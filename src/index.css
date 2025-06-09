@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'FabioXM';
+  src:
+    url('/fonts/FabioXM-Regular.woff2') format('woff2'),
+    url('/fonts/FabioXM-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'FabioXM';
+  src:
+    url('/fonts/FabioXM-Bold.woff2') format('woff2'),
+    url('/fonts/FabioXM-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 94 100% 54%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 9%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 94 100% 54%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 0 0% 9%;
+    --input: 0 0% 9%;
+    --ring: 94 100% 54%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'FabioXM', system-ui, sans-serif;
+  }
+}
+
+.betting-slider {
+  @apply w-full h-2 bg-secondary rounded-full appearance-none cursor-pointer;
+}
+
+.betting-slider::-webkit-slider-thumb {
+  @apply w-4 h-4 bg-primary rounded-full appearance-none;
+}
+
+.stream-card {
+  @apply relative overflow-hidden rounded-lg transition-transform duration-200 hover:scale-[1.02];
+}
+
+.stream-card::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-t from-background/80 to-transparent pointer-events-none;
+}

@@ -1,0 +1,202 @@
+// Compatibility layer for transitioning from Supabase to custom API
+import { api } from '../api/client';
+
+// Create a mock supabase client that redirects operations to our custom API
+export const supabase = {
+  // Auth operations
+  auth: {
+    getSession: async () => {
+      try {
+        const session = await api.auth.getSession();
+        return { data: { session } };
+      } catch (error) {
+        return { data: { session: null } };
+      }
+    },
+    signOut: async () => {
+      await api.auth.signOut();
+      return { error: null };
+    },
+    onAuthStateChange: (callback: any) => {
+      // This is a no-op for now
+      // In a real implementation, we would set up a listener
+      return { data: { subscription: { unsubscribe: () => {} } } };
+    },
+  },
+
+  // Database operations
+  from: (table: string) => ({
+    select: (columns: string = '*') => ({
+      eq: (column: string, value: any) => ({
+        single: async () => {
+          try {
+            if (table === 'profiles') {
+              const data = await api.user.getProfile();
+              return { data, error: null };
+            } else if (table === 'stream_bets') {
+              const bets = await api.betting.getUserBets(true);
+              const data = bets.find(
+                bet =>
+                  (column === 'user_id' && bet.userId === value) ||
+                  (column === 'stream_id' && bet.streamId === value)
+              );
+              return { data, error: null };
+            } else if (table === 'streams') {
+              const streams = await api.betting.getStreams();
+              const data = streams.find(stream => stream.id === value);
+              return { data, error: null };
+            }
+            return { data: null, error: null };
+          } catch (error) {
+            return { data: null, error };
+          }
+        },
+        maybeSingle: async () => {
+          try {
+            if (table === 'stream_bets') {
+              const bets = await api.betting.getUserBets(true);
+              const data = bets.find(
+                bet =>
+                  (column === 'user_id' && bet.userId === value) ||
+                  (column === 'stream_id' && bet.streamId === value)
+              );
+              return { data, error: null };
+            }
+            return { data: null, error: null };
+          } catch (error) {
+            return { data: null, error };
+          }
+        },
+      }),
+      order: (column: string, { ascending }: { ascending: boolean }) => ({
+        limit: (limit: number) => ({
+          eq: (column: string, value: any) => ({
+            in: (column: string, values: any[]) => ({
+              execute: async () => {
+                try {
+                  if (table === 'streams') {
+                    const data = await api.betting.getStreams();
+                    return { data, error: null };
+                  }
+                  return { data: [], error: null };
+                } catch (error) {
+                  return { data: [], error };
+                }
+              },
+            }),
+          }),
+        }),
+      }),
+    }),
+    insert: (data: any) => ({
+      select: (columns: string = '*') => ({
+        execute: async () => {
+          try {
+            // Insert operations would be mapped to appropriate API calls here
+            return { data: null, error: null };
+          } catch (error) {
+            return { data: null, error };
+          }
+        },
+      }),
+    }),
+    update: (data: any) => ({
+      eq: (column: string, value: any) => ({
+        execute: async () => {
+          try {
+            // Update operations would be mapped to appropriate API calls here
+            return { data: null, error: null };
+          } catch (error) {
+            return { data: null, error };
+          }
+        },
+      }),
+    }),
+    delete: () => ({
+      eq: (column: string, value: any) => ({
+        execute: async () => {
+          try {
+            if (table === 'stream_bets' && column === 'id') {
+              await api.betting.cancelBet(value);
+              return { error: null };
+            }
+            return { error: null };
+          } catch (error) {
+            return { error };
+          }
+        },
+      }),
+    }),
+  }),
+
+  // Realtime subscriptions
+  channel: (channelName: string) => {
+    return {
+      on: (eventType: string, table: string, filter: string, callback: any) => {
+        return {
+          subscribe: (statusCallback?: any) => {
+            // Connect to socket.io instead for real-time updates
+            const socket = api.socket.connect();
+            if (socket) {
+              // Extract streamId from filter if present
+              const streamIdMatch = filter?.match(/stream_id=eq\.([^)&\s]+)/);
+              const streamId = streamIdMatch ? streamIdMatch[1] : null;
+
+              if (streamId) {
+                api.socket.joinStream(streamId);
+                api.socket.onBettingUpdate(data => {
+                  // Transform the data to match what the callback expects
+                  callback({
+                    new: data,
+                    old: null,
+                    eventType: data.eventType || 'UPDATE',
+                  });
+                });
+              }
+
+              if (statusCallback) {
+                statusCallback('SUBSCRIBED');
+              }
+            }
+            return this;
+          },
+        };
+      },
+    };
+  },
+
+  removeChannel: () => {
+    // No-op for now
+  },
+
+  // Storage operations
+  storage: {
+    from: (bucket: string) => ({
+      upload: async (path: string, file: File) => {
+        try {
+          // Storage operations would be mapped to appropriate API calls here
+          return { data: { path }, error: null };
+        } catch (error) {
+          return { data: null, error };
+        }
+      },
+      getPublicUrl: (path: string) => {
+        return { data: { publicUrl: path } };
+      },
+    }),
+  },
+
+  // Function invocations
+  functions: {
+    invoke: async (functionName: string, options: any = {}) => {
+      try {
+        // Function calls would be mapped to appropriate API endpoints
+        return { data: null, error: null };
+      } catch (error) {
+        return { data: null, error };
+      }
+    },
+  },
+};
+
+export default supabase;
