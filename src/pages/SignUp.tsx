@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -20,6 +20,12 @@ import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { verifyUserLocation, GeolocationResult } from '@/integrations/api/geolocation';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { AvatarUploadField } from '@/components/AvatarUploadField';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const signupSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
@@ -34,6 +40,9 @@ const signupSchema = z.object({
   tosAccepted: z.boolean().refine(val => val === true, {
     message: 'You must accept the Terms of Service',
   }),
+  isOlder: z.boolean().refine(val => val === true, {
+    message: 'You must be atleast 18 years old',
+  }),
 });
 
 export default function SignUp() {
@@ -44,9 +53,23 @@ export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [tosAccepted, setTosAccepted] = useState(false);
+  const [isOlder, setIsOlder] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [locationStatus, setLocationStatus] = useState<GeolocationResult | null>(null);
   const [isCheckingLocation, setIsCheckingLocation] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const form = useForm({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      username: '',
+      email: '',
+      password: '',
+      tosAccepted: false,
+      isOlder: false,
+      avatar: null,
+    },
+  });
 
   // Check user location on component mount
   useEffect(() => {
@@ -77,12 +100,75 @@ export default function SignUp() {
     checkLocation();
   }, [toast]);
 
+  const { data: session } = useQuery({
+    queryKey: ['session'],
+    queryFn: async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      return session;
+    },
+  });
+
+  const handleAvatarUpload = async (file: File | null) => {
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${session?.user?.id}-${Math.random()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('avatars').getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', session?.user?.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Success',
+        description: 'Profile picture updated successfully',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile', session?.user?.id],
+    enabled: !!session?.user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session!.user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const signupMutation = useMutation({
     mutationFn: async (userData: {
       username: string;
       email: string;
       password: string;
       tosAccepted: boolean;
+      isOlder: boolean;
     }) => {
       // Verify location again before proceeding with signup
       const locationResult = await verifyUserLocation();
@@ -128,7 +214,7 @@ export default function SignUp() {
 
   const validateForm = () => {
     try {
-      signupSchema.parse({ username, email, password, tosAccepted });
+      signupSchema.parse({ username, email, password, tosAccepted, isOlder });
       setErrors({});
       return true;
     } catch (error) {
@@ -160,7 +246,14 @@ export default function SignUp() {
 
     if (!validateForm()) return;
 
-    signupMutation.mutate({ username, email, password, tosAccepted });
+    console.log('username', username);
+    console.log('email', email);
+    console.log('passport', password);
+    console.log('tosAccepted', tosAccepted);
+    console.log('isOlder', isOlder);
+    console.log('avatar', form.getValues('avatar'));
+    console.log('lastKnownIp', locationStatus?.ip_address);
+    // signupMutation.mutate({ username, email, password, tosAccepted, isOlder });
   };
 
   const handleGoogleLogin = async () => {
@@ -199,7 +292,7 @@ export default function SignUp() {
   const renderLocationWarning = () => {
     if (!locationStatus) return null;
 
-    if (!locationStatus.allowed) {
+    if (!locationStatus?.allowed) {
       return (
         <Alert variant="destructive" className="mb-4">
           <AlertTitle>Location Restricted</AlertTitle>
@@ -219,19 +312,27 @@ export default function SignUp() {
         variants={containerVariants}
         className="w-full max-w-md"
       >
-        <motion.div variants={itemVariants}>
-          <Card className="border-border/40 shadow-lg">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
-              <CardDescription className="text-center">
-                Enter your details below to create your account
-              </CardDescription>
-            </CardHeader>
-
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">Create an account</CardTitle>
+            <CardDescription className="text-center">
+              Enter your information to create your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             {renderLocationWarning()}
-
-            <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-4">
+            <FormProvider {...form}>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Label htmlFor="avatar">Profile Picture</Label>
+                <div className="flex justify-center space-y-2">
+                  <AvatarUploadField
+                    form={form}
+                    name="avatar"
+                    label=""
+                    disabled={isUploading}
+                    size="lg"
+                  />
+                </div>
                 <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="username">Username</Label>
                   <Input
@@ -290,6 +391,18 @@ export default function SignUp() {
                     <p className="text-destructive text-sm">{errors.tosAccepted}</p>
                   )}
                 </motion.div>
+                <motion.div variants={itemVariants} className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isOlder"
+                    checked={isOlder}
+                    onCheckedChange={checked => setIsOlder(checked as boolean)}
+                    disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                  />
+                  <Label htmlFor="isOlder" className="text-sm">
+                    I confirm that I am 18 years of age or older
+                  </Label>
+                  {errors.isOlder && <p className="text-destructive text-sm">{errors.isOlder}</p>}
+                </motion.div>
                 <motion.div variants={itemVariants}>
                   <Button
                     type="submit"
@@ -328,20 +441,20 @@ export default function SignUp() {
                     Continue with Google
                   </Button>
                 </motion.div>
-              </CardContent>
-            </form>
-            <CardFooter className="flex flex-col space-y-2">
-              <motion.div variants={itemVariants} className="text-center w-full">
-                <p className="text-sm text-muted-foreground">
-                  Already have an account?{' '}
-                  <Link to="/login" className="text-primary hover:underline">
-                    Log in
-                  </Link>
-                </p>
-              </motion.div>
-            </CardFooter>
-          </Card>
-        </motion.div>
+              </form>
+            </FormProvider>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-2">
+            <motion.div variants={itemVariants} className="text-center w-full">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{' '}
+                <Link to="/login" className="text-primary hover:underline">
+                  Log in
+                </Link>
+              </p>
+            </motion.div>
+          </CardFooter>
+        </Card>
       </motion.div>
     </div>
   );
