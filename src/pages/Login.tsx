@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,10 @@ import { api } from '@/integrations/api/client';
 import { motion } from 'framer-motion';
 import { FaGoogle } from 'react-icons/fa';
 import { z } from 'zod';
+import { GoogleLogin } from '@react-oauth/google';
+import { decodeIdToken } from '@/utils/format';
+import { GeolocationResult, verifyUserLocation } from '@/integrations/api/geolocation';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -30,6 +34,38 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [locationStatus, setLocationStatus] = useState<GeolocationResult | null>(null);
+  const [isCheckingLocation, setIsCheckingLocation] = useState(true);
+  const googleLoginRef = useRef<HTMLDivElement>(null);
+
+  // Check user location on component mount
+  useEffect(() => {
+    const checkLocation = async () => {
+      setIsCheckingLocation(true);
+      try {
+        const result = await verifyUserLocation();
+        setLocationStatus(result);
+
+        if (!result.allowed) {
+          toast({
+            variant: 'destructive',
+            title: 'Location Restricted',
+            description: result.error,
+          });
+        }
+      } catch (error) {
+        console.error('Location check failed:', error);
+        setLocationStatus({
+          allowed: true,
+          error: 'Could not verify location. Proceeding anyway.',
+        });
+      } finally {
+        setIsCheckingLocation(false);
+      }
+    };
+
+    checkLocation();
+  }, [toast]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
@@ -80,16 +116,71 @@ export default function Login() {
     }
   };
 
+  // Display location restriction warning if needed
+  const renderLocationWarning = () => {
+    if (!locationStatus) return null;
+
+    if (!locationStatus?.allowed) {
+      return (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Location Restricted</AlertTitle>
+          <AlertDescription>{locationStatus.error}</AlertDescription>
+        </Alert>
+      );
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Don't proceed if location is restricted
+    if (locationStatus && !locationStatus.allowed) {
+      toast({
+        variant: 'destructive',
+        title: 'Location Restricted',
+        description: locationStatus.error,
+      });
+      return;
+    }
 
     if (!validateForm()) return;
 
     loginMutation.mutate({ email, password });
   };
 
+  const handleLoginSuccess = (credentialResponse: any) => {
+    const userResponse = decodeIdToken(credentialResponse?.credential);
+    if (userResponse) {
+      if (userResponse.email) setEmail(userResponse.email);
+    }
+  };
+
+  const handleLoginFailure = () => {
+    toast({
+      variant: 'destructive',
+      title: 'Error signup with google',
+      description: 'Please try again',
+    });
+  };
+
   const handleGoogleLogin = async () => {
-    googleLoginMutation.mutate();
+    // Don't proceed if location is restricted
+    if (locationStatus && !locationStatus.allowed) {
+      toast({
+        variant: 'destructive',
+        title: 'Location Restricted',
+        description: locationStatus.error,
+      });
+      return;
+    }
+
+    // Trigger the Google login button click
+    const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
+    if (googleButton instanceof HTMLElement) {
+      googleButton.click();
+    }
   };
 
   const containerVariants = {
@@ -126,6 +217,7 @@ export default function Login() {
                 Enter your credentials to access your account
               </CardDescription>
             </CardHeader>
+            {renderLocationWarning()}
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
                 <motion.div variants={itemVariants} className="space-y-2">
@@ -177,6 +269,9 @@ export default function Login() {
                     <FaGoogle className="mr-2" />
                     Continue with Google
                   </Button>
+                  <div ref={googleLoginRef} className="hidden">
+                    <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
+                  </div>
                 </motion.div>
               </CardContent>
             </form>

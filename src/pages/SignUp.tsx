@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -26,24 +26,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { AvatarUploadField } from '@/components/AvatarUploadField';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
-const signupSchema = z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  email: z.string().email('Invalid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least 1 lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least 1 number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least 1 special character'),
-  tosAccepted: z.boolean().refine(val => val === true, {
-    message: 'You must accept the Terms of Service',
-  }),
-  isOlder: z.boolean().refine(val => val === true, {
-    message: 'You must be atleast 18 years old',
-  }),
-});
+import { GoogleLogin } from '@react-oauth/google';
+import { decodeIdToken } from '@/utils/format';
+import { useDebounce } from '@/lib/utils';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -58,6 +43,29 @@ export default function SignUp() {
   const [locationStatus, setLocationStatus] = useState<GeolocationResult | null>(null);
   const [isCheckingLocation, setIsCheckingLocation] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGoogleLogin, setIsGoogleLogin] = useState(false);
+  const [userNameCheck, setUserNameCheck] = useState('');
+  const googleLoginRef = useRef<HTMLDivElement>(null);
+
+  const signupSchema = z.object({
+    username: z.string().min(3, 'Username must be at least 3 characters'),
+    email: z.string().email('Invalid email address'),
+    password: isGoogleLogin
+      ? z.string().optional()
+      : z
+          .string()
+          .min(8, 'Password must be at least 8 characters')
+          .regex(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
+          .regex(/[a-z]/, 'Password must contain at least 1 lowercase letter')
+          .regex(/[0-9]/, 'Password must contain at least 1 number')
+          .regex(/[^A-Za-z0-9]/, 'Password must contain at least 1 special character'),
+    tosAccepted: z.boolean().refine(val => val === true, {
+      message: 'You must accept the Terms of Service',
+    }),
+    isOlder: z.boolean().refine(val => val === true, {
+      message: 'You must be atleast 18 years old',
+    }),
+  });
 
   const form = useForm({
     resolver: zodResolver(signupSchema),
@@ -110,58 +118,6 @@ export default function SignUp() {
     },
   });
 
-  const handleAvatarUpload = async (file: File | null) => {
-    if (!file) return;
-
-    try {
-      setIsUploading(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${session?.user?.id}-${Math.random()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('avatars').getPublicUrl(fileName);
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', session?.user?.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: 'Success',
-        description: 'Profile picture updated successfully',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const { data: profile } = useQuery({
-    queryKey: ['profile', session?.user?.id],
-    enabled: !!session?.user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session!.user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const signupMutation = useMutation({
     mutationFn: async (userData: {
       username: string;
@@ -169,6 +125,8 @@ export default function SignUp() {
       password: string;
       tosAccepted: boolean;
       isOlder: boolean;
+      profileImageUrl: string;
+      // lastKnownIp: string;
     }) => {
       // Verify location again before proceeding with signup
       const locationResult = await verifyUserLocation();
@@ -246,14 +204,35 @@ export default function SignUp() {
 
     if (!validateForm()) return;
 
-    console.log('username', username);
-    console.log('email', email);
-    console.log('passport', password);
-    console.log('tosAccepted', tosAccepted);
-    console.log('isOlder', isOlder);
-    console.log('avatar', form.getValues('avatar'));
-    console.log('lastKnownIp', locationStatus?.ip_address);
-    // signupMutation.mutate({ username, email, password, tosAccepted, isOlder });
+    signupMutation.mutate({
+      username,
+      email,
+      password,
+      tosAccepted,
+      isOlder,
+      profileImageUrl: form.getValues('avatar') || undefined,
+      // lastKnownIp: locationStatus?.ip_address
+    });
+  };
+
+  const handleLoginSuccess = (credentialResponse: any) => {
+    const userResponse = decodeIdToken(credentialResponse?.credential);
+    if (userResponse) {
+      if (userResponse.name) setUsername(userResponse.given_name);
+      if (userResponse.email) setEmail(userResponse.email);
+      // if (userResponse.picture) form.setValue('avatar', userResponse.picture);
+    }
+
+    window?.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsGoogleLogin(true);
+  };
+
+  const handleLoginFailure = () => {
+    toast({
+      variant: 'destructive',
+      title: 'Error signup with google',
+      description: 'Please try again',
+    });
   };
 
   const handleGoogleLogin = async () => {
@@ -267,7 +246,11 @@ export default function SignUp() {
       return;
     }
 
-    googleLoginMutation.mutate();
+    // Trigger the Google login button click
+    const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
+    if (googleButton instanceof HTMLElement) {
+      googleButton.click();
+    }
   };
 
   const containerVariants = {
@@ -287,6 +270,35 @@ export default function SignUp() {
       opacity: 1,
     },
   };
+
+  const {
+    data: userAvailabilityData,
+    isFetching: isUserAvailabilityFetching,
+    refetch: refetchUserAvailability,
+  } = useQuery({
+    queryKey: ['user-availability'],
+    enabled: false,
+    queryFn: async () => {
+      const { data, error }: any = await api.auth.getUsernameAvailability(userNameCheck);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (userNameCheck && userNameCheck?.length >= 3) refetchUserAvailability();
+  }, [refetchUserAvailability, userNameCheck]);
+
+  // Example usage:
+  const debouncedSearch = useDebounce((searchTerm: string) => {
+    // Your search logic here
+    setUserNameCheck(searchTerm);
+  });
+
+  useEffect(() => {
+    debouncedSearch(username);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username]);
 
   // Display location restriction warning if needed
   const renderLocationWarning = () => {
@@ -344,6 +356,22 @@ export default function SignUp() {
                     disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
                   />
                   {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
+                  {username.length >= 3 && (
+                    <div className="flex items-center gap-2 text-sm">
+                      {isUserAvailabilityFetching ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <span className="text-muted-foreground">
+                            Checking username availability...
+                          </span>
+                        </>
+                      ) : userAvailabilityData?.is_available ? (
+                        <span className="text-green-500">Username is available</span>
+                      ) : userAvailabilityData?.is_available === false ? (
+                        <span className="text-destructive">Username is not available</span>
+                      ) : null}
+                    </div>
+                  )}
                 </motion.div>
                 <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -354,26 +382,34 @@ export default function SignUp() {
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     className={errors.email ? 'border-destructive' : ''}
-                    disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                    disabled={
+                      isCheckingLocation ||
+                      isGoogleLogin ||
+                      (locationStatus && !locationStatus.allowed)
+                    }
                   />
                   {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
                 </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className={errors.password ? 'border-destructive' : ''}
-                    disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
-                  />
-                  {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
-                  <p className="text-muted-foreground text-sm">
-                    Password must be at least 8 characters and include uppercase, lowercase, number,
-                    and special character.
-                  </p>
-                </motion.div>
+                {!isGoogleLogin && (
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className={errors.password ? 'border-destructive' : ''}
+                      disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                    />
+                    {errors.password && (
+                      <p className="text-destructive text-sm">{errors.password}</p>
+                    )}
+                    <p className="text-muted-foreground text-sm">
+                      Password must be at least 8 characters and include uppercase, lowercase,
+                      number, and special character.
+                    </p>
+                  </motion.div>
+                )}
                 <motion.div variants={itemVariants} className="flex items-center space-x-2">
                   <Checkbox
                     id="tosAccepted"
@@ -440,6 +476,9 @@ export default function SignUp() {
                     <FaGoogle className="mr-2" />
                     Continue with Google
                   </Button>
+                  <div ref={googleLoginRef} className="hidden">
+                    <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
+                  </div>
                 </motion.div>
               </form>
             </FormProvider>

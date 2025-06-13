@@ -4,6 +4,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import Index from './pages/Index';
 import Stream from './pages/Stream';
 import Login from './pages/Login';
@@ -61,28 +62,30 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <WelcomeModal open={showWelcomeModal} onOpenChange={setShowWelcomeModal} />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/stream/:id" element={<Stream />} />
-            <Route path="/stream/:id/settings" element={<StreamSettings />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/deposit" element={<Deposit />} />
-            <Route path="/withdraw" element={<Withdraw />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/faq" element={<FAQ />} />
-          </Routes>
-        </TooltipProvider>
-      </BrowserRouter>
+      <GoogleOAuthProvider clientId="384116887530-94lphjlsp6245tu2t719uacjjhev2ihl.apps.googleusercontent.com">
+        <BrowserRouter>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <WelcomeModal open={showWelcomeModal} onOpenChange={setShowWelcomeModal} />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/stream/:id" element={<Stream />} />
+              <Route path="/stream/:id/settings" element={<StreamSettings />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<SignUp />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/deposit" element={<Deposit />} />
+              <Route path="/withdraw" element={<Withdraw />} />
+              <Route path="/transactions" element={<Transactions />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/faq" element={<FAQ />} />
+            </Routes>
+          </TooltipProvider>
+        </BrowserRouter>
+      </GoogleOAuthProvider>
     </QueryClientProvider>
   );
 };

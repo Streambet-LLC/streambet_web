@@ -35,6 +35,8 @@ export const authAPI = {
     password: string;
     username: string;
     tosAccepted: boolean;
+    profileImageUrl: string;
+    // lastKnownIp: string;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
     // Store the token
@@ -67,6 +69,16 @@ export const authAPI = {
             : null,
         },
       };
+    } catch (error) {
+      return { data: { session: null } };
+    }
+  },
+
+  // Get username availability
+  getUsernameAvailability: async (userName: string) => {
+    try {
+      const response = await apiClient.get(`/auth/username?username=${userName}`);
+      return response;
     } catch (error) {
       return { data: { session: null } };
     }
