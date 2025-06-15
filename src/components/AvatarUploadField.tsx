@@ -25,7 +25,7 @@ export const AvatarUploadField = ({
       control={form.control}
       name={name}
       render={({ field }) => (
-        <FormItem>
+        <FormItem className="flex flex-col items-center">
           {label && <FormLabel>{label}</FormLabel>}
           <FormControl>
             <AvatarUpload

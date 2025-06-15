@@ -40,6 +40,7 @@ export default function SignUp() {
   const [tosAccepted, setTosAccepted] = useState(false);
   const [isOlder, setIsOlder] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [locationStatus, setLocationStatus] = useState<GeolocationResult | null>(null);
   const [isCheckingLocation, setIsCheckingLocation] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -170,7 +171,38 @@ export default function SignUp() {
     },
   });
 
+  // Add real-time validation effect that only runs after first submission
+  useEffect(() => {
+    if (!hasSubmitted) return;
+
+    const validateField = (fieldName: string, value: any) => {
+      try {
+        signupSchema.shape[fieldName].parse(value);
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          setErrors(prev => ({
+            ...prev,
+            [fieldName]: error.errors[0].message,
+          }));
+        }
+      }
+    };
+
+    // Validate each field when it changes
+    if (username) validateField('username', username);
+    if (email) validateField('email', email);
+    if (password) validateField('password', password);
+    if (tosAccepted) validateField('tosAccepted', tosAccepted);
+    if (isOlder) validateField('isOlder', isOlder);
+  }, [hasSubmitted, username, email, password, tosAccepted, isOlder]);
+
   const validateForm = () => {
+    setHasSubmitted(true);
     try {
       signupSchema.parse({ username, email, password, tosAccepted, isOlder });
       setErrors({});
@@ -203,6 +235,37 @@ export default function SignUp() {
     }
 
     if (!validateForm()) return;
+
+    // Check if username is available
+    if (username.length >= 3 && userAvailabilityData?.is_available === false) {
+      toast({
+        variant: 'destructive',
+        title: 'Username not available',
+        description: 'Please choose a different username or use the suggested one.',
+      });
+      return;
+    }
+
+    // Check if username availability check is still in progress
+    if (username.length >= 3 && isUserAvailabilityFetching) {
+      toast({
+        variant: 'destructive',
+        title: 'Please wait',
+        description: 'Username availability check is in progress.',
+      });
+      return;
+    }
+
+    // Check for avatar validation errors
+    const avatarError = form.formState.errors.avatar;
+    if (avatarError) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Profile Picture',
+        description: (avatarError.message as string) || 'Please upload a valid profile picture.',
+      });
+      return;
+    }
 
     signupMutation.mutate({
       username,
@@ -280,6 +343,7 @@ export default function SignUp() {
     enabled: false,
     queryFn: async () => {
       const { data, error }: any = await api.auth.getUsernameAvailability(userNameCheck);
+
       if (error) throw error;
       return data;
     },
@@ -347,28 +411,69 @@ export default function SignUp() {
                 </div>
                 <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    placeholder="your-username"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    className={errors.username ? 'border-destructive' : ''}
-                    disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="username"
+                      placeholder="your-username"
+                      value={username}
+                      onChange={e => setUsername(e.target.value)}
+                      className={`${errors.username ? 'border-destructive' : ''} ${username.length >= 3 ? 'pr-10' : ''}`}
+                      disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                    />
+                    {username.length >= 3 && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {isUserAvailabilityFetching ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : userAvailabilityData?.is_available ? (
+                          <svg
+                            className="h-4 w-4 text-green-500"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        ) : userAvailabilityData?.is_available === false ? (
+                          <svg
+                            className="h-4 w-4 text-destructive"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
                   {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
                   {username.length >= 3 && (
                     <div className="flex items-center gap-2 text-sm">
                       {isUserAvailabilityFetching ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            Checking username availability...
-                          </span>
-                        </>
+                        <span className="text-muted-foreground">
+                          Checking username availability...
+                        </span>
                       ) : userAvailabilityData?.is_available ? (
                         <span className="text-green-500">Username is available</span>
                       ) : userAvailabilityData?.is_available === false ? (
-                        <span className="text-destructive">Username is not available</span>
+                        <span>
+                          <span className="text-destructive">
+                            Username is not available. Suggested username:{' '}
+                          </span>
+                          <span className="text-green-500">
+                            {userAvailabilityData?.suggested_username}
+                          </span>
+                        </span>
                       ) : null}
                     </div>
                   )}
