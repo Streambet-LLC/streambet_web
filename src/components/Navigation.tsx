@@ -22,13 +22,12 @@ export const Navigation = () => {
     queryKey: ['session'],
     queryFn: async () => {
       const { data } = await api.auth.getSession();
-      return data.session;
+      return data;
     },
   });
-
   const { data: profile } = useQuery({
-    queryKey: ['profile', session?.user?.id],
-    enabled: !!session?.user?.id,
+    queryKey: ['profile', session?.id],
+    enabled: !!session?.id,
     queryFn: async () => {
       const data = await api.user.getProfile();
       return data;
@@ -146,7 +145,7 @@ export const Navigation = () => {
                   </motion.div>
                 )}
 
-                <UserDropdown profile={profile} user={session.user} onLogout={handleLogout} />
+                <UserDropdown profile={profile?.data} user={session} onLogout={handleLogout} />
               </>
             ) : (
               <>

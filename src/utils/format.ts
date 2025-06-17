@@ -83,20 +83,3 @@ export const formatViewCount = (count: number): string => {
   if (count === 1) return '1 view';
   return `${formatCompactNumber(count)} views`;
 };
-
-/**
- * Decode a JWT token
- * @param idToken - The JWT token to decode
- * @returns The decoded token
- */
-export const decodeIdToken = (idToken: string) => {
-  const base64Url = idToken.split('.')[1]; // Get the payload part
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/'); // Replace URL-safe characters
-  const jsonPayload = decodeURIComponent(
-    atob(base64)
-      .split('')
-      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-      .join('')
-  );
-  return JSON.parse(jsonPayload);
-};

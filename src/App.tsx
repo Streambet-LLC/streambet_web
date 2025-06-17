@@ -20,6 +20,7 @@ import Terms from './pages/Terms';
 import FAQ from './pages/FAQ';
 import { WelcomeModal } from './components/auth/WelcomeModal';
 import { api } from './integrations/api/client';
+import ForgotPassword from './pages/ForgotPassword';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -82,6 +83,7 @@ const App = () => {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/faq" element={<FAQ />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
             </Routes>
           </TooltipProvider>
         </BrowserRouter>

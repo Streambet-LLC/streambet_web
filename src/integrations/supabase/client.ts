@@ -8,7 +8,7 @@ export const supabase = {
     getSession: async () => {
       try {
         const session = await api.auth.getSession();
-        return { data: { session } };
+        return session.data;
       } catch (error) {
         return { data: { session: null } };
       }

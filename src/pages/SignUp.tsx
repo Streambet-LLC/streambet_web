@@ -20,15 +20,14 @@ import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { verifyUserLocation, GeolocationResult } from '@/integrations/api/geolocation';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarUploadField } from '@/components/AvatarUploadField';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GoogleLogin } from '@react-oauth/google';
-import { decodeIdToken } from '@/utils/format';
 import { useDebounce } from '@/lib/utils';
+import { decodeIdToken, getMessage } from '@/utils/helper';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -49,7 +48,10 @@ export default function SignUp() {
   const googleLoginRef = useRef<HTMLDivElement>(null);
 
   const signupSchema = z.object({
-    username: z.string().min(3, 'Username must be at least 3 characters'),
+    username: z
+      .string()
+      .min(3, 'Username must be at least 3 characters')
+      .regex(/^[^\s]*$/, 'Username cannot contain spaces'),
     email: z.string().email('Invalid email address'),
     password: isGoogleLogin
       ? z.string().optional()
@@ -127,7 +129,7 @@ export default function SignUp() {
       tosAccepted: boolean;
       isOlder: boolean;
       profileImageUrl: string;
-      // lastKnownIp: string;
+      lastKnownIp: string;
     }) => {
       // Verify location again before proceeding with signup
       const locationResult = await verifyUserLocation();
@@ -148,7 +150,7 @@ export default function SignUp() {
       toast({
         variant: 'destructive',
         title: 'Registration failed',
-        description: error.message || 'Failed to create account. Please try again.',
+        description: getMessage(error) || 'Failed to create account. Please try again.',
       });
     },
   });
@@ -199,6 +201,7 @@ export default function SignUp() {
     if (password) validateField('password', password);
     if (tosAccepted) validateField('tosAccepted', tosAccepted);
     if (isOlder) validateField('isOlder', isOlder);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasSubmitted, username, email, password, tosAccepted, isOlder]);
 
   const validateForm = () => {
@@ -267,19 +270,41 @@ export default function SignUp() {
       return;
     }
 
+    const avatar = form.getValues('avatar');
+    let profileImageUrl = '';
+
+    if (avatar) {
+      try {
+        setIsUploading(true);
+        const response = await api.auth.uploadProfilePicture(avatar);
+        profileImageUrl = response?.data?.Key;
+        setIsUploading(false);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error uploading profile picture',
+          description: getMessage(error) || 'Failed to upload profile picture. Please try again.',
+        });
+        setIsUploading(false);
+      }
+    }
+
     signupMutation.mutate({
       username,
       email,
       password,
       tosAccepted,
       isOlder,
-      profileImageUrl: form.getValues('avatar') || undefined,
-      // lastKnownIp: locationStatus?.ip_address
+      profileImageUrl: profileImageUrl || undefined,
+      lastKnownIp: locationStatus?.ip_address,
     });
   };
 
-  const handleLoginSuccess = (credentialResponse: any) => {
+  const handleLoginSuccess = async (credentialResponse: any) => {
     const userResponse = decodeIdToken(credentialResponse?.credential);
+    const googleResponseFromAPI: any = await api.auth.googleCallback(
+      credentialResponse?.credential
+    );
     if (userResponse) {
       if (userResponse.name) setUsername(userResponse.given_name);
       if (userResponse.email) setEmail(userResponse.email);
@@ -350,7 +375,8 @@ export default function SignUp() {
   });
 
   useEffect(() => {
-    if (userNameCheck && userNameCheck?.length >= 3) refetchUserAvailability();
+    if (userNameCheck && userNameCheck?.length >= 3 && !userNameCheck.includes(' '))
+      refetchUserAvailability();
   }, [refetchUserAvailability, userNameCheck]);
 
   // Example usage:
@@ -417,10 +443,10 @@ export default function SignUp() {
                       placeholder="your-username"
                       value={username}
                       onChange={e => setUsername(e.target.value)}
-                      className={`${errors.username ? 'border-destructive' : ''} ${username.length >= 3 ? 'pr-10' : ''}`}
+                      className={`${errors.username ? 'border-destructive' : ''} ${username.length >= 3 && !username.includes(' ') ? 'pr-10' : ''}`}
                       disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
                     />
-                    {username.length >= 3 && (
+                    {username.length >= 3 && !username.includes(' ') && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         {isUserAvailabilityFetching ? (
                           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -457,7 +483,7 @@ export default function SignUp() {
                     )}
                   </div>
                   {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
-                  {username.length >= 3 && (
+                  {username.length >= 3 && !username.includes(' ') && (
                     <div className="flex items-center gap-2 text-sm">
                       {isUserAvailabilityFetching ? (
                         <span className="text-muted-foreground">
@@ -470,9 +496,7 @@ export default function SignUp() {
                           <span className="text-destructive">
                             Username is not available. Suggested username:{' '}
                           </span>
-                          <span className="text-green-500">
-                            {userAvailabilityData?.suggested_username}
-                          </span>
+                          <span className="text-green-500">{userAvailabilityData?.suggestion}</span>
                         </span>
                       ) : null}
                     </div>
@@ -550,13 +574,14 @@ export default function SignUp() {
                     className="w-full"
                     disabled={
                       signupMutation.isPending ||
+                      isUploading ||
                       isCheckingLocation ||
                       (locationStatus && !locationStatus.allowed)
                     }
                   >
                     {isCheckingLocation
                       ? 'Verifying location...'
-                      : signupMutation.isPending
+                      : signupMutation.isPending || isUploading
                         ? 'Creating account...'
                         : 'Sign Up'}
                   </Button>

@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { User } from '@supabase/supabase-js';
 import { Tables } from '@/integrations/supabase/types';
+import { getImageLink } from '@/utils/helper';
 
 type Profile = Tables<'profiles'>;
 
@@ -21,12 +22,18 @@ interface UserDropdownProps {
 }
 
 export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => {
+  console.log('profile', profile);
+  console.log('user', user);
+  console.log('getImageLink(profile?.profile_image_url)', getImageLink(profile?.profileImageUrl));
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.username} />
+            <AvatarImage
+              src={getImageLink(profile?.profileImageUrl) || undefined}
+              alt={profile?.username}
+            />
             <AvatarFallback>
               {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || ''}
             </AvatarFallback>

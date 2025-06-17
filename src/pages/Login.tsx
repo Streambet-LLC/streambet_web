@@ -18,12 +18,12 @@ import { motion } from 'framer-motion';
 import { FaGoogle } from 'react-icons/fa';
 import { z } from 'zod';
 import { GoogleLogin } from '@react-oauth/google';
-import { decodeIdToken } from '@/utils/format';
 import { GeolocationResult, verifyUserLocation } from '@/integrations/api/geolocation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { decodeIdToken, getMessage } from '@/utils/helper';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().min(1, 'Email/Username is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -68,7 +68,7 @@ export default function Login() {
   }, [toast]);
 
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
+    mutationFn: async (credentials: { identifier: string; password: string }) => {
       return await api.auth.login(credentials);
     },
     onSuccess: () => {
@@ -79,7 +79,7 @@ export default function Login() {
       toast({
         variant: 'destructive',
         title: 'Login failed',
-        description: error.message || 'Invalid email or password. Please try again.',
+        description: getMessage(error) || 'Invalid email or password. Please try again.',
       });
     },
   });
@@ -92,7 +92,7 @@ export default function Login() {
       toast({
         variant: 'destructive',
         title: 'Google login failed',
-        description: error.message || 'Failed to authenticate with Google. Please try again.',
+        description: getMessage(error) || 'Failed to authenticate with Google. Please try again.',
       });
     },
   });
@@ -147,7 +147,7 @@ export default function Login() {
 
     if (!validateForm()) return;
 
-    loginMutation.mutate({ email, password });
+    loginMutation.mutate({ identifier: email, password });
   };
 
   const handleLoginSuccess = (credentialResponse: any) => {
@@ -225,7 +225,7 @@ export default function Login() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your-email@example.com"
+                    placeholder="Email or password"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     className={errors.email ? 'border-destructive' : ''}

@@ -24,13 +24,13 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
   ({ value, onChange, onClear, className, size = 'md', disabled }, ref) => {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [preview, setPreview] = React.useState<string | undefined>(value);
+    const [isDragging, setIsDragging] = React.useState(false);
 
     React.useEffect(() => {
       setPreview(value);
     }, [value]);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
+    const handleFile = (file: File) => {
       if (file) {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -38,6 +38,13 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
         };
         reader.readAsDataURL(file);
         onChange?.(file);
+      }
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        handleFile(file);
       }
     };
 
@@ -56,12 +63,44 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
       onClear?.();
     };
 
+    const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!disabled) {
+        setIsDragging(true);
+      }
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+
+      if (disabled) return;
+
+      const file = e.dataTransfer.files?.[0];
+      if (file) {
+        handleFile(file);
+      }
+    };
+
     return (
       <div ref={ref} className={cn('relative inline-block', className)}>
         <div
           onClick={handleClick}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           className={cn(
-            'relative cursor-pointer transition-opacity hover:opacity-90',
+            'relative cursor-pointer transition-all duration-200',
+            'hover:opacity-90',
+            isDragging && 'ring-2 ring-primary ring-offset-2',
             disabled && 'cursor-not-allowed opacity-50'
           )}
         >

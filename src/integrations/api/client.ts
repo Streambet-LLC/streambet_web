@@ -9,6 +9,7 @@ const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': '69420',
   },
 });
 
@@ -36,23 +37,51 @@ export const authAPI = {
     username: string;
     tosAccepted: boolean;
     profileImageUrl: string;
-    // lastKnownIp: string;
+    lastKnownIp: string;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
     // Store the token
-    if (response.data.accessToken) {
-      localStorage.setItem('accessToken', response.data.accessToken);
+    if (response?.data?.data?.accessToken) {
+      localStorage.setItem('accessToken', response.data.data.accessToken);
     }
     return response.data;
   },
 
   // Login user
-  login: async (credentials: { email: string; password: string }) => {
+  login: async (credentials: { identifier: string; password: string }) => {
     const response = await apiClient.post('/auth/login', credentials);
     // Store the token
-    if (response.data.accessToken) {
-      localStorage.setItem('accessToken', response.data.accessToken);
+    if (response?.data?.data?.accessToken) {
+      localStorage.setItem('accessToken', response.data.data.accessToken);
     }
+    return response.data;
+  },
+
+  // Google Callback user
+  googleCallback: async (googleToken: string) => {
+    // const headers = {
+    //   'Authorization': `Bearer ${googleToken}`,
+    //   'Content-Type': 'application/json',
+    // };
+    const response = await apiClient.get('/auth/google');
+    console.log('response?.data', response);
+    // const response = await apiClient.get(`/auth/google/callback?token=${googleToken}`);
+    // Store the token
+    if (response?.data?.data?.accessToken) {
+      localStorage.setItem('accessToken', response.data.data.accessToken);
+    }
+    return response.data;
+  },
+
+  // Upload Profile Image
+  uploadProfilePicture: async (filePayload: File) => {
+    const formData = new FormData();
+    formData.append('file', filePayload);
+    const response = await apiClient.post('/assets/file/upload/image/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
@@ -60,17 +89,9 @@ export const authAPI = {
   getSession: async () => {
     try {
       const response = await apiClient.get('/auth/me');
-      return {
-        data: {
-          session: response.data
-            ? {
-                user: response.data,
-              }
-            : null,
-        },
-      };
+      return response.data;
     } catch (error) {
-      return { data: { session: null } };
+      return { data: null };
     }
   },
 
