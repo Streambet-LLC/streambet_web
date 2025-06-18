@@ -58,10 +58,10 @@ build:
     - echo "Fetching VITE_ build-time envs from /$ENVIRONMENT"
 
     # Pull values from Parameter Store
-    - export VITE_API_URL=$(aws ssm get-parameter --name "/$ENVIRONMENT/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
-    - export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/$ENVIRONMENT/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_API_URL=$(aws ssm get-parameter --name "/streambet/$ENVIRONMENT/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/streambet/$ENVIRONMENT/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
 
-    - echo "🔧 Building with VITE_API_URL=$VITE_API_URL"
+    - echo "Building with VITE_API_URL=$VITE_API_URL"
     - VITE_API_URL=$VITE_API_URL VITE_S3_BASE_URL=$VITE_S3_BASE_URL npm ci && npm run build
   artifacts:
     paths:
