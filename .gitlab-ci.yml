@@ -69,7 +69,7 @@ build:
 
 deploy:
   stage: deploy
-  image: amazon/aws-cli
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
   <<: *before_script_template
   dependencies:
     - build
