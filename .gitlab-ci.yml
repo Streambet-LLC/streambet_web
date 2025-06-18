@@ -69,15 +69,51 @@ build:
 
 deploy:
   stage: deploy
-  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest
-  <<: *before_script_template
+  image: node:18-alpine
   dependencies:
     - build
+  before_script:
+    - apk add --no-cache curl jq python3 py3-pip
+    - pip3 install awscli --break-system-packages
+
+    - echo "Branch - $CI_COMMIT_REF_NAME"
+
+    # Determine account
+    - |
+      if [ "$CI_COMMIT_REF_NAME" = "dev" ] || [ "$CI_COMMIT_REF_NAME" = "qa" ] || [ "$CI_COMMIT_REF_NAME" = "beta" ]; then
+        export ACCOUNT_OWNER="$ACCOUNT_OWNER_REVYRIE"
+        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_REVYRIE"
+        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_REVYRIE"
+      else
+        export ACCOUNT_OWNER="$ACCOUNT_OWNER_CLIENT"
+        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_CLIENT"
+        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_CLIENT"
+      fi
+
+      echo "Using AWS credentials for $ACCOUNT_OWNER"
+
+      ENV_UPPER=$(echo "$CI_COMMIT_REF_NAME" | tr '[:lower:]' '[:upper:]')
+      S3_BUCKET_VAR="S3_BUCKET_${ENV_UPPER}"
+      CLOUDFRONT_ID_VAR="CLOUDFRONT_ID_${ENV_UPPER}"
+
+      export S3_BUCKET=$(eval echo "\$$S3_BUCKET_VAR")
+      export CLOUDFRONT_ID=$(eval echo "\$$CLOUDFRONT_ID_VAR")
+
+      echo "S3_BUCKET = $S3_BUCKET"
+      echo "CLOUDFRONT_ID = $CLOUDFRONT_ID"
+
+      # export creds to be reused
+      echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> credentials.env
+      echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> credentials.env
+      echo "AWS_DEFAULT_REGION=ap-south-1" >> credentials.env  # change if needed
+
   script:
+    - source credentials.env
+
     - echo "Deploying to s3://$S3_BUCKET"
     - aws s3 sync dist/ "s3://$S3_BUCKET" --delete
 
-    - echo "Invalidating CloudFront cache - $CLOUDFRONT_ID"
+    - echo "Invalidating CloudFront cache"
     - aws cloudfront create-invalidation \
         --distribution-id "$CLOUDFRONT_ID" \
         --paths "/*"
@@ -89,4 +125,4 @@ deploy:
     - prod
   environment:
     name: $CI_COMMIT_REF_NAME
-  when: manual  # Optional: set to 'on_success' if you want auto-deploy
+  when: manual
