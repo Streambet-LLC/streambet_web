@@ -51,7 +51,7 @@ build:
   <<: *before_script_template
   script:
     - echo "Installing AWS CLI"
-    - apk add --no-cache curl jq python3 py3-pip && pip3 install awscli
+    - apk add --no-cache curl jq python3 py3-pip && pip3 install awscli --break-system-packages
 
     # Construct SSM parameter path
     - export ENVIRONMENT="$ACCOUNT_OWNER/$CI_COMMIT_REF_NAME"
