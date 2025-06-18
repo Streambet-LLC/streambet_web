@@ -13,7 +13,7 @@ default:
 # --------------------------
 .setup_env: &setup_env
   before_script:
-    - echo "🔧 Branch - $CI_COMMIT_REF_NAME"
+    - echo "Branch - $CI_COMMIT_REF_NAME"
     - apk add --no-cache curl jq python3 py3-pip
     - pip3 install awscli --break-system-packages
 
@@ -37,10 +37,10 @@ default:
       export S3_BUCKET=$(eval echo "\$$S3_BUCKET_VAR")
       export CLOUDFRONT_ID=$(eval echo "\$$CLOUDFRONT_ID_VAR")
 
-      echo "✅ Account: $ACCOUNT_OWNER"
-      echo "✅ S3 Bucket: $S3_BUCKET"
-      echo "✅ CloudFront ID: $CLOUDFRONT_ID"
-      echo "✅ AWS Region: us-east-1"
+      echo "Account: $ACCOUNT_OWNER"
+      echo "S3 Bucket: $S3_BUCKET"
+      echo "CloudFront ID: $CLOUDFRONT_ID"
+      echo "AWS Region: us-east-1"
 
     - export AWS_DEFAULT_REGION=us-east-1
 
@@ -52,13 +52,13 @@ build:
   <<: *setup_env
   script:
     - export ENVIRONMENT="$ACCOUNT_OWNER/$CI_COMMIT_REF_NAME"
-    - echo "📦 Fetching from Parameter Store - /streambet/$ENVIRONMENT"
+    - echo "Fetching from Parameter Store - /streambet/$ENVIRONMENT"
 
     - export VITE_API_URL=$(aws ssm get-parameter --name "/streambet/$ENVIRONMENT/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
     - export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/streambet/$ENVIRONMENT/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
 
-    - echo "🔧 VITE_API_URL=$VITE_API_URL"
-    - echo "🔧 VITE_S3_BASE_URL=$VITE_S3_BASE_URL"
+    - echo "VITE_API_URL=$VITE_API_URL"
+    - echo "VITE_S3_BASE_URL=$VITE_S3_BASE_URL"
 
     - VITE_API_URL=$VITE_API_URL VITE_S3_BASE_URL=$VITE_S3_BASE_URL npm ci && npm run build
   artifacts:
@@ -79,10 +79,10 @@ deploy:
     - export S3_BUCKET=$(eval echo "\$S3_BUCKET_${ENV_UPPER}")
     - export CLOUDFRONT_ID=$(eval echo "\$CLOUDFRONT_ID_${ENV_UPPER}")
 
-    - echo "🚀 Deploying to s3://$S3_BUCKET"
+    - echo "Deploying to s3://$S3_BUCKET"
     - aws s3 sync dist/ "s3://$S3_BUCKET" --delete
 
-    - echo "🧹 Invalidating CloudFront cache for $CLOUDFRONT_ID"
+    - echo "Invalidating CloudFront cache for $CLOUDFRONT_ID"
     - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "/*"
   only:
     - dev
