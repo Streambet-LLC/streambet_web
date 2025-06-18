@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AvatarUploadProps {
@@ -106,7 +106,9 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
         >
           <Avatar className={cn(sizeClasses[size])}>
             <AvatarImage src={preview} />
-            <AvatarFallback className="text-lg">U</AvatarFallback>
+            <AvatarFallback>
+              <Upload className="h-6 w-6 text-muted-foreground" />
+            </AvatarFallback>
           </Avatar>
           {preview && (
             <Button

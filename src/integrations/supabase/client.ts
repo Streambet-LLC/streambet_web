@@ -104,7 +104,10 @@ export const supabase = {
       eq: (column: string, value: any) => ({
         execute: async () => {
           try {
-            // Update operations would be mapped to appropriate API calls here
+            if (table === 'profiles') {
+              const updatedProfile = await api.user.updateProfile(data);
+              return { data: updatedProfile, error: null };
+            }
             return { data: null, error: null };
           } catch (error) {
             return { data: null, error };

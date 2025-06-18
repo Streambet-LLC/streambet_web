@@ -335,10 +335,11 @@ export default function SignUp() {
     }
 
     // Trigger the Google login button click
-    const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
-    if (googleButton instanceof HTMLElement) {
-      googleButton.click();
-    }
+    // const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
+    // if (googleButton instanceof HTMLElement) {
+    //   googleButton.click();
+    // }
+    googleLoginMutation.mutateAsync();
   };
 
   const containerVariants = {
@@ -379,9 +380,7 @@ export default function SignUp() {
       refetchUserAvailability();
   }, [refetchUserAvailability, userNameCheck]);
 
-  // Example usage:
   const debouncedSearch = useDebounce((searchTerm: string) => {
-    // Your search logic here
     setUserNameCheck(searchTerm);
   });
 

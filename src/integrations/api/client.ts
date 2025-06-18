@@ -112,7 +112,7 @@ export const authAPI = {
   },
 
   // Handle OAuth
-  googleAuth: () => {
+  googleAuth: async () => {
     window.location.href = `${API_URL}/auth/google`;
   },
 };
