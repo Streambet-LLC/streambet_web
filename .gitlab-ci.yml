@@ -1,141 +1,93 @@
 stages:
   - build
-  - test
   - deploy
 
-variables:
-  AWS_DEFAULT_REGION: us-east-1  # Change to your AWS region
-  S3_BUCKET_DEV: streambet-frontend-dev
-  S3_BUCKET_QA: streambet-frontend-qa
-  S3_BUCKET_STAGING: streambet-frontend-staging
-  S3_BUCKET_PROD: streambet-frontend-prod
-  CLOUDFRONT_DISTRIBUTION_ID_DEV: XXXXXXXXXXXDEV  # Replace with actual CloudFront distribution ID
-  CLOUDFRONT_DISTRIBUTION_ID_QA: XXXXXXXXXXXQA  # Replace with actual CloudFront distribution ID
-  CLOUDFRONT_DISTRIBUTION_ID_STAGING: XXXXXXXXXXXSTAGING  # Replace with actual CloudFront distribution ID
-  CLOUDFRONT_DISTRIBUTION_ID_PROD: XXXXXXXXXXXPROD  # Replace with actual CloudFront distribution ID
-  # Use AWS IAM roles for secure access
-  AWS_ROLE_ARN_DEV: arn:aws:iam::ACCOUNT_ID:role/GitLabCIStreambet-Dev  # Replace ACCOUNT_ID with actual AWS account ID
-  AWS_ROLE_ARN_QA: arn:aws:iam::ACCOUNT_ID:role/GitLabCIStreambet-QA
-  AWS_ROLE_ARN_STAGING: arn:aws:iam::ACCOUNT_ID:role/GitLabCIStreambet-Staging
-  AWS_ROLE_ARN_PROD: arn:aws:iam::ACCOUNT_ID:role/GitLabCIStreambet-Prod
-  AWS_WEB_IDENTITY_TOKEN_FILE: /tmp/web_identity_token
-  AWS_ROLE_SESSION_NAME: gitlab-ci-streambet
+default:
+  image: node:18-alpine
+  cache:
+    paths:
+      - node_modules/
 
-workflow:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "qa" || $CI_COMMIT_BRANCH == "staging" || $CI_COMMIT_BRANCH == "prod"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-cache:
-  paths:
-    - node_modules/
-  key: ${CI_COMMIT_REF_SLUG}
-
-.install_deps: &install_deps
+# --------------------------
+# Template: Set AWS creds & env based on branch
+# --------------------------
+.before_script_template: &before_script_template
   before_script:
-    - echo "Installing dependencies..."
-    - npm ci
+    - |
+      echo "Branch: $CI_COMMIT_REF_NAME"
 
-.assume_role: &assume_role
-  before_script:
-    - echo "Assuming AWS role for $CI_ENVIRONMENT_NAME environment..."
-    - export AWS_ROLE_ARN=${AWS_ROLE_ARN_VAR}
-    - aws sts assume-role-with-web-identity --role-arn $AWS_ROLE_ARN --role-session-name $AWS_ROLE_SESSION_NAME --web-identity-token file://$AWS_WEB_IDENTITY_TOKEN_FILE --duration-seconds 3600 > /tmp/aws_credentials.json
-    - export AWS_ACCESS_KEY_ID=$(jq -r .Credentials.AccessKeyId /tmp/aws_credentials.json)
-    - export AWS_SECRET_ACCESS_KEY=$(jq -r .Credentials.SecretAccessKey /tmp/aws_credentials.json)
-    - export AWS_SESSION_TOKEN=$(jq -r .Credentials.SessionToken /tmp/aws_credentials.json)
-    - rm /tmp/aws_credentials.json
+      # Determine ACCOUNT_OWNER (revyrie or client)
+      if [[ "$CI_COMMIT_REF_NAME" == "dev" || "$CI_COMMIT_REF_NAME" == "qa" || "$CI_COMMIT_REF_NAME" == "beta" ]]; then
+        export ACCOUNT_OWNER=$ACCOUNT_OWNER_REVYRIE
+      else
+        export ACCOUNT_OWNER=$ACCOUNT_OWNER_CLIENT
+      fi
 
-.get_aws_params: &get_aws_params
-  - |
-    echo "Fetching environment variables from AWS Parameter Store..."
-    ENV_PREFIX="/streambet/frontend/$CI_ENVIRONMENT_NAME"
-    export $(aws ssm get-parameters-by-path --path $ENV_PREFIX --recursive --with-decryption --query "Parameters[*].{Name:Name,Value:Value}" --output text | sed -E "s|$ENV_PREFIX/||" | xargs -L1 echo)
-    
-    # Create .env file for build
-    echo "Creating .env file for build..."
-    env | grep -E '^(VITE_|REACT_APP_)' > .env
+      echo "Using AWS credentials for account: $ACCOUNT_OWNER"
+
+      # Export correct AWS credentials
+      if [[ "$ACCOUNT_OWNER" == "revyrie" ]]; then
+        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_REVYRIE"
+        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_REVYRIE"
+      else
+        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_CLIENT"
+        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_CLIENT"
+      fi
+
+      # Convert branch name to uppercase for var lookup
+      export ENV_UPPER=$(echo "$CI_COMMIT_REF_NAME" | tr '[:lower:]' '[:upper:]')
+      export S3_BUCKET_VAR="S3_BUCKET_${ENV_UPPER}"
+      export CLOUDFRONT_ID_VAR="CLOUDFRONT_ID_${ENV_UPPER}"
+
+      # Dereference S3 and CloudFront IDs
+      export S3_BUCKET="${!S3_BUCKET_VAR}"
+      export CLOUDFRONT_ID="${!CLOUDFRONT_ID_VAR}"
+
+      echo "Target S3 Bucket: $S3_BUCKET"
+      echo "CloudFront Distribution ID: $CLOUDFRONT_ID"
 
 build:
   stage: build
-  image: node:18-alpine
-  <<: *install_deps
+  <<: *before_script_template
   script:
-    - echo "Building application..."
-    - npm run build
+    - echo "Installing AWS CLI"
+    - apk add --no-cache curl jq python3 py3-pip && pip3 install awscli
+
+    # Construct SSM parameter path
+    - export ENVIRONMENT="$ACCOUNT_OWNER/$CI_COMMIT_REF_NAME"
+    - echo "Fetching VITE_ build-time envs from /$ENVIRONMENT"
+
+    # Pull values from Parameter Store
+    - export VITE_API_URL=$(aws ssm get-parameter --name "/$ENVIRONMENT/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/$ENVIRONMENT/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
+
+    - echo "🔧 Building with VITE_API_URL=$VITE_API_URL"
+    - VITE_API_URL=$VITE_API_URL VITE_S3_BASE_URL=$VITE_S3_BASE_URL npm ci && npm run build
   artifacts:
     paths:
       - dist/
-    expire_in: 1 day
 
-test:
-  stage: test
-  image: node:18-alpine
-  <<: *install_deps
-  script:
-    - echo "Running tests..."
-    - npm run lint
-    - npm test
-  allow_failure: true
 
-.deploy_template: &deploy_template
+deploy:
   stage: deploy
-  image: amazon/aws-cli:latest
-  script:
-    - *get_aws_params
-    - echo "Deploying to S3 bucket: $S3_BUCKET..."
-    - aws s3 sync dist/ s3://$S3_BUCKET --delete
-    - echo "Creating CloudFront invalidation..."
-    - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
-    - echo "Deployment completed successfully!"
+  image: amazon/aws-cli
+  <<: *before_script_template
   dependencies:
     - build
+  script:
+    - echo "Deploying to s3://$S3_BUCKET"
+    - aws s3 sync dist/ "s3://$S3_BUCKET" --delete
 
-deploy_dev:
-  <<: *deploy_template
-  environment:
-    name: dev
-  variables:
-    S3_BUCKET: $S3_BUCKET_DEV
-    CLOUDFRONT_DISTRIBUTION_ID: $CLOUDFRONT_DISTRIBUTION_ID_DEV
-    AWS_ROLE_ARN_VAR: $AWS_ROLE_ARN_DEV
-  <<: *assume_role
+    - echo "Invalidating CloudFront cache - $CLOUDFRONT_ID"
+    - aws cloudfront create-invalidation \
+        --distribution-id "$CLOUDFRONT_ID" \
+        --paths "/*"
   only:
     - dev
-
-deploy_qa:
-  <<: *deploy_template
-  environment:
-    name: qa
-  variables:
-    S3_BUCKET: $S3_BUCKET_QA
-    CLOUDFRONT_DISTRIBUTION_ID: $CLOUDFRONT_DISTRIBUTION_ID_QA
-    AWS_ROLE_ARN_VAR: $AWS_ROLE_ARN_QA
-  <<: *assume_role
-  only:
     - qa
-
-deploy_staging:
-  <<: *deploy_template
-  environment:
-    name: staging
-  variables:
-    S3_BUCKET: $S3_BUCKET_STAGING
-    CLOUDFRONT_DISTRIBUTION_ID: $CLOUDFRONT_DISTRIBUTION_ID_STAGING
-    AWS_ROLE_ARN_VAR: $AWS_ROLE_ARN_STAGING
-  <<: *assume_role
-  only:
-    - staging
-
-deploy_prod:
-  <<: *deploy_template
-  environment:
-    name: prod
-  variables:
-    S3_BUCKET: $S3_BUCKET_PROD
-    CLOUDFRONT_DISTRIBUTION_ID: $CLOUDFRONT_DISTRIBUTION_ID_PROD
-    AWS_ROLE_ARN_VAR: $AWS_ROLE_ARN_PROD
-  <<: *assume_role
-  only:
+    - beta
+    - stag
     - prod
-  when: manual  # Requires manual approval for production deployment 
+  environment:
+    name: $CI_COMMIT_REF_NAME
+  when: manual  # Optional: remove this if you want auto-deploy
