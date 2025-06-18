@@ -17,16 +17,16 @@ default:
       echo "Branch: $CI_COMMIT_REF_NAME"
 
       # Determine ACCOUNT_OWNER (revyrie or client)
-      if [[ "$CI_COMMIT_REF_NAME" == "dev" || "$CI_COMMIT_REF_NAME" == "qa" || "$CI_COMMIT_REF_NAME" == "beta" ]]; then
-        export ACCOUNT_OWNER=$ACCOUNT_OWNER_REVYRIE
+      if [ "$CI_COMMIT_REF_NAME" = "dev" ] || [ "$CI_COMMIT_REF_NAME" = "qa" ] || [ "$CI_COMMIT_REF_NAME" = "beta" ]; then
+        export ACCOUNT_OWNER="$ACCOUNT_OWNER_REVYRIE"
       else
-        export ACCOUNT_OWNER=$ACCOUNT_OWNER_CLIENT
+        export ACCOUNT_OWNER="$ACCOUNT_OWNER_CLIENT"
       fi
 
       echo "Using AWS credentials for account: $ACCOUNT_OWNER"
 
       # Export correct AWS credentials
-      if [[ "$ACCOUNT_OWNER" == "revyrie" ]]; then
+      if [ "$ACCOUNT_OWNER" = "revyrie" ]; then
         export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_REVYRIE"
         export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_REVYRIE"
       else
@@ -34,14 +34,14 @@ default:
         export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_CLIENT"
       fi
 
-      # Convert branch name to uppercase for var lookup
-      export ENV_UPPER=$(echo "$CI_COMMIT_REF_NAME" | tr '[:lower:]' '[:upper:]')
-      export S3_BUCKET_VAR="S3_BUCKET_${ENV_UPPER}"
-      export CLOUDFRONT_ID_VAR="CLOUDFRONT_ID_${ENV_UPPER}"
+      # Convert branch name to uppercase for variable key
+      ENV_UPPER=$(echo "$CI_COMMIT_REF_NAME" | tr '[:lower:]' '[:upper:]')
+      S3_BUCKET_VAR="S3_BUCKET_${ENV_UPPER}"
+      CLOUDFRONT_ID_VAR="CLOUDFRONT_ID_${ENV_UPPER}"
 
-      # Dereference S3 and CloudFront IDs
-      export S3_BUCKET="${!S3_BUCKET_VAR}"
-      export CLOUDFRONT_ID="${!CLOUDFRONT_ID_VAR}"
+      # Use eval to dereference variables safely
+      export S3_BUCKET=$(eval echo "\$$S3_BUCKET_VAR")
+      export CLOUDFRONT_ID=$(eval echo "\$$CLOUDFRONT_ID_VAR")
 
       echo "Target S3 Bucket: $S3_BUCKET"
       echo "CloudFront Distribution ID: $CLOUDFRONT_ID"
@@ -55,7 +55,7 @@ build:
 
     # Construct SSM parameter path
     - export ENVIRONMENT="$ACCOUNT_OWNER/$CI_COMMIT_REF_NAME"
-    - echo "Fetching VITE_ build-time envs from /$ENVIRONMENT"
+    - echo "Fetching VITE_ build-time envs from /streambet/$ENVIRONMENT"
 
     # Pull values from Parameter Store
     - export VITE_API_URL=$(aws ssm get-parameter --name "/streambet/$ENVIRONMENT/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
@@ -66,7 +66,6 @@ build:
   artifacts:
     paths:
       - dist/
-
 
 deploy:
   stage: deploy
@@ -90,4 +89,4 @@ deploy:
     - prod
   environment:
     name: $CI_COMMIT_REF_NAME
-  when: manual  # Optional: remove this if you want auto-deploy
+  when: manual  # Optional: set to 'on_success' if you want auto-deploy
