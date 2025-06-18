@@ -9,114 +9,81 @@ default:
       - node_modules/
 
 # --------------------------
-# Template: Set AWS creds & env based on branch
+# Template for AWS env setup
 # --------------------------
-.before_script_template: &before_script_template
+.setup_env: &setup_env
   before_script:
-    - |
-      echo "Branch: $CI_COMMIT_REF_NAME"
+    - echo "🔧 Branch - $CI_COMMIT_REF_NAME"
+    - apk add --no-cache curl jq python3 py3-pip
+    - pip3 install awscli --break-system-packages
 
-      # Determine ACCOUNT_OWNER (revyrie or client)
+    # Determine AWS Account
+    - |
       if [ "$CI_COMMIT_REF_NAME" = "dev" ] || [ "$CI_COMMIT_REF_NAME" = "qa" ] || [ "$CI_COMMIT_REF_NAME" = "beta" ]; then
         export ACCOUNT_OWNER="$ACCOUNT_OWNER_REVYRIE"
-      else
-        export ACCOUNT_OWNER="$ACCOUNT_OWNER_CLIENT"
-      fi
-
-      echo "Using AWS credentials for account: $ACCOUNT_OWNER"
-
-      # Export correct AWS credentials
-      if [ "$ACCOUNT_OWNER" = "revyrie" ]; then
         export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_REVYRIE"
         export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_REVYRIE"
       else
+        export ACCOUNT_OWNER="$ACCOUNT_OWNER_CLIENT"
         export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_CLIENT"
         export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_CLIENT"
       fi
 
-      # Convert branch name to uppercase for variable key
-      ENV_UPPER=$(echo "$CI_COMMIT_REF_NAME" | tr '[:lower:]' '[:upper:]')
-      S3_BUCKET_VAR="S3_BUCKET_${ENV_UPPER}"
-      CLOUDFRONT_ID_VAR="CLOUDFRONT_ID_${ENV_UPPER}"
-
-      # Use eval to dereference variables safely
+    # Set bucket and CloudFront vars
+    - |
+      export ENV_UPPER=$(echo "$CI_COMMIT_REF_NAME" | tr '[:lower:]' '[:upper:]')
+      export S3_BUCKET_VAR="S3_BUCKET_${ENV_UPPER}"
+      export CLOUDFRONT_ID_VAR="CLOUDFRONT_ID_${ENV_UPPER}"
       export S3_BUCKET=$(eval echo "\$$S3_BUCKET_VAR")
       export CLOUDFRONT_ID=$(eval echo "\$$CLOUDFRONT_ID_VAR")
 
-      echo "Target S3 Bucket: $S3_BUCKET"
-      echo "CloudFront Distribution ID: $CLOUDFRONT_ID"
+      echo "✅ Account: $ACCOUNT_OWNER"
+      echo "✅ S3 Bucket: $S3_BUCKET"
+      echo "✅ CloudFront ID: $CLOUDFRONT_ID"
+      echo "✅ AWS Region: us-east-1"
 
+    - export AWS_DEFAULT_REGION=us-east-1
+
+# --------------------------
+# Build Job
+# --------------------------
 build:
   stage: build
-  <<: *before_script_template
+  <<: *setup_env
   script:
-    - echo "Installing AWS CLI"
-    - apk add --no-cache curl jq python3 py3-pip && pip3 install awscli --break-system-packages
-
-    # Construct SSM parameter path
     - export ENVIRONMENT="$ACCOUNT_OWNER/$CI_COMMIT_REF_NAME"
-    - echo "Fetching VITE_ build-time envs from /streambet/$ENVIRONMENT"
+    - echo "📦 Fetching from Parameter Store - /streambet/$ENVIRONMENT"
 
-    # Pull values from Parameter Store
     - export VITE_API_URL=$(aws ssm get-parameter --name "/streambet/$ENVIRONMENT/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
     - export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/streambet/$ENVIRONMENT/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
 
-    - echo "Building with VITE_API_URL=$VITE_API_URL"
+    - echo "🔧 VITE_API_URL=$VITE_API_URL"
+    - echo "🔧 VITE_S3_BASE_URL=$VITE_S3_BASE_URL"
+
     - VITE_API_URL=$VITE_API_URL VITE_S3_BASE_URL=$VITE_S3_BASE_URL npm ci && npm run build
   artifacts:
     paths:
       - dist/
 
+# --------------------------
+# Deploy Job
+# --------------------------
 deploy:
   stage: deploy
-  image: node:18-alpine
+  <<: *setup_env
   dependencies:
     - build
-  before_script:
-    - apk add --no-cache curl jq python3 py3-pip
-    - pip3 install awscli --break-system-packages
-
-    - echo "Branch - $CI_COMMIT_REF_NAME"
-
-    # Determine account
-    - |
-      if [ "$CI_COMMIT_REF_NAME" = "dev" ] || [ "$CI_COMMIT_REF_NAME" = "qa" ] || [ "$CI_COMMIT_REF_NAME" = "beta" ]; then
-        export ACCOUNT_OWNER="$ACCOUNT_OWNER_REVYRIE"
-        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_REVYRIE"
-        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_REVYRIE"
-      else
-        export ACCOUNT_OWNER="$ACCOUNT_OWNER_CLIENT"
-        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_CLIENT"
-        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_CLIENT"
-      fi
-
-      echo "Using AWS credentials for $ACCOUNT_OWNER"
-
-      ENV_UPPER=$(echo "$CI_COMMIT_REF_NAME" | tr '[:lower:]' '[:upper:]')
-      S3_BUCKET_VAR="S3_BUCKET_${ENV_UPPER}"
-      CLOUDFRONT_ID_VAR="CLOUDFRONT_ID_${ENV_UPPER}"
-
-      export S3_BUCKET=$(eval echo "\$$S3_BUCKET_VAR")
-      export CLOUDFRONT_ID=$(eval echo "\$$CLOUDFRONT_ID_VAR")
-
-      echo "S3_BUCKET = $S3_BUCKET"
-      echo "CLOUDFRONT_ID = $CLOUDFRONT_ID"
-
-      # export creds to be reused
-      echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> credentials.env
-      echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> credentials.env
-      echo "AWS_DEFAULT_REGION=ap-south-1" >> credentials.env  # change if needed
-
   script:
-    - source credentials.env
+    # Recompute env vars in script section to ensure persistence
+    - export ENV_UPPER=$(echo "$CI_COMMIT_REF_NAME" | tr '[:lower:]' '[:upper:]')
+    - export S3_BUCKET=$(eval echo "\$S3_BUCKET_${ENV_UPPER}")
+    - export CLOUDFRONT_ID=$(eval echo "\$CLOUDFRONT_ID_${ENV_UPPER}")
 
-    - echo "Deploying to s3://$S3_BUCKET"
+    - echo "🚀 Deploying to s3://$S3_BUCKET"
     - aws s3 sync dist/ "s3://$S3_BUCKET" --delete
 
-    - echo "Invalidating CloudFront cache"
-    - aws cloudfront create-invalidation \
-        --distribution-id "$CLOUDFRONT_ID" \
-        --paths "/*"
+    - echo "🧹 Invalidating CloudFront cache for $CLOUDFRONT_ID"
+    - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "/*"
   only:
     - dev
     - qa
