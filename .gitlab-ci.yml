@@ -52,7 +52,7 @@ build:
   <<: *setup_env
   script:
     - export ENVIRONMENT="$ACCOUNT_OWNER/$CI_COMMIT_REF_NAME"
-    - echo "Fetching from Parameter Store - /streambet/$ENVIRONMENT"
+    - echo "Fetching from Parameter Store - /streambet/$CI_COMMIT_REF_NAME"
 
     - export VITE_API_URL=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
     - export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
