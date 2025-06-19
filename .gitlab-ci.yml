@@ -92,4 +92,3 @@ deploy:
     - prod
   environment:
     name: $CI_COMMIT_REF_NAME
-  when: manual
