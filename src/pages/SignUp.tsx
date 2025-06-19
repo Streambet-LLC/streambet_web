@@ -25,7 +25,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { AvatarUploadField } from '@/components/AvatarUploadField';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { GoogleLogin } from '@react-oauth/google';
 import { useDebounce } from '@/lib/utils';
 import { decodeIdToken, getMessage } from '@/utils/helper';
 
@@ -406,224 +405,244 @@ export default function SignUp() {
   };
 
   return (
-    <div className="container flex items-center justify-center min-h-screen py-8">
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="w-full max-w-md"
-      >
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Create an account</CardTitle>
-            <CardDescription className="text-center">
-              Enter your information to create your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {renderLocationWarning()}
-            <FormProvider {...form}>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Label htmlFor="avatar">Profile Picture</Label>
-                <div className="flex justify-center space-y-2">
-                  <AvatarUploadField
-                    form={form}
-                    name="avatar"
-                    label=""
-                    disabled={isUploading}
-                    size="lg"
-                  />
-                </div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <div className="relative">
-                    <Input
-                      id="username"
-                      placeholder="your-username"
-                      value={username}
-                      onChange={e => setUsername(e.target.value)}
-                      className={`${errors.username ? 'border-destructive' : ''} ${username.length >= 3 && !username.includes(' ') ? 'pr-10' : ''}`}
-                      disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+    <>
+      <div className="auth-bg-gradient" />
+      <div className="container flex justify-center min-h-screen pt-16 pb-8">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+          className="w-full max-w-md"
+        >
+          <div className="mb-6">
+            <img src="/logo.png" alt="StreamBet Logo" className="mb-4" />
+            <h1 className="text-3xl font-bold text-white text-left">Create an account</h1>
+            <p className="text-[#FFFFFFBF] mt-2 text-left">
+              Enter your details below to create an account
+            </p>
+          </div>
+          <Card className="bg-transparent border-0 p-0">
+            <CardContent className="p-0">
+              {renderLocationWarning()}
+              <FormProvider {...form}>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <Label htmlFor="avatar">Profile Picture</Label>
+                  <div className="flex justify-center space-y-2">
+                    <AvatarUploadField
+                      form={form}
+                      name="avatar"
+                      label=""
+                      disabled={isUploading}
+                      size="lg"
                     />
+                  </div>
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <div className="relative">
+                      <Input
+                        id="username"
+                        placeholder="your-username"
+                        value={username}
+                        onChange={e => setUsername(e.target.value)}
+                        className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${errors.username ? 'border-destructive' : ''} ${username.length >= 3 && !username.includes(' ') ? 'pr-10' : ''}`}
+                        disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                      />
+                      {username.length >= 3 && !username.includes(' ') && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {isUserAvailabilityFetching ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : userAvailabilityData?.is_available ? (
+                            <svg
+                              className="h-4 w-4 text-green-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          ) : userAvailabilityData?.is_available === false ? (
+                            <svg
+                              className="h-4 w-4 text-destructive"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                    {errors.username && (
+                      <p className="text-destructive text-sm">{errors.username}</p>
+                    )}
                     {username.length >= 3 && !username.includes(' ') && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="flex items-center gap-2 text-sm">
                         {isUserAvailabilityFetching ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <span className="text-muted-foreground">
+                            Checking username availability...
+                          </span>
                         ) : userAvailabilityData?.is_available ? (
-                          <svg
-                            className="h-4 w-4 text-green-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
+                          <span className="text-green-500">Username is available</span>
                         ) : userAvailabilityData?.is_available === false ? (
-                          <svg
-                            className="h-4 w-4 text-destructive"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
+                          <span>
+                            <span className="text-destructive">
+                              Username is not available. Suggested username:{' '}
+                            </span>
+                            <span className="text-green-500">
+                              {userAvailabilityData?.suggestion}
+                            </span>
+                          </span>
                         ) : null}
                       </div>
                     )}
-                  </div>
-                  {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
-                  {username.length >= 3 && !username.includes(' ') && (
-                    <div className="flex items-center gap-2 text-sm">
-                      {isUserAvailabilityFetching ? (
-                        <span className="text-muted-foreground">
-                          Checking username availability...
-                        </span>
-                      ) : userAvailabilityData?.is_available ? (
-                        <span className="text-green-500">Username is available</span>
-                      ) : userAvailabilityData?.is_available === false ? (
-                        <span>
-                          <span className="text-destructive">
-                            Username is not available. Suggested username:{' '}
-                          </span>
-                          <span className="text-green-500">{userAvailabilityData?.suggestion}</span>
-                        </span>
-                      ) : null}
-                    </div>
-                  )}
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your-email@example.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className={errors.email ? 'border-destructive' : ''}
-                    disabled={
-                      isCheckingLocation ||
-                      isGoogleLogin ||
-                      (locationStatus && !locationStatus.allowed)
-                    }
-                  />
-                  {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
-                </motion.div>
-                {!isGoogleLogin && (
+                  </motion.div>
                   <motion.div variants={itemVariants} className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className={errors.password ? 'border-destructive' : ''}
+                      id="email"
+                      type="email"
+                      placeholder="your-email@example.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${errors.email ? 'border-destructive' : ''}`}
+                      disabled={
+                        isCheckingLocation ||
+                        isGoogleLogin ||
+                        (locationStatus && !locationStatus.allowed)
+                      }
+                    />
+                    {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
+                  </motion.div>
+                  {!isGoogleLogin && (
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''}`}
+                        disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                      />
+                      {errors.password && (
+                        <p className="text-destructive text-sm">{errors.password}</p>
+                      )}
+                      <p className="text-muted-foreground text-sm">
+                        Password must be at least 8 characters and include uppercase, lowercase,
+                        number, and special character.
+                      </p>
+                    </motion.div>
+                  )}
+                  <motion.div variants={itemVariants} className="flex items-center space-x-2">
+                    <Checkbox
+                      id="tosAccepted"
+                      checked={tosAccepted}
+                      onCheckedChange={checked => setTosAccepted(checked as boolean)}
                       disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
                     />
-                    {errors.password && (
-                      <p className="text-destructive text-sm">{errors.password}</p>
+                    <Label htmlFor="tosAccepted" className="text-sm">
+                      I accept the{' '}
+                      <Link to="/terms" className="text-primary hover:underline">
+                        Terms of Service
+                      </Link>
+                    </Label>
+                    {errors.tosAccepted && (
+                      <p className="text-destructive text-sm">{errors.tosAccepted}</p>
                     )}
-                    <p className="text-muted-foreground text-sm">
-                      Password must be at least 8 characters and include uppercase, lowercase,
-                      number, and special character.
-                    </p>
                   </motion.div>
-                )}
-                <motion.div variants={itemVariants} className="flex items-center space-x-2">
-                  <Checkbox
-                    id="tosAccepted"
-                    checked={tosAccepted}
-                    onCheckedChange={checked => setTosAccepted(checked as boolean)}
-                    disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
-                  />
-                  <Label htmlFor="tosAccepted" className="text-sm">
-                    I accept the{' '}
-                    <Link to="/terms" className="text-primary hover:underline">
-                      Terms of Service
-                    </Link>
-                  </Label>
-                  {errors.tosAccepted && (
-                    <p className="text-destructive text-sm">{errors.tosAccepted}</p>
-                  )}
-                </motion.div>
-                <motion.div variants={itemVariants} className="flex items-center space-x-2">
-                  <Checkbox
-                    id="isOlder"
-                    checked={isOlder}
-                    onCheckedChange={checked => setIsOlder(checked as boolean)}
-                    disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
-                  />
-                  <Label htmlFor="isOlder" className="text-sm">
-                    I confirm that I am 18 years of age or older
-                  </Label>
-                  {errors.isOlder && <p className="text-destructive text-sm">{errors.isOlder}</p>}
-                </motion.div>
-                <motion.div variants={itemVariants}>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={
-                      signupMutation.isPending ||
-                      isUploading ||
-                      isCheckingLocation ||
-                      (locationStatus && !locationStatus.allowed)
-                    }
-                  >
-                    {isCheckingLocation
-                      ? 'Verifying location...'
-                      : signupMutation.isPending || isUploading
-                        ? 'Creating account...'
-                        : 'Sign Up'}
-                  </Button>
-                </motion.div>
-                <motion.div variants={itemVariants} className="relative flex items-center">
-                  <div className="flex-1 border-t"></div>
-                  <div className="mx-4 text-sm text-muted-foreground">or</div>
-                  <div className="flex-1 border-t"></div>
-                </motion.div>
-                <motion.div variants={itemVariants}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleGoogleLogin}
-                    disabled={
-                      googleLoginMutation.isPending ||
-                      isCheckingLocation ||
-                      (locationStatus && !locationStatus.allowed)
-                    }
-                  >
-                    <FaGoogle className="mr-2" />
-                    Continue with Google
-                  </Button>
-                  <div ref={googleLoginRef} className="hidden">
-                    <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
-                  </div>
-                </motion.div>
-              </form>
-            </FormProvider>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-2">
-            <motion.div variants={itemVariants} className="text-center w-full">
-              <p className="text-sm text-muted-foreground">
-                Already have an account?{' '}
-                <Link to="/login" className="text-primary hover:underline">
-                  Log in
-                </Link>
-              </p>
-            </motion.div>
-          </CardFooter>
-        </Card>
-      </motion.div>
-    </div>
+                  <motion.div variants={itemVariants} className="flex items-center space-x-2">
+                    <Checkbox
+                      id="isOlder"
+                      checked={isOlder}
+                      onCheckedChange={checked => setIsOlder(checked as boolean)}
+                      disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                    />
+                    <Label htmlFor="isOlder" className="text-sm">
+                      I confirm that I am 18 years of age or older
+                    </Label>
+                    {errors.isOlder && <p className="text-destructive text-sm">{errors.isOlder}</p>}
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={
+                        signupMutation.isPending ||
+                        isUploading ||
+                        isCheckingLocation ||
+                        (locationStatus && !locationStatus.allowed)
+                      }
+                    >
+                      {isCheckingLocation
+                        ? 'Verifying location...'
+                        : signupMutation.isPending || isUploading
+                          ? 'Creating account...'
+                          : 'Sign Up'}
+                    </Button>
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="relative flex items-center">
+                    <div className="flex-1 border-t"></div>
+                    <div className="mx-4 text-sm text-muted-foreground">or</div>
+                    <div className="flex-1 border-t"></div>
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleGoogleLogin}
+                      disabled={
+                        googleLoginMutation.isPending ||
+                        isCheckingLocation ||
+                        (locationStatus && !locationStatus.allowed)
+                      }
+                    >
+                      <FaGoogle className="mr-2" />
+                      Continue with Google
+                    </Button>
+                    {/* <div ref={googleLoginRef} className="hidden">
+                      <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
+                    </div> */}
+                  </motion.div>
+                </form>
+              </FormProvider>
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-2">
+              <motion.div variants={itemVariants} className="text-center w-full">
+                <p className="text-sm text-muted-foreground">
+                  Already have an account?{' '}
+                  <Link to="/login" className="text-primary hover:underline">
+                    Log in
+                  </Link>
+                </p>
+              </motion.div>
+            </CardFooter>
+          </Card>
+        </motion.div>
+      </div>
+      <div
+        style={{
+          position: 'fixed',
+          left: 20,
+          bottom: 20,
+          color: '#FFFFFF',
+          fontSize: '0.95rem',
+          zIndex: 10,
+        }}
+      >
+        © Streambet 2025
+      </div>
+    </>
   );
 }

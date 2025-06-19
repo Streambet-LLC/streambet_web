@@ -28,6 +28,42 @@ apiClient.interceptors.request.use(
   error => Promise.reject(error)
 );
 
+// Add response interceptor to handle 401 errors and refresh token
+// apiClient.interceptors.response.use(
+//   response => response,
+//   async error => {
+//     const originalRequest = error.config;
+//     // Prevent infinite loop
+//     if (error.response && error.response.status === 401 && !originalRequest._retry) {
+//       originalRequest._retry = true;
+//       try {
+//         const refreshToken = localStorage.getItem('refreshToken');
+//         if (!refreshToken) throw new Error('No refresh token');
+//         // Call refresh endpoint
+//         const refreshResponse = await apiClient.post('/auth/refresh', { refreshToken });
+//         const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data.data || {};
+//         if (accessToken) {
+//           localStorage.setItem('accessToken', accessToken);
+//         }
+//         if (newRefreshToken) {
+//           localStorage.setItem('refreshToken', newRefreshToken);
+//         }
+//         // Update the Authorization header and retry the original request
+//         originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+//         return apiClient(originalRequest);
+//       } catch (refreshError) {
+//         // If refresh fails, log out
+//         console.log('refreshError', refreshError);
+//         localStorage.removeItem('accessToken');
+//         localStorage.removeItem('refreshToken');
+//         window.location.href = '/login';
+//         return Promise.reject(refreshError);
+//       }
+//     }
+//     return Promise.reject(error);
+//   }
+// );
+
 // Auth API
 export const authAPI = {
   // Register a new user
@@ -40,9 +76,12 @@ export const authAPI = {
     lastKnownIp: string;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
-    // Store the token
+    // Store the tokens
     if (response?.data?.data?.accessToken) {
       localStorage.setItem('accessToken', response.data.data.accessToken);
+    }
+    if (response?.data?.data?.refreshToken) {
+      localStorage.setItem('refreshToken', response.data.data.refreshToken);
     }
     return response.data;
   },
@@ -50,9 +89,12 @@ export const authAPI = {
   // Login user
   login: async (credentials: { identifier: string; password: string }) => {
     const response = await apiClient.post('/auth/login', credentials);
-    // Store the token
+    // Store the tokens
     if (response?.data?.data?.accessToken) {
       localStorage.setItem('accessToken', response.data.data.accessToken);
+    }
+    if (response?.data?.data?.refreshToken) {
+      localStorage.setItem('refreshToken', response.data.data.refreshToken);
     }
     return response.data;
   },
@@ -66,9 +108,12 @@ export const authAPI = {
     const response = await apiClient.get('/auth/google');
     console.log('response?.data', response);
     // const response = await apiClient.get(`/auth/google/callback?token=${googleToken}`);
-    // Store the token
+    // Store the tokens
     if (response?.data?.data?.accessToken) {
       localStorage.setItem('accessToken', response.data.data.accessToken);
+    }
+    if (response?.data?.data?.refreshToken) {
+      localStorage.setItem('refreshToken', response.data.data.refreshToken);
     }
     return response.data;
   },
@@ -95,6 +140,21 @@ export const authAPI = {
     }
   },
 
+  // Refresh access token
+  refreshToken: async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) throw new Error('No refresh token');
+    const response = await apiClient.post('/auth/refresh', { refreshToken });
+    const { accessToken, refreshToken: newRefreshToken } = response.data.data || {};
+    if (accessToken) {
+      localStorage.setItem('accessToken', accessToken);
+    }
+    if (newRefreshToken) {
+      localStorage.setItem('refreshToken', newRefreshToken);
+    }
+    return response.data;
+  },
+
   // Get username availability
   getUsernameAvailability: async (userName: string) => {
     try {
@@ -108,6 +168,7 @@ export const authAPI = {
   // Sign out
   signOut: async () => {
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     return { error: null };
   },
 

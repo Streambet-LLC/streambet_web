@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { StreamTabs } from '@/components/admin/StreamTabs';
+import { StreamTableList } from '@/components/admin/StreamTableList';
 
 const Admin = () => {
   const [newStreamTitle, setNewStreamTitle] = useState('');
@@ -98,7 +99,7 @@ const Admin = () => {
     }
   };
 
-  if (profile && !profile.is_admin) {
+  if (profile && profile.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
 
@@ -127,12 +128,12 @@ const Admin = () => {
         return (
           <div className="space-y-8">
             <h2 className="text-2xl font-bold">Current Streams</h2>
-            <StreamList
+            <StreamTableList
               streams={currentStreams}
-              isAdmin={true}
-              onDelete={deleteStream}
-              onUpdate={refetchStreams}
-              showAdminControls={true}
+              // isAdmin={true}
+              // onDelete={deleteStream}
+              // onUpdate={refetchStreams}
+              // showAdminControls={true}
             />
           </div>
         );

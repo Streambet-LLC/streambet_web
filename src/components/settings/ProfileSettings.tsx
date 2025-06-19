@@ -80,8 +80,8 @@ export const ProfileSettings = () => {
         </CardContent>
       </Card>
 
-      <ProfileSection currentUsername={profile?.username} currentAvatar={avatarLink} />
-      <PasswordSection />
+      <ProfileSection currentUsername={profile?.data?.username} currentAvatar={avatarLink} />
+      {/* <PasswordSection /> */}
     </div>
   );
 };

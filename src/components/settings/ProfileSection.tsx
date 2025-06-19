@@ -20,6 +20,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { ArrowLeft } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().optional(),
@@ -34,12 +36,10 @@ const formSchema = z.object({
 
 type ProfileFormData = z.infer<typeof formSchema>;
 
-interface ProfileData {
-  name: string;
-  city: string;
-  state: string;
-  username: string;
-}
+type changePasswordData = {
+  oldPassword: string;
+  newPassword: string;
+};
 
 interface ProfileSectionProps {
   currentUsername: string;
@@ -55,8 +55,8 @@ export const ProfileSection = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [userNameCheck, setUserNameCheck] = useState('');
+  const [open, setOpen] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(formSchema),
@@ -116,10 +116,11 @@ export const ProfileSection = ({
   }, 500);
 
   useEffect(() => {
-    console.log('usernameData', usernameData);
-    debouncedCheckUsername(usernameData);
+    if (usernameData !== currentUsername) {
+      debouncedCheckUsername(usernameData);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usernameData]);
+  }, [usernameData, currentUsername]);
 
   const handleProfileUpdate = async (data: ProfileFormData) => {
     try {
@@ -131,17 +132,14 @@ export const ProfileSection = ({
 
       if (currentAvatar && typeof currentAvatar === 'object' && currentAvatar?.name) {
         try {
-          setIsUploading(true);
           const response = await api.auth.uploadProfilePicture(currentAvatar);
           profileImageUrl = response?.data?.Key;
-          setIsUploading(false);
         } catch (error) {
           toast({
             variant: 'destructive',
             title: 'Error uploading profile picture',
             description: getMessage(error) || 'Failed to upload profile picture. Please try again.',
           });
-          setIsUploading(false);
         }
       }
       // Update profile
@@ -164,6 +162,40 @@ export const ProfileSection = ({
         title: 'Success',
         description: 'Profile updated successfully',
       });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: getMessage(error),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handlePasswordUpdate = async (data: changePasswordData) => {
+    try {
+      setIsUpdating(true);
+
+      if (!session) throw new Error('User not found');
+
+      // Update profile password
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          currentPassword: data?.oldPassword,
+          newPassword: data?.newPassword,
+        })
+        .eq('id', session?.id)
+        .execute();
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Success',
+        description: 'Password updated successfully',
+      });
+      setOpen(false);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -207,60 +239,65 @@ export const ProfileSection = ({
                       <Input placeholder="Username" {...field} />
                       {field?.value?.length >= 3 && !field?.value?.includes(' ') && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          {isUserAvailabilityFetching ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          ) : userAvailabilityData?.is_available ? (
-                            <svg
-                              className="h-4 w-4 text-green-500"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          ) : userAvailabilityData?.is_available === false ? (
-                            <svg
-                              className="h-4 w-4 text-destructive"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          ) : null}
+                          {usernameData !== currentUsername &&
+                            (isUserAvailabilityFetching ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : userAvailabilityData?.is_available ? (
+                              <svg
+                                className="h-4 w-4 text-green-500"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            ) : userAvailabilityData?.is_available === false ? (
+                              <svg
+                                className="h-4 w-4 text-destructive"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            ) : null)}
                         </div>
                       )}
                     </div>
                   </FormControl>
                   <FormMessage />
-                  {field?.value?.length >= 3 && !field?.value?.includes(' ') && (
-                    <div className="flex items-center gap-2 text-sm">
-                      {isUserAvailabilityFetching ? (
-                        <span className="text-muted-foreground">
-                          Checking username availability...
-                        </span>
-                      ) : userAvailabilityData?.is_available ? (
-                        <span className="text-green-500">Username is available</span>
-                      ) : userAvailabilityData?.is_available === false ? (
-                        <span>
-                          <span className="text-destructive">
-                            Username is not available. Suggested username:{' '}
+                  {field?.value?.length >= 3 &&
+                    !field?.value?.includes(' ') &&
+                    usernameData !== currentUsername && (
+                      <div className="flex items-center gap-2 text-sm">
+                        {isUserAvailabilityFetching ? (
+                          <span className="text-muted-foreground">
+                            Checking username availability...
                           </span>
-                          <span className="text-green-500">{userAvailabilityData?.suggestion}</span>
-                        </span>
-                      ) : null}
-                    </div>
-                  )}
+                        ) : userAvailabilityData?.is_available ? (
+                          <span className="text-green-500">Username is available</span>
+                        ) : userAvailabilityData?.is_available === false ? (
+                          <span>
+                            <span className="text-destructive">
+                              Username is not available. Suggested username:{' '}
+                            </span>
+                            <span className="text-green-500">
+                              {userAvailabilityData?.suggestion}
+                            </span>
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
                 </FormItem>
               )}
             />
@@ -291,6 +328,17 @@ export const ProfileSection = ({
               )}
             />
 
+            {/* Password Change Trigger Row */}
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm">Need to change your password?</span>
+              <PasswordChangeDialog
+                isUpdating={isUpdating}
+                handleProfileUpdate={handlePasswordUpdate}
+                open={open}
+                setOpen={setOpen}
+              />
+            </div>
+
             <Button type="submit" disabled={isUpdating} className="w-full cursor-pointer">
               {isUpdating ? (
                 <>
@@ -307,3 +355,108 @@ export const ProfileSection = ({
     </Card>
   );
 };
+
+function PasswordChangeDialog({
+  isUpdating,
+  handleProfileUpdate,
+  open,
+  setOpen,
+}: {
+  isUpdating: boolean;
+  open: boolean;
+  handleProfileUpdate: ({ oldPassword, newPassword }) => void;
+  setOpen: (open: boolean) => void;
+}) {
+  const [step, setStep] = useState<'old' | 'new'>('old');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setStep('old');
+    setOldPassword('');
+    setNewPassword('');
+  }, [open]);
+
+  // Dummy handler for continue (replace with real validation if needed)
+  const handleContinue = () => {
+    setError(null);
+    if (step === 'old') {
+      if (!oldPassword) {
+        setError('Please enter your old password.');
+        return;
+      }
+      setStep('new');
+    } else if (step === 'new') {
+      if (!newPassword) {
+        setError('Please enter your new password.');
+        return;
+      }
+      handleProfileUpdate({ oldPassword, newPassword });
+    }
+  };
+
+  const handleBack = () => {
+    setError(null);
+    if (step === 'new') {
+      setStep('old');
+    } else {
+      setOpen(false);
+      setStep('old');
+      setOldPassword('');
+      setNewPassword('');
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button style={{ background: '#272727', color: '#fff' }} className="ml-2 px-4 py-2 rounded">
+          Create new password
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        className="p-6 rounded-lg"
+        style={{ background: '#0D0D0D', borderRadius: '16px', minWidth: 340, maxWidth: 360 }}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              onClick={handleBack}
+              className="px-3 py-1 text-white flex items-center"
+              style={{ background: '#272727', color: '#fff' }}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-base font-medium text-white text-left">
+                {step === 'old' ? 'Enter your old password' : 'Enter your new password'}
+              </span>
+              <Button onClick={handleContinue} disabled={isUpdating} className="ml-4">
+                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : 'Continue'}
+              </Button>
+            </div>
+            <label className="block text-sm text-white mb-1" htmlFor="password-input">
+              {step === 'old' ? 'Old password' : 'New password'}
+            </label>
+            <Input
+              id="password-input"
+              type="password"
+              value={step === 'old' ? oldPassword : newPassword}
+              onChange={e =>
+                step === 'old' ? setOldPassword(e.target.value) : setNewPassword(e.target.value)
+              }
+              className="w-full border-none text-white placeholder:text-gray-400"
+              style={{ background: '#272727' }}
+              autoFocus
+            />
+            {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
