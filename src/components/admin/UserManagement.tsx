@@ -1,127 +1,114 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { UserBalanceAdjuster } from './UserBalanceAdjuster';
-import { AdminToggle } from './AdminToggle';
+import { UserTable } from './UserTable';
 
 export const UserManagement = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [searchUserQuery, setSearchUserQuery] = useState('');
 
-  const { data: profiles, refetch: refetchProfiles } = useQuery({
-    queryKey: ['profiles'],
-    queryFn: async () => {
-      const { data: profiles, error } = await supabase.from('profiles').select('*');
+  // Replace with real data
+  const totalUsers = 1280;
+  const activeBets = 91.42;
+  const totalLiveTime = 42321;
 
-      if (error) throw error;
-      return profiles;
-    },
-  });
-
-  const { data: emails } = useQuery({
-    queryKey: ['user-emails'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_user_emails');
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const getUserEmail = (userId: string) => {
-    return emails?.find(email => email.id === userId)?.email || 'N/A';
-  };
-
-  // Wrap refetchProfiles in a function that returns Promise<void>
-  const handleRefetch = async () => {
-    await refetchProfiles();
-  };
-
-  // Filter profiles based on search query
-  const filteredProfiles = profiles?.filter(user => {
-    const userEmail = getUserEmail(user.id).toLowerCase();
-    const username = (user.username || '').toLowerCase();
-    const query = searchQuery.toLowerCase();
-
-    return username.includes(query) || userEmail.includes(query);
-  });
+  const tabs = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'livestreams', label: 'Livestreams' },
+    { key: 'users', label: 'Users' },
+  ];
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">User Management</h2>
+      <div className="flex items-center justify-between w-full mb-4">
+        <div className="flex">
+          {tabs.map((tab, idx) => {
+            const isActive = activeTab === tab.key;
+            const isFirst = idx === 0;
+            const isLast = idx === tabs.length - 1;
 
-      {/* Search input */}
-      <div className="relative">
-        <div className="flex gap-2 items-end mb-4">
-          <div className="flex-1">
-            <Label htmlFor="search-users" className="mb-2 block">
-              Search Users
-            </Label>
-            <div className="relative">
-              <Input
-                id="search-users"
-                type="text"
-                placeholder="Search by username or email"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            </div>
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`
+              px-6 py-2 text-sm font-medium
+              border border-[#2D343E]
+              ${isLast ? 'border-r-1' : ''}
+              ${isFirst ? 'rounded-l-lg' : ''}
+              ${isLast ? 'rounded-r-lg' : ''}
+              ${isActive ? 'bg-[#2A2A2A] text-white' : ' text-white hover:bg-[#1f1f1f]'}
+            `}
+                style={{
+                  borderColor: '#2D343E',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {activeTab === 'users' && (
+          <div className="relative rounded-md" style={{ border: '1px solid #2D343E' }}>
+            <Input
+              id="search-users"
+              type="text"
+              placeholder="Search"
+              value={searchUserQuery}
+              onChange={e => setSearchUserQuery(e.target.value)}
+              className="pl-9 rounded-md"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+            <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              Users
+            </p>
+            <p className="text-2xl font-semibold">${totalUsers}</p>
+          </div>
+
+          <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
+            <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              Active Streams
+            </p>
+            <p className="text-2xl font-semibold">14</p>
+          </div>
+
+          <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+            <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              Active Bets
+            </p>
+            <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
+          </div>
+
+          <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+            <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              Time Live
+            </p>
+            <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Username</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Coins</TableHead>
-              <TableHead>Admin</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProfiles?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                  No users found matching "{searchQuery}"
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredProfiles?.map(user => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>{getUserEmail(user.id)}</TableCell>
-                  <TableCell>{user.wallet_balance || 0}</TableCell>
-                  <TableCell>
-                    <AdminToggle
-                      userId={user.id}
-                      isAdmin={user.is_admin || false}
-                      onSuccess={handleRefetch}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <UserBalanceAdjuster userId={user.id} onSuccess={handleRefetch} />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {activeTab === 'livestreams' && (
+        <div className="text-white p-4 bg-zinc-800 rounded-md">
+          <p className="text-lg font-medium">Livestreams content goes here.</p>
+        </div>
+      )}
+
+      {activeTab === 'users' && (
+        <div className="space-y-4">
+          <UserTable searchUserQuery={searchUserQuery} />
+        </div>
+      )}
     </div>
   );
 };

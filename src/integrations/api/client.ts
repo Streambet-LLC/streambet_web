@@ -381,8 +381,20 @@ export const socketAPI = {
 // Admin API
 export const adminAPI = {
   // Get all users
-  getUsers: async () => {
-    const response = await apiClient.get('/admin/users');
+  getUsers: async (params?: any) => {
+    const response = await apiClient.get(`/admin/users`, {
+      params,
+    });
+    return response.data;
+  },
+
+  updateUsersStatus: async (userId?: any, userStatus?: any) => {
+    const response = await apiClient.patch(`/admin/users`, userId, userStatus);
+    return response.data;
+  },
+
+  deleteUser: async (userId: any) => {
+    const response = await apiClient.delete(`/admin/users/soft-delete/{userId}?userId=${userId}`);
     return response.data;
   },
 

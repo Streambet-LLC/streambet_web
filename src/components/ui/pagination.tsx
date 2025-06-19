@@ -8,7 +8,7 @@ const Pagination = ({ className, ...props }: React.ComponentProps<'nav'>) => (
   <nav
     role="navigation"
     aria-label="pagination"
-    className={cn('mx-auto flex w-full justify-center', className)}
+    className={cn('mx-auto flex w-full justify-end', className)}
     {...props}
   />
 );
@@ -53,10 +53,11 @@ const PaginationPrevious = ({
   <PaginationLink
     aria-label="Go to previous page"
     size="default"
-    className={cn('gap-1 pl-2.5', className)}
+    className={cn('px-4 py-2 text-sm border rounded-md mr-2', className)}
+    style={{ color: 'rgba(255, 255, 255, 0.75)', borderColor: 'rgba(45, 52, 62, 1)' }}
     {...props}
   >
-    <ChevronLeft className="h-4 w-4" />
+    {/* <ChevronLeft className="h-4 w-4" /> */}
     <span>Previous</span>
   </PaginationLink>
 );
@@ -66,11 +67,12 @@ const PaginationNext = ({ className, ...props }: React.ComponentProps<typeof Pag
   <PaginationLink
     aria-label="Go to next page"
     size="default"
-    className={cn('gap-1 pr-2.5', className)}
+    className={cn('px-4 py-2 text-sm border rounded-md', className)}
+    style={{ color: 'rgba(255, 255, 255, 0.75)', borderColor: 'rgba(45, 52, 62, 1)' }}
     {...props}
   >
     <span>Next</span>
-    <ChevronRight className="h-4 w-4" />
+    {/* <ChevronRight className="h-4 w-4" /> */}
   </PaginationLink>
 );
 PaginationNext.displayName = 'PaginationNext';
