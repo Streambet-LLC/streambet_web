@@ -202,92 +202,110 @@ export default function Login() {
   };
 
   return (
-    <div className="container flex items-center justify-center min-h-screen py-8">
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="w-full max-w-md"
-      >
-        <motion.div variants={itemVariants}>
-          <Card className="border-border/40 shadow-lg">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
-              <CardDescription className="text-center">
-                Enter your credentials to access your account
-              </CardDescription>
-            </CardHeader>
-            {renderLocationWarning()}
-            <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-4">
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Email or password"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className={errors.email ? 'border-destructive' : ''}
-                  />
-                  {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                      Forgot password?
+    <>
+      <div className="auth-bg-gradient" />
+      <div className="container flex justify-center min-h-screen pt-16 pb-8">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+          className="w-full max-w-md"
+        >
+          <div className="mb-6">
+            <img src="/logo.png" alt="StreamBet Logo" className="mb-4" />
+            <h1 className="text-3xl font-bold text-white text-left">Log in</h1>
+            <p className="text-[#FFFFFFBF] mt-2 text-left">
+              Welcome back! Please enter your details.
+            </p>
+          </div>
+          <motion.div variants={itemVariants}>
+            <Card className="bg-transparent border-0 p-0">
+              {renderLocationWarning()}
+              <form onSubmit={handleSubmit}>
+                <CardContent className="space-y-4 p-0">
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Email or password"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${errors.email ? 'border-destructive' : ''}`}
+                    />
+                    {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''}`}
+                    />
+                    {errors.password && (
+                      <p className="text-destructive text-sm">{errors.password}</p>
+                    )}
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+                      {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+                    </Button>
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="relative flex items-center">
+                    <div className="flex-1 border-t"></div>
+                    <div className="mx-4 text-sm text-muted-foreground">or</div>
+                    <div className="flex-1 border-t"></div>
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleGoogleLogin}
+                      disabled={googleLoginMutation.isPending}
+                    >
+                      <FaGoogle className="mr-2" />
+                      Continue with Google
+                    </Button>
+                    <div ref={googleLoginRef} className="hidden">
+                      <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
+                    </div>
+                  </motion.div>
+                </CardContent>
+              </form>
+              <CardFooter className="flex flex-col space-y-2">
+                <motion.div variants={itemVariants} className="text-center w-full">
+                  <p className="text-sm text-muted-foreground">
+                    Don't have an account?{' '}
+                    <Link to="/signup" className="text-primary hover:underline">
+                      Sign up
                     </Link>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className={errors.password ? 'border-destructive' : ''}
-                  />
-                  {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
+                  </p>
                 </motion.div>
-                <motion.div variants={itemVariants}>
-                  <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-                    {loginMutation.isPending ? 'Logging in...' : 'Login'}
-                  </Button>
-                </motion.div>
-                <motion.div variants={itemVariants} className="relative flex items-center">
-                  <div className="flex-1 border-t"></div>
-                  <div className="mx-4 text-sm text-muted-foreground">or</div>
-                  <div className="flex-1 border-t"></div>
-                </motion.div>
-                <motion.div variants={itemVariants}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleGoogleLogin}
-                    disabled={googleLoginMutation.isPending}
-                  >
-                    <FaGoogle className="mr-2" />
-                    Continue with Google
-                  </Button>
-                  <div ref={googleLoginRef} className="hidden">
-                    <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
-                  </div>
-                </motion.div>
-              </CardContent>
-            </form>
-            <CardFooter className="flex flex-col space-y-2">
-              <motion.div variants={itemVariants} className="text-center w-full">
-                <p className="text-sm text-muted-foreground">
-                  Don't have an account?{' '}
-                  <Link to="/signup" className="text-primary hover:underline">
-                    Sign up
-                  </Link>
-                </p>
-              </motion.div>
-            </CardFooter>
-          </Card>
+              </CardFooter>
+            </Card>
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </div>
+      </div>
+      <div
+        style={{
+          position: 'fixed',
+          left: 20,
+          bottom: 20,
+          color: '#FFFFFF',
+          fontSize: '0.95rem',
+          zIndex: 10,
+        }}
+      >
+        © Streambet 2025
+      </div>
+    </>
   );
 }

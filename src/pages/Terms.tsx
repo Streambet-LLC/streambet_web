@@ -59,7 +59,7 @@ const Terms = () => {
         </div>
       </main>
 
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };

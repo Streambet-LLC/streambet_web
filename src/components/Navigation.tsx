@@ -91,9 +91,7 @@ export const Navigation = () => {
       <div className="container flex h-16 items-center">
         <motion.div variants={logoVariants} initial="hidden" animate="visible">
           <Link to="/" className="flex items-center">
-            <span className="text-2xl font-bold text-primary">
-              Stream<span className="text-foreground">bet</span>
-            </span>
+            <img src="./logo.png" alt="Streambet Logo" className="h-8 w-auto object-contain" />
           </Link>
         </motion.div>
 

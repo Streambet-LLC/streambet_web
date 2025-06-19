@@ -144,10 +144,11 @@ const Index = () => {
         <div className="space-y-8">
           <div className="max-w-3xl mx-auto text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold">
-              Bet on the internet's <span className="text-[#B4FF39]">stupidest</span> moments
+              Bet on the internet's <br />
+              <span className="text-[#B4FF39]">stupidest</span> moments
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Live betting for games created by the internet.
+            <p>
+              Live betting for games created on the internet.
               <br />
               Bet on the unexpected.
             </p>
@@ -180,7 +181,7 @@ const Index = () => {
         </div>
       </main>
 
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };
