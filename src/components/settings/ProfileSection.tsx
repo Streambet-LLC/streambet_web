@@ -436,7 +436,7 @@ function PasswordChangeDialog({
                 {step === 'old' ? 'Enter your old password' : 'Enter your new password'}
               </span>
               <Button onClick={handleContinue} disabled={isUpdating} className="ml-4">
-                Continue
+                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : 'Continue'}
               </Button>
             </div>
             <label className="block text-sm text-white mb-1" htmlFor="password-input">

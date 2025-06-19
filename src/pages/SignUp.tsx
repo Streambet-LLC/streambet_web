@@ -612,9 +612,9 @@ export default function SignUp() {
                       <FaGoogle className="mr-2" />
                       Continue with Google
                     </Button>
-                    <div ref={googleLoginRef} className="hidden">
+                    {/* <div ref={googleLoginRef} className="hidden">
                       <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
-                    </div>
+                    </div> */}
                   </motion.div>
                 </form>
               </FormProvider>

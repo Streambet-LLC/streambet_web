@@ -56,6 +56,6 @@ export function useUser() {
     user: session?.user || null,
     profile: profile || null,
     isLoading,
-    isAdmin: profile?.is_admin || false,
+    isAdmin: profile?.data?.role === 'admin',
   };
 }

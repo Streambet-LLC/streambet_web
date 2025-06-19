@@ -43,7 +43,7 @@ export const StreamActions = ({ streamId, onDelete }: StreamActionsProps) => {
           Delete
         </Button>
       )}
-      {profile?.is_admin && (
+      {profile?.data?.role === 'admin' && (
         <Link to={`/stream/${streamId}/settings`} className="flex-1">
           <Button variant="outline" className="w-full">
             <Settings className="mr-2 h-4 w-4" />

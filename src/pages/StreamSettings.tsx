@@ -49,7 +49,7 @@ const StreamSettings = () => {
       return;
     }
 
-    if (profile && !profile.is_admin) {
+    if (profile && profile?.data?.role !== 'admin') {
       toast({
         title: 'Access Denied',
         description: 'Only administrators can access stream settings',
@@ -59,7 +59,7 @@ const StreamSettings = () => {
     }
   }, [session, profile, navigate, toast]);
 
-  if (!stream || !profile?.is_admin) return null;
+  if (!stream || profile?.data?.role !== 'admin') return null;
 
   return (
     <div className="min-h-screen bg-background">

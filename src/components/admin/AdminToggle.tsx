@@ -4,18 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface AdminToggleProps {
   userId: string;
-  isAdmin: boolean;
+  role: string;
   onSuccess: () => Promise<void>;
 }
 
-export const AdminToggle = ({ userId, isAdmin, onSuccess }: AdminToggleProps) => {
+export const AdminToggle = ({ userId, role, onSuccess }: AdminToggleProps) => {
   const { toast } = useToast();
 
   const toggleAdminStatus = async () => {
     try {
+      const newRole = role === 'admin' ? 'user' : 'admin';
       const { error } = await supabase
         .from('profiles')
-        .update({ is_admin: !isAdmin })
+        .update({ role: newRole })
         .eq('id', userId);
 
       if (error) throw error;
@@ -36,5 +37,5 @@ export const AdminToggle = ({ userId, isAdmin, onSuccess }: AdminToggleProps) =>
     }
   };
 
-  return <Switch checked={isAdmin} onCheckedChange={toggleAdminStatus} />;
+  return <Switch checked={role === 'admin'} onCheckedChange={toggleAdminStatus} />;
 };

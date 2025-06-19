@@ -28,11 +28,11 @@ Deno.serve(async req => {
 
     const { data: adminProfile } = await supabaseClient
       .from('profiles')
-      .select('is_admin')
+      .select('role')
       .eq('id', user.id)
       .single();
 
-    if (!adminProfile?.is_admin) {
+    if (adminProfile?.role !== 'admin') {
       throw new Error('Not authorized');
     }
 

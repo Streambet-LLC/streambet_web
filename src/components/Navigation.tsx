@@ -130,7 +130,7 @@ export const Navigation = () => {
               <>
                 <WalletDropdown walletBalance={profile?.wallet_balance || 0} />
 
-                {profile?.is_admin && (
+                {profile?.data?.role === 'admin' && (
                   <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
                     <Button
                       variant="outline"

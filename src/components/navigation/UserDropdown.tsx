@@ -9,22 +9,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { User } from '@supabase/supabase-js';
-import { Tables } from '@/integrations/supabase/types';
 import { getImageLink } from '@/utils/helper';
 
-type Profile = Tables<'profiles'>;
+type Profile = any;
 
 interface UserDropdownProps {
   profile: Profile | null;
-  user: User;
+  user: any;
   onLogout: () => void;
 }
 
 export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => {
-  console.log('profile', profile);
-  console.log('user', user);
-  console.log('getImageLink(profile?.profile_image_url)', getImageLink(profile?.profileImageUrl));
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -54,7 +49,7 @@ export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => 
         <DropdownMenuItem asChild>
           <Link to="/faq">FAQ</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onLogout}>Log out</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onLogout()}>Log out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

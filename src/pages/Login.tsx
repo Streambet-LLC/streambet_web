@@ -55,6 +55,7 @@ export default function Login() {
         }
       } catch (error) {
         console.error('Location check failed:', error);
+        debugger;
         setLocationStatus({
           allowed: true,
           error: 'Could not verify location. Proceeding anyway.',
@@ -150,20 +151,21 @@ export default function Login() {
     loginMutation.mutate({ identifier: email, password });
   };
 
-  const handleLoginSuccess = (credentialResponse: any) => {
-    const userResponse = decodeIdToken(credentialResponse?.credential);
-    if (userResponse) {
-      if (userResponse.email) setEmail(userResponse.email);
-    }
-  };
+  // const handleLoginSuccess = (credentialResponse: any) => {
+  //   const userResponse = decodeIdToken(credentialResponse?.credential);
+  //   if (userResponse) {
+  //     if (userResponse.email) setEmail(userResponse.email);
+  //   }
+  // };
 
-  const handleLoginFailure = () => {
-    toast({
-      variant: 'destructive',
-      title: 'Error signup with google',
-      description: 'Please try again',
-    });
-  };
+  // const handleLoginFailure = () => {
+  //   toast({
+  //     variant: 'destructive',
+  //     title: 'Error signup with google',
+  //     description: 'Please try again',
+  //   });
+  // };
+  
 
   const handleGoogleLogin = async () => {
     // Don't proceed if location is restricted
@@ -177,10 +179,28 @@ export default function Login() {
     }
 
     // Trigger the Google login button click
-    const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
-    if (googleButton instanceof HTMLElement) {
-      googleButton.click();
-    }
+    // const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
+    // if (googleButton instanceof HTMLElement) {
+    //   googleButton.click();
+    // }
+    const handleGoogleLogin = async () => {
+      // Don't proceed if location is restricted
+      if (locationStatus && !locationStatus.allowed) {
+        toast({
+          variant: 'destructive',
+          title: 'Location Restricted',
+          description: locationStatus.error,
+        });
+        return;
+      }
+  
+      // Trigger the Google login button click
+      // const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
+      // if (googleButton instanceof HTMLElement) {
+      //   googleButton.click();
+      // }
+      googleLoginMutation.mutateAsync();
+    };
   };
 
   const containerVariants = {
@@ -274,9 +294,9 @@ export default function Login() {
                       <FaGoogle className="mr-2" />
                       Continue with Google
                     </Button>
-                    <div ref={googleLoginRef} className="hidden">
+                    {/* <div ref={googleLoginRef} className="hidden">
                       <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
-                    </div>
+                    </div> */}
                   </motion.div>
                 </CardContent>
               </form>

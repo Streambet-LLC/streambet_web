@@ -109,7 +109,7 @@ export const UserManagement = () => {
                   <TableCell>
                     <AdminToggle
                       userId={user.id}
-                      isAdmin={user.is_admin || false}
+                      role={user.role}
                       onSuccess={handleRefetch}
                     />
                   </TableCell>
