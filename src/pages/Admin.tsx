@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { StreamTabs } from '@/components/admin/StreamTabs';
-import { StreamTableList } from '@/components/admin/STreamTableList';
+import { StreamTableList } from '@/components/admin/StreamTableList';
 
 const Admin = () => {
   const [newStreamTitle, setNewStreamTitle] = useState('');

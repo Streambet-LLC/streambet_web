@@ -17,7 +17,6 @@ import { api } from '@/integrations/api/client';
 import { motion } from 'framer-motion';
 import { FaGoogle } from 'react-icons/fa';
 import { z } from 'zod';
-import { GoogleLogin } from '@react-oauth/google';
 import { GeolocationResult, verifyUserLocation } from '@/integrations/api/geolocation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { decodeIdToken, getMessage } from '@/utils/helper';
@@ -55,7 +54,6 @@ export default function Login() {
         }
       } catch (error) {
         console.error('Location check failed:', error);
-        debugger;
         setLocationStatus({
           allowed: true,
           error: 'Could not verify location. Proceeding anyway.',

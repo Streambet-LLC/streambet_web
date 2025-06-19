@@ -25,7 +25,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { AvatarUploadField } from '@/components/AvatarUploadField';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { GoogleLogin } from '@react-oauth/google';
 import { useDebounce } from '@/lib/utils';
 import { decodeIdToken, getMessage } from '@/utils/helper';
 
