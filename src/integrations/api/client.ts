@@ -77,12 +77,12 @@ export const authAPI = {
   }) => {
     const response = await apiClient.post('/auth/register', userData);
     // Store the tokens
-    if (response?.data?.data?.accessToken) {
-      localStorage.setItem('accessToken', response.data.data.accessToken);
-    }
-    if (response?.data?.data?.refreshToken) {
-      localStorage.setItem('refreshToken', response.data.data.refreshToken);
-    }
+    // if (response?.data?.data?.accessToken) {
+    //   localStorage.setItem('accessToken', response.data.data.accessToken);
+    // }
+    // if (response?.data?.data?.refreshToken) {
+    //   localStorage.setItem('refreshToken', response.data.data.refreshToken);
+    // }
     return response.data;
   },
 
