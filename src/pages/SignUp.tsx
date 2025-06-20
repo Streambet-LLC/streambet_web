@@ -27,6 +27,9 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useDebounce } from '@/lib/utils';
 import { decodeIdToken, getMessage } from '@/utils/helper';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -45,6 +48,8 @@ export default function SignUp() {
   const [isGoogleLogin, setIsGoogleLogin] = useState(false);
   const [userNameCheck, setUserNameCheck] = useState('');
   const googleLoginRef = useRef<HTMLDivElement>(null);
+  const [dob, setDob] = useState<Date | undefined>(undefined);
+  const [currentMonth, setCurrentMonth] = useState<Date | undefined>(undefined);
 
   const signupSchema = z.object({
     username: z
@@ -61,6 +66,18 @@ export default function SignUp() {
           .regex(/[a-z]/, 'Password must contain at least 1 lowercase letter')
           .regex(/[0-9]/, 'Password must contain at least 1 number')
           .regex(/[^A-Za-z0-9]/, 'Password must contain at least 1 special character'),
+    dob: z
+      .date({ required_error: 'Date of Birth is required' })
+      .refine(
+        (date) => {
+          if (!date) return false;
+          const now = new Date();
+          const minAge = 18;
+          const minDate = new Date(now.getFullYear() - minAge, now.getMonth(), now.getDate());
+          return date <= minDate;
+        },
+        { message: 'You must be at least 18 years old' }
+      ),
     tosAccepted: z.boolean().refine(val => val === true, {
       message: 'You must accept the Terms of Service',
     }),
@@ -75,6 +92,7 @@ export default function SignUp() {
       username: '',
       email: '',
       password: '',
+      dob: undefined,
       tosAccepted: false,
       isOlder: false,
       avatar: null,
@@ -110,6 +128,15 @@ export default function SignUp() {
     checkLocation();
   }, [toast]);
 
+  // Initialize currentMonth when dob changes or component mounts
+  useEffect(() => {
+    if (dob) {
+      setCurrentMonth(dob);
+    } else {
+      setCurrentMonth(new Date());
+    }
+  }, [dob]);
+
   const { data: session } = useQuery({
     queryKey: ['session'],
     queryFn: async () => {
@@ -125,6 +152,7 @@ export default function SignUp() {
       username: string;
       email: string;
       password: string;
+      dob: string | undefined;
       tosAccepted: boolean;
       isOlder: boolean;
       profileImageUrl: string;
@@ -143,7 +171,7 @@ export default function SignUp() {
         title: 'Account created!',
         description: 'Your account has been successfully created.',
       });
-      navigate('/');
+      window.location.href = '/';
     },
     onError: (error: any) => {
       toast({
@@ -200,13 +228,14 @@ export default function SignUp() {
     if (password) validateField('password', password);
     if (tosAccepted) validateField('tosAccepted', tosAccepted);
     if (isOlder) validateField('isOlder', isOlder);
+    if (dob) validateField('dob', dob);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasSubmitted, username, email, password, tosAccepted, isOlder]);
+  }, [hasSubmitted, username, email, password, tosAccepted, isOlder, dob]);
 
   const validateForm = () => {
     setHasSubmitted(true);
     try {
-      signupSchema.parse({ username, email, password, tosAccepted, isOlder });
+      signupSchema.parse({ username, email, password, dob, tosAccepted, isOlder });
       setErrors({});
       return true;
     } catch (error) {
@@ -288,10 +317,14 @@ export default function SignUp() {
       }
     }
 
+    // Format dob as YYYY-MM-DD string for payload
+    const dobFormatted = dob ? dob.toISOString().slice(0, 10) : undefined;
+
     signupMutation.mutate({
       username,
       email,
       password,
+      dob: dobFormatted,
       tosAccepted,
       isOlder,
       profileImageUrl: profileImageUrl || undefined,
@@ -524,26 +557,64 @@ export default function SignUp() {
                     />
                     {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
                   </motion.div>
-                  {!isGoogleLogin && (
-                    <motion.div variants={itemVariants} className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''}`}
-                        disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
-                      />
-                      {errors.password && (
-                        <p className="text-destructive text-sm">{errors.password}</p>
-                      )}
-                      <p className="text-muted-foreground text-sm">
-                        Password must be at least 8 characters and include uppercase, lowercase,
-                        number, and special character.
-                      </p>
-                    </motion.div>
-                  )}
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''}`}
+                      disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                    />
+                    {errors.password && (
+                      <p className="text-destructive text-sm">{errors.password}</p>
+                    )}
+                    <p className="text-muted-foreground text-sm">
+                      Password must be at least 8 characters and include uppercase, lowercase,
+                      number, and special character.
+                    </p>
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="dob">Date of Birth</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div className="relative">
+                          <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+                          <Input
+                            id="dob"
+                            type="text"
+                            value={dob ? dob.toLocaleDateString() : ''}
+                            placeholder="Select your date of birth"
+                            readOnly
+                            className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 pl-10 ${errors.dob ? 'border-destructive' : ''}`}
+                            disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                          />
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dob}
+                          month={currentMonth}
+                          onMonthChange={setCurrentMonth}
+                          onSelect={date => {
+                            setDob(date as Date);
+                            setCurrentMonth(date as Date);
+                            form.setValue('dob', date as Date, { shouldValidate: true });
+                          }}
+                          captionLayout="dropdown"
+                          components={{
+                            CaptionLabel: () => null,
+                          }}
+                          fromYear={1900}
+                          toYear={new Date().getFullYear()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {errors.dob && <p className="text-destructive text-sm">{errors.dob}</p>}
+                  </motion.div>
                   <motion.div variants={itemVariants} className="flex items-center space-x-2">
                     <Checkbox
                       id="tosAccepted"
@@ -561,7 +632,7 @@ export default function SignUp() {
                       <p className="text-destructive text-sm">{errors.tosAccepted}</p>
                     )}
                   </motion.div>
-                  <motion.div variants={itemVariants} className="flex items-center space-x-2">
+                  <motion.div variants={itemVariants} className="flex items-center space-x-2 w-full">
                     <Checkbox
                       id="isOlder"
                       checked={isOlder}
@@ -573,34 +644,31 @@ export default function SignUp() {
                     </Label>
                     {errors.isOlder && <p className="text-destructive text-sm">{errors.isOlder}</p>}
                   </motion.div>
-                  <motion.div variants={itemVariants}>
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={
-                        signupMutation.isPending ||
-                        isUploading ||
-                        isCheckingLocation ||
-                        (locationStatus && !locationStatus.allowed)
-                      }
-                    >
-                      {isCheckingLocation
-                        ? 'Verifying location...'
-                        : signupMutation.isPending || isUploading
-                          ? 'Creating account...'
-                          : 'Sign Up'}
-                    </Button>
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="relative flex items-center">
-                    <div className="flex-1 border-t"></div>
-                    <div className="mx-4 text-sm text-muted-foreground">or</div>
-                    <div className="flex-1 border-t"></div>
-                  </motion.div>
+                  {/* Sign Up button */}
+                  <div className="relative">
+                    <motion.div variants={itemVariants}>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={
+                          signupMutation.isPending ||
+                          isUploading ||
+                          isCheckingLocation ||
+                          (locationStatus && !locationStatus.allowed)
+                        }
+                      >
+                        {isCheckingLocation
+                          ? 'Verifying location...'
+                          : signupMutation.isPending || isUploading
+                            ? 'Creating account...'
+                            : 'Sign Up'}
+                      </Button>
+                    </motion.div>
+                  </div>
                   <motion.div variants={itemVariants}>
                     <Button
                       type="button"
-                      variant="outline"
-                      className="w-full"
+                      className="w-full flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
                       onClick={handleGoogleLogin}
                       disabled={
                         googleLoginMutation.isPending ||
@@ -608,8 +676,22 @@ export default function SignUp() {
                         (locationStatus && !locationStatus.allowed)
                       }
                     >
-                      <FaGoogle className="mr-2" />
-                      Continue with Google
+                      <span className="mr-2">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <g clipPath="url(#clip0_17_40)">
+                            <path d="M19.805 10.2305C19.805 9.55078 19.7484 8.90078 19.6484 8.27344H10.2V12.0563H15.6016C15.36 13.2813 14.6016 14.2938 13.5234 14.9938V17.2438H16.6016C18.3984 15.5938 19.805 13.1875 19.805 10.2305Z" fill="#4285F4"/>
+                            <path d="M10.2 20C12.7 20 14.7734 19.1688 16.6016 17.2438L13.5234 14.9938C12.5234 15.6688 11.2734 16.0813 10.2 16.0813C7.80156 16.0813 5.77344 14.4063 5.04844 12.2438H1.85156V14.5563C3.67031 17.7313 6.70156 20 10.2 20Z" fill="#34A853"/>
+                            <path d="M5.04844 12.2438C4.85156 11.6688 4.73594 11.0563 4.73594 10.4188C4.73594 9.78125 4.85156 9.16875 5.04844 8.59375V6.28125H1.85156C1.15625 7.55625 0.75 8.93125 0.75 10.4188C0.75 11.9063 1.15625 13.2813 1.85156 14.5563L5.04844 12.2438Z" fill="#FBBC05"/>
+                            <path d="M10.2 4.75625C11.3984 4.75625 12.4766 5.16875 13.3047 5.95625L16.6641 2.59375C14.7734 0.84375 12.7 0 10.2 0C6.70156 0 3.67031 2.26875 1.85156 5.44375L5.04844 7.75625C5.77344 5.59375 7.80156 4.75625 10.2 4.75625Z" fill="#EA4335"/>
+                          </g>
+                          <defs>
+                            <clipPath id="clip0_17_40">
+                              <rect width="19.0556" height="20" fill="white" transform="translate(0.75)"/>
+                            </clipPath>
+                          </defs>
+                        </svg>
+                      </span>
+                      Sign in with Google
                     </Button>
                     {/* <div ref={googleLoginRef} className="hidden">
                       <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
@@ -620,9 +702,9 @@ export default function SignUp() {
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
               <motion.div variants={itemVariants} className="text-center w-full">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-semibold text-white drop-shadow-md mt-1">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-primary hover:underline">
+                  <Link to="/login" className="text-primary hover:underline font-bold drop-shadow-md">
                     Log in
                   </Link>
                 </p>

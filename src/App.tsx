@@ -20,6 +20,8 @@ import FAQ from './pages/FAQ';
 import { WelcomeModal } from './components/auth/WelcomeModal';
 import { api } from './integrations/api/client';
 import ForgotPassword from './pages/ForgotPassword';
+import GoogleCallback from './pages/GoogleCallback';
+import ResetPassword from './pages/ResetPassword';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -82,6 +84,8 @@ const App = () => {
               <Route path="/terms" element={<Terms />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/google-callback" element={<GoogleCallback />} />
             </Routes>
           </TooltipProvider>
         </BrowserRouter>
