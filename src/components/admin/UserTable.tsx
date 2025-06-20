@@ -54,18 +54,17 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     },
   });
 
+  const totalPages = Math.ceil((profiles?.total || 0) / itemsPerPage);
+
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= profiles?.total) {
+    if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
 
   console.log(profiles?.data, 'profiles');
 
-  const paginatedUsers = profiles?.data?.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const paginatedUsers = profiles?.data;
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -106,7 +105,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                   <TableCell className="truncate whitespace-nowrap overflow-hidden max-w-[180px]">
                     {user.username}
                   </TableCell>
-                  <TableCell>{user?.wallet?.freeTokens}</TableCell>
+                  <TableCell>{user?.wallet?.freeTokens ? user?.wallet?.freeTokens : '-'}</TableCell>
                   <TableCell>
                     <span
                       className="px-2 py-1 rounded-md font-bold text-sm"
@@ -158,7 +157,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
 
       <div className="flex w-full justify-between bg-black rounded-md mt-4">
         <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-          Page {currentPage} of {profiles?.total}
+          Page {currentPage} of {totalPages}
         </div>
         <Pagination>
           <PaginationContent>
