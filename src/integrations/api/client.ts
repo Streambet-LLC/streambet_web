@@ -174,7 +174,22 @@ export const authAPI = {
 
   // Handle OAuth
   googleAuth: async () => {
+    // const response = await apiClient.get('/auth/google');
+    // console.log('response', response?.data);
+    // return response.data;
     window.location.href = `${API_URL}/auth/google`;
+  },
+
+  // Forgot password (send reset link)
+  forgotPassword: async (identifier: string) => {
+    const response = await apiClient.post('/auth/forgot-password', { identifier });
+    return response.data;
+  },
+
+  // Reset password (with token)
+  resetPassword: async (token: string, newPassword: string) => {
+    const response = await apiClient.post('/auth/reset-password', { token, newPassword });
+    return response.data;
   },
 };
 

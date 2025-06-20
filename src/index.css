@@ -121,3 +121,15 @@
   pointer-events: none;
   opacity: 0.7;
 }
+
+/* Dark theme overrides for react-day-picker dropdowns */
+.rdp-dropdown,
+.rdp-dropdown select {
+  background-color: #18181b !important; /* Tailwind's zinc-900 */
+  color: #f4f4f5 !important; /* Tailwind's zinc-100 */
+  border: 1px solid #27272a !important; /* Tailwind's zinc-800 */
+}
+.rdp-dropdown option {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+}
