@@ -52,7 +52,7 @@ const ResetPassword = () => {
       });
       window.location.href = '/login'; // Redirect to login after success
     } catch (err: any) {
-      setError(err?.response?.data?.message || err.message || 'Failed to reset password.');
+      setError(err?.response?.data?.message || err?.message || 'Failed to reset password.');
     } finally {
       setIsSubmitting(false);
     }

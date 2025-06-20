@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getMessage } from '@/utils/helper';
+import { Loader2 } from 'lucide-react';
 
 const VerifyEmail: React.FC = () => {
   const location = useLocation();
@@ -21,7 +22,8 @@ const VerifyEmail: React.FC = () => {
     }
     setLoading(true);
     setError(null);
-    fetch('/auth/verify-email', {
+
+    fetch(`${import.meta.env.VITE_API_URL}/auth/verify-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
@@ -45,7 +47,7 @@ const VerifyEmail: React.FC = () => {
     if (error) {
       const timer = setTimeout(() => {
         navigate('/');
-      }, 4000);
+      }, 6000);
       return () => clearTimeout(timer);
     }
   }, [error, navigate]);
@@ -54,15 +56,17 @@ const VerifyEmail: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen">
       {loading ? (
         <div className="flex flex-col items-center">
-          <div className="loader mb-4" />
-          <span className="text-lg font-medium">Verifiying your email</span>
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <p>Verifying your mail...</p>
         </div>
       ) : error ? (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative max-w-md text-center" role="alert">
           <strong className="font-bold">Error: </strong>
           <span className="block sm:inline">{error}</span>
         </div>
-      ) : null}
+      ) : <div className="flex flex-col items-center">
+            <p>Email verified successfully. Please login.</p>
+          </div>}
     </div>
   );
 };
