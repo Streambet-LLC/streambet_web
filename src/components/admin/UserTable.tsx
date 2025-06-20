@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { DeleteUserDialog } from './DeleteUserDialog';
 import AddTokens from './AddTokens';
+import { useNavigate } from 'react-router-dom';
 
 interface Props {
   searchUserQuery: string;
@@ -28,8 +29,10 @@ interface Props {
 
 
 export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
+
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const itemsPerPage = 8;
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
   const rangeEnd = rangeStart + itemsPerPage - 1;
@@ -38,7 +41,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     queryKey: ['profiles', currentPage, searchUserQuery],
     queryFn: async () => {
       const data = await api.admin.getUsers({
-        range: `[${rangeStart},${rangeEnd}]`,
+        range: `[${rangeStart},${7}]`,
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: searchUserQuery }),
         pagination: true,
@@ -58,8 +61,8 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
 
  
   const mutationTokens = useMutation({
-    mutationFn: async ({ userId, newBalance }: { userId: string; newBalance: number }) => {
-      return await api.admin.updateUsersTokens({ userId, newBalance });
+    mutationFn: async ({ userId, amount }: { userId: string; amount: number }) => {
+      return await api.admin.updateUsersTokens({ userId, amount });
     },
     onSuccess: () => {
       refetchProfiles();
@@ -125,7 +128,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     </span>
                   )}
                   </TableCell>
-                  <TableCell>{user?.wallet?.freeTokens}</TableCell>
+                  <TableCell>{user?.wallet?.freeTokens ? user?.wallet?.freeTokens?.toLocaleString('en-US'):'-'}</TableCell>
                   <TableCell>
                     <span
                       className="px-2 py-1 rounded-md font-bold text-sm"
@@ -137,7 +140,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       {user.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </TableCell>
-                  <TableCell>{new Date(user.createdAt).toLocaleDateString('en-US')}</TableCell>
+                  <TableCell>{new Date(user?.createdAt).toLocaleDateString('en-US')}</TableCell>
                   <TableCell className="truncate whitespace-nowrap overflow-hidden max-w-[180px]">
                     {user.email}
                   </TableCell>
@@ -151,20 +154,12 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     />
                   </TableCell>
                   <TableCell className="cursor-pointer">
-                  <div className="w-[18px] h-[18px]">
-                    <img
-                      src="/icons/wallet.svg"
-                      className="w-full h-full object-contain"
-                      alt="wallet"
-                      // onClick={() => setOpen(true)}
-                    />
-                  </div>
-                    {/* <AddTokens
+                    <AddTokens
                       currentBalance={user?.wallet?.freeTokens}
                       username={user.username}
                       onSave={(newBalance) => {
-                        mutationTokens.mutate({ userId: user.id, newBalance });
-                      }}/> */}
+                        mutationTokens.mutate({ userId: user.id, amount: newBalance});
+                      }}/>
                   </TableCell>
                   <TableCell className="cursor-pointer">
                     <DeleteUserDialog

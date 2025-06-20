@@ -469,8 +469,8 @@ export const adminAPI = {
     return response.data;
   },
 
-  updateUsersTokens: async (userId?: any, userTokens?: any) => {
-    const response = await apiClient.patch(`/admin/tokens/free`, userId, userTokens);
+  updateUsersTokens: async (userId?: any, amount?: any) => {
+    const response = await apiClient.patch(`/admin/tokens/free`, userId, amount);
     return response.data;
   },
 

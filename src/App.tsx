@@ -21,6 +21,7 @@ import GoogleCallback from './pages/GoogleCallback';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
 
+
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {

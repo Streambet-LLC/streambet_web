@@ -120,17 +120,17 @@ const AddTokens: React.FC<WalletCellProps> = ({
           <div className="flex justify-between text-left mb-2">
             <div>
               <p className="text-sm text-[#FFFFFF] font-medium mb-2">Current Balance</p>
-              <div className="bg-[#272727] w-[200px] px-3 py-2 rounded text-[#FFFFFF] text-sm font-normal">
+              <div className="bg-[#272727] w-[200px] px-3 py-2 rounded h-[35px] text-[#FFFFFF] text-sm font-normal">
               <p className="text-sm  font-normal">
-                {currentBalance}
+                {currentBalance?.toLocaleString('en-US')}
               </p>
               </div>
             </div>
             <div>
               <p className="text-sm text-[#FFFFFF] font-medium mb-2">New Balance</p>
-              <div className="bg-[#272727] w-[200px] px-3 py-2 rounded text-[#FFFFFF] text-sm font-normal">
+              <div className="bg-[#272727] w-[200px] px-3 py-2 rounded h-[35px] text-[#FFFFFF] text-sm font-normal">
               <p className="text-sm font-normal">
-                {newBalance}
+                {newBalance === currentBalance ? '' : newBalance?.toLocaleString('en-US')}
               </p>
               </div>
             </div>
