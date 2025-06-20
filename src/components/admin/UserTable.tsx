@@ -20,10 +20,12 @@ import api from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { DeleteUserDialog } from './DeleteUserDialog';
+import AddTokens from './AddTokens';
 
 interface Props {
   searchUserQuery: string;
 }
+
 
 export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,6 +56,16 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     },
   });
 
+ 
+  const mutationTokens = useMutation({
+    mutationFn: async ({ userId, newBalance }: { userId: string; newBalance: number }) => {
+      return await api.admin.updateUsersTokens({ userId, newBalance });
+    },
+    onSuccess: () => {
+      refetchProfiles();
+    },
+  });
+
   const totalPages = Math.ceil((profiles?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
@@ -75,6 +87,8 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
       refetchProfiles();
     },
   });
+
+
 
   return (
     <div>
@@ -104,8 +118,14 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 <TableRow key={user.id}>
                   <TableCell className="truncate whitespace-nowrap overflow-hidden max-w-[180px]">
                     {user.username}
+
+                    {user.role === 'admin' && (
+                    <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
+                      Admin
+                    </span>
+                  )}
                   </TableCell>
-                  <TableCell>{user?.wallet?.freeTokens ? user?.wallet?.freeTokens : '-'}</TableCell>
+                  <TableCell>{user?.wallet?.freeTokens}</TableCell>
                   <TableCell>
                     <span
                       className="px-2 py-1 rounded-md font-bold text-sm"
@@ -131,12 +151,20 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     />
                   </TableCell>
                   <TableCell className="cursor-pointer">
-                    <div className="w-[18px] h-[18px]">
-                      <img
-                        src="/icons/wallet.svg"
-                        className="w-[100%] h-[100%] object-contain cursor-pointer"
-                      />
-                    </div>
+                  <div className="w-[18px] h-[18px]">
+                    <img
+                      src="/icons/wallet.svg"
+                      className="w-full h-full object-contain"
+                      alt="wallet"
+                      // onClick={() => setOpen(true)}
+                    />
+                  </div>
+                    {/* <AddTokens
+                      currentBalance={user?.wallet?.freeTokens}
+                      username={user.username}
+                      onSave={(newBalance) => {
+                        mutationTokens.mutate({ userId: user.id, newBalance });
+                      }}/> */}
                   </TableCell>
                   <TableCell className="cursor-pointer">
                     <DeleteUserDialog
@@ -144,8 +172,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       onConfirm={() => {
                         deleteMutation.mutate(user?.id);
                       }}
-                      // isDeleteDialogOpen={isDeleteDialogOpen}
-                      // setIsDeleteDialogOpen={setIsDeleteDialogOpen}
                     />
                   </TableCell>
                 </TableRow>
