@@ -166,12 +166,12 @@ export default function SignUp() {
       return await api.auth.register(userData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['session'] });
+      // queryClient.invalidateQueries({ queryKey: ['session'] });
       toast({
         title: 'Account created!',
-        description: 'Your account has been successfully created.',
+        description: 'Your account has been successfully created. Please verify mail to login.',
       });
-      window.location.href = '/';
+      navigate('/login');
     },
     onError: (error: any) => {
       toast({

@@ -79,7 +79,7 @@ export const Navigation = () => {
     { label: 'Rewards', icon: <Gift size={18} />, path: '/rewards' },
     { label: 'Community', icon: <Users size={18} />, path: '/community' },
   ];
-
+console.log('progile', profile)
   return (
     <motion.nav
       variants={navVariants}
@@ -128,7 +128,7 @@ export const Navigation = () => {
           >
             {session ? (
               <>
-                <WalletDropdown walletBalance={profile?.wallet_balance || 0} />
+                <WalletDropdown walletBalance={profile?.data?.wallet_balance || 0} />
 
                 {profile?.data?.role === 'admin' && (
                   <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">

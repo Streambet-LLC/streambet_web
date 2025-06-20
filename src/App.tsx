@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -17,11 +16,10 @@ import Settings from './pages/Settings';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import FAQ from './pages/FAQ';
-import { WelcomeModal } from './components/auth/WelcomeModal';
-import { api } from './integrations/api/client';
 import ForgotPassword from './pages/ForgotPassword';
 import GoogleCallback from './pages/GoogleCallback';
 import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/auth/VerifyEmail';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -86,6 +84,7 @@ const App = () => {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/auth/google-callback" element={<GoogleCallback />} />
+              <Route path="/auth/verify-email" element={<VerifyEmail />} />
             </Routes>
           </TooltipProvider>
         </BrowserRouter>

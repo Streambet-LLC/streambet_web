@@ -75,7 +75,7 @@ console.log('error', error)
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-white">
-                      Email
+                      Email or Username
                     </Label>
                     <Input
                       id="email"
