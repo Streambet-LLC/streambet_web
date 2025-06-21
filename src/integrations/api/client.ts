@@ -87,7 +87,7 @@ export const authAPI = {
   },
 
   // Login user
-  login: async (credentials: { identifier: string; password: string }) => {
+  login: async (credentials: { identifier: string; password: string, remember_me?: boolean}) => {
     const response = await apiClient.post('/auth/login', credentials);
     // Store the tokens
     if (response?.data?.data?.accessToken) {
