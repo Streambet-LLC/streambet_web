@@ -132,7 +132,7 @@ export const ProfileSection = ({
 
       if (currentAvatar && typeof currentAvatar === 'object' && currentAvatar?.name) {
         try {
-          const response = await api.auth.uploadProfilePicture(currentAvatar);
+          const response = await api.auth.uploadImage(currentAvatar);
           profileImageUrl = response?.data?.Key;
         } catch (error) {
           toast({

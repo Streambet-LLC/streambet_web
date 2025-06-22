@@ -1,21 +1,22 @@
 import { Navigation } from '@/components/Navigation';
-import { CreateLivestream } from '@/components/CreateLivestream';
 import { useStreamManagement } from '@/hooks/useStreamManagement';
-import { StreamList } from '@/components/admin/StreamList';
-import { UserManagement } from '@/components/admin/UserManagement';
+import { AdminManagement } from '@/components/admin/AdminManagement';
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { AdminSidebar } from '@/components/admin/AdminSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { StreamTabs } from '@/components/admin/StreamTabs';
-import { StreamTableList } from '@/components/admin/StreamTableList';
 
 const Admin = () => {
   const [newStreamTitle, setNewStreamTitle] = useState('');
   const [newStreamDescription, setNewStreamDescription] = useState('');
-  const { profile, streams, deleteStream, refetchStreams } = useStreamManagement();
+  const {
+    profile,
+    streams,
+    searchStreamQuery,
+    deleteStream,
+    refetchStreams,
+    setSearchStreamQuery
+  } = useStreamManagement();
   const { toast } = useToast();
   const [activeSection, setActiveSection] = useState('current');
 
@@ -112,60 +113,18 @@ const Admin = () => {
   // Current streams are all streams that are still live
   const currentStreams = allStreams.filter(stream => stream.is_live !== false);
 
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'create':
-        return (
-          <CreateLivestream
-            newStreamTitle={newStreamTitle}
-            newStreamDescription={newStreamDescription}
-            onNewStreamTitleChange={setNewStreamTitle}
-            onNewStreamDescriptionChange={setNewStreamDescription}
-            onCreateStream={createStream}
-          />
-        );
-      case 'current':
-        return (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold">Current Streams</h2>
-            <StreamTableList
-              streams={currentStreams}
-              // isAdmin={true}
-              // onDelete={deleteStream}
-              // onUpdate={refetchStreams}
-              // showAdminControls={true}
-            />
-          </div>
-        );
-      case 'history':
-        return (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold">Stream History</h2>
-            <StreamTabs
-              currentStreams={allStreams}
-              pastStreams={pastStreams}
-              isAdmin={true}
-              onDelete={deleteStream}
-              onUpdate={refetchStreams}
-            />
-          </div>
-        );
-      case 'users':
-        return <UserManagement />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <SidebarProvider>
         <div className="container flex w-full pt-24 pb-8">
-          <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-          <main className="flex-1 pl-4">{renderContent()}</main>
+          <main className="flex-1 pl-4">{<AdminManagement
+              streams={currentStreams}
+              refetchStreams={() => refetchStreams()}
+              searchStreamQuery={searchStreamQuery}
+              setSearchStreamQuery={setSearchStreamQuery}
+            />}
+          </main>
         </div>
-      </SidebarProvider>
     </div>
   );
 };

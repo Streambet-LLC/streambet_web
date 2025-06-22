@@ -1,7 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
-import { useNavigate } from 'react-router-dom';
-import { api } from '@/integrations/api/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WalletDropdown } from './navigation/WalletDropdown';
 import { UserDropdown } from './navigation/UserDropdown';
@@ -9,9 +7,11 @@ import { Home, Tv, Gift, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useAnimations } from '@/hooks/useAnimations';
+import { api } from '@/integrations/api/client';
 
 export const Navigation = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [isScrolled, setIsScrolled] = useState(false);
   const [prevScrollY, setPrevScrollY] = useState(0);
@@ -74,12 +74,13 @@ export const Navigation = () => {
   };
 
   const menuItems = [
-    { label: 'Home', icon: <Home size={18} />, path: '/' },
-    { label: 'Streams', icon: <Tv size={18} />, path: '/' },
-    { label: 'Rewards', icon: <Gift size={18} />, path: '/rewards' },
-    { label: 'Community', icon: <Users size={18} />, path: '/community' },
-  ];
-console.log('progile', profile)
+    profile?.data?.role === 'admin' && { label: 'Dashboard', icon: undefined, path: '/admin' },
+    { label: 'Home', icon: undefined, path: '/' },
+    { label: 'Streams', icon: undefined, path: '/streams' },
+    { label: 'Rewards', icon: undefined, path: '/rewards' },
+    { label: 'Community', icon: undefined, path: '/community' },
+  ].filter(Boolean);
+
   return (
     <motion.nav
       variants={navVariants}
@@ -97,24 +98,31 @@ console.log('progile', profile)
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center ml-8 space-x-1">
-          {menuItems.map((item, index) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 + 0.2, duration: 0.3 }}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-2"
-                onClick={() => navigate(item.path)}
+          {menuItems.map((item, index) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 + 0.2, duration: 0.3 }}
               >
-                {item.icon}
-                <span>{item.label}</span>
-              </Button>
-            </motion.div>
-          ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`flex items-center gap-2 font-normal transition-colors px-3 py-2 ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-[#FFFFFF80] hover:text-white'
+                  }`}
+                  onClick={() => navigate(item.path)}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Button>
+              </motion.div>
+            );
+          })}
         </div>
 
         <div className="flex-1" />
@@ -129,19 +137,6 @@ console.log('progile', profile)
             {session ? (
               <>
                 <WalletDropdown walletBalance={profile?.data?.wallet_balance || 0} />
-
-                {profile?.data?.role === 'admin' && (
-                  <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-primary/30 text-primary hover:bg-primary/10"
-                      onClick={() => navigate('/admin')}
-                    >
-                      Admin
-                    </Button>
-                  </motion.div>
-                )}
 
                 <UserDropdown profile={profile?.data} user={session} onLogout={handleLogout} />
               </>
