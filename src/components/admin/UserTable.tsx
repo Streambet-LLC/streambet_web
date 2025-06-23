@@ -12,7 +12,6 @@ import {
   Pagination,
   PaginationContent,
   PaginationItem,
-  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from '../ui/pagination';
@@ -21,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { DeleteUserDialog } from './DeleteUserDialog';
 import AddTokens from './AddTokens';
-import { useNavigate } from 'react-router-dom';
+
 
 interface Props {
   searchUserQuery: string;
@@ -30,15 +29,13 @@ interface Props {
 
 export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
 
-  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
-  const rangeEnd = rangeStart + itemsPerPage - 1;
 
   const { data: profiles, refetch: refetchProfiles } = useQuery({
-    queryKey: ['profiles', currentPage, searchUserQuery],
+    queryKey: ['userList', currentPage, searchUserQuery],
     queryFn: async () => {
       const data = await api.admin.getUsers({
         range: `[${rangeStart},${7}]`,
@@ -77,7 +74,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     }
   };
 
-  console.log(profiles?.data, 'profiles');
 
   const paginatedUsers = profiles?.data;
 
