@@ -266,7 +266,7 @@ export const ProfileSection = ({
             name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white">Username</FormLabel>
+                <FormLabel className="text-white font-normal">Username</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input 
@@ -344,7 +344,7 @@ export const ProfileSection = ({
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white">Email</FormLabel>
+                <FormLabel className="text-white font-normal">Email</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Email" 
@@ -363,7 +363,7 @@ export const ProfileSection = ({
             name="state"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white">State</FormLabel>
+                <FormLabel className="text-white font-normal">State</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="State" 
@@ -390,8 +390,8 @@ export const ProfileSection = ({
           {/* Profile Picture Section */}
           <div className="space-y-4">
           <div>
-            <h2 className="text-lg font-normal text-white">Your photo</h2>
-            <p className="text-sm text-[#FFFFFFBF] mt-1">This will be displayed on your profile.</p>
+            <h2 className="text-md font-normal text-white">Your photo</h2>
+            <p className="text-sm text-[#FFFFFF] mt-1">This will be displayed on your profile.</p>
           </div>
             <AvatarUploadField
               form={form}
