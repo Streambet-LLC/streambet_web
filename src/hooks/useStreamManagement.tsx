@@ -2,10 +2,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { bettingAPI } from '@/integrations/api/client';
+import { useState } from 'react';
 
 export const useStreamManagement = () => {
   const { toast } = useToast();
-
+  const [searchStreamQuery, setSearchStreamQuery] = useState();
   const { data: profile } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
@@ -25,13 +26,15 @@ export const useStreamManagement = () => {
   });
 
   const { data: streams, refetch: refetchStreams } = useQuery({
-    queryKey: ['streams'],
+    queryKey: ['streams', searchStreamQuery],
     queryFn: async () => {
-      const { data, error } = await bettingAPI.getStreams(true);
+      console.log('Stream API called');
+      const { data, error } = await bettingAPI.getStreams(true, {
+        filter: JSON.stringify({ q: searchStreamQuery }),
+      });
 
       if (error) throw error;
 
-      console.log('Fetched streams for admin:', data);
       return data;
     },
     // Increase refetch frequency to see new streams faster
@@ -40,7 +43,6 @@ export const useStreamManagement = () => {
 
   const deleteStream = async (id: string) => {
     try {
-      console.log('Deleting stream:', id);
 
       // First, delete all comments associated with the stream
       const { error: commentsError } = await supabase.from('comments').delete().eq('stream_id', id);
@@ -88,6 +90,8 @@ export const useStreamManagement = () => {
   return {
     profile,
     streams,
+    searchStreamQuery,
+    setSearchStreamQuery,
     deleteStream,
     refetchStreams,
   };

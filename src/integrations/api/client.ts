@@ -87,7 +87,7 @@ export const authAPI = {
   },
 
   // Login user
-  login: async (credentials: { identifier: string; password: string }) => {
+  login: async (credentials: { identifier: string; password: string, remember_me?: boolean}) => {
     const response = await apiClient.post('/auth/login', credentials);
     // Store the tokens
     if (response?.data?.data?.accessToken) {
@@ -118,11 +118,11 @@ export const authAPI = {
     return response.data;
   },
 
-  // Upload Profile Image
-  uploadProfilePicture: async (filePayload: File) => {
+  // Upload Image
+  uploadImage: async (filePayload: File, type?: string) => {
     const formData = new FormData();
     formData.append('file', filePayload);
-    const response = await apiClient.post('/assets/file/upload/image/avatar', formData, {
+    const response = await apiClient.post(`/assets/file/upload/image/${type || 'avatar'}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -311,8 +311,10 @@ export const walletAPI = {
 // Betting API
 export const bettingAPI = {
   // Get all streams
-  getStreams: async (includeEnded = false) => {
-    const response = await apiClient.get(`/betting/streams?includeEnded=${includeEnded}`);
+  getStreams: async (includeEnded = false, params?: any) => {
+    const response = await apiClient.get(`/betting/streams?includeEnded=${includeEnded}`, {
+      params
+    });
     return response.data;
   },
 

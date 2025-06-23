@@ -5,21 +5,18 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/integrations/api/client';
 import { motion } from 'framer-motion';
-import { FaGoogle } from 'react-icons/fa';
 import { z } from 'zod';
 import { GeolocationResult, verifyUserLocation } from '@/integrations/api/geolocation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { decodeIdToken, getMessage } from '@/utils/helper';
+import { getMessage } from '@/utils/helper';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email/Username is required'),
@@ -35,6 +32,7 @@ export default function Login() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [locationStatus, setLocationStatus] = useState<GeolocationResult | null>(null);
   const [isCheckingLocation, setIsCheckingLocation] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const googleLoginRef = useRef<HTMLDivElement>(null);
 
   // Check user location on component mount
@@ -67,7 +65,7 @@ export default function Login() {
   }, [toast]);
 
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { identifier: string; password: string }) => {
+    mutationFn: async (credentials: { identifier: string; password: string; remember_me?: boolean }) => {
       return await api.auth.login(credentials);
     },
     onSuccess: () => {
@@ -123,7 +121,7 @@ export default function Login() {
       return (
         <Alert variant="destructive" className="mb-4">
           <AlertTitle>Location Restricted</AlertTitle>
-          <AlertDescription>{locationStatus.error}</AlertDescription>
+          <AlertDescription>{locationStatus?.error}</AlertDescription>
         </Alert>
       );
     }
@@ -139,14 +137,14 @@ export default function Login() {
       toast({
         variant: 'destructive',
         title: 'Location Restricted',
-        description: locationStatus.error,
+        description: locationStatus?.error,
       });
       return;
     }
 
     if (!validateForm()) return;
 
-    loginMutation.mutate({ identifier: email, password });
+    loginMutation.mutate({ identifier: email, password, remember_me: rememberMe });
   };
 
   // const handleLoginSuccess = (credentialResponse: any) => {
@@ -255,8 +253,19 @@ export default function Login() {
                       <p className="text-destructive text-sm">{errors.password}</p>
                     )}
                   </motion.div>
-                  {/* Forgot password link above submit buttons */}
-                  <div className="flex justify-end mb-2">
+                  {/* Remember me and Forgot password link */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center">
+                      <Checkbox
+                        id="rememberMe"
+                        checked={rememberMe}
+                        onCheckedChange={checked => setRememberMe(!!checked)}
+                        className="mr-2"
+                      />
+                      <Label htmlFor="rememberMe" className="text-sm select-none text-white">
+                        Remember me to 30 days
+                      </Label>
+                    </div>
                     <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                       Forgot password?
                     </Link>

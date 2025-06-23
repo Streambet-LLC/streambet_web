@@ -304,7 +304,7 @@ export default function SignUp() {
     if (avatar) {
       try {
         setIsUploading(true);
-        const response = await api.auth.uploadProfilePicture(avatar);
+        const response = await api.auth.uploadImage(avatar);
         profileImageUrl = response?.data?.Key;
         setIsUploading(false);
       } catch (error) {
