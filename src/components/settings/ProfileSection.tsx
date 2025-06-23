@@ -22,6 +22,9 @@ import {
 } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { AvatarUploadField } from '@/components/AvatarUploadField';
+import { useNavigate } from 'react-router-dom';
 
 const formSchema = z.object({
   name: z.string().optional(),
@@ -30,8 +33,10 @@ const formSchema = z.object({
     .min(3, 'Username must be at least 3 characters')
     .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
     .refine(val => !val.includes(' '), 'Username cannot contain spaces'),
+  email: z.string().email().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
+  avatar: z.any().optional(),
 });
 
 type ProfileFormData = z.infer<typeof formSchema>;
@@ -54,6 +59,7 @@ export const ProfileSection = ({
 }: ProfileSectionProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [isUpdating, setIsUpdating] = useState(false);
   const [userNameCheck, setUserNameCheck] = useState('');
   const [open, setOpen] = useState(false);
@@ -65,6 +71,8 @@ export const ProfileSection = ({
       city: currentProfile?.city ?? '',
       state: currentProfile?.state ?? '',
       username: currentUsername,
+      email: currentProfile?.email ?? '',
+      avatar: currentAvatar,
     },
   });
 
@@ -85,9 +93,11 @@ export const ProfileSection = ({
         city: session?.city ?? '',
         state: session?.state ?? '',
         username: session?.username,
+        email: session?.email ?? '',
+        avatar: currentAvatar,
       });
     }
-  }, [session, form]);
+  }, [session, form, currentAvatar]);
 
   const {
     data: userAvailabilityData,
@@ -130,9 +140,9 @@ export const ProfileSection = ({
 
       let profileImageUrl = '';
 
-      if (currentAvatar && typeof currentAvatar === 'object' && currentAvatar?.name) {
+      if (data.avatar && typeof data.avatar === 'object' && data.avatar?.name) {
         try {
-          const response = await api.auth.uploadImage(currentAvatar);
+          const response = await api.auth.uploadImage(data.avatar);
           profileImageUrl = response?.data?.Key;
         } catch (error) {
           toast({
@@ -142,15 +152,17 @@ export const ProfileSection = ({
           });
         }
       }
-      // Update profile
+      
+      // Update profile with only the fields we want to keep
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          name: data.name,
-          city: data.city,
-          state: data.state,
           username: data.username,
+          state: data.state,
           profileImageUrl: profileImageUrl || currentAvatar || undefined,
+          // Set hidden fields to undefined
+          name: undefined,
+          city: undefined,
         })
         .eq('id', session?.id)
         .execute();
@@ -207,152 +219,189 @@ export const ProfileSection = ({
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Profile Settings</CardTitle>
-        <CardDescription>Update your profile information</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleProfileUpdate)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input placeholder="Your name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+  const handleCancel = () => {
+    navigate('/');
+  };
 
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="relative">
-                      <Input placeholder="Username" {...field} />
-                      {field?.value?.length >= 3 && !field?.value?.includes(' ') && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          {usernameData !== currentUsername &&
-                            (isUserAvailabilityFetching ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            ) : userAvailabilityData?.is_available ? (
-                              <svg
-                                className="h-4 w-4 text-green-500"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
-                            ) : userAvailabilityData?.is_available === false ? (
-                              <svg
-                                className="h-4 w-4 text-destructive"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
-                            ) : null)}
-                        </div>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                  {field?.value?.length >= 3 &&
-                    !field?.value?.includes(' ') &&
-                    usernameData !== currentUsername && (
-                      <div className="flex items-center gap-2 text-sm">
-                        {isUserAvailabilityFetching ? (
-                          <span className="text-muted-foreground">
-                            Checking username availability...
-                          </span>
-                        ) : userAvailabilityData?.is_available ? (
-                          <span className="text-green-500">Username is available</span>
-                        ) : userAvailabilityData?.is_available === false ? (
-                          <span>
-                            <span className="text-destructive">
-                              Username is not available. Suggested username:{' '}
-                            </span>
-                            <span className="text-green-500">
-                              {userAvailabilityData?.suggestion}
-                            </span>
-                          </span>
-                        ) : null}
+  return (
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-normal text-white">Settings</h2>
+          <p className="text-sm text-[#FFFFFFBF] mt-1">Update your photo and personal details here.</p>
+        </div>
+        <div className="flex gap-3">
+          <Button 
+            onClick={handleCancel}
+            variant="outline" 
+            className="bg-[#272727] text-white border-[#272727] hover:bg-[#3a3a3a]"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={form.handleSubmit(handleProfileUpdate)}
+            disabled={isUpdating}
+            className="w-full"
+          >
+            {isUpdating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save'
+            )}
+          </Button>
+        </div>
+      </div>
+
+      <Separator className="bg-gray-700" />
+
+      {/* Form Section */}
+      <Form {...form}>
+        <form className="space-y-4">
+          <FormField
+            control={form.control}
+            name="username"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-white">Username</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input 
+                      placeholder="Username" 
+                      {...field} 
+                      className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
+                    />
+                    {field?.value?.length >= 3 && !field?.value?.includes(' ') && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {usernameData !== currentUsername &&
+                          (isUserAvailabilityFetching ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : userAvailabilityData?.is_available ? (
+                            <svg
+                              className="h-4 w-4 text-green-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          ) : userAvailabilityData?.is_available === false ? (
+                            <svg
+                              className="h-4 w-4 text-destructive"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          ) : null)}
                       </div>
                     )}
-                </FormItem>
-              )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+                {field?.value?.length >= 3 &&
+                  !field?.value?.includes(' ') &&
+                  usernameData !== currentUsername && (
+                    <div className="flex items-center gap-2 text-sm">
+                      {isUserAvailabilityFetching ? (
+                        <span className="text-muted-foreground">
+                          Checking username availability...
+                        </span>
+                      ) : userAvailabilityData?.is_available ? (
+                        <span className="text-green-500">Username is available</span>
+                      ) : userAvailabilityData?.is_available === false ? (
+                        <span>
+                          <span className="text-destructive">
+                            Username is not available. Suggested username:{' '}
+                          </span>
+                          <span className="text-green-500">
+                            {userAvailabilityData?.suggestion}
+                          </span>
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-white">Email</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Email" 
+                    {...field} 
+                    disabled
+                    className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400 opacity-50"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="state"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-white">State</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="State" 
+                    {...field} 
+                    className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Password Change Section - moved below state field */}
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-sm">Need to change your password?</span>
+            <PasswordChangeDialog
+              isUpdating={isUpdating}
+              handleProfileUpdate={handlePasswordUpdate}
+              open={open}
+              setOpen={setOpen}
             />
-
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input placeholder="City" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <Separator className="bg-gray-700" />
+          {/* Profile Picture Section */}
+          <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-normal text-white">Your photo</h2>
+            <p className="text-sm text-[#FFFFFFBF] mt-1">This will be displayed on your profile.</p>
+          </div>
+            <AvatarUploadField
+              form={form}
+              name="avatar"
+              label=""
             />
-
-            <FormField
-              control={form.control}
-              name="state"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input placeholder="State" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Password Change Trigger Row */}
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-sm">Need to change your password?</span>
-              <PasswordChangeDialog
-                isUpdating={isUpdating}
-                handleProfileUpdate={handlePasswordUpdate}
-                open={open}
-                setOpen={setOpen}
-              />
-            </div>
-
-            <Button type="submit" disabled={isUpdating} className="w-full cursor-pointer">
-              {isUpdating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                'Update Profile'
-              )}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 };
 
