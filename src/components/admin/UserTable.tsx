@@ -45,6 +45,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
       });
       return data;
     },
+    enabled: false,
   });
 
   useEffect(()=>{
