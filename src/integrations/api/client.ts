@@ -471,6 +471,11 @@ export const adminAPI = {
     return response.data;
   },
 
+  updateUsersTokens: async (userId?: any, amount?: any) => {
+    const response = await apiClient.patch(`/admin/tokens/free`, userId, amount);
+    return response.data;
+  },
+
   deleteUser: async (userId: any) => {
     const response = await apiClient.delete(`/admin/users/soft-delete/{userId}?userId=${userId}`);
     return response.data;
