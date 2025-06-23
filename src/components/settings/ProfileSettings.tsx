@@ -62,7 +62,7 @@ export const ProfileSettings = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Profile Picture</CardTitle>
           <CardDescription>Update your profile picture</CardDescription>
@@ -78,7 +78,7 @@ export const ProfileSettings = () => {
             />
           </FormProvider>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <ProfileSection currentUsername={profile?.data?.username} currentAvatar={avatarLink} />
       {/* <PasswordSection /> */}
