@@ -546,7 +546,7 @@ export const AdminManagement = ({
             </div>
 
             {activeTab === 'users' && (
-              <div className="relative rounded-md" style={{ border: '1px solid #2D343E' }}>
+              <div  className="relative rounded-md w-[200px] lg:w-[400px] border" style={{ border: '1px solid #2D343E'}}>
                 <Input
                   id="search-users"
                   type="text"

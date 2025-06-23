@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   Table,
@@ -35,7 +35,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
   const rangeStart = (currentPage - 1) * itemsPerPage;
 
   const { data: profiles, refetch: refetchProfiles } = useQuery({
-    queryKey: ['userList', currentPage, searchUserQuery],
+    queryKey: ['userList'],
     queryFn: async () => {
       const data = await api.admin.getUsers({
         range: `[${rangeStart},${7}]`,
@@ -46,6 +46,10 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
       return data;
     },
   });
+
+  useEffect(()=>{
+    refetchProfiles()
+  },[currentPage, searchUserQuery, refetchProfiles])
 
   const mutation = useMutation({
     mutationFn: async ({ userId, userStatus }: { userId: string; userStatus: boolean }) => {
@@ -79,7 +83,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
-      console.log(userId, 'userId');
       await api.admin.deleteUser(userId);
     },
     onSuccess: () => {
