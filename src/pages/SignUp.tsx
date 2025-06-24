@@ -693,7 +693,7 @@ export default function SignUp() {
                       onCheckedChange={checked => setTosAccepted(checked as boolean)}
                       disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
                     />
-                    <Label htmlFor="tosAccepted" className="text-sm">
+                    <Label htmlFor="tosAccepted" className="text-sm pt-2 pb-2">
                       I accept the{' '}
                       <Link to="/terms" target="_blank" className="text-primary hover:underline">
                         Terms of Service
@@ -703,7 +703,7 @@ export default function SignUp() {
                       <p className="text-destructive text-sm">{errors.tosAccepted}</p>
                     )}
                   </motion.div>
-                  <motion.div variants={itemVariants} className="flex items-center space-x-2 w-full">
+                  <motion.div variants={itemVariants} className="flex items-center space-x-2 w-full pb-2">
                     <Checkbox
                       id="isOlder"
                       checked={isOlder}
@@ -773,9 +773,9 @@ export default function SignUp() {
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
               <motion.div variants={itemVariants} className="text-center w-full">
-                <p className="text-sm font-semibold text-white drop-shadow-md mt-6">
+                <p className="text-sm font-sm text-[rgba(255, 255, 255, 0.8)] opacity-50 drop-shadow-md mt-6">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-primary hover:underline font-bold drop-shadow-md">
+                  <Link to="/login" className="text-primary hover:underline font-sm drop-shadow-md">
                     Log in
                   </Link>
                 </p>
