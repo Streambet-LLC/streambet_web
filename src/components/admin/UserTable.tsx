@@ -30,15 +30,16 @@ interface Props {
 export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 7;
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
+  const rangeEnd = itemsPerPage;
 
   const { data: profiles, refetch: refetchProfiles } = useQuery({
     queryKey: ['userList'],
     queryFn: async () => {
       const data = await api.admin.getUsers({
-        range: `[${rangeStart},${7}]`,
+        range: `[${rangeStart},${rangeEnd}]`,
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: searchUserQuery }),
         pagination: true,
@@ -107,6 +108,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
               <TableHead></TableHead>
               <TableHead></TableHead>
               <TableHead></TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -143,6 +145,18 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                   <TableCell>{new Date(user?.createdAt).toLocaleDateString('en-US')}</TableCell>
                   <TableCell className="truncate whitespace-nowrap overflow-hidden max-w-[180px]">
                     {user.email}
+                  </TableCell>
+                  <TableCell className="truncate whitespace-nowrap overflow-hidden max-w-[180px]">
+                    
+                    {user.isVerify ? (
+                    <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
+                      Verified
+                    </span>
+                  ):(
+                    <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
+                      Not Verified
+                    </span>
+                  )}
                   </TableCell>
                   <TableCell>
                     <Switch
