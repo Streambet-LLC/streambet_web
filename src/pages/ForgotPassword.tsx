@@ -46,9 +46,9 @@ console.log('error', error)
       <div className="flex min-h-screen justify-center pt-16 pb-8">
         <div className="w-full max-w-md">
           <div className="mb-6">
-            <img src="/logo.png" alt="StreamBet Logo" className="mb-4" />
+            <img src="/logo.svg" alt="StreamBet Logo" className="mb-8 w-[121px]" />
             <h1 className="text-3xl font-bold text-white text-left">Reset your password</h1>
-            <p className="text-[#FFFFFFBF] mt-2 text-left">
+            <p className="text-[#FFFFFFBF] mt-3 text-left font-light">
               Enter your email to receive a magic link
             </p>
           </div>
@@ -73,19 +73,19 @@ console.log('error', error)
                 </Alert>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-white">
+                  <div className="space-y-2 mb-2">
+                    <Label htmlFor="email" className="text-white font-light">
                       Email or Username
                     </Label>
                     <Input
                       id="email"
-                      placeholder="your@email.com or username"
+                      placeholder="Enter your email or username"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
                       onFocus={() => setIsFocused(true)}
                       onBlur={() => setIsFocused(false)}
                       required
-                      className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${!isFocused ? 'border-sidebar-border' : ''}`}
+                      className={`bg-[#272727]/80 border-none text-white placeholder:text-gray-400 ${!isFocused ? 'border-sidebar-border' : ''}`}
                     />
                   </div>
 

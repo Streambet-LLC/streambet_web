@@ -59,9 +59,9 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
       <div className="flex items-center gap-2">
         {!showStreamCoins ? (
           <div className="flex items-center">
-            <Button variant="ghost" className="gap-2" onClick={() => navigate('/transactions')}>
-              <Wallet className="h-4 w-4" />
-              <span className="text-[#B4FF39]">{walletBalance?.toFixed(0) || '0'} Free Coins</span>
+            <Button variant="ghost" className="gap-2 group" onClick={() => navigate('/transactions')}>
+              <Wallet className="h-4 w-4 group-hover:text-black transition-colors" />
+              <span className="text-[#B4FF39] group-hover:text-black transition-colors">{(walletBalance || 0).toLocaleString('en-US')} Free Coins</span>
             </Button>
           </div>
         ) : (

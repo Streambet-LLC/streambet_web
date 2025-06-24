@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,7 +53,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'FabioXM', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "liga" 1, "calt" 1, "ss01" 1, "ss02" 1, "ss03" 1, "cv01" 1, "cv02" 1, "cv03" 1, "cv04" 1;
   }
 }
 
@@ -122,14 +128,38 @@
   opacity: 0.7;
 }
 
-/* Dark theme overrides for react-day-picker dropdowns */
+/* Custom styles for react-day-picker dropdowns in calendar popover */
 .rdp-dropdown,
 .rdp-dropdown select {
-  background-color: #18181b !important; /* Tailwind's zinc-900 */
-  color: #f4f4f5 !important; /* Tailwind's zinc-100 */
-  border: 1px solid #27272a !important; /* Tailwind's zinc-800 */
+  background-color: #000 !important;
+  color: #fff !important;
+  border: 1px solid #27272a !important;
 }
 .rdp-dropdown option {
-  background-color: #18181b !important;
-  color: #f4f4f5 !important;
+  background-color: #000 !important;
+  color: #fff !important;
+}
+
+/* Prevent double-click selection on calendar elements */
+.rdp-day,
+.rdp-day_selected,
+.rdp-day_today,
+.rdp-day_outside,
+.rdp-day_disabled,
+.rdp-day_range_middle,
+.rdp-day_hidden {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent double-click on calendar container */
+.rdp {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }

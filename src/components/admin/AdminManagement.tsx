@@ -52,8 +52,8 @@ export const AdminManagement = ({
     mutationFn: async (payload: any) => api.admin.createStream(payload),
     onSuccess: () => {
       toast({ title: 'Success', description: 'Stream created successfully!' });
-      setIsCreateStream(false);
       resetForm();
+      setIsCreateStream(false);
       refetchStreams();
     },
     onError: (error: any) => {
@@ -69,6 +69,7 @@ export const AdminManagement = ({
     kickEmbedUrl: '',
     thumbnail: '',
     startDate: '',
+    endDate: ''
   });
   const [startTime, setStartTime] = useState(''); // format: 'HH:mm'
   const [endTime, setEndTime] = useState('');
@@ -88,21 +89,108 @@ export const AdminManagement = ({
   const startDateRef = useRef<HTMLButtonElement>(null);
   const thumbnailRef = useRef<HTMLDivElement>(null);
 
+  // Add new helper functions for time validation
+  const isToday = (date: Date | null) => {
+    if (!date) return false;
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+  };
+
+  const getCurrentTime = () => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  };
+
+  const isTimeValid = (time: string, date: Date | null) => {
+    if (!date || !time) return true;
+    if (!isToday(date)) return true;
+
+    const [hours, minutes] = time.split(':').map(Number);
+    const now = new Date();
+    const selectedTime = new Date(date);
+    selectedTime.setHours(hours, minutes);
+
+    return selectedTime > now;
+  };
+
+  const isEndDateTimeValid = (endDate: Date | null, endTime: string) => {
+    if (!startDateObj || !startTime || !endDate || !endTime) return true;
+
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+
+    const startDateTime = new Date(startDateObj);
+    startDateTime.setHours(startHours, startMinutes);
+
+    const endDateTime = new Date(endDate);
+    endDateTime.setHours(endHours, endMinutes);
+
+    return endDateTime > startDateTime;
+  };
+
+  // Add handler for start date changes
+  const handleStartDateChange = (date: Date | null) => {
+    setStartDateObj(date);
+    // Reset end date and time when start date changes
+    setEndDateObj(null);
+    setEndTime('');
+    validateForm();
+  };
+
+  // Add handler for start time changes
+  const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    setStartTime(newTime);
+    
+    // Reset end date and time when start time changes
+    setEndDateObj(null);
+    setEndTime('');
+    
+    // Validate the form after setting the new time
+    validateForm();
+  };
+
+  // Add handler for end time changes
+  const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    setEndTime(newTime);
+    validateForm();
+  };
+
   function resetForm() {
+    // Reset text inputs
     setTitle('');
     setDescription('');
     setKickEmbedUrl('');
-    setStartDate('');
-    setEndDate('');
+
+    // Reset dates and times
+    setStartDateObj(null);
+    setEndDateObj(null);
+    setStartTime('');
+    setEndTime('');
+
+    // Reset thumbnail related states
+    setSelectedThumbnailFile(null);
+    setThumbnailPreviewUrl(undefined);
     setThumbnailError(null);
+    setIsDragging(false);
+    setIsUploading(false);
+    
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
+    // Reset all errors
     setErrors({
       title: '',
       kickEmbedUrl: '',
       thumbnail: '',
       startDate: '',
+      endDate: ''
     });
-    setStartTime('');
-    setEndTime('');
   }
 
   function scrollToFirstError() {
@@ -145,23 +233,49 @@ export const AdminManagement = ({
   }
 
   function validateForm() {
-    const newErrors: any = {};
+    const newErrors = {
+      title: '',
+      kickEmbedUrl: '',
+      thumbnail: '',
+      startDate: '',
+      endDate: ''
+    };
+
+    let isValid = true;
+
     if (title.trim().length < 3 || title.trim().length > 70) {
       newErrors.title = 'Title must be 3-70 characters';
+      isValid = false;
     }
     if (!kickEmbedUrl.trim() || (!kickEmbedUrl.includes('http') && !kickEmbedUrl.includes('www') && !kickEmbedUrl.includes('kick'))) {
       newErrors.kickEmbedUrl = 'Embed URL is required and should be valid';
+      isValid = false;
     }
     if (!selectedThumbnailFile) {
       newErrors.thumbnail = 'Thumbnail is required';
+      isValid = false;
     }
     if (!startDateObj) {
       newErrors.startDate = 'Start date is required';
+      isValid = false;
     } else if (!startTime) {
       newErrors.startDate = 'Start time is required';
+      isValid = false;
+    } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+      newErrors.startDate = 'Cannot select past time for today';
+      isValid = false;
     }
+
+    // Validate end date/time if they are provided
+    if (endDateObj && endTime) {
+      if (!isEndDateTimeValid(endDateObj, endTime)) {
+        newErrors.endDate = 'End time must be after start time';
+        isValid = false;
+      }
+    }
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   }
 
   function handleUploadClick() {
@@ -174,12 +288,26 @@ export const AdminManagement = ({
   async function handleFile(file: File) {
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setErrors(errors => ({ ...errors, thumbnail: 'Please upload an image file' }));
+      setErrors({ 
+        ...errors, 
+        thumbnail: 'Please upload an image file',
+        title: '',
+        kickEmbedUrl: '',
+        startDate: '',
+        endDate: ''
+      });
       return;
     }
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      setErrors(errors => ({ ...errors, thumbnail: 'Please upload an image smaller than 5MB' }));
+      setErrors({ 
+        ...errors, 
+        thumbnail: 'Please upload an image smaller than 5MB',
+        title: '',
+        kickEmbedUrl: '',
+        startDate: '',
+        endDate: ''
+      });
       return;
     }
     // Validate image dimensions
@@ -228,6 +356,14 @@ export const AdminManagement = ({
   function handleDeleteThumbnail() {
     setSelectedThumbnailFile(null);
     setThumbnailPreviewUrl(undefined);
+    setErrors({
+      ...errors,
+      thumbnail: '',
+      title: '',
+      kickEmbedUrl: '',
+      startDate: '',
+      endDate: ''
+    });
     // Clear the file input to allow reselection
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -244,19 +380,20 @@ export const AdminManagement = ({
     let thumbnailImageUrl = '';
 
     if (selectedThumbnailFile?.name) {
-        try {
-          setIsUploading(true);
-          const response = await api.auth.uploadImage(selectedThumbnailFile, 'thumbnail');
-          thumbnailImageUrl = response?.data?.Key;
-          setIsUploading(false);
-        } catch (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Error uploading stream thumbnail',
-            description: getMessage(error) || 'Failed to upload thumbnail. Please try again.',
-          });
-          setIsUploading(false);
-        }
+      try {
+        setIsUploading(true);
+        const response = await api.auth.uploadImage(selectedThumbnailFile, 'thumbnail');
+        thumbnailImageUrl = response?.data?.Key;
+        setIsUploading(false);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error uploading stream thumbnail',
+          description: getMessage(error) || 'Failed to upload thumbnail. Please try again.',
+        });
+        setIsUploading(false);
+        return;
+      }
     }
 
     const payload = {
@@ -276,26 +413,26 @@ export const AdminManagement = ({
       {isCreateStream ? (
         <div className="flex justify-center items-center min-h-[60vh]">
           <Card className="w-full max-w-xl bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none">
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-4 !pt-2 sm:p-6">
               {/* Back button only at top */}
               <div className="mb-6">
                 <Button
                   type="button"
                   variant="secondary"
-                  className="flex items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
+                  className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
                   onClick={() => { setIsCreateStream(false); resetForm(); }}
                 >
-                  <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                  <ArrowLeft className="h-4 w-4 mr-0" /> Back
                 </Button>
               </div>
               {/* Label and Create button in same row */}
               <div className="flex flex-row items-center justify-between mb-6">
-                <span className="text-lg text-white font-normal">Create new livestream</span>
+                <span className="text-lg text-white font-light">Create new livestream</span>
                 <Button
                   type="submit"
-                  className="bg-primary text-black font-semibold px-6 py-2 rounded-lg shadow-none border-none"
-                  style={{ borderRadius: '10px', fontWeight: 500 }}
+                  className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[79px] h-[40px]"
+                  style={{ borderRadius: '10px' }}
                   onClick={async (e) => {
                     e.preventDefault();
                     await handleCreateStream();
@@ -310,10 +447,10 @@ export const AdminManagement = ({
               <form className="space-y-8" onSubmit={e => e.preventDefault()}>
                 {/* Title */}
                 <div>
-                  <Label className="text-white font-normal mb-3 block">Title</Label>
+                  <Label className="text-white font-light mb-3 block">Title</Label>
                   <Input
                     ref={titleRef}
-                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#667085] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
+                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
                     placeholder="Title of livestream"
                     value={title}
                     maxLength={70}
@@ -325,9 +462,9 @@ export const AdminManagement = ({
                 </div>
                 {/* Description */}
                 <div>
-                  <Label className="text-white font-normal mb-3 block">Description</Label>
+                  <Label className="text-white font-light mb-3 block">Description</Label>
                   <Textarea
-                    className="bg-[#272727] text-[#D7DFEF] placeholder:text-[#667085] border-none mt-2"
+                    className="bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] border-none mt-2"
                     placeholder="Stream description"
                     rows={10}
                     value={description}
@@ -336,10 +473,10 @@ export const AdminManagement = ({
                 </div>
                 {/* Kick embed URL */}
                 <div>
-                  <Label className="text-white font-normal mb-3 block">Kick embed URL</Label>
+                  <Label className="text-white font-light mb-3 block">Kick embed URL</Label>
                   <Input
                     ref={kickEmbedUrlRef}
-                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#667085] mt-2 ${errors.kickEmbedUrl ? 'border border-red-500' : 'border-none'}`}
+                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.kickEmbedUrl ? 'border border-red-500' : 'border-none'}`}
                     placeholder="Kick embed URL"
                     value={kickEmbedUrl}
                     onChange={e => { setKickEmbedUrl(e.target.value); setErrors({ ...errors, kickEmbedUrl: '' }); }}
@@ -349,7 +486,7 @@ export const AdminManagement = ({
                 </div>
                 {/* Thumbnail upload */}
                 <div ref={thumbnailRef}>
-                  <Label className="text-white font-normal mb-3 block">Thumbnail</Label>
+                  <Label className="text-white font-light mb-3 block">Thumbnail</Label>
                   <div className="flex flex-col sm:flex-row gap-4 items-center">
                     {/* Left: Preview */}
                     <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727]">
@@ -395,9 +532,9 @@ export const AdminManagement = ({
                             </button>
                           )}
                         </div>
-                        <span className="text-sm text-center" style={{ lineHeight: '1.7' }}>
+                        <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
                           <span className="text-primary font-semibold">Click to upload</span> or drag and drop<br />
-                          <span className="text-[#667085]">SVG, PNG, JPG or GIF (max. 800x400px)</span>
+                          <span className="text-[#667085] text-[12px]">SVG, PNG, JPG or GIF (max. 800x400px)</span>
                         </span>
                       </div>
                       {errors.thumbnail && <div className="text-destructive text-xs mt-1">{errors.thumbnail}</div>}
@@ -406,7 +543,7 @@ export const AdminManagement = ({
                 </div>
                 {/* Start date */}
                 <div>
-                  <Label className="text-white font-normal mb-3 block">Start date</Label>
+                  <Label className="text-white font-light mb-3 block">Start date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <button
@@ -418,7 +555,7 @@ export const AdminManagement = ({
                         <span className="absolute left-3 top-1/2 -translate-y-1/2">
                           <CalendarIcon className="h-5 w-5 text-white" />
                         </span>
-                        <span className={startDateObj ? '' : 'text-[#667085]'}>
+                        <span className={startDateObj ? '' : 'text-[#FFFFFFBF]'}>
                           {formatDateTimeForDisplay(startDateObj, startTime)}
                         </span>
                         {(startDateObj || startTime) && (
@@ -436,10 +573,7 @@ export const AdminManagement = ({
                       <Calendar
                         mode="single"
                         selected={startDateObj || undefined}
-                        onSelect={date => {
-                          setStartDateObj(date as Date);
-                          setErrors({ ...errors, startDate: '' });
-                        }}
+                        onSelect={handleStartDateChange}
                         initialFocus
                         showOutsideDays
                         disabled={date => date < new Date(new Date().setHours(0,0,0,0))}
@@ -450,7 +584,8 @@ export const AdminManagement = ({
                           ref={startTimeRef}
                           type="time"
                           value={startTime}
-                          onChange={e => { setStartTime(e.target.value); setErrors({ ...errors, startDate: '' }); }}
+                          onChange={handleStartTimeChange}
+                          min={startDateObj && isToday(startDateObj) ? getCurrentTime() : undefined}
                           className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
                           style={{ color: 'white' }}
                         />
@@ -461,19 +596,20 @@ export const AdminManagement = ({
                 </div>
                 {/* End date */}
                 <div>
-                  <Label className="text-white font-normal mb-3 block">End date</Label>
+                  <Label className="text-white font-light mb-3 block">End date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <button
                         type="button"
                         className="w-full bg-[#272727] text-[#D7DFEF] border-none pl-10 mt-2 flex items-center h-10 rounded-md relative"
                         style={{ textAlign: 'left' }}
+                        disabled={!startDateObj || !startTime}
                       >
                         <span className="absolute left-3 top-1/2 -translate-y-1/2">
                           <CalendarIcon className="h-5 w-5 text-white" />
                         </span>
-                        <span className={endDateObj ? '' : 'text-[#667085]'}>
-                          {formatDateTimeForDisplay(endDateObj, endTime)}
+                        <span className={endDateObj ? '' : 'text-[#FFFFFFBF]'}>
+                          {!startDateObj || !startTime ? 'Set start date first' : formatDateTimeForDisplay(endDateObj, endTime)}
                         </span>
                         {(endDateObj || endTime) && (
                           <button
@@ -490,10 +626,13 @@ export const AdminManagement = ({
                       <Calendar
                         mode="single"
                         selected={endDateObj || undefined}
-                        onSelect={date => setEndDateObj(date as Date)}
+                        onSelect={setEndDateObj}
                         initialFocus
                         showOutsideDays
-                        disabled={date => date < new Date(new Date().setHours(0,0,0,0))}
+                        disabled={date => {
+                          if (!startDateObj) return true;
+                          return date < startDateObj;
+                        }}
                       />
                       <div className="flex items-center gap-2 p-2">
                         <span className="text-xs text-white">Time:</span>
@@ -501,13 +640,16 @@ export const AdminManagement = ({
                           ref={endTimeRef}
                           type="time"
                           value={endTime}
-                          onChange={e => setEndTime(e.target.value)}
+                          onChange={handleEndTimeChange}
+                          min={endDateObj?.getTime() === startDateObj?.getTime() ? startTime : undefined}
                           className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
                           style={{ color: 'white' }}
+                          disabled={!endDateObj}
                         />
                       </div>
                     </PopoverContent>
                   </Popover>
+                  {errors.endDate && <div className="text-destructive text-xs mt-1">{errors.endDate}</div>}
                 </div>
               </form>
             </CardContent>
@@ -561,14 +703,14 @@ export const AdminManagement = ({
 
             {activeTab === 'livestreams' && (
               <div className="flex items-center justify-end w-full">
-                <div className="relative mr-2" style={{ border: '1px solid #2D343E' }}>
+                <div className="relative rounded-md mr-2" style={{ border: '1px solid #2D343E' }}>
                   <Input
                     id="search-streams"
                     type="text"
                     placeholder="Search"
                     value={searchStreamQuery}
                     onChange={e => setSearchStreamQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 rounded-md"
                     style={{ minWidth: 180 }}
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

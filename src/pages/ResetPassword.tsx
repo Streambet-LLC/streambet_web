@@ -64,9 +64,9 @@ const ResetPassword = () => {
       <div className="flex min-h-screen justify-center pt-16 pb-8">
         <div className="w-full max-w-md">
           <div className="mb-6">
-            <img src="/logo.png" alt="StreamBet Logo" className="mb-4" />
+            <img src="/logo.svg" alt="StreamBet Logo" className="mb-6 w-[121px]" />
             <h1 className="text-3xl font-bold text-white text-left">Set a new password</h1>
-            <p className="text-[#FFFFFFBF] mt-2 text-left">Enter your new password below.</p>
+            <p className="text-[#FFFFFFBF] mt-3 text-left font-light">Enter your new password below.</p>
           </div>
 
           <Card className="bg-transparent border-0 p-0">
@@ -89,7 +89,7 @@ const ResetPassword = () => {
                 </Alert>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Label htmlFor="password" className="text-white">
                       New Password
                     </Label>
@@ -102,10 +102,10 @@ const ResetPassword = () => {
                       onFocus={() => setIsFocused(true)}
                       onBlur={() => setIsFocused(false)}
                       required
-                      className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${!isFocused ? 'border-sidebar-border' : ''}`}
+                      className={`bg-[#272727]/80 border-none text-white placeholder:text-gray-400 ${!isFocused ? 'border-sidebar-border' : ''}`}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Label htmlFor="confirmPassword" className="text-white">
                       Confirm Password
                     </Label>

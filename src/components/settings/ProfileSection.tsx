@@ -4,10 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getMessage } from '@/utils/helper';
-import { useDebounce } from '@/lib/utils';
+import { getImageLink, getMessage } from '@/utils/helper';
+import { cn, useDebounce } from '@/lib/utils';
 import api from '@/integrations/api/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -21,10 +21,12 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { AvatarUploadField } from '@/components/AvatarUploadField';
 import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 const formSchema = z.object({
   name: z.string().optional(),
@@ -35,7 +37,11 @@ const formSchema = z.object({
     .refine(val => !val.includes(' '), 'Username cannot contain spaces'),
   email: z.string().email().optional(),
   city: z.string().optional(),
-  state: z.string().optional(),
+  state: z
+    .string()
+    .optional()
+    .transform(val => val?.replace(/^\s+/, '')) // Only trim leading spaces
+    .refine(val => !val?.startsWith(' '), 'State cannot start with a space'),
   avatar: z.any().optional(),
 });
 
@@ -63,6 +69,13 @@ export const ProfileSection = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [userNameCheck, setUserNameCheck] = useState('');
   const [open, setOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | undefined>(undefined);
+  const [avatarDeleted, setAvatarDeleted] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(formSchema),
@@ -74,6 +87,7 @@ export const ProfileSection = ({
       email: currentProfile?.email ?? '',
       avatar: currentAvatar,
     },
+    mode: 'onChange',
   });
 
   const { data: session } = useQuery({
@@ -132,7 +146,35 @@ export const ProfileSection = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usernameData, currentUsername]);
 
+  // Update preview when selected file changes
+  useEffect(() => {
+    if (selectedAvatarFile)
+    {
+      console.log('selectedAvatarFile set')
+      setAvatarPreviewUrl(URL.createObjectURL(selectedAvatarFile));
+      return () => URL.revokeObjectURL(avatarPreviewUrl!);
+    } else if (currentAvatar)
+    {
+      console.log('currentAvatar set')
+      setAvatarPreviewUrl(currentAvatar);
+    } else
+    {
+      console.log('undefined set')
+      setAvatarPreviewUrl(undefined);
+    }
+    // eslint-disable-next-line
+  }, [selectedAvatarFile, currentAvatar]);
+
   const handleProfileUpdate = async (data: ProfileFormData) => {
+    // Prevent submission if avatarError exists
+    if (avatarError) {
+      toast({
+        title: 'Error',
+        description: avatarError,
+        variant: 'destructive',
+      });
+      return;
+    }
     try {
       setIsUpdating(true);
 
@@ -140,9 +182,11 @@ export const ProfileSection = ({
 
       let profileImageUrl = '';
 
-      if (data.avatar && typeof data.avatar === 'object' && data.avatar?.name) {
+      // Only upload if a new file is selected
+      if (selectedAvatarFile) {
         try {
-          const response = await api.auth.uploadImage(data.avatar);
+          setIsUploading(true);
+          const response = await api.auth.uploadImage(selectedAvatarFile);
           profileImageUrl = response?.data?.Key;
         } catch (error) {
           toast({
@@ -150,16 +194,32 @@ export const ProfileSection = ({
             title: 'Error uploading profile picture',
             description: getMessage(error) || 'Failed to upload profile picture. Please try again.',
           });
+          setIsUploading(false);
+          setIsUpdating(false);
+          return;
         }
+        setIsUploading(false);
       }
-      
+
+      // Determine what to save for profileImageUrl
+      let profileImageUrlToSave: string | null = null;
+      if (avatarDeleted) {
+        profileImageUrlToSave = null;
+      } else if (selectedAvatarFile) {
+        profileImageUrlToSave = profileImageUrl;
+      } else if (!currentAvatar) {
+        profileImageUrlToSave = null;
+      } else {
+        profileImageUrlToSave = currentAvatar;
+      }
+
       // Update profile with only the fields we want to keep
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           username: data.username,
           state: data.state,
-          profileImageUrl: profileImageUrl || currentAvatar || undefined,
+          profileImageUrl: profileImageUrlToSave,
           // Set hidden fields to undefined
           name: undefined,
           city: undefined,
@@ -174,15 +234,23 @@ export const ProfileSection = ({
         title: 'Success',
         description: 'Profile updated successfully',
       });
+      // Reset selected file after successful update
+      // setSelectedAvatarFile(null);
+      setAvatarDeleted(false);
+      // Update preview to new avatar or fallback after save
+      if (profileImageUrlToSave) {
+        setAvatarPreviewUrl(profileImageUrlToSave);
+      } else {
+        setAvatarPreviewUrl(undefined);
+      }
     } catch (error: any) {
       toast({
         title: 'Error',
         description: getMessage(error),
         variant: 'destructive',
       });
-    } finally {
-      setIsUpdating(false);
     }
+    setIsUpdating(false);
   };
 
   const handlePasswordUpdate = async (data: changePasswordData) => {
@@ -223,12 +291,60 @@ export const ProfileSection = ({
     navigate('/');
   };
 
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileChange(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileChange(e.target.files[0]);
+    }
+  };
+
+  const handleFileChange = (file: File) => {
+    setAvatarError(null);
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError('Please upload a file smaller than 2MB.');
+      return;
+    }
+    setSelectedAvatarFile(file);
+  };
+
+  const handleDeleteAvatar = () => {
+    setSelectedAvatarFile(null);
+    setAvatarPreviewUrl(undefined);
+    setAvatarError(null);
+    form.reset({ ...form.getValues(), avatar: undefined });
+    setAvatarDeleted(true);
+  };
+
+  console.log('avatarPreviewUrl', avatarPreviewUrl);
+  console.log('currentAvatar', currentAvatar);
   return (
     <div className="space-y-6">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-lg font-normal text-white">Settings</h2>
+          <h2 className="text-lg font-light text-white">Settings</h2>
           <p className="text-sm text-[#FFFFFFBF] mt-1">Update your photo and personal details here.</p>
         </div>
         <div className="flex gap-3">
@@ -241,7 +357,7 @@ export const ProfileSection = ({
           </Button>
           <Button 
             onClick={form.handleSubmit(handleProfileUpdate)}
-            disabled={isUpdating}
+            disabled={isUpdating || !!avatarError || !form.formState.isValid}
             className="w-full"
           >
             {isUpdating ? (
@@ -256,7 +372,7 @@ export const ProfileSection = ({
         </div>
       </div>
 
-      <Separator className="bg-gray-700" />
+      <Separator className="bg-gray-900" />
 
       {/* Form Section */}
       <Form {...form}>
@@ -266,7 +382,7 @@ export const ProfileSection = ({
             name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white font-normal">Username</FormLabel>
+                <FormLabel className="text-white font-light">Username</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input 
@@ -344,7 +460,7 @@ export const ProfileSection = ({
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white font-normal">Email</FormLabel>
+                <FormLabel className="text-white font-light">Email</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="Email" 
@@ -363,11 +479,16 @@ export const ProfileSection = ({
             name="state"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white font-normal">State</FormLabel>
+                <FormLabel className="text-white font-light">State</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="State" 
                     {...field} 
+                    value={field.value || ''}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/^\s+/, ''); // Only trim leading spaces
+                      field.onChange(value);
+                    }}
                     className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
                   />
                 </FormControl>
@@ -386,18 +507,72 @@ export const ProfileSection = ({
               setOpen={setOpen}
             />
           </div>
-          <Separator className="bg-gray-700" />
+          <Separator className="bg-gray-900" />
           {/* Profile Picture Section */}
           <div className="space-y-4">
-          <div>
-            <h2 className="text-md font-normal text-white">Your photo</h2>
-            <p className="text-sm text-[#FFFFFF] mt-1">This will be displayed on your profile.</p>
-          </div>
-            <AvatarUploadField
-              form={form}
-              name="avatar"
-              label=""
-            />
+            <div>
+              <h2 className="text-md font-light text-white">Your photo</h2>
+              <p className="text-sm text-[#FFFFFF] mt-1">This will be displayed on your profile.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              {/* Left: Preview */}
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={avatarPreviewUrl ? (avatarPreviewUrl.includes('blob') ?  avatarPreviewUrl : getImageLink(avatarPreviewUrl)) : undefined} />
+                <AvatarFallback>
+                  {(session?.username?.[0] || session?.email?.[0] || 'U').toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              {/* <div className="w-[120px] h-[120px] bg-[#808080] flex items-center justify-center rounded-full overflow-hidden border border-[#272727]">
+                {avatarPreviewUrl ? (
+                  <img src={avatarPreviewUrl} alt="Avatar preview" className="object-cover w-full h-full" />
+                ) : (
+                  <span className="text-white text-xs">No image</span>
+                )}
+              </div> */}
+              {/* Right: Upload */}
+              <div
+                className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-dashed border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''}`}
+                style={{ minHeight: 120 }}
+                onClick={isUploading ? undefined : handleUploadClick}
+                onDrop={isUploading ? undefined : handleDrop}
+                onDragOver={isUploading ? undefined : handleDragOver}
+                onDragLeave={isUploading ? undefined : handleDragLeave}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileInputChange}
+                  disabled={isUploading}
+                />
+                <div className="flex flex-col items-center mt-2">
+                  <div className="flex items-center justify-center mb-1 relative">
+                    <div className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center" style={{ width: 44, height: 44 }}>
+                      {isUploading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      ) : (
+                        <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
+                      )}
+                    </div>
+                    {avatarPreviewUrl && !isUploading && (
+                      <button
+                        type="button"
+                        className="absolute -top-2 -right-2 bg-[#232323] rounded-full p-1 hover:bg-destructive"
+                        onClick={e => { e.stopPropagation(); handleDeleteAvatar(); }}
+                      >
+                        <X className="h-4 w-4 text-white" />
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-sm text-center" style={{ lineHeight: '1.7' }}>
+                    <span className="text-primary font-semibold">Click to upload</span> or drag and drop<br />
+                    <span className="text-[#667085]">SVG, PNG, JPG or GIF (max. 2MB)</span>
+                  </span>
+                  {avatarError && <div className="text-destructive text-xs mt-1">{avatarError}</div>}
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       </Form>
@@ -466,28 +641,29 @@ function PasswordChangeDialog({
       </DialogTrigger>
       <DialogContent
         className="p-6 rounded-lg border-2 border-[#7AFF14]"
-        style={{ background: '#0D0D0D', borderRadius: '16px', minWidth: 340, maxWidth: 360 }}
+        style={{ background: '#0D0D0D', borderRadius: '16px', minWidth: 340, maxWidth: 480 }}
       >
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2 mb-2">
             <Button
               onClick={handleBack}
               className="px-3 py-1 text-white flex items-center"
-              style={{ background: '#272727', color: '#fff' }}
+              style={{ background: '#272727', color: '#fff', width: 94 }}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 mr-0" />
               Back
             </Button>
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-base font-medium text-white text-left">
+              <span className="text-base font-light text-white text-left">
                 {step === 'old' ? 'Enter your old password' : 'Enter your new password'}
               </span>
               <Button onClick={handleContinue} disabled={isUpdating} className="ml-4">
                 {isUpdating ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : 'Continue'}
               </Button>
             </div>
+            <Separator className="mt-4 mb-6 bg-[#232323]" />
             <label className="block text-sm text-white mb-1" htmlFor="password-input">
               {step === 'old' ? 'Old password' : 'New password'}
             </label>
@@ -499,7 +675,7 @@ function PasswordChangeDialog({
                 step === 'old' ? setOldPassword(e.target.value) : setNewPassword(e.target.value)
               }
               className="w-full border-none text-white placeholder:text-gray-400"
-              style={{ background: '#272727' }}
+              style={{ background: '#272727', height: 44 }}
               autoFocus
             />
             {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
