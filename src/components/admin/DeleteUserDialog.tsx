@@ -24,7 +24,7 @@ export function DeleteUserDialog({ user, onConfirm }: { user: any; onConfirm: ()
           />
         </div>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className='border-2 border-[#7AFF14]' style={{ background: '#0D0D0D',}}>
         <DialogHeader>
           <DialogTitle>Delete User</DialogTitle>
         </DialogHeader>

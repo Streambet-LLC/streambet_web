@@ -218,9 +218,9 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="mb-6">
-            <img src="/logo.png" alt="StreamBet Logo" className="mb-4" />
-            <h1 className="text-3xl font-bold text-white text-left">Log in</h1>
-            <p className="text-[#FFFFFFBF] mt-2 text-left">
+            <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-6" />
+            <h1 className="text-3xl font-bold text-white text-left mb-4">Log in</h1>
+            <p className="text-[#FFFFFFBF] mt-2 text-left mb-4">
               Welcome back! Please enter your details.
             </p>
           </div>
@@ -230,55 +230,56 @@ export default function Login() {
               <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4 p-0">
                   <motion.div variants={itemVariants} className="space-y-2">
-                    <Label htmlFor="email">Email or Username</Label>
+                    <Label htmlFor="email" className='pb-2'>Email or Username</Label>
                     <Input
                       id="email"
-                      placeholder="Email or Username"
+                      placeholder="Enter your email or username"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${errors.email ? 'border-destructive' : ''}`}
+                      className={`bg-[#272727]/80 text-white placeholder:text-gray-400 ${errors.email ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 h-[44px]`}
                     />
                     {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
                   </motion.div>
                   <motion.div variants={itemVariants} className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className='pb-2'>Password</Label>
                     <Input
                       id="password"
                       type="password"
+                      placeholder='Enter your password'
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''}`}
+                      className={`bg-[#272727]/80 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 h-[44px]`}
                     />
                     {errors.password && (
                       <p className="text-destructive text-sm">{errors.password}</p>
                     )}
                   </motion.div>
                   {/* Remember me and Forgot password link */}
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between pt-2 pb-2">
                     <div className="flex items-center">
                       <Checkbox
                         id="rememberMe"
                         checked={rememberMe}
                         onCheckedChange={checked => setRememberMe(!!checked)}
-                        className="mr-2"
+                        className="appearance-none w-4 h-4 border-[1.5px] border-[#D0D5DD] rounded-sm bg-white checked:bg-white checked:border-[#D0D5DD] checked:before:content-['✔'] checked:before:text-black checked:before:text-[10px] checked:before:block checked:before:text-center mr-2"
                       />
-                      <Label htmlFor="rememberMe" className="text-sm select-none text-white">
-                        Remember me to 30 days
+                      <Label htmlFor="rememberMe" className="text-sm select-none font-medium text-white">
+                        Remember for 30 days
                       </Label>
                     </div>
                     <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                      Forgot password?
+                      Forgot password
                     </Link>
                   </div>
                   <motion.div variants={itemVariants}>
-                    <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+                    <Button type="submit" className="w-full h-[44px]" disabled={loginMutation.isPending}>
                       {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
                     </Button>
                   </motion.div>
                   <motion.div variants={itemVariants}>
                     <Button
                       type="button"
-                      className="w-full flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
+                      className="w-full h-[44px] flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
                       onClick={handleGoogleLogin}
                       disabled={googleLoginMutation.isPending}
                     >
@@ -306,7 +307,7 @@ export default function Login() {
                 </CardContent>
               </form>
               <CardFooter className="flex flex-col space-y-2">
-                <motion.div variants={itemVariants} className="text-center w-full mt-1">
+                <motion.div variants={itemVariants} className="text-center w-full mt-7">
                   <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
                     <Link to="/signup" className="text-primary hover:underline">

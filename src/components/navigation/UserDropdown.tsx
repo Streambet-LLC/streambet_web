@@ -38,8 +38,12 @@ export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => 
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{profile?.username || 'User'}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+            <p className="text-sm font-medium leading-none truncate max-w-[180px]">
+              {profile?.username || 'User'}
+            </p>
+            <p className="text-xs leading-none text-muted-foreground truncate max-w-[180px]">
+              {user?.email}
+            </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

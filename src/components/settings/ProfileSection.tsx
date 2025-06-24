@@ -465,7 +465,7 @@ function PasswordChangeDialog({
         </Button>
       </DialogTrigger>
       <DialogContent
-        className="p-6 rounded-lg"
+        className="p-6 rounded-lg border-2 border-[#7AFF14]"
         style={{ background: '#0D0D0D', borderRadius: '16px', minWidth: 340, maxWidth: 360 }}
       >
         <div className="flex flex-col gap-4">

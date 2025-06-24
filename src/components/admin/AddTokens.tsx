@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
+  DialogOverlay,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
@@ -47,11 +48,13 @@ const AddTokens: React.FC<WalletCellProps> = ({
               />
             </div>
         </DialogTrigger>
+
+        {/* <DialogOverlay className="fixed inset-0 bg-black/0 backdrop-blur-sm" /> */}
   
-        <DialogContent className="bg-[#121212] text-white sm:rounded-xl px-6 pt-4 pb-6"  hideCloseButton>
+        <DialogContent className="bg-[#0D0D0D] text-white sm:rounded-xl px-6 pt-4 pb-6 border-2 border-[#7AFF14]"  hideCloseButton style={{ background: '#0D0D0D',}}>
         <DialogClose asChild>
-            <button className="text-white bg-[#272727] w-[94px] h-[44px] rounded-md justify-center text-sm flex items-center">
-            <div className="w-[14px] h-[14px] mr-2">
+            <button className="text-white bg-[#272727] w-[90px] h-[44px] rounded-md justify-center text-sm flex items-center">
+            <div className="w-[14px] h-[14px] mr-3">
                 <img
                     src="/icons/back.svg"
                     className="w-[100%] h-[100%] object-contain cursor-pointer"
@@ -61,10 +64,10 @@ const AddTokens: React.FC<WalletCellProps> = ({
             </button>
           </DialogClose>
 
-        <div className="flex items-center justify-between mb-4 mt-6">
+        <div className="flex items-center justify-between  mt-0">
        
 
-          <h2 className="text-lg font-medium">{username}</h2>
+          <h2 className="text-lg font-medium truncate max-w-[180px] capitalize">{username}</h2>
 
           <Button
             onClick={handleSave}
@@ -73,6 +76,7 @@ const AddTokens: React.FC<WalletCellProps> = ({
             Save changes
           </Button>
         </div>
+        <hr style={{ border: 0, borderTop: '1px solid rgba(25, 29, 36, 1)', margin: '0 0 0px 0' }} />
 
 
         <div className="text-center">
@@ -81,7 +85,7 @@ const AddTokens: React.FC<WalletCellProps> = ({
             <Button
               onClick={() => setAdjustAmount(String((parseInt(adjustAmount) || 0) - 100))}
               disabled={parsedAmount < 100}
-              className={`bg-[#272727] px-3 text-white py-2 rounded text-sm font-normal ${
+              className={`bg-[#272727] px-3 text-white py-2 rounded-lg text-sm font-normal ${
                 parsedAmount < 100 ? 'opacity-50 cursor-not-allowed' : 'text-white'
                 }`}
             >
@@ -90,7 +94,7 @@ const AddTokens: React.FC<WalletCellProps> = ({
             <Button
              onClick={() => setAdjustAmount(String((parseInt(adjustAmount) || 0) - 10))}
              disabled={parsedAmount < 10}
-             className={`bg-[#272727] px-3 py-2 rounded text-[#FFFFFF] text-sm font-normal ${
+             className={`bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal ${
                parsedAmount < 10 ? 'opacity-50 cursor-not-allowed' : 'text-white'
              }`}
             >
@@ -100,17 +104,17 @@ const AddTokens: React.FC<WalletCellProps> = ({
               placeholder='0'
               value={adjustAmount}
               onChange={e => setAdjustAmount(e.target.value)}
-              className="w-[100%]  bg-[#272727] px-3 py-2 rounded text-[#FFFFFF] text-sm font-normal"
+              className="w-[100%]  bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal"
             />
             <Button
              onClick={() => setAdjustAmount(String((parseInt(adjustAmount) || 0) + 10))}
-              className="bg-[#272727] px-3 py-2 rounded text-[#FFFFFF] text-sm font-normal"
+              className="bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal"
             >
               +10
             </Button>
             <Button
              onClick={() => setAdjustAmount(String((parseInt(adjustAmount) || 0) + 100))}
-              className="bg-[#272727] px-3 py-2 rounded text-[#FFFFFF] text-sm font-normal"
+              className="bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal"
             >
               +100
             </Button>
@@ -142,4 +146,3 @@ const AddTokens: React.FC<WalletCellProps> = ({
   };
   
   export default AddTokens;
-  
