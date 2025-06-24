@@ -265,7 +265,7 @@ export const AdminManagement = ({
       kickEmbedUrl,
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
-      scheduledEndTime: formatDateTimeForISO(endDateObj, endTime),
+      endTime: formatDateTimeForISO(endDateObj, endTime),
     };
 
     createStreamMutation.mutate(payload);
