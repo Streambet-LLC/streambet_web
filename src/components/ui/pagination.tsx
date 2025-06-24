@@ -53,7 +53,7 @@ const PaginationPrevious = ({
   <PaginationLink
     aria-label="Go to previous page"
     size="default"
-    className={cn('px-4 py-2 text-sm border rounded-md mr-2', className)}
+    className={cn('px-4 py-2 text-sm border rounded-md mr-2 cursor-pointer', className)}
     style={{ color: 'rgba(255, 255, 255, 0.75)', borderColor: 'rgba(45, 52, 62, 1)' }}
     {...props}
   >
@@ -67,7 +67,7 @@ const PaginationNext = ({ className, ...props }: React.ComponentProps<typeof Pag
   <PaginationLink
     aria-label="Go to next page"
     size="default"
-    className={cn('px-4 py-2 text-sm border rounded-md', className)}
+    className={cn('px-4 py-2 text-sm border rounded-md cursor-pointer', className)}
     style={{ color: 'rgba(255, 255, 255, 0.75)', borderColor: 'rgba(45, 52, 62, 1)' }}
     {...props}
   >
