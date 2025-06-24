@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { DeleteUserDialog } from './DeleteUserDialog';
 import AddTokens from './AddTokens';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface Props {
@@ -29,6 +30,7 @@ interface Props {
 
 export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
 
+  const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
@@ -89,6 +91,11 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     },
     onSuccess: () => {
       refetchProfiles();
+      toast({
+        description:
+          "User deleted successfuly",
+        variant: 'default',
+      });
     },
   });
 
@@ -102,13 +109,13 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Token Balance</TableHead>
-              <TableHead>status</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead></TableHead>
-              <TableHead></TableHead>
-              <TableHead></TableHead>
-              <TableHead></TableHead>
+              <TableHead>Verification</TableHead>
+              <TableHead>Actions</TableHead>
+              <TableHead>Tokens</TableHead>
+              <TableHead>Delete</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -121,7 +128,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
             ) : (
               paginatedUsers?.map(user => (
                 <TableRow key={user.id}>
-                  <TableCell className="truncate whitespace-nowrap overflow-hidden max-w-[180px]">
+                  <TableCell className="truncate whitespace-nowrap overflow-hidden max-w-[180px] capitalize">
                     {user.username}
 
                     {user.role === 'admin' && (
@@ -167,15 +174,16 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       }}
                     />
                   </TableCell>
-                  <TableCell className="cursor-pointer">
+                  <TableCell className="cursor-pointer" title="Token Allocation">
                     <AddTokens
                       currentBalance={user?.wallet?.freeTokens}
                       username={user.username}
                       onSave={(newBalance) => {
                         mutationTokens.mutate({ userId: user.id, amount: newBalance});
-                      }}/>
+                      }}
+                    />
                   </TableCell>
-                  <TableCell className="cursor-pointer">
+                  <TableCell className="cursor-pointer" title="Delete">
                     <DeleteUserDialog
                       user={user?.username}
                       onConfirm={() => {
