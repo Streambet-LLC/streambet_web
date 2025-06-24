@@ -474,7 +474,7 @@ export default function SignUp() {
                     <div className="relative">
                       <Input
                         id="username"
-                        placeholder="Emter your username"
+                        placeholder="Enter your username"
                         value={username}
                         onChange={e => setUsername(e.target.value)}
                         className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.username ? 'border-destructive' : ''} ${username.length >= 3 && !username.includes(' ') ? 'pr-10' : ''} border-0 focus:border-0 focus:ring-0`}
