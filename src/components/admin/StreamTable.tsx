@@ -83,7 +83,7 @@ export const StreamTable: React.FC<Props> = ({ streams, refetchStreams }) => {
              <TableHead>Actions</TableHead>
            </TableRow>
          </TableHeader>
-         <TableBody className="[&_td]:font-normal">
+         <TableBody className="[&_td]:font-light">
            {streams?.length ? streams?.map(stream => (
              <TableRow key={stream?.id}>
                <TableCell className="font-medium">{stream?.name}</TableCell>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,8 @@ export default function SignUp() {
   const googleLoginRef = useRef<HTMLDivElement>(null);
   const [dob, setDob] = useState<Date | undefined>(undefined);
   const [currentMonth, setCurrentMonth] = useState<Date | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const lastClickTimeRef = useRef<number>(0);
 
   const signupSchema = z.object({
     username: z
@@ -128,14 +130,10 @@ export default function SignUp() {
     checkLocation();
   }, [toast]);
 
-  // Initialize currentMonth when dob changes or component mounts
+  // Initialize currentMonth when component mounts
   useEffect(() => {
-    if (dob) {
-      setCurrentMonth(dob);
-    } else {
-      setCurrentMonth(new Date());
-    }
-  }, [dob]);
+    setCurrentMonth(new Date());
+  }, []);
 
   const { data: session } = useQuery({
     queryKey: ['session'],
@@ -318,7 +316,7 @@ export default function SignUp() {
     }
 
     // Format dob as YYYY-MM-DD string for payload
-    const dobFormatted = dob ? dob.toISOString().slice(0, 10) : undefined;
+    const dobFormatted = dob ? formatDateForAPI(dob) : undefined;
 
     signupMutation.mutate({
       username,
@@ -437,6 +435,59 @@ export default function SignUp() {
     return null;
   };
 
+  // Helper function to format date as YYYY-MM-DD without timezone issues
+  const formatDateForAPI = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper function to format date for display
+  const formatDateForDisplay = (date: Date): string => {
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  };
+
+  // Debounced date selection handler to prevent double-click issues
+  const handleDateSelect = useCallback((date: Date | undefined) => {
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTimeRef.current;
+    
+    // Prevent rapid successive clicks (less than 300ms apart)
+    if (timeSinceLastClick < 300) {
+      return;
+    }
+    
+    lastClickTimeRef.current = now;
+    
+    if (date) {
+      // Add a small delay to ensure proper processing
+      setTimeout(() => {
+        setDob(date);
+        form.setValue('dob', date, { shouldValidate: true });
+        setIsDatePickerOpen(false);
+      }, 50);
+    }
+  }, [form]);
+
+  // Debounced click handler for opening the date picker
+  const handleInputClick = useCallback(() => {
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTimeRef.current;
+    
+    // Prevent rapid successive clicks (less than 300ms apart)
+    if (timeSinceLastClick < 300) {
+      return;
+    }
+    
+    lastClickTimeRef.current = now;
+    setIsDatePickerOpen(true);
+  }, []);
+
   return (
     <>
       <div className="auth-bg-gradient" />
@@ -448,7 +499,7 @@ export default function SignUp() {
           className="w-full max-w-md"
         >
           <div className="mb-6">
-            <img src="/logo.png" alt="StreamBet Logo" className="mb-4" />
+            <img src="/logo.svg" alt="StreamBet Logo" className="mb-4 w-[121px]" />
             <h1 className="text-3xl font-bold text-white text-left">Create an account</h1>
             <p className="text-[#FFFFFFBF] mt-2 text-left">
               Enter your details below to create an account
@@ -577,35 +628,54 @@ export default function SignUp() {
                   </motion.div>
                   <motion.div variants={itemVariants} className="space-y-2">
                     <Label htmlFor="dob">Date of Birth</Label>
-                    <Popover>
+                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <div className="relative">
                           <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                           <Input
                             id="dob"
                             type="text"
-                            value={dob ? dob.toLocaleDateString() : ''}
+                            value={dob ? formatDateForDisplay(dob) : ''}
                             placeholder="Select your date of birth"
                             readOnly
                             className={`bg-[#272727]/80 border-gray-700 text-white placeholder:text-gray-400 pl-10 ${errors.dob ? 'border-destructive' : ''}`}
                             disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                            onClick={handleInputClick}
                           />
                         </div>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 select-none" align="start">
                         <Calendar
+                          key="dob-calendar"
                           mode="single"
                           selected={dob}
                           month={currentMonth}
                           onMonthChange={setCurrentMonth}
-                          onSelect={date => {
-                            setDob(date as Date);
-                            setCurrentMonth(date as Date);
-                            form.setValue('dob', date as Date, { shouldValidate: true });
-                          }}
+                          onSelect={handleDateSelect}
                           captionLayout="dropdown"
                           components={{
                             CaptionLabel: () => null,
+                            Dropdown: ({ children, value, onChange, className = '', style, ...rest }) => (
+                              <select
+                                value={value}
+                                onChange={onChange}
+                                className={`bg-black text-white rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary border border-gray-700 ${className}`}
+                                style={{ minWidth: 80, ...style }}
+                                {...rest}
+                              >
+                                {children}
+                              </select>
+                            ),
+                          }}
+                          classNames={{
+                            caption_dropdowns: 'flex gap-[5px] justify-center',
+                            day: 'select-none',
+                            day_selected: 'select-none',
+                            day_today: 'select-none',
+                            day_outside: 'select-none',
+                            day_disabled: 'select-none',
+                            day_range_middle: 'select-none',
+                            day_hidden: 'select-none',
                           }}
                           fromYear={1900}
                           toYear={new Date().getFullYear()}
@@ -624,7 +694,7 @@ export default function SignUp() {
                     />
                     <Label htmlFor="tosAccepted" className="text-sm">
                       I accept the{' '}
-                      <Link to="/terms" className="text-primary hover:underline">
+                      <Link to="/terms" target="_blank" className="text-primary hover:underline">
                         Terms of Service
                       </Link>
                     </Label>

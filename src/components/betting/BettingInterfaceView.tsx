@@ -286,7 +286,7 @@ export const BettingInterfaceView = ({
             Place Your Bet
             <span
               className={cn(
-                'ml-3 text-sm font-normal px-2 py-0.5 rounded-full',
+                'ml-3 text-sm font-light px-2 py-0.5 rounded-full',
                 bettingOutcome
                   ? 'bg-primary/20 text-primary'
                   : bettingLocked

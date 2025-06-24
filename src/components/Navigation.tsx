@@ -92,7 +92,7 @@ export const Navigation = () => {
       <div className="container flex h-16 items-center">
         <motion.div variants={logoVariants} initial="hidden" animate="visible">
           <Link to="/" className="flex items-center">
-            <img src="./logo.png" alt="Streambet Logo" className="h-8 w-auto object-contain" />
+            <img src="./logo.svg" alt="Streambet Logo" className="h-8 w-[121px] object-contain" />
           </Link>
         </motion.div>
 
@@ -110,7 +110,7 @@ export const Navigation = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex items-center gap-2 font-normal transition-colors px-3 py-2 ${
+                  className={`flex items-center gap-2 font-light transition-colors px-3 py-2 ${
                     isActive
                       ? 'text-white'
                       : 'text-[#FFFFFF80] hover:text-white'

@@ -20,6 +20,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import GoogleCallback from './pages/GoogleCallback';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
+import NotFound from './pages/NotFound';
 
 
 // Create a client
@@ -86,6 +87,7 @@ const App = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/auth/google-callback" element={<GoogleCallback />} />
               <Route path="/auth/verify-email" element={<VerifyEmail />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>
         </BrowserRouter>

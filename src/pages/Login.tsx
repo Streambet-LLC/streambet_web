@@ -218,7 +218,7 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="mb-6">
-            <img src="/logo.png" alt="StreamBet Logo" className="mb-4" />
+            <img src="/logo.svg" alt="StreamBet Logo" className="mb-4 w-[121px]" />
             <h1 className="text-3xl font-bold text-white text-left">Log in</h1>
             <p className="text-[#FFFFFFBF] mt-2 text-left">
               Welcome back! Please enter your details.
@@ -263,7 +263,7 @@ export default function Login() {
                         className="mr-2"
                       />
                       <Label htmlFor="rememberMe" className="text-sm select-none text-white">
-                        Remember me to 30 days
+                        Remember for 30 days
                       </Label>
                     </div>
                     <Link to="/forgot-password" className="text-sm text-primary hover:underline">

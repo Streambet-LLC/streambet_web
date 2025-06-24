@@ -187,7 +187,7 @@ export function WalletHistory() {
                   </TableCell>
                   <TableCell>{transaction.description || 'No description'}</TableCell>
                   <TableCell>
-                    {formatDistanceToNow(new Date(transaction.created_at), { addSuffix: true })}
+                    {!!transaction.created_at && formatDistanceToNow(new Date(transaction.created_at), { addSuffix: true })}
                   </TableCell>
                   <TableCell
                     className={`text-right font-medium ${

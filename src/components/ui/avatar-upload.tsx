@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { X, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 
 interface AvatarUploadProps {
   value?: string;
@@ -90,6 +91,16 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
       }
     };
 
+    const { data: session } = useQuery<any>({
+      queryKey: ['session'],
+      enabled: false,
+    });
+  
+    const { data: profile } = useQuery<any>({
+      queryKey: ['profile', session?.id],
+      enabled: !!session?.id,
+    });
+
     return (
       <div ref={ref} className={cn('relative inline-block', className)}>
         <div
@@ -107,7 +118,7 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
           <Avatar className={cn(sizeClasses[size])}>
             <AvatarImage src={preview} />
             <AvatarFallback>
-              <Upload className="h-6 w-6 text-muted-foreground" />
+            {profile?.data?.username?.[0]?.toUpperCase() || profile?.data?.email?.[0]?.toUpperCase() || <Upload className="h-6 w-6 text-muted-foreground" />}
             </AvatarFallback>
           </Avatar>
           {preview && (
