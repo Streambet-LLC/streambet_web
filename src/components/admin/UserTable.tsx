@@ -218,7 +218,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 onClick={() => handlePageChange(currentPage + 1)}
                 className={cn(
                   'text-white border-white hover:bg-white/10',
-                  currentPage === profiles?.total && 'pointer-events-none opacity-50'
+                  currentPage === totalPages && 'pointer-events-none opacity-50'
                 )}
               />
             </PaginationItem>

@@ -68,9 +68,9 @@ export default function Login() {
     mutationFn: async (credentials: { identifier: string; password: string; remember_me?: boolean }) => {
       return await api.auth.login(credentials);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['session'] });
-      navigate('/');
+      navigate(response?.data?.role === 'admin' ? '/admin' : '/');
     },
     onError: (error: any) => {
       toast({

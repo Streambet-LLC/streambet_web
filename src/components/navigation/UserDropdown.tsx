@@ -10,6 +10,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { getImageLink } from '@/utils/helper';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Profile = any;
 
@@ -30,8 +31,8 @@ export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => 
               src={profile?.profileImageUrl ? getImageLink(profile?.profileImageUrl) : undefined}
               alt={profile?.username}
             />
-            <AvatarFallback>
-              {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || ''}
+            <AvatarFallback className='bg-[#BDFF00] text-[#000000]'>
+              {profile?.username?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || ''}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -39,12 +40,30 @@ export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => 
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-light">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none truncate max-w-[180px]">
-              {profile?.username || 'User'}
-            </p>
-            <p className="text-xs leading-none text-muted-foreground truncate max-w-[180px]">
-              {user?.email}
-            </p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-sm font-medium leading-none truncate max-w-[180px] cursor-help">
+                    {profile?.username || 'User'}
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {profile?.username || 'User'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-xs leading-none text-muted-foreground truncate max-w-[180px] cursor-help pb-[1px]">
+                    {user?.email}
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {user?.email}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

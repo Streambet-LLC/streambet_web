@@ -4,10 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Upload } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 import { getImageLink, getMessage } from '@/utils/helper';
-import { cn, useDebounce } from '@/lib/utils';
+import { useDebounce } from '@/lib/utils';
 import api from '@/integrations/api/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -23,7 +22,6 @@ import {
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { AvatarUploadField } from '@/components/AvatarUploadField';
 import { useNavigate } from 'react-router-dom';
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -218,7 +216,7 @@ export const ProfileSection = ({
         .from('profiles')
         .update({
           username: data.username,
-          state: data.state,
+          state: data.state?.trim(),
           profileImageUrl: profileImageUrlToSave,
           // Set hidden fields to undefined
           name: undefined,
@@ -531,7 +529,7 @@ export const ProfileSection = ({
               </div> */}
               {/* Right: Upload */}
               <div
-                className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-dashed border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''}`}
+                className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''}`}
                 style={{ minHeight: 120 }}
                 onClick={isUploading ? undefined : handleUploadClick}
                 onDrop={isUploading ? undefined : handleDrop}
@@ -565,8 +563,8 @@ export const ProfileSection = ({
                       </button>
                     )}
                   </div>
-                  <span className="text-sm text-center" style={{ lineHeight: '1.7' }}>
-                    <span className="text-primary font-semibold">Click to upload</span> or drag and drop<br />
+                  <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
+                    <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
                     <span className="text-[#667085]">SVG, PNG, JPG or GIF (max. 2MB)</span>
                   </span>
                   {avatarError && <div className="text-destructive text-xs mt-1">{avatarError}</div>}
@@ -595,6 +593,7 @@ function PasswordChangeDialog({
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setStep('old');
@@ -602,18 +601,52 @@ function PasswordChangeDialog({
     setNewPassword('');
   }, [open]);
 
-  // Dummy handler for continue (replace with real validation if needed)
+  // Password validation function
+  const validatePassword = (password: string) => {
+    // At least 1 uppercase, 1 lowercase, 1 number, 1 special char, min 8 chars
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    return regex.test(password);
+  };
+
   const handleContinue = () => {
     setError(null);
     if (step === 'old') {
       if (!oldPassword) {
-        setError('Please enter your old password.');
+        toast({
+          title: 'Error',
+          description: 'Please enter your old password.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (!validatePassword(oldPassword)) {
+        toast({
+          title: 'Error',
+          description:
+            'Old password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.',
+          variant: 'destructive',
+          duration: 8000,
+        });
         return;
       }
       setStep('new');
     } else if (step === 'new') {
       if (!newPassword) {
-        setError('Please enter your new password.');
+        toast({
+          title: 'Error',
+          description: 'Please enter your new password.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (!validatePassword(newPassword)) {
+        toast({
+          title: 'Error',
+          description:
+            'New password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.',
+          variant: 'destructive',
+          duration: 8000,
+        });
         return;
       }
       handleProfileUpdate({ oldPassword, newPassword });
@@ -659,7 +692,7 @@ function PasswordChangeDialog({
               <span className="text-base font-light text-white text-left">
                 {step === 'old' ? 'Enter your old password' : 'Enter your new password'}
               </span>
-              <Button onClick={handleContinue} disabled={isUpdating} className="ml-4">
+              <Button onClick={handleContinue} disabled={isUpdating} className="ml-4 font-bold">
                 {isUpdating ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : 'Continue'}
               </Button>
             </div>
@@ -674,7 +707,8 @@ function PasswordChangeDialog({
               onChange={e =>
                 step === 'old' ? setOldPassword(e.target.value) : setNewPassword(e.target.value)
               }
-              className="w-full border-none text-white placeholder:text-gray-400"
+              placeholder={step === 'old' ? 'Old password' : 'New password'}
+              className="w-full border-none text-white placeholder:text-[#D7DFEF60]"
               style={{ background: '#272727', height: 44 }}
               autoFocus
             />

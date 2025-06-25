@@ -20,7 +20,7 @@ import api from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { DeleteUserDialog } from './DeleteUserDialog';
-import { Eye, Network, Pencil, Play, Wifi, Lock } from 'lucide-react';
+import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing } from 'lucide-react';
 
 interface Props {
   streams: any;
@@ -106,9 +106,8 @@ export const StreamTable: React.FC<Props> = ({ streams, refetchStreams }) => {
                <TableCell>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <Eye color="#FFFFFFBF" size={18} />
-                  <Pencil color="#FFFFFFBF" size={18} />
-                  <Wifi color="#FFFFFFBF" size={18} />
-                  <Network color="#FFFFFFBF" size={18} />
+                  <Pen color="#FFFFFFBF" size={18} />
+                  <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={18} />
                   <Lock color="#FFFFFFBF" size={18} />
                   <Play color="#FFFFFFBF" size={18} />
                 </div>

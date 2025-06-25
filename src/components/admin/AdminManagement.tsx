@@ -498,7 +498,7 @@ export const AdminManagement = ({
                     </div>
                     {/* Right: Upload */}
                     <div
-                      className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-dashed border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''} ${errors.thumbnail ? 'border-red-500' : ''}`}
+                      className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''} ${errors.thumbnail ? 'border-red-500' : ''}`}
                       style={{ minHeight: 120 }}
                       onClick={isUploading ? undefined : handleUploadClick}
                       onDrop={isUploading ? undefined : handleDrop}
@@ -533,7 +533,7 @@ export const AdminManagement = ({
                           )}
                         </div>
                         <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
-                          <span className="text-primary font-semibold">Click to upload</span> or drag and drop<br />
+                          <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
                           <span className="text-[#667085] text-[12px]">SVG, PNG, JPG or GIF (max. 800x400px)</span>
                         </span>
                       </div>
