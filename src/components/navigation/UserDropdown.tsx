@@ -22,6 +22,7 @@ interface UserDropdownProps {
 
 export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => {
   console.log('profile user dropdown', profile)
+  console.log('getImageLink(profile?.profileImageUrl)', getImageLink(profile?.profileImageUrl))
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
