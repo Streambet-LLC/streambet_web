@@ -772,13 +772,14 @@ export default function SignUp() {
               </FormProvider>
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
-              <motion.div variants={itemVariants} className="text-center w-full">
-                <p className="text-sm font-sm text-[rgba(255, 255, 255, 0.8)] opacity-50 drop-shadow-md mt-6">
+              <motion.div variants={itemVariants} className="text-center w-full inline-flex flex-row justify-center items-center">
+                <p className="text-sm font-sm text-[rgba(255, 255, 255, 0.8)] opacity-70 drop-shadow-md mt-6">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-primary hover:underline font-sm drop-shadow-md">
+               
+                </p>
+                <Link to="/login" className="text-sm text-primary hover:underline font-md drop-shadow-md mt-6 ml-2">
                     Log in
                   </Link>
-                </p>
               </motion.div>
             </CardFooter>
           </Card>

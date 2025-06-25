@@ -98,11 +98,11 @@
   height: 30vh;
   /* Strong lime at center bottom, soft shadowy fade to sides and up */
   background: radial-gradient(
-    ellipse 52vw 40vh at 50% 100%,
-    rgba(189, 255, 0, 0.5) 0%,               /* Bright green with 70% opacity */
-    rgba(180, 255, 57, 0.25) 60%,            /* Lighter green with low opacity */
-    rgba(0, 0, 0, 0.6) 90%,                  /* Dark fade */
-    transparent 100%  
+    ellipse 52vw 30vh at 50% 100%,
+    rgba(189, 255, 0, 1) 0%,
+    rgba(180, 255, 57, 0.25) 68%,
+    rgba(0, 0, 0, 0.18) 100%,
+    transparent 100%
   );
   opacity: 1;
   pointer-events: none;
