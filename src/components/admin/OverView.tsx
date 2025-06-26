@@ -10,35 +10,35 @@ const OverView = () => {
     const totalLiveTime = 42321;
     
   return (
-    <div className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-white">
       {/* Top Stats */}
-       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-               <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                 <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+               <div className="bg-zinc-900  p-5 rounded-lg shadow h-[109px]  center">
+                 <p className="text-sm font-medium text-[rgba(255, 255, 255, 0.75)] pb-2" >
                    Users
                  </p>
-                 <p className="text-2xl font-semibold">${totalUsers}</p>
+                 <p className="text-2xl font-semibold text-[rgba(255, 255, 255, 1)]">${totalUsers}</p>
                </div>
 
-               <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
-                 <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+               <div className="bg-zinc-900 text-white p-5 rounded-lg h-[109px]  shadow relative">
+                 <p className="text-sm font-medium text-[rgba(255, 255, 255, 0.75)] pb-2">
                   Active Streams
                 </p>
                  <p className="text-2xl font-semibold">14</p>
                </div>
 
-               <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                 <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+               <div className="bg-zinc-900 text-white p-5 rounded-lg h-[109px]  shadow">
+                 <p className="text-sm font-medium text-[rgba(255, 255, 255, 0.75)] pb-2">
                    Active Bets
                  </p>
                  <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
                </div>
 
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                 <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              <div className="bg-zinc-900 text-white p-5 rounded-lg h-[109px]  shadow">
+                 <p className="text-sm font-medium text-[rgba(255, 255, 255, 0.75)] pb-2">
                    Time Live
                  </p>
-            <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
+                <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
                </div>
              </div>
 

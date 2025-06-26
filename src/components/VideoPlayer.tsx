@@ -10,12 +10,13 @@ export const VideoPlayer = ({ playbackId, thumbnailUrl }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (!playbackId || !videoRef.current) {
-      console.log('No playback ID or video ref available');
-      return;
-    }
+    // if (!playbackId || !videoRef.current) {
+    //   console.log('No playback ID or video ref available');
+    //   return;
+    // }
 
-    const playbackUrl = `https://cdn.livepeer.com/hls/${playbackId}/index.m3u8`;
+    // const playbackUrl = `https://cdn.livepeer.com/hls/${playbackId}/index.m3u8`;
+    const playbackUrl = thumbnailUrl;
     console.log('Setting up playback with URL:', playbackUrl);
 
     if (Hls.isSupported()) {
@@ -38,8 +39,9 @@ export const VideoPlayer = ({ playbackId, thumbnailUrl }: VideoPlayerProps) => {
           details: data.details,
           fatal: data.fatal,
           error: data.error,
+          // url: playbackUrl,
           url: playbackUrl,
-          playbackId,
+          // playbackId,
         });
 
         if (data.fatal) {
@@ -62,7 +64,7 @@ export const VideoPlayer = ({ playbackId, thumbnailUrl }: VideoPlayerProps) => {
 
       hls.on(Hls.Events.MANIFEST_LOADED, () => {
         console.log('HLS manifest loaded successfully for stream:', {
-          playbackId,
+          // playbackId,
           url: playbackUrl,
         });
         videoRef.current?.play().catch(error => {
@@ -81,7 +83,7 @@ export const VideoPlayer = ({ playbackId, thumbnailUrl }: VideoPlayerProps) => {
         console.error('Error attempting native HLS playback:', error);
       });
     }
-  }, [playbackId]);
+  }, []);
 
   return (
     <video

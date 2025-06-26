@@ -18,6 +18,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { getMessage } from '@/utils/helper';
+import OverView from './OverView';
 
 export const AdminManagement = ({
   streams,
@@ -728,35 +729,36 @@ export const AdminManagement = ({
             <Separator className="!mt-1" />
           {/* Tab Content */}
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Users
-                </p>
-                <p className="text-2xl font-semibold">${totalUsers}</p>
-              </div>
+            <OverView/>
+            // <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+            //       Users
+            //     </p>
+            //     <p className="text-2xl font-semibold">${totalUsers}</p>
+            //   </div>
 
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
-                <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Active Streams
-                </p>
-                <p className="text-2xl font-semibold">14</p>
-              </div>
+            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
+            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+            //       Active Streams
+            //     </p>
+            //     <p className="text-2xl font-semibold">14</p>
+            //   </div>
 
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Active Bets
-                </p>
-                <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
-              </div>
+            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+            //       Active Bets
+            //     </p>
+            //     <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
+            //   </div>
 
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Time Live
-                </p>
-                <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
-              </div>
-            </div>
+            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+            //       Time Live
+            //     </p>
+            //     <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
+            //   </div>
+            // </div>
           )}
 
           {activeTab === 'livestreams' && (

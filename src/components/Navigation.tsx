@@ -76,7 +76,7 @@ export const Navigation = () => {
   const menuItems = [
     profile?.data?.role === 'admin' && { label: 'Dashboard', icon: undefined, path: '/admin' },
     { label: 'Home', icon: undefined, path: '/' },
-    { label: 'Streams', icon: undefined, path: '/streams' },
+    { label: 'Streams', icon: undefined, path: '/stream' },
     { label: 'Rewards', icon: undefined, path: '/rewards' },
     { label: 'Community', icon: undefined, path: '/community' },
   ].filter(Boolean);

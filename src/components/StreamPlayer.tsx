@@ -5,6 +5,7 @@ import { VideoPlayer } from './VideoPlayer';
 import { KickEmbed } from './stream/KickEmbed';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import ReactPlayer from 'react-player';
 
 interface StreamPlayerProps {
   streamId: string;
@@ -16,49 +17,10 @@ export const StreamPlayer = ({ streamId }: StreamPlayerProps) => {
   const [kickError, setKickError] = useState<string | null>(null);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Set up thumbnail refresh on regular intervals
-  useEffect(() => {
-    if (stream?.is_live) {
-      const refreshThumbnail = async () => {
-        try {
-          console.log('Refreshing thumbnail for stream:', streamId);
-
-          if (stream.platform === 'custom') {
-            await supabase.functions.invoke('update-thumbnail', {
-              body: { streamId },
-            });
-          } else if (stream.platform === 'kick' && stream.embed_url) {
-            await supabase.functions.invoke('capture-thumbnail', {
-              body: {
-                streamId,
-                embedUrl: stream.embed_url,
-              },
-            });
-          }
-
-          // Refetch stream data to get updated thumbnail
-          refetch();
-        } catch (error) {
-          console.error('Error refreshing thumbnail:', error);
-        }
-      };
-
-      // Initial thumbnail refresh
-      refreshThumbnail();
-
-      // Set up interval for regular refreshes (every 60 seconds)
-      refreshIntervalRef.current = setInterval(refreshThumbnail, 60000);
-
-      return () => {
-        if (refreshIntervalRef.current) {
-          clearInterval(refreshIntervalRef.current);
-        }
-      };
-    }
-  }, [streamId, stream?.is_live, stream?.platform, stream?.embed_url]);
+ 
 
   useEffect(() => {
-    if (stream?.platform === 'kick') {
+    if (stream?.data?.platformName === 'kick') {
       setKickEmbedLoading(true);
       setKickError(null);
       // Reset state when stream changes
@@ -68,15 +30,17 @@ export const StreamPlayer = ({ streamId }: StreamPlayerProps) => {
 
       return () => clearTimeout(timeout);
     }
-  }, [stream?.embed_url]);
+  }, [stream?.data?.embeddedUrl]);
 
   if (!stream) {
     return <StreamLoading />;
   }
 
-  // For Kick.com streams, check if they have a valid embed_url
-  if (stream.platform === 'kick' && stream.embed_url) {
-    console.log('Rendering Kick embed for URL:', stream.embed_url);
+  console.log(stream,"streamstreamstream")
+
+  // For Kick.com streams, check if they have a valid embeddedUrl
+  if (stream?.data?.platformName === 'kick' && stream?.data?.embeddedUrl) {
+    console.log('Rendering Kick embed for URL', stream?.data?.embeddedUrl);
 
     return (
       <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
@@ -90,17 +54,16 @@ export const StreamPlayer = ({ streamId }: StreamPlayerProps) => {
             Error loading stream: {kickError}
           </div>
         )}
-        <KickEmbed embedUrl={stream.embed_url} />
+        <KickEmbed embedUrl={stream?.data?.embeddedUrl} />
       </div>
     );
   }
 
   return (
     <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-      <VideoPlayer playbackId={stream.playback_id} thumbnailUrl={stream.thumbnail_url} />
-      {!stream.is_live && stream.platform !== 'kick' && (
-        <StreamOffline thumbnailUrl={stream.thumbnail_url} />
-      )}
+       <div className="relative w-full h-full">
+       <ReactPlayer url={stream?.data?.embeddedUrl} controls={true} width={'100%'} height={'100%'}/>
+    </div>
     </div>
   );
 };

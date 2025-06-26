@@ -71,7 +71,7 @@ const App = () => {
             {/* <WelcomeModal open={showWelcomeModal} onOpenChange={setShowWelcomeModal} /> */}
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/stream/:id" element={<Stream />} />
+              <Route path="/stream" element={<Stream />} />
               <Route path="/stream/:id/settings" element={<StreamSettings />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<SignUp />} />

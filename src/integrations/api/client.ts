@@ -320,7 +320,7 @@ export const bettingAPI = {
 
   // Get stream by ID
   getStream: async (streamId: string) => {
-    const response = await apiClient.get(`/betting/streams/${streamId}`);
+    const response = await apiClient.get(`/stream/${streamId}`);
     return response.data;
   },
 

@@ -22,7 +22,7 @@ export const CommentSection = ({
   showInputOnly = false,
 }: CommentSectionProps) => {
   const commentsEndRef = useRef<HTMLDivElement>(null);
-  const [userKey, setUserKey] = useState<string>(session?.user?.id || 'anonymous');
+  const [userKey, setUserKey] = useState<string>(session?.id || 'anonymous');
   const [autoScroll, setAutoScroll] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [hasInitialScrolled, setHasInitialScrolled] = useState(false);
@@ -32,11 +32,11 @@ export const CommentSection = ({
   const { fadeVariants, pulseVariants, scaleVariants } = useAnimations();
 
   useEffect(() => {
-    const newUserKey = session?.user?.id || 'anonymous';
+    const newUserKey = session?.id || 'anonymous';
     if (newUserKey !== userKey) {
       setUserKey(newUserKey);
     }
-  }, [session?.user?.id, userKey]);
+  }, [session?.id, userKey]);
 
   const {
     comment,
@@ -161,8 +161,8 @@ export const CommentSection = ({
       >
         <div className="flex items-center space-x-2 mb-2">
           <Avatar className="h-8 w-8">
-            {session?.user?.avatar_url ? (
-              <AvatarImage src={session.user.avatar_url} alt="Avatar" />
+            {session?.avatar_url ? (
+              <AvatarImage src={session.avatar_url} alt="Avatar" />
             ) : (
               <AvatarFallback>
                 <User size={16} />
@@ -170,7 +170,7 @@ export const CommentSection = ({
             )}
           </Avatar>
           <span className="text-sm font-medium">
-            {session?.user ? session.user.username || 'You' : 'Sign in to comment'}
+            {session ? session.username || 'You' : 'Sign in to comment'}
           </span>
         </div>
         <CommentInput
@@ -178,7 +178,7 @@ export const CommentSection = ({
           onCommentChange={handleCommentChange}
           onEmojiSelect={handleEmojiSelect}
           onSubmit={handleSubmitComment}
-          isDisabled={!session?.user || isSubmitting}
+          isDisabled={!session || isSubmitting}
         />
       </motion.div>
     );
@@ -340,8 +340,8 @@ export const CommentSection = ({
       >
         <div className="flex items-center space-x-2 mb-2">
           <Avatar className="h-8 w-8">
-            {session?.user?.avatar_url ? (
-              <AvatarImage src={session.user.avatar_url} alt="Avatar" />
+            {session?.avatar_url ? (
+              <AvatarImage src={session.avatar_url} alt="Avatar" />
             ) : (
               <AvatarFallback>
                 <User size={16} />
@@ -349,7 +349,7 @@ export const CommentSection = ({
             )}
           </Avatar>
           <span className="text-sm font-medium">
-            {session?.user ? session.user.username || 'You' : 'Sign in to comment'}
+            {session ? session.username || 'You' : 'Sign in to comment'}
           </span>
         </div>
         <CommentInput
@@ -357,7 +357,7 @@ export const CommentSection = ({
           onCommentChange={handleCommentChange}
           onEmojiSelect={handleEmojiSelect}
           onSubmit={handleSubmitComment}
-          isDisabled={!session?.user || isSubmitting}
+          isDisabled={!session || isSubmitting}
         />
       </motion.div>
     </motion.div>

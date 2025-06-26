@@ -11,7 +11,7 @@ interface BettingInterfaceProps {
 }
 
 export const BettingInterface = ({ session, stream, streamId }: BettingInterfaceProps) => {
-  const userId = session?.user?.id;
+  const userId = session?.id;
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const refreshAttemptCountRef = useRef(0);
