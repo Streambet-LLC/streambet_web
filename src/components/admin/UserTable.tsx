@@ -51,9 +51,9 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     enabled: false,
   });
 
-  useEffect(()=>{
+  useEffect(() => {
     refetchProfiles()
-  },[currentPage, searchUserQuery, refetchProfiles])
+  }, [currentPage, searchUserQuery, refetchProfiles]);
 
   const mutation = useMutation({
     mutationFn: async ({ userId, userStatus }: { userId: string; userStatus: boolean }) => {

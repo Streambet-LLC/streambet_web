@@ -5,9 +5,11 @@ import { Eye, Trash, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAnimations } from '@/hooks/useAnimations';
+import { getImageLink } from '@/utils/helper';
 
 interface StreamCardProps {
   stream: any;
+  isLive?: boolean;
   isAdmin?: boolean;
   onDelete?: (id: string) => void;
   onUpdate?: () => void;
@@ -17,42 +19,38 @@ interface StreamCardProps {
 export const StreamCard = ({
   stream,
   isAdmin,
+  isLive,
   onDelete,
   onUpdate,
   showAdminControls = false,
 }: StreamCardProps) => {
   const shouldShowAdminControls = isAdmin && showAdminControls;
   const { cardVariants } = useAnimations();
-
+  console.log('stream', stream);
   // Handle both full URLs and storage paths
   const getThumbnailUrl = () => {
-    if (!stream.thumbnail_url) {
+    if (!stream.thumbnailURL) {
       return '/placeholder.svg';
     }
 
     // If it's already a full URL (starts with http or https), use it directly
-    if (stream.thumbnail_url.startsWith('http')) {
-      return stream.thumbnail_url;
+    if (stream.thumbnailURL.startsWith('http')) {
+      return stream.thumbnailURL;
     }
 
     // If it's a storage path from bucket but doesn't have the storage URL prefix
     if (
-      stream.thumbnail_url.includes('stream-thumbnails/') &&
-      !stream.thumbnail_url.includes(import.meta.env.VITE_SUPABASE_URL)
+      stream.thumbnailURL.includes('stream-thumbnails/') &&
+      !stream.thumbnailURL.includes(import.meta.env.VITE_SUPABASE_URL)
     ) {
-      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${stream.thumbnail_url}`;
+      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${stream.thumbnailURL}`;
     }
 
-    // If it's a storage path, prepend the Supabase storage URL
-    if (stream.thumbnail_url.startsWith('/')) {
-      return stream.thumbnail_url; // Path like /placeholder.svg
-    } else {
-      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/stream-thumbnails/${stream.thumbnail_url}`;
-    }
+    return getImageLink(stream.thumbnailURL) || '/placeholder.svg' ;
   };
-
+  console.log('getThumbnailUrl', getThumbnailUrl());
   // Random viewer count for visual enhancement
-  const viewerCount = stream.is_live ? Math.floor(Math.random() * 500) + 50 : 0;
+  const viewerCount = isLive ? Math.floor(Math.random() * 500) + 50 : 0;
 
   return (
     <motion.div
@@ -64,7 +62,7 @@ export const StreamCard = ({
       transition={{ duration: 0.4 }}
       className="h-full"
     >
-      <Card className="stream-card h-full flex flex-col bg-card border border-border shadow-lg overflow-hidden">
+      <Card className="h-full flex flex-col bg-card !bg-[#181818] border border-border shadow-lg overflow-hidden">
         <Link to={`/stream/${stream.id}`} className="block flex-grow">
           <div className="aspect-video bg-muted relative overflow-hidden group">
             {shouldShowAdminControls && onDelete && (
@@ -86,7 +84,7 @@ export const StreamCard = ({
             <div className="w-full h-full overflow-hidden">
               <motion.img
                 src={getThumbnailUrl()}
-                alt={stream.title}
+                alt={stream.streamName}
                 className="object-cover w-full h-full transition-transform duration-700"
                 whileHover={{ scale: 1.05 }}
                 onError={e => {
@@ -96,10 +94,10 @@ export const StreamCard = ({
             </div>
 
             {/* Overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent opacity-70 group-hover:opacity-40 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 bg-gradient-to-t via-background/30 to-transparent group-hover:opacity-40 transition-opacity duration-300"></div>
 
             {/* LIVE badge with animation */}
-            {stream.is_live && (
+            {isLive && (
               <div className="absolute top-2 left-2 z-30">
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
@@ -122,26 +120,26 @@ export const StreamCard = ({
             )}
 
             {/* Viewer count badge */}
-            {stream.is_live && (
+            {/* {isLive && (
               <div className="absolute top-2 right-2 z-20">
                 <div className="flex items-center gap-1 bg-background/80 backdrop-blur-sm text-foreground px-2 py-1 rounded text-xs">
                   <Users size={12} className="text-primary" />
                   <span>{viewerCount}</span>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Stream title overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-4">
+            {/* <div className="absolute bottom-0 left-0 right-0 p-4">
               <h3 className="font-semibold text-lg text-white mb-1 line-clamp-1 group-hover:underline decoration-primary decoration-2 underline-offset-2">
-                {stream.title}
+                {stream.streamName}
               </h3>
               {stream.description && (
                 <p className="text-sm text-gray-300 line-clamp-2 opacity-90">
                   {stream.description}
                 </p>
               )}
-            </div>
+            </div> */}
           </div>
         </Link>
 
@@ -198,8 +196,12 @@ export const StreamCard = ({
                 </div>
               )}
             </div>
-
-            <StreamActions streamId={stream.id} onDelete={undefined} />
+            <p className="font-semibold text-[#D7DFEF] text-[15px] mb-5">
+                {stream.streamName}
+            </p>
+            <div className='!mb-3 !mt-5'>
+              <StreamActions streamId={stream.id} onDelete={undefined} />
+              </div>
           </div>
         </div>
       </Card>

@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { getImageLink } from '@/utils/helper';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Loader2 } from 'lucide-react';
+import React from 'react';
 
 type Profile = any;
 
@@ -21,7 +23,8 @@ interface UserDropdownProps {
 }
 
 export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => {
-  console.log('profile user dropdown', profile)
+
+  const [isImageLoading, setIsImageLoading] = React.useState(false);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -30,11 +33,17 @@ export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => 
             <AvatarImage
               src={profile?.profileImageUrl ? getImageLink(profile?.profileImageUrl) : undefined}
               alt={profile?.username}
+              onLoadingStatusChange={(status) => setIsImageLoading(status === 'loading')}
             />
             <AvatarFallback className='bg-[#BDFF00] text-[#000000]'>
               {profile?.username?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || ''}
             </AvatarFallback>
           </Avatar>
+          {isImageLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-full z-10">
+              <Loader2 className="animate-spin h-5 w-5 text-[#0000ff]" />
+            </div>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
