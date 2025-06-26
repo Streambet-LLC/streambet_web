@@ -31,7 +31,7 @@ export const AdminManagement = ({
   // Create livestream form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [kickEmbedUrl, setKickEmbedUrl] = useState('');
+  const [embeddedUrl, setEmbeddedUrl] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export const AdminManagement = ({
 
   const [errors, setErrors] = useState({
     title: '',
-    kickEmbedUrl: '',
+    embeddedUrl: '',
     thumbnail: '',
     startDate: '',
     endDate: ''
@@ -85,7 +85,7 @@ export const AdminManagement = ({
 
   // Refs for error scrolling
   const titleRef = useRef<HTMLInputElement>(null);
-  const kickEmbedUrlRef = useRef<HTMLInputElement>(null);
+  const embeddedUrlRef = useRef<HTMLInputElement>(null);
   const startDateRef = useRef<HTMLButtonElement>(null);
   const thumbnailRef = useRef<HTMLDivElement>(null);
 
@@ -163,7 +163,7 @@ export const AdminManagement = ({
     // Reset text inputs
     setTitle('');
     setDescription('');
-    setKickEmbedUrl('');
+    setEmbeddedUrl('');
 
     // Reset dates and times
     setStartDateObj(null);
@@ -186,7 +186,7 @@ export const AdminManagement = ({
     // Reset all errors
     setErrors({
       title: '',
-      kickEmbedUrl: '',
+      embeddedUrl: '',
       thumbnail: '',
       startDate: '',
       endDate: ''
@@ -196,8 +196,8 @@ export const AdminManagement = ({
   function scrollToFirstError() {
     if (errors.title && titleRef.current) {
       titleRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.kickEmbedUrl && kickEmbedUrlRef.current) {
-      kickEmbedUrlRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (errors.embeddedUrl && embeddedUrlRef.current) {
+      embeddedUrlRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else if (errors.thumbnail && thumbnailRef.current) {
       thumbnailRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else if (errors.startDate && startDateRef.current) {
@@ -235,7 +235,7 @@ export const AdminManagement = ({
   function validateForm() {
     const newErrors = {
       title: '',
-      kickEmbedUrl: '',
+      embeddedUrl: '',
       thumbnail: '',
       startDate: '',
       endDate: ''
@@ -247,8 +247,8 @@ export const AdminManagement = ({
       newErrors.title = 'Title must be 3-70 characters';
       isValid = false;
     }
-    if (!kickEmbedUrl.trim() || (!kickEmbedUrl.includes('http') && !kickEmbedUrl.includes('www') && !kickEmbedUrl.includes('kick'))) {
-      newErrors.kickEmbedUrl = 'Embed URL is required and should be valid';
+    if (!embeddedUrl.trim() || (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))) {
+      newErrors.embeddedUrl = 'Embed URL is required and should be valid';
       isValid = false;
     }
     if (!selectedThumbnailFile) {
@@ -292,7 +292,7 @@ export const AdminManagement = ({
         ...errors, 
         thumbnail: 'Please upload an image file',
         title: '',
-        kickEmbedUrl: '',
+        embeddedUrl: '',
         startDate: '',
         endDate: ''
       });
@@ -304,7 +304,7 @@ export const AdminManagement = ({
         ...errors, 
         thumbnail: 'Please upload an image smaller than 5MB',
         title: '',
-        kickEmbedUrl: '',
+        embeddedUrl: '',
         startDate: '',
         endDate: ''
       });
@@ -360,7 +360,7 @@ export const AdminManagement = ({
       ...errors,
       thumbnail: '',
       title: '',
-      kickEmbedUrl: '',
+      embeddedUrl: '',
       startDate: '',
       endDate: ''
     });
@@ -399,7 +399,7 @@ export const AdminManagement = ({
     const payload = {
       name: title,
       description,
-      kickEmbedUrl,
+      embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
       endTime: formatDateTimeForISO(endDateObj, endTime),
@@ -471,18 +471,18 @@ export const AdminManagement = ({
                     onChange={e => setDescription(e.target.value)}
                   />
                 </div>
-                {/* Kick embed URL */}
+                {/* Embed URL */}
                 <div>
-                  <Label className="text-white font-light mb-3 block">Kick embed URL</Label>
+                  <Label className="text-white font-light mb-3 block">Embed URL</Label>
                   <Input
-                    ref={kickEmbedUrlRef}
-                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.kickEmbedUrl ? 'border border-red-500' : 'border-none'}`}
-                    placeholder="Kick embed URL"
-                    value={kickEmbedUrl}
-                    onChange={e => { setKickEmbedUrl(e.target.value); setErrors({ ...errors, kickEmbedUrl: '' }); }}
+                    ref={embeddedUrlRef}
+                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
+                    placeholder="Embed URL"
+                    value={embeddedUrl}
+                    onChange={e => { setEmbeddedUrl(e.target.value); setErrors({ ...errors, embeddedUrl: '' }); }}
                     required
                   />
-                  {errors.kickEmbedUrl && <div className="text-destructive text-xs mt-1">{errors.kickEmbedUrl}</div>}
+                  {errors.embeddedUrl && <div className="text-destructive text-xs mt-1">{errors.embeddedUrl}</div>}
                 </div>
                 {/* Thumbnail upload */}
                 <div ref={thumbnailRef}>

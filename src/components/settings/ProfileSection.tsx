@@ -74,6 +74,7 @@ export const ProfileSection = ({
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | undefined>(undefined);
   const [avatarDeleted, setAvatarDeleted] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(formSchema),
@@ -313,7 +314,9 @@ export const ProfileSection = ({
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files && e.target.files.length > 0)
+    {
+      setAvatarDeleted(false);
       handleFileChange(e.target.files[0]);
     }
   };
@@ -514,11 +517,19 @@ export const ProfileSection = ({
             </div>
             <div className="flex flex-col sm:flex-row gap-4 items-center">
               {/* Left: Preview */}
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={avatarPreviewUrl ? (avatarPreviewUrl.includes('blob') ?  avatarPreviewUrl : getImageLink(avatarPreviewUrl)) : undefined} />
+              <Avatar className="h-20 w-20 relative">
+                <AvatarImage 
+                  src={avatarPreviewUrl ? (avatarPreviewUrl.includes('blob') ?  avatarPreviewUrl : getImageLink(avatarPreviewUrl)) : undefined}
+                  onLoadingStatusChange={(status) => setIsImageLoading(status === 'loading')}
+                />
                 <AvatarFallback>
                   {(session?.username?.[0] || session?.email?.[0] || 'U').toUpperCase()}
                 </AvatarFallback>
+                {isImageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-full z-10">
+                    <Loader2 className="animate-spin h-8 w-8 text-[#0000ff]" />
+                  </div>
+                )}
               </Avatar>
               {/* <div className="w-[120px] h-[120px] bg-[#808080] flex items-center justify-center rounded-full overflow-hidden border border-[#272727]">
                 {avatarPreviewUrl ? (
