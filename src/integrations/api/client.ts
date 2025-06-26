@@ -372,6 +372,17 @@ export const bettingAPI = {
   },
 };
 
+// User stream API
+export const userStreamAPI = {
+  // Get all streams
+  getStreams: async (params?: any) => {
+    const response = await apiClient.get(`/stream/home`, {
+      params
+    });
+    return response.data;
+  },
+};
+
 // WebSocket handling
 export const socketAPI = {
   // Connect to WebSocket
@@ -570,6 +581,7 @@ export const api = {
   betting: bettingAPI,
   socket: socketAPI,
   admin: adminAPI,
+  userStream: userStreamAPI,
 };
 
 export default api;

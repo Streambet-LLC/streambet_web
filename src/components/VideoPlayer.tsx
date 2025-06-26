@@ -30,7 +30,7 @@ export const VideoPlayer = ({ playbackId, thumbnailUrl }: VideoPlayerProps) => {
         debug: true,
       });
 
-      hls.loadSource(playbackUrl);
+      // hls.loadSource(playbackUrl);
       hls.attachMedia(videoRef.current);
 
       hls.on(Hls.Events.ERROR, (event, data) => {

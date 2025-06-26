@@ -12,8 +12,8 @@ import { useToast } from '@/components/ui/use-toast';
 
 const Stream = () => {
   const { id } = useParams();
-  // const streamId = id;
-  const streamId = 'ab58330d-e10c-433b-8b0b-df259a1878de';
+  const streamId = id;
+  // const streamId = 'ab58330d-e10c-433b-8b0b-df259a1878de';
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const prevUserIdRef = useRef<string | null>(null);

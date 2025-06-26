@@ -1,7 +1,6 @@
 import { useStreamData } from '@/hooks/useStreamData';
 import { StreamLoading } from './StreamLoading';
 import { StreamOffline } from './StreamOffline';
-import { VideoPlayer } from './VideoPlayer';
 import { KickEmbed } from './stream/KickEmbed';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
