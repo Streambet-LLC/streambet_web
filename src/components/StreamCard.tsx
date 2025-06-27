@@ -26,7 +26,7 @@ export const StreamCard = ({
 }: StreamCardProps) => {
   const shouldShowAdminControls = isAdmin && showAdminControls;
   const { cardVariants } = useAnimations();
-  console.log('stream', stream);
+
   // Handle both full URLs and storage paths
   const getThumbnailUrl = () => {
     if (!stream.thumbnailURL) {
@@ -48,7 +48,7 @@ export const StreamCard = ({
 
     return getImageLink(stream.thumbnailURL) || '/placeholder.svg' ;
   };
-  console.log('getThumbnailUrl', getThumbnailUrl());
+
   // Random viewer count for visual enhancement
   const viewerCount = isLive ? Math.floor(Math.random() * 500) + 50 : 0;
 

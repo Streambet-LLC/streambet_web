@@ -9,6 +9,8 @@ import { useEffect, useRef, useState } from 'react';
 import api from '@/integrations/api/client';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
+import { UpcomingStreams } from '@/components/stream/UpcomingStreams';
+import { TabSwitch } from '@/components/navigation/TabSwitch';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
@@ -60,7 +62,7 @@ const Index = () => {
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: '' }),
         pagination: true,
-        streamStatus: 'scheduled',
+        streamStatus: isLive ? 'live' : 'scheduled',
       });
 
       return response;
@@ -75,7 +77,8 @@ const Index = () => {
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= totalPages)
+    {
       setCurrentPage(page);
     }
   };
@@ -85,24 +88,30 @@ const Index = () => {
 
     console.log('Updating thumbnails for active streams');
 
-    for (const stream of streams) {
-      try {
-        if (stream.is_live) {
+    for (const stream of streams)
+    {
+      try
+      {
+        if (stream.is_live)
+        {
           console.log('Updating thumbnail for live stream:', stream.id);
 
           // Update Livepeer stream thumbnails
-          if (stream.platform === 'custom' && stream.livepeer_stream_id) {
+          if (stream.platform === 'custom' && stream.livepeer_stream_id)
+          {
             const { error } = await supabase.functions.invoke('update-thumbnail', {
               body: { streamId: stream.id },
             });
 
-            if (error) {
+            if (error)
+            {
               console.error('Error updating thumbnail for stream:', stream.id, error);
             }
           }
 
           // Update Kick stream thumbnails
-          if (stream.platform === 'kick' && stream.embed_url) {
+          if (stream.platform === 'kick' && stream.embed_url)
+          {
             const { error } = await supabase.functions.invoke('capture-thumbnail', {
               body: {
                 streamId: stream.id,
@@ -110,12 +119,14 @@ const Index = () => {
               },
             });
 
-            if (error) {
+            if (error)
+            {
               console.error('Error capturing Kick stream thumbnail:', error);
             }
           }
         }
-      } catch (error) {
+      } catch (error)
+      {
         console.error('Failed to update thumbnail for stream:', stream.id, error);
       }
     }
@@ -134,14 +145,16 @@ const Index = () => {
     }, 60000); // Every 60 seconds
 
     return () => {
-      if (refreshInterval.current) {
+      if (refreshInterval.current)
+      {
         clearInterval(refreshInterval.current);
       }
     };
   }, [streams]);
 
   useEffect(() => {
-    if (streams) {
+    if (streams)
+    {
       console.log('All streams with live status:');
       streams.data?.forEach(stream => {
         console.log(`${stream.id}: is_live=${stream.is_live}, title=${stream.title}`);
@@ -167,37 +180,13 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="flex justify-center align-center">
-              {tabs.map((tab, idx) => {
-                const isActive = activeTab === tab.key;
-                const isFirst = idx === 0;
-                const isLast = idx === tabs.length - 1;
+          {/* Commented as CR */}
+          {/* <TabSwitch
+            className='!justify-center !mt-12 !mb-14'
+            tabs={tabs}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab} /> */}
 
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => {
-                      setCurrentPage(1);
-                      setActiveTab(tab.key);
-                    }}
-                    className={`mt-2 mb-3
-              px-6 py-2 text-sm font-medium
-              border border-[#2D343E]
-              ${isLast ? 'border-r-1' : ''}
-              ${isFirst ? 'rounded-l-lg' : ''}
-              ${isLast ? 'rounded-r-lg' : ''}
-              ${isActive ? 'bg-[#2A2A2A] text-white' : ' text-white hover:bg-[#1f1f1f]'}
-            `}
-                    style={{
-                      borderColor: '#2D343E',
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          
           <div className="mt-16">
 
             {(!streams || streams.data?.length === 0) && isLive ? (
@@ -220,36 +209,34 @@ const Index = () => {
                   />
                 ))}
               </div>
-              ) : (
-                <div>
-                {streams.data?.map(stream => (
-                  <p>To be updated</p>
-                ))}
+            ) : (
+              <div>
+                <UpcomingStreams streams={streams?.data} />
               </div>
             )}
           </div>
-            <Pagination className='!justify-center'>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    className={cn(
-                      'text-white border-white hover:bg-white/10',
-                      currentPage === 1 && 'pointer-events-none opacity-50'
-                    )}
-                  />
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    className={cn(
-                      'text-white border-white hover:bg-white/10',
-                      currentPage === totalPages && 'pointer-events-none opacity-50'
-                    )}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+          {streams?.data?.length > 0 && <Pagination className='!justify-center'>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className={cn(
+                    'text-white border-white hover:bg-white/10',
+                    currentPage === 1 && 'pointer-events-none opacity-50'
+                  )}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className={cn(
+                    'text-white border-white hover:bg-white/10',
+                    currentPage === totalPages && 'pointer-events-none opacity-50'
+                  )}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>}
         </div>
       </main>
 

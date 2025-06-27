@@ -149,16 +149,13 @@ export const ProfileSection = ({
   useEffect(() => {
     if (selectedAvatarFile)
     {
-      console.log('selectedAvatarFile set')
       setAvatarPreviewUrl(URL.createObjectURL(selectedAvatarFile));
       return () => URL.revokeObjectURL(avatarPreviewUrl!);
     } else if (currentAvatar)
     {
-      console.log('currentAvatar set')
       setAvatarPreviewUrl(currentAvatar);
     } else
     {
-      console.log('undefined set')
       setAvatarPreviewUrl(undefined);
     }
     // eslint-disable-next-line
@@ -338,8 +335,6 @@ export const ProfileSection = ({
     setAvatarDeleted(true);
   };
 
-  console.log('avatarPreviewUrl', avatarPreviewUrl);
-  console.log('currentAvatar', currentAvatar);
   return (
     <div className="space-y-6">
       {/* Header Section */}

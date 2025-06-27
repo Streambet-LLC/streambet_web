@@ -24,15 +24,17 @@ import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing } from 'lucide-react'
 
 interface Props {
   streams: any;
-  refetchStreams: VoidFunction;
+  refetchStreams: (range: string) => void;
+  setEditStreamId: (streamId: string) => void;
 }
 
-export const StreamTable: React.FC<Props> = ({ streams, refetchStreams }) => {
+export const StreamTable: React.FC<Props> = ({
+  streams,
+  refetchStreams,
+  setEditStreamId,
+}) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
-
-  const rangeStart = (currentPage - 1) * itemsPerPage;
-  const rangeEnd = rangeStart + itemsPerPage - 1;
 
   // const { data: streams, refetch: refetchStreams } = useQuery({
   //   queryKey: ['streams'],
@@ -49,8 +51,10 @@ export const StreamTable: React.FC<Props> = ({ streams, refetchStreams }) => {
   // });
 
   useEffect(() => {
-    refetchStreams();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const rangeStart = (currentPage - 1) * itemsPerPage;
+
+    refetchStreams(`[${rangeStart},${itemsPerPage}]`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
   // const mutation = useMutation({
@@ -65,7 +69,8 @@ export const StreamTable: React.FC<Props> = ({ streams, refetchStreams }) => {
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= totalPages)
+    {
       setCurrentPage(page);
     }
   };
@@ -73,52 +78,84 @@ export const StreamTable: React.FC<Props> = ({ streams, refetchStreams }) => {
   return (
     <div>
       <div className="rounded-md border">
-      <Table className='bg-[#0D0D0D]'>
-         <TableHeader>
-           <TableRow>
-             <TableHead>Stream Title</TableHead>
-             <TableHead>Stream Status</TableHead>
-             <TableHead>Betting Status</TableHead>
-             <TableHead>Users</TableHead>
-             <TableHead>Actions</TableHead>
-           </TableRow>
-         </TableHeader>
-         <TableBody className="[&_td]:font-light">
-           {streams?.length ? streams?.map(stream => (
-             <TableRow key={stream?.id}>
-               <TableCell className="font-medium">{stream?.name}</TableCell>
-               <TableCell>
-               <span
-                      className="px-2 py-1 rounded-md font-bold text-sm"
-                      style={{
-                        backgroundColor: stream?.status === 'scheduled' ? 'rgb(87 115 243)'
-                          : stream?.status === 'active' ? '#7AFF14'
-                            : '#FF1418',
-                        color: stream?.status === 'inactive' ?
-                          '#000' : '#FFFFFF',
-                      }}
-                    >
-                     {stream?.status?.charAt(0)?.toUpperCase() + stream?.status?.slice(1)}
-                 </span>
-               </TableCell>
-               <TableCell>{stream?.bettingStatus}</TableCell>
-               <TableCell>{stream?.viewerCount}</TableCell>
-               <TableCell>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <Eye color="#FFFFFFBF" size={18} />
-                  <Pen color="#FFFFFFBF" size={18} />
-                  <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={18} />
-                  <Lock color="#FFFFFFBF" size={18} />
-                  <Play color="#FFFFFFBF" size={18} />
-                </div>
-               </TableCell>
-             </TableRow>
-           )) : <div className='m-3'>
+        <Table className='bg-[#0D0D0D]'>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Stream Title</TableHead>
+              <TableHead>Stream Status</TableHead>
+              <TableHead>Betting Status</TableHead>
+              <TableHead>Users</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="[&_td]:font-light">
+            {streams?.data?.length ? streams?.data?.map(stream => (
+              <TableRow key={stream?.id}>
+                <TableCell className="font-medium">{stream?.streamName}</TableCell>
+                <TableCell>
+                  <span
+                    className="px-2 py-1 rounded-md font-bold text-sm"
+                    style={{
+                      backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
+                        : stream?.status === 'active' ? '#7AFF14'
+                          : '#FF1418',
+                      color: stream?.status === 'inactive' ?
+                        '#000' : '#FFFFFF',
+                    }}
+                  >
+                    {stream?.streamStatus?.charAt(0)?.toUpperCase() + stream?.streamStatus?.slice(1)}
+                  </span>
+                </TableCell>
+                <TableCell>{stream?.data?.bettingStatus}</TableCell>
+                <TableCell>{stream?.data?.viewerCount}</TableCell>
+                <TableCell>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <Eye color="#FFFFFFBF" size={18} />
+                    <Pen
+                      color="#FFFFFFBF"
+                      size={18}
+                      className='cursor-pointer'
+                      onClick={() => setEditStreamId(stream?.id)} />
+                    <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={18} />
+                    <Lock color="#FFFFFFBF" size={18} />
+                    <Play color="#FFFFFFBF" size={18} />
+                  </div>
+                </TableCell>
+              </TableRow>
+            )) : <div className='m-3'>
               No stream(s) available to display
             </div>}
-         </TableBody>
-       </Table>
+          </TableBody>
+        </Table>
       </div>
+      {streams?.data?.length > 0 &&
+        <div className="flex w-full justify-between bg-black rounded-md mt-4">
+          <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+            Page {currentPage} of {totalPages}
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className={cn(
+                    'text-white border-white hover:bg-white/10',
+                    currentPage === 1 && 'pointer-events-none opacity-50'
+                  )}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className={cn(
+                    'text-white border-white hover:bg-white/10',
+                    currentPage === totalPages && 'pointer-events-none opacity-50'
+                  )}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>}
 
       {/* <div className="flex w-full justify-between bg-black rounded-md mt-4">
         <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
