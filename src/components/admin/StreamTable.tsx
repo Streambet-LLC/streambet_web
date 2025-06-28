@@ -16,11 +16,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '../ui/pagination';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import api from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { DeleteUserDialog } from './DeleteUserDialog';
 import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Props {
   streams: any;
@@ -33,6 +36,7 @@ export const StreamTable: React.FC<Props> = ({
   refetchStreams,
   setEditStreamId,
 }) => {
+  const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
@@ -77,57 +81,132 @@ export const StreamTable: React.FC<Props> = ({
 
   return (
     <div>
-      <div className="rounded-md border">
-        <Table className='bg-[#0D0D0D]'>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Stream Title</TableHead>
-              <TableHead>Stream Status</TableHead>
-              <TableHead>Betting Status</TableHead>
-              <TableHead>Users</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody className="[&_td]:font-light">
-            {streams?.data?.length ? streams?.data?.map(stream => (
-              <TableRow key={stream?.id}>
-                <TableCell className="font-medium">{stream?.streamName}</TableCell>
-                <TableCell>
-                  <span
-                    className="px-2 py-1 rounded-md font-bold text-sm"
-                    style={{
-                      backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
-                        : stream?.status === 'active' ? '#7AFF14'
-                          : '#FF1418',
-                      color: stream?.status === 'inactive' ?
-                        '#000' : '#FFFFFF',
-                    }}
-                  >
-                    {stream?.streamStatus?.charAt(0)?.toUpperCase() + stream?.streamStatus?.slice(1)}
-                  </span>
-                </TableCell>
-                <TableCell>{stream?.data?.bettingStatus}</TableCell>
-                <TableCell>{stream?.data?.viewerCount}</TableCell>
-                <TableCell>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <Eye color="#FFFFFFBF" size={18} />
-                    <Pen
-                      color="#FFFFFFBF"
-                      size={18}
-                      className='cursor-pointer'
-                      onClick={() => setEditStreamId(stream?.id)} />
-                    <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={18} />
-                    <Lock color="#FFFFFFBF" size={18} />
-                    <Play color="#FFFFFFBF" size={18} />
-                  </div>
-                </TableCell>
-              </TableRow>
-            )) : <div className='m-3'>
+      {isMobile ? (
+        // Mobile Card View
+        <div className="space-y-4">
+          {streams?.data?.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
               No stream(s) available to display
-            </div>}
-          </TableBody>
-        </Table>
-      </div>
+            </div>
+          ) : (
+            streams?.data?.map(stream => (
+              <Card key={stream?.id} className="bg-[#0D0D0D] border-gray-800">
+                <CardContent className="p-4 space-y-3">
+                  {/* Stream Title */}
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-medium text-sm truncate max-w-[200px]">
+                      {stream?.streamName}
+                    </h3>
+                  </div>
+
+                  {/* Stream Status */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Stream Status:</span>
+                    <span
+                      className="px-2 py-1 rounded-md font-bold text-xs"
+                      style={{
+                        backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
+                          : stream?.status === 'active' ? '#7AFF14'
+                            : '#FF1418',
+                        color: stream?.status === 'inactive' ?
+                          '#000' : '#FFFFFF',
+                      }}
+                    >
+                      {stream?.streamStatus?.charAt(0)?.toUpperCase() + stream?.streamStatus?.slice(1)}
+                    </span>
+                  </div>
+
+                  {/* Betting Status */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Betting Status:</span>
+                    <span className="text-sm font-medium">
+                      {stream?.data?.bettingStatus || 'N/A'}
+                    </span>
+                  </div>
+
+                  {/* Users */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Users:</span>
+                    <span className="text-sm font-medium">
+                      {stream?.data?.viewerCount || '0'}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-800">
+                    <span className="text-sm text-muted-foreground">Actions:</span>
+                    <div className="flex gap-3">
+                      <Eye color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                      <Pen
+                        color="#FFFFFFBF"
+                        size={16}
+                        className='cursor-pointer'
+                        onClick={() => setEditStreamId(stream?.id)} />
+                      <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                      <Lock color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                      <Play color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      ) : (
+        // Desktop Table View
+        <div className="rounded-md border">
+          <Table className='bg-[#0D0D0D]'>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stream Title</TableHead>
+                <TableHead>Stream Status</TableHead>
+                <TableHead>Betting Status</TableHead>
+                <TableHead>Users</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="[&_td]:font-light">
+              {streams?.data?.length ? streams?.data?.map(stream => (
+                <TableRow key={stream?.id}>
+                  <TableCell className="font-medium">{stream?.streamName}</TableCell>
+                  <TableCell>
+                    <span
+                      className="px-2 py-1 rounded-md font-bold text-sm"
+                      style={{
+                        backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
+                          : stream?.status === 'active' ? '#7AFF14'
+                            : '#FF1418',
+                        color: stream?.status === 'inactive' ?
+                          '#000' : '#FFFFFF',
+                      }}
+                    >
+                      {stream?.streamStatus?.charAt(0)?.toUpperCase() + stream?.streamStatus?.slice(1)}
+                    </span>
+                  </TableCell>
+                  <TableCell>{stream?.data?.bettingStatus}</TableCell>
+                  <TableCell>{stream?.data?.viewerCount}</TableCell>
+                  <TableCell>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <Eye color="#FFFFFFBF" size={18} />
+                      <Pen
+                        color="#FFFFFFBF"
+                        size={18}
+                        className='cursor-pointer'
+                        onClick={() => setEditStreamId(stream?.id)} />
+                      <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={18} />
+                      <Lock color="#FFFFFFBF" size={18} />
+                      <Play color="#FFFFFFBF" size={18} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )) : <div className='m-3'>
+                No stream(s) available to display
+              </div>}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      
       {streams?.data?.length > 0 &&
         <div className="flex w-full justify-between bg-black rounded-md mt-4">
           <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>

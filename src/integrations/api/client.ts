@@ -563,6 +563,18 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Create betting options for stream
+  createBettingData: async (payload: any) => {
+    const response = await apiClient.post(`/admin/betting-variables`, payload);
+    return response.data;
+  },
+
+  // Edit betting options for stream
+  updateBettingData: async (payload: any) => {
+    const response = await apiClient.patch(`/admin/betting-variables`, payload);
+    return response.data;
+  },
+
   // Lock betting for a stream
   lockBetting: async (streamId: string) => {
     const response = await apiClient.post(`/admin/streams/${streamId}/lock-betting`);

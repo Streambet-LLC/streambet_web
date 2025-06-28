@@ -2,12 +2,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { adminAPI, bettingAPI } from '@/integrations/api/client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export const useStreamManagement = () => {
   const { toast } = useToast();
   const [searchStreamQuery, setSearchStreamQuery] = useState();
-  const rangeRef = useRef<any>();
+  const rangeRef = useRef('[0,7]');
 
   const { data: profile } = useQuery({
     queryKey: ['profile'],
@@ -28,17 +28,18 @@ export const useStreamManagement = () => {
   });
 
   const { data: streams, refetch: refetchStreams } = useQuery({
-    queryKey: ['streams', searchStreamQuery],
+    queryKey: ['streams'],
     queryFn: async () => {
 
       const response = await adminAPI.getStreams({
-        range: rangeRef.current,
+        range: searchStreamQuery ? '[0,24]' : rangeRef.current,
         filter: JSON.stringify({ q: searchStreamQuery }),
       });
 
 
       return response;
     },
+    enabled: false,
     // Increase refetch frequency to see new streams faster
     refetchInterval: 5000,
   });
@@ -50,6 +51,12 @@ export const useStreamManagement = () => {
     rangeRef.current = range || '';
     refetchStreams();
   };
+
+  useEffect(() => {
+    if (rangeRef.current !== '') {
+      refetchStreams();
+    }
+  }, [searchStreamQuery, refetchStreams])
 
   return {
     profile,

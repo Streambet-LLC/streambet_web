@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
@@ -21,12 +21,26 @@ import { getMessage } from '@/utils/helper';
 import OverView from './OverView';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { CopyableInput } from '../ui/CopyableInput';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { BettingRounds } from './BettingRounds';
+
+interface BettingOption {
+  optionId?: string;
+  option: string;
+}
+
+interface BettingRound {
+  roundId?: string;
+  roundName: string;
+  options: BettingOption[];
+}
 
 export const AdminManagement = ({
   streams,
   refetchStreams,
   searchStreamQuery,
   setSearchStreamQuery }) => {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
   const [activeEditStreamTab, setActiveEditStreamTab] = useState('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
@@ -40,15 +54,29 @@ export const AdminManagement = ({
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Betting rounds state
+  const [bettingRounds, setBettingRounds] = useState<BettingRound[]>([]);
+
+  // Load existing betting data when editing
+  useEffect(() => {
+    if (editStreamId) {
+      // TODO: Load existing betting data from API
+      // For now, we'll set empty array
+      setBettingRounds([]);
+    }
+  }, [editStreamId]);
+
   const tabs = [
     { key: 'overview', label: 'Overview' },
     { key: 'livestreams', label: 'Livestreams' },
     { key: 'users', label: 'Users' },
   ];
 
-  const editStreamTabs = [
+  const editStreamTabs = editStreamId ? [
     { key: 'info', label: 'Information' },
     { key: 'betting', label: 'Betting' },
+  ] : [
+    { key: 'info', label: 'Information' },
   ];
 
   const createStreamMutation = useMutation({
@@ -180,6 +208,9 @@ export const AdminManagement = ({
     setThumbnailError(null);
     setIsDragging(false);
     setIsUploading(false);
+
+    // Reset betting rounds
+    setBettingRounds([]);
 
     // Clear the file input
     if (fileInputRef.current)
@@ -429,9 +460,18 @@ export const AdminManagement = ({
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
       endTime: formatDateTimeForISO(endDateObj, endTime),
+      streamId: editStreamId || undefined,
+      betRoundsData: bettingRounds.length > 0 ? bettingRounds : undefined,
     };
 
     createStreamMutation.mutate(payload);
+  }
+
+  const handleRestAll = () => {
+    setIsCreateStream(false);
+    setEditStreamId('');
+    setActiveEditStreamTab('info');
+    resetForm();
   }
 
   return (
@@ -447,7 +487,7 @@ export const AdminManagement = ({
                   variant="secondary"
                   className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
-                  onClick={() => { setIsCreateStream(false); resetForm(); }}
+                  onClick={() => { handleRestAll() }}
                 >
                   <ArrowLeft className="h-4 w-4 mr-0" /> Back
                 </Button>
@@ -686,7 +726,13 @@ export const AdminManagement = ({
                   </Popover>
                   {errors.endDate && <div className="text-destructive text-xs mt-1">{errors.endDate}</div>}
                   </div>
-                  </>}
+                </>}
+                {editStreamId && activeEditStreamTab === 'betting' && <>
+                  <BettingRounds 
+                    rounds={bettingRounds} 
+                    onRoundsChange={setBettingRounds} 
+                  />
+                </>}
               </form>
             </CardContent>
           </Card>
@@ -694,14 +740,15 @@ export const AdminManagement = ({
       ) : (
         <>
           {/* Top bar (tabs, search, create button) only when not creating stream */}
-            <div className="flex items-center justify-between w-full mb-4">
+          <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}>
             <TabSwitch tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+            
             {activeTab === 'users' && (
-              <div className="relative rounded-md w-[200px] lg:w-[400px] border" style={{ border: '1px solid #2D343E' }}>
+              <div className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`} style={{ border: '1px solid #2D343E' }}>
                 <Input
                   id="search-users"
                   type="text"
-                  placeholder="Search"
+                  placeholder="Search users..."
                   value={searchUserQuery}
                   onChange={e => setSearchUserQuery(e.target.value)}
                   className="pl-9 rounded-md"
@@ -711,25 +758,25 @@ export const AdminManagement = ({
             )}
 
             {activeTab === 'livestreams' && (
-              <div className="flex items-center justify-end w-full">
-                <div className="relative rounded-md mr-2" style={{ border: '1px solid #2D343E' }}>
+              <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-end'} w-full`}>
+                <div className={`relative rounded-md ${isMobile ? 'w-full' : 'mr-2'}`} style={{ border: '1px solid #2D343E' }}>
                   <Input
                     id="search-streams"
                     type="text"
-                    placeholder="Search"
+                    placeholder="Search streams..."
                     value={searchStreamQuery}
                     onChange={e => setSearchStreamQuery(e.target.value)}
                     className="pl-9 rounded-md"
-                    style={{ minWidth: 180 }}
+                    style={isMobile ? {} : { minWidth: 180 }}
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
                 <button
                   type="button"
-                  className="bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors"
+                  className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
                   onClick={() => setIsCreateStream(true)}
                 >
-                  Create new livestream
+                  {isMobile ? 'Create Livestream' : 'Create new livestream'}
                 </button>
               </div>
             )}
