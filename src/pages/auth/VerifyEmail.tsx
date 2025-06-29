@@ -31,7 +31,11 @@ const VerifyEmail: React.FC = () => {
       body: JSON.stringify({ token }),
     })
       .then(async (res) => {
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok)
+        {
+          const errorResponse = await res.json();
+          throw new Error(getMessage(errorResponse));
+        }
         return res.json();
       })
       .then(() => {
@@ -64,7 +68,7 @@ const VerifyEmail: React.FC = () => {
       ) : error ? (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative max-w-md text-center" role="alert">
           <strong className="font-bold">Error: </strong>
-          <span className="block sm:inline">{error}</span>
+          <span className="block sm:inline">{getMessage(error)}</span>
         </div>
       ) : <div className="flex flex-col items-center">
             <p>Email verified successfully. Please login.</p>

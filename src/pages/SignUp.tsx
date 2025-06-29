@@ -59,7 +59,7 @@ export default function SignUp() {
     username: z
       .string()
       .min(3, 'Username must be at least 3 characters')
-      .regex(/^[^\s]*$/, 'Username cannot contain spaces'),
+      .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
     email: z.string().email('Invalid email address'),
     password: isGoogleLogin
       ? z.string().optional()

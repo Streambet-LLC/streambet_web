@@ -72,20 +72,29 @@ export const AdminManagement = ({
     { key: 'users', label: 'Users' },
   ];
 
-  const editStreamTabs = editStreamId ? [
+  const editStreamTabs = [
     { key: 'info', label: 'Information' },
     { key: 'betting', label: 'Betting' },
-  ] : [
-    { key: 'info', label: 'Information' },
   ];
 
   const createStreamMutation = useMutation({
-    mutationFn: async (payload: any) => api.admin.createStream(payload),
+    mutationFn: (payload: any) => api.admin.createStream(payload),
     onSuccess: () => {
-      toast({ title: 'Success', description: 'Stream created successfully!' });
-      resetForm();
-      setIsCreateStream(false);
-      refetchStreams();
+      if (!bettingRounds?.length) {
+        toast({ title: 'Success', description: 'Stream saved successfully!' });
+        handleRestAll();
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
+    },
+  });
+
+  const createBetMutation = useMutation({
+    mutationFn: (payload: any) => api.admin.createBettingData(payload),
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Stream and Betting saved successfully!' });
+      handleRestAll();
     },
     onError: (error: any) => {
       toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
@@ -428,6 +437,11 @@ export const AdminManagement = ({
     {
       // Scroll to first error after validation
       setTimeout(() => scrollToFirstError(), 100);
+      toast({
+        title: 'Form error',
+        description: 'Please check your form for any validation error',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -465,6 +479,15 @@ export const AdminManagement = ({
     };
 
     createStreamMutation.mutate(payload);
+
+    if (bettingRounds.length > 0)
+    {
+      const bettingPayload = {
+        streamId: editStreamId,
+        rounds: bettingRounds,
+      };
+      createBetMutation.mutate(bettingPayload);
+    }
   }
 
   const handleRestAll = () => {
@@ -472,7 +495,8 @@ export const AdminManagement = ({
     setEditStreamId('');
     setActiveEditStreamTab('info');
     resetForm();
-  }
+    setBettingRounds([]);
+  };
 
   return (
     <div className="space-y-6">
@@ -503,11 +527,15 @@ export const AdminManagement = ({
                     e.preventDefault();
                     await handleCreateStream();
                   }}
-                  disabled={createStreamMutation.isPending || isUploading}
+                  disabled={createStreamMutation.isPending
+                    || createBetMutation.isPending
+                    || isUploading}
                 >
-                  {editStreamId ? (createStreamMutation.isPending || isUploading ?
-                    'Creating...' : 'Create')
-                    : (createStreamMutation.isPending || isUploading) ? 'Saving...' : 'Save'}
+                  {editStreamId ? (createStreamMutation.isPending
+                    || createBetMutation.isPending
+                    || isUploading ?
+                    'Saving...' : 'Save')
+                    : (createStreamMutation.isPending || isUploading) ? 'Creating...' : 'Create'}
                 </Button>
               </div>
               {!!editStreamId && <TabSwitch tabs={editStreamTabs} activeTab={activeEditStreamTab} setActiveTab={setActiveEditStreamTab} />}
