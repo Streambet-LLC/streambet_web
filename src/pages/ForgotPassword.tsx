@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import api from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
 
 const ForgotPassword = () => {
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ const ForgotPassword = () => {
     setError(null);
 
     try {
-      const { error } = await api.auth.forgotPassword(email);
+      const { error } = await api.auth.forgotPassword(email, redirectParam || undefined);
 
       if (error) {
         throw error;
@@ -108,7 +110,7 @@ console.log('error', error)
             </CardContent>
 
             <CardFooter className="flex justify-center border-t border-gray-800 pt-4">
-              <Link to="/login" className="text-primary hover:underline flex items-center">
+              <Link to={redirectParam ? `/login?redirect=${redirectParam}` : "/login"} className="text-primary hover:underline flex items-center">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Login
               </Link>

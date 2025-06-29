@@ -164,7 +164,7 @@ export const Navigation = () => {
                   className={`flex items-center gap-2 font-light transition-colors px-3 py-2 ${
                     isActive
                       ? 'text-white'
-                      : 'text-[#FFFFFF80] hover:text-white'
+                      : 'text-[#FFFFFF80] hover:text-primary-foreground'
                   }`}
                   onClick={() => navigate(item.path)}
                 >

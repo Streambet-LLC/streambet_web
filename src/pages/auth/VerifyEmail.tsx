@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getMessage } from '@/utils/helper';
 import { Loader2 } from 'lucide-react';
@@ -7,6 +7,8 @@ import { Loader2 } from 'lucide-react';
 const VerifyEmail: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,14 +36,14 @@ const VerifyEmail: React.FC = () => {
       })
       .then(() => {
         toast({ title: 'Email verified', description: 'Email verified please try login now!' });
-        navigate('/login');
+        navigate(redirectParam ? `/login?redirect=${redirectParam}` : '/login');
       })
       .catch((err) => {
         toast({ title: 'Verification failed', description: 'Invalid or expired token', variant: 'destructive' });
         setError(getMessage(err) || 'Invalid or expired token');
         setLoading(false);
       });
-  }, [location.search, navigate, toast]);
+  }, [location.search, navigate, toast, redirectParam]);
 
   useEffect(() => {
     if (error) {

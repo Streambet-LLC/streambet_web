@@ -119,15 +119,9 @@ export const authAPI = {
     tosAccepted: boolean;
     profileImageUrl: string;
     lastKnownIp: string;
+    redirect?: string;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
-    // Store the tokens
-    // if (response?.data?.data?.accessToken) {
-    //   localStorage.setItem('accessToken', response.data.data.accessToken);
-    // }
-    // if (response?.data?.data?.refreshToken) {
-    //   localStorage.setItem('refreshToken', response.data.data.refreshToken);
-    // }
     return response.data;
   },
 
@@ -226,8 +220,8 @@ export const authAPI = {
   },
 
   // Forgot password (send reset link)
-  forgotPassword: async (identifier: string) => {
-    const response = await apiClient.post('/auth/forgot-password', { identifier });
+  forgotPassword: async (identifier: string, redirect?: string) => {
+    const response = await apiClient.post('/auth/forgot-password', { identifier, redirect });
     return response.data;
   },
 

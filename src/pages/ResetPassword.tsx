@@ -19,6 +19,7 @@ function validatePassword(password: string) {
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') || '';
+  const redirectParam = searchParams.get('redirect');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +51,7 @@ const ResetPassword = () => {
       title: 'Password changed successfully!',
       description: `Please log in with your new password.`,
       });
-      window.location.href = '/login'; // Redirect to login after success
+      window.location.href = redirectParam ? `/login?redirect=${redirectParam}` : '/login'; // Redirect to login after success
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Failed to reset password.');
     } finally {
@@ -84,7 +85,7 @@ const ResetPassword = () => {
               {success ? (
                 <Alert className="mb-4 bg-green-900/30 border-green-800 text-white">
                   <AlertDescription>
-                    Password reset successful! You can now <Link to="/login" className="underline text-primary">log in</Link> with your new password.
+                    Password reset successful! You can now <Link to={redirectParam ? `/login?redirect=${redirectParam}` : '/login'} className="underline text-primary">log in</Link> with your new password.
                   </AlertDescription>
                 </Alert>
               ) : (
