@@ -143,7 +143,7 @@ export const Navigation = () => {
 
         <motion.div variants={logoVariants} initial="hidden" animate="visible">
           <Link to="/" className="flex items-center">
-            <img src="./logo.svg" alt="Streambet Logo" className="h-8 w-[121px] object-contain" />
+            <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[121px] object-contain" />
           </Link>
         </motion.div>
 

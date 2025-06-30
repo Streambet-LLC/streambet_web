@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,7 +39,7 @@ export default function Login() {
   const googleLoginRef = useRef<HTMLDivElement>(null);
 
   // Parse query params
-  const searchParams = new URLSearchParams(location.search);
+  // const searchParams = new URLSearchParams(location.search);
   const from = searchParams.get('from');
   const streamId = searchParams.get('id');
 
@@ -81,9 +81,6 @@ export default function Login() {
       if (redirectParam) {
         navigate(redirectParam);
       } 
-      else if (from === 'stream' && streamId) {
-        navigate(`/stream/${streamId}`);
-      }
       else {
         navigate(response?.data?.role === 'admin' ? '/admin' : '/');
       }

@@ -4,6 +4,11 @@ import { CommentSection } from '@/components/CommentSection';
 import { StreamDetails } from '@/components/stream/StreamDetails';
 import BetTokens from './BetTokens';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import api from '@/integrations/api/client';
+import LockTokens from './LockTokens';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface StreamContentProps {
   streamId: string;
@@ -14,8 +19,59 @@ interface StreamContentProps {
 
 export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamContentProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+   const [placedBet, setPlaceBet] = useState(false);
+
+   console.log(session, 'session inside StreamContent');
+
+  const { data: bettingData, refetch: refetchBettingData} = useQuery({
+    queryKey: ['bettingData'],
+    queryFn: async () => {
+      const data = await api.betting.getBettingData(streamId,session?.id);
+      return data?.data;
+    },
+    // enabled: false,
+  });
+
+  // Mutation to place a bet
+  const placeBetMutation = useMutation({
+    mutationFn: async ({ bettingVariableId, amount, currencyType }: { bettingVariableId: string; amount: number; currencyType: string }) => {
+      return await api.betting.placeBet({
+        bettingVariableId,
+        amount,
+        currencyType,
+      });
+    },
+    onSuccess: () => {
+      setPlaceBet(true)
+      toast({
+        description:
+          "Bet placed successfuly",
+        variant: 'default',
+      });
+    },
+  });
+
+  // Cancel bet mutation
+   const cancelBetMutation = useMutation({
+      mutationFn: async ({ betId, currencyType }: { betId: string; currencyType: string }) => {
+        await api.betting.cancelUserBet({
+          betId,
+          currencyType,
+        });
+      },
+      onSuccess: () => {
+        setPlaceBet(false)
+        toast({
+          description:
+            "Bet cancled successfuly",
+          variant: 'default',
+        });
+      },
+    });
 
   console.log(session,'session')
+  console.log(bettingData, 'bettingData');
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-6">
@@ -28,7 +84,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         <h2 className="text-white text-lg font-semibold">Sign in to play</h2>
         <button
           className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
-          onClick={() => navigate(`/login?from=stream&id=${streamId}`)}
+          onClick={() => navigate(`/login?redirect=/stream/${streamId}`)}
         >
           Sign in
         </button>
@@ -44,8 +100,19 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           />
         )} */}
 
-        <BetTokens
-        session={session}/>
+
+        {/* {!placedBet  ? (
+                <BetTokens
+                session={session}
+                bettingData={bettingData}
+                placeBet={(data) => placeBetMutation.mutate(data)}
+                />
+        ):( */}
+
+                <LockTokens
+                bettingData={bettingData}
+                cancelBet={(data) => cancelBetMutation.mutate(data)}/>
+         {/* )}  */}
 
         {/* <BettingInterface
           key={`betting-${session?.id}-${streamId}-${refreshKey}-${Date.now()}`}
