@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,6 +35,8 @@ export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,7 +59,7 @@ export default function SignUp() {
     username: z
       .string()
       .min(3, 'Username must be at least 3 characters')
-      .regex(/^[^\s]*$/, 'Username cannot contain spaces'),
+      .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
     email: z.string().email('Invalid email address'),
     password: isGoogleLogin
       ? z.string().optional()
@@ -155,6 +157,7 @@ export default function SignUp() {
       isOlder: boolean;
       profileImageUrl: string;
       lastKnownIp: string;
+      redirect?: string;
     }) => {
       // Verify location again before proceeding with signup
       const locationResult = await verifyUserLocation();
@@ -169,7 +172,11 @@ export default function SignUp() {
         title: 'Account created!',
         description: 'Your account has been successfully created. Please verify mail to login.',
       });
-      navigate('/login');
+      if (redirectParam) {
+        navigate(`/login?redirect=${redirectParam}`);
+      } else {
+        navigate('/login');
+      }
     },
     onError: (error: any) => {
       toast({
@@ -327,6 +334,7 @@ export default function SignUp() {
       isOlder,
       profileImageUrl: profileImageUrl || undefined,
       lastKnownIp: locationStatus?.ip_address,
+      redirect: redirectParam || undefined,
     });
   };
 
@@ -777,7 +785,7 @@ export default function SignUp() {
                   Already have an account?{' '}
                
                 </p>
-                <Link to="/login" className="text-sm text-primary hover:underline font-md drop-shadow-md mt-6 ml-2">
+                <Link to={redirectParam ? `/login?redirect=${redirectParam}` : "/login"} className="text-sm text-primary hover:underline font-md drop-shadow-md mt-6 ml-2">
                     Log in
                   </Link>
               </motion.div>

@@ -23,7 +23,7 @@ const OverView = () => {
                <div className="bg-zinc-900 text-white p-5 rounded-lg h-[109px]  shadow relative">
                  <p className="text-sm font-medium text-[rgba(255, 255, 255, 0.75)] pb-2">
                   Active Streams
-                </p>
+                 </p>
                  <p className="text-2xl font-semibold">14</p>
                </div>
 
@@ -42,16 +42,16 @@ const OverView = () => {
                </div>
              </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left - Video & Actions */}
-        <div className="col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4">
           <div>
             <h2 className="text-lg font-semibold mb-2">My Epic Stream - Playing Valorant all day</h2>
             <VideoPlayer playbackId={''} />
           </div>
 
           {/* Activity Feed + Mod Actions */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-black p-4 rounded-md">
               <h3 className="font-bold mb-2">Activity Feed</h3>
               <p>Anyone else bet:<br /><strong>50 Stream Coins</strong></p>
@@ -68,7 +68,7 @@ const OverView = () => {
         </div>
 
         {/* Right - Live Chat */}
-        <div>
+        <div className="lg:col-span-1">
           <LiveChat />
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +28,8 @@ export default function Login() {
   const location = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -76,9 +78,13 @@ export default function Login() {
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['session'] });
-      if (from === 'stream' && streamId) {
+      if (redirectParam) {
+        navigate(redirectParam);
+      } 
+      else if (from === 'stream' && streamId) {
         navigate(`/stream/${streamId}`);
-      } else {
+      }
+      else {
         navigate(response?.data?.role === 'admin' ? '/admin' : '/');
       }
     },
@@ -277,7 +283,7 @@ export default function Login() {
                         Remember for 30 days
                       </Label>
                     </div>
-                    <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                    <Link to={redirectParam ? `/forgot-password?redirect=${redirectParam}` : "/forgot-password"} className="text-sm text-primary hover:underline">
                       Forgot password
                     </Link>
                   </div>
@@ -320,7 +326,7 @@ export default function Login() {
                 <motion.div variants={itemVariants} className="text-center w-full mt-7">
                   <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
-                    <Link to="/signup" className="text-primary hover:underline">
+                    <Link to={redirectParam ? `/signup?redirect=${redirectParam}` : "/signup"} className="text-primary hover:underline">
                       Sign up
                     </Link>
                   </p>

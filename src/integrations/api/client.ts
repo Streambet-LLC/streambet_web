@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
+import { decodeIdToken } from '@/utils/helper';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -9,19 +10,34 @@ const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': '69420',
   },
 });
 
 // Socket.io instance
 let socket: Socket | null = null;
 
-// Add request interceptor to include the token in every request
+// Unique symbols for retry flags
+const RETRY_REFRESH = Symbol('RETRY_REFRESH');
+const RETRY_401 = Symbol('RETRY_401');
+
+// Add request interceptor to include the token in every request and check expiry
 apiClient.interceptors.request.use(
   config => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      try {
+        const decoded = decodeIdToken(token);
+        // Check expiry (exp is in seconds)
+        if (decoded.exp && Date.now() / 1000 > decoded.exp) {
+          // Token expired, do not attach token, let the request fail and response interceptor handle refresh
+          // No refresh logic here
+        } else {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (e) {
+        // If decode fails, treat as invalid/expired, do not attach token
+        // No refresh logic here
+      }
     }
     return config;
   },
@@ -29,40 +45,69 @@ apiClient.interceptors.request.use(
 );
 
 // Add response interceptor to handle 401 errors and refresh token
-// apiClient.interceptors.response.use(
-//   response => response,
-//   async error => {
-//     const originalRequest = error.config;
-//     // Prevent infinite loop
-//     if (error.response && error.response.status === 401 && !originalRequest._retry) {
-//       originalRequest._retry = true;
-//       try {
-//         const refreshToken = localStorage.getItem('refreshToken');
-//         if (!refreshToken) throw new Error('No refresh token');
-//         // Call refresh endpoint
-//         const refreshResponse = await apiClient.post('/auth/refresh', { refreshToken });
-//         const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data.data || {};
-//         if (accessToken) {
-//           localStorage.setItem('accessToken', accessToken);
-//         }
-//         if (newRefreshToken) {
-//           localStorage.setItem('refreshToken', newRefreshToken);
-//         }
-//         // Update the Authorization header and retry the original request
-//         originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
-//         return apiClient(originalRequest);
-//       } catch (refreshError) {
-//         // If refresh fails, log out
-//         console.log('refreshError', refreshError);
-//         localStorage.removeItem('accessToken');
-//         localStorage.removeItem('refreshToken');
-//         window.location.href = '/login';
-//         return Promise.reject(refreshError);
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
+apiClient.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+
+    // Prevent infinite loop: do not refresh for /auth/refresh itself
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      originalRequest.url &&
+      originalRequest.url.endsWith('/auth/refresh')
+    ) {
+      alert('Session has been expired! Please relogin');
+      await authAPI.signOut();
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
+
+    // Prevent infinite loop: only allow one refresh attempt per original request
+    if (
+      error.response &&
+      error.response.status === 401
+    ) {
+      const accessToken = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      // If no accessToken is present, do nothing
+      if (!accessToken) {
+        return Promise.reject(error);
+      }
+      
+      // If this is the first 401 for this request, try refresh
+      if (refreshToken && !(originalRequest as any)[RETRY_401]) {
+        (originalRequest as any)[RETRY_401] = true;
+        try {
+          const refreshResponse = await apiClient.post('/auth/refresh', { refreshToken });
+          const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshResponse.data.data || {};
+          if (newAccessToken) {
+            localStorage.setItem('accessToken', newAccessToken);
+            if (newRefreshToken) {
+              localStorage.setItem('refreshToken', newRefreshToken);
+            }
+            originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+            return apiClient(originalRequest);
+          }
+        } catch (refreshError) {
+          // If refresh fails, show alert and logout
+          alert('Session has been expired! Please relogin');
+          await authAPI.signOut();
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        }
+      } else {
+        // If already retried once, or no refreshToken, show alert and logout
+        alert('Session has been expired! Please relogin');
+        await authAPI.signOut();
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Auth API
 export const authAPI = {
@@ -74,15 +119,9 @@ export const authAPI = {
     tosAccepted: boolean;
     profileImageUrl: string;
     lastKnownIp: string;
+    redirect?: string;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
-    // Store the tokens
-    // if (response?.data?.data?.accessToken) {
-    //   localStorage.setItem('accessToken', response.data.data.accessToken);
-    // }
-    // if (response?.data?.data?.refreshToken) {
-    //   localStorage.setItem('refreshToken', response.data.data.refreshToken);
-    // }
     return response.data;
   },
 
@@ -106,7 +145,7 @@ export const authAPI = {
     //   'Content-Type': 'application/json',
     // };
     const response = await apiClient.get('/auth/google');
-    console.log('response?.data', response);
+
     // const response = await apiClient.get(`/auth/google/callback?token=${googleToken}`);
     // Store the tokens
     if (response?.data?.data?.accessToken) {
@@ -181,8 +220,8 @@ export const authAPI = {
   },
 
   // Forgot password (send reset link)
-  forgotPassword: async (identifier: string) => {
-    const response = await apiClient.post('/auth/forgot-password', { identifier });
+  forgotPassword: async (identifier: string, redirect?: string) => {
+    const response = await apiClient.post('/auth/forgot-password', { identifier, redirect });
     return response.data;
   },
 
@@ -509,9 +548,29 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Get all streams
+  getStreams: async (params?: any) => {
+    const response = await apiClient.get(`/admin/streams`, {
+      params,
+    });
+    return response.data;
+  },
+
   // Delete stream
   deleteStream: async (streamId: string) => {
     const response = await apiClient.delete(`/admin/streams/${streamId}`);
+    return response.data;
+  },
+
+  // Create betting options for stream
+  createBettingData: async (payload: any) => {
+    const response = await apiClient.post(`/admin/betting-variables`, payload);
+    return response.data;
+  },
+
+  // Edit betting options for stream
+  updateBettingData: async (payload: any) => {
+    const response = await apiClient.patch(`/admin/betting-variables`, payload);
     return response.data;
   },
 

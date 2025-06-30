@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
@@ -19,29 +19,52 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { getMessage } from '@/utils/helper';
 import OverView from './OverView';
+import { TabSwitch } from '../navigation/TabSwitch';
+import { CopyableInput } from '../ui/CopyableInput';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { BettingRounds } from './BettingRounds';
+
+interface BettingOption {
+  optionId?: string;
+  option: string;
+}
+
+interface BettingRound {
+  roundId?: string;
+  roundName: string;
+  options: BettingOption[];
+}
 
 export const AdminManagement = ({
   streams,
   refetchStreams,
   searchStreamQuery,
   setSearchStreamQuery }) => {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
+  const [activeEditStreamTab, setActiveEditStreamTab] = useState('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
   const [isCreateStream, setIsCreateStream] = useState(false);
+  const [editStreamId, setEditStreamId] = useState('');
 
   // Create livestream form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [embeddedUrl, setEmbeddedUrl] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Replace with real data
-  const totalUsers = 1280;
-  const activeBets = 91.42;
-  const totalLiveTime = 42321;
+  // Betting rounds state
+  const [bettingRounds, setBettingRounds] = useState<BettingRound[]>([]);
+
+  // Load existing betting data when editing
+  useEffect(() => {
+    if (editStreamId) {
+      // TODO: Load existing betting data from API
+      // For now, we'll set empty array
+      setBettingRounds([]);
+    }
+  }, [editStreamId]);
 
   const tabs = [
     { key: 'overview', label: 'Overview' },
@@ -49,13 +72,29 @@ export const AdminManagement = ({
     { key: 'users', label: 'Users' },
   ];
 
+  const editStreamTabs = [
+    { key: 'info', label: 'Information' },
+    { key: 'betting', label: 'Betting' },
+  ];
+
   const createStreamMutation = useMutation({
-    mutationFn: async (payload: any) => api.admin.createStream(payload),
+    mutationFn: (payload: any) => api.admin.createStream(payload),
     onSuccess: () => {
-      toast({ title: 'Success', description: 'Stream created successfully!' });
-      resetForm();
-      setIsCreateStream(false);
-      refetchStreams();
+      if (!bettingRounds?.length) {
+        toast({ title: 'Success', description: 'Stream saved successfully!' });
+        handleRestAll();
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
+    },
+  });
+
+  const createBetMutation = useMutation({
+    mutationFn: (payload: any) => api.admin.createBettingData(payload),
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Stream and Betting saved successfully!' });
+      handleRestAll();
     },
     onError: (error: any) => {
       toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
@@ -144,11 +183,11 @@ export const AdminManagement = ({
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = e.target.value;
     setStartTime(newTime);
-    
+
     // Reset end date and time when start time changes
     setEndDateObj(null);
     setEndTime('');
-    
+
     // Validate the form after setting the new time
     validateForm();
   };
@@ -178,9 +217,13 @@ export const AdminManagement = ({
     setThumbnailError(null);
     setIsDragging(false);
     setIsUploading(false);
-    
+
+    // Reset betting rounds
+    setBettingRounds([]);
+
     // Clear the file input
-    if (fileInputRef.current) {
+    if (fileInputRef.current)
+    {
       fileInputRef.current.value = '';
     }
 
@@ -195,13 +238,17 @@ export const AdminManagement = ({
   }
 
   function scrollToFirstError() {
-    if (errors.title && titleRef.current) {
+    if (errors.title && titleRef.current)
+    {
       titleRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.embeddedUrl && embeddedUrlRef.current) {
+    } else if (errors.embeddedUrl && embeddedUrlRef.current)
+    {
       embeddedUrlRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.thumbnail && thumbnailRef.current) {
+    } else if (errors.thumbnail && thumbnailRef.current)
+    {
       thumbnailRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.startDate && startDateRef.current) {
+    } else if (errors.startDate && startDateRef.current)
+    {
       startDateRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
@@ -210,25 +257,25 @@ export const AdminManagement = ({
     if (!date) return 'Select date';
     const dateStr = format(date, 'MM/dd/yyyy');
     if (!time) return dateStr;
-    
+
     // Convert 24-hour format to 12-hour format
     const [hours, minutes] = time.split(':');
     const hour = parseInt(hours);
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     const timeStr = `${displayHour}:${minutes} ${ampm}`;
-    
+
     return `${dateStr} ${timeStr}`;
   }
 
   function formatDateTimeForISO(date: Date | null, time: string): string | undefined {
     if (!date || !time) return undefined;
-    
+
     // Create a new date object with the selected date and time
     const dateTime = new Date(date);
     const [hours, minutes] = time.split(':');
     dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    
+
     // Format as ISO 8601 string
     return dateTime.toISOString();
   }
@@ -244,32 +291,40 @@ export const AdminManagement = ({
 
     let isValid = true;
 
-    if (title.trim().length < 3 || title.trim().length > 70) {
+    if (title.trim().length < 3 || title.trim().length > 70)
+    {
       newErrors.title = 'Title must be 3-70 characters';
       isValid = false;
     }
-    if (!embeddedUrl.trim() || (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))) {
+    if (!embeddedUrl.trim() || (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick')))
+    {
       newErrors.embeddedUrl = 'Embed URL is required and should be valid';
       isValid = false;
     }
-    if (!selectedThumbnailFile) {
+    if (!selectedThumbnailFile)
+    {
       newErrors.thumbnail = 'Thumbnail is required';
       isValid = false;
     }
-    if (!startDateObj) {
+    if (!startDateObj)
+    {
       newErrors.startDate = 'Start date is required';
       isValid = false;
-    } else if (!startTime) {
+    } else if (!startTime)
+    {
       newErrors.startDate = 'Start time is required';
       isValid = false;
-    } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+    } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj))
+    {
       newErrors.startDate = 'Cannot select past time for today';
       isValid = false;
     }
 
     // Validate end date/time if they are provided
-    if (endDateObj && endTime) {
-      if (!isEndDateTimeValid(endDateObj, endTime)) {
+    if (endDateObj && endTime)
+    {
+      if (!isEndDateTimeValid(endDateObj, endTime))
+      {
         newErrors.endDate = 'End time must be after start time';
         isValid = false;
       }
@@ -288,9 +343,10 @@ export const AdminManagement = ({
   }
   async function handleFile(file: File) {
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setErrors({ 
-        ...errors, 
+    if (!file.type.startsWith('image/'))
+    {
+      setErrors({
+        ...errors,
         thumbnail: 'Please upload an image file',
         title: '',
         embeddedUrl: '',
@@ -300,9 +356,10 @@ export const AdminManagement = ({
       return;
     }
     // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors({ 
-        ...errors, 
+    if (file.size > 5 * 1024 * 1024)
+    {
+      setErrors({
+        ...errors,
         thumbnail: 'Please upload an image smaller than 5MB',
         title: '',
         embeddedUrl: '',
@@ -325,10 +382,12 @@ export const AdminManagement = ({
       img.onload = () => {
         URL.revokeObjectURL(img.src);
         const isValidSize = img.width <= 800 && img.height <= 400;
-        if (!isValidSize) {
+        if (!isValidSize)
+        {
           setErrors(errors => ({ ...errors, thumbnail: 'Image must be max 800x400px' }));
           resolve(false);
-        } else {
+        } else
+        {
           resolve(true);
         }
       };
@@ -342,7 +401,8 @@ export const AdminManagement = ({
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files && e.dataTransfer.files[0])
+    {
       handleFile(e.dataTransfer.files[0]);
     }
   }
@@ -366,27 +426,37 @@ export const AdminManagement = ({
       endDate: ''
     });
     // Clear the file input to allow reselection
-    if (fileInputRef.current) {
+    if (fileInputRef.current)
+    {
       fileInputRef.current.value = '';
     }
   }
 
   async function handleCreateStream() {
-    if (!validateForm()) {
+    if (!validateForm())
+    {
       // Scroll to first error after validation
       setTimeout(() => scrollToFirstError(), 100);
+      toast({
+        title: 'Form error',
+        description: 'Please check your form for any validation error',
+        variant: 'destructive'
+      });
       return;
     }
 
     let thumbnailImageUrl = '';
 
-    if (selectedThumbnailFile?.name) {
-      try {
+    if (selectedThumbnailFile?.name)
+    {
+      try
+      {
         setIsUploading(true);
         const response = await api.auth.uploadImage(selectedThumbnailFile, 'thumbnail');
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
-      } catch (error) {
+      } catch (error)
+      {
         toast({
           variant: 'destructive',
           title: 'Error uploading stream thumbnail',
@@ -404,14 +474,33 @@ export const AdminManagement = ({
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
       endTime: formatDateTimeForISO(endDateObj, endTime),
+      streamId: editStreamId || undefined,
+      betRoundsData: bettingRounds.length > 0 ? bettingRounds : undefined,
     };
 
     createStreamMutation.mutate(payload);
+
+    if (bettingRounds.length > 0)
+    {
+      const bettingPayload = {
+        streamId: editStreamId,
+        rounds: bettingRounds,
+      };
+      createBetMutation.mutate(bettingPayload);
+    }
   }
+
+  const handleRestAll = () => {
+    setIsCreateStream(false);
+    setEditStreamId('');
+    setActiveEditStreamTab('info');
+    resetForm();
+    setBettingRounds([]);
+  };
 
   return (
     <div className="space-y-6">
-      {isCreateStream ? (
+      {isCreateStream || editStreamId ? (
         <div className="flex justify-center items-center min-h-[60vh]">
           <Card className="w-full max-w-xl bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none">
             <CardContent className="p-4 !pt-2 sm:p-6">
@@ -422,14 +511,14 @@ export const AdminManagement = ({
                   variant="secondary"
                   className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
-                  onClick={() => { setIsCreateStream(false); resetForm(); }}
+                  onClick={() => { handleRestAll() }}
                 >
                   <ArrowLeft className="h-4 w-4 mr-0" /> Back
                 </Button>
               </div>
               {/* Label and Create button in same row */}
               <div className="flex flex-row items-center justify-between mb-6">
-                <span className="text-lg text-white font-light">Create new livestream</span>
+                <span className="text-lg text-white font-light">{editStreamId ? 'Manage Livestream' : 'Create new livestream'}</span>
                 <Button
                   type="submit"
                   className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[79px] h-[40px]"
@@ -438,14 +527,22 @@ export const AdminManagement = ({
                     e.preventDefault();
                     await handleCreateStream();
                   }}
-                  disabled={createStreamMutation.isPending || isUploading}
+                  disabled={createStreamMutation.isPending
+                    || createBetMutation.isPending
+                    || isUploading}
                 >
-                  {createStreamMutation.isPending || isUploading ? 'Creating...' : 'Create'}
+                  {editStreamId ? (createStreamMutation.isPending
+                    || createBetMutation.isPending
+                    || isUploading ?
+                    'Saving...' : 'Save')
+                    : (createStreamMutation.isPending || isUploading) ? 'Creating...' : 'Create'}
                 </Button>
               </div>
+              {!!editStreamId && <TabSwitch tabs={editStreamTabs} activeTab={activeEditStreamTab} setActiveTab={setActiveEditStreamTab} />}
               <Separator className="my-4 bg-[#232323]" />
               {/* Form fields */}
               <form className="space-y-8" onSubmit={e => e.preventDefault()}>
+                {(isCreateStream || activeEditStreamTab === 'info') && <>
                 {/* Title */}
                 <div>
                   <Label className="text-white font-light mb-3 block">Title</Label>
@@ -471,7 +568,12 @@ export const AdminManagement = ({
                     value={description}
                     onChange={e => setDescription(e.target.value)}
                   />
-                </div>
+                  </div>
+                  {/* Stream URL */}
+                  {!!editStreamId && <div>
+                    <Label className="text-white font-light mb-3 block">Stream url</Label>
+                    <CopyableInput value={`${window.location.origin}/stream/${editStreamId}`} />
+                  </div>}
                 {/* Embed URL */}
                 <div>
                   <Label className="text-white font-light mb-3 block">Embed URL</Label>
@@ -577,7 +679,7 @@ export const AdminManagement = ({
                         onSelect={handleStartDateChange}
                         initialFocus
                         showOutsideDays
-                        disabled={date => date < new Date(new Date().setHours(0,0,0,0))}
+                        disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
                       />
                       <div className="flex items-center gap-2 p-2">
                         <span className="text-xs text-white">Time:</span>
@@ -651,7 +753,14 @@ export const AdminManagement = ({
                     </PopoverContent>
                   </Popover>
                   {errors.endDate && <div className="text-destructive text-xs mt-1">{errors.endDate}</div>}
-                </div>
+                  </div>
+                </>}
+                {editStreamId && activeEditStreamTab === 'betting' && <>
+                  <BettingRounds 
+                    rounds={bettingRounds} 
+                    onRoundsChange={setBettingRounds} 
+                  />
+                </>}
               </form>
             </CardContent>
           </Card>
@@ -659,41 +768,15 @@ export const AdminManagement = ({
       ) : (
         <>
           {/* Top bar (tabs, search, create button) only when not creating stream */}
-          <div className="flex items-center justify-between w-full mb-4">
-            <div className="flex">
-              {tabs.map((tab, idx) => {
-                const isActive = activeTab === tab.key;
-                const isFirst = idx === 0;
-                const isLast = idx === tabs.length - 1;
-
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`
-              px-6 py-2 text-sm font-medium
-              border border-[#2D343E]
-              ${isLast ? 'border-r-1' : ''}
-              ${isFirst ? 'rounded-l-lg' : ''}
-              ${isLast ? 'rounded-r-lg' : ''}
-              ${isActive ? 'bg-[#2A2A2A] text-white' : ' text-white hover:bg-[#1f1f1f]'}
-            `}
-                    style={{
-                      borderColor: '#2D343E',
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
+          <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}>
+            <TabSwitch tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+            
             {activeTab === 'users' && (
-              <div  className="relative rounded-md w-[200px] lg:w-[400px] border" style={{ border: '1px solid #2D343E'}}>
+              <div className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`} style={{ border: '1px solid #2D343E' }}>
                 <Input
                   id="search-users"
                   type="text"
-                  placeholder="Search"
+                  placeholder="Search users..."
                   value={searchUserQuery}
                   onChange={e => setSearchUserQuery(e.target.value)}
                   className="pl-9 rounded-md"
@@ -703,33 +786,33 @@ export const AdminManagement = ({
             )}
 
             {activeTab === 'livestreams' && (
-              <div className="flex items-center justify-end w-full">
-                <div className="relative rounded-md mr-2" style={{ border: '1px solid #2D343E' }}>
+              <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-end'} w-full`}>
+                <div className={`relative rounded-md ${isMobile ? 'w-full' : 'mr-2'}`} style={{ border: '1px solid #2D343E' }}>
                   <Input
                     id="search-streams"
                     type="text"
-                    placeholder="Search"
+                    placeholder="Search streams..."
                     value={searchStreamQuery}
                     onChange={e => setSearchStreamQuery(e.target.value)}
                     className="pl-9 rounded-md"
-                    style={{ minWidth: 180 }}
+                    style={isMobile ? {} : { minWidth: 180 }}
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
                 <button
                   type="button"
-                  className="bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors"
+                  className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
                   onClick={() => setIsCreateStream(true)}
                 >
-                  Create new livestream
+                  {isMobile ? 'Create Livestream' : 'Create new livestream'}
                 </button>
               </div>
             )}
-            </div>
-            <Separator className="!mt-1" />
+          </div>
+          <Separator className="!mt-1" />
           {/* Tab Content */}
           {activeTab === 'overview' && (
-            <OverView/>
+            <OverView />
             // <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
             //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
@@ -763,10 +846,11 @@ export const AdminManagement = ({
 
           {activeTab === 'livestreams' && (
             <div className="space-y-4">
-                <StreamTable
-                  streams={streams}
-                  refetchStreams={() => refetchStreams()}
-                />
+              <StreamTable
+                streams={streams}
+                refetchStreams={refetchStreams}
+                setEditStreamId={setEditStreamId}
+              />
             </div>
           )}
 

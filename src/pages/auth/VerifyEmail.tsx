@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getMessage } from '@/utils/helper';
 import { Loader2 } from 'lucide-react';
@@ -7,6 +7,8 @@ import { Loader2 } from 'lucide-react';
 const VerifyEmail: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,19 +31,23 @@ const VerifyEmail: React.FC = () => {
       body: JSON.stringify({ token }),
     })
       .then(async (res) => {
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok)
+        {
+          const errorResponse = await res.json();
+          throw new Error(getMessage(errorResponse));
+        }
         return res.json();
       })
       .then(() => {
         toast({ title: 'Email verified', description: 'Email verified please try login now!' });
-        navigate('/login');
+        navigate(redirectParam ? `/login?redirect=${redirectParam}` : '/login');
       })
       .catch((err) => {
         toast({ title: 'Verification failed', description: 'Invalid or expired token', variant: 'destructive' });
         setError(getMessage(err) || 'Invalid or expired token');
         setLoading(false);
       });
-  }, [location.search, navigate, toast]);
+  }, [location.search, navigate, toast, redirectParam]);
 
   useEffect(() => {
     if (error) {
@@ -62,7 +68,7 @@ const VerifyEmail: React.FC = () => {
       ) : error ? (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative max-w-md text-center" role="alert">
           <strong className="font-bold">Error: </strong>
-          <span className="block sm:inline">{error}</span>
+          <span className="block sm:inline">{getMessage(error)}</span>
         </div>
       ) : <div className="flex flex-col items-center">
             <p>Email verified successfully. Please login.</p>

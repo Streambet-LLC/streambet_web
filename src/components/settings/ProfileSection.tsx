@@ -31,8 +31,7 @@ const formSchema = z.object({
   username: z
     .string()
     .min(3, 'Username must be at least 3 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
-    .refine(val => !val.includes(' '), 'Username cannot contain spaces'),
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
   email: z.string().email().optional(),
   city: z.string().optional(),
   state: z
@@ -149,16 +148,13 @@ export const ProfileSection = ({
   useEffect(() => {
     if (selectedAvatarFile)
     {
-      console.log('selectedAvatarFile set')
       setAvatarPreviewUrl(URL.createObjectURL(selectedAvatarFile));
       return () => URL.revokeObjectURL(avatarPreviewUrl!);
     } else if (currentAvatar)
     {
-      console.log('currentAvatar set')
       setAvatarPreviewUrl(currentAvatar);
     } else
     {
-      console.log('undefined set')
       setAvatarPreviewUrl(undefined);
     }
     // eslint-disable-next-line
@@ -338,8 +334,6 @@ export const ProfileSection = ({
     setAvatarDeleted(true);
   };
 
-  console.log('avatarPreviewUrl', avatarPreviewUrl);
-  console.log('currentAvatar', currentAvatar);
   return (
     <div className="space-y-6">
       {/* Header Section */}

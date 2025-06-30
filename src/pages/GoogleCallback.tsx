@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const GoogleLoadingIcon = () => (
   <svg width="64" height="64" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-spin">
@@ -12,6 +12,8 @@ const GoogleLoadingIcon = () => (
 
 const GoogleCallback = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,13 +35,17 @@ const GoogleCallback = () => {
       localStorage.setItem('refreshToken', refreshToken);
       // Give a short delay for UX
       setTimeout(() => {
-        navigate('/');
+        if (redirectParam) {
+          navigate(redirectParam);
+        } else {
+          navigate('/');
+        }
       }, 1000);
     } else {
       setError('No authentication tokens found');
       setTimeout(() => navigate('/login'), 3000);
     }
-  }, [navigate]);
+  }, [navigate, redirectParam]);
 
   if (error) {
     return (
