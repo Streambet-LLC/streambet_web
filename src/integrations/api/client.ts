@@ -330,6 +330,11 @@ export const bettingAPI = {
     return response.data;
   },
 
+  getBettingData: async (streamId: string) => {
+    const response = await apiClient.get(`/betting/round/options/${streamId}`);
+    return response.data;
+  },
+
   // Place a bet
   placeBet: async (betData: {
     streamId: string;
