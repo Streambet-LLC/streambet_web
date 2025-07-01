@@ -1,5 +1,4 @@
 import { CurrencyType } from "@/enums";
-import { console } from "inspector";
 import { useState } from "react";
 
 interface BettingVariable {
@@ -19,17 +18,25 @@ interface BettingData {
   walletFreeToken?: number;
 }
 
+interface getRoundData {
+  betAmount?: number;
+  potentialFreeTokenAmt?: number;
+  optionName?: string;
+  betId?: string;
+}
+
 interface LockTokens {
   bettingData?: BettingData;
   cancelBet: (data: { betId: string; currencyType: string }) => void;
+  getRoundData: getRoundData;
+  handleBetEdit?: () => void;
 }
 
-export default function LockTokens({ bettingData ,cancelBet}: LockTokens) {
+export default function LockTokens({ bettingData ,cancelBet,getRoundData,handleBetEdit}: LockTokens) {
 
-  // console.log(bettingData?.bettingRounds[0]?.id, 'bettingData inside LockTokens');
 
    const handleCancelBet = () => {
-    cancelBet({ betId: bettingData?.bettingRounds[0]?.id,currencyType: CurrencyType.FREE_TOKENS });
+    cancelBet({ betId: getRoundData?.betId,currencyType: CurrencyType.FREE_TOKENS });
     };
 
   return (
@@ -42,7 +49,7 @@ export default function LockTokens({ bettingData ,cancelBet}: LockTokens) {
         }}
         ></div>
 
-          <img
+          {/* <img
               src="/icons/lock1.svg"
               alt="lock left"
               className="absolute top-8  left-0 w-[230px] h-auto z-10"
@@ -52,35 +59,25 @@ export default function LockTokens({ bettingData ,cancelBet}: LockTokens) {
               src="/icons/lock2.svg"
               alt="lock right"
               className="absolute bottom-9 right-0 w-[100px] h-auto z-10"
-            />
+            /> */}
 
 
       <div className="relative z-10">
         <div className="bg-[#242424] flex justify-between items-center rounded-t-2xl p-5 pl-[55px] pr-[55px]">
           <div>
             <p className="text-xs text-[#606060] font-semibold text-center pb-1">Your bet</p>
-            <p className="font-medium text-[16px] text-[#D7DFEF]">540 tokens</p>
+            <p className="font-medium text-[16px] text-[#D7DFEF]">{getRoundData?.betAmount} tokens</p>
           </div>
           <div>
             <p className="text-xs text-[#606060] font-semibold text-center pb-1">Selected winner</p>
-            <p className="font-medium text-[16px] text-[#D7DFEF] text-center">Pink</p>
+            <p className="font-medium text-[16px] text-[#D7DFEF] text-center">{getRoundData?.optionName}</p>
           </div>
           <div>
             <p className="text-xs text-[#606060] font-semibold text-center pb-1">Potential winnings:</p>
-            <p className="font-medium text-[16px] text-[#BDFF00] text-center">$14,322.10</p>
+            <p className="font-medium text-[16px] text-[#BDFF00] text-center">${Math.round(getRoundData?.potentialFreeTokenAmt ?? 0)}</p>
           </div>
         </div>
 
-        {/* <div
-        className="relative"
-        style={{
-          backgroundImage: `url('/icons/lock_bg.svg')`,
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-          height: '220px',
-        }}
-      > */}
 
         <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-14 pb-4">Bets will be locked soon</p>
 
@@ -90,11 +87,12 @@ export default function LockTokens({ bettingData ,cancelBet}: LockTokens) {
           className="bg-[#242424] w-[95px] text-white px-6 py-2 rounded-[28px] text-xs font-semibold">
             Cancel
           </button>
-          <button className="bg-[#242424] w-[95px] text-white text-xs font-semibold px-6 py-2 rounded-[28px]">
+          <button
+          onClick={handleBetEdit}
+           className="bg-[#242424] w-[95px] text-white text-xs font-semibold px-6 py-2 rounded-[28px]">
             Edit
           </button>
         </div>
-        {/* </div> */}
       </div>
     </div>
   );

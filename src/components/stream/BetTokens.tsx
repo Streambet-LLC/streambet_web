@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from '@/components/ui/use-toast';
 import { useMutation } from "@tanstack/react-query";
 import api from "@/integrations/api/client";
@@ -18,6 +18,13 @@ interface BettingRound {
 interface BettingData {
   bettingRounds?: BettingRound[];
   walletFreeToken?: number;
+  roundTotalBetsTokenAmount:number
+}
+
+interface getRoundData {
+  betAmount?: number;
+  potentialFreeTokenAmt?: number;
+  optionName?: string;
 }
 
 interface BetTokensProps {
@@ -25,36 +32,49 @@ interface BetTokensProps {
   session: any;
   bettingData?: BettingData;
   placeBet: (data: { bettingVariableId: string; amount: number; currencyType: string }) => void;
+  editBetMutation?: (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => void;
+  getRoundData?: getRoundData;
 }
 
-export default function BetTokens({ streamId, session, bettingData ,placeBet}: BetTokensProps) {
+export default function BetTokens({ streamId, session, bettingData ,placeBet,getRoundData,editBetMutation}: BetTokensProps) {
   const { toast } = useToast();
-  const [betAmount, setBetAmount] = useState(0);
+  const [betAmount, setBetAmount] = useState(getRoundData?.betAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
-  // Extract round and betting variables from bettingData
-  const round = bettingData?.bettingRounds?.[0];
-  const roundName = round?.roundName;
-  const totalPot = round?.roundTotalBetsTokenAmount ?? 0;
-  const bettingOptions = round?.bettingVariables || [];
+
 
   const handleColorClick = (color: string) => {
     setSelectedColor(color);
-    // setBetAmount(0); // Remove this line to prevent slider from resetting
   };
 
   const isColorButtonsEnabled = betAmount > 0;
   const isBetButtonEnabled = selectedColor !== "";
-  const sliderMin = 0;
   const sliderMax = bettingData?.walletFreeToken ?? 0;
 
+
+   useEffect(() => {
+    if (getRoundData) {
+      setSelectedColor(getRoundData.optionName);
+      setBetAmount(getRoundData.betAmount);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getRoundData]);
+  
+
+  console.log(betAmount,'betAmount')
+
   const handleBet = () => {
-    const selectedOption = bettingOptions.find(option => option.name === selectedColor);
+    const selectedOption = bettingData?.bettingRounds?.[0]?.bettingVariables?.find(option => option.name === selectedColor);
     if (!selectedOption) return;
-    // Call the placeBet prop with required data
-    if (betAmount > 0 && selectedColor) {
-        placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS });
+
+    if (getRoundData?.betAmount) {
+      editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: CurrencyType.FREE_TOKENS });
+    }
+    else{
+      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS });
     }
   };
+
+ 
 
   return (
     <div
@@ -72,10 +92,10 @@ export default function BetTokens({ streamId, session, bettingData ,placeBet}: B
         </div>
         <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-            {roundName}
+            {bettingData?.bettingRounds?.[0]?.roundName}
             </span>
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-            Total Pot: {totalPot} Free Tokens
+            Total Pot: {bettingData?.roundTotalBetsTokenAmount ? bettingData?.roundTotalBetsTokenAmount : 0} Free Tokens
             </span>
         </div>
       </div>
@@ -83,13 +103,13 @@ export default function BetTokens({ streamId, session, bettingData ,placeBet}: B
       <div className="relative w-full pt-2 pb-2">
         <input
           type="range"
-          min={sliderMin}
+          min={0}
           max={sliderMax}
           value={betAmount}
           disabled={session == null}
           onChange={(e) => setBetAmount(parseInt(e.target.value))}
           onMouseDown={() => {
-            if (sliderMin === 0 && sliderMax === 0) {
+            if (sliderMax === 0) {
               toast({
                 variant: 'destructive',
                 description: 'No Tokens available to bet',
@@ -132,8 +152,8 @@ export default function BetTokens({ streamId, session, bettingData ,placeBet}: B
       </div>
 
 
-      <div className="flex justify-between gap-2 pb-1">
-        {bettingOptions.map((option: any) => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pb-1">
+        {bettingData?.bettingRounds?.[0]?.bettingVariables?.map((option: any, idx: number) => (
           <button
             key={option.id}
             onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}

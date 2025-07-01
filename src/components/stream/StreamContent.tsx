@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import LockTokens from './LockTokens';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 interface StreamContentProps {
@@ -20,18 +20,37 @@ interface StreamContentProps {
 export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamContentProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-   const [placedBet, setPlaceBet] = useState(false);
+  const [placedBet, setPlaceBet] = useState(false);
 
-   console.log(session, 'session inside StreamContent');
-
+// Query to get the betting data for the stream
   const { data: bettingData, refetch: refetchBettingData} = useQuery({
-    queryKey: ['bettingData'],
+    queryKey: ['bettingData', streamId, session?.id],
     queryFn: async () => {
-      const data = await api.betting.getBettingData(streamId,session?.id);
+      if (!session?.id) return null;
+      const data = await api.betting.getBettingData(streamId, session.id);
       return data?.data;
     },
-    // enabled: false,
+    enabled: !!session?.id,
   });
+
+  // Query to get selected betting round data
+  const { data: getRoundData, refetch: refetchRoundData} = useQuery({
+    queryKey: ['selectedRoundData'],
+    queryFn: async () => {
+      const data = await api.betting.getBettingRoundData(bettingData?.bettingRounds?.[0]?.id);
+      return data?.data;
+    },
+    enabled: !!bettingData?.bettingRounds?.[0]?.id,
+  });
+
+// Show bet tokens if a bet is placed
+  useEffect(() => {
+    if (getRoundData?.betAmount !== null && getRoundData?.betAmount !== undefined) {
+      setPlaceBet(true);
+    }
+  }, [getRoundData]);
+
+  console.log(getRoundData, 'getRoundData');
 
   // Mutation to place a bet
   const placeBetMutation = useMutation({
@@ -43,6 +62,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       });
     },
     onSuccess: () => {
+      refetchRoundData()
       setPlaceBet(true)
       toast({
         description:
@@ -57,6 +77,38 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       });
     },
   });
+
+   // Mutation to edit a bet
+   const editBetMutation = useMutation({
+    mutationFn: async ({ newBettingVariableId, newAmount, newCurrencyType }: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
+      return await api.betting.EditBet({
+        betId:getRoundData?.betId,
+        newBettingVariableId,
+        newAmount,
+        newCurrencyType
+      });
+    },
+    onSuccess: () => {
+      refetchRoundData()
+      setPlaceBet(true)
+      toast({
+        description:
+          "Bet placed successfuly",
+        variant: 'default',
+      });
+    },
+    onError: (error:any) => {
+      toast({
+        description: error?.response?.data?.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleBetEdit = ()=>{
+    setPlaceBet(false);
+    refetchRoundData();
+  }
 
   // Cancel bet mutation
    const cancelBetMutation = useMutation({
@@ -107,18 +159,36 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         )} */}
 
 
-        {!placedBet  ? (
-                <BetTokens
-                session={session}
-                bettingData={bettingData}
-                placeBet={(data) => placeBetMutation.mutate(data)}
-                />
-        ):(
+        {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
+        {bettingData?.bettingRounds && bettingData.bettingRounds.length > 0 ? (
+          !placedBet ? (
+            <BetTokens
+              session={session}
+              bettingData={bettingData}
+              placeBet={(data) => placeBetMutation.mutate(data)}
+              editBetMutation={(data) => editBetMutation.mutate(data)}
+              getRoundData={getRoundData}
+            />
+          ) : (
+            <LockTokens
+              bettingData={bettingData}
+              cancelBet={(data) => cancelBetMutation.mutate(data)}
+              getRoundData={getRoundData}
+              handleBetEdit={handleBetEdit}
+            />
+          )
+        ) : 
+        <div className="relative mx-auto rounded-[16px] shadow-lg" style={{ border: '0.62px solid #2C2C2C' }}>
+          <div className='all-center flex justify-center items-center h-[100px] mt-8'>
+          <img
+              src="/icons/nobettingData.svg"
+              alt="lock left"
+              className="w-[100%] h-[100%] object-contain"
+            />
+          </div>
+           <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-4 pb-4">No betting options available</p>
 
-                <LockTokens
-                bettingData={bettingData}
-                cancelBet={(data) => cancelBetMutation.mutate(data)}/>
-          )}  
+          </div>}
 
         {/* <BettingInterface
           key={`betting-${session?.id}-${streamId}-${refreshKey}-${Date.now()}`}

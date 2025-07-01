@@ -70,8 +70,8 @@ export const WalletHistory: React.FC<Props> = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-lg font-medium">Transaction History</h1>
+      <div className={`${isMobile ? 'block' : 'flex'}  items-center justify-between mb-8`}>
+        <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>Transaction History</h1>
         <div className={`relative rounded-md ${isMobile ? 'w-full' : 'ml-4'}`} style={{ border: '1px solid #2D343E', minWidth: isMobile ? undefined : 180 }}>
           <Input
             id="search-streams"
@@ -97,15 +97,15 @@ export const WalletHistory: React.FC<Props> = () => {
                 <CardContent className="p-4 space-y-3">
 
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Token Balance:</span>
+                    <span className="text-sm text-muted-foreground">Date</span>
                     <span className="font-medium">
-                      {user?.wallet?.freeTokens ? user?.wallet?.freeTokens?.toLocaleString('en-US') : '-'}
+                    {new Date(user?.createdAt).toLocaleDateString('en-US')}
                     </span>
                   </div>
 
                   {/* Status */}
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Status:</span>
+                    <span className="text-sm text-muted-foreground">Type</span>
                     <span
                       className="px-2 py-1 rounded-md font-bold text-xs"
                       style={{
@@ -120,7 +120,7 @@ export const WalletHistory: React.FC<Props> = () => {
                  
                   {/* Created Date */}
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Created:</span>
+                    <span className="text-sm text-muted-foreground">Amount</span>
                     <span className="text-sm">
                       {new Date(user?.createdAt).toLocaleDateString('en-US')}
                     </span>

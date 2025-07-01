@@ -374,6 +374,22 @@ export const bettingAPI = {
     const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}`);
     return response.data;
   },
+// Get data for seltected betting round
+  getBettingRoundData: async (roundId: string) => {
+    const response = await apiClient.get(`/betting/potentialAmount/${roundId}`);
+    return response.data;
+  },
+
+// Edit a bet
+    EditBet: async (betData: {
+      betId: string;
+      newBettingVariableId: string;
+      newAmount: number;
+      newCurrencyType: string;
+    }) => {
+      const response = await apiClient.patch('/betting/edit-bet', betData);
+      return response.data;
+    },
 
   // Place a bet
   placeBet: async (betData: {
