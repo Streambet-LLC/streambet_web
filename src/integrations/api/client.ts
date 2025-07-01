@@ -551,6 +551,12 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Get stream details based on stream ID
+  getStream: async (id: string) => {
+    const response = await apiClient.get(`/admin/stream/${id}`);
+    return response.data;
+  },
+
   // Delete stream
   deleteStream: async (streamId: string) => {
     const response = await apiClient.delete(`/admin/streams/${streamId}`);

@@ -617,41 +617,21 @@ function PasswordChangeDialog({
     setError(null);
     if (step === 'old') {
       if (!oldPassword) {
-        toast({
-          title: 'Error',
-          description: 'Please enter your old password.',
-          variant: 'destructive',
-        });
+        setError('Please enter your old password.');
         return;
       }
       if (!validatePassword(oldPassword)) {
-        toast({
-          title: 'Error',
-          description:
-            'Old password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.',
-          variant: 'destructive',
-          duration: 8000,
-        });
+        setError('Old password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.');
         return;
       }
       setStep('new');
     } else if (step === 'new') {
       if (!newPassword) {
-        toast({
-          title: 'Error',
-          description: 'Please enter your new password.',
-          variant: 'destructive',
-        });
+        setError('Please enter your new password.');
         return;
       }
       if (!validatePassword(newPassword)) {
-        toast({
-          title: 'Error',
-          description:
-            'New password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.',
-          variant: 'destructive',
-          duration: 8000,
-        });
+        setError('New password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.');
         return;
       }
       handleProfileUpdate({ oldPassword, newPassword });

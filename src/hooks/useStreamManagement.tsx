@@ -33,6 +33,7 @@ export const useStreamManagement = () => {
 
       const response = await adminAPI.getStreams({
         range: searchStreamQuery ? '[0,24]' : rangeRef.current,
+        sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: searchStreamQuery }),
       });
 

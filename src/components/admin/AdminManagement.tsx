@@ -4,20 +4,20 @@ import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 import { UserTable } from './UserTable';
 import { StreamTable } from './StreamTable';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
-import api from '@/integrations/api/client';
+import api, { adminAPI } from '@/integrations/api/client';
 import { ArrowLeft, X as XIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
-import { getMessage } from '@/utils/helper';
+import { getImageLink, getMessage } from '@/utils/helper';
 import OverView from './OverView';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { CopyableInput } from '../ui/CopyableInput';
@@ -57,15 +57,6 @@ export const AdminManagement = ({
   // Betting rounds state
   const [bettingRounds, setBettingRounds] = useState<BettingRound[]>([]);
 
-  // Load existing betting data when editing
-  useEffect(() => {
-    if (editStreamId) {
-      // TODO: Load existing betting data from API
-      // For now, we'll set empty array
-      setBettingRounds([]);
-    }
-  }, [editStreamId]);
-
   const tabs = [
     { key: 'overview', label: 'Overview' },
     { key: 'livestreams', label: 'Livestreams' },
@@ -78,9 +69,11 @@ export const AdminManagement = ({
   ];
 
   const createStreamMutation = useMutation({
-    mutationFn: (payload: any) => api.admin.createStream(payload),
+    mutationFn: (payload: any) => editStreamId ? api.admin.updateStream(editStreamId, payload)
+    : api.admin.createStream(payload),
     onSuccess: () => {
-      if (!bettingRounds?.length) {
+      if (!bettingRounds?.length)
+      {
         toast({ title: 'Success', description: 'Stream saved successfully!' });
         handleRestAll();
       }
@@ -91,7 +84,9 @@ export const AdminManagement = ({
   });
 
   const createBetMutation = useMutation({
-    mutationFn: (payload: any) => api.admin.createBettingData(payload),
+    mutationFn: (payload: any) => payload?.rounds?.[0]?.roundId ?
+    api.admin.updateBettingData(payload)
+    : api.admin.createBettingData(payload),
     onSuccess: () => {
       toast({ title: 'Success', description: 'Stream and Betting saved successfully!' });
       handleRestAll();
@@ -102,19 +97,15 @@ export const AdminManagement = ({
   });
 
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
-  const [endDateObj, setEndDateObj] = useState<Date | null>(null);
+  const startTimeRef = useRef<HTMLInputElement>(null);
 
   const [errors, setErrors] = useState({
     title: '',
     embeddedUrl: '',
     thumbnail: '',
     startDate: '',
-    endDate: ''
   });
   const [startTime, setStartTime] = useState(''); // format: 'HH:mm'
-  const [endTime, setEndTime] = useState('');
-  const startTimeRef = useRef<HTMLInputElement>(null);
-  const endTimeRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -155,27 +146,11 @@ export const AdminManagement = ({
     return selectedTime > now;
   };
 
-  const isEndDateTimeValid = (endDate: Date | null, endTime: string) => {
-    if (!startDateObj || !startTime || !endDate || !endTime) return true;
-
-    const [startHours, startMinutes] = startTime.split(':').map(Number);
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
-
-    const startDateTime = new Date(startDateObj);
-    startDateTime.setHours(startHours, startMinutes);
-
-    const endDateTime = new Date(endDate);
-    endDateTime.setHours(endHours, endMinutes);
-
-    return endDateTime > startDateTime;
-  };
-
   // Add handler for start date changes
   const handleStartDateChange = (date: Date | null) => {
     setStartDateObj(date);
     // Reset end date and time when start date changes
-    setEndDateObj(null);
-    setEndTime('');
+    setStartTime('');
     validateForm();
   };
 
@@ -183,19 +158,6 @@ export const AdminManagement = ({
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = e.target.value;
     setStartTime(newTime);
-
-    // Reset end date and time when start time changes
-    setEndDateObj(null);
-    setEndTime('');
-
-    // Validate the form after setting the new time
-    validateForm();
-  };
-
-  // Add handler for end time changes
-  const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = e.target.value;
-    setEndTime(newTime);
     validateForm();
   };
 
@@ -207,9 +169,7 @@ export const AdminManagement = ({
 
     // Reset dates and times
     setStartDateObj(null);
-    setEndDateObj(null);
     setStartTime('');
-    setEndTime('');
 
     // Reset thumbnail related states
     setSelectedThumbnailFile(null);
@@ -233,7 +193,6 @@ export const AdminManagement = ({
       embeddedUrl: '',
       thumbnail: '',
       startDate: '',
-      endDate: ''
     });
   }
 
@@ -286,22 +245,27 @@ export const AdminManagement = ({
       embeddedUrl: '',
       thumbnail: '',
       startDate: '',
-      endDate: ''
     };
 
     let isValid = true;
 
-    if (title.trim().length < 3 || title.trim().length > 70)
+    if (!title)
+    {
+      newErrors.title = 'Title is required';
+      isValid = false;
+    }
+    else if (title?.trim().length < 3 || title?.trim().length > 70)
     {
       newErrors.title = 'Title must be 3-70 characters';
       isValid = false;
     }
-    if (!embeddedUrl.trim() || (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick')))
+
+    if (!embeddedUrl?.trim() || (!embeddedUrl?.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick')))
     {
       newErrors.embeddedUrl = 'Embed URL is required and should be valid';
       isValid = false;
     }
-    if (!selectedThumbnailFile)
+    if (!selectedThumbnailFile && !thumbnailPreviewUrl)
     {
       newErrors.thumbnail = 'Thumbnail is required';
       isValid = false;
@@ -320,19 +284,58 @@ export const AdminManagement = ({
       isValid = false;
     }
 
-    // Validate end date/time if they are provided
-    if (endDateObj && endTime)
-    {
-      if (!isEndDateTimeValid(endDateObj, endTime))
-      {
-        newErrors.endDate = 'End time must be after start time';
-        isValid = false;
-      }
-    }
-
     setErrors(newErrors);
     return isValid;
-  }
+  };
+
+  const {
+    data: streamData,
+    isFetching: isStreamLoading,
+    refetch: refetchStreamData,
+  } = useQuery({
+    queryKey: ['adminStreamData'],
+    queryFn: async () => {
+      if (editStreamId)
+      {
+        const response = await adminAPI.getStream(editStreamId);
+        return response?.data;
+      }
+      return undefined;
+    },
+    enabled: false,
+  });
+
+  useEffect(() => {
+    refetchStreamData();
+  }, [editStreamId, refetchStreamData]);
+
+  useEffect(() => {
+    if (!isStreamLoading && streamData)
+    {
+      setTitle(streamData?.streamName);
+      setDescription(streamData?.description);
+      setEmbeddedUrl(streamData?.embeddedUrl);
+      setBettingRounds(streamData?.rounds || []);
+
+      // Set thumbnail if available
+      if (streamData.thumbnailUrl)
+      {
+        setThumbnailPreviewUrl(getImageLink(streamData.thumbnailUrl));
+      }
+
+      // Set start date and time if scheduledStartTime is available
+      if (streamData.scheduledStartTime)
+      {
+        const date = new Date(streamData.scheduledStartTime);
+        setStartDateObj(date);
+
+        // Extract time in HH:mm format
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        setStartTime(`${hours}:${minutes}`);
+      }
+    }
+  }, [streamData, isStreamLoading]);
 
   function handleUploadClick() {
     if (fileInputRef.current) fileInputRef.current.click();
@@ -351,7 +354,6 @@ export const AdminManagement = ({
         title: '',
         embeddedUrl: '',
         startDate: '',
-        endDate: ''
       });
       return;
     }
@@ -364,7 +366,6 @@ export const AdminManagement = ({
         title: '',
         embeddedUrl: '',
         startDate: '',
-        endDate: ''
       });
       return;
     }
@@ -381,10 +382,10 @@ export const AdminManagement = ({
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(img.src);
-        const isValidSize = img.width <= 800 && img.height <= 400;
+        const isValidSize = img.width <= 1920 && img.height <= 1080;
         if (!isValidSize)
         {
-          setErrors(errors => ({ ...errors, thumbnail: 'Image must be max 800x400px' }));
+          setErrors(errors => ({ ...errors, thumbnail: 'Image must be maximum 1920x1080px' }));
           resolve(false);
         } else
         {
@@ -423,7 +424,6 @@ export const AdminManagement = ({
       title: '',
       embeddedUrl: '',
       startDate: '',
-      endDate: ''
     });
     // Clear the file input to allow reselection
     if (fileInputRef.current)
@@ -433,8 +433,10 @@ export const AdminManagement = ({
   }
 
   async function handleCreateStream() {
+    console.log('handle create stream called');
     if (!validateForm())
     {
+      console.log('validation failed');
       // Scroll to first error after validation
       setTimeout(() => scrollToFirstError(), 100);
       toast({
@@ -445,7 +447,7 @@ export const AdminManagement = ({
       return;
     }
 
-    let thumbnailImageUrl = '';
+    let thumbnailImageUrl = streamData?.thumbnailUrl || '';
 
     if (selectedThumbnailFile?.name)
     {
@@ -473,9 +475,6 @@ export const AdminManagement = ({
       embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
-      endTime: formatDateTimeForISO(endDateObj, endTime),
-      streamId: editStreamId || undefined,
-      betRoundsData: bettingRounds.length > 0 ? bettingRounds : undefined,
     };
 
     createStreamMutation.mutate(payload);
@@ -543,222 +542,165 @@ export const AdminManagement = ({
               {/* Form fields */}
               <form className="space-y-8" onSubmit={e => e.preventDefault()}>
                 {(isCreateStream || activeEditStreamTab === 'info') && <>
-                {/* Title */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">Title</Label>
-                  <Input
-                    ref={titleRef}
-                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
-                    placeholder="Title of livestream"
-                    value={title}
-                    maxLength={70}
-                    minLength={3}
-                    onChange={e => { setTitle(e.target.value); setErrors({ ...errors, title: '' }); }}
-                    required
-                  />
-                  {errors.title && <div className="text-destructive text-xs mt-1">{errors.title}</div>}
-                </div>
-                {/* Description */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">Description</Label>
-                  <Textarea
-                    className="bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] border-none mt-2"
-                    placeholder="Stream description"
-                    rows={10}
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                  />
+                  {/* Title */}
+                  <div>
+                    <Label className="text-white font-light mb-3 block">Title</Label>
+                    <Input
+                      ref={titleRef}
+                      className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
+                      placeholder="Title of livestream"
+                      value={title}
+                      maxLength={70}
+                      minLength={3}
+                      onChange={e => { setTitle(e.target.value); setErrors({ ...errors, title: '' }); }}
+                      required
+                    />
+                    {errors.title && <div className="text-destructive text-xs mt-1">{errors.title}</div>}
+                  </div>
+                  {/* Description */}
+                  <div>
+                    <Label className="text-white font-light mb-3 block">Description</Label>
+                    <Textarea
+                      className="bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] border-none mt-2"
+                      placeholder="Stream description"
+                      rows={10}
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                    />
                   </div>
                   {/* Stream URL */}
                   {!!editStreamId && <div>
                     <Label className="text-white font-light mb-3 block">Stream url</Label>
                     <CopyableInput value={`${window.location.origin}/stream/${editStreamId}`} />
                   </div>}
-                {/* Embed URL */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">Embed URL</Label>
-                  <Input
-                    ref={embeddedUrlRef}
-                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
-                    placeholder="Embed URL"
-                    value={embeddedUrl}
-                    onChange={e => { setEmbeddedUrl(e.target.value); setErrors({ ...errors, embeddedUrl: '' }); }}
-                    required
-                  />
-                  {errors.embeddedUrl && <div className="text-destructive text-xs mt-1">{errors.embeddedUrl}</div>}
-                </div>
-                {/* Thumbnail upload */}
-                <div ref={thumbnailRef}>
-                  <Label className="text-white font-light mb-3 block">Thumbnail</Label>
-                  <div className="flex flex-col sm:flex-row gap-4 items-center">
-                    {/* Left: Preview */}
-                    <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727]">
-                      {thumbnailPreviewUrl ? (
-                        <img src={thumbnailPreviewUrl} alt="Thumbnail preview" className="object-cover w-full h-full" />
-                      ) : (
-                        <span className="text-white text-xs">No image</span>
-                      )}
-                    </div>
-                    {/* Right: Upload */}
-                    <div
-                      className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''} ${errors.thumbnail ? 'border-red-500' : ''}`}
-                      style={{ minHeight: 120 }}
-                      onClick={isUploading ? undefined : handleUploadClick}
-                      onDrop={isUploading ? undefined : handleDrop}
-                      onDragOver={isUploading ? undefined : handleDragOver}
-                      onDragLeave={isUploading ? undefined : handleDragLeave}
-                    >
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileChange}
-                        disabled={isUploading}
-                      />
-                      <div className="flex flex-col items-center mt-2">
-                        <div className="flex items-center justify-center mb-1 relative">
-                          <div className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center" style={{ width: 44, height: 44 }}>
-                            {isUploading ? (
-                              <Loader2 className="h-6 w-6 animate-spin text-white" />
-                            ) : (
-                              <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
+                  {/* Embed URL */}
+                  <div>
+                    <Label className="text-white font-light mb-3 block">Embed URL</Label>
+                    <Input
+                      ref={embeddedUrlRef}
+                      className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
+                      placeholder="Embed URL"
+                      value={embeddedUrl}
+                      onChange={e => { setEmbeddedUrl(e.target.value); setErrors({ ...errors, embeddedUrl: '' }); }}
+                      required
+                    />
+                    {errors.embeddedUrl && <div className="text-destructive text-xs mt-1">{errors.embeddedUrl}</div>}
+                  </div>
+                  {/* Thumbnail upload */}
+                  <div ref={thumbnailRef}>
+                    <Label className="text-white font-light mb-3 block">Thumbnail</Label>
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                      {/* Left: Preview */}
+                      <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727]">
+                        {thumbnailPreviewUrl ? (
+                          <img src={thumbnailPreviewUrl} alt="Thumbnail preview" className="object-cover w-full h-full" />
+                        ) : (
+                          <span className="text-white text-xs">No image</span>
+                        )}
+                      </div>
+                      {/* Right: Upload */}
+                      <div
+                        className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''} ${errors.thumbnail ? 'border-red-500' : ''}`}
+                        style={{ minHeight: 120 }}
+                        onClick={isUploading ? undefined : handleUploadClick}
+                        onDrop={isUploading ? undefined : handleDrop}
+                        onDragOver={isUploading ? undefined : handleDragOver}
+                        onDragLeave={isUploading ? undefined : handleDragLeave}
+                      >
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                          disabled={isUploading}
+                        />
+                        <div className="flex flex-col items-center mt-2">
+                          <div className="flex items-center justify-center mb-1 relative">
+                            <div className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center" style={{ width: 44, height: 44 }}>
+                              {isUploading ? (
+                                <Loader2 className="h-6 w-6 animate-spin text-white" />
+                              ) : (
+                                <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
+                              )}
+                            </div>
+                            {thumbnailPreviewUrl && !isUploading && (
+                              <button
+                                type="button"
+                                className="absolute -top-2 -right-2 bg-[#232323] rounded-full p-1 hover:bg-destructive"
+                                onClick={e => { e.stopPropagation(); handleDeleteThumbnail(); }}
+                              >
+                                <XIcon className="h-4 w-4 text-white" />
+                              </button>
                             )}
                           </div>
-                          {thumbnailPreviewUrl && !isUploading && (
+                          <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
+                            <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
+                            <span className="text-[#667085] text-[12px]">SVG, PNG, JPG or GIF (max. 1920x1080px)</span>
+                          </span>
+                        </div>
+                        {errors.thumbnail && <div className="text-destructive text-xs mt-1">{errors.thumbnail}</div>}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Start date */}
+                  <div>
+                    <Label className="text-white font-light mb-3 block">Start date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          ref={startDateRef}
+                          type="button"
+                          className={`w-full bg-[#272727] text-[#D7DFEF] pl-10 mt-2 flex items-center h-10 rounded-md relative ${errors.startDate ? 'border border-red-500' : 'border-none'}`}
+                          style={{ textAlign: 'left' }}
+                        >
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                            <CalendarIcon className="h-5 w-5 text-white" />
+                          </span>
+                          <span className={startDateObj ? '' : 'text-[#FFFFFFBF]'}>
+                            {formatDateTimeForDisplay(startDateObj, startTime)}
+                          </span>
+                          {(startDateObj || startTime) && (
                             <button
                               type="button"
-                              className="absolute -top-2 -right-2 bg-[#232323] rounded-full p-1 hover:bg-destructive"
-                              onClick={e => { e.stopPropagation(); handleDeleteThumbnail(); }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
+                              onClick={e => { e.stopPropagation(); setStartDateObj(null); setStartTime(''); }}
                             >
                               <XIcon className="h-4 w-4 text-white" />
                             </button>
                           )}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={startDateObj || undefined}
+                          onSelect={handleStartDateChange}
+                          initialFocus
+                          showOutsideDays
+                          disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        />
+                        <div className="flex items-center gap-2 p-2">
+                          <span className="text-xs text-white">Time:</span>
+                          <input
+                            ref={startTimeRef}
+                            type="time"
+                            value={startTime}
+                            onChange={handleStartTimeChange}
+                            min={startDateObj && isToday(startDateObj) ? getCurrentTime() : undefined}
+                            className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
+                            style={{ color: 'white' }}
+                          />
                         </div>
-                        <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
-                          <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
-                          <span className="text-[#667085] text-[12px]">SVG, PNG, JPG or GIF (max. 800x400px)</span>
-                        </span>
-                      </div>
-                      {errors.thumbnail && <div className="text-destructive text-xs mt-1">{errors.thumbnail}</div>}
-                    </div>
-                  </div>
-                </div>
-                {/* Start date */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">Start date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        ref={startDateRef}
-                        type="button"
-                        className={`w-full bg-[#272727] text-[#D7DFEF] pl-10 mt-2 flex items-center h-10 rounded-md relative ${errors.startDate ? 'border border-red-500' : 'border-none'}`}
-                        style={{ textAlign: 'left' }}
-                      >
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                          <CalendarIcon className="h-5 w-5 text-white" />
-                        </span>
-                        <span className={startDateObj ? '' : 'text-[#FFFFFFBF]'}>
-                          {formatDateTimeForDisplay(startDateObj, startTime)}
-                        </span>
-                        {(startDateObj || startTime) && (
-                          <button
-                            type="button"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
-                            onClick={e => { e.stopPropagation(); setStartDateObj(null); setStartTime(''); }}
-                          >
-                            <XIcon className="h-4 w-4 text-white" />
-                          </button>
-                        )}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={startDateObj || undefined}
-                        onSelect={handleStartDateChange}
-                        initialFocus
-                        showOutsideDays
-                        disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      />
-                      <div className="flex items-center gap-2 p-2">
-                        <span className="text-xs text-white">Time:</span>
-                        <input
-                          ref={startTimeRef}
-                          type="time"
-                          value={startTime}
-                          onChange={handleStartTimeChange}
-                          min={startDateObj && isToday(startDateObj) ? getCurrentTime() : undefined}
-                          className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
-                          style={{ color: 'white' }}
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  {errors.startDate && <div className="text-destructive text-xs mt-1">{errors.startDate}</div>}
-                </div>
-                {/* End date */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">End date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="w-full bg-[#272727] text-[#D7DFEF] border-none pl-10 mt-2 flex items-center h-10 rounded-md relative"
-                        style={{ textAlign: 'left' }}
-                        disabled={!startDateObj || !startTime}
-                      >
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                          <CalendarIcon className="h-5 w-5 text-white" />
-                        </span>
-                        <span className={endDateObj ? '' : 'text-[#FFFFFFBF]'}>
-                          {!startDateObj || !startTime ? 'Set start date first' : formatDateTimeForDisplay(endDateObj, endTime)}
-                        </span>
-                        {(endDateObj || endTime) && (
-                          <button
-                            type="button"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
-                            onClick={e => { e.stopPropagation(); setEndDateObj(null); setEndTime(''); }}
-                          >
-                            <XIcon className="h-4 w-4 text-white" />
-                          </button>
-                        )}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={endDateObj || undefined}
-                        onSelect={setEndDateObj}
-                        initialFocus
-                        showOutsideDays
-                        disabled={date => {
-                          if (!startDateObj) return true;
-                          return date < startDateObj;
-                        }}
-                      />
-                      <div className="flex items-center gap-2 p-2">
-                        <span className="text-xs text-white">Time:</span>
-                        <input
-                          ref={endTimeRef}
-                          type="time"
-                          value={endTime}
-                          onChange={handleEndTimeChange}
-                          min={endDateObj?.getTime() === startDateObj?.getTime() ? startTime : undefined}
-                          className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
-                          style={{ color: 'white' }}
-                          disabled={!endDateObj}
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  {errors.endDate && <div className="text-destructive text-xs mt-1">{errors.endDate}</div>}
+                      </PopoverContent>
+                    </Popover>
+                    {errors.startDate && <div className="text-destructive text-xs mt-1">{errors.startDate}</div>}
                   </div>
                 </>}
                 {editStreamId && activeEditStreamTab === 'betting' && <>
-                  <BettingRounds 
-                    rounds={bettingRounds} 
-                    onRoundsChange={setBettingRounds} 
+                  <BettingRounds
+                    rounds={bettingRounds}
+                    onRoundsChange={setBettingRounds}
                   />
                 </>}
               </form>
@@ -770,7 +712,7 @@ export const AdminManagement = ({
           {/* Top bar (tabs, search, create button) only when not creating stream */}
           <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}>
             <TabSwitch tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-            
+
             {activeTab === 'users' && (
               <div className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`} style={{ border: '1px solid #2D343E' }}>
                 <Input
