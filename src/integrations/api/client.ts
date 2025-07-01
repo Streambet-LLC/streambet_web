@@ -24,17 +24,22 @@ const RETRY_401 = Symbol('RETRY_401');
 apiClient.interceptors.request.use(
   config => {
     const token = localStorage.getItem('accessToken');
-    if (token) {
-      try {
+    if (token)
+    {
+      try
+      {
         const decoded = decodeIdToken(token);
         // Check expiry (exp is in seconds)
-        if (decoded.exp && Date.now() / 1000 > decoded.exp) {
+        if (decoded.exp && Date.now() / 1000 > decoded.exp)
+        {
           // Token expired, do not attach token, let the request fail and response interceptor handle refresh
           // No refresh logic here
-        } else {
+        } else
+        {
           config.headers.Authorization = `Bearer ${token}`;
         }
-      } catch (e) {
+      } catch (e)
+      {
         // If decode fails, treat as invalid/expired, do not attach token
         // No refresh logic here
       }
@@ -56,7 +61,8 @@ apiClient.interceptors.response.use(
       error.response.status === 401 &&
       originalRequest.url &&
       originalRequest.url.endsWith('/auth/refresh')
-    ) {
+    )
+    {
       alert('Session has been expired! Please relogin');
       await authAPI.signOut();
       window.location.href = '/login';
@@ -67,37 +73,45 @@ apiClient.interceptors.response.use(
     if (
       error.response &&
       error.response.status === 401
-    ) {
+    )
+    {
       const accessToken = localStorage.getItem('accessToken');
       const refreshToken = localStorage.getItem('refreshToken');
-      
+
       // If no accessToken is present, do nothing
-      if (!accessToken) {
+      if (!accessToken)
+      {
         return Promise.reject(error);
       }
-      
+
       // If this is the first 401 for this request, try refresh
-      if (refreshToken && !(originalRequest as any)[RETRY_401]) {
+      if (refreshToken && !(originalRequest as any)[RETRY_401])
+      {
         (originalRequest as any)[RETRY_401] = true;
-        try {
+        try
+        {
           const refreshResponse = await apiClient.post('/auth/refresh', { refreshToken });
           const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshResponse.data.data || {};
-          if (newAccessToken) {
+          if (newAccessToken)
+          {
             localStorage.setItem('accessToken', newAccessToken);
-            if (newRefreshToken) {
+            if (newRefreshToken)
+            {
               localStorage.setItem('refreshToken', newRefreshToken);
             }
             originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
             return apiClient(originalRequest);
           }
-        } catch (refreshError) {
+        } catch (refreshError)
+        {
           // If refresh fails, show alert and logout
           alert('Session has been expired! Please relogin');
           await authAPI.signOut();
           window.location.href = '/login';
           return Promise.reject(refreshError);
         }
-      } else {
+      } else
+      {
         // If already retried once, or no refreshToken, show alert and logout
         alert('Session has been expired! Please relogin');
         await authAPI.signOut();
@@ -126,13 +140,15 @@ export const authAPI = {
   },
 
   // Login user
-  login: async (credentials: { identifier: string; password: string, remember_me?: boolean}) => {
+  login: async (credentials: { identifier: string; password: string, remember_me?: boolean }) => {
     const response = await apiClient.post('/auth/login', credentials);
     // Store the tokens
-    if (response?.data?.data?.accessToken) {
+    if (response?.data?.data?.accessToken)
+    {
       localStorage.setItem('accessToken', response.data.data.accessToken);
     }
-    if (response?.data?.data?.refreshToken) {
+    if (response?.data?.data?.refreshToken)
+    {
       localStorage.setItem('refreshToken', response.data.data.refreshToken);
     }
     return response.data;
@@ -148,10 +164,12 @@ export const authAPI = {
 
     // const response = await apiClient.get(`/auth/google/callback?token=${googleToken}`);
     // Store the tokens
-    if (response?.data?.data?.accessToken) {
+    if (response?.data?.data?.accessToken)
+    {
       localStorage.setItem('accessToken', response.data.data.accessToken);
     }
-    if (response?.data?.data?.refreshToken) {
+    if (response?.data?.data?.refreshToken)
+    {
       localStorage.setItem('refreshToken', response.data.data.refreshToken);
     }
     return response.data;
@@ -171,10 +189,12 @@ export const authAPI = {
 
   // Get current session
   getSession: async () => {
-    try {
+    try
+    {
       const response = await apiClient.get('/auth/me');
       return response.data;
-    } catch (error) {
+    } catch (error)
+    {
       return { data: null };
     }
   },
@@ -185,10 +205,12 @@ export const authAPI = {
     if (!refreshToken) throw new Error('No refresh token');
     const response = await apiClient.post('/auth/refresh', { refreshToken });
     const { accessToken, refreshToken: newRefreshToken } = response.data.data || {};
-    if (accessToken) {
+    if (accessToken)
+    {
       localStorage.setItem('accessToken', accessToken);
     }
-    if (newRefreshToken) {
+    if (newRefreshToken)
+    {
       localStorage.setItem('refreshToken', newRefreshToken);
     }
     return response.data;
@@ -196,10 +218,12 @@ export const authAPI = {
 
   // Get username availability
   getUsernameAvailability: async (userName: string) => {
-    try {
+    try
+    {
       const response = await apiClient.get(`/auth/username?username=${userName}`);
       return response;
-    } catch (error) {
+    } catch (error)
+    {
       return { data: { session: null } };
     }
   },
@@ -284,10 +308,12 @@ export const walletAPI = {
 
   // Check if the user has a payment method saved
   hasPaymentMethod: async () => {
-    try {
+    try
+    {
       const response = await apiClient.get('/wallets/payment-methods');
       return { hasPaymentMethod: response.data.length > 0 };
-    } catch (error) {
+    } catch (error)
+    {
       console.error('Error checking payment methods:', error);
       return { hasPaymentMethod: false };
     }
@@ -447,7 +473,8 @@ export const socketAPI = {
 
   // Disconnect WebSocket
   disconnect: () => {
-    if (socket) {
+    if (socket)
+    {
       socket.disconnect();
       socket = null;
     }
@@ -455,49 +482,56 @@ export const socketAPI = {
 
   // Join a stream room
   joinStream: (streamId: string) => {
-    if (socket) {
+    if (socket)
+    {
       socket.emit('joinStream', streamId);
     }
   },
 
   // Leave a stream room
   leaveStream: (streamId: string) => {
-    if (socket) {
+    if (socket)
+    {
       socket.emit('leaveStream', streamId);
     }
   },
 
   // Send a chat message
   sendChatMessage: (streamId: string, message: string) => {
-    if (socket) {
+    if (socket)
+    {
       socket.emit('sendChatMessage', { streamId, message });
     }
   },
 
   // Subscribe to betting updates
   onBettingUpdate: (callback: (data: any) => void) => {
-    if (socket) {
+    if (socket)
+    {
       socket.on('bettingUpdate', callback);
     }
   },
 
   // Subscribe to chat messages
   onChatMessage: (callback: (data: any) => void) => {
-    if (socket) {
+    if (socket)
+    {
       socket.on('chatMessage', callback);
     }
   },
 
   // Subscribe to betting locked events
   onBettingLocked: (callback: (data: any) => void) => {
-    if (socket) {
+    if (socket)
+    {
       socket.on('bettingLocked', callback);
     }
   },
 
   // Subscribe to winner declared events
   onWinnerDeclared: (callback: (data: any) => void) => {
-    if (socket) {
+    if (socket)
+    {
       socket.on('winnerDeclared', callback);
     }
   },
@@ -557,6 +591,24 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Get stream bet details based on stream ID
+  getStreamBetData: async (id: string) => {
+    const response = await apiClient.get(`/admin/streams/${id}/rounds`);
+    return response;
+  },
+
+  // Update bet status
+  updateBetStatus: async (streamId: string, betStatusData: any) => {
+    const response = await apiClient.patch(`/admin/rounds/${streamId}/status`, betStatusData);
+    return response.data;
+  },
+
+  // Declare winner for a betting variable
+  declareWinner: async (optionId: string) => {
+    const response = await apiClient.post(`/api/admin/betting-variables/${optionId}/declare-winner`);
+    return response.data;
+  },
+
   // Delete stream
   deleteStream: async (streamId: string) => {
     const response = await apiClient.delete(`/admin/streams/${streamId}`);
@@ -578,17 +630,6 @@ export const adminAPI = {
   // Lock betting for a stream
   lockBetting: async (streamId: string) => {
     const response = await apiClient.post(`/admin/streams/${streamId}/lock-betting`);
-    return response.data;
-  },
-
-  // Declare winner for a betting variable
-  declareWinner: async (bettingVariableId: string, winnerOption: string) => {
-    const response = await apiClient.post(
-      `/admin/betting-variables/${bettingVariableId}/declare-winner`,
-      {
-        winnerOption,
-      }
-    );
     return response.data;
   },
 

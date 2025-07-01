@@ -29,12 +29,14 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 interface Props {
   streams: any;
   refetchStreams: (range: string) => void;
+  setViewStreamId: (streamId: string) => void;
   setEditStreamId: (streamId: string) => void;
 }
 
 export const StreamTable: React.FC<Props> = ({
   streams,
   refetchStreams,
+  setViewStreamId,
   setEditStreamId,
 }) => {
   const isMobile = useIsMobile();
@@ -137,7 +139,16 @@ export const StreamTable: React.FC<Props> = ({
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <span className="text-sm text-muted-foreground">Actions:</span>
                     <div className="flex gap-3">
-                      <Eye color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Eye
+                            size={16}
+                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                            onClick={() => setViewStreamId(stream?.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>View stream</TooltipContent>
+                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Pen
@@ -192,7 +203,16 @@ export const StreamTable: React.FC<Props> = ({
                   <TableCell>{stream?.data?.viewerCount}</TableCell>
                   <TableCell>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <Eye color="#FFFFFFBF" size={18} />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Eye
+                            size={18}
+                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                            onClick={() => setViewStreamId(stream?.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>View stream</TooltipContent>
+                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Pen
@@ -215,7 +235,7 @@ export const StreamTable: React.FC<Props> = ({
           </Table>
         </div>
       )}
-      
+
       {streams?.data?.length > 0 &&
         <div className="flex w-full justify-between bg-black rounded-md mt-4">
           <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>

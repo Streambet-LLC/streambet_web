@@ -29,6 +29,7 @@ const Admin = () => {
       <Navigation />
         <div className="container flex w-full pt-24 pb-8">
           <main className="flex-1 pl-4">{<AdminManagement
+              session={profile}
               streams={streams}
               refetchStreams={(range) => handleRefetchStreams(range)}
               searchStreamQuery={searchStreamQuery}

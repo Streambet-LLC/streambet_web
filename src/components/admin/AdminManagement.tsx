@@ -23,6 +23,8 @@ import { TabSwitch } from '../navigation/TabSwitch';
 import { CopyableInput } from '../ui/CopyableInput';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds } from './BettingRounds';
+import { AdminStreamContent } from './AdminStreamContent';
+import { BettingRoundStatus } from '@/types/bet';
 
 interface BettingOption {
   optionId?: string;
@@ -36,6 +38,7 @@ interface BettingRound {
 }
 
 export const AdminManagement = ({
+  session,
   streams,
   refetchStreams,
   searchStreamQuery,
@@ -45,6 +48,7 @@ export const AdminManagement = ({
   const [activeEditStreamTab, setActiveEditStreamTab] = useState('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
   const [isCreateStream, setIsCreateStream] = useState(false);
+  const [viewStreamId, setViewStreamId] = useState('');
   const [editStreamId, setEditStreamId] = useState('');
 
   // Create livestream form state
@@ -52,6 +56,8 @@ export const AdminManagement = ({
   const [description, setDescription] = useState('');
   const [embeddedUrl, setEmbeddedUrl] = useState('');
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
+  const [startDateObj, setStartDateObj] = useState<Date | null>(null);
+  const startTimeRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Betting rounds state
@@ -70,7 +76,7 @@ export const AdminManagement = ({
 
   const createStreamMutation = useMutation({
     mutationFn: (payload: any) => editStreamId ? api.admin.updateStream(editStreamId, payload)
-    : api.admin.createStream(payload),
+      : api.admin.createStream(payload),
     onSuccess: () => {
       if (!bettingRounds?.length)
       {
@@ -85,8 +91,8 @@ export const AdminManagement = ({
 
   const createBetMutation = useMutation({
     mutationFn: (payload: any) => payload?.rounds?.[0]?.roundId ?
-    api.admin.updateBettingData(payload)
-    : api.admin.createBettingData(payload),
+      api.admin.updateBettingData(payload)
+      : api.admin.createBettingData(payload),
     onSuccess: () => {
       toast({ title: 'Success', description: 'Stream and Betting saved successfully!' });
       handleRestAll();
@@ -95,9 +101,6 @@ export const AdminManagement = ({
       toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
     },
   });
-
-  const [startDateObj, setStartDateObj] = useState<Date | null>(null);
-  const startTimeRef = useRef<HTMLInputElement>(null);
 
   const [errors, setErrors] = useState({
     title: '',
@@ -289,6 +292,48 @@ export const AdminManagement = ({
   };
 
   const {
+    data: betStreamData,
+    isLoading: isBetStreamLoading,
+    refetch: refetchBetStreamData,
+  } = useQuery({
+    queryKey: ['adminBetStreamData'],
+    queryFn: async () => {
+      const streamId = viewStreamId || editStreamId;
+      if (streamId)
+      {
+        const response = await adminAPI.getStreamBetData(streamId);
+        return response?.data;
+      }
+      return undefined;
+    },
+    enabled: false,
+  });
+
+  useEffect(() => {
+    refetchBetStreamData();
+  }, [viewStreamId, editStreamId, refetchBetStreamData]);
+
+  const { isPending: isBetStatusUpdating, mutateAsync: betStatusUpdate } = useMutation({
+    mutationFn: ({ streamId, payload }: { streamId: string, payload: any }) => api.admin.updateBetStatus(streamId, payload),
+    onSuccess: () => {
+      refetchBetStreamData();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to update bet', variant: 'destructive' });
+    },
+  });
+
+  const { isPending: isDeclareWinnerUpdating, mutateAsync: betDeclareWinner } = useMutation({
+    mutationFn: (payload: any) => api.admin.declareWinner(payload),
+    onSuccess: () => {
+      refetchBetStreamData();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to declare the winner', variant: 'destructive' });
+    },
+  });
+
+  const {
     data: streamData,
     isFetching: isStreamLoading,
     refetch: refetchStreamData,
@@ -308,6 +353,18 @@ export const AdminManagement = ({
   useEffect(() => {
     refetchStreamData();
   }, [editStreamId, refetchStreamData]);
+
+  const handleOpenRound = (streamId: string) => {
+    betStatusUpdate({ streamId, payload: { status: BettingRoundStatus.OPEN } });
+  };
+
+  const handleLockBets = (streamId: string) => {
+    betStatusUpdate({ streamId, payload: { status: BettingRoundStatus.LOCKED } });
+  };
+
+  const handleEndRound = (optionId: string) => {
+    betDeclareWinner(optionId);
+  };
 
   useEffect(() => {
     if (!isStreamLoading && streamData)
@@ -433,10 +490,8 @@ export const AdminManagement = ({
   }
 
   async function handleCreateStream() {
-    console.log('handle create stream called');
     if (!validateForm())
     {
-      console.log('validation failed');
       // Scroll to first error after validation
       setTimeout(() => scrollToFirstError(), 100);
       toast({
@@ -491,6 +546,7 @@ export const AdminManagement = ({
 
   const handleRestAll = () => {
     setIsCreateStream(false);
+    setViewStreamId('');
     setEditStreamId('');
     setActiveEditStreamTab('info');
     resetForm();
@@ -707,7 +763,15 @@ export const AdminManagement = ({
             </CardContent>
           </Card>
         </div>
-      ) : (
+      ) : viewStreamId ? <AdminStreamContent
+        streamId={viewStreamId}
+        session={session}
+          betData={betStreamData?.rounds}
+          isUpdatingAction={isBetStatusUpdating}
+        handleOpenRound={handleOpenRound}
+        handleLockBets={handleLockBets}
+          handleEndRound={handleEndRound}
+      /> : (
         <>
           {/* Top bar (tabs, search, create button) only when not creating stream */}
           <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}>
@@ -791,6 +855,7 @@ export const AdminManagement = ({
               <StreamTable
                 streams={streams}
                 refetchStreams={refetchStreams}
+                setViewStreamId={setViewStreamId}
                 setEditStreamId={setEditStreamId}
               />
             </div>

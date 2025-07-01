@@ -116,7 +116,7 @@ export const useCommentsSubscription = (
     };
 
     // Initial setup
-    setupChannel();
+    // setupChannel();
 
     // Clean up subscription on unmount
     return () => {
