@@ -167,16 +167,11 @@ export default function SignUp() {
       return await api.auth.register(userData);
     },
     onSuccess: () => {
-      // queryClient.invalidateQueries({ queryKey: ['session'] });
       toast({
         title: 'Account created!',
         description: 'Your account has been successfully created. Please verify mail to login.',
       });
-      if (redirectParam) {
-        navigate(`/login?redirect=${redirectParam}`);
-      } else {
-        navigate('/login');
-      }
+      navigate('/verify-email-notice');
     },
     onError: (error: any) => {
       toast({
@@ -662,6 +657,7 @@ export default function SignUp() {
                           onMonthChange={setCurrentMonth}
                           onSelect={handleDateSelect}
                           captionLayout="dropdown"
+                          toDate={new Date()}
                           components={{
                             CaptionLabel: () => null,
                             Dropdown: ({ children, value, onChange, className = '', style, ...rest }) => (
@@ -678,12 +674,12 @@ export default function SignUp() {
                           }}
                           classNames={{
                             caption_dropdowns: 'flex gap-[5px] justify-center',
-                            day: 'select-none',
-                            day_selected: 'select-none',
-                            day_today: 'select-none',
-                            day_outside: 'select-none',
-                            day_disabled: 'select-none',
-                            day_range_middle: 'select-none',
+                            day: 'h-9 w-9 p-0 font-light aria-selected:opacity-100',
+                            day_selected: 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
+                            day_today: 'bg-accent text-accent-foreground',
+                            day_outside: 'day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30',
+                            day_disabled: 'text-muted-foreground opacity-50',
+                            day_range_middle: 'aria-selected:bg-accent aria-selected:text-accent-foreground',
                             day_hidden: 'select-none',
                           }}
                           fromYear={1900}
@@ -704,8 +700,13 @@ export default function SignUp() {
                     <Label htmlFor="tosAccepted" className="text-sm pt-2 pb-2">
                       I accept the{' '}
                       <Link to="/terms" target="_blank" className="text-primary hover:underline">
-                        Terms of Service
+                        Terms of Use
                       </Link>
+                      {', '}
+                      <Link to="/privacy" target="_blank" className="text-primary hover:underline">
+                        Privacy Policy
+                      </Link>
+                      {', and Sweestakes Rules.'}
                     </Label>
                     {errors.tosAccepted && (
                       <p className="text-destructive text-sm">{errors.tosAccepted}</p>

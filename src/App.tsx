@@ -21,6 +21,7 @@ import GoogleCallback from './pages/GoogleCallback';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import NotFound from './pages/NotFound';
+import VerifyEmailNotice from './pages/auth/VerifyEmailNotice';
 
 
 // Create a client
@@ -86,6 +87,7 @@ const App = () => {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/auth/google-callback" element={<GoogleCallback />} />
+              <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
               <Route path="/auth/verify-email" element={<VerifyEmail />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

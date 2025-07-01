@@ -24,6 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { DeleteUserDialog } from './DeleteUserDialog';
 import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface Props {
   streams: any;
@@ -137,11 +138,15 @@ export const StreamTable: React.FC<Props> = ({
                     <span className="text-sm text-muted-foreground">Actions:</span>
                     <div className="flex gap-3">
                       <Eye color="#FFFFFFBF" size={16} className="cursor-pointer" />
-                      <Pen
-                        color="#FFFFFFBF"
-                        size={16}
-                        className='cursor-pointer'
-                        onClick={() => setEditStreamId(stream?.id)} />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Pen
+                            size={16}
+                            className='cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]'
+                            onClick={() => setEditStreamId(stream?.id)} />
+                        </TooltipTrigger>
+                        <TooltipContent>Manage stream</TooltipContent>
+                      </Tooltip>
                       <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={16} className="cursor-pointer" />
                       <Lock color="#FFFFFFBF" size={16} className="cursor-pointer" />
                       <Play color="#FFFFFFBF" size={16} className="cursor-pointer" />
@@ -188,11 +193,15 @@ export const StreamTable: React.FC<Props> = ({
                   <TableCell>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <Eye color="#FFFFFFBF" size={18} />
-                      <Pen
-                        color="#FFFFFFBF"
-                        size={18}
-                        className='cursor-pointer'
-                        onClick={() => setEditStreamId(stream?.id)} />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Pen
+                            size={18}
+                            className='cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]'
+                            onClick={() => setEditStreamId(stream?.id)} />
+                        </TooltipTrigger>
+                        <TooltipContent>Manage stream</TooltipContent>
+                      </Tooltip>
                       <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={18} />
                       <Lock color="#FFFFFFBF" size={18} />
                       <Play color="#FFFFFFBF" size={18} />

@@ -26,7 +26,7 @@ export function DeleteBettingDialog({ onConfirm, message, title, trigger }: Dele
       <DialogTrigger asChild>
         {trigger || (
           <div className="w-[18px] h-[18px]">
-            <Trash2 onClick={() => setIsDeleteDialogOpen(true)} />
+            <Trash2 className="cursor-pointer" onClick={() => setIsDeleteDialogOpen(true)} />
           </div>
         )}
       </DialogTrigger>

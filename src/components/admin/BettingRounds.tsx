@@ -227,7 +227,7 @@ export function BettingRounds({ rounds, onRoundsChange }: BettingRoundsProps) {
                     </TableCell>
                     <TableCell className="py-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-white text-sm">
+                        <span className="text-white text-sm text-nowrap">
                           {round.options.length} option{round.options.length !== 1 ? 's' : ''}
                         </span>
                         <Button
