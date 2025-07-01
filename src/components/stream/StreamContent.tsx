@@ -50,6 +50,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         variant: 'default',
       });
     },
+    onError: (error:any) => {
+      toast({
+        description: error?.response?.data?.message,
+        variant: 'destructive',
+      });
+    },
   });
 
   // Cancel bet mutation
@@ -101,18 +107,18 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         )} */}
 
 
-        {/* {!placedBet  ? (
+        {!placedBet  ? (
                 <BetTokens
                 session={session}
                 bettingData={bettingData}
                 placeBet={(data) => placeBetMutation.mutate(data)}
                 />
-        ):( */}
+        ):(
 
                 <LockTokens
                 bettingData={bettingData}
                 cancelBet={(data) => cancelBetMutation.mutate(data)}/>
-         {/* )}  */}
+          )}  
 
         {/* <BettingInterface
           key={`betting-${session?.id}-${streamId}-${refreshKey}-${Date.now()}`}
