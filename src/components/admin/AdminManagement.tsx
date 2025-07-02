@@ -45,6 +45,7 @@ export const AdminManagement = ({
   setSearchStreamQuery }) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('livestreams');
+  const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
   const [activeEditStreamTab, setActiveEditStreamTab] = useState('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
   const [isCreateStream, setIsCreateStream] = useState(false);
@@ -62,6 +63,10 @@ export const AdminManagement = ({
 
   // Betting rounds state
   const [bettingRounds, setBettingRounds] = useState<BettingRound[]>([]);
+
+  // Add error state for betting rounds
+  const [bettingErrorRounds, setBettingErrorRounds] = useState<number[]>([]);
+  const [showBettingValidation, setShowBettingValidation] = useState(false);
 
   const tabs = [
     { key: 'livestreams', label: 'Livestreams' },
@@ -503,6 +508,24 @@ export const AdminManagement = ({
   }
 
   async function handleCreateStream() {
+    // Validate betting rounds: no round should have 0 options
+    const errorIndices = bettingRounds
+      .map((r, idx) => (r.options.length === 0 ? idx : -1))
+      .filter(idx => idx !== -1);
+    if (errorIndices.length > 0) {
+      setBettingErrorRounds(errorIndices);
+      setShowBettingValidation(true);
+      toast({
+        title: 'Betting round error',
+        description: 'Each round must have at least one option.',
+        variant: 'destructive',
+      });
+      return;
+    } else {
+      setBettingErrorRounds([]);
+      setShowBettingValidation(false);
+    }
+
     if (!validateForm())
     {
       // Scroll to first error after validation
@@ -562,8 +585,38 @@ export const AdminManagement = ({
     setViewStreamId('');
     setEditStreamId('');
     setActiveEditStreamTab('info');
+    setCreateStep('info');
     resetForm();
     setBettingRounds([]);
+  };
+
+  // New: handle next step from info to betting
+  const handleNextStep = async () => {
+    if (!validateForm()) {
+      setTimeout(() => scrollToFirstError(), 100);
+      toast({
+        title: 'Form error',
+        description: 'Please check your form for any validation error',
+        variant: 'destructive'
+      });
+      return;
+    }
+    setCreateStep('betting');
+  };
+
+  // New: handle back from betting to info
+  const handleBackStep = () => {
+    setCreateStep('info');
+  };
+
+  // Wrap setBettingRounds to auto-clear errors if all rounds have at least one option
+  const handleRoundsChange = (newRounds: BettingRound[]) => {
+    setBettingRounds(newRounds);
+    // If all rounds have at least one option, clear errors
+    if (newRounds.every(r => r.options.length > 0)) {
+      setBettingErrorRounds([]);
+      setShowBettingValidation(false);
+    }
   };
 
   return (
@@ -579,199 +632,223 @@ export const AdminManagement = ({
                   variant="secondary"
                   className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
-                  onClick={() => { handleResetAll() }}
+                  onClick={() => {
+                    if (createStep === 'betting') {
+                      handleBackStep();
+                    } else {
+                      handleResetAll();
+                    }
+                  }}
                 >
                   <ArrowLeft className="h-4 w-4 mr-0" /> Back
                 </Button>
               </div>
               {/* Label and Create button in same row */}
               <div className="flex flex-row items-center justify-between mb-6">
-                <span className="text-lg text-white font-light">{editStreamId ? 'Manage Livestream' : 'Create new livestream'}</span>
-                <Button
-                  type="submit"
-                  className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[79px] h-[40px]"
-                  style={{ borderRadius: '10px' }}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    await handleCreateStream();
-                  }}
-                  disabled={createStreamMutation.isPending
-                    || createBetMutation.isPending
-                    || isUploading}
-                >
-                  {editStreamId ? (createStreamMutation.isPending
-                    || createBetMutation.isPending
-                    || isUploading ?
-                    'Saving...' : 'Save')
-                    : (createStreamMutation.isPending || isUploading) ? 'Creating...' : 'Create'}
-                </Button>
+                <span className="text-lg text-white font-light">{createStep === 'betting' ? (editStreamId ? 'Edit your betting options' : 'Create your betting options') : (editStreamId ? 'Manage Livestream' : 'Create new livestream')}</span>
+                {/* Step 1: Next button, Step 2: Submit button */}
+                {createStep === 'info' ? (
+                  <Button
+                    type="button"
+                    className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[79px] h-[40px]"
+                    style={{ borderRadius: '10px' }}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await handleNextStep();
+                    }}
+                    disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
+                    style={{ borderRadius: '10px' }}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await handleCreateStream();
+                    }}
+                    disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                  >
+                    {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Edit stream') : (createStreamMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
+                  </Button>
+                )}
               </div>
-              {!!editStreamId && <TabSwitch tabs={editStreamTabs} activeTab={activeEditStreamTab} setActiveTab={setActiveEditStreamTab} />}
+              {/* Only show tabs in edit mode, and only in betting step */}
+              {!!editStreamId && createStep === 'betting' && <TabSwitch tabs={editStreamTabs} activeTab={activeEditStreamTab} setActiveTab={setActiveEditStreamTab} />}
               <Separator className="my-4 bg-[#232323]" />
               {/* Form fields */}
               <form className="space-y-8" onSubmit={e => e.preventDefault()}>
-                {(isCreateStream || activeEditStreamTab === 'info') && <>
-                  {/* Title */}
-                  <div>
-                    <Label className="text-white font-light mb-3 block">Title</Label>
-                    <Input
-                      ref={titleRef}
-                      className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
-                      placeholder="Title of livestream"
-                      value={title}
-                      maxLength={70}
-                      minLength={3}
-                      onChange={e => { setTitle(e.target.value); setErrors({ ...errors, title: '' }); }}
-                      required
-                    />
-                    {errors.title && <div className="text-destructive text-xs mt-1">{errors.title}</div>}
-                  </div>
-                  {/* Description */}
-                  <div>
-                    <Label className="text-white font-light mb-3 block">Description</Label>
-                    <Textarea
-                      className="bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] border-none mt-2"
-                      placeholder="Stream description"
-                      rows={10}
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                    />
-                  </div>
-                  {/* Stream URL */}
-                  {!!editStreamId && <div>
-                    <Label className="text-white font-light mb-3 block">Stream url</Label>
-                    <CopyableInput value={`${window.location.origin}/stream/${editStreamId}`} />
-                  </div>}
-                  {/* Embed URL */}
-                  <div>
-                    <Label className="text-white font-light mb-3 block">Embed URL</Label>
-                    <Input
-                      ref={embeddedUrlRef}
-                      className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
-                      placeholder="Embed URL"
-                      value={embeddedUrl}
-                      onChange={e => { setEmbeddedUrl(e.target.value); setErrors({ ...errors, embeddedUrl: '' }); }}
-                      required
-                    />
-                    {errors.embeddedUrl && <div className="text-destructive text-xs mt-1">{errors.embeddedUrl}</div>}
-                  </div>
-                  {/* Thumbnail upload */}
-                  <div ref={thumbnailRef}>
-                    <Label className="text-white font-light mb-3 block">Thumbnail</Label>
-                    <div className="flex flex-col sm:flex-row gap-4 items-center">
-                      {/* Left: Preview */}
-                      <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727]">
-                        {thumbnailPreviewUrl ? (
-                          <img src={thumbnailPreviewUrl} alt="Thumbnail preview" className="object-cover w-full h-full" />
-                        ) : (
-                          <span className="text-white text-xs">No image</span>
-                        )}
-                      </div>
-                      {/* Right: Upload */}
-                      <div
-                        className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''} ${errors.thumbnail ? 'border-red-500' : ''}`}
-                        style={{ minHeight: 120 }}
-                        onClick={isUploading ? undefined : handleUploadClick}
-                        onDrop={isUploading ? undefined : handleDrop}
-                        onDragOver={isUploading ? undefined : handleDragOver}
-                        onDragLeave={isUploading ? undefined : handleDragLeave}
-                      >
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleFileChange}
-                          disabled={isUploading}
-                        />
-                        <div className="flex flex-col items-center mt-2">
-                          <div className="flex items-center justify-center mb-1 relative">
-                            <div className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center" style={{ width: 44, height: 44 }}>
-                              {isUploading ? (
-                                <Loader2 className="h-6 w-6 animate-spin text-white" />
-                              ) : (
-                                <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
+                {/* Step 1: Info */}
+                {createStep === 'info' && (
+                  <>
+                    {/* Title */}
+                    <div>
+                      <Label className="text-white font-light mb-3 block">Title</Label>
+                      <Input
+                        ref={titleRef}
+                        className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
+                        placeholder="Title of livestream"
+                        value={title}
+                        maxLength={70}
+                        minLength={3}
+                        onChange={e => { setTitle(e.target.value); setErrors({ ...errors, title: '' }); }}
+                        required
+                      />
+                      {errors.title && <div className="text-destructive text-xs mt-1">{errors.title}</div>}
+                    </div>
+                    {/* Description */}
+                    <div>
+                      <Label className="text-white font-light mb-3 block">Description</Label>
+                      <Textarea
+                        className="bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] border-none mt-2"
+                        placeholder="Stream description"
+                        rows={10}
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                      />
+                    </div>
+                    {/* Stream URL */}
+                    {!!editStreamId && <div>
+                      <Label className="text-white font-light mb-3 block">Stream url</Label>
+                      <CopyableInput value={`${window.location.origin}/stream/${editStreamId}`} />
+                    </div>}
+                    {/* Embed URL */}
+                    <div>
+                      <Label className="text-white font-light mb-3 block">Embed URL</Label>
+                      <Input
+                        ref={embeddedUrlRef}
+                        className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
+                        placeholder="Embed URL"
+                        value={embeddedUrl}
+                        onChange={e => { setEmbeddedUrl(e.target.value); setErrors({ ...errors, embeddedUrl: '' }); }}
+                        required
+                      />
+                      {errors.embeddedUrl && <div className="text-destructive text-xs mt-1">{errors.embeddedUrl}</div>}
+                    </div>
+                    {/* Thumbnail upload */}
+                    <div ref={thumbnailRef}>
+                      <Label className="text-white font-light mb-3 block">Thumbnail</Label>
+                      <div className="flex flex-col sm:flex-row gap-4 items-center">
+                        {/* Left: Preview */}
+                        <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727]">
+                          {thumbnailPreviewUrl ? (
+                            <img src={thumbnailPreviewUrl} alt="Thumbnail preview" className="object-cover w-full h-full" />
+                          ) : (
+                            <span className="text-white text-xs">No image</span>
+                          )}
+                        </div>
+                        {/* Right: Upload */}
+                        <div
+                          className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''} ${errors.thumbnail ? 'border-red-500' : ''}`}
+                          style={{ minHeight: 120 }}
+                          onClick={isUploading ? undefined : handleUploadClick}
+                          onDrop={isUploading ? undefined : handleDrop}
+                          onDragOver={isUploading ? undefined : handleDragOver}
+                          onDragLeave={isUploading ? undefined : handleDragLeave}
+                        >
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleFileChange}
+                            disabled={isUploading}
+                          />
+                          <div className="flex flex-col items-center mt-2">
+                            <div className="flex items-center justify-center mb-1 relative">
+                              <div className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center" style={{ width: 44, height: 44 }}>
+                                {isUploading ? (
+                                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                                ) : (
+                                  <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
+                                )}
+                              </div>
+                              {thumbnailPreviewUrl && !isUploading && (
+                                <button
+                                  type="button"
+                                  className="absolute -top-2 -right-2 bg-[#232323] rounded-full p-1 hover:bg-destructive"
+                                  onClick={e => { e.stopPropagation(); handleDeleteThumbnail(); }}
+                                >
+                                  <XIcon className="h-4 w-4 text-white" />
+                                </button>
                               )}
                             </div>
-                            {thumbnailPreviewUrl && !isUploading && (
+                            <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
+                              <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
+                              <span className="text-[#667085] text-[12px]">SVG, PNG, JPG or GIF (max. 1920x1080px)</span>
+                            </span>
+                          </div>
+                          {errors.thumbnail && <div className="text-destructive text-xs mt-1">{errors.thumbnail}</div>}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Start date */}
+                    <div>
+                      <Label className="text-white font-light mb-3 block">Start date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            ref={startDateRef}
+                            type="button"
+                            className={`w-full bg-[#272727] text-[#D7DFEF] pl-10 mt-2 flex items-center h-10 rounded-md relative ${errors.startDate ? 'border border-red-500' : 'border-none'}`}
+                            style={{ textAlign: 'left' }}
+                          >
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                              <CalendarIcon className="h-5 w-5 text-white" />
+                            </span>
+                            <span className={startDateObj ? '' : 'text-[#FFFFFFBF]'}>
+                              {formatDateTimeForDisplay(startDateObj, startTime)}
+                            </span>
+                            {(startDateObj || startTime) && (
                               <button
                                 type="button"
-                                className="absolute -top-2 -right-2 bg-[#232323] rounded-full p-1 hover:bg-destructive"
-                                onClick={e => { e.stopPropagation(); handleDeleteThumbnail(); }}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
+                                onClick={e => { e.stopPropagation(); setStartDateObj(null); setStartTime(''); }}
                               >
                                 <XIcon className="h-4 w-4 text-white" />
                               </button>
                             )}
-                          </div>
-                          <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
-                            <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
-                            <span className="text-[#667085] text-[12px]">SVG, PNG, JPG or GIF (max. 1920x1080px)</span>
-                          </span>
-                        </div>
-                        {errors.thumbnail && <div className="text-destructive text-xs mt-1">{errors.thumbnail}</div>}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Start date */}
-                  <div>
-                    <Label className="text-white font-light mb-3 block">Start date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button
-                          ref={startDateRef}
-                          type="button"
-                          className={`w-full bg-[#272727] text-[#D7DFEF] pl-10 mt-2 flex items-center h-10 rounded-md relative ${errors.startDate ? 'border border-red-500' : 'border-none'}`}
-                          style={{ textAlign: 'left' }}
-                        >
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                            <CalendarIcon className="h-5 w-5 text-white" />
-                          </span>
-                          <span className={startDateObj ? '' : 'text-[#FFFFFFBF]'}>
-                            {formatDateTimeForDisplay(startDateObj, startTime)}
-                          </span>
-                          {(startDateObj || startTime) && (
-                            <button
-                              type="button"
-                              className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
-                              onClick={e => { e.stopPropagation(); setStartDateObj(null); setStartTime(''); }}
-                            >
-                              <XIcon className="h-4 w-4 text-white" />
-                            </button>
-                          )}
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={startDateObj || undefined}
-                          onSelect={handleStartDateChange}
-                          initialFocus
-                          showOutsideDays
-                          disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                        />
-                        <div className="flex items-center gap-2 p-2">
-                          <span className="text-xs text-white">Time:</span>
-                          <input
-                            ref={startTimeRef}
-                            type="time"
-                            value={startTime}
-                            onChange={handleStartTimeChange}
-                            min={startDateObj && isToday(startDateObj) ? getCurrentTime() : undefined}
-                            className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
-                            style={{ color: 'white' }}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={startDateObj || undefined}
+                            onSelect={handleStartDateChange}
+                            initialFocus
+                            showOutsideDays
+                            disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
                           />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    {errors.startDate && <div className="text-destructive text-xs mt-1">{errors.startDate}</div>}
-                  </div>
-                </>}
-                {editStreamId && activeEditStreamTab === 'betting' && <>
+                          <div className="flex items-center gap-2 p-2">
+                            <span className="text-xs text-white">Time:</span>
+                            <input
+                              ref={startTimeRef}
+                              type="time"
+                              value={startTime}
+                              onChange={handleStartTimeChange}
+                              min={startDateObj && isToday(startDateObj) ? getCurrentTime() : undefined}
+                              className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
+                              style={{ color: 'white' }}
+                            />
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      {errors.startDate && <div className="text-destructive text-xs mt-1">{errors.startDate}</div>}
+                    </div>
+                  </>
+                )}
+                {/* Step 2: Betting */}
+                {createStep === 'betting' && (
                   <BettingRounds
                     rounds={bettingRounds}
-                    onRoundsChange={setBettingRounds}
+                    onRoundsChange={handleRoundsChange}
+                    editStreamId={editStreamId}
+                    showValidationErrors={showBettingValidation}
+                    errorRounds={bettingErrorRounds}
                   />
-                </>}
+                )}
               </form>
             </CardContent>
           </Card>
