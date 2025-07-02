@@ -17,8 +17,9 @@ import {
      DialogTrigger,
      DialogContent,
 } from '@/components/ui/dialog';
-import { BettingRoundStatus } from '@/types/bet';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { BettingRoundStatus } from '@/enums';
+import { getImageLink } from '@/utils/helper';
 
 // Helper for status priority
 const statusPriority = [
@@ -46,7 +47,23 @@ function getActiveRoundIndex(betData) {
      return 0;
 }
 
+// Custom scrollbar style for winners row
+const customScrollbarStyle = `
+.custom-scrollbar::-webkit-scrollbar {
+  height: 7px !important;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #BDFF00 60%, #242424 100%) !important;
+  border-radius: 6px !important;
+  border: 2px solid #181818 !important;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #181818 !important;
+}
+`;
+
 export const AdminBettingRoundsCard = ({
+     isStreamEnded,
      isUpdatingAction,
      betData,
      handleOpenRound,
@@ -75,36 +92,10 @@ export const AdminBettingRoundsCard = ({
           }
      }, [carouselApi, activeIdx]);
 
-     // Handlers for status changes
-     //   const handleOpenRound = (roundId) => {
-     //     setStatusMap((prev) => ({ ...prev, [roundId]: BettingRoundStatus.OPEN }));
-     //     setRounds((prev) =>
-     //       prev.map((r) =>
-     //         r?.roundId === roundId ? { ...r, status: BettingRoundStatus.OPEN } : r
-     //       )
-     //     );
-     //   };
-     //   const handleLockBets = (roundId) => {
-     //     setStatusMap((prev) => ({ ...prev, [roundId]: BettingRoundStatus.LOCKED }));
-     //     setRounds((prev) =>
-     //       prev.map((r) =>
-     //         r?.roundId === roundId ? { ...r, status: BettingRoundStatus.LOCKED } : r
-     //       )
-     //     );
-     //   };
-     //   const handleEndRound = (roundId) => {
-     //     setStatusMap((prev) => ({ ...prev, [roundId]: BettingRoundStatus.WINNER }));
-     //     setRounds((prev) =>
-     //       prev.map((r) =>
-     //         r?.roundId === roundId ? { ...r, status: BettingRoundStatus.WINNER } : r
-     //       )
-     //     );
-     //   };
-
      // Card/box styles
      const getBoxStyles = (isActive, status) => {
           const borderRadius = 16;
-          if (status === BettingRoundStatus.WINNER)
+          if (status === BettingRoundStatus.CLOSED)
           {
                return {
                     background: '#000',
@@ -198,7 +189,7 @@ export const AdminBettingRoundsCard = ({
                          style={{ borderBottom: '0.62px solid #2C2C2C' }}
                     >
                          <span className="font-medium text-white/80 text-lg">Betting Rounds</span>
-                         <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                         {!isStreamEnded && <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                               <DialogTrigger asChild>
                                    <Button
                                         className="ml-auto h-9 px-6 rounded-lg border border-[#2D343E] bg-[#0D0D0D] text-white/75 font-medium text-[14px] transition-colors duration-150"
@@ -213,7 +204,7 @@ export const AdminBettingRoundsCard = ({
                               <DialogContent className="max-w-xs text-center">
                                    <div className="py-8 text-lg font-semibold">Coming Soon!</div>
                               </DialogContent>
-                         </Dialog>
+                         </Dialog>}
                     </CardHeader>
                     {/* Card Content: Carousel */}
                     <CardContent className="bg-transparent px-0 py-4">
@@ -227,14 +218,14 @@ export const AdminBettingRoundsCard = ({
                                         {rounds && rounds.length > 0 ? rounds.map((round, idx) => {
                                              const isActive = idx === activeIdx;
                                              const status = (statusMap[round.roundId] || round.status || '').toLowerCase();
-                                             const isWinner = status === BettingRoundStatus.WINNER;
+                                             const isWinner = status === BettingRoundStatus.CLOSED;
                                              const isLocked = status === BettingRoundStatus.LOCKED;
                                              const isOpen = status === BettingRoundStatus.OPEN;
                                              const isCreated = status === BettingRoundStatus.CREATED;
                                              return (
                                                   <CarouselItem
                                                        key={round.roundId || idx}
-                                                       className="flex flex-col items-center justify-between mx-2 rounded-[16px]"
+                                                       className="flex flex-col items-center justify-between mx-2 rounded-[16px] !px-2 !py-1"
                                                        style={{
                                                             width: slideWidth,
                                                             minWidth: slideWidth,
@@ -261,6 +252,7 @@ export const AdminBettingRoundsCard = ({
                                                             {isActive && isCreated && (
                                                                  <Button
                                                                       className="mt-4 w-32 rounded-full bg-primary text-black font-bold"
+                                                                      style={{ height: '30px' }}
                                                                       disabled={isUpdatingAction}
                                                                       onClick={() => handleOpenRound(round.roundId)}
                                                                  >
@@ -276,7 +268,7 @@ export const AdminBettingRoundsCard = ({
                                                                       >
                                                                            Users are betting
                                                                       </div>
-                                                                      <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2">
+                                                                      <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar">
                                                                            {round.options.map((opt) => (
                                                                                 <span
                                                                                      key={opt.id || opt.optionId || opt.option}
@@ -295,6 +287,7 @@ export const AdminBettingRoundsCard = ({
                                                                       </div>
                                                                       <Button
                                                                            className="w-full rounded-full bg-primary text-black font-bold"
+                                                                           style={{ height: '30px' }}
                                                                            onClick={() => handleLockBets(round.roundId)}
                                                                            disabled={isUpdatingAction}
                                                                       >
@@ -311,7 +304,7 @@ export const AdminBettingRoundsCard = ({
                                                                       >
                                                                            Bets are locked - pick a winner
                                                                       </div>
-                                                                      <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2">
+                                                                      <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar">
                                                                            {round.options.map((opt) => {
                                                                                 const isSelected = selectedOption[round.roundId] === (opt.id || opt.optionId);
                                                                                 return (
@@ -340,43 +333,74 @@ export const AdminBettingRoundsCard = ({
                                                                       </div>
                                                                       <Button
                                                                            className="w-full rounded-full bg-primary text-black font-bold"
-                                                                           disabled={!selectedOption[round.roundId]}
+                                                                           style={{ height: '30px' }}
+                                                                           disabled={!selectedOption[round.roundId] || isUpdatingAction}
                                                                            onClick={() => handleEndRound(selectedOption[round.roundId])}
                                                                       >
-                                                                           End Round
+                                                                           {isUpdatingAction ? 'Ending...' : 'End Round'}
                                                                       </Button>
                                                                  </div>
                                                             )}
                                                             {/* Winner: show winner label and options */}
                                                             {isWinner && (
                                                                  <div className="flex flex-col items-center w-full mt-2">
-                                                                      {/* Winner label: Avatar + username inline, then 'won winnerAmount' */}
-                                                                      {round.winners && round.winners.length > 0 && (
-                                                                           <div className="flex items-center justify-center gap-2 mb-2">
-                                                                                <Avatar className="h-6 w-6">
-                                                                                     <AvatarImage src={round.winners[0].avatar} alt={round.winners[0].userName} />
-                                                                                     <AvatarFallback>{round.winners[0].userName?.[0]?.toUpperCase() || '?'}</AvatarFallback>
-                                                                                </Avatar>
-                                                                                <span className="text-white text-sm font-semibold" style={{ fontFamily: 'Inter, sans-serif' }}>{round.winners[0].userName}</span>
-                                                                                <span className="text-white text-sm font-normal ml-1">won</span>
-                                                                                <span className="text-primary text-sm font-semibold ml-1">{round.winnerAmount}</span>
+                                                                      {/* Winner label: Avatar + username in a horizontal scrollable row */}
+                                                                      {round.winners && round.winners.freeTokens?.length > 0 ? (
+                                                                           <div className="flex flex-col items-center w-full">
+                                                                                <div
+                                                                                     className="flex flex-row gap-4 overflow-x-auto pb-2 w-full max-w-full winner-scrollbar"
+                                                                                     style={{ maxWidth: '100%', scrollbarWidth: 'thin' }}
+                                                                                >
+                                                                                     {round.winners.freeTokens?.map((winner: any, idx: number) => (
+                                                                                          <div key={idx} className="flex flex-col items-center min-w-[70px]">
+                                                                                               <Avatar className="h-10 w-10 mb-1">
+                                                                                                    <AvatarImage src={getImageLink(winner?.avatar)} alt={winner?.userName} />
+                                                                                                    <AvatarFallback>{winner?.userName?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+                                                                                               </Avatar>
+                                                                                               {/* Tooltip on username */}
+                                                                                               <span
+                                                                                                    className="text-white text-xs font-semibold text-center truncate max-w-[60px] cursor-pointer"
+                                                                                                    style={{ fontFamily: 'Inter, sans-serif' }}
+                                                                                                    title={winner?.userName}
+                                                                                               >
+                                                                                                    {winner?.userName}
+                                                                                               </span>
+                                                                                          </div>
+                                                                                     ))}
+                                                                                </div>
+                                                                                <div className="flex items-center mt-1">
+                                                                                     <span className="text-white text-sm font-normal ml-1">won</span>
+                                                                                     <span className="text-white text-sm font-normal ml-1">{round?.winnerAmount?.freeTokens}</span>
+                                                                                </div>
                                                                            </div>
-                                                                      )}
+                                                                      ) : (<span className='text-center'>Round closed with no winner</span>)}
                                                                  </div>
                                                             )}
                                                        </div>
                                                   </CarouselItem>
                                              );
                                         }) : (
-                                             <div className="w-full flex items-center justify-center h-32 text-white/60 text-lg">
-                                                  No betting rounds available.
-                                             </div>
-                                        )}
+                                                  <div className="w-full flex items-center justify-center h-32 text-white/60 text-lg">
+                                                       No betting rounds available.
+                                                  </div>
+                                             )}
                                    </CarouselContent>
                                    {/* Carousel Arrows: show on hover/near edges */}
                                    <div className="hidden md:block">
-                                        <CarouselPrevious className="left-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                                        <CarouselNext className="right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                        {/* Left hover area */}
+                                        <div className="absolute left-0 top-0 h-full w-12 z-10 group/arrow-area pointer-events-none">
+                                             <CarouselPrevious
+                                                  className="left-2 opacity-0 group-hover/arrow-area:opacity-100 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto"
+                                                  style={{ pointerEvents: 'auto' }}
+                                             />
+                                        </div>
+                                        {/* Right hover area */}
+                                        <div className="absolute right-0 top-0 h-full w-12 z-10 group/arrow-area pointer-events-none">
+                                             <CarouselNext
+                                                  className="right-2 opacity-0 group-hover/arrow-area:opacity-100 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto"
+                                                  style={{ pointerEvents: 'auto' }}
+                                             />
+                                        </div>
                                    </div>
                               </Carousel>
                          </div>

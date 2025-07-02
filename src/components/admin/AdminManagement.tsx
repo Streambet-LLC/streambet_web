@@ -24,7 +24,7 @@ import { CopyableInput } from '../ui/CopyableInput';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
-import { BettingRoundStatus } from '@/types/bet';
+import { BettingRoundStatus } from '@/enums';
 
 interface BettingOption {
   optionId?: string;
@@ -44,7 +44,7 @@ export const AdminManagement = ({
   searchStreamQuery,
   setSearchStreamQuery }) => {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('livestreams');
   const [activeEditStreamTab, setActiveEditStreamTab] = useState('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
   const [isCreateStream, setIsCreateStream] = useState(false);
@@ -64,7 +64,6 @@ export const AdminManagement = ({
   const [bettingRounds, setBettingRounds] = useState<BettingRound[]>([]);
 
   const tabs = [
-    { key: 'overview', label: 'Overview' },
     { key: 'livestreams', label: 'Livestreams' },
     { key: 'users', label: 'Users' },
   ];
@@ -81,7 +80,7 @@ export const AdminManagement = ({
       if (!bettingRounds?.length)
       {
         toast({ title: 'Success', description: 'Stream saved successfully!' });
-        handleRestAll();
+        handleResetAll();
       }
     },
     onError: (error: any) => {
@@ -95,7 +94,7 @@ export const AdminManagement = ({
       : api.admin.createBettingData(payload),
     onSuccess: () => {
       toast({ title: 'Success', description: 'Stream and Betting saved successfully!' });
-      handleRestAll();
+      handleResetAll();
     },
     onError: (error: any) => {
       toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
@@ -293,7 +292,7 @@ export const AdminManagement = ({
 
   const {
     data: betStreamData,
-    isLoading: isBetStreamLoading,
+    isFetching: isBetStreamLoading,
     refetch: refetchBetStreamData,
   } = useQuery({
     queryKey: ['adminBetStreamData'],
@@ -333,6 +332,20 @@ export const AdminManagement = ({
     },
   });
 
+  const { isPending: isStreamEnding, mutateAsync: initiateEndStream } = useMutation({
+    mutationFn: (streamId: string) => api.admin.endStream(streamId),
+    onSuccess: () => {
+      toast({
+        title: 'Stream ended',
+        description: 'Stream has successfully ended',
+      });
+      handleResetAll();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to end stream', variant: 'destructive' });
+    },
+  });
+
   const {
     data: streamData,
     isFetching: isStreamLoading,
@@ -355,11 +368,11 @@ export const AdminManagement = ({
   }, [editStreamId, refetchStreamData]);
 
   const handleOpenRound = (streamId: string) => {
-    betStatusUpdate({ streamId, payload: { status: BettingRoundStatus.OPEN } });
+    betStatusUpdate({ streamId, payload: { newStatus: BettingRoundStatus.OPEN } });
   };
 
   const handleLockBets = (streamId: string) => {
-    betStatusUpdate({ streamId, payload: { status: BettingRoundStatus.LOCKED } });
+    betStatusUpdate({ streamId, payload: { newStatus: BettingRoundStatus.LOCKED } });
   };
 
   const handleEndRound = (optionId: string) => {
@@ -544,7 +557,7 @@ export const AdminManagement = ({
     }
   }
 
-  const handleRestAll = () => {
+  const handleResetAll = () => {
     setIsCreateStream(false);
     setViewStreamId('');
     setEditStreamId('');
@@ -566,7 +579,7 @@ export const AdminManagement = ({
                   variant="secondary"
                   className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
-                  onClick={() => { handleRestAll() }}
+                  onClick={() => { handleResetAll() }}
                 >
                   <ArrowLeft className="h-4 w-4 mr-0" /> Back
                 </Button>
@@ -764,13 +777,16 @@ export const AdminManagement = ({
           </Card>
         </div>
       ) : viewStreamId ? <AdminStreamContent
-        streamId={viewStreamId}
-        session={session}
-          betData={betStreamData?.rounds}
-          isUpdatingAction={isBetStatusUpdating}
-        handleOpenRound={handleOpenRound}
-        handleLockBets={handleLockBets}
-          handleEndRound={handleEndRound}
+            streamId={viewStreamId}
+            session={session}
+            betData={betStreamData?.data?.rounds}
+            isStreamEnding={isStreamEnding}
+            isUpdatingAction={isBetStatusUpdating || isDeclareWinnerUpdating || isBetStreamLoading}
+            handleOpenRound={handleOpenRound}
+            handleLockBets={handleLockBets}
+            handleEndRound={handleEndRound}
+            handleEndStream={initiateEndStream}
+            handleBack={() => handleResetAll()}
       /> : (
         <>
           {/* Top bar (tabs, search, create button) only when not creating stream */}

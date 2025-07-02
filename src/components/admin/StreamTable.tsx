@@ -25,6 +25,8 @@ import { DeleteUserDialog } from './DeleteUserDialog';
 import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { StreamStatus } from '@/enums';
+import { toast } from '@/components/ui/use-toast';
 
 interface Props {
   streams: any;
@@ -109,9 +111,9 @@ export const StreamTable: React.FC<Props> = ({
                       className="px-2 py-1 rounded-md font-bold text-xs"
                       style={{
                         backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
-                          : stream?.status === 'active' ? '#7AFF14'
+                          : stream?.streamStatus === 'active' ? '#7AFF14'
                             : '#FF1418',
-                        color: stream?.status === 'inactive' ?
+                        color: stream?.streamStatus === 'inactive' ?
                           '#000' : '#FFFFFF',
                       }}
                     >
@@ -154,7 +156,18 @@ export const StreamTable: React.FC<Props> = ({
                           <Pen
                             size={16}
                             className='cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]'
-                            onClick={() => setEditStreamId(stream?.id)} />
+                            onClick={() => {
+                              if (stream?.streamStatus === StreamStatus.ENDED) {
+                                toast({
+                                  title: 'Stream Ended',
+                                  description: 'You cannot edit stream as it is already ended',
+                                  variant: 'destructive',
+                                  duration: 5000,
+                                });
+                                return;
+                              }
+                              setEditStreamId(stream?.id);
+                            }} />
                         </TooltipTrigger>
                         <TooltipContent>Manage stream</TooltipContent>
                       </Tooltip>
@@ -190,9 +203,9 @@ export const StreamTable: React.FC<Props> = ({
                       className="px-2 py-1 rounded-md font-bold text-sm"
                       style={{
                         backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
-                          : stream?.status === 'active' ? '#7AFF14'
+                          : stream?.streamStatus === 'active' ? '#7AFF14'
                             : '#FF1418',
-                        color: stream?.status === 'inactive' ?
+                        color: stream?.streamStatus === 'inactive' ?
                           '#000' : '#FFFFFF',
                       }}
                     >
@@ -218,7 +231,18 @@ export const StreamTable: React.FC<Props> = ({
                           <Pen
                             size={18}
                             className='cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]'
-                            onClick={() => setEditStreamId(stream?.id)} />
+                            onClick={() => {
+                              if (stream?.streamStatus === StreamStatus.ENDED) {
+                                toast({
+                                  title: 'Stream Ended',
+                                  description: 'You cannot edit stream as it is already ended',
+                                  variant: 'destructive',
+                                  duration: 5000,
+                                });
+                                return;
+                              }
+                              setEditStreamId(stream?.id);
+                            }} />
                         </TooltipTrigger>
                         <TooltipContent>Manage stream</TooltipContent>
                       </Tooltip>

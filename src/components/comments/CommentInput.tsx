@@ -59,7 +59,7 @@ export const CommentInput = ({
     >
       <div className="flex-1 flex space-x-2">
         <Input
-          placeholder={isDisabled ? 'Sign in to comment' : 'Add a comment...'}
+          placeholder={isDisabled ? '' : 'Add a comment...'}
           value={comment}
           onChange={e => onCommentChange(e.target.value)}
           onKeyDown={handleKeyPress}

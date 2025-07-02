@@ -636,7 +636,13 @@ export const adminAPI = {
 
   // Declare winner for a betting variable
   declareWinner: async (optionId: string) => {
-    const response = await apiClient.post(`/api/admin/betting-variables/${optionId}/declare-winner`);
+    const response = await apiClient.post(`/admin/betting-variables/${optionId}/declare-winner`);
+    return response.data;
+  },
+
+  // End the stream
+  endStream: async (streamId: string) => {
+    const response = await apiClient.patch(`/admin/streams/${streamId}/end`);
     return response.data;
   },
 
