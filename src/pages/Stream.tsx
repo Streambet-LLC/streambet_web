@@ -1,4 +1,4 @@
-import { Navigation } from '@/components/Navigation';
+
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,7 @@ import { useAuthStateChangeHandler } from '@/hooks/useAuthStateChangeHandler';
 import { StreamContent } from '@/components/stream/StreamContent';
 import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { Navigation } from '@/components/Navigation';
 
 const Stream = () => {
   const { id } = useParams();

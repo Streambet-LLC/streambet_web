@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +25,7 @@ const loginSchema = z.object({
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -36,6 +37,11 @@ export default function Login() {
   const [isCheckingLocation, setIsCheckingLocation] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
   const googleLoginRef = useRef<HTMLDivElement>(null);
+
+  // Parse query params
+  // const searchParams = new URLSearchParams(location.search);
+  const from = searchParams.get('from');
+  const streamId = searchParams.get('id');
 
   // Check user location on component mount
   useEffect(() => {
@@ -74,7 +80,8 @@ export default function Login() {
       queryClient.invalidateQueries({ queryKey: ['session'] });
       if (redirectParam) {
         navigate(redirectParam);
-      } else {
+      } 
+      else {
         navigate(response?.data?.role === 'admin' ? '/admin' : '/');
       }
     },

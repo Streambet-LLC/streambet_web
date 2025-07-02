@@ -395,22 +395,53 @@ export const bettingAPI = {
     return response.data;
   },
 
+// Get betting options for a stream
+  getBettingData: async (streamId: string,userId?:string) => {
+    const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}`);
+    return response.data;
+  },
+// Get data for seltected betting round
+  getBettingRoundData: async (roundId: string) => {
+    const response = await apiClient.get(`/betting/potentialAmount/${roundId}`);
+    return response.data;
+  },
+
+// Edit a bet
+    EditBet: async (betData: {
+      betId: string;
+      newBettingVariableId: string;
+      newAmount: number;
+      newCurrencyType: string;
+    }) => {
+      const response = await apiClient.patch('/betting/edit-bet', betData);
+      return response.data;
+    },
+
   // Place a bet
   placeBet: async (betData: {
-    streamId: string;
     bettingVariableId: string;
     amount: number;
-    option: string;
+    currencyType: string;
   }) => {
     const response = await apiClient.post('/betting/place-bet', betData);
     return response.data;
   },
 
-  // Cancel a bet
-  cancelBet: async (betId: string) => {
-    const response = await apiClient.delete(`/betting/bets/${betId}`);
+  cancelUserBet: async (betData: {
+    betId: string;
+    currencyType: string;
+  }) => {
+    const response = await apiClient.delete('/betting/bets/cancel', { data: betData });
     return response.data;
   },
+
+  // Cancel a bet
+  cancelBet: async (betId: string) => {
+    const response = await apiClient.delete(`/betting/bets/cancel${betId}`);
+    return response.data;
+  },
+
+
 
   // Get user's betting history
   getUserBets: async (active = false) => {

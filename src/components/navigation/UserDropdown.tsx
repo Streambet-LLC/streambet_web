@@ -79,6 +79,11 @@ export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => 
         <DropdownMenuItem asChild>
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link to="/transactions">Transaction history</Link>
+        </DropdownMenuItem>
+
         <DropdownMenuItem asChild>
           <Link to="/faq">FAQ</Link>
         </DropdownMenuItem>
