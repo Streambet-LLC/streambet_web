@@ -28,12 +28,6 @@ const statusPriority = [
      BettingRoundStatus.CREATED,
 ];
 
-function getStatusPriority(status) {
-     if (!status) return 99;
-     const idx = statusPriority.indexOf(status.toLowerCase());
-     return idx === -1 ? 99 : idx;
-}
-
 function getActiveRoundIndex(betData) {
      // Find first open, then locked, then created
      for (const status of statusPriority)
@@ -46,21 +40,6 @@ function getActiveRoundIndex(betData) {
      // fallback to first
      return 0;
 }
-
-// Custom scrollbar style for winners row
-const customScrollbarStyle = `
-.custom-scrollbar::-webkit-scrollbar {
-  height: 7px !important;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, #BDFF00 60%, #242424 100%) !important;
-  border-radius: 6px !important;
-  border: 2px solid #181818 !important;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #181818 !important;
-}
-`;
 
 export const AdminBettingRoundsCard = ({
      isStreamEnded,
@@ -99,7 +78,6 @@ export const AdminBettingRoundsCard = ({
           {
                return {
                     background: '#000',
-                    border: '1px solid #2C2C2C',
                     boxShadow: 'none',
                     borderRadius,
                };
@@ -116,56 +94,14 @@ export const AdminBettingRoundsCard = ({
                };
           }
           return {
-               background: '#181818',
-               border: '1px solid #2C2C2C',
+               background: '#00000030',
                boxShadow: 'none',
                borderRadius,
           };
      };
 
-     // Option capsule styles
-     const getOptionStyles = (isSelected, isLocked, isWinner) => {
-          if (isWinner)
-          {
-               return {
-                    background: '#BDFF00',
-                    color: '#000',
-                    fontWeight: 700,
-               };
-          }
-          if (isSelected)
-          {
-               return {
-                    background: '#BDFF00',
-                    color: '#000',
-                    fontWeight: 700,
-               };
-          }
-          if (isLocked)
-          {
-               return {
-                    background: '#242424',
-                    color: '#fff',
-                    filter: 'brightness(1.2)',
-               };
-          }
-          return {
-               background: '#242424',
-               color: '#fff',
-               opacity: 0.8,
-               filter: 'blur(0.5px)',
-          };
-     };
-
      // Responsive width for card
      const cardWidth = 'w-full';
-
-     // Responsive slide width
-     const getSlideWidth = () => {
-          if (typeof window !== 'undefined' && window.innerWidth < 640) return '100%';
-          if (typeof window !== 'undefined' && window.innerWidth < 1024) return 220;
-          return 260;
-     };
 
      // Track window width for responsive slides
      const [windowWidth, setWindowWidth] = React.useState(
@@ -193,7 +129,7 @@ export const AdminBettingRoundsCard = ({
                          {!isStreamEnded && <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                               <DialogTrigger asChild>
                                    <Button
-                                        className="ml-auto h-9 px-6 rounded-lg border border-[#2D343E] bg-[#0D0D0D] text-white/75 font-medium text-[14px] transition-colors duration-150"
+                                        className="!mt-0 ml-auto h-9 px-6 rounded-lg border border-[#2D343E] bg-[#0D0D0D] text-white/75 font-medium text-[14px] transition-colors duration-150"
                                         style={{ fontWeight: 500, borderRadius: '10px' }}
                                         onClick={() => setSettingsOpen(true)}
                                         onMouseOver={e => (e.currentTarget.style.color = '#000')}
@@ -216,16 +152,16 @@ export const AdminBettingRoundsCard = ({
                                    className="w-full"
                               >
                                    <CarouselContent className="flex items-center" style={{ paddingLeft: windowWidth < 640 ? 0 : 32 }}>
-                                        {rounds && rounds.length > 0 ? rounds.map((round, idx) => {
-                                             const isActive = idx === activeIdx;
+                                        {rounds && rounds?.length > 0 ? rounds.map((round, idx) => {
                                              const status = (statusMap[round.roundId] || round.status || '').toLowerCase();
                                              const isWinner = status === BettingRoundStatus.CLOSED;
                                              const isLocked = status === BettingRoundStatus.LOCKED;
                                              const isOpen = status === BettingRoundStatus.OPEN;
                                              const isCreated = status === BettingRoundStatus.CREATED;
+                                             const isActive = (idx === activeIdx) && (isLocked || isOpen || isCreated);
                                              return (
                                                   <CarouselItem
-                                                       key={round.roundId || idx}
+                                                       key={round?.roundId || idx}
                                                        className="flex flex-col items-center justify-between mx-2 rounded-[16px] !px-2 !py-1"
                                                        style={{
                                                             width: slideWidth,
@@ -245,10 +181,10 @@ export const AdminBettingRoundsCard = ({
                                                        {/* Round Name */}
                                                        <div className="w-full flex flex-col items-center justify-center h-full">
                                                             <div
-                                                                 className="text-center text-white text-lg font-semibold truncate"
+                                                                 className={`text-center ${isCreated && !isActive ? 'text-[#FFFFFF30]' : 'text-white'} text-lg font-semibold truncate`}
                                                                  style={{ fontWeight: 700 }}
                                                             >
-                                                                 {round.roundName}
+                                                                 {round?.roundName}
                                                             </div>
                                                             {/* Created: show Open button */}
                                                             {isActive && isCreated && (

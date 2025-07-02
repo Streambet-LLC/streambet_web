@@ -33,8 +33,7 @@ export const AdminStreamContent = ({
   handleEndStream,
   handleBack,
 }: AdminStreamContentProps) => {
-  const [streamName, setStreamName] = useState('');
-  const [streamStatus, setStreamStatus] = useState('');
+  const [streamInfo, setStreamInfo] = useState<any>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [endStreamDialogOpen, setEndStreamDialogOpen] = useState(false);
 
@@ -42,17 +41,15 @@ export const AdminStreamContent = ({
     async function fetchStreamData() {
       try {
         const streamData = await api.admin.getStream(streamId);
-        setStreamName(streamData?.data?.streamName || '');
-        setStreamStatus(streamData?.data?.status || '')
+        setStreamInfo(streamData?.data || undefined);
       } catch (e) {
-        setStreamName('');
-        setStreamStatus('');
+        setStreamInfo(undefined);
       }
     }
     fetchStreamData();
   }, [streamId]);
 
-  const isStreamEnded = streamStatus === StreamStatus.ENDED;
+  const isStreamEnded = streamInfo?.status === StreamStatus.ENDED;
 
   return (
     <div className="flex flex-col gap-0 h-full">
@@ -69,15 +66,24 @@ export const AdminStreamContent = ({
         {/* Left: Video and betting */}
         <div className="flex-1 flex flex-col min-w-0 h-full order-1 md:order-none">
           {/* Stream name */}
-          <span style={{ color: '#fff', fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{streamName}</span>
+          <span style={{ color: '#fff', fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{streamInfo?.streamName}</span>
           {/* View live link label below stream name */}
+          <a href={streamInfo?.embeddedUrl} target='_blank'>
           <div className="flex items-center mb-5 mt-1">
             <ExternalLink size={16} className="mr-1" style={{ opacity: 0.5, color: '#fff' }} />
             <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 400, fontSize: 12 }}>
               View live link
-            </span>
+              </span>
+            </div>
+            </a>
+          <div className="relative">
+            <StreamPlayer streamId={streamId} />
+            {isStreamEnded && (
+              <div className="absolute inset-0 z-20 flex items-center border border-primary justify-center bg-black text-white text-2xl font-bold rounded-lg">
+                Stream has ended
+              </div>
+            )}
           </div>
-          <StreamPlayer streamId={streamId} />
           <AdminBettingRoundsCard
             isStreamEnded={isStreamEnded}
             isUpdatingAction={isUpdatingAction}
@@ -88,32 +94,32 @@ export const AdminStreamContent = ({
           />
         </div>
         {/* Right: Chat and controls */}
-        <div className="w-full max-w-md flex flex-col h-full flex-1 min-h-0 order-2 md:order-none md:max-w-md md:w-full">
+        <div className="w-full max-w-md flex flex-col flex-1 min-h-0 order-2 md:order-none md:max-w-md md:w-full">
           {/* Controls at top right of chat */}
-          {!isStreamEnded && <div className="flex items-center justify-end gap-3 mb-5">
+          <div className={`flex items-center justify-end gap-3 mb-5 ${isStreamEnded ? 'invisible' : 'visible'}`}>
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  className="h-10 px-6 rounded-lg border border-[#2D343E] bg-[#0D0D0D] text-white/75 font-medium text-[14px] transition-colors duration-150 hover:text-black"
-                  style={{ fontWeight: 500, borderRadius: '10px', height: 40 }}
-                  onClick={() => setSettingsOpen(true)}
-                >
-                  Stream Settings
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-xs text-center">
-                <div className="py-8 text-lg font-semibold">Coming Soon!</div>
-              </DialogContent>
-            </Dialog>
-            <Button
-              className="h-10 px-6 rounded-lg bg-destructive text-white font-bold text-[14px]"
-              style={{ fontWeight: 700, borderRadius: '10px', background: '#FF1418', height: 40 }}
-              disabled={isStreamEnding}
-              onClick={() => setEndStreamDialogOpen(true)}
-            >
-              {isStreamEnding ? 'Ending...' : 'End stream'}
-            </Button>
-          </div>}
+                <DialogTrigger asChild>
+                  <Button
+                    className="h-10 px-6 rounded-lg border border-[#2D343E] bg-[#0D0D0D] text-white/75 font-medium text-[14px] transition-colors duration-150 hover:text-black"
+                    style={{ fontWeight: 500, borderRadius: '10px', height: 40 }}
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    Stream Settings
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-xs text-center">
+                  <div className="py-8 text-lg font-semibold">Coming Soon!</div>
+                </DialogContent>
+              </Dialog>
+              <Button
+                className="h-10 px-6 rounded-lg bg-destructive text-white font-bold text-[14px]"
+                style={{ fontWeight: 700, borderRadius: '10px', background: '#FF1418', height: 40 }}
+                disabled={isStreamEnding}
+                onClick={() => setEndStreamDialogOpen(true)}
+              >
+                {isStreamEnding ? 'Ending...' : 'End stream'}
+              </Button>
+          </div>
           {/* End Stream Confirmation Dialog */}
           <Dialog open={endStreamDialogOpen} onOpenChange={setEndStreamDialogOpen}>
             <DialogContent className="max-w-xs text-center border border-primary bg-[#000]">
@@ -141,7 +147,7 @@ export const AdminStreamContent = ({
               </div>
             </DialogContent>
           </Dialog>
-          <div className="flex-1 h-full min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 flex flex-col h-full">
             <CommentSection session={session} streamId={streamId} showInputOnly={false} />
           </div>
         </div>
