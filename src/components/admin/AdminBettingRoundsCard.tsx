@@ -108,10 +108,11 @@ export const AdminBettingRoundsCard = ({
           {
                return {
                     background: '#000',
-                    border: '1px solid',
-                    borderImage: 'linear-gradient(180deg, #BDFF00, #0000001F) 1',
-                    boxShadow: '0 8px 32px 0 #BDFF004F',
+                    border: 'none',
+                    boxShadow: '0 4px 16px 0 #BDFF004F, 0 -2px 8px 0 #BDFF004F',
                     borderRadius,
+                    position: 'relative' as const,
+                    overflow: 'hidden',
                };
           }
           return {
@@ -238,6 +239,7 @@ export const AdminBettingRoundsCard = ({
                                                             borderRadius: 16,
                                                             marginTop: 12,
                                                             marginBottom: 12, // extra space for shadow
+                                                            ...(isActive ? { position: 'relative' as const } : {}),
                                                        }}
                                                   >
                                                        {/* Round Name */}
@@ -377,6 +379,27 @@ export const AdminBettingRoundsCard = ({
                                                                  </div>
                                                             )}
                                                        </div>
+                                                       {isActive && (
+                                                        <div
+                                                          style={{
+                                                            position: 'absolute',
+                                                            top: 0,
+                                                            left: 0,
+                                                            right: 0,
+                                                            bottom: 0,
+                                                            borderRadius: 16,
+                                                            inset: '-1px',
+                                                            padding: '1.5px',
+                                                            background: 'conic-gradient(from 0deg, #BDFF00 0deg, #BDFF00 60deg, transparent 90deg, transparent 270deg, #BDFF00 300deg, #BDFF00 360deg)',
+                                                            WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                                                            WebkitMaskComposite: 'xor',
+                                                            mask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                                                            maskComposite: 'exclude',
+                                                            pointerEvents: 'none',
+                                                            zIndex: 3,
+                                                          }}
+                                                        />
+                                                       )}
                                                   </CarouselItem>
                                              );
                                         }) : (
