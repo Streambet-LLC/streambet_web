@@ -509,7 +509,7 @@ export const ProfileSection = ({
               <h2 className="text-md font-light text-white">Your photo</h2>
               <p className="text-sm text-[#FFFFFF] mt-1">This will be displayed on your profile.</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="flex flex-col sm:flex-row gap-4 items-center relative">
               {/* Left: Preview */}
               <Avatar className="h-20 w-20 relative">
                 <AvatarImage 
@@ -525,13 +525,16 @@ export const ProfileSection = ({
                   </div>
                 )}
               </Avatar>
-              {/* <div className="w-[120px] h-[120px] bg-[#808080] flex items-center justify-center rounded-full overflow-hidden border border-[#272727]">
-                {avatarPreviewUrl ? (
-                  <img src={avatarPreviewUrl} alt="Avatar preview" className="object-cover w-full h-full" />
-                ) : (
-                  <span className="text-white text-xs">No image</span>
-                )}
-              </div> */}
+              {/* Delete button positioned outside Avatar component, relative to parent div */}
+              {avatarPreviewUrl && !isUploading && (
+                <button
+                  type="button"
+                  className="absolute top-[20%] left-[60px] bg-gray-700 border border-gray-600 rounded-full h-5 w-5 flex items-center justify-center hover:bg-red-500 z-20"
+                  onClick={e => { e.stopPropagation(); handleDeleteAvatar(); }}
+                >
+                  <X className="h-4 w-4 text-white" />
+                </button>
+              )}
               {/* Right: Upload */}
               <div
                 className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''}`}
@@ -558,15 +561,7 @@ export const ProfileSection = ({
                         <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
                       )}
                     </div>
-                    {avatarPreviewUrl && !isUploading && (
-                      <button
-                        type="button"
-                        className="absolute -top-2 -right-2 bg-[#232323] rounded-full p-1 hover:bg-destructive"
-                        onClick={e => { e.stopPropagation(); handleDeleteAvatar(); }}
-                      >
-                        <X className="h-4 w-4 text-white" />
-                      </button>
-                    )}
+                    {/* Close button moved to Avatar preview */}
                   </div>
                   <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
                     <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
