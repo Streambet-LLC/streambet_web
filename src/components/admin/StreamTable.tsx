@@ -33,6 +33,8 @@ interface Props {
   refetchStreams: (range: string) => void;
   setViewStreamId: (streamId: string) => void;
   setEditStreamId: (streamId: string) => void;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
 }
 
 export const StreamTable: React.FC<Props> = ({
@@ -40,9 +42,10 @@ export const StreamTable: React.FC<Props> = ({
   refetchStreams,
   setViewStreamId,
   setEditStreamId,
+  currentPage,
+  setCurrentPage,
 }) => {
   const isMobile = useIsMobile();
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
   // const { data: streams, refetch: refetchStreams } = useQuery({
@@ -61,7 +64,6 @@ export const StreamTable: React.FC<Props> = ({
 
   useEffect(() => {
     const rangeStart = (currentPage - 1) * itemsPerPage;
-
     refetchStreams(`[${rangeStart},${itemsPerPage}]`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
@@ -78,8 +80,7 @@ export const StreamTable: React.FC<Props> = ({
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages)
-    {
+    if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };

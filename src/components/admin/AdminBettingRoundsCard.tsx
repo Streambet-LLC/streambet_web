@@ -18,8 +18,9 @@ import {
      DialogContent,
 } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { BettingRoundStatus } from '@/enums';
+import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink } from '@/utils/helper';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
 // Helper for status priority
 const statusPriority = [
@@ -54,6 +55,8 @@ export const AdminBettingRoundsCard = ({
      const [rounds, setRounds] = useState([]);
      const [selectedOption, setSelectedOption] = useState({}); // { [roundId]: optionId }
      const [statusMap, setStatusMap] = useState({});
+     const { currency } = useCurrencyContext();
+     const isStreamCoins = currency === CurrencyType.STREAM_COINS;
   
      useEffect(() => {
           setRounds(betData?.map((r) => ({ ...r })) || []);
@@ -283,13 +286,13 @@ export const AdminBettingRoundsCard = ({
                                                             {isWinner && (
                                                                  <div className="flex flex-col items-center w-full mt-2">
                                                                       {/* Winner label: Avatar + username in a horizontal scrollable row */}
-                                                                      {round.winners && round.winners.freeTokens?.length > 0 ? (
+                                                                      {round.winners && (isStreamCoins ? round.winners.streamCoins?.length > 0 : round.winners.freeTokens?.length > 0) ? (
                                                                            <div className="flex flex-col items-center w-full">
                                                                                 <div
                                                                                      className="flex flex-row gap-4 overflow-x-auto pb-2 w-full max-w-full winner-scrollbar"
                                                                                      style={{ maxWidth: '100%', scrollbarWidth: 'thin' }}
                                                                                 >
-                                                                                     {round.winners.freeTokens?.map((winner: any, idx: number) => (
+                                                                                     {(isStreamCoins ? round.winners.streamCoins : round.winners.freeTokens)?.map((winner: any, idx: number) => (
                                                                                           <div key={idx} className="flex flex-col items-center min-w-[70px]">
                                                                                                <Avatar className="h-10 w-10 mb-1">
                                                                                                     <AvatarImage src={getImageLink(winner?.avatar)} alt={winner?.userName} />
@@ -308,7 +311,7 @@ export const AdminBettingRoundsCard = ({
                                                                                 </div>
                                                                                 <div className="flex items-center mt-1">
                                                                                      <span className="text-white text-sm font-normal ml-1">won</span>
-                                                                                     <span className="text-white text-sm font-normal ml-1">{round?.winnerAmount?.freeTokens}</span>
+                                                                                     <span className="text-white text-sm font-normal ml-1">{isStreamCoins ? `${round?.winnerAmount?.streamCoins} coins` : `${round?.winnerAmount?.freeTokens} tokens`}</span>
                                                                                 </div>
                                                                            </div>
                                                                       ) : (<span className='text-center'>Round closed with no winner</span>)}

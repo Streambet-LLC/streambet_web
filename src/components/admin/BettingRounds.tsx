@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { DeleteBettingDialog } from './DeleteBettingDialog';
 import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Edit, Copy } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
 
 interface BettingOption {
   optionId?: string;
@@ -24,9 +23,10 @@ interface BettingRoundsProps {
   editStreamId?: string;
   showValidationErrors?: boolean;
   errorRounds?: number[];
+  onErrorRoundsChange?: (errorRounds: number[]) => void;
 }
 
-export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValidationErrors, errorRounds = [] }: BettingRoundsProps) {
+export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValidationErrors, errorRounds = [], onErrorRoundsChange }: BettingRoundsProps) {
   const isMobile = useIsMobile();
   const [expandedRounds, setExpandedRounds] = useState<string[]>([]);
 
@@ -70,6 +70,11 @@ export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValida
     if (!expandedRounds.includes(roundValue)) {
       setExpandedRounds([...expandedRounds, roundValue]);
     }
+
+    // Remove error for this round if present
+    if (errorRounds.includes(roundIndex) && onErrorRoundsChange) {
+      onErrorRoundsChange(errorRounds.filter(idx => idx !== roundIndex));
+    }
   };
 
   const updateOptionName = (roundIndex: number, optionIndex: number, newName: string) => {
@@ -106,105 +111,133 @@ export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValida
 
   return (
     <div className="space-y-4">
-      {/* Betting rounds list */}
       {rounds.length > 0 ? (
-        <div className="space-y-8">
+        <div className="space-y-2">
           {rounds.map((round, roundIndex) => (
-            <div key={`round-wrap-${roundIndex}`}>
-              <div
-                className={`border rounded-lg bg-[#141414] p-4 relative ${errorRounds.includes(roundIndex) ? 'border-destructive' : 'border-[#272727]'}`}
-                style={{ marginBottom: 0 }}
-              >
-                {/* Round header row */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 group">
-                    {/* Accordion toggle */}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-white hover:bg-[#272727] px-2 py-1"
-                      style={{ minWidth: 32 }}
-                      onClick={() => toggleRoundExpansion(roundIndex)}
+            <div key={`round-${roundIndex}`}>
+              <div className="overflow-x-auto">
+                <Table
+                  className="w-full table-fixed rounded-xl overflow-hidden border border-[#191D24] bg-transparent"
+                  style={{ background: 'transparent', borderCollapse: 'separate', borderSpacing: 0 }}
+                >
+                  <TableBody>
+                    {/* Round header row */}
+                    <TableRow
+                      className="bg-[#141414] border-b border-[#191D24]"
+                      style={{ height: 57, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
                     >
-                      {expandedRounds.includes(getRoundValue(roundIndex)) ? '▼' : '▶'}
-                    </Button>
-                    <InlineEditable
-                      value={round.roundName}
-                      onSave={(newName) => updateRoundName(roundIndex, newName)}
-                      className="text-white font-medium"
-                      style={{ fontSize: '16px', color: '#FFFFFFBF' }}
-                      minLength={3}
-                    />
-                    <Edit className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
-                      style={{ height: 33, fontSize: '16px', fontWeight: 500 }}
-                      onClick={() => addNewOption(roundIndex)}
-                    >
-                      + New option
-                    </Button>
-                    <Button
-                      type="button"
-                      className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
-                      style={{ height: 33, fontSize: '16px', fontWeight: 500 }}
-                      onClick={() => duplicateRound(roundIndex)}
-                    >
-                      <Copy className="h-4 w-4 mr-1" /> Duplicate
-                    </Button>
-                    <DeleteBettingDialog
-                      title="Delete Round"
-                      message={`Deleting this round will delete all betting options related with this round. Are you sure?`}
-                      onConfirm={() => deleteRound(roundIndex)}
-                    />
-                  </div>
-                </div>
-                {/* Accordion: show options if expanded */}
-                {expandedRounds.includes(getRoundValue(roundIndex)) && (
-                  <div className="flex flex-col gap-2">
-                    {round.options.map((option, optionIndex) => (
-                      <div
-                        key={optionIndex}
-                        className="flex items-center"
+                      <TableCell
+                        className="border-none px-0 py-0 w-full"
+                        style={{ borderTopLeftRadius: 12, maxWidth: 'calc(100% - 56px)' }}
                       >
-                        <div className="flex items-center gap-2 bg-[#272727] rounded-lg py-2 px-3 flex-1 min-w-0">
-                          <InlineEditable
-                            value={option.option}
-                            onSave={(newName) => updateOptionName(roundIndex, optionIndex, newName)}
-                            className="text-white text-sm font-normal truncate"
-                            style={{ color: '#FFFFFFBF', maxWidth: '180px' }}
-                            minLength={3}
-                          />
-                          <Edit className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="flex items-center justify-between px-4 w-full" style={{ height: 57 }}>
+                          <div className="flex items-center gap-2 group min-w-0">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-white hover:bg-[#272727] px-2 py-1"
+                              style={{ minWidth: 32 }}
+                              onClick={() => toggleRoundExpansion(roundIndex)}
+                            >
+                              {expandedRounds.includes(getRoundValue(roundIndex)) ? '▼' : '▶'}
+                            </Button>
+                            <InlineEditable
+                              value={round.roundName}
+                              onSave={(newName) => updateRoundName(roundIndex, newName)}
+                              className="text-white font-medium truncate"
+                              style={{ fontSize: '16px', color: '#FFFFFFBF', maxWidth: '200px' }}
+                              minLength={2}
+                            />
+                            <Edit className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button
+                              type="button"
+                              className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
+                              style={{ height: 33, fontSize: '16px', fontWeight: 500 }}
+                              onClick={() => addNewOption(roundIndex)}
+                            >
+                              + New option
+                            </Button>
+                            <Button
+                              type="button"
+                              className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
+                              style={{ height: 33, fontSize: '16px', fontWeight: 500 }}
+                              onClick={() => duplicateRound(roundIndex)}
+                            >
+                              <Copy className="h-4 w-4 mr-1" /> Duplicate
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center ml-2">
+                      </TableCell>
+                      <TableCell className="border-none p-0 w-14" style={{ borderTopRightRadius: 12, width: 56 }}>
+                        <div className="flex items-center justify-center h-full" style={{ minHeight: 57 }}>
                           <DeleteBettingDialog
-                            title="Delete Option"
-                            message={`Delete this option from round ${round.roundName}`}
-                            onConfirm={() => deleteOption(roundIndex, optionIndex)}
+                            title="Delete Round"
+                            message={`Deleting this round will delete all betting options related with this round. Are you sure?`}
+                            onConfirm={() => deleteRound(roundIndex)}
                           />
                         </div>
-                      </div>
-                    ))}
-                    {round.options.length === 0 && (
-                      <div className="text-center py-4 text-destructive text-sm">
-                        No options added yet. Click "+ New option" to add options.
-                      </div>
+                      </TableCell>
+                    </TableRow>
+                    {/* Options rows */}
+                    {expandedRounds.includes(getRoundValue(roundIndex)) && (
+                      round.options.length > 0 ? (
+                        round.options.map((option, optionIndex) => (
+                          <TableRow
+                            key={`option-${roundIndex}-${optionIndex}`}
+                            className="bg-transparent border-b border-[#191D24]"
+                            style={{ height: 72, borderRadius: 0 }}
+                          >
+                            <TableCell className="border-none px-4 py-2 w-full" style={{ borderRadius: 0, maxWidth: 'calc(100% - 56px)' }}>
+                              <div className="flex items-center gap-2 group min-w-0 h-full" style={{ height: 72 }}>
+                                <div className="flex items-center w-full" style={{ height: 44, background: '#272727', borderRadius: 8, paddingLeft: 16, paddingRight: 16 }}>
+                                  <InlineEditable
+                                    value={option.option}
+                                    onSave={(newName) => updateOptionName(roundIndex, optionIndex, newName)}
+                                    className="text-white text-sm font-normal truncate"
+                                    style={{ color: '#FFFFFFBF', maxWidth: '180px' }}
+                                    minLength={2}
+                                  />
+                                  <Edit className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2" />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="border-none p-0 w-14" style={{ borderRadius: 0, width: 56 }}>
+                              <div className="flex items-center justify-center h-full" style={{ minHeight: 72 }}>
+                                <DeleteBettingDialog
+                                  title="Delete Option"
+                                  message={`Delete this option from round ${round.roundName}`}
+                                  onConfirm={() => deleteOption(roundIndex, optionIndex)}
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow className="bg-transparent border-b border-[#191D24]">
+                          <TableCell colSpan={2} className="border-none px-4 py-4 text-center text-destructive text-sm">
+                            No options added yet. Click "+ New option" to add options.
+                          </TableCell>
+                        </TableRow>
+                      )
                     )}
-                  </div>
-                )}
-                {/* Error message for round with 0 options */}
-                {errorRounds.includes(roundIndex) && (
-                  <div className="text-destructive text-xs mt-2">
-                    Each round must have at least one option.
-                  </div>
-                )}
+                    {/* Error message for round with 0 options */}
+                    {errorRounds.includes(roundIndex) && (
+                      <TableRow>
+                        <TableCell colSpan={2} className="border-none px-4 py-2 !text-destructive text-xs">
+                          Each round must have at least one option.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </div>
               {/* Separator between rounds */}
-              {roundIndex < rounds.length - 1 && <Separator className="mt-8 mb-6 bg-[#232323]" />}
+              {roundIndex < rounds.length - 1 && (
+                <div className="bg-[#232323] h-[2px] w-full my-4" />
+              )}
             </div>
           ))}
         </div>

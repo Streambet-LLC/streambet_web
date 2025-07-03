@@ -90,8 +90,12 @@ apiClient.interceptors.response.use(
         (originalRequest as any)[RETRY_401] = true;
         try
         {
-          const refreshResponse = await apiClient.post('/auth/refresh', { refreshToken });
-          const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshResponse.data.data || {};
+          const refreshResponse = await apiClient.post('/auth/refresh', { refreshToken }, {
+            headers: {
+              'Authorization': `Bearer ${refreshToken}`,
+            },
+          });
+          const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshResponse?.data?.data || {};
           if (newAccessToken)
           {
             localStorage.setItem('accessToken', newAccessToken);
@@ -203,7 +207,11 @@ export const authAPI = {
   refreshToken: async () => {
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) throw new Error('No refresh token');
-    const response = await apiClient.post('/auth/refresh', { refreshToken });
+    const response = await apiClient.post('/auth/refresh', { refreshToken }, {
+      headers: {
+        'refresh-token': refreshToken,
+      },
+    });
     const { accessToken, refreshToken: newRefreshToken } = response.data.data || {};
     if (accessToken)
     {

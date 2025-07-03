@@ -46,7 +46,6 @@ export const AdminManagement = ({
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('livestreams');
   const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
-  const [activeEditStreamTab, setActiveEditStreamTab] = useState('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
   const [isCreateStream, setIsCreateStream] = useState(false);
   const [viewStreamId, setViewStreamId] = useState('');
@@ -73,16 +72,19 @@ export const AdminManagement = ({
     { key: 'users', label: 'Users' },
   ];
 
-  const editStreamTabs = [
-    { key: 'info', label: 'Information' },
-    { key: 'betting', label: 'Betting' },
-  ];
-
   const createStreamMutation = useMutation({
     mutationFn: (payload: any) => editStreamId ? api.admin.updateStream(editStreamId, payload)
       : api.admin.createStream(payload),
-    onSuccess: () => {
-      if (!bettingRounds?.length)
+    onSuccess: (response) => {
+      if (bettingRounds.length > 0)
+        {
+          const bettingPayload = {
+            streamId: editStreamId || response?.data?.id,
+            rounds: bettingRounds,
+          };
+          createBetMutation.mutate(bettingPayload);
+        }
+      else
       {
         toast({ title: 'Success', description: 'Stream saved successfully!' });
         handleResetAll();
@@ -569,22 +571,12 @@ export const AdminManagement = ({
     };
 
     createStreamMutation.mutate(payload);
-
-    if (bettingRounds.length > 0)
-    {
-      const bettingPayload = {
-        streamId: editStreamId,
-        rounds: bettingRounds,
-      };
-      createBetMutation.mutate(bettingPayload);
-    }
   }
 
   const handleResetAll = () => {
     setIsCreateStream(false);
     setViewStreamId('');
     setEditStreamId('');
-    setActiveEditStreamTab('info');
     setCreateStep('info');
     resetForm();
     setBettingRounds([]);
@@ -618,6 +610,12 @@ export const AdminManagement = ({
       setShowBettingValidation(false);
     }
   };
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchStreamQuery]);
 
   return (
     <div className="space-y-6">
@@ -671,12 +669,10 @@ export const AdminManagement = ({
                     }}
                     disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
                   >
-                    {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Edit stream') : (createStreamMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
+                    {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Edit stream') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
                   </Button>
                 )}
               </div>
-              {/* Only show tabs in edit mode, and only in betting step */}
-              {!!editStreamId && createStep === 'betting' && <TabSwitch tabs={editStreamTabs} activeTab={activeEditStreamTab} setActiveTab={setActiveEditStreamTab} />}
               <Separator className="my-4 bg-[#232323]" />
               {/* Form fields */}
               <form className="space-y-8" onSubmit={e => e.preventDefault()}>
@@ -844,6 +840,7 @@ export const AdminManagement = ({
                   <BettingRounds
                     rounds={bettingRounds}
                     onRoundsChange={handleRoundsChange}
+                    onErrorRoundsChange={(errorRounds) => setBettingErrorRounds(errorRounds)}
                     editStreamId={editStreamId}
                     showValidationErrors={showBettingValidation}
                     errorRounds={bettingErrorRounds}
@@ -950,6 +947,8 @@ export const AdminManagement = ({
                 refetchStreams={refetchStreams}
                 setViewStreamId={setViewStreamId}
                 setEditStreamId={setEditStreamId}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
               />
             </div>
           )}

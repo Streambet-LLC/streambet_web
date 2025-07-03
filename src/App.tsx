@@ -22,6 +22,7 @@ import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import NotFound from './pages/NotFound';
 import VerifyEmailNotice from './pages/auth/VerifyEmailNotice';
+import { CurrencyProvider } from '@/contexts/CurrencyContext';
 
 
 // Create a client
@@ -65,6 +66,7 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <CurrencyProvider>
         <BrowserRouter>
           <TooltipProvider>
             <Toaster />
@@ -93,6 +95,7 @@ const App = () => {
             </Routes>
           </TooltipProvider>
         </BrowserRouter>
+      </CurrencyProvider>
     </QueryClientProvider>
   );
 };
