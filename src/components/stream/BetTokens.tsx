@@ -44,9 +44,11 @@ interface BetTokensProps {
   loading?: boolean; // Optional prop to indicate loading state
   selectedAmount?: number; // Optional prop for selected amount
   selectedWinner?: string; // Optional prop for selected winner
+  isEditing?: boolean; // Optional prop to indicate if it's an editing state
+  updatedCurrency?: string; // Optional prop for updated currency type
 }
 
-export default function BetTokens({ streamId,loading,totalPot,selectedAmount,selectedWinner, lockedOptions,session, bettingData ,placeBet,getRoundData,editBetMutation, resetKey}: BetTokensProps) {
+export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,totalPot,selectedAmount,selectedWinner, lockedOptions,session, bettingData ,placeBet,getRoundData,editBetMutation, resetKey}: BetTokensProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
@@ -62,8 +64,7 @@ export default function BetTokens({ streamId,loading,totalPot,selectedAmount,sel
   const isColorButtonsEnabled = betAmount > 0;
   const isBetButtonEnabled = selectedColor !== "";
   const sliderMax = bettingData?.walletFreeToken ?? 0;
-  // const isLocked = bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED;
-
+ 
 
    useEffect(() => {
     // if (getRoundData) {
@@ -88,10 +89,10 @@ export default function BetTokens({ streamId,loading,totalPot,selectedAmount,sel
 
     if (getRoundData) {
       console.log("edit in bettoekn")
-      editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: CurrencyType.FREE_TOKENS });
+      editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: updatedCurrency });
     }
     else{
-      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS })
+      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: currency })
       // placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS });
     }
   };
@@ -116,7 +117,7 @@ export default function BetTokens({ streamId,loading,totalPot,selectedAmount,sel
             {bettingData?.bettingRounds?.[0]?.roundName}
             </span>
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-            Total Pot: {totalPot} Free Tokens
+            Total Pot: {totalPot} Free {currency === CurrencyType?.FREE_TOKENS && !isEditing ?'Tokens': currency === CurrencyType?.STREAM_COINS && !isEditing ? 'Coins' : updatedCurrency === CurrencyType?.FREE_TOKENS ? 'Tokens' : updatedCurrency === CurrencyType?.STREAM_COINS ? 'Coins' : ''}
             </span>
         </div>
       </div>

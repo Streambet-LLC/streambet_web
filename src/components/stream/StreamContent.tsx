@@ -9,7 +9,7 @@ import api from '@/integrations/api/client';
 import LockTokens from './LockTokens';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { BettingRoundStatus } from '@/enums';
+import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
@@ -30,7 +30,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [potentialWinnings, setPotentialWinnings] = useState(0); 
   const [selectedAmount, setSelectedAmount] = useState(0); 
   const [selectedWinner, setSelectedWinner] = useState<string | undefined>(""); 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);  //indicate if it's an editing state
   const [lockedOptions, setLockedOptions] = useState<boolean>(false);  // Track if bet is locked in BetTokens,tsx
   const [lockedBet, setLockedBet] = useState<boolean>(false); // Track if bet is locked in LockTokens.tsx
   const [loading, setLoading] = useState<boolean>(false);    // Loader state when data is being fetched from socket           
@@ -41,6 +41,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   // Track if last update came from socket then no need to execute getRoundData useEffect
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
+  const [updatedCurrency, setUpdatedCurrency] = useState();   //currency type from socket update
 
   console.log(currency,'currency')
 
@@ -67,10 +68,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     enabled: !!session?.id,
   });
 
+  console.log(currency,CurrencyType?.FREE_TOKENS,'currency in bettingData')
+
   useEffect(() => {
-    setTotalPot(bettingData?.roundTotalBetsTokenAmount);
+    setTotalPot(currency === CurrencyType?.FREE_TOKENS && !isEditing ?  bettingData?.roundTotalBetsTokenAmount : currency === CurrencyType?.STREAM_COINS && !isEditing?bettingData?.roundTotalBetsCoinAmount:null);
     setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED)
-  },[bettingData])
+  },[bettingData,currency])
 
 
 
@@ -79,7 +82,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   
     const handler = (update: any) => {
       console.log(update, 'update in bettingUpdate');
-      setTotalPot(update?.totalBetsTokenAmount);
+      setTotalPot(CurrencyType?.FREE_TOKENS === update?.currencyType ? update?.totalBetsTokenAmount :  CurrencyType?.STREAM_COINS === update?.currencyType ? update?.totalBetsCoinAmount : null);
+      setUpdatedCurrency(update?.currencyType)
       setPotentialWinnings(update?.potentialTokenWinningAmount);
       setSelectedAmount(update?.amount)
       setSelectedWinner(update?.selectedWinner);
@@ -125,7 +129,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     // };
   }, [socket, toast]);
 
-  console.log(isUserWinner,'isUserWinner')
+
+
+  console.log(totalPot,'totalPot in bettingData')
 
     // Query to get selected betting round data
   const { data: getRoundData, refetch: refetchRoundData} = useQuery({
@@ -145,6 +151,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setSelectedAmount(getRoundData?.betAmount);
       setSelectedWinner(getRoundData?.optionName);
       setLockedBet(getRoundData?.status === BettingRoundStatus.LOCKED)
+      setUpdatedCurrency(getRoundData?.currencyType)
     }
   }, [getRoundData, hasSocketUpdate]);
 
@@ -284,6 +291,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               loading={loading}
               selectedAmount={selectedAmount}
               selectedWinner={selectedWinner}
+              isEditing={isEditing}
+              updatedCurrency={updatedCurrency}
             />
           ) : (
             <LockTokens

@@ -501,7 +501,7 @@ export const socketAPI = {
 
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
-      socket = io('https://f441-2401-4900-666d-abbe-38f5-cb48-ecba-78cf.ngrok-free.app', {
+      socket = io(API_URL.replace('/api', ''), {
         transports: ["websocket"],
         auth: { token }
       });
