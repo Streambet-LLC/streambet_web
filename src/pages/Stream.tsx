@@ -10,6 +10,7 @@ import { StreamContent } from '@/components/stream/StreamContent';
 import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Navigation } from '@/components/Navigation';
+import api from '@/integrations/api/client';
 
 const Stream = () => {
   const { id } = useParams();
@@ -31,7 +32,7 @@ const Stream = () => {
     },
   });
 
-  console.log(session,'session inside stream')
+
 
   // Debounced refetch function to prevent excessive API calls
   const debouncedRefetch = (queryKey: string[], delay: number = 300) => {
@@ -163,6 +164,8 @@ const Stream = () => {
   //   console.error('No stream ID available');
   //   return null;
   // }
+
+
 
   return (
     <div className="min-h-screen bg-background">
