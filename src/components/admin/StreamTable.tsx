@@ -27,6 +27,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { StreamStatus } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
+import { BettingRoundStatus } from '@/enums';
 
 interface Props {
   streams: any;
@@ -55,21 +56,66 @@ const BettingStatusBadge = ({ status }: { status?: string }) => {
   const label = status?.charAt(0)?.toUpperCase() + status?.slice(1) || 'N/A';
 
   switch (normalized) {
-    case 'locked':
+    case BettingRoundStatus.LOCKED:
       style.background = 'orange';
       style.color = '#fff';
       break;
-    case 'open':
+    case BettingRoundStatus.OPEN:
       style.background = '#007AFF';
       style.color = '#fff';
       break;
-    case 'closed':
+    case BettingRoundStatus.CLOSED:
       style.background = '#6c757d';
       style.color = '#fff';
       break;
-    case 'created':
+    case BettingRoundStatus.CREATED:
       style.background = '#34C759';
       style.color = '#fff';
+      break;
+    default:
+      style.background = '#222';
+      style.color = '#fff';
+      break;
+  }
+
+  return <span style={style}>{label}</span>;
+};
+
+const StreamStatusBadge = ({ status }: { status?: string }) => {
+  const normalized = status?.toLowerCase();
+  const style: React.CSSProperties = {
+    borderRadius: 8,
+    padding: '0 12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 700,
+    fontSize: 14,
+    gap: 4,
+    height: 28,
+    minWidth: 54,
+    width: 'fit-content',
+  };
+  let label = status?.charAt(0)?.toUpperCase() + status?.slice(1) || 'N/A';
+
+  switch (normalized) {
+    case StreamStatus.LIVE:
+      style.background = '#FF1418';
+      style.color = '#fff';
+      label = 'Live';
+      break;
+    case StreamStatus.SCHEDULED:
+      style.background = 'rgb(87 115 243)';
+      style.color = '#fff';
+      break;
+    case StreamStatus.ACTIVE:
+      style.background = '#7AFF14';
+      style.color = '#fff';
+      label = 'Active';
+      break;
+    case StreamStatus.INACTIVE:
+      style.background = '#FF1418';
+      style.color = '#000';
       break;
     default:
       style.background = '#222';
@@ -151,18 +197,7 @@ export const StreamTable: React.FC<Props> = ({
                   {/* Stream Status */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Stream Status:</span>
-                    <span
-                      className="px-2 py-1 rounded-md font-bold text-xs"
-                      style={{
-                        backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
-                          : stream?.streamStatus === 'active' ? '#7AFF14'
-                            : '#FF1418',
-                        color: stream?.streamStatus === 'inactive' ?
-                          '#000' : '#FFFFFF',
-                      }}
-                    >
-                      {stream?.streamStatus?.charAt(0)?.toUpperCase() + stream?.streamStatus?.slice(1)}
-                    </span>
+                    <StreamStatusBadge status={stream?.streamStatus} />
                   </div>
 
                   {/* Betting Status */}
@@ -241,18 +276,7 @@ export const StreamTable: React.FC<Props> = ({
                 <TableRow key={stream?.id}>
                   <TableCell className="font-medium">{stream?.streamName}</TableCell>
                   <TableCell>
-                    <span
-                      className="px-2 py-1 rounded-md font-bold text-sm"
-                      style={{
-                        backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
-                          : stream?.streamStatus === 'active' ? '#7AFF14'
-                            : '#FF1418',
-                        color: stream?.streamStatus === 'inactive' ?
-                          '#000' : '#FFFFFF',
-                      }}
-                    >
-                      {stream?.streamStatus?.charAt(0)?.toUpperCase() + stream?.streamStatus?.slice(1)}
-                    </span>
+                    <StreamStatusBadge status={stream?.streamStatus} />
                   </TableCell>
                   <TableCell>
                     <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />

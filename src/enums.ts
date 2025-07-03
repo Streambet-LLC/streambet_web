@@ -24,4 +24,5 @@ export enum StreamStatus {
   ENDED = 'ended',
   ACTIVE = 'active',
   INACTIVE = 'inactive',
+  SCHEDULED = 'scheduled'
 };
