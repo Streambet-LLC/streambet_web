@@ -41,12 +41,16 @@ interface BetTokensProps {
   totalPot?: number;
   lockedOptions?: boolean;
   loading?: boolean; // Optional prop to indicate loading state
+  selectedAmount?: number; // Optional prop for selected amount
+  selectedWinner?: string; // Optional prop for selected winner
 }
 
-export default function BetTokens({ streamId,loading,totalPot, lockedOptions,session, bettingData ,placeBet,getRoundData,editBetMutation, resetKey}: BetTokensProps) {
+export default function BetTokens({ streamId,loading,totalPot,selectedAmount,selectedWinner, lockedOptions,session, bettingData ,placeBet,getRoundData,editBetMutation, resetKey}: BetTokensProps) {
   const { toast } = useToast();
-  const [betAmount, setBetAmount] = useState(getRoundData?.betAmount || 0);
+  const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
+
+  console.log(selectedAmount,'selectedAmount')
 
 
   const handleColorClick = (color: string) => {
@@ -60,12 +64,12 @@ export default function BetTokens({ streamId,loading,totalPot, lockedOptions,ses
 
 
    useEffect(() => {
-    if (getRoundData) {
-      setSelectedColor(getRoundData.optionName);
-      setBetAmount(getRoundData.betAmount);
-    }
+    // if (getRoundData) {
+      setSelectedColor(selectedWinner);
+      setBetAmount(selectedAmount);
+    // }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getRoundData]);
+  }, [selectedAmount,selectedWinner]);
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
