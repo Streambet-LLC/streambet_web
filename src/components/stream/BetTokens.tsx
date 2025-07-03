@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import api from "@/integrations/api/client";
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useBettingStreamUpdates } from "@/hooks/useBettingStreamUpdates";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 
 interface BettingVariable {
   id: string;
@@ -47,6 +48,7 @@ interface BetTokensProps {
 
 export default function BetTokens({ streamId,loading,totalPot,selectedAmount,selectedWinner, lockedOptions,session, bettingData ,placeBet,getRoundData,editBetMutation, resetKey}: BetTokensProps) {
   const { toast } = useToast();
+  const { currency } = useCurrencyContext();
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
 

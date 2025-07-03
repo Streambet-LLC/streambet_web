@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus } from '@/enums';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
 interface StreamContentProps {
   streamId: string;
@@ -22,6 +23,7 @@ interface StreamContentProps {
 export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamContentProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currency } = useCurrencyContext();
   const [placedBet, setPlaceBet] = useState(true); // show BetTokens when true, LockTokens when false
   const [resetKey, setResetKey] = useState(0); // Add resetKey state
   const [totalPot, setTotalPot] = useState(0); 
@@ -39,6 +41,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   // Track if last update came from socket then no need to execute getRoundData useEffect
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
+
+  console.log(currency,'currency')
 
   useEffect(() => {
     const newSocket = api.socket.connect();
@@ -68,14 +72,14 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED)
   },[bettingData])
 
-  console.log(totalPot,'totalPot')
+
 
   useEffect(() => {
     if (!socket) return; // Only add listener if socket is available
   
     const handler = (update: any) => {
       console.log(update, 'update in bettingUpdate');
-      setTotalPot(update?.roundTotalBetsTokenAmount);
+      setTotalPot(update?.totalBetsTokenAmount);
       setPotentialWinnings(update?.potentialTokenWinningAmount);
       setSelectedAmount(update?.amount)
       setSelectedWinner(update?.selectedWinner);
