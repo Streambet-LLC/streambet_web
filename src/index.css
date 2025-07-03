@@ -184,3 +184,8 @@
   scrollbar-color: #BDFF00 rgba(24, 24, 24, 0.5) !important;
   scrollbar-width: thin !important;
 }
+
+/* Hide dialog close button for custom popups (Stream Settings & Betting Settings) */
+.no-dialog-close > button.absolute.right-4.top-4 {
+  display: none !important;
+}

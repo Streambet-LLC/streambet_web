@@ -21,6 +21,10 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink } from '@/utils/helper';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import api from '@/integrations/api/client';
+import { BettingRounds } from './BettingRounds';
+import { ArrowLeft } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 // Helper for status priority
 const statusPriority = [
@@ -49,6 +53,7 @@ export const AdminBettingRoundsCard = ({
      handleOpenRound,
      handleLockBets,
      handleEndRound,
+     editStreamId,
 }) => {
      const [carouselApi, setCarouselApi] = useState(null);
      const [settingsOpen, setSettingsOpen] = useState(false);
@@ -57,10 +62,15 @@ export const AdminBettingRoundsCard = ({
      const [statusMap, setStatusMap] = useState({});
      const { currency } = useCurrencyContext();
      const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+     const [editableRounds, setEditableRounds] = useState([]);
+     const [bettingErrorRounds, setBettingErrorRounds] = useState([]);
+     const [showBettingValidation, setShowBettingValidation] = useState(false);
+     const [bettingSaveLoading, setBettingSaveLoading] = useState(false);
   
      useEffect(() => {
           setRounds(betData?.map((r) => ({ ...r })) || []);
           setStatusMap(betData ? Object.fromEntries(betData.map((r) => [r?.roundId, r?.status])) : {});
+          setEditableRounds(betData?.map((r) => ({ ...r })) || []);
      }, [betData]);
 
      // Find active round index
@@ -141,8 +151,53 @@ export const AdminBettingRoundsCard = ({
                                         Betting Settings
                                    </Button>
                               </DialogTrigger>
-                              <DialogContent className="max-w-xs text-center">
-                                   <div className="py-8 text-lg font-semibold">Coming Soon!</div>
+                              <DialogContent className="max-w-2xl winner-scrollbar overflow-y-auto max-h-[90vh] p-0 border border-primary no-dialog-close">
+                                   <div className="p-6">
+                                        {/* Back button at the very top */}
+                                        <Button
+                                             type="button"
+                                             variant="secondary"
+                                             className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none mb-4"
+                                             style={{ borderRadius: '10px', fontWeight: 400 }}
+                                             onClick={() => setSettingsOpen(false)}
+                                        >
+                                             <ArrowLeft className="h-4 w-4 mr-0" /> Back
+                                        </Button>
+                                        {/* Header row: label, Save button */}
+                                        <div className="flex items-center mb-4">
+                                             <div className="flex-1 flex items-center justify-between">
+                                                  <span className="text-white font-medium" style={{ fontWeight: 500, fontSize: 18 }}>Betting Settings</span>
+                                                   <Button
+                                                        type="button"
+                                                        className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[120px] h-[40px]"
+                                                        style={{ borderRadius: '10px' }}
+                                                        onClick={async () => {
+                                                             setBettingSaveLoading(true);
+                                                             try {
+                                                                  await api.admin.updateBettingData({ streamId: editStreamId, rounds: editableRounds });
+                                                                  setSettingsOpen(false);
+                                                                  // Optionally refetch betting data here
+                                                             } catch (e) {
+                                                                  // Optionally show error
+                                                             }
+                                                             setBettingSaveLoading(false);
+                                                        }}
+                                                        disabled={bettingSaveLoading}
+                                                   >
+                                                        {bettingSaveLoading ? 'Saving...' : 'Save'}
+                                                   </Button>
+                                             </div>
+                                        </div>
+                                        <Separator className="my-4 bg-[#232323]" />
+                                        <BettingRounds
+                                             rounds={editableRounds}
+                                             onRoundsChange={setEditableRounds}
+                                             editStreamId={editStreamId}
+                                             showValidationErrors={showBettingValidation}
+                                             errorRounds={bettingErrorRounds}
+                                             onErrorRoundsChange={setBettingErrorRounds}
+                                        />
+                                   </div>
                               </DialogContent>
                          </Dialog>}
                     </CardHeader>
