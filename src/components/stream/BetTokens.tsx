@@ -53,6 +53,7 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
   const { currency } = useCurrencyContext();
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
+  const [sliderMax, setSliderMax] = useState<number | undefined>();
 
   console.log(selectedAmount,'selectedAmount')
 
@@ -63,16 +64,21 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
 
   const isColorButtonsEnabled = betAmount > 0;
   const isBetButtonEnabled = selectedColor !== "";
-  const sliderMax = bettingData?.walletFreeToken ?? 0;
+
+
+
  
 
    useEffect(() => {
     // if (getRoundData) {
+      setSliderMax(bettingData?.walletFreeToken)
       setSelectedColor(selectedWinner);
       setBetAmount(selectedAmount);
     // }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAmount,selectedWinner]);
+
+  console.log(sliderMax,'sliderMax',bettingData?.walletFreeToken)
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
@@ -89,10 +95,10 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
 
     if (getRoundData) {
       console.log("edit in bettoekn")
-      editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: updatedCurrency });
+      editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: CurrencyType.FREE_TOKENS });
     }
     else{
-      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: currency })
+      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS })
       // placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS });
     }
   };
@@ -117,7 +123,7 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
             {bettingData?.bettingRounds?.[0]?.roundName}
             </span>
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-            Total Pot: {totalPot} Free {currency === CurrencyType?.FREE_TOKENS && !isEditing ?'Tokens': currency === CurrencyType?.STREAM_COINS && !isEditing ? 'Coins' : updatedCurrency === CurrencyType?.FREE_TOKENS ? 'Tokens' : updatedCurrency === CurrencyType?.STREAM_COINS ? 'Coins' : ''}
+            Total Pot: {totalPot} Free Tokens
             </span>
         </div>
       </div>

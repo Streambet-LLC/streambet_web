@@ -71,7 +71,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   console.log(currency,CurrencyType?.FREE_TOKENS,'currency in bettingData')
 
   useEffect(() => {
-    setTotalPot(currency === CurrencyType?.FREE_TOKENS && !isEditing ?  bettingData?.roundTotalBetsTokenAmount : currency === CurrencyType?.STREAM_COINS && !isEditing?bettingData?.roundTotalBetsCoinAmount:null);
+    setTotalPot(bettingData?.roundTotalBetsTokenAmount);
     setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED)
   },[bettingData,currency])
 
@@ -82,7 +82,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   
     const handler = (update: any) => {
       console.log(update, 'update in bettingUpdate');
-      setTotalPot(CurrencyType?.FREE_TOKENS === update?.currencyType ? update?.totalBetsTokenAmount :  CurrencyType?.STREAM_COINS === update?.currencyType ? update?.totalBetsCoinAmount : null);
+      setTotalPot(update?.totalBetsTokenAmount);
       setUpdatedCurrency(update?.currencyType)
       setPotentialWinnings(update?.potentialTokenWinningAmount);
       setSelectedAmount(update?.amount)
