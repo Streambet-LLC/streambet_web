@@ -189,12 +189,12 @@ export const CommentSection = ({
       variants={scaleVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col h-full border border-border rounded-lg bg-card overflow-hidden"
+      className="flex flex-col h-full border border-border rounded-[16px] bg-card overflow-hidden"
+      style={{ borderRadius: 16 }}
     >
-      <div className="p-4 border-b border-border flex justify-between items-center">
+      <div className="flex items-center justify-between border-b border-border" style={{ background: '#000000B2', height: 52, minHeight: 52, padding: '0 24px' }}>
         <div className="flex items-center">
-          <MessageSquare className="h-5 w-5 mr-2 text-primary" />
-          <h3 className="text-lg font-medium">Stream Chat</h3>
+          <h3 className="text-lg font-medium text-white">Live chat</h3>
           {isLoading && (
             <motion.div
               variants={pulseVariants}
@@ -269,9 +269,9 @@ export const CommentSection = ({
               >
                 <MessageSquare size={40} className="text-muted" />
                 <div>
-                  <p className="text-muted-foreground">No messages yet</p>
+                  <p className="text-muted-foreground">Coming Soon!</p>
                   <p className="text-sm text-muted-foreground/70">
-                    Be the first to start the conversation!
+                    Yet to develop :)
                   </p>
                 </div>
               </motion.div>
@@ -336,28 +336,14 @@ export const CommentSection = ({
         variants={fadeVariants}
         initial="hidden"
         animate="visible"
-        className="p-4 pt-2 border-t border-border mt-auto bg-card/50 backdrop-blur-sm"
+        className="p-4 border-t border-border mt-auto bg-card/50 backdrop-blur-sm"
       >
-        <div className="flex items-center space-x-2 mb-2">
-          <Avatar className="h-8 w-8">
-            {session?.avatar_url ? (
-              <AvatarImage src={session.avatar_url} alt="Avatar" />
-            ) : (
-              <AvatarFallback>
-                <User size={16} />
-              </AvatarFallback>
-            )}
-          </Avatar>
-          <span className="text-sm font-medium">
-            {session ? session.username || 'You' : 'Sign in to comment'}
-          </span>
-        </div>
         <CommentInput
           comment={comment}
           onCommentChange={handleCommentChange}
           onEmojiSelect={handleEmojiSelect}
           onSubmit={handleSubmitComment}
-          isDisabled={!session || isSubmitting}
+          isDisabled={true}
         />
       </motion.div>
     </motion.div>

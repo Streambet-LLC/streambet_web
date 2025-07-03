@@ -40,3 +40,21 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Custom scrollbar for winners row */
+.winner-scrollbar::-webkit-scrollbar {
+  height: 7px !important;
+}
+.winner-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #BDFF00 60%, #242424 100%) !important;
+  border-radius: 6px !important;
+  border: 2px solid #181818 !important;
+}
+.winner-scrollbar::-webkit-scrollbar-track {
+  background: #181818 !important;
+}
+/* Firefox support */
+.winner-scrollbar {
+  scrollbar-color: #BDFF00 #181818 !important;
+  scrollbar-width: thin !important;
+}

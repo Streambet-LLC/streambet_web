@@ -25,20 +25,27 @@ import { DeleteUserDialog } from './DeleteUserDialog';
 import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { StreamStatus } from '@/enums';
+import { toast } from '@/components/ui/use-toast';
 
 interface Props {
   streams: any;
   refetchStreams: (range: string) => void;
+  setViewStreamId: (streamId: string) => void;
   setEditStreamId: (streamId: string) => void;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
 }
 
 export const StreamTable: React.FC<Props> = ({
   streams,
   refetchStreams,
+  setViewStreamId,
   setEditStreamId,
+  currentPage,
+  setCurrentPage,
 }) => {
   const isMobile = useIsMobile();
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
   // const { data: streams, refetch: refetchStreams } = useQuery({
@@ -57,7 +64,6 @@ export const StreamTable: React.FC<Props> = ({
 
   useEffect(() => {
     const rangeStart = (currentPage - 1) * itemsPerPage;
-
     refetchStreams(`[${rangeStart},${itemsPerPage}]`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
@@ -74,8 +80,7 @@ export const StreamTable: React.FC<Props> = ({
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages)
-    {
+    if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
@@ -107,9 +112,9 @@ export const StreamTable: React.FC<Props> = ({
                       className="px-2 py-1 rounded-md font-bold text-xs"
                       style={{
                         backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
-                          : stream?.status === 'active' ? '#7AFF14'
+                          : stream?.streamStatus === 'active' ? '#7AFF14'
                             : '#FF1418',
-                        color: stream?.status === 'inactive' ?
+                        color: stream?.streamStatus === 'inactive' ?
                           '#000' : '#FFFFFF',
                       }}
                     >
@@ -137,13 +142,33 @@ export const StreamTable: React.FC<Props> = ({
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <span className="text-sm text-muted-foreground">Actions:</span>
                     <div className="flex gap-3">
-                      <Eye color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Eye
+                            size={16}
+                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                            onClick={() => setViewStreamId(stream?.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>View stream</TooltipContent>
+                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Pen
                             size={16}
                             className='cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]'
-                            onClick={() => setEditStreamId(stream?.id)} />
+                            onClick={() => {
+                              if (stream?.streamStatus === StreamStatus.ENDED) {
+                                toast({
+                                  title: 'Stream Ended',
+                                  description: 'You cannot edit stream as it is already ended',
+                                  variant: 'destructive',
+                                  duration: 5000,
+                                });
+                                return;
+                              }
+                              setEditStreamId(stream?.id);
+                            }} />
                         </TooltipTrigger>
                         <TooltipContent>Manage stream</TooltipContent>
                       </Tooltip>
@@ -179,9 +204,9 @@ export const StreamTable: React.FC<Props> = ({
                       className="px-2 py-1 rounded-md font-bold text-sm"
                       style={{
                         backgroundColor: stream?.streamStatus === 'scheduled' ? 'rgb(87 115 243)'
-                          : stream?.status === 'active' ? '#7AFF14'
+                          : stream?.streamStatus === 'active' ? '#7AFF14'
                             : '#FF1418',
-                        color: stream?.status === 'inactive' ?
+                        color: stream?.streamStatus === 'inactive' ?
                           '#000' : '#FFFFFF',
                       }}
                     >
@@ -192,13 +217,33 @@ export const StreamTable: React.FC<Props> = ({
                   <TableCell>{stream?.data?.viewerCount}</TableCell>
                   <TableCell>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <Eye color="#FFFFFFBF" size={18} />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Eye
+                            size={18}
+                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                            onClick={() => setViewStreamId(stream?.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>View stream</TooltipContent>
+                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Pen
                             size={18}
                             className='cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]'
-                            onClick={() => setEditStreamId(stream?.id)} />
+                            onClick={() => {
+                              if (stream?.streamStatus === StreamStatus.ENDED) {
+                                toast({
+                                  title: 'Stream Ended',
+                                  description: 'You cannot edit stream as it is already ended',
+                                  variant: 'destructive',
+                                  duration: 5000,
+                                });
+                                return;
+                              }
+                              setEditStreamId(stream?.id);
+                            }} />
                         </TooltipTrigger>
                         <TooltipContent>Manage stream</TooltipContent>
                       </Tooltip>
@@ -215,7 +260,7 @@ export const StreamTable: React.FC<Props> = ({
           </Table>
         </div>
       )}
-      
+
       {streams?.data?.length > 0 &&
         <div className="flex w-full justify-between bg-black rounded-md mt-4">
           <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
