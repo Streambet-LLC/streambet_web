@@ -73,7 +73,7 @@ export default function Login() {
   }, [toast]);
 
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { identifier: string; password: string; remember_me?: boolean }) => {
+    mutationFn: async (credentials: { identifier: string; password: string; remember_me?: boolean, redirect?: string }) => {
       return await api.auth.login(credentials);
     },
     onSuccess: (response) => {
@@ -157,7 +157,7 @@ export default function Login() {
 
     if (!validateForm()) return;
 
-    loginMutation.mutate({ identifier: email, password, remember_me: rememberMe });
+    loginMutation.mutate({ identifier: email, password, remember_me: rememberMe, redirect: redirectParam || undefined });
   };
 
   // const handleLoginSuccess = (credentialResponse: any) => {
@@ -231,7 +231,9 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="mb-6">
-            <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-6" />
+            <Link to="/">
+              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-6" />
+            </Link>
             <h1 className="text-3xl font-bold text-white text-left mb-4">Log in</h1>
             <p className="text-[#FFFFFFBF] mt-2 text-left mb-4">
               Welcome back! Please enter your details.

@@ -17,7 +17,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
-import { getImageLink, getMessage } from '@/utils/helper';
+import { formatDateTimeForISO, getImageLink, getMessage } from '@/utils/helper';
 import OverView from './OverView';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { CopyableInput } from '../ui/CopyableInput';
@@ -237,18 +237,6 @@ export const AdminManagement = ({
     return `${dateStr} ${timeStr}`;
   }
 
-  function formatDateTimeForISO(date: Date | null, time: string): string | undefined {
-    if (!date || !time) return undefined;
-
-    // Create a new date object with the selected date and time
-    const dateTime = new Date(date);
-    const [hours, minutes] = time.split(':');
-    dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-    // Format as ISO 8601 string
-    return dateTime.toISOString();
-  }
-
   const [validationStarted, setValidationStarted] = useState(false);
 
   function validateForm() {
@@ -342,6 +330,16 @@ export const AdminManagement = ({
     },
   });
 
+  const { isPending: isBetRoundCancelling, mutateAsync: cancelBetRound } = useMutation({
+    mutationFn: (payload: any) => api.admin.cancelBetRound(payload),
+    onSuccess: () => {
+      refetchBetStreamData();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to update bet', variant: 'destructive' });
+    },
+  });
+
   const { isPending: isStreamEnding, mutateAsync: initiateEndStream } = useMutation({
     mutationFn: (streamId: string) => api.admin.endStream(streamId),
     onSuccess: () => {
@@ -384,9 +382,13 @@ export const AdminManagement = ({
   const handleLockBets = (streamId: string) => {
     betStatusUpdate({ streamId, payload: { newStatus: BettingRoundStatus.LOCKED } });
   };
-
+  
   const handleEndRound = (optionId: string) => {
     betDeclareWinner(optionId);
+  };
+
+  const handleCancelRound = (roundId: string) => {
+    cancelBetRound(roundId);
   };
 
   useEffect(() => {
@@ -772,11 +774,14 @@ export const AdminManagement = ({
             session={session}
             betData={betStreamData?.data?.rounds}
             isStreamEnding={isStreamEnding}
+            isBetRoundCancelling={isBetRoundCancelling}
             isUpdatingAction={isBetStatusUpdating || isDeclareWinnerUpdating || isBetStreamLoading}
             handleOpenRound={handleOpenRound}
             handleLockBets={handleLockBets}
             handleEndRound={handleEndRound}
+            handleCancelRound={handleCancelRound}
             handleEndStream={initiateEndStream}
+            refetchBetData={refetchBetStreamData}
             handleBack={() => handleResetAll()}
       /> : (
         <>

@@ -502,7 +502,9 @@ export default function SignUp() {
           className="w-full max-w-md"
         >
           <div className="mb-6">
-            <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-4" />
+            <Link to="/">
+              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-4" />
+            </Link>
             <h1 className="text-3xl font-bold text-white text-left">Create an account</h1>
             <p className="text-[#FFFFFFBF] mt-2 text-left">
               Enter your details below to create an account

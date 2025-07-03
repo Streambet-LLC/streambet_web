@@ -48,4 +48,16 @@ export function getImageLink(url: string | null | undefined, isNotAvatar?: boole
       : isNotAvatar
         ? '/assets/no-image.svg'
         : '/avatar_placeholder_large.png';
-}
+};
+
+export function formatDateTimeForISO(date: Date | null, time: string): string | undefined {
+  if (!date || !time) return undefined;
+
+  // Create a new date object with the selected date and time
+  const dateTime = new Date(date);
+  const [hours, minutes] = time.split(':');
+  dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+  // Format as ISO 8601 string
+  return dateTime.toISOString();
+};

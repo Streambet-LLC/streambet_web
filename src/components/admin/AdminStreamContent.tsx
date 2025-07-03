@@ -10,6 +10,9 @@ import { StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { BettingRounds } from './BettingRounds';
 import { Separator } from '@/components/ui/separator';
+import { useMutation } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { formatDateTimeForISO, getMessage } from '@/utils/helper';
 
 interface AdminStreamContentProps {
   streamId: string;
@@ -17,10 +20,13 @@ interface AdminStreamContentProps {
   betData: any;
   isUpdatingAction: boolean;
   isStreamEnding: boolean;
-  handleOpenRound: (streamId: string) => void;
-  handleLockBets: (streamId: string) => void;
-  handleEndRound: (streamId: string) => void;
+  isBetRoundCancelling: boolean;
+  handleOpenRound: (roundId: string) => void;
+  handleLockBets: (roundId: string) => void;
+  handleEndRound: (optionId: string) => void;
   handleEndStream: (streamId: string) => void;
+  handleCancelRound: (roundId: string) => void;
+  refetchBetData: VoidFunction;
   handleBack: VoidFunction;
 }
 
@@ -31,16 +37,78 @@ function parseLocalDate(dateStr) {
   return new Date(year, month - 1, day);
 }
 
+// Helper to check if a date is today
+function isToday(date) {
+  if (!date) return false;
+  const today = new Date();
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  );
+}
+
+// Helper to check if a time is valid for today
+function isTimeValid(time, date) {
+  if (!date || !time) return true;
+  if (!isToday(date)) return true;
+  const [hours, minutes] = time.split(':').map(Number);
+  const now = new Date();
+  const selectedTime = new Date(date);
+  selectedTime.setHours(hours, minutes);
+  return selectedTime > now;
+}
+
+// Validation function for stream settings form
+function validateForm({ title, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime }, selectedThumbnailFile) {
+  const newErrors = {
+    title: '',
+    embeddedUrl: '',
+    thumbnail: '',
+    startDate: '',
+  };
+  let isValid = true;
+  if (!title) {
+    newErrors.title = 'Title is required';
+    isValid = false;
+  } else if (title.trim().length < 3 || title.trim().length > 70) {
+    newErrors.title = 'Title must be 3-70 characters';
+    isValid = false;
+  }
+  if (!embeddedUrl?.trim() || (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))) {
+    newErrors.embeddedUrl = 'Embed URL is required and should be valid';
+    isValid = false;
+  }
+  if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
+    newErrors.thumbnail = 'Thumbnail is required';
+    isValid = false;
+  }
+  if (!startDateObj) {
+    newErrors.startDate = 'Start date is required';
+    isValid = false;
+  } else if (!startTime) {
+    newErrors.startDate = 'Start time is required';
+    isValid = false;
+  } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+    newErrors.startDate = 'Cannot select past time for today';
+    isValid = false;
+  }
+  return { isValid, newErrors };
+}
+
 export const AdminStreamContent = ({
   streamId,
   session,
   betData,
   isUpdatingAction,
+  isBetRoundCancelling,
   isStreamEnding,
   handleOpenRound,
   handleLockBets,
   handleEndRound,
   handleEndStream,
+  handleCancelRound,
+  refetchBetData,
   handleBack,
 }: AdminStreamContentProps) => {
   const [streamInfo, setStreamInfo] = useState<any>(undefined);
@@ -50,6 +118,7 @@ export const AdminStreamContent = ({
   const [editableRounds, setEditableRounds] = useState([]);
   const [bettingErrorRounds, setBettingErrorRounds] = useState([]);
   const [showBettingValidation, setShowBettingValidation] = useState(false);
+  const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
 
   // Stream info form state for editing
   const [editForm, setEditForm] = useState({
@@ -70,20 +139,23 @@ export const AdminStreamContent = ({
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   // Add loading state for betting save
   const [bettingSaveLoading, setBettingSaveLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchStreamData() {
-      try {
-        const streamData = await api.admin.getStream(streamId);
-        setStreamInfo(streamData?.data || undefined);
-      } catch (e) {
-        setStreamInfo(undefined);
-      }
+  async function fetchStreamData() {
+    try {
+      const streamData = await api.admin.getStream(streamId);
+      setStreamInfo(streamData?.data || undefined);
+    } catch (e) {
+      setStreamInfo(undefined);
     }
+  };
+
+  useEffect(() => {
     fetchStreamData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamId]);
 
   // Populate form when streamInfo changes
@@ -122,6 +194,7 @@ export const AdminStreamContent = ({
     });
   };
   const handleEditFileChange = (file) => {
+    setSelectedThumbnailFile(file);
     // Implement file upload logic here, update thumbnailPreviewUrl and setIsUploading as needed
     // For now, just set preview URL if file is present
     if (file) {
@@ -138,12 +211,56 @@ export const AdminStreamContent = ({
   const handleEditStartTimeChange = (e) => {
     setEditForm((prev) => ({ ...prev, startTime: e.target.value }));
   };
+
+  const createStreamMutation = useMutation({
+    mutationFn: (payload: any) => api.admin.updateStream(streamInfo.streamId, payload),
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Stream updated successfully!' });
+      fetchStreamData();
+      setSettingsOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
+    },
+  });
+
   const handleEditSubmit = async () => {
-    setLoading(true);
+    // Run validation first
+    const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile);
+    setEditErrors(newErrors);
+    if (!isValid) {
+      return;
+    }
+    let thumbnailImageUrl = streamInfo?.thumbnailUrl || '';
+    if (selectedThumbnailFile?.name)
+    {
+      try
+      {
+        setIsUploading(true);
+        const response = await api.auth.uploadImage(selectedThumbnailFile, 'thumbnail');
+        thumbnailImageUrl = response?.data?.Key;
+        setIsUploading(false);
+      } catch (error)
+      {
+        toast({
+          variant: 'destructive',
+          title: 'Error uploading stream thumbnail',
+          description: getMessage(error) || 'Failed to upload thumbnail. Please try again.',
+        });
+        setIsUploading(false);
+        return;
+      }
+    };
     // Implement API call to update stream info here
-    // On success, close dialog and refetch stream info
-    setSettingsOpen(false);
-    setLoading(false);
+    const payload = {
+      name: editForm.title,
+      description: editForm.description,
+      embeddedUrl: editForm.embeddedUrl,
+      thumbnailUrl: thumbnailImageUrl,
+      scheduledStartTime: formatDateTimeForISO(editForm.startDateObj, editForm.startTime),
+    };
+
+    createStreamMutation.mutate(payload);
   };
 
   const isStreamEnded = streamInfo?.status === StreamStatus.ENDED;
@@ -185,10 +302,13 @@ export const AdminStreamContent = ({
             editStreamId={streamId}
             isStreamEnded={isStreamEnded}
             isUpdatingAction={isUpdatingAction}
+            isBetRoundCancelling={isBetRoundCancelling}
             betData={betData}
             handleOpenRound={handleOpenRound}
             handleLockBets={handleLockBets}
             handleEndRound={handleEndRound}
+            handleCancelRound={handleCancelRound}
+            refetchBetData={refetchBetData}
           />
         </div>
         {/* Right: Chat and controls */}
@@ -226,9 +346,9 @@ export const AdminStreamContent = ({
                         className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[120px] h-[40px]"
                         style={{ borderRadius: '10px' }}
                         onClick={handleEditSubmit}
-                        disabled={loading || isUploading}
+                        disabled={createStreamMutation.isPending || isUploading}
                       >
-                        {loading || isUploading ? 'Saving...' : 'Update'}
+                        {createStreamMutation.isPending || isUploading ? 'Saving...' : 'Update'}
                       </Button>
                     </div>
                   </div>

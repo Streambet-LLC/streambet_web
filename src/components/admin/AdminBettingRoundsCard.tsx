@@ -19,12 +19,24 @@ import {
 } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
-import { getImageLink } from '@/utils/helper';
+import { getImageLink, getMessage } from '@/utils/helper';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import api from '@/integrations/api/client';
 import { BettingRounds } from './BettingRounds';
 import { ArrowLeft } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import {
+     AlertDialog,
+     AlertDialogTrigger,
+     AlertDialogContent,
+     AlertDialogHeader,
+     AlertDialogFooter,
+     AlertDialogTitle,
+     AlertDialogDescription,
+     AlertDialogAction,
+     AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 // Helper for status priority
 const statusPriority = [
@@ -35,8 +47,7 @@ const statusPriority = [
 
 function getActiveRoundIndex(betData) {
      // Find first open, then locked, then created
-     for (const status of statusPriority)
-     {
+     for (const status of statusPriority) {
           const idx = betData.findIndex(
                (r) => (r.status || '').toLowerCase().includes(status)
           );
@@ -49,11 +60,14 @@ function getActiveRoundIndex(betData) {
 export const AdminBettingRoundsCard = ({
      isStreamEnded,
      isUpdatingAction,
+     isBetRoundCancelling,
      betData,
      handleOpenRound,
      handleLockBets,
      handleEndRound,
+     handleCancelRound,
      editStreamId,
+     refetchBetData,
 }) => {
      const [carouselApi, setCarouselApi] = useState(null);
      const [settingsOpen, setSettingsOpen] = useState(false);
@@ -66,11 +80,16 @@ export const AdminBettingRoundsCard = ({
      const [bettingErrorRounds, setBettingErrorRounds] = useState([]);
      const [showBettingValidation, setShowBettingValidation] = useState(false);
      const [bettingSaveLoading, setBettingSaveLoading] = useState(false);
-  
+     const { toast } = useToast();
+
      useEffect(() => {
           setRounds(betData?.map((r) => ({ ...r })) || []);
           setStatusMap(betData ? Object.fromEntries(betData.map((r) => [r?.roundId, r?.status])) : {});
-          setEditableRounds(betData?.map((r) => ({ ...r })) || []);
+          setEditableRounds(betData?.map((r) => ({
+               roundId: r.roundId,
+               roundName: r.roundName,
+               options: r.options
+          })) || []);
      }, [betData]);
 
      // Find active round index
@@ -78,8 +97,7 @@ export const AdminBettingRoundsCard = ({
 
      // Center carousel on active round
      React.useEffect(() => {
-          if (carouselApi && typeof activeIdx === 'number')
-          {
+          if (carouselApi && typeof activeIdx === 'number') {
                carouselApi.scrollTo(activeIdx);
           }
      }, [carouselApi, activeIdx]);
@@ -87,16 +105,14 @@ export const AdminBettingRoundsCard = ({
      // Card/box styles
      const getBoxStyles = (isActive, status) => {
           const borderRadius = 16;
-          if (status === BettingRoundStatus.CLOSED)
-          {
+          if (status === BettingRoundStatus.CLOSED || status === BettingRoundStatus.CANCELLED) {
                return {
                     background: '#000',
                     boxShadow: 'none',
                     borderRadius,
                };
           }
-          if (isActive)
-          {
+          if (isActive) {
                return {
                     background: '#000',
                     border: 'none',
@@ -167,25 +183,26 @@ export const AdminBettingRoundsCard = ({
                                         <div className="flex items-center mb-4">
                                              <div className="flex-1 flex items-center justify-between">
                                                   <span className="text-white font-medium" style={{ fontWeight: 500, fontSize: 18 }}>Betting Settings</span>
-                                                   <Button
-                                                        type="button"
-                                                        className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[120px] h-[40px]"
-                                                        style={{ borderRadius: '10px' }}
-                                                        onClick={async () => {
-                                                             setBettingSaveLoading(true);
-                                                             try {
-                                                                  await api.admin.updateBettingData({ streamId: editStreamId, rounds: editableRounds });
-                                                                  setSettingsOpen(false);
-                                                                  // Optionally refetch betting data here
-                                                             } catch (e) {
-                                                                  // Optionally show error
-                                                             }
-                                                             setBettingSaveLoading(false);
-                                                        }}
-                                                        disabled={bettingSaveLoading}
-                                                   >
-                                                        {bettingSaveLoading ? 'Saving...' : 'Save'}
-                                                   </Button>
+                                                  <Button
+                                                       type="button"
+                                                       className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[120px] h-[40px]"
+                                                       style={{ borderRadius: '10px' }}
+                                                       onClick={async () => {
+                                                            setBettingSaveLoading(true);
+                                                            try {
+                                                                 await api.admin.updateBettingData({ streamId: editStreamId, rounds: editableRounds });
+                                                                 refetchBetData();
+                                                                 setSettingsOpen(false);
+                                                                 // Optionally refetch betting data here
+                                                            } catch (e) {
+                                                                 toast({ title: 'Error', description: getMessage(e) || 'Failed to update bet', variant: 'destructive' });
+                                                            }
+                                                            setBettingSaveLoading(false);
+                                                       }}
+                                                       disabled={bettingSaveLoading}
+                                                  >
+                                                       {bettingSaveLoading ? 'Saving...' : 'Save'}
+                                                  </Button>
                                              </div>
                                         </div>
                                         <Separator className="my-4 bg-[#232323]" />
@@ -203,7 +220,7 @@ export const AdminBettingRoundsCard = ({
                     </CardHeader>
                     {/* Card Content: Carousel */}
                     <CardContent className="bg-transparent px-0 py-4">
-                         <div className="relative group">
+                         <div className="relative group max-w-[50vw]">
                               <Carousel
                                    setApi={setCarouselApi}
                                    opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}
@@ -216,6 +233,7 @@ export const AdminBettingRoundsCard = ({
                                              const isLocked = status === BettingRoundStatus.LOCKED;
                                              const isOpen = status === BettingRoundStatus.OPEN;
                                              const isCreated = status === BettingRoundStatus.CREATED;
+                                             const isCancelled = status === BettingRoundStatus.CANCELLED;
                                              const isActive = (idx === activeIdx) && (isLocked || isOpen || isCreated);
                                              return (
                                                   <CarouselItem
@@ -327,14 +345,45 @@ export const AdminBettingRoundsCard = ({
                                                                                 );
                                                                            })}
                                                                       </div>
-                                                                      <Button
-                                                                           className="w-full rounded-full bg-primary text-black font-bold"
-                                                                           style={{ height: '30px' }}
-                                                                           disabled={!selectedOption[round.roundId] || isUpdatingAction}
-                                                                           onClick={() => handleEndRound(selectedOption[round.roundId])}
-                                                                      >
-                                                                           {isUpdatingAction ? 'Ending...' : 'End Round'}
-                                                                      </Button>
+                                                                      <div className="flex flex-row gap-2 w-full mt-2">
+                                                                           <Button
+                                                                                className="rounded-full font-bold w-1/2"
+                                                                                style={{ height: '30px' }}
+                                                                                disabled={!selectedOption[round.roundId] || isUpdatingAction}
+                                                                                onClick={() => handleEndRound(selectedOption[round.roundId])}
+                                                                           >
+                                                                                {isUpdatingAction ? 'Ending...' : 'End Round'}
+                                                                           </Button>
+                                                                           <AlertDialog>
+                                                                                <AlertDialogTrigger asChild>
+                                                                                     <Button
+                                                                                          className="rounded-full font-bold w-1/2"
+                                                                                          style={{ height: '30px' }}
+                                                                                          variant="destructive"
+                                                                                          disabled={isUpdatingAction || isBetRoundCancelling}
+                                                                                     >
+                                                                                          {isBetRoundCancelling ? 'Cancelling...' : 'Cancel Round'}
+                                                                                     </Button>
+                                                                                </AlertDialogTrigger>
+                                                                                <AlertDialogContent className='border border-primary'>
+                                                                                     <AlertDialogHeader>
+                                                                                          <AlertDialogTitle>Cancel Round</AlertDialogTitle>
+                                                                                          <AlertDialogDescription>
+                                                                                               Are you sure to cancel this round?
+                                                                                          </AlertDialogDescription>
+                                                                                     </AlertDialogHeader>
+                                                                                     <AlertDialogFooter>
+                                                                                          <AlertDialogCancel>Dismiss</AlertDialogCancel>
+                                                                                          <AlertDialogAction
+                                                                                               className="bg-destructive text-white hover:bg-destructive/90"
+                                                                                               onClick={() => handleCancelRound(round.roundId)}
+                                                                                          >
+                                                                                               Confirm
+                                                                                          </AlertDialogAction>
+                                                                                     </AlertDialogFooter>
+                                                                                </AlertDialogContent>
+                                                                           </AlertDialog>
+                                                                      </div>
                                                                  </div>
                                                             )}
                                                             {/* Winner: show winner label and options */}
@@ -372,35 +421,41 @@ export const AdminBettingRoundsCard = ({
                                                                       ) : (<span className='text-center'>Round closed with no winner</span>)}
                                                                  </div>
                                                             )}
+                                                            {/* Cancelled: show message */}
+                                                            {isCancelled && (
+                                                                 <div className="flex flex-col items-center w-full mt-2">
+                                                                      <span className='text-center'>Round cancelled</span>
+                                                                 </div>
+                                                            )}
                                                        </div>
                                                        {isActive && (
-                                                        <div
-                                                          style={{
-                                                            position: 'absolute',
-                                                            top: 0,
-                                                            left: 0,
-                                                            right: 0,
-                                                            bottom: 0,
-                                                            borderRadius: 16,
-                                                            inset: '-1px',
-                                                            padding: '1.5px',
-                                                            background: 'conic-gradient(from 0deg, #BDFF00 0deg, #BDFF00 60deg, transparent 90deg, transparent 270deg, #BDFF00 300deg, #BDFF00 360deg)',
-                                                            WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
-                                                            WebkitMaskComposite: 'xor',
-                                                            mask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
-                                                            maskComposite: 'exclude',
-                                                            pointerEvents: 'none',
-                                                            zIndex: 3,
-                                                          }}
-                                                        />
+                                                            <div
+                                                                 style={{
+                                                                      position: 'absolute',
+                                                                      top: 0,
+                                                                      left: 0,
+                                                                      right: 0,
+                                                                      bottom: 0,
+                                                                      borderRadius: 16,
+                                                                      inset: '-1px',
+                                                                      padding: '1.5px',
+                                                                      background: 'conic-gradient(from 0deg, #BDFF00 0deg, #BDFF00 60deg, transparent 90deg, transparent 270deg, #BDFF00 300deg, #BDFF00 360deg)',
+                                                                      WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                                                                      WebkitMaskComposite: 'xor',
+                                                                      mask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                                                                      maskComposite: 'exclude',
+                                                                      pointerEvents: 'none',
+                                                                      zIndex: 3,
+                                                                 }}
+                                                            />
                                                        )}
                                                   </CarouselItem>
                                              );
                                         }) : (
-                                                  <div className="w-full flex items-center justify-center h-32 text-white/60 text-lg">
-                                                       No betting rounds available.
-                                                  </div>
-                                             )}
+                                             <div className="w-full flex items-center justify-center h-32 text-white/60 text-lg">
+                                                  No betting rounds available.
+                                             </div>
+                                        )}
                                    </CarouselContent>
                                    {/* Carousel Arrows: show on hover/near edges */}
                                    <div className="hidden md:block">

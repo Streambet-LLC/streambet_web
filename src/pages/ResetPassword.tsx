@@ -65,7 +65,9 @@ const ResetPassword = () => {
       <div className="flex min-h-screen justify-center pt-16 pb-8">
         <div className="w-full max-w-md">
           <div className="mb-6">
-            <img src="/logo.svg" alt="StreamBet Logo" className="mb-6 w-[121px]" />
+            <Link to="/">
+              <img src="/logo.svg" alt="StreamBet Logo" className="mb-6 w-[121px]" />
+            </Link>
             <h1 className="text-3xl font-bold text-white text-left">Set a new password</h1>
             <p className="text-[#FFFFFFBF] mt-3 text-left font-light">Enter your new password below.</p>
           </div>

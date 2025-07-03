@@ -144,7 +144,7 @@ export const authAPI = {
   },
 
   // Login user
-  login: async (credentials: { identifier: string; password: string, remember_me?: boolean }) => {
+  login: async (credentials: { identifier: string; password: string, remember_me?: boolean, redirect?: string }) => {
     const response = await apiClient.post('/auth/login', credentials);
     // Store the tokens
     if (response?.data?.data?.accessToken)
@@ -646,6 +646,12 @@ export const adminAPI = {
   declareWinner: async (optionId: string) => {
     const response = await apiClient.post(`/admin/betting-variables/${optionId}/declare-winner`);
     return response.data;
+  },
+
+  // Update bet status
+  cancelBetRound: async (roundId: string) => {
+  const response = await apiClient.patch(`/admin/rounds/${roundId}/cancel`);
+  return response.data;
   },
 
   // End the stream
