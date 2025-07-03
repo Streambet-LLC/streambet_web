@@ -37,6 +37,49 @@ interface Props {
   setCurrentPage: (page: number) => void;
 }
 
+const BettingStatusBadge = ({ status }: { status?: string }) => {
+  const normalized = status?.toLowerCase();
+  const style: React.CSSProperties = {
+    borderRadius: 8,
+    padding: '0 12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 600,
+    fontSize: 14,
+    gap: 4,
+    height: 28,
+    minWidth: 54,
+    width: 'fit-content',
+  };
+  const label = status?.charAt(0)?.toUpperCase() + status?.slice(1) || 'N/A';
+
+  switch (normalized) {
+    case 'locked':
+      style.background = 'orange';
+      style.color = '#fff';
+      break;
+    case 'open':
+      style.background = '#007AFF';
+      style.color = '#fff';
+      break;
+    case 'closed':
+      style.background = '#6c757d';
+      style.color = '#fff';
+      break;
+    case 'created':
+      style.background = '#34C759';
+      style.color = '#fff';
+      break;
+    default:
+      style.background = '#222';
+      style.color = '#fff';
+      break;
+  }
+
+  return <span style={style}>{label}</span>;
+};
+
 export const StreamTable: React.FC<Props> = ({
   streams,
   refetchStreams,
@@ -125,16 +168,14 @@ export const StreamTable: React.FC<Props> = ({
                   {/* Betting Status */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Betting Status:</span>
-                    <span className="text-sm font-medium">
-                      {stream?.data?.bettingStatus || 'N/A'}
-                    </span>
+                    <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
                   </div>
 
                   {/* Users */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Users:</span>
                     <span className="text-sm font-medium">
-                      {stream?.data?.viewerCount || '0'}
+                      {stream?.viewerCount || '0'}
                     </span>
                   </div>
 
@@ -213,8 +254,10 @@ export const StreamTable: React.FC<Props> = ({
                       {stream?.streamStatus?.charAt(0)?.toUpperCase() + stream?.streamStatus?.slice(1)}
                     </span>
                   </TableCell>
-                  <TableCell>{stream?.data?.bettingStatus}</TableCell>
-                  <TableCell>{stream?.data?.viewerCount}</TableCell>
+                  <TableCell>
+                    <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
+                  </TableCell>
+                  <TableCell>{stream?.viewerCount}</TableCell>
                   <TableCell>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <Tooltip>
