@@ -188,6 +188,20 @@ export const AdminBettingRoundsCard = ({
                                                        className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[120px] h-[40px]"
                                                        style={{ borderRadius: '10px' }}
                                                        onClick={async () => {
+                                                            // Validation: check for rounds with no options
+                                                            const errorIndices = editableRounds
+                                                              .map((round, idx) => (round.options.length === 0 ? idx : -1))
+                                                              .filter(idx => idx !== -1);
+                                                            if (errorIndices.length > 0) {
+                                                              setBettingErrorRounds(errorIndices);
+                                                              setShowBettingValidation(true);
+                                                              toast({ 
+                                                                title: 'Validation Error', 
+                                                                description: 'Each round must have at least one option. Please add options to all rounds before saving.', 
+                                                                variant: 'destructive' 
+                                                              });
+                                                              return;
+                                                            }
                                                             setBettingSaveLoading(true);
                                                             try {
                                                                  await api.admin.updateBettingData({ streamId: editStreamId, rounds: editableRounds });
@@ -208,6 +222,7 @@ export const AdminBettingRoundsCard = ({
                                         <Separator className="my-4 bg-[#232323]" />
                                         <BettingRounds
                                              rounds={editableRounds}
+                                             statusMap={statusMap}
                                              onRoundsChange={setEditableRounds}
                                              editStreamId={editStreamId}
                                              showValidationErrors={showBettingValidation}

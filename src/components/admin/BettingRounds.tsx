@@ -5,6 +5,7 @@ import { DeleteBettingDialog } from './DeleteBettingDialog';
 import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Edit, Copy } from 'lucide-react';
+import { BettingRoundStatus } from '@/enums';
 
 interface BettingOption {
   optionId?: string;
@@ -23,10 +24,19 @@ interface BettingRoundsProps {
   editStreamId?: string;
   showValidationErrors?: boolean;
   errorRounds?: number[];
+  statusMap?: any;
   onErrorRoundsChange?: (errorRounds: number[]) => void;
 }
 
-export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValidationErrors, errorRounds = [], onErrorRoundsChange }: BettingRoundsProps) {
+export function BettingRounds({ 
+  rounds, 
+  onRoundsChange, 
+  editStreamId, 
+  showValidationErrors, 
+  errorRounds = [],
+  statusMap,
+  onErrorRoundsChange
+ }: BettingRoundsProps) {
   const isMobile = useIsMobile();
   const [expandedRounds, setExpandedRounds] = useState<string[]>([]);
 
@@ -113,7 +123,10 @@ export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValida
     <div className="space-y-4">
       {rounds.length > 0 ? (
         <div className="space-y-2">
-          {rounds.map((round, roundIndex) => (
+          {rounds.map((round, roundIndex) => {
+            const isNotCreatedStatus = statusMap && round.roundId ? statusMap?.[round.roundId] !== BettingRoundStatus.CREATED : false;
+
+            return (
             <div key={`round-${roundIndex}`}>
               <div className="overflow-x-auto">
                 <Table
@@ -144,6 +157,7 @@ export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValida
                             </Button>
                             <InlineEditable
                               value={round.roundName}
+                              isNotCreatedStatus={isNotCreatedStatus}
                               onSave={(newName) => updateRoundName(roundIndex, newName)}
                               className="text-white font-medium truncate"
                               style={{ fontSize: '16px', color: '#FFFFFFBF', maxWidth: '200px' }}
@@ -177,6 +191,7 @@ export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValida
                             title="Delete Round"
                             message={`Deleting this round will delete all betting options related with this round. Are you sure?`}
                             onConfirm={() => deleteRound(roundIndex)}
+                            isNotCreatedStatus={isNotCreatedStatus}
                           />
                         </div>
                       </TableCell>
@@ -187,13 +202,14 @@ export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValida
                         round.options.map((option, optionIndex) => (
                           <TableRow
                             key={`option-${roundIndex}-${optionIndex}`}
-                            className="bg-transparent border-b border-[#191D24]"
+                            className="bg-transparent"
                             style={{ height: 72, borderRadius: 0 }}
                           >
-                            <TableCell className="border-none px-4 py-2 w-full" style={{ borderRadius: 0, maxWidth: 'calc(100% - 56px)' }}>
+                            <TableCell className="border-t border-b border-[#191D24] px-4 py-2 w-full" style={{ borderRadius: 0, maxWidth: 'calc(100% - 56px)', borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#191D24' }}>
                               <div className="flex items-center gap-2 group min-w-0 h-full" style={{ height: 72 }}>
                                 <div className="flex items-center w-full" style={{ height: 44, background: '#272727', borderRadius: 8, paddingLeft: 16, paddingRight: 16 }}>
                                   <InlineEditable
+                                    isNotCreatedStatus={isNotCreatedStatus}
                                     value={option.option}
                                     onSave={(newName) => updateOptionName(roundIndex, optionIndex, newName)}
                                     className="text-white text-sm font-normal truncate"
@@ -204,12 +220,13 @@ export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValida
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="border-none p-0 w-14" style={{ borderRadius: 0, width: 56 }}>
+                            <TableCell className="border-t border-b border-[#191D24] p-0 w-14" style={{ borderRadius: 0, width: 56, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#191D24' }}>
                               <div className="flex items-center justify-center h-full" style={{ minHeight: 72 }}>
                                 <DeleteBettingDialog
                                   title="Delete Option"
                                   message={`Delete this option from round ${round.roundName}`}
                                   onConfirm={() => deleteOption(roundIndex, optionIndex)}
+                                  isNotCreatedStatus={isNotCreatedStatus}
                                 />
                               </div>
                             </TableCell>
@@ -239,7 +256,7 @@ export function BettingRounds({ rounds, onRoundsChange, editStreamId, showValida
                 <div className="bg-[#232323] h-[2px] w-full my-4" />
               )}
             </div>
-          ))}
+          )})}
         </div>
       ) : (
         <div className="text-center py-8 text-gray-500">

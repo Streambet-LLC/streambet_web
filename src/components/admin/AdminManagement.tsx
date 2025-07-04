@@ -757,6 +757,7 @@ export const AdminManagement = ({
                 {/* Step 2: Betting */}
                 {createStep === 'betting' && (
                   <BettingRounds
+                    statusMap={betStreamData?.data?.rounds ? Object.fromEntries(betStreamData?.data?.rounds.map((r) => [r?.roundId, r?.status])) : {}}
                     rounds={bettingRounds}
                     onRoundsChange={handleRoundsChange}
                     onErrorRoundsChange={(errorRounds) => setBettingErrorRounds(errorRounds)}

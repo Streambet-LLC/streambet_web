@@ -15,6 +15,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from './ui/drawer';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { CurrencyType } from '@/enums';
 
 export const Navigation = () => {
   const navigate = useNavigate();
@@ -25,6 +27,8 @@ export const Navigation = () => {
   const [visible, setVisible] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { navVariants, buttonVariants } = useAnimations();
+  const { currency } = useCurrencyContext();
+  const isStreamCoins = currency === CurrencyType.STREAM_COINS;
 
   const { data: session } = useQuery({
     queryKey: ['session'],
@@ -187,7 +191,7 @@ export const Navigation = () => {
           >
             {session ? (
               <>
-                <WalletDropdown walletBalance={profile?.data?.wallet_balance || 0} />
+                <WalletDropdown walletBalance={isStreamCoins ? profile?.data?.walletBalanceCoin : profile?.data?.walletBalanceToken || 0} />
 
                 <UserDropdown profile={profile?.data} user={session} onLogout={handleLogout} />
               </>
