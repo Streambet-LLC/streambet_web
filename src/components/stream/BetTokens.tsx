@@ -21,6 +21,7 @@ interface BettingRound {
 interface BettingData {
   bettingRounds?: BettingRound[];
   walletFreeToken?: number;
+  walletCoin?: number;
   roundTotalBetsTokenAmount:number
   status?: BettingRoundStatus;
 }
@@ -54,9 +55,7 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
   const [sliderMax, setSliderMax] = useState<number | undefined>();
-
-  console.log(selectedAmount,'selectedAmount')
-
+  const isStreamCoins = currency === CurrencyType.STREAM_COINS;
 
   const handleColorClick = (color: string) => {
     setSelectedColor(color);
@@ -65,20 +64,15 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
   const isColorButtonsEnabled = betAmount > 0;
   const isBetButtonEnabled = selectedColor !== "";
 
-
-
- 
-
    useEffect(() => {
     // if (getRoundData) {
-      setSliderMax(bettingData?.walletFreeToken)
+      const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+      setSliderMax(isStreamCoins ? bettingData?.walletCoin : bettingData?.walletFreeToken)
       setSelectedColor(selectedWinner);
-      setBetAmount(selectedAmount);
+      setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAmount,selectedWinner]);
-
-  console.log(sliderMax,'sliderMax',bettingData?.walletFreeToken)
+  }, [selectedAmount,selectedWinner, currency, updatedCurrency]);
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
@@ -95,10 +89,10 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
 
     if (getRoundData) {
       console.log("edit in bettoekn")
-      editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: CurrencyType.FREE_TOKENS });
+      editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: currency });
     }
     else{
-      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS })
+      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: currency })
       // placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS });
     }
   };
@@ -113,17 +107,16 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
         pointerEvents: session == null ? 'none' : 'auto',
       }}
     >
-
       <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
         <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
-          Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount}</span> Free Tokens
+          Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
         </div>
         <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
             {bettingData?.bettingRounds?.[0]?.roundName}
             </span>
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-            Total Pot: {totalPot} Free Tokens
+            Total Pot: {`${totalPot} ${isStreamCoins ? ' Stream Coins' : ' Free Tokens'}`}
             </span>
         </div>
       </div>
