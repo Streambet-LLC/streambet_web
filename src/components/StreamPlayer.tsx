@@ -35,7 +35,6 @@ export const StreamPlayer = ({ streamId }: StreamPlayerProps) => {
     return <StreamLoading />;
   }
 
-  console.log(stream,"streamstreamstream")
 
   // For Kick.com streams, check if they have a valid embeddedUrl
   if (stream?.data?.platformName === 'kick' && stream?.data?.embeddedUrl) {

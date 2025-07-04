@@ -36,10 +36,10 @@ export const WalletHistory: React.FC<Props> = () => {
   const rangeStart = (currentPage - 1) * itemsPerPage;
   const rangeEnd = itemsPerPage;
 
-  const { data: profiles, refetch: refetchProfiles } = useQuery({
-    queryKey: ['userList'],
+  const { data: transactions, refetch: refetchTransactions } = useQuery({
+    queryKey: ['getTransactions'],
     queryFn: async () => {
-      const data = await api.admin.getUsers({
+      const data = await api.wallet.getTransactions({
         range: `[${rangeStart},${rangeEnd}]`,
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: searchUserQuery }),
@@ -51,11 +51,11 @@ export const WalletHistory: React.FC<Props> = () => {
   });
 
   useEffect(() => {
-    refetchProfiles()
-  }, [currentPage, searchUserQuery, refetchProfiles]);
+    refetchTransactions()
+  }, [currentPage, searchUserQuery, refetchTransactions]);
 
 
-  const totalPages = Math.ceil((profiles?.total || 0) / itemsPerPage);
+  const totalPages = Math.ceil((transactions?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -64,9 +64,9 @@ export const WalletHistory: React.FC<Props> = () => {
   };
 
 
-  const paginatedUsers = profiles?.data;
+  const paginatedUsers = transactions?.data;
 
-
+console.log(paginatedUsers, 'paginatedUsers');
 
   return (
     <div>
@@ -99,7 +99,7 @@ export const WalletHistory: React.FC<Props> = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Date</span>
                     <span className="font-medium">
-                    {new Date(user?.createdAt).toLocaleDateString('en-US')}
+                      {user?.createdat ? new Date(user.createdat).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
                     </span>
                   </div>
 
@@ -108,12 +108,8 @@ export const WalletHistory: React.FC<Props> = () => {
                     <span className="text-sm text-muted-foreground">Type</span>
                     <span
                       className="px-2 py-1 rounded-md font-bold text-xs"
-                      style={{
-                        backgroundColor: user.isActive ? '#7AFF14' : '#FF1418',
-                        color: user.isActive ? '#000' : '#FFFFFF',
-                      }}
                     >
-                      {user.isActive ? 'Active' : 'Inactive'}
+                      {user.type}
                     </span>
                   </div>
 
@@ -121,8 +117,8 @@ export const WalletHistory: React.FC<Props> = () => {
                   {/* Created Date */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Amount</span>
-                    <span className="text-sm">
-                      {new Date(user?.createdAt).toLocaleDateString('en-US')}
+                    <span className="text-sm" style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
+                      {user?.amount < 0 ? '-' : ''}${Math.abs(user?.amount)}
                     </span>
                   </div>
 
@@ -153,17 +149,11 @@ export const WalletHistory: React.FC<Props> = () => {
               ) : (
                 paginatedUsers?.map(user => (
                   <TableRow key={user.id}>
-                    <TableCell className="text-left">{new Date(user?.createdAt).toLocaleDateString('en-US')}</TableCell>
-                    <TableCell className="text-left">{user?.wallet?.freeTokens ? user?.wallet?.freeTokens?.toLocaleString('en-US'):'-'}</TableCell>
+                    <TableCell className="text-left">{user?.createdat ? new Date(user.createdat).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</TableCell>
+                    <TableCell className="text-left">{user?.type}</TableCell>
                     <TableCell className="text-right">
-                      <span
-                        className="px-2 py-1 rounded-md font-bold text-sm"
-                        style={{
-                          backgroundColor: user.isActive ? '#7AFF14' : '#FF1418',
-                          color: user.isActive ? '#000' : '#FFFFFF',
-                        }}
-                      >
-                        {user.isActive ? 'Active' : 'Inactive'}
+                      <span style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
+                        {user?.amount < 0 ? '-' : ''}${Math.abs(user?.amount)}
                       </span>
                     </TableCell>
                   </TableRow>

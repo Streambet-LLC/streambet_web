@@ -9,6 +9,9 @@ import api from '@/integrations/api/client';
 import LockTokens from './LockTokens';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { BettingRoundStatus, CurrencyType } from '@/enums';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
 interface StreamContentProps {
   streamId: string;
@@ -20,9 +23,41 @@ interface StreamContentProps {
 export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamContentProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [placedBet, setPlaceBet] = useState(false);
+  const { currency } = useCurrencyContext();
+  const [placedBet, setPlaceBet] = useState(true); // show BetTokens when true, LockTokens when false
+  const [resetKey, setResetKey] = useState(0); // Add resetKey state
+  const [totalPot, setTotalPot] = useState(0); 
+  const [potentialWinnings, setPotentialWinnings] = useState(0); 
+  const [selectedAmount, setSelectedAmount] = useState(0); 
+  const [selectedWinner, setSelectedWinner] = useState<string | undefined>(""); 
+  const [isEditing, setIsEditing] = useState(false);  //indicate if it's an editing state
+  const [lockedOptions, setLockedOptions] = useState<boolean>(false);  // Track if bet is locked in BetTokens,tsx
+  const [lockedBet, setLockedBet] = useState<boolean>(false); // Track if bet is locked in LockTokens.tsx
+  const [loading, setLoading] = useState<boolean>(false);    // Loader state when data is being fetched from socket           
+  const [winnerOption, setWinnerOption] = useState<boolean>(); 
+  // Socket reference
+  const [socket, setSocket] = useState<any>(null);
+  const [showWinnerAnimation, setShowWinnerAnimation] = useState(false);
+  // Track if last update came from socket then no need to execute getRoundData useEffect
+  const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
+  const [isUserWinner, setIsUserWinner] = useState(false);
+  const [updatedCurrency, setUpdatedCurrency] = useState();   //currency type from socket update
 
-// Query to get the betting data for the stream
+  console.log(currency,'currency')
+
+  useEffect(() => {
+    const newSocket = api.socket.connect();
+    setSocket(newSocket);
+    api.socket.joinStream(streamId, newSocket);
+  
+    return () => {
+      api.socket.leaveStream(streamId, newSocket);
+      api.socket.disconnect();
+      setSocket(null);
+    };
+  }, [streamId]);
+
+  // Query to get the betting data for the stream
   const { data: bettingData, refetch: refetchBettingData} = useQuery({
     queryKey: ['bettingData', streamId, session?.id],
     queryFn: async () => {
@@ -33,105 +68,176 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     enabled: !!session?.id,
   });
 
-  // Query to get selected betting round data
-  const { data: getRoundData, refetch: refetchRoundData} = useQuery({
-    queryKey: ['selectedRoundData'],
-    queryFn: async () => {
-      const data = await api.betting.getBettingRoundData(bettingData?.bettingRounds?.[0]?.id);
-      return data?.data;
-    },
-    enabled: !!bettingData?.bettingRounds?.[0]?.id,
-  });
+  console.log(currency,CurrencyType?.FREE_TOKENS,'currency in bettingData')
 
-// Show bet tokens if a bet is placed
   useEffect(() => {
-    if (getRoundData?.betAmount !== null && getRoundData?.betAmount !== undefined) {
-      setPlaceBet(true);
-    }
-  }, [getRoundData]);
+    setTotalPot(bettingData?.roundTotalBetsTokenAmount);
+    setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED)
+  },[bettingData,currency])
 
-  console.log(getRoundData, 'getRoundData');
+
+
+  useEffect(() => {
+    if (!socket) return; // Only add listener if socket is available
+  
+    const handler = (update: any) => {
+      console.log(update, 'update in bettingUpdate');
+      setTotalPot(update?.totalBetsTokenAmount);
+      setUpdatedCurrency(update?.currencyType)
+      setPotentialWinnings(update?.potentialTokenWinningAmount);
+      setSelectedAmount(update?.amount)
+      setSelectedWinner(update?.selectedWinner);
+      setLoading(false);
+      setIsEditing(false);
+      setPlaceBet(false)
+      toast({
+        description:"Bet placed successfuly",
+        variant: 'default',
+      });
+      setHasSocketUpdate(true);
+    };
+    socket.on('bettingUpdate', handler);
+
+    socket.on('bettingLocked', (data) => {
+      setLockedOptions(data?.locked)
+      setLockedBet(data?.locked);
+      
+      console.log(data, 'bettingLocked in bettingUpdate');
+
+    })
+
+    socket.on('winnerDeclared', (data) => {
+      console.log(data,'winnerDeclared')
+      setWinnerOption(data?.winnerName)
+      setShowWinnerAnimation(true);
+      // Check if current session user is a winner
+      if (Array.isArray(data?.winners) && session?.id) {
+        const found = data.winners.some((w: any) => w.userId === session.id);
+        setIsUserWinner(found);
+      } else {
+        setIsUserWinner(false);
+      }
+      // Hide the animation after 5 seconds
+      setTimeout(() => {
+        setShowWinnerAnimation(false);
+      }, 5000);
+    })
+  
+    // Clean up the listener when socket or component unmounts
+    // return () => {
+    //   socket.off('bettingUpdate', handler);
+    // };
+  }, [socket, toast]);
+
+
+
+  console.log(totalPot,'totalPot in bettingData')
+
+    // Query to get selected betting round data
+  const { data: getRoundData, refetch: refetchRoundData} = useQuery({
+      queryKey: ['selectedRoundData',bettingData?.bettingRounds?.[0]?.id],
+      queryFn: async () => {
+        const data = await api.betting.getBettingRoundData(bettingData?.bettingRounds?.[0]?.id);
+        return data?.data;
+      },
+      enabled: !!bettingData?.id,
+    });
+
+  useEffect(() => {
+    if (hasSocketUpdate) return;
+    if (getRoundData !== undefined) {
+      setPlaceBet(false);
+      setPotentialWinnings(getRoundData?.potentialFreeTokenAmt);
+      setSelectedAmount(getRoundData?.betAmount);
+      setSelectedWinner(getRoundData?.optionName);
+      setLockedBet(getRoundData?.status === BettingRoundStatus.LOCKED)
+      setUpdatedCurrency(getRoundData?.currencyType)
+    }
+  }, [getRoundData, hasSocketUpdate]);
+
+
 
   // Mutation to place a bet
-  const placeBetMutation = useMutation({
-    mutationFn: async ({ bettingVariableId, amount, currencyType }: { bettingVariableId: string; amount: number; currencyType: string }) => {
-      return await api.betting.placeBet({
-        bettingVariableId,
-        amount,
-        currencyType,
+  const placedBetSocket = (data: { bettingVariableId: string; amount: number; currencyType: string }) => {
+    setLoading(true);
+    console.log('Placing bet via socket:', data);
+    if (socket) {
+      socket.emit('placeBet', {
+        bettingVariableId: data.bettingVariableId,
+        amount: data.amount,
+        currencyType: data.currencyType,
       });
-    },
-    onSuccess: () => {
-      refetchRoundData()
-      setPlaceBet(true)
+      
+    } else {
       toast({
-        description:
-          "Bet placed successfuly",
-        variant: 'default',
-      });
-    },
-    onError: (error:any) => {
-      toast({
-        description: error?.response?.data?.message,
+        description: 'Socket not connected. Please try again.',
         variant: 'destructive',
       });
-    },
-  });
+    }
+  }
+
+  
 
    // Mutation to edit a bet
-   const editBetMutation = useMutation({
-    mutationFn: async ({ newBettingVariableId, newAmount, newCurrencyType }: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
-      return await api.betting.EditBet({
+  const editBetSocket = (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
+    setLoading(true);
+    if (socket) {
+      console.log('Placing edit bet via socket:', data);
+      socket.emit('editBet', {
         betId:getRoundData?.betId,
-        newBettingVariableId,
-        newAmount,
-        newCurrencyType
+        newBettingVariableId: data.newBettingVariableId,
+        newAmount: data.newAmount,
+        newCurrencyType: data.newCurrencyType,
       });
-    },
-    onSuccess: () => {
-      refetchRoundData()
-      setPlaceBet(true)
+      
+    } else {
       toast({
-        description:
-          "Bet placed successfuly",
-        variant: 'default',
-      });
-    },
-    onError: (error:any) => {
-      toast({
-        description: error?.response?.data?.message,
+        description: 'Socket not connected. Please try again.',
         variant: 'destructive',
       });
-    },
-  });
+    }
+  }
 
-  const handleBetEdit = ()=>{
-    setPlaceBet(false);
-    refetchRoundData();
+// Function to handle bet edit
+  const handleBetEdit = () => {
+    setIsEditing(true);
+    setPlaceBet(true); // Show BetTokens (edit mode)
+    // refetchRoundData();
+    // refetchBettingData();
+    // setSelectedAmount(getRoundData?.betAmount);
+    // setSelectedWinner(getRoundData?.optionName);
+    // setPotentialWinnings(getRoundData?.potentialFreeTokenAmt);
   }
 
   // Cancel bet mutation
-   const cancelBetMutation = useMutation({
-      mutationFn: async ({ betId, currencyType }: { betId: string; currencyType: string }) => {
-        await api.betting.cancelUserBet({
-          betId,
-          currencyType,
+    const cancelBetSocket = (data: { betId: string; currencyType: string }) => {
+      if (socket) {
+        console.log('Placing cancel bet via socket:', data);
+        socket.emit('cancelBet', {
+          betId:data?.betId,
+          currencyType: data.currencyType,
         });
-      },
-      onSuccess: () => {
-        setPlaceBet(false)
+        setIsEditing(false);
+        setPlaceBet(true)
+        refetchBettingData();
+        setResetKey(prev => prev + 1); // Increment resetKey on cancel
         toast({
-          description:
-            "Bet cancled successfuly",
+          description:"Bet cancled successfuly",
           variant: 'default',
         });
-      },
-    });
+      } else {
+        toast({
+          description: 'Socket not connected. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    }
 
-  console.log(session,'session')
-  console.log(bettingData, 'bettingData');
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      
       <div className="lg:col-span-2 space-y-6">
         <StreamPlayer 
         streamId={streamId} 
@@ -149,32 +255,57 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       </div>
         }
 
-        {/* Stream Details component with real-time viewer tracking */}
-        {/* {stream && (
-          <StreamDetails
-            key={`stream-details-${streamId}-${Date.now()}`}
-            stream={stream}
-            streamId={streamId}
-          />
-        )} */}
-
+          <AnimatePresence>
+             {showWinnerAnimation && isUserWinner && ( 
+              <motion.div
+                className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="bg-gradient-to-r from-lime-400 to-green-500 text-black text-3xl font-bold px-10 py-6 rounded-xl shadow-xl"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                 Congratulations!! You are a winner!
+                </motion.div>
+              </motion.div>
+              )} 
+          </AnimatePresence>
 
         {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
         {bettingData?.bettingRounds && bettingData.bettingRounds.length > 0 ? (
-          !placedBet ? (
+          placedBet ? (
             <BetTokens
               session={session}
               bettingData={bettingData}
-              placeBet={(data) => placeBetMutation.mutate(data)}
-              editBetMutation={(data) => editBetMutation.mutate(data)}
+              placeBet={placedBetSocket} // Pass socket bet function
+              editBetMutation={editBetSocket}
               getRoundData={getRoundData}
+              resetKey={resetKey} // Pass resetKey to BetTokens
+              totalPot={totalPot}
+              lockedOptions={lockedOptions}
+              loading={loading}
+              selectedAmount={selectedAmount}
+              selectedWinner={selectedWinner}
+              isEditing={isEditing}
+              updatedCurrency={updatedCurrency}
             />
           ) : (
             <LockTokens
               bettingData={bettingData}
-              cancelBet={(data) => cancelBetMutation.mutate(data)}
+              cancelBet={cancelBetSocket}
               getRoundData={getRoundData}
               handleBetEdit={handleBetEdit}
+              resetKey={resetKey} // Pass resetKey to LockTokens if needed
+              potentialWinnings={potentialWinnings}
+              selectedAmount={selectedAmount}
+              selectedWinner={selectedWinner}
+              socket={socket}
+              lockedBet={lockedBet}
             />
           )
         ) : 

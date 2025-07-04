@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useToast } from '@/components/ui/use-toast';
 import { useMutation } from "@tanstack/react-query";
 import api from "@/integrations/api/client";
-import { CurrencyType } from '@/enums';
+import { BettingRoundStatus, CurrencyType } from '@/enums';
+import { useBettingStreamUpdates } from "@/hooks/useBettingStreamUpdates";
+import { useCurrencyContext } from "@/contexts/CurrencyContext";
 
 interface BettingVariable {
   id: string;
@@ -13,12 +15,14 @@ interface BettingRound {
   roundName?: string;
   roundTotalBetsTokenAmount?: number;
   bettingVariables?: BettingVariable[];
+  status?: BettingRoundStatus;
 }
 
 interface BettingData {
   bettingRounds?: BettingRound[];
   walletFreeToken?: number;
   roundTotalBetsTokenAmount:number
+  status?: BettingRoundStatus;
 }
 
 interface getRoundData {
@@ -34,12 +38,24 @@ interface BetTokensProps {
   placeBet: (data: { bettingVariableId: string; amount: number; currencyType: string }) => void;
   editBetMutation?: (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => void;
   getRoundData?: getRoundData;
+  resetKey?: number;
+  totalPot?: number;
+  lockedOptions?: boolean;
+  loading?: boolean; // Optional prop to indicate loading state
+  selectedAmount?: number; // Optional prop for selected amount
+  selectedWinner?: string; // Optional prop for selected winner
+  isEditing?: boolean; // Optional prop to indicate if it's an editing state
+  updatedCurrency?: string; // Optional prop for updated currency type
 }
 
-export default function BetTokens({ streamId, session, bettingData ,placeBet,getRoundData,editBetMutation}: BetTokensProps) {
+export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,totalPot,selectedAmount,selectedWinner, lockedOptions,session, bettingData ,placeBet,getRoundData,editBetMutation, resetKey}: BetTokensProps) {
   const { toast } = useToast();
-  const [betAmount, setBetAmount] = useState(getRoundData?.betAmount || 0);
+  const { currency } = useCurrencyContext();
+  const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
+  const [sliderMax, setSliderMax] = useState<number | undefined>();
+
+  console.log(selectedAmount,'selectedAmount')
 
 
   const handleColorClick = (color: string) => {
@@ -48,33 +64,45 @@ export default function BetTokens({ streamId, session, bettingData ,placeBet,get
 
   const isColorButtonsEnabled = betAmount > 0;
   const isBetButtonEnabled = selectedColor !== "";
-  const sliderMax = bettingData?.walletFreeToken ?? 0;
 
+
+
+ 
 
    useEffect(() => {
-    if (getRoundData) {
-      setSelectedColor(getRoundData.optionName);
-      setBetAmount(getRoundData.betAmount);
-    }
+    // if (getRoundData) {
+      setSliderMax(bettingData?.walletFreeToken)
+      setSelectedColor(selectedWinner);
+      setBetAmount(selectedAmount);
+    // }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getRoundData]);
-  
+  }, [selectedAmount,selectedWinner]);
 
-  console.log(betAmount,'betAmount')
+  console.log(sliderMax,'sliderMax',bettingData?.walletFreeToken)
+
+  // Reset slider and option when resetKey changes
+  useEffect(() => {
+    if(resetKey !==0){
+      setBetAmount(0);
+      setSelectedColor("");
+    }
+  }, [resetKey]);
+  
 
   const handleBet = () => {
     const selectedOption = bettingData?.bettingRounds?.[0]?.bettingVariables?.find(option => option.name === selectedColor);
     if (!selectedOption) return;
 
-    if (getRoundData?.betAmount) {
+    if (getRoundData) {
+      console.log("edit in bettoekn")
       editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: CurrencyType.FREE_TOKENS });
     }
     else{
-      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS });
+      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS })
+      // placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS });
     }
   };
 
- 
 
   return (
     <div
@@ -95,7 +123,7 @@ export default function BetTokens({ streamId, session, bettingData ,placeBet,get
             {bettingData?.bettingRounds?.[0]?.roundName}
             </span>
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-            Total Pot: {bettingData?.roundTotalBetsTokenAmount ? bettingData?.roundTotalBetsTokenAmount : 0} Free Tokens
+            Total Pot: {totalPot} Free Tokens
             </span>
         </div>
       </div>
@@ -107,12 +135,20 @@ export default function BetTokens({ streamId, session, bettingData ,placeBet,get
           max={sliderMax}
           value={betAmount}
           disabled={session == null}
-          onChange={(e) => setBetAmount(parseInt(e.target.value))}
+          onChange={(e) => {
+            if (!lockedOptions) setBetAmount(parseInt(e.target.value));
+          }}
           onMouseDown={() => {
             if (sliderMax === 0) {
               toast({
                 variant: 'destructive',
                 description: 'No Tokens available to bet',
+              });
+            }
+            if (lockedOptions) {
+              toast({
+                variant: 'destructive',
+                description: 'Admin has locked the betting round',
               });
             }
           }}
@@ -169,11 +205,17 @@ export default function BetTokens({ streamId, session, bettingData ,placeBet,get
       </div>
 
       <button
-        className="w-full bg-[#BDFF00] text-black font-bold py-2 rounded-full hover:brightness-105 transition text-lg sm:text-base text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-[#BDFF00] text-black font-bold py-2 rounded-full hover:brightness-105 transition text-lg sm:text-base text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         disabled={!isBetButtonEnabled || betAmount<=0}
         onClick={handleBet}
       >
-        Bet {betAmount} on {selectedColor}
+        {loading ? (
+          <svg className="animate-spin h-5 w-5 mr-2 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+        ) : null}
+        {loading ? 'Processing...' : `Bet ${betAmount} on ${selectedColor}`}
       </button>
     </div>
   );

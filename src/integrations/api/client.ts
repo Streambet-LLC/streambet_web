@@ -5,6 +5,8 @@ import { decodeIdToken } from '@/utils/helper';
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
+console.log(API_URL,'API_URL')
+
 // Create axios instance
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -309,10 +311,13 @@ export const walletAPI = {
   },
 
   // Get transaction history
-  getTransactions: async (limit = 20, offset = 0) => {
-    const response = await apiClient.get(`/wallets/transactions?limit=${limit}&offset=${offset}`);
+  getTransactions: async (params) => {
+    const response = await apiClient.get(`/wallets/transactions`,{
+      params,
+    });
     return response.data;
   },
+
 
   // Check if the user has a payment method saved
   hasPaymentMethod: async () => {
@@ -491,22 +496,28 @@ export const userStreamAPI = {
 export const socketAPI = {
   // Connect to WebSocket
   connect: () => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('refreshToken');
     if (!token) return null;
 
-    socket = io(API_URL.replace('/api', ''), {
-      auth: { token },
-      transports: ['websocket'],
-    });
+    // Only create a new socket if one does not already exist or is disconnected
+    if (!socket || (socket && socket.disconnected)) {
+      socket = io(API_URL.replace('/api', ''), {
+        transports: ["websocket"],
+        auth: { token }
+      });
 
-    socket.on('connect', () => {
-      console.log('WebSocket connected');
-    });
+      socket.on('connect', () => {
+        console.log('WebSocket connected');
+      });
 
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-    });
+      socket.on('disconnect', (reason) => {
+        console.log('WebSocket disconnected', reason);
+      });
 
+      socket.on("connect_error", (err) => {
+        console.log("Connection error:", err);
+      });
+    }
     return socket;
   },
 
@@ -520,17 +531,16 @@ export const socketAPI = {
   },
 
   // Join a stream room
-  joinStream: (streamId: string) => {
-    if (socket)
-    {
+  joinStream: (streamId: string,socket:any) => {
+  // console.log(socket,'socket in joinStream')
+    if (socket) {
       socket.emit('joinStream', streamId);
     }
   },
 
   // Leave a stream room
-  leaveStream: (streamId: string) => {
-    if (socket)
-    {
+  leaveStream: (streamId: string,socket:any) => {
+    if (socket) {
       socket.emit('leaveStream', streamId);
     }
   },
@@ -542,6 +552,8 @@ export const socketAPI = {
       socket.emit('sendChatMessage', { streamId, message });
     }
   },
+
+
 
   // Subscribe to betting updates
   onBettingUpdate: (callback: (data: any) => void) => {

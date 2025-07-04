@@ -35,6 +35,8 @@ export function useBettingStreamUpdates(streamId: string) {
     // Connect to WebSocket
     const socket = api.socket.connect();
 
+    console.log(socket,'socket in useBettingStreamUpdates');
+
     if (!socket) {
       console.error('Failed to connect to WebSocket');
       return;
@@ -43,7 +45,9 @@ export function useBettingStreamUpdates(streamId: string) {
     setIsConnected(true);
 
     // Join the stream room
-    api.socket.joinStream(streamId);
+    api.socket.joinStream(streamId,socket);
+
+
 
     // Set up event listeners
     socket.on('bettingUpdate', (update: BettingUpdate) => {
@@ -104,7 +108,7 @@ export function useBettingStreamUpdates(streamId: string) {
 
     // Clean up
     return () => {
-      api.socket.leaveStream(streamId);
+      api.socket.leaveStream(streamId,socket);
       api.socket.disconnect();
     };
   }, [streamId, queryClient]);
@@ -115,6 +119,11 @@ export function useBettingStreamUpdates(streamId: string) {
     api.socket.sendChatMessage(streamId, message);
   };
 
+  // Function to place a bet via socket
+  // const placeBetSocket = (data: { bettingVariableId: string; amount: number; currencyType: string; streamId?: string }) => {
+  //   api.socket.onPlaceBet(data, socket);
+  // };
+
   return {
     bettingUpdates,
     winnerDeclared,
@@ -122,5 +131,6 @@ export function useBettingStreamUpdates(streamId: string) {
     chatMessages,
     isConnected,
     sendChatMessage,
+    placeBetSocket, // Expose the socket bet function
   };
 }

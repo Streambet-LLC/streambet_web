@@ -17,7 +17,18 @@ export enum BettingRoundStatus {
   LOCKED = 'locked',
   CLOSED = 'closed',
   CANCELLED = 'cancelled',
-};
+}
+
+export enum TransactionType {
+  DEPOSIT = 'deposit',
+  WITHDRAWAL = 'withdrawal',
+  BET_PLACEMENT = 'bet_placement',
+  BET_WINNINGS = 'bet_winnings',
+  PURCHASE = 'purchase',
+  SYSTEM_ADJUSTMENT = 'system_adjustment',
+  INITIAL_CREDIT = 'initial_credit',
+  ADMIN_CREDIT = 'admin_credit',
+}
 
 export enum StreamStatus {
   LIVE = 'live',
