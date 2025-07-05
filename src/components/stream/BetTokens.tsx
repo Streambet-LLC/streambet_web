@@ -88,12 +88,10 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
     if (!selectedOption) return;
 
     if (getRoundData) {
-      console.log("edit in bettoekn")
       editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: currency });
     }
     else{
       placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: currency })
-      // placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: CurrencyType.FREE_TOKENS });
     }
   };
 
