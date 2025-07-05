@@ -84,6 +84,21 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setIsEditing(false);
       setTimeout(() => setHasSocketUpdate(false), 3000);
     };
+
+    const processPlacedBet = (update) => {
+      queryClient.prefetchQuery({ queryKey: ['profile', session?.id] }); // To recall me api that will update currency amount near to toggle
+      const isStreamCoins = update?.currencyType === CurrencyType.STREAM_COINS;
+      setUpdatedCurrency(update?.currencyType);
+      setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
+      setSelectedAmount(update?.amount)
+      setSelectedWinner(update?.selectedWinner);
+      setIsEditing(false);
+      setPlaceBet(false);
+      toast({
+        description:"Bet placed successfuly",
+        variant: 'default',
+      });
+    }
   
     const handler = (update: any) => {
       console.log('bettingUpdate', update);
@@ -130,18 +145,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socket.on('betPlaced', (update) => {
       console.log('betPlaced', update);
-      queryClient.prefetchQuery({ queryKey: ['profile', session?.id] }); // To recall me api that will update currency amount near to toggle
-      const isStreamCoins = update?.currencyType === CurrencyType.STREAM_COINS;
-      setUpdatedCurrency(update?.currencyType);
-      setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
-      setSelectedAmount(update?.amount)
-      setSelectedWinner(update?.selectedWinner);
-      setIsEditing(false);
-      setPlaceBet(false);
-      toast({
-        description:"Bet placed successfuly",
-        variant: 'default',
-      });
+      processPlacedBet(update);
     });
 
     socket.on('betOpened', (update) => {
@@ -163,9 +167,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       resetBetData();
     });
 
-    socket.on('editBet', (update) => {
+    socket.on('betEdited', (update) => {
       console.log('editBet', update);
-      queryClient.prefetchQuery({ queryKey: ['profile', session?.id] });
+      processPlacedBet(update);
     });
 
     socket.on('streamEnded', (update) => {
