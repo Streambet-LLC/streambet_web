@@ -18,6 +18,11 @@ interface BettingRound {
   status?: BettingRoundStatus;
 }
 
+interface SliderMax {
+  freeTokens?: number;
+  streamCoins?: number;
+}
+
 interface BettingData {
   bettingRounds?: BettingRound[];
   walletFreeToken?: number;
@@ -36,6 +41,7 @@ interface BetTokensProps {
   streamId?: string;
   session: any;
   bettingData?: BettingData;
+  updatedSliderMax: SliderMax;
   placeBet: (data: { bettingVariableId: string; amount: number; currencyType: string }) => void;
   editBetMutation?: (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => void;
   getRoundData?: getRoundData;
@@ -49,7 +55,23 @@ interface BetTokensProps {
   updatedCurrency?: string; // Optional prop for updated currency type
 }
 
-export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,totalPot,selectedAmount,selectedWinner, lockedOptions,session, bettingData ,placeBet,getRoundData,editBetMutation, resetKey}: BetTokensProps) {
+export default function BetTokens({ 
+  streamId,
+  updatedCurrency,
+  updatedSliderMax,
+  isEditing,
+  loading,
+  totalPot,
+  selectedAmount,
+  selectedWinner, 
+  lockedOptions,
+  session, 
+  bettingData ,
+  placeBet,
+  getRoundData,
+  editBetMutation, 
+  resetKey
+}: BetTokensProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
@@ -67,12 +89,13 @@ export default function BetTokens({ streamId,updatedCurrency,isEditing,loading,t
    useEffect(() => {
     // if (getRoundData) {
       const isStreamCoins = currency === CurrencyType.STREAM_COINS;
-      setSliderMax(isStreamCoins ? bettingData?.walletCoin : bettingData?.walletFreeToken)
+      setSliderMax(isStreamCoins ? updatedSliderMax?.streamCoins ?? bettingData?.walletCoin 
+        : updatedSliderMax?.freeTokens ?? bettingData?.walletFreeToken);
       setSelectedColor(selectedWinner);
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAmount,selectedWinner, currency, updatedCurrency]);
+  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax]);
 
   // Reset slider and option when resetKey changes
   useEffect(() => {

@@ -31,7 +31,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [totalPotCoins, setTotalPotCoins] = useState(0);
   const [potentialWinnings, setPotentialWinnings] = useState(0); 
   const [selectedAmount, setSelectedAmount] = useState(0); 
-  const [selectedWinner, setSelectedWinner] = useState<string | undefined>(""); 
+  const [selectedWinner, setSelectedWinner] = useState<string | undefined>("");
+  const [updatedSliderMax, setUpdatedSliderMax] = useState({
+    freeTokens: undefined,
+    streamCoins: undefined,
+  }); 
   const [isEditing, setIsEditing] = useState(false);  //indicate if it's an editing state
   const [lockedOptions, setLockedOptions] = useState<boolean>(false);  // Track if bet is locked in BetTokens,tsx
   const [lockedBet, setLockedBet] = useState<boolean>(false); // Track if bet is locked in LockTokens.tsx
@@ -79,6 +83,10 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     if (!socket) return; // Only add listener if socket is available
 
     const resetBetData = () => {
+      setUpdatedSliderMax({
+        freeTokens: undefined,
+        streamCoins: undefined,
+      });
       setLockedOptions(false);
       setLockedBet(false);
       setUpdatedCurrency(undefined);
@@ -90,6 +98,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     const processPlacedBet = (update) => {
       queryClient.prefetchQuery({ queryKey: ['profile', session?.id] }); // To recall me api that will update currency amount near to toggle
+      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
+      setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
+      setUpdatedSliderMax({
+        freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
+        streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
+      });
       setSelectedAmount(update?.amount)
       setSelectedWinner(update?.selectedWinner);
       setIsEditing(false);
@@ -104,7 +118,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('bettingUpdate', update);
       const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
       setTotalPot(isStreamCoins ? update?.totalBetsCoinAmount : update?.totalBetsTokenAmount);
-      setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
       setTotalPotCoins(update?.totalBetsCoinAmount);
       setTotalPotTokens(update?.totalBetsTokenAmount);
       setLoading(false);
@@ -113,6 +126,18 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     // For all users
     socket.on('bettingUpdate', handler);
+    
+    socket.on('potentialAmountUpdate', (data) => {
+      console.log('potentialAmountUpdate', data);
+      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
+      setPotentialWinnings(isStreamCoins ? data?.potentialCoinWinningAmount : data?.potentialTokenWinningAmount);
+    });
+
+    socket.on('potentialAmountUpdate', (data) => {
+      console.log('potentialAmountUpdate', data);
+      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
+      setPotentialWinnings(isStreamCoins ? data?.potentialCoinWinningAmount : data?.potentialTokenWinningAmount);
+    });
 
     socket.on('bettingLocked', (data) => {
       console.log('bettingLocked', data);
@@ -172,6 +197,10 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     socket.on('betCancelled', (update) => {
       console.log('betCancelled', update);
       queryClient.prefetchQuery({ queryKey: ['profile', session?.id] });
+      setUpdatedSliderMax({
+        freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
+        streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
+      });
       toast({
         description:"Bet cancelled",
         variant: 'default',
@@ -427,6 +456,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             <BetTokens
               session={session}
               bettingData={bettingData}
+              updatedSliderMax={updatedSliderMax}
               placeBet={placedBetSocket} // Pass socket bet function
               editBetMutation={editBetSocket}
               getRoundData={getRoundData}
