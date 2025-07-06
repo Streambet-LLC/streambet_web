@@ -87,9 +87,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     const processPlacedBet = (update) => {
       queryClient.prefetchQuery({ queryKey: ['profile', session?.id] }); // To recall me api that will update currency amount near to toggle
-      const isStreamCoins = update?.currencyType === CurrencyType.STREAM_COINS;
       setUpdatedCurrency(update?.currencyType);
-      setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
       setSelectedAmount(update?.amount)
       setSelectedWinner(update?.selectedWinner);
       setIsEditing(false);
@@ -104,6 +102,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('bettingUpdate', update);
       const isStreamCoins = update?.currencyType === CurrencyType.STREAM_COINS;
       setTotalPot(isStreamCoins ? update?.totalBetsCoinAmount : update?.totalBetsTokenAmount);
+      setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
       setTotalPotCoins(update?.totalBetsCoinAmount);
       setTotalPotTokens(update?.totalBetsTokenAmount);
       setLoading(false);
@@ -157,18 +156,29 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       resetBetData();
     });
 
-    socket.on('betCancelled', (update) => {
-      console.log('betOpened', update);
+    socket.on('betCancelledByAdmin', (update) => {
+      console.log('betCancelledByAdmin', update);
       queryClient.prefetchQuery({ queryKey: ['profile', session?.id] });
       toast({
         description:"Current betting round cancelled by admin.",
         variant: 'destructive',
+        duration: 6000,
+      });
+      resetBetData();
+    });
+
+    socket.on('betCancelled', (update) => {
+      console.log('betCancelled', update);
+      queryClient.prefetchQuery({ queryKey: ['profile', session?.id] });
+      toast({
+        description:"Bet cancelled",
+        variant: 'default',
       });
       resetBetData();
     });
 
     socket.on('betEdited', (update) => {
-      console.log('editBet', update);
+      console.log('betEdited', update);
       processPlacedBet(update);
     });
 
