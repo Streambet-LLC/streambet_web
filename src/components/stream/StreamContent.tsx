@@ -43,7 +43,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   // Track if last update came from socket then no need to execute getRoundData useEffect
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
-  const [updatedCurrency, setUpdatedCurrency] = useState();   //currency type from socket update
+  const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -79,6 +79,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     if (!socket) return; // Only add listener if socket is available
 
     const resetBetData = () => {
+      setUpdatedCurrency(undefined);
       refetchBettingData();
       refetchRoundData();
       setIsEditing(false);
@@ -87,7 +88,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     const processPlacedBet = (update) => {
       queryClient.prefetchQuery({ queryKey: ['profile', session?.id] }); // To recall me api that will update currency amount near to toggle
-      setUpdatedCurrency(update?.currencyType);
       setSelectedAmount(update?.amount)
       setSelectedWinner(update?.selectedWinner);
       setIsEditing(false);
@@ -100,7 +100,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   
     const handler = (update: any) => {
       console.log('bettingUpdate', update);
-      const isStreamCoins = update?.currencyType === CurrencyType.STREAM_COINS;
+      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
       setTotalPot(isStreamCoins ? update?.totalBetsCoinAmount : update?.totalBetsTokenAmount);
       setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
       setTotalPotCoins(update?.totalBetsCoinAmount);
@@ -223,6 +223,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     setLoading(true);
     console.log('Placing bet via socket:', data);
     if (socket) {
+      setUpdatedCurrency(data.currencyType as CurrencyType);
       socket.emit('placeBet', {
         bettingVariableId: data.bettingVariableId,
         amount: data.amount,
@@ -244,6 +245,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     setLoading(true);
     if (socket) {
       console.log('Placing edit bet via socket:', data);
+      setUpdatedCurrency(data.newCurrencyType as CurrencyType);
       socket.emit('editBet', {
         betId:getRoundData?.betId,
         newBettingVariableId: data.newBettingVariableId,
