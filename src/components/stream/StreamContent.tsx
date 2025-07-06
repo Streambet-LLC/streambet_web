@@ -128,8 +128,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         description: `${data?.winnerName} has selected as winning bet option!`,
         duration: 7000,
       });
-      refetchBettingData();
-      setWinnerOption(data?.winnerName)
+      resetBetData();
+      setWinnerOption(data?.winnerName);
       setShowWinnerAnimation(true);
       // Check if current session user is a winner
       if (Array.isArray(data?.winners) && session?.id) {
