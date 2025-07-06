@@ -235,7 +235,7 @@ export const AdminBettingRoundsCard = ({
                     </CardHeader>
                     {/* Card Content: Carousel */}
                     <CardContent className="bg-transparent px-0 py-4">
-                         <div className="relative group max-w-[50vw]">
+                         <div className="relative group" style={{ maxWidth: windowWidth < 768 ? '80vw' : '50vw' }}>
                               <Carousel
                                    setApi={setCarouselApi}
                                    opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}

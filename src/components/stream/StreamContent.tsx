@@ -71,14 +71,16 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
   useEffect(() => {
     setTotalPot(currency === CurrencyType.STREAM_COINS ? totalPotCoins || bettingData?.roundTotalBetsCoinAmount : totalPotTokens || bettingData?.roundTotalBetsTokenAmount);
-    setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED)
+    setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[bettingData, currency])
+  },[bettingData, currency]);
 
   useEffect(() => {
     if (!socket) return; // Only add listener if socket is available
 
     const resetBetData = () => {
+      setLockedOptions(false);
+      setLockedBet(false);
       setUpdatedCurrency(undefined);
       refetchBettingData();
       refetchRoundData();
@@ -96,7 +98,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         description:"Bet placed successfuly",
         variant: 'default',
       });
-    }
+    };
   
     const handler = (update: any) => {
       console.log('bettingUpdate', update);
