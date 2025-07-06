@@ -191,7 +191,7 @@ export const Navigation = () => {
           >
             {session ? (
               <>
-                <WalletDropdown walletBalance={isStreamCoins ? profile?.data?.walletBalanceCoin : profile?.data?.walletBalanceToken || 0} />
+                <WalletDropdown walletBalance={isStreamCoins ? session?.walletBalanceCoin || 0 : session?.walletBalanceToken || 0} />
 
                 <UserDropdown profile={profile?.data} user={session} onLogout={handleLogout} />
               </>

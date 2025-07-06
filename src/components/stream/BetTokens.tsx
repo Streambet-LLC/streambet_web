@@ -110,7 +110,7 @@ export default function BetTokens({
     const selectedOption = bettingData?.bettingRounds?.[0]?.bettingVariables?.find(option => option.name === selectedColor);
     if (!selectedOption) return;
 
-    if (getRoundData) {
+    if (isEditing) {
       editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: currency });
     }
     else{
