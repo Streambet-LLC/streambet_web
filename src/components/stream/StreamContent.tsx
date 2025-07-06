@@ -133,12 +133,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setPotentialWinnings(isStreamCoins ? data?.potentialCoinWinningAmount : data?.potentialTokenWinningAmount);
     });
 
-    socket.on('potentialAmountUpdate', (data) => {
-      console.log('potentialAmountUpdate', data);
-      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
-      setPotentialWinnings(isStreamCoins ? data?.potentialCoinWinningAmount : data?.potentialTokenWinningAmount);
-    });
-
     socket.on('bettingLocked', (data) => {
       console.log('bettingLocked', data);
       setLockedOptions(data?.locked)
