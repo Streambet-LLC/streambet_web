@@ -141,9 +141,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setLockedBet(data?.locked);
     });
 
-    socket.on('winnerDeclared', (data) => {
-      console.log('winnerDeclared', data);
-      queryClient.prefetchQuery({ queryKey: ['session'] }); 
+    socket.on('winnerDeclared', (data) => { 
       toast({
         title: 'Round Closed',
         description: `${data?.winnerName} has selected as winning bet option!`,
@@ -163,6 +161,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setTimeout(() => {
         setShowWinnerAnimation(false);
       }, 5000);
+      queryClient.prefetchQuery({ queryKey: ['session'] }); 
     });
 
     socket.on('betPlaced', (update) => {
@@ -245,7 +244,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setPlaceBet(true);
     }
   }, [getRoundData, hasSocketUpdate]);
-
 
 
   // Mutation to place a bet
