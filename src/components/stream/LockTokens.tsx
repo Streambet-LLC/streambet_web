@@ -27,6 +27,7 @@ interface getRoundData {
 }
 
 interface LockTokens {
+  updatedBetId?: string;
   bettingData?: BettingData;
   cancelBet: (data: { betId: string; currencyType: string }) => void;
   getRoundData: getRoundData;
@@ -39,7 +40,18 @@ interface LockTokens {
   lockedBet?: boolean; // Track if bet is locked
 }
 
-export default function LockTokens({ bettingData ,socket,lockedBet,potentialWinnings,selectedAmount,selectedWinner,cancelBet,getRoundData,handleBetEdit, resetKey}: LockTokens) {
+export default function LockTokens({ 
+  bettingData ,
+  socket,
+  lockedBet,
+  potentialWinnings,
+  selectedAmount,
+  selectedWinner,
+  cancelBet,
+  getRoundData,
+  updatedBetId,
+  handleBetEdit, 
+  resetKey}: LockTokens) {
   const [localBetAmount, setLocalBetAmount] = useState(selectedAmount || 0);
   const [localOption, setLocalOption] = useState(selectedWinner || "");
 
@@ -54,7 +66,7 @@ export default function LockTokens({ bettingData ,socket,lockedBet,potentialWinn
   }, [selectedAmount, selectedWinner]);
 
    const handleCancelBet = () => {
-    cancelBet({ betId: getRoundData?.betId,currencyType: CurrencyType.FREE_TOKENS });
+    cancelBet({ betId: updatedBetId || getRoundData?.betId,currencyType: CurrencyType.FREE_TOKENS });
     };
 
 console.log(selectedAmount,'selectedAmount')
