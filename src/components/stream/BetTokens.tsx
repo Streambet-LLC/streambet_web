@@ -153,7 +153,8 @@ export default function BetTokens({
             if (!lockedOptions) setBetAmount(parseInt(e.target.value));
           }}
           onMouseDown={() => {
-            if (sliderMax === 0) {
+            // Use Number(sliderMax) to ensure correct comparison
+            if (Number(sliderMax) === 0) {
               toast({
                 variant: 'destructive',
                 description: 'No Tokens available to bet',

@@ -13,7 +13,7 @@ export const PlaceBetButton = ({ isPlacingBet, disabled, onClick }: PlaceBetButt
       onClick={onClick}
       disabled={disabled}
     >
-      {isPlacingBet ? 'Processing...' : 'Place Bet'}
+      {isPlacingBet ? 'Placing bet...' : 'Place Bet'}
     </Button>
   );
 };

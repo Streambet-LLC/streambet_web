@@ -28,8 +28,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [placedBet, setPlaceBet] = useState(true); // show BetTokens when true, LockTokens when false
   const [resetKey, setResetKey] = useState(0); // Add resetKey state
   const [totalPot, setTotalPot] = useState(0); 
-  const [totalPotTokens, setTotalPotTokens] = useState(0);
-  const [totalPotCoins, setTotalPotCoins] = useState(0);
+  const [totalPotTokens, setTotalPotTokens] = useState(undefined);
+  const [totalPotCoins, setTotalPotCoins] = useState(undefined);
   const [potentialWinnings, setPotentialWinnings] = useState(0); 
   const [selectedAmount, setSelectedAmount] = useState(0); 
   const [selectedWinner, setSelectedWinner] = useState<string | undefined>("");
@@ -75,7 +75,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   });
 
   useEffect(() => {
-    setTotalPot(currency === CurrencyType.STREAM_COINS ? totalPotCoins || bettingData?.roundTotalBetsCoinAmount : totalPotTokens || bettingData?.roundTotalBetsTokenAmount);
+    setTotalPot(currency === CurrencyType.STREAM_COINS ? totalPotCoins ?? (bettingData?.roundTotalBetsCoinAmount || 0) : totalPotTokens ?? (bettingData?.roundTotalBetsTokenAmount || 0));
     setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED);
   },[bettingData, currency, totalPotCoins, totalPotTokens]);
 
@@ -83,6 +83,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     if (!socket) return; // Only add listener if socket is available
 
     const resetBetData = () => {
+      setTotalPotTokens(undefined);
+      setTotalPotCoins(undefined);
       setPlaceBet(true);
       setBetId(undefined);
       setUpdatedSliderMax({
@@ -135,7 +137,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socket.on('bettingLocked', (data) => {
       console.log('bettingLocked', data);
-      setPlaceBet(false);
       setLockedOptions(data?.locked)
       setLockedBet(data?.locked);
     });
@@ -306,10 +307,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         setPlaceBet(true);
         refetchBettingData();
         setResetKey(prev => prev + 1); // Increment resetKey on cancel
-        toast({
-          description:"Bet canceled successfuly",
-          variant: 'default',
-        });
       } else {
         toast({
           description: 'Socket not connected. Please try again.',

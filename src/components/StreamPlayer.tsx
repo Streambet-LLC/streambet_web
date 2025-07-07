@@ -38,7 +38,6 @@ export const StreamPlayer = ({ streamId }: StreamPlayerProps) => {
 
   // For Kick.com streams, check if they have a valid embeddedUrl
   if (stream?.data?.platformName === 'kick' && stream?.data?.embeddedUrl) {
-    console.log('Rendering Kick embed for URL', stream?.data?.embeddedUrl);
 
     return (
       <div className="relative aspect-video bg-black rounded-lg overflow-hidden">

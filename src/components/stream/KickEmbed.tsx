@@ -31,7 +31,6 @@ export const KickEmbed = ({ embedUrl }: KickEmbedProps) => {
 
     const finalUrl = `https://player.kick.com/${channelName}`;
 
-    console.log('Final Kick embed URL:', finalUrl);
     return finalUrl;
   };
 
