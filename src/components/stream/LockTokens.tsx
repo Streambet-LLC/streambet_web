@@ -69,7 +69,6 @@ export default function LockTokens({
     cancelBet({ betId: updatedBetId || getRoundData?.betId,currencyType: CurrencyType.FREE_TOKENS });
     };
 
-console.log(selectedAmount,'selectedAmount')
   return (
     <div className="h-[250px] relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]" style={{ border: '0.62px solid #181818' }}>
       <div className="relative z-10 h-full flex flex-col justify-between">
