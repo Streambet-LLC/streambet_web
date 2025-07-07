@@ -64,7 +64,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   }, [streamId]);
 
   // Query to get the betting data for the stream
-  const { data: bettingData, refetch: refetchBettingData} = useQuery({
+  const { data: bettingData, refetch: refetchBettingData, isFetching: fetchingBettingData} = useQuery({
     queryKey: ['bettingData', streamId, session?.id],
     queryFn: async () => {
       if (!session?.id) return null;
@@ -77,8 +77,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   useEffect(() => {
     setTotalPot(currency === CurrencyType.STREAM_COINS ? totalPotCoins || bettingData?.roundTotalBetsCoinAmount : totalPotTokens || bettingData?.roundTotalBetsTokenAmount);
     setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[bettingData, currency]);
+  },[bettingData, currency, totalPotCoins, totalPotTokens]);
 
   useEffect(() => {
     if (!socket) return; // Only add listener if socket is available
@@ -96,7 +95,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       refetchBettingData();
       refetchRoundData();
       setIsEditing(false);
-      setTimeout(() => setHasSocketUpdate(false), 1000);
     };
 
     const processPlacedBet = (update) => {
@@ -105,10 +103,10 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
       setBetId(update?.bet?.id);
       setUpdatedSliderMax({
-        freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
-        streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
+        freeTokens: update?.updatedWalletBalance?.freeTokens || undefined,
+        streamCoins: update?.updatedWalletBalance?.streamCoins || undefined,
       });
-      setSelectedAmount(update?.amount)
+      setSelectedAmount(update?.amount);
       setSelectedWinner(update?.selectedWinner);
       setIsEditing(false);
       setPlaceBet(false);
@@ -120,8 +118,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   
     const handler = (update: any) => {
       console.log('bettingUpdate', update);
-      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
-      setTotalPot(isStreamCoins ? update?.totalBetsCoinAmount : update?.totalBetsTokenAmount);
       setTotalPotCoins(update?.totalBetsCoinAmount);
       setTotalPotTokens(update?.totalBetsTokenAmount);
       setLoading(false);
@@ -232,7 +228,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         return data?.data;
       },
       enabled: !!bettingData?.id,
-    });
+  });
 
   useEffect(() => {
     if (hasSocketUpdate) return;
@@ -243,6 +239,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setSelectedWinner(getRoundData?.optionName);
       setLockedBet(getRoundData?.status === BettingRoundStatus.LOCKED);
       setUpdatedCurrency(getRoundData?.currencyType)
+    } else
+    {
+      setPlaceBet(true);
     }
   }, [getRoundData, hasSocketUpdate]);
 
@@ -267,8 +266,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       });
     }
   }
-
-  
 
    // Mutation to edit a bet
   const editBetSocket = (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
@@ -295,11 +292,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const handleBetEdit = () => {
     setIsEditing(true);
     setPlaceBet(true); // Show BetTokens (edit mode)
-    // refetchRoundData();
-    // refetchBettingData();
-    // setSelectedAmount(getRoundData?.betAmount);
-    // setSelectedWinner(getRoundData?.optionName);
-    // setPotentialWinnings(getRoundData?.potentialFreeTokenAmt);
   }
 
   // Cancel bet mutation
@@ -469,7 +461,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               updatedCurrency={updatedCurrency}
             />
           ) : (
-            <LockTokens
+              <LockTokens
+              updatedBetId={betId}
               bettingData={bettingData}
               cancelBet={cancelBetSocket}
               getRoundData={getRoundData}
