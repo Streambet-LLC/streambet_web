@@ -430,7 +430,8 @@ export const AdminBettingRoundsCard = ({
                                                                                 </div>
                                                                                 <div className="flex items-center mt-1">
                                                                                      <span className="text-white text-sm font-normal ml-1">won</span>
-                                                                                     <span className="text-white text-sm font-normal ml-1">{isStreamCoins ? `${round?.winnerAmount?.streamCoins} coins` : `${round?.winnerAmount?.freeTokens} tokens`}</span>
+                                                                                     <span className="text-white text-sm font-normal ml-1">{isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
+                                                                                     : `${Number(round?.winnerAmount?.freeTokens || 0)?.toLocaleString('en-US')} tokens`}</span>
                                                                                 </div>
                                                                            </div>
                                                                       ) : (<span className='text-center'>Round closed with no winner</span>)}
