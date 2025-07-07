@@ -19,7 +19,7 @@ type WalletCellProps = {
   };
   
 const AddTokens: React.FC<WalletCellProps> = ({
-    currentBalance,
+    currentBalance = 0,
     username,
     onSave,
   }) => { 

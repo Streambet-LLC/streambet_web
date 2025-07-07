@@ -1,80 +1,121 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 import { UserTable } from './UserTable';
 import { StreamTable } from './StreamTable';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
-import api from '@/integrations/api/client';
+import api, { adminAPI } from '@/integrations/api/client';
 import { ArrowLeft, X as XIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
-import { getMessage } from '@/utils/helper';
+import { formatDateTimeForISO, getImageLink, getMessage } from '@/utils/helper';
+import OverView from './OverView';
+import { TabSwitch } from '../navigation/TabSwitch';
+import { CopyableInput } from '../ui/CopyableInput';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { BettingRounds } from './BettingRounds';
+import { AdminStreamContent } from './AdminStreamContent';
+import { BettingRoundStatus } from '@/enums';
+import { StreamInfoForm } from './StreamInfoForm';
+
+interface BettingOption {
+  optionId?: string;
+  option: string;
+}
+
+interface BettingRound {
+  roundId?: string;
+  roundName: string;
+  options: BettingOption[];
+}
 
 export const AdminManagement = ({
+  session,
   streams,
   refetchStreams,
   searchStreamQuery,
   setSearchStreamQuery }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState('livestreams');
+  const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
   const [isCreateStream, setIsCreateStream] = useState(false);
+  const [viewStreamId, setViewStreamId] = useState('');
+  const [editStreamId, setEditStreamId] = useState('');
 
   // Create livestream form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [kickEmbedUrl, setKickEmbedUrl] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [embeddedUrl, setEmbeddedUrl] = useState('');
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
+  const [startDateObj, setStartDateObj] = useState<Date | null>(null);
+  const startTimeRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Replace with real data
-  const totalUsers = 1280;
-  const activeBets = 91.42;
-  const totalLiveTime = 42321;
+  // Betting rounds state
+  const [bettingRounds, setBettingRounds] = useState<BettingRound[]>([]);
+
+  // Add error state for betting rounds
+  const [bettingErrorRounds, setBettingErrorRounds] = useState<number[]>([]);
+  const [showBettingValidation, setShowBettingValidation] = useState(false);
 
   const tabs = [
-    { key: 'overview', label: 'Overview' },
     { key: 'livestreams', label: 'Livestreams' },
     { key: 'users', label: 'Users' },
   ];
 
   const createStreamMutation = useMutation({
-    mutationFn: async (payload: any) => api.admin.createStream(payload),
-    onSuccess: () => {
-      toast({ title: 'Success', description: 'Stream created successfully!' });
-      resetForm();
-      setIsCreateStream(false);
-      refetchStreams();
+    mutationFn: (payload: any) => editStreamId ? api.admin.updateStream(editStreamId, payload)
+      : api.admin.createStream(payload),
+    onSuccess: (response) => {
+      if (bettingRounds.length > 0)
+        {
+          const bettingPayload = {
+            streamId: editStreamId || response?.data?.id,
+            rounds: bettingRounds,
+          };
+          createBetMutation.mutate(bettingPayload);
+        }
+      else
+      {
+        toast({ title: 'Success', description: 'Stream saved successfully!' });
+        handleResetAll();
+      }
     },
     onError: (error: any) => {
       toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
     },
   });
 
-  const [startDateObj, setStartDateObj] = useState<Date | null>(null);
-  const [endDateObj, setEndDateObj] = useState<Date | null>(null);
+  const createBetMutation = useMutation({
+    mutationFn: (payload: any) => payload?.rounds?.[0]?.roundId ?
+      api.admin.updateBettingData(payload)
+      : api.admin.createBettingData(payload),
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Stream and Betting saved successfully!' });
+      handleResetAll();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
+    },
+  });
 
   const [errors, setErrors] = useState({
     title: '',
-    kickEmbedUrl: '',
+    embeddedUrl: '',
     thumbnail: '',
     startDate: '',
-    endDate: ''
   });
   const [startTime, setStartTime] = useState(''); // format: 'HH:mm'
-  const [endTime, setEndTime] = useState('');
-  const startTimeRef = useRef<HTMLInputElement>(null);
-  const endTimeRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -85,7 +126,7 @@ export const AdminManagement = ({
 
   // Refs for error scrolling
   const titleRef = useRef<HTMLInputElement>(null);
-  const kickEmbedUrlRef = useRef<HTMLInputElement>(null);
+  const embeddedUrlRef = useRef<HTMLInputElement>(null);
   const startDateRef = useRef<HTMLButtonElement>(null);
   const thumbnailRef = useRef<HTMLDivElement>(null);
 
@@ -115,27 +156,11 @@ export const AdminManagement = ({
     return selectedTime > now;
   };
 
-  const isEndDateTimeValid = (endDate: Date | null, endTime: string) => {
-    if (!startDateObj || !startTime || !endDate || !endTime) return true;
-
-    const [startHours, startMinutes] = startTime.split(':').map(Number);
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
-
-    const startDateTime = new Date(startDateObj);
-    startDateTime.setHours(startHours, startMinutes);
-
-    const endDateTime = new Date(endDate);
-    endDateTime.setHours(endHours, endMinutes);
-
-    return endDateTime > startDateTime;
-  };
-
   // Add handler for start date changes
   const handleStartDateChange = (date: Date | null) => {
     setStartDateObj(date);
     // Reset end date and time when start date changes
-    setEndDateObj(null);
-    setEndTime('');
+    setStartTime('');
     validateForm();
   };
 
@@ -143,19 +168,6 @@ export const AdminManagement = ({
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = e.target.value;
     setStartTime(newTime);
-    
-    // Reset end date and time when start time changes
-    setEndDateObj(null);
-    setEndTime('');
-    
-    // Validate the form after setting the new time
-    validateForm();
-  };
-
-  // Add handler for end time changes
-  const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = e.target.value;
-    setEndTime(newTime);
     validateForm();
   };
 
@@ -163,13 +175,11 @@ export const AdminManagement = ({
     // Reset text inputs
     setTitle('');
     setDescription('');
-    setKickEmbedUrl('');
+    setEmbeddedUrl('');
 
     // Reset dates and times
     setStartDateObj(null);
-    setEndDateObj(null);
     setStartTime('');
-    setEndTime('');
 
     // Reset thumbnail related states
     setSelectedThumbnailFile(null);
@@ -177,30 +187,37 @@ export const AdminManagement = ({
     setThumbnailError(null);
     setIsDragging(false);
     setIsUploading(false);
-    
+
+    // Reset betting rounds
+    setBettingRounds([]);
+
     // Clear the file input
-    if (fileInputRef.current) {
+    if (fileInputRef.current)
+    {
       fileInputRef.current.value = '';
     }
 
     // Reset all errors
     setErrors({
       title: '',
-      kickEmbedUrl: '',
+      embeddedUrl: '',
       thumbnail: '',
       startDate: '',
-      endDate: ''
     });
   }
 
   function scrollToFirstError() {
-    if (errors.title && titleRef.current) {
+    if (errors.title && titleRef.current)
+    {
       titleRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.kickEmbedUrl && kickEmbedUrlRef.current) {
-      kickEmbedUrlRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.thumbnail && thumbnailRef.current) {
+    } else if (errors.embeddedUrl && embeddedUrlRef.current)
+    {
+      embeddedUrlRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (errors.thumbnail && thumbnailRef.current)
+    {
       thumbnailRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.startDate && startDateRef.current) {
+    } else if (errors.startDate && startDateRef.current)
+    {
       startDateRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
@@ -209,74 +226,198 @@ export const AdminManagement = ({
     if (!date) return 'Select date';
     const dateStr = format(date, 'MM/dd/yyyy');
     if (!time) return dateStr;
-    
+
     // Convert 24-hour format to 12-hour format
     const [hours, minutes] = time.split(':');
     const hour = parseInt(hours);
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     const timeStr = `${displayHour}:${minutes} ${ampm}`;
-    
+
     return `${dateStr} ${timeStr}`;
   }
 
-  function formatDateTimeForISO(date: Date | null, time: string): string | undefined {
-    if (!date || !time) return undefined;
-    
-    // Create a new date object with the selected date and time
-    const dateTime = new Date(date);
-    const [hours, minutes] = time.split(':');
-    dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    
-    // Format as ISO 8601 string
-    return dateTime.toISOString();
-  }
+  const [validationStarted, setValidationStarted] = useState(false);
 
   function validateForm() {
     const newErrors = {
       title: '',
-      kickEmbedUrl: '',
+      embeddedUrl: '',
       thumbnail: '',
       startDate: '',
-      endDate: ''
     };
 
     let isValid = true;
 
-    if (title.trim().length < 3 || title.trim().length > 70) {
+    if (!title)
+    {
+      newErrors.title = 'Title is required';
+      isValid = false;
+    }
+    else if (title?.trim().length < 3 || title?.trim().length > 70)
+    {
       newErrors.title = 'Title must be 3-70 characters';
       isValid = false;
     }
-    if (!kickEmbedUrl.trim() || (!kickEmbedUrl.includes('http') && !kickEmbedUrl.includes('www') && !kickEmbedUrl.includes('kick'))) {
-      newErrors.kickEmbedUrl = 'Embed URL is required and should be valid';
+
+    if (!embeddedUrl?.trim() || (!embeddedUrl?.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick')))
+    {
+      newErrors.embeddedUrl = 'Embed URL is required and should be valid';
       isValid = false;
     }
-    if (!selectedThumbnailFile) {
+    if (!selectedThumbnailFile && !thumbnailPreviewUrl)
+    {
       newErrors.thumbnail = 'Thumbnail is required';
       isValid = false;
     }
-    if (!startDateObj) {
+    if (!startDateObj)
+    {
       newErrors.startDate = 'Start date is required';
       isValid = false;
-    } else if (!startTime) {
+    } else if (!startTime)
+    {
       newErrors.startDate = 'Start time is required';
       isValid = false;
-    } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+    } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj))
+    {
       newErrors.startDate = 'Cannot select past time for today';
       isValid = false;
     }
 
-    // Validate end date/time if they are provided
-    if (endDateObj && endTime) {
-      if (!isEndDateTimeValid(endDateObj, endTime)) {
-        newErrors.endDate = 'End time must be after start time';
-        isValid = false;
-      }
-    }
-
     setErrors(newErrors);
     return isValid;
-  }
+  };
+
+  const {
+    data: betStreamData,
+    isFetching: isBetStreamLoading,
+    refetch: refetchBetStreamData,
+  } = useQuery({
+    queryKey: ['adminBetStreamData'],
+    queryFn: async () => {
+      const streamId = viewStreamId || editStreamId;
+      if (streamId)
+      {
+        const response = await adminAPI.getStreamBetData(streamId);
+        return response?.data;
+      }
+      return undefined;
+    },
+    enabled: false,
+  });
+
+  useEffect(() => {
+    refetchBetStreamData();
+  }, [viewStreamId, editStreamId, refetchBetStreamData]);
+
+  const { isPending: isBetStatusUpdating, mutateAsync: betStatusUpdate } = useMutation({
+    mutationFn: ({ streamId, payload }: { streamId: string, payload: any }) => api.admin.updateBetStatus(streamId, payload),
+    onSuccess: () => {
+      refetchBetStreamData();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to update bet', variant: 'destructive' });
+    },
+  });
+
+  const { isPending: isDeclareWinnerUpdating, mutateAsync: betDeclareWinner } = useMutation({
+    mutationFn: (payload: any) => api.admin.declareWinner(payload),
+    onSuccess: () => {
+      refetchBetStreamData();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to declare the winner', variant: 'destructive' });
+    },
+  });
+
+  const { isPending: isBetRoundCancelling, mutateAsync: cancelBetRound } = useMutation({
+    mutationFn: (payload: any) => api.admin.cancelBetRound(payload),
+    onSuccess: () => {
+      refetchBetStreamData();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to update bet', variant: 'destructive' });
+    },
+  });
+
+  const { isPending: isStreamEnding, mutateAsync: initiateEndStream } = useMutation({
+    mutationFn: (streamId: string) => api.admin.endStream(streamId),
+    onSuccess: () => {
+      toast({
+        title: 'Stream ended',
+        description: 'Stream has successfully ended',
+      });
+      handleResetAll();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to end stream', variant: 'destructive' });
+    },
+  });
+
+  const {
+    data: streamData,
+    isFetching: isStreamLoading,
+    refetch: refetchStreamData,
+  } = useQuery({
+    queryKey: ['adminStreamData'],
+    queryFn: async () => {
+      if (editStreamId)
+      {
+        const response = await adminAPI.getStream(editStreamId);
+        return response?.data;
+      }
+      return undefined;
+    },
+    enabled: false,
+  });
+
+  useEffect(() => {
+    refetchStreamData();
+  }, [editStreamId, refetchStreamData]);
+
+  const handleOpenRound = (streamId: string) => {
+    betStatusUpdate({ streamId, payload: { newStatus: BettingRoundStatus.OPEN } });
+  };
+
+  const handleLockBets = (streamId: string) => {
+    betStatusUpdate({ streamId, payload: { newStatus: BettingRoundStatus.LOCKED } });
+  };
+  
+  const handleEndRound = (optionId: string) => {
+    betDeclareWinner(optionId);
+  };
+
+  const handleCancelRound = (roundId: string) => {
+    cancelBetRound(roundId);
+  };
+
+  useEffect(() => {
+    if (!isStreamLoading && streamData)
+    {
+      setTitle(streamData?.streamName);
+      setDescription(streamData?.description);
+      setEmbeddedUrl(streamData?.embeddedUrl);
+      setBettingRounds(streamData?.rounds || []);
+
+      // Set thumbnail if available
+      if (streamData.thumbnailUrl)
+      {
+        setThumbnailPreviewUrl(getImageLink(streamData.thumbnailUrl));
+      }
+
+      // Set start date and time if scheduledStartTime is available
+      if (streamData.scheduledStartTime)
+      {
+        const date = new Date(streamData.scheduledStartTime);
+        setStartDateObj(date);
+
+        // Extract time in HH:mm format
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        setStartTime(`${hours}:${minutes}`);
+      }
+    }
+  }, [streamData, isStreamLoading]);
 
   function handleUploadClick() {
     if (fileInputRef.current) fileInputRef.current.click();
@@ -287,26 +428,26 @@ export const AdminManagement = ({
   }
   async function handleFile(file: File) {
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setErrors({ 
-        ...errors, 
+    if (!file.type.startsWith('image/'))
+    {
+      setErrors({
+        ...errors,
         thumbnail: 'Please upload an image file',
         title: '',
-        kickEmbedUrl: '',
+        embeddedUrl: '',
         startDate: '',
-        endDate: ''
       });
       return;
     }
     // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors({ 
-        ...errors, 
+    if (file.size > 5 * 1024 * 1024)
+    {
+      setErrors({
+        ...errors,
         thumbnail: 'Please upload an image smaller than 5MB',
         title: '',
-        kickEmbedUrl: '',
+        embeddedUrl: '',
         startDate: '',
-        endDate: ''
       });
       return;
     }
@@ -323,11 +464,13 @@ export const AdminManagement = ({
       img.src = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(img.src);
-        const isValidSize = img.width <= 800 && img.height <= 400;
-        if (!isValidSize) {
-          setErrors(errors => ({ ...errors, thumbnail: 'Image must be max 800x400px' }));
+        const isValidSize = img.width <= 1920 && img.height <= 1080;
+        if (!isValidSize)
+        {
+          setErrors(errors => ({ ...errors, thumbnail: 'Image must be maximum 1920x1080px' }));
           resolve(false);
-        } else {
+        } else
+        {
           resolve(true);
         }
       };
@@ -341,7 +484,8 @@ export const AdminManagement = ({
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files && e.dataTransfer.files[0])
+    {
       handleFile(e.dataTransfer.files[0]);
     }
   }
@@ -360,32 +504,59 @@ export const AdminManagement = ({
       ...errors,
       thumbnail: '',
       title: '',
-      kickEmbedUrl: '',
+      embeddedUrl: '',
       startDate: '',
-      endDate: ''
     });
     // Clear the file input to allow reselection
-    if (fileInputRef.current) {
+    if (fileInputRef.current)
+    {
       fileInputRef.current.value = '';
     }
   }
 
   async function handleCreateStream() {
-    if (!validateForm()) {
+    // Validate betting rounds: no round should have 0 options
+    const errorIndices = bettingRounds
+      .map((r, idx) => (r.options.length === 0 ? idx : -1))
+      .filter(idx => idx !== -1);
+    if (errorIndices.length > 0) {
+      setBettingErrorRounds(errorIndices);
+      setShowBettingValidation(true);
+      toast({
+        title: 'Betting round error',
+        description: 'Each round must have at least one option.',
+        variant: 'destructive',
+      });
+      return;
+    } else {
+      setBettingErrorRounds([]);
+      setShowBettingValidation(false);
+    }
+
+    if (!validateForm())
+    {
       // Scroll to first error after validation
       setTimeout(() => scrollToFirstError(), 100);
+      toast({
+        title: 'Form error',
+        description: 'Please check your form for any validation error',
+        variant: 'destructive'
+      });
       return;
     }
 
-    let thumbnailImageUrl = '';
+    let thumbnailImageUrl = streamData?.thumbnailUrl || '';
 
-    if (selectedThumbnailFile?.name) {
-      try {
+    if (selectedThumbnailFile?.name)
+    {
+      try
+      {
         setIsUploading(true);
         const response = await api.auth.uploadImage(selectedThumbnailFile, 'thumbnail');
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
-      } catch (error) {
+      } catch (error)
+      {
         toast({
           variant: 'destructive',
           title: 'Error uploading stream thumbnail',
@@ -399,18 +570,61 @@ export const AdminManagement = ({
     const payload = {
       name: title,
       description,
-      kickEmbedUrl,
+      embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
-      endTime: formatDateTimeForISO(endDateObj, endTime),
     };
 
     createStreamMutation.mutate(payload);
   }
 
+  const handleResetAll = () => {
+    setIsCreateStream(false);
+    setViewStreamId('');
+    setEditStreamId('');
+    setCreateStep('info');
+    resetForm();
+    setBettingRounds([]);
+  };
+
+  // New: handle next step from info to betting
+  const handleNextStep = async () => {
+    if (!validateForm()) {
+      setTimeout(() => scrollToFirstError(), 100);
+      toast({
+        title: 'Form error',
+        description: 'Please check your form for any validation error',
+        variant: 'destructive'
+      });
+      return;
+    }
+    setCreateStep('betting');
+  };
+
+  // New: handle back from betting to info
+  const handleBackStep = () => {
+    setCreateStep('info');
+  };
+
+  // Wrap setBettingRounds to auto-clear errors if all rounds have at least one option
+  const handleRoundsChange = (newRounds: BettingRound[]) => {
+    setBettingRounds(newRounds);
+    // If all rounds have at least one option, clear errors
+    if (newRounds.every(r => r.options.length > 0)) {
+      setBettingErrorRounds([]);
+      setShowBettingValidation(false);
+    }
+  };
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchStreamQuery]);
+
   return (
     <div className="space-y-6">
-      {isCreateStream ? (
+      {isCreateStream || editStreamId ? (
         <div className="flex justify-center items-center min-h-[60vh]">
           <Card className="w-full max-w-xl bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none">
             <CardContent className="p-4 !pt-2 sm:p-6">
@@ -421,278 +635,167 @@ export const AdminManagement = ({
                   variant="secondary"
                   className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
-                  onClick={() => { setIsCreateStream(false); resetForm(); }}
+                  onClick={() => {
+                    if (createStep === 'betting') {
+                      handleBackStep();
+                    } else {
+                      handleResetAll();
+                    }
+                  }}
                 >
                   <ArrowLeft className="h-4 w-4 mr-0" /> Back
                 </Button>
               </div>
               {/* Label and Create button in same row */}
               <div className="flex flex-row items-center justify-between mb-6">
-                <span className="text-lg text-white font-light">Create new livestream</span>
-                <Button
-                  type="submit"
-                  className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[79px] h-[40px]"
-                  style={{ borderRadius: '10px' }}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    await handleCreateStream();
-                  }}
-                  disabled={createStreamMutation.isPending || isUploading}
-                >
-                  {createStreamMutation.isPending || isUploading ? 'Creating...' : 'Create'}
-                </Button>
+                <span className="text-lg text-white font-light">{createStep === 'betting' ? (editStreamId ? 'Edit your betting options' : 'Create your betting options') : (editStreamId ? 'Manage Livestream' : 'Create new livestream')}</span>
+                {/* Step 1: Next button, Step 2: Submit button */}
+                {createStep === 'info' ? (
+                  <Button
+                    type="button"
+                    className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[79px] h-[40px]"
+                    style={{ borderRadius: '10px' }}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      setValidationStarted(true);
+                      await handleNextStep();
+                    }}
+                    disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
+                    style={{ borderRadius: '10px' }}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await handleCreateStream();
+                    }}
+                    disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                  >
+                    {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Edit stream') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
+                  </Button>
+                )}
               </div>
               <Separator className="my-4 bg-[#232323]" />
               {/* Form fields */}
               <form className="space-y-8" onSubmit={e => e.preventDefault()}>
-                {/* Title */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">Title</Label>
-                  <Input
-                    ref={titleRef}
-                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
-                    placeholder="Title of livestream"
-                    value={title}
-                    maxLength={70}
-                    minLength={3}
-                    onChange={e => { setTitle(e.target.value); setErrors({ ...errors, title: '' }); }}
-                    required
+                {/* Step 1: Info */}
+                {createStep === 'info' && (
+                  <StreamInfoForm
+                    initialValues={{
+                      title,
+                      description,
+                      embeddedUrl,
+                      thumbnailPreviewUrl,
+                      startDateObj,
+                      startTime,
+                      streamId: editStreamId || undefined,
+                    }}
+                    errors={errors}
+                    isUploading={isUploading}
+                    loading={createStreamMutation.isPending || createBetMutation.isPending}
+                    isDragging={isDragging}
+                    onChange={fields => {
+                      if (!validationStarted) {
+                        if ('title' in fields) setTitle(fields.title ?? '');
+                        if ('description' in fields) setDescription(fields.description ?? '');
+                        if ('embeddedUrl' in fields) setEmbeddedUrl(fields.embeddedUrl ?? '');
+                        if ('startDateObj' in fields) setStartDateObj(fields.startDateObj ?? null);
+                        if ('startTime' in fields) setStartTime(fields.startTime ?? '');
+                        return;
+                      }
+                      const newErrors = { ...errors };
+                      if ('title' in fields) {
+                        setTitle(fields.title ?? '');
+                        const value = fields.title ?? '';
+                        if (!value) newErrors.title = 'Title is required';
+                        else if (value.trim().length < 3 || value.trim().length > 70) newErrors.title = 'Title must be 3-70 characters';
+                        else newErrors.title = '';
+                      }
+                      if ('description' in fields) {
+                        setDescription(fields.description ?? '');
+                        // No validation for description
+                      }
+                      if ('embeddedUrl' in fields) {
+                        setEmbeddedUrl(fields.embeddedUrl ?? '');
+                        const value = fields.embeddedUrl ?? '';
+                        if (!value.trim() || (!value.includes('http') && !value.includes('www') && !value.includes('kick')))
+                          newErrors.embeddedUrl = 'Embed URL is required and should be valid';
+                        else newErrors.embeddedUrl = '';
+                      }
+                      if ('startDateObj' in fields) {
+                        setStartDateObj(fields.startDateObj ?? null);
+                        const date = fields.startDateObj ?? null;
+                        if (!date) newErrors.startDate = 'Start date is required';
+                        else if (!startTime) newErrors.startDate = 'Start time is required';
+                        else if (isToday(date) && !isTimeValid(startTime, date)) newErrors.startDate = 'Cannot select past time for today';
+                        else newErrors.startDate = '';
+                      }
+                      if ('startTime' in fields) {
+                        setStartTime(fields.startTime ?? '');
+                        const value = fields.startTime ?? '';
+                        if (!startDateObj) newErrors.startDate = 'Start date is required';
+                        else if (!value) newErrors.startDate = 'Start time is required';
+                        else if (isToday(startDateObj) && !isTimeValid(value, startDateObj)) newErrors.startDate = 'Cannot select past time for today';
+                        else newErrors.startDate = '';
+                      }
+                      setErrors(newErrors);
+                    }}
+                    onFileChange={file => handleFileChange({ target: { files: file ? [file] : [] } } as any)}
+                    onSubmit={async () => {
+                      setValidationStarted(true);
+                      await handleNextStep();
+                    }}
+                    onDeleteThumbnail={handleDeleteThumbnail}
+                    onStartDateChange={handleStartDateChange}
+                    onStartTimeChange={handleStartTimeChange}
                   />
-                  {errors.title && <div className="text-destructive text-xs mt-1">{errors.title}</div>}
-                </div>
-                {/* Description */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">Description</Label>
-                  <Textarea
-                    className="bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] border-none mt-2"
-                    placeholder="Stream description"
-                    rows={10}
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
+                )}
+                {/* Step 2: Betting */}
+                {createStep === 'betting' && (
+                  <BettingRounds
+                    statusMap={betStreamData?.data?.rounds ? Object.fromEntries(betStreamData?.data?.rounds.map((r) => [r?.roundId, r?.status])) : {}}
+                    rounds={bettingRounds}
+                    onRoundsChange={handleRoundsChange}
+                    onErrorRoundsChange={(errorRounds) => setBettingErrorRounds(errorRounds)}
+                    editStreamId={editStreamId}
+                    showValidationErrors={showBettingValidation}
+                    errorRounds={bettingErrorRounds}
                   />
-                </div>
-                {/* Kick embed URL */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">Kick embed URL</Label>
-                  <Input
-                    ref={kickEmbedUrlRef}
-                    className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.kickEmbedUrl ? 'border border-red-500' : 'border-none'}`}
-                    placeholder="Kick embed URL"
-                    value={kickEmbedUrl}
-                    onChange={e => { setKickEmbedUrl(e.target.value); setErrors({ ...errors, kickEmbedUrl: '' }); }}
-                    required
-                  />
-                  {errors.kickEmbedUrl && <div className="text-destructive text-xs mt-1">{errors.kickEmbedUrl}</div>}
-                </div>
-                {/* Thumbnail upload */}
-                <div ref={thumbnailRef}>
-                  <Label className="text-white font-light mb-3 block">Thumbnail</Label>
-                  <div className="flex flex-col sm:flex-row gap-4 items-center">
-                    {/* Left: Preview */}
-                    <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727]">
-                      {thumbnailPreviewUrl ? (
-                        <img src={thumbnailPreviewUrl} alt="Thumbnail preview" className="object-cover w-full h-full" />
-                      ) : (
-                        <span className="text-white text-xs">No image</span>
-                      )}
-                    </div>
-                    {/* Right: Upload */}
-                    <div
-                      className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''} ${errors.thumbnail ? 'border-red-500' : ''}`}
-                      style={{ minHeight: 120 }}
-                      onClick={isUploading ? undefined : handleUploadClick}
-                      onDrop={isUploading ? undefined : handleDrop}
-                      onDragOver={isUploading ? undefined : handleDragOver}
-                      onDragLeave={isUploading ? undefined : handleDragLeave}
-                    >
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileChange}
-                        disabled={isUploading}
-                      />
-                      <div className="flex flex-col items-center mt-2">
-                        <div className="flex items-center justify-center mb-1 relative">
-                          <div className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center" style={{ width: 44, height: 44 }}>
-                            {isUploading ? (
-                              <Loader2 className="h-6 w-6 animate-spin text-white" />
-                            ) : (
-                              <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
-                            )}
-                          </div>
-                          {thumbnailPreviewUrl && !isUploading && (
-                            <button
-                              type="button"
-                              className="absolute -top-2 -right-2 bg-[#232323] rounded-full p-1 hover:bg-destructive"
-                              onClick={e => { e.stopPropagation(); handleDeleteThumbnail(); }}
-                            >
-                              <XIcon className="h-4 w-4 text-white" />
-                            </button>
-                          )}
-                        </div>
-                        <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
-                          <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
-                          <span className="text-[#667085] text-[12px]">SVG, PNG, JPG or GIF (max. 800x400px)</span>
-                        </span>
-                      </div>
-                      {errors.thumbnail && <div className="text-destructive text-xs mt-1">{errors.thumbnail}</div>}
-                    </div>
-                  </div>
-                </div>
-                {/* Start date */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">Start date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        ref={startDateRef}
-                        type="button"
-                        className={`w-full bg-[#272727] text-[#D7DFEF] pl-10 mt-2 flex items-center h-10 rounded-md relative ${errors.startDate ? 'border border-red-500' : 'border-none'}`}
-                        style={{ textAlign: 'left' }}
-                      >
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                          <CalendarIcon className="h-5 w-5 text-white" />
-                        </span>
-                        <span className={startDateObj ? '' : 'text-[#FFFFFFBF]'}>
-                          {formatDateTimeForDisplay(startDateObj, startTime)}
-                        </span>
-                        {(startDateObj || startTime) && (
-                          <button
-                            type="button"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
-                            onClick={e => { e.stopPropagation(); setStartDateObj(null); setStartTime(''); }}
-                          >
-                            <XIcon className="h-4 w-4 text-white" />
-                          </button>
-                        )}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={startDateObj || undefined}
-                        onSelect={handleStartDateChange}
-                        initialFocus
-                        showOutsideDays
-                        disabled={date => date < new Date(new Date().setHours(0,0,0,0))}
-                      />
-                      <div className="flex items-center gap-2 p-2">
-                        <span className="text-xs text-white">Time:</span>
-                        <input
-                          ref={startTimeRef}
-                          type="time"
-                          value={startTime}
-                          onChange={handleStartTimeChange}
-                          min={startDateObj && isToday(startDateObj) ? getCurrentTime() : undefined}
-                          className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
-                          style={{ color: 'white' }}
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  {errors.startDate && <div className="text-destructive text-xs mt-1">{errors.startDate}</div>}
-                </div>
-                {/* End date */}
-                <div>
-                  <Label className="text-white font-light mb-3 block">End date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="w-full bg-[#272727] text-[#D7DFEF] border-none pl-10 mt-2 flex items-center h-10 rounded-md relative"
-                        style={{ textAlign: 'left' }}
-                        disabled={!startDateObj || !startTime}
-                      >
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                          <CalendarIcon className="h-5 w-5 text-white" />
-                        </span>
-                        <span className={endDateObj ? '' : 'text-[#FFFFFFBF]'}>
-                          {!startDateObj || !startTime ? 'Set start date first' : formatDateTimeForDisplay(endDateObj, endTime)}
-                        </span>
-                        {(endDateObj || endTime) && (
-                          <button
-                            type="button"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
-                            onClick={e => { e.stopPropagation(); setEndDateObj(null); setEndTime(''); }}
-                          >
-                            <XIcon className="h-4 w-4 text-white" />
-                          </button>
-                        )}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={endDateObj || undefined}
-                        onSelect={setEndDateObj}
-                        initialFocus
-                        showOutsideDays
-                        disabled={date => {
-                          if (!startDateObj) return true;
-                          return date < startDateObj;
-                        }}
-                      />
-                      <div className="flex items-center gap-2 p-2">
-                        <span className="text-xs text-white">Time:</span>
-                        <input
-                          ref={endTimeRef}
-                          type="time"
-                          value={endTime}
-                          onChange={handleEndTimeChange}
-                          min={endDateObj?.getTime() === startDateObj?.getTime() ? startTime : undefined}
-                          className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
-                          style={{ color: 'white' }}
-                          disabled={!endDateObj}
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  {errors.endDate && <div className="text-destructive text-xs mt-1">{errors.endDate}</div>}
-                </div>
+                )}
               </form>
             </CardContent>
           </Card>
         </div>
-      ) : (
+      ) : viewStreamId ? <AdminStreamContent
+            streamId={viewStreamId}
+            session={session}
+            betData={betStreamData?.data?.rounds}
+            isStreamEnding={isStreamEnding}
+            isBetRoundCancelling={isBetRoundCancelling}
+            isUpdatingAction={isBetStatusUpdating || isDeclareWinnerUpdating || isBetStreamLoading}
+            handleOpenRound={handleOpenRound}
+            handleLockBets={handleLockBets}
+            handleEndRound={handleEndRound}
+            handleCancelRound={handleCancelRound}
+            handleEndStream={initiateEndStream}
+            refetchBetData={refetchBetStreamData}
+            handleBack={() => handleResetAll()}
+      /> : (
         <>
           {/* Top bar (tabs, search, create button) only when not creating stream */}
-          <div className="flex items-center justify-between w-full mb-4">
-            <div className="flex">
-              {tabs.map((tab, idx) => {
-                const isActive = activeTab === tab.key;
-                const isFirst = idx === 0;
-                const isLast = idx === tabs.length - 1;
-
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`
-              px-6 py-2 text-sm font-medium
-              border border-[#2D343E]
-              ${isLast ? 'border-r-1' : ''}
-              ${isFirst ? 'rounded-l-lg' : ''}
-              ${isLast ? 'rounded-r-lg' : ''}
-              ${isActive ? 'bg-[#2A2A2A] text-white' : ' text-white hover:bg-[#1f1f1f]'}
-            `}
-                    style={{
-                      borderColor: '#2D343E',
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
+          <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}>
+            <TabSwitch tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
             {activeTab === 'users' && (
-              <div  className="relative rounded-md w-[200px] lg:w-[400px] border" style={{ border: '1px solid #2D343E'}}>
+              <div className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`} style={{ border: '1px solid #2D343E' }}>
                 <Input
                   id="search-users"
                   type="text"
-                  placeholder="Search"
+                  placeholder="Search users..."
                   value={searchUserQuery}
                   onChange={e => setSearchUserQuery(e.target.value)}
                   className="pl-9 rounded-md"
@@ -702,69 +805,74 @@ export const AdminManagement = ({
             )}
 
             {activeTab === 'livestreams' && (
-              <div className="flex items-center justify-end w-full">
-                <div className="relative rounded-md mr-2" style={{ border: '1px solid #2D343E' }}>
+              <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-end'} w-full`}>
+                <div className={`relative rounded-md ${isMobile ? 'w-full' : 'mr-2'}`} style={{ border: '1px solid #2D343E' }}>
                   <Input
                     id="search-streams"
                     type="text"
-                    placeholder="Search"
+                    placeholder="Search streams..."
                     value={searchStreamQuery}
                     onChange={e => setSearchStreamQuery(e.target.value)}
                     className="pl-9 rounded-md"
-                    style={{ minWidth: 180 }}
+                    style={isMobile ? {} : { minWidth: 180 }}
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
                 <button
                   type="button"
-                  className="bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors"
+                  className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
                   onClick={() => setIsCreateStream(true)}
                 >
-                  Create new livestream
+                  {isMobile ? 'Create Livestream' : 'Create new livestream'}
                 </button>
               </div>
             )}
-            </div>
-            <Separator className="!mt-1" />
+          </div>
+          <Separator className="!mt-1" />
           {/* Tab Content */}
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Users
-                </p>
-                <p className="text-2xl font-semibold">${totalUsers}</p>
-              </div>
+            <OverView />
+            // <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+            //       Users
+            //     </p>
+            //     <p className="text-2xl font-semibold">${totalUsers}</p>
+            //   </div>
 
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
-                <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Active Streams
-                </p>
-                <p className="text-2xl font-semibold">14</p>
-              </div>
+            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
+            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+            //       Active Streams
+            //     </p>
+            //     <p className="text-2xl font-semibold">14</p>
+            //   </div>
 
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Active Bets
-                </p>
-                <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
-              </div>
+            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+            //       Active Bets
+            //     </p>
+            //     <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
+            //   </div>
 
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-                  Time Live
-                </p>
-                <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
-              </div>
-            </div>
+            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+            //       Time Live
+            //     </p>
+            //     <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
+            //   </div>
+            // </div>
           )}
 
           {activeTab === 'livestreams' && (
             <div className="space-y-4">
-                <StreamTable
-                  streams={streams}
-                  refetchStreams={() => refetchStreams()}
-                />
+              <StreamTable
+                streams={streams}
+                refetchStreams={refetchStreams}
+                setViewStreamId={setViewStreamId}
+                setEditStreamId={setEditStreamId}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+              />
             </div>
           )}
 

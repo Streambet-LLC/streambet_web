@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,6 +35,8 @@ export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,7 +59,7 @@ export default function SignUp() {
     username: z
       .string()
       .min(3, 'Username must be at least 3 characters')
-      .regex(/^[^\s]*$/, 'Username cannot contain spaces'),
+      .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
     email: z.string().email('Invalid email address'),
     password: isGoogleLogin
       ? z.string().optional()
@@ -155,6 +157,7 @@ export default function SignUp() {
       isOlder: boolean;
       profileImageUrl: string;
       lastKnownIp: string;
+      redirect?: string;
     }) => {
       // Verify location again before proceeding with signup
       const locationResult = await verifyUserLocation();
@@ -164,12 +167,11 @@ export default function SignUp() {
       return await api.auth.register(userData);
     },
     onSuccess: () => {
-      // queryClient.invalidateQueries({ queryKey: ['session'] });
       toast({
         title: 'Account created!',
         description: 'Your account has been successfully created. Please verify mail to login.',
       });
-      navigate('/login');
+      navigate('/verify-email-notice');
     },
     onError: (error: any) => {
       toast({
@@ -327,6 +329,7 @@ export default function SignUp() {
       isOlder,
       profileImageUrl: profileImageUrl || undefined,
       lastKnownIp: locationStatus?.ip_address,
+      redirect: redirectParam || undefined,
     });
   };
 
@@ -499,7 +502,9 @@ export default function SignUp() {
           className="w-full max-w-md"
         >
           <div className="mb-6">
-            <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-4" />
+            <Link to="/">
+              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-4" />
+            </Link>
             <h1 className="text-3xl font-bold text-white text-left">Create an account</h1>
             <p className="text-[#FFFFFFBF] mt-2 text-left">
               Enter your details below to create an account
@@ -654,6 +659,7 @@ export default function SignUp() {
                           onMonthChange={setCurrentMonth}
                           onSelect={handleDateSelect}
                           captionLayout="dropdown"
+                          toDate={new Date()}
                           components={{
                             CaptionLabel: () => null,
                             Dropdown: ({ children, value, onChange, className = '', style, ...rest }) => (
@@ -670,12 +676,12 @@ export default function SignUp() {
                           }}
                           classNames={{
                             caption_dropdowns: 'flex gap-[5px] justify-center',
-                            day: 'select-none',
-                            day_selected: 'select-none',
-                            day_today: 'select-none',
-                            day_outside: 'select-none',
-                            day_disabled: 'select-none',
-                            day_range_middle: 'select-none',
+                            day: 'h-9 w-9 p-0 font-light aria-selected:opacity-100',
+                            day_selected: 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
+                            day_today: 'bg-accent text-accent-foreground',
+                            day_outside: 'day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30',
+                            day_disabled: 'text-muted-foreground opacity-50',
+                            day_range_middle: 'aria-selected:bg-accent aria-selected:text-accent-foreground',
                             day_hidden: 'select-none',
                           }}
                           fromYear={1900}
@@ -696,8 +702,13 @@ export default function SignUp() {
                     <Label htmlFor="tosAccepted" className="text-sm pt-2 pb-2">
                       I accept the{' '}
                       <Link to="/terms" target="_blank" className="text-primary hover:underline">
-                        Terms of Service
+                        Terms of Use
                       </Link>
+                      {', '}
+                      <Link to="/privacy" target="_blank" className="text-primary hover:underline">
+                        Privacy Policy
+                      </Link>
+                      {', and Sweestakes Rules.'}
                     </Label>
                     {errors.tosAccepted && (
                       <p className="text-destructive text-sm">{errors.tosAccepted}</p>
@@ -777,7 +788,7 @@ export default function SignUp() {
                   Already have an account?{' '}
                
                 </p>
-                <Link to="/login" className="text-sm text-primary hover:underline font-md drop-shadow-md mt-6 ml-2">
+                <Link to={redirectParam ? `/login?redirect=${redirectParam}` : "/login"} className="text-sm text-primary hover:underline font-md drop-shadow-md mt-6 ml-2">
                     Log in
                   </Link>
               </motion.div>

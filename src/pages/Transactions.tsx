@@ -31,8 +31,7 @@ const Transactions = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container pt-24 pb-8">
-        <h1 className="text-3xl font-bold mb-8">Transaction History</h1>
-        {session && <WalletHistory session={session} />}
+        {session && <WalletHistory searchUserQuery={''} />}
       </main>
     </div>
   );

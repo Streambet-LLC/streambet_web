@@ -21,20 +21,19 @@ export const ThumbnailUpload = ({ onUploadComplete }: ThumbnailUploadProps) => {
 
       img.onload = () => {
         URL.revokeObjectURL(img.src);
-        const aspectRatio = img.width / img.height;
-        const isValidRatio = Math.abs(aspectRatio - 16 / 9) < 0.1; // Allow small deviation from 16:9
-        const isValidSize = img.width >= 1280 && img.height >= 720; // Minimum 720p
-
-        if (!isValidRatio || !isValidSize) {
+        // Allow any image up to and including 1920x1080
+        const isValidSize = img.width <= 1920 && img.height <= 1080;
+        if (!isValidSize) {
           toast({
             title: 'Invalid image dimensions',
             description:
-              'Please upload an image with 16:9 aspect ratio and minimum resolution of 1280x720',
+              'Please upload an image with a maximum resolution of 1920x1080 (16:9 aspect ratio)',
             variant: 'destructive',
           });
           resolve(false);
+        } else {
+          resolve(true);
         }
-        resolve(true);
       };
 
       img.onerror = () => {
@@ -134,7 +133,7 @@ export const ThumbnailUpload = ({ onUploadComplete }: ThumbnailUploadProps) => {
     <div className="space-y-4">
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">
-          Upload a thumbnail image (16:9 aspect ratio, minimum 1280x720)
+          Upload a thumbnail image (maximum 1920x1080, 16:9 aspect ratio)
         </p>
         <div className="flex items-center gap-4">
           <Input

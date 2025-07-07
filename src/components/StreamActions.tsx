@@ -3,6 +3,7 @@ import { Settings, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
 
 interface StreamActionsProps {
   streamId: string;
@@ -10,6 +11,7 @@ interface StreamActionsProps {
 }
 
 export const StreamActions = ({ streamId, onDelete }: StreamActionsProps) => {
+
   const { data: session } = useQuery({
     queryKey: ['session'],
     queryFn: async () => {
@@ -52,7 +54,9 @@ export const StreamActions = ({ streamId, onDelete }: StreamActionsProps) => {
         </Link>
       )}
       <Link to={`/stream/${streamId}`} className="flex-1">
-        <Button className="w-full">View Stream</Button>
+        <Button className="w-full rounded-full border border-[#7F56D9] font-medium text-[12px]">
+          View Stream
+        </Button>
       </Link>
     </div>
   );

@@ -1,4 +1,4 @@
-import { Navigation } from '@/components/Navigation';
+
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,10 +9,13 @@ import { useAuthStateChangeHandler } from '@/hooks/useAuthStateChangeHandler';
 import { StreamContent } from '@/components/stream/StreamContent';
 import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { Navigation } from '@/components/Navigation';
+import api from '@/integrations/api/client';
 
 const Stream = () => {
   const { id } = useParams();
   const streamId = id;
+  // const streamId = 'ab58330d-e10c-433b-8b0b-df259a1878de';
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const prevUserIdRef = useRef<string | null>(null);
@@ -24,12 +27,12 @@ const Stream = () => {
   const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: ['session'],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
+    const sessionResponse = await supabase.auth.getSession();
+      return sessionResponse;
     },
   });
+
+
 
   // Debounced refetch function to prevent excessive API calls
   const debouncedRefetch = (queryKey: string[], delay: number = 300) => {
@@ -71,7 +74,7 @@ const Stream = () => {
 
   // Invalidate relevant queries when user changes
   useEffect(() => {
-    const currentUserId = session?.user?.id;
+    const currentUserId = session?.id;
 
     if (currentUserId !== prevUserIdRef.current) {
       console.log(
@@ -97,47 +100,49 @@ const Stream = () => {
 
       debouncedRefetch(['stream-total-bets', streamId], 100);
     }
-  }, [session?.user?.id, streamId, queryClient]);
+  }, [session?.id, streamId, queryClient]);
 
   // Watch for auth state changes
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log('Auth state changed:', event);
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
-        prevUserIdRef.current = newSession?.user?.id || null;
+  // useEffect(() => {
+  //   const {
+  //     data: { subscription },
+  //   } = supabase.auth.onAuthStateChange((event, newSession) => {
+  //     console.log('Auth state changed:', event);
+  //     if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+  //       prevUserIdRef.current = newSession?.id || null;
 
-        // Invalidate all important queries on auth change
-        queryClient.resetQueries({ queryKey: ['session'] });
+  //       // Invalidate all important queries on auth change
+  //       queryClient.resetQueries({ queryKey: ['session'] });
 
-        // Use progressive loading to avoid hammering the backend
-        setTimeout(() => debouncedRefetch(['comments'], 300), 100);
-        setTimeout(() => debouncedRefetch(['existing-bet'], 300), 200);
-        setTimeout(() => debouncedRefetch(['stream-total-bets'], 300), 300);
-        setTimeout(() => debouncedRefetch(['profile'], 300), 400);
+  //       // Use progressive loading to avoid hammering the backend
+  //       setTimeout(() => debouncedRefetch(['comments'], 300), 100);
+  //       setTimeout(() => debouncedRefetch(['existing-bet'], 300), 200);
+  //       setTimeout(() => debouncedRefetch(['stream-total-bets'], 300), 300);
+  //       setTimeout(() => debouncedRefetch(['profile'], 300), 400);
 
-        // Toast for better UX
-        if (event === 'SIGNED_IN') {
-          toast({
-            title: 'Signed in successfully',
-            description: 'Welcome back! You can now comment and place bets.',
-          });
-        }
-      }
-    });
+  //       // Toast for better UX
+  //       if (event === 'SIGNED_IN') {
+  //         toast({
+  //           title: 'Signed in successfully',
+  //           description: 'Welcome back! You can now comment and place bets.',
+  //         });
+  //       }
+  //     }
+  //   });
 
-    return () => subscription.unsubscribe();
-  }, [queryClient, streamId, toast]);
+  //   return () => subscription.unsubscribe();
+  // }, [queryClient, streamId, toast]);
 
   // Get stream data
   const { data: stream, refetch } = useStreamData(streamId!);
 
+ 
+
   // Set up stream subscriptions
-  useStreamSubscriptions(streamId!, refetch);
+  // useStreamSubscriptions(streamId!, refetch);
 
   // Setup bet deletion listener
-  const { refreshKey } = useBetDeletionListener(streamId!, session?.user?.id);
+  // const { refreshKey } = useBetDeletionListener(streamId!, session?.id);
 
   // Setup auth change handler
   useAuthStateChangeHandler(streamId);
@@ -155,10 +160,12 @@ const Stream = () => {
     }
   }, [isSessionLoading, stream, isInitialized, queryClient, streamId]);
 
-  if (!streamId) {
-    console.error('No stream ID available');
-    return null;
-  }
+  // if (!streamId) {
+  //   console.error('No stream ID available');
+  //   return null;
+  // }
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -168,8 +175,8 @@ const Stream = () => {
         <StreamContent
           streamId={streamId}
           session={session}
-          stream={stream}
-          refreshKey={refreshKey}
+          stream={stream?.data}
+          // refreshKey={refreshKey}
         />
       </main>
     </div>

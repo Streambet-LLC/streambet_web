@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,8 +25,11 @@ const loginSchema = z.object({
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -34,6 +37,11 @@ export default function Login() {
   const [isCheckingLocation, setIsCheckingLocation] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
   const googleLoginRef = useRef<HTMLDivElement>(null);
+
+  // Parse query params
+  // const searchParams = new URLSearchParams(location.search);
+  const from = searchParams.get('from');
+  const streamId = searchParams.get('id');
 
   // Check user location on component mount
   useEffect(() => {
@@ -65,12 +73,17 @@ export default function Login() {
   }, [toast]);
 
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { identifier: string; password: string; remember_me?: boolean }) => {
+    mutationFn: async (credentials: { identifier: string; password: string; remember_me?: boolean, redirect?: string }) => {
       return await api.auth.login(credentials);
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['session'] });
-      navigate(response?.data?.role === 'admin' ? '/admin' : '/');
+      if (redirectParam) {
+        navigate(redirectParam);
+      } 
+      else {
+        navigate(response?.data?.role === 'admin' ? '/admin' : '/');
+      }
     },
     onError: (error: any) => {
       toast({
@@ -144,7 +157,7 @@ export default function Login() {
 
     if (!validateForm()) return;
 
-    loginMutation.mutate({ identifier: email, password, remember_me: rememberMe });
+    loginMutation.mutate({ identifier: email, password, remember_me: rememberMe, redirect: redirectParam || undefined });
   };
 
   // const handleLoginSuccess = (credentialResponse: any) => {
@@ -218,7 +231,9 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="mb-6">
-            <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-6" />
+            <Link to="/">
+              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-6" />
+            </Link>
             <h1 className="text-3xl font-bold text-white text-left mb-4">Log in</h1>
             <p className="text-[#FFFFFFBF] mt-2 text-left mb-4">
               Welcome back! Please enter your details.
@@ -267,7 +282,7 @@ export default function Login() {
                         Remember for 30 days
                       </Label>
                     </div>
-                    <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                    <Link to={redirectParam ? `/forgot-password?redirect=${redirectParam}` : "/forgot-password"} className="text-sm text-primary hover:underline">
                       Forgot password
                     </Link>
                   </div>
@@ -310,7 +325,7 @@ export default function Login() {
                 <motion.div variants={itemVariants} className="text-center w-full mt-7">
                   <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
-                    <Link to="/signup" className="text-primary hover:underline">
+                    <Link to={redirectParam ? `/signup?redirect=${redirectParam}` : "/signup"} className="text-primary hover:underline">
                       Sign up
                     </Link>
                   </p>

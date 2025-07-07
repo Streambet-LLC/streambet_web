@@ -164,7 +164,7 @@ export const BettingInterfaceView = ({
 
   // Check if user can place a bet
   const canPlaceBet = !!(
-    session?.user?.id &&
+    session?.id &&
     selectedOption &&
     betAmount > 0 &&
     !existingBet &&
@@ -482,7 +482,7 @@ export const BettingInterfaceView = ({
         )}
 
         {/* No session message */}
-        {!session?.user?.id && (
+        {!session?.id && (
           <div className="bg-muted/30 border border-border rounded-lg p-4 text-center">
             <p className="text-muted-foreground">Sign in to place bets and join the action!</p>
             <Button

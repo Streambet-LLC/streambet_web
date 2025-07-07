@@ -5,10 +5,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import api from '@/integrations/api/client';
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { cn } from '@/lib/utils';
+import { UpcomingStreams } from '@/components/stream/UpcomingStreams';
+import { TabSwitch } from '@/components/navigation/TabSwitch';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
+  const [activeTab, setActiveTab] = useState('live');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
+
+  const rangeStart = (currentPage - 1) * itemsPerPage;
+  const rangeEnd = itemsPerPage;
+
+  const tabs = [
+    { key: 'live', label: 'Live' },
+    { key: 'upcoming', label: 'Upcoming' },
+  ];
+
+  const isLive = activeTab === 'live';
 
   const { data: session } = useQuery({
     queryKey: ['session'],
@@ -36,60 +55,63 @@ const Index = () => {
   });
 
   const { data: streams, refetch: refetchStreams } = useQuery({
-    queryKey: ['streams'],
+    queryKey: ['userStreams'],
     queryFn: async () => {
-      console.log('Fetching active streams');
-      const { data, error } = await supabase
-        .from('streams')
-        .select(
-          `
-          *,
-          profiles (
-            username
-          )
-        `
-        )
-        .order('created_at', { ascending: false });
+      const response = await api.userStream.getStreams({
+        range: `[${rangeStart},${rangeEnd}]`,
+        sort: '["createdAt","DESC"]',
+        filter: JSON.stringify({ q: '' }),
+        pagination: true,
+        streamStatus: isLive ? 'live' : 'scheduled',
+      });
 
-      if (error) {
-        console.error('Error fetching streams:', error);
-        throw error;
-      }
-
-      console.log('All fetched streams:', data);
-
-      // Show any stream that is still live, regardless of betting outcome
-      const activeStreams = data.filter(stream => stream.is_live !== false);
-
-      console.log('Filtered active streams:', activeStreams);
-      return activeStreams;
+      return response;
     },
     refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
   });
 
+  useEffect(() => {
+    refetchStreams()
+  }, [currentPage, refetchStreams]);
+
+  const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages)
+    {
+      setCurrentPage(page);
+    }
+  };
+
   const updateThumbnails = async () => {
-    if (!streams || streams.length === 0) return;
+    if (!streams || streams.data?.length === 0) return;
 
     console.log('Updating thumbnails for active streams');
 
-    for (const stream of streams) {
-      try {
-        if (stream.is_live) {
+    for (const stream of streams)
+    {
+      try
+      {
+        if (stream.is_live)
+        {
           console.log('Updating thumbnail for live stream:', stream.id);
 
           // Update Livepeer stream thumbnails
-          if (stream.platform === 'custom' && stream.livepeer_stream_id) {
+          if (stream.platform === 'custom' && stream.livepeer_stream_id)
+          {
             const { error } = await supabase.functions.invoke('update-thumbnail', {
               body: { streamId: stream.id },
             });
 
-            if (error) {
+            if (error)
+            {
               console.error('Error updating thumbnail for stream:', stream.id, error);
             }
           }
 
           // Update Kick stream thumbnails
-          if (stream.platform === 'kick' && stream.embed_url) {
+          if (stream.platform === 'kick' && stream.embed_url)
+          {
             const { error } = await supabase.functions.invoke('capture-thumbnail', {
               body: {
                 streamId: stream.id,
@@ -97,12 +119,14 @@ const Index = () => {
               },
             });
 
-            if (error) {
+            if (error)
+            {
               console.error('Error capturing Kick stream thumbnail:', error);
             }
           }
         }
-      } catch (error) {
+      } catch (error)
+      {
         console.error('Failed to update thumbnail for stream:', stream.id, error);
       }
     }
@@ -121,16 +145,18 @@ const Index = () => {
     }, 60000); // Every 60 seconds
 
     return () => {
-      if (refreshInterval.current) {
+      if (refreshInterval.current)
+      {
         clearInterval(refreshInterval.current);
       }
     };
   }, [streams]);
 
   useEffect(() => {
-    if (streams) {
+    if (streams)
+    {
       console.log('All streams with live status:');
-      streams.forEach(stream => {
+      streams.data?.forEach(stream => {
         console.log(`${stream.id}: is_live=${stream.is_live}, title=${stream.title}`);
       });
     }
@@ -154,10 +180,16 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-8">Live Streams</h2>
+          {/* Commented as CR */}
+          {/* <TabSwitch
+            className='!justify-center !mt-12 !mb-14'
+            tabs={tabs}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab} /> */}
 
-            {!streams || streams.length === 0 ? (
+          <div className="mt-16">
+
+            {(!streams || streams.data?.length === 0) && isLive ? (
               <Alert variant="default" className="bg-muted">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>No Live Streams</AlertTitle>
@@ -165,19 +197,46 @@ const Index = () => {
                   Uh-oh! Looks like there aren't any streams happening right now. Check back later!
                 </AlertDescription>
               </Alert>
-            ) : (
+            ) : isLive ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {streams.map(stream => (
+                {streams.data?.map(stream => (
                   <StreamCard
                     key={stream.id}
                     stream={stream}
-                    isAdmin={profile?.is_admin}
+                    isLive={isLive}
+                    isAdmin={profile?.role === 'admin'}
                     showAdminControls={false}
                   />
                 ))}
               </div>
+            ) : (
+              <div>
+                <UpcomingStreams streams={streams?.data} />
+              </div>
             )}
           </div>
+          {streams?.data?.length > 0 && <Pagination className='!justify-center'>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className={cn(
+                    'text-white border-white hover:bg-white/10',
+                    currentPage === 1 && 'pointer-events-none opacity-50'
+                  )}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className={cn(
+                    'text-white border-white hover:bg-white/10',
+                    currentPage === totalPages && 'pointer-events-none opacity-50'
+                  )}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>}
         </div>
       </main>
 

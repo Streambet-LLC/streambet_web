@@ -10,48 +10,48 @@ const OverView = () => {
     const totalLiveTime = 42321;
     
   return (
-    <div className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-white">
       {/* Top Stats */}
-       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-               <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                 <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+               <div className="bg-zinc-900  p-5 rounded-lg shadow h-[109px]  center">
+                 <p className="text-sm font-medium text-[rgba(255, 255, 255, 0.75)] pb-2" >
                    Users
                  </p>
-                 <p className="text-2xl font-semibold">${totalUsers}</p>
+                 <p className="text-2xl font-semibold text-[rgba(255, 255, 255, 1)]">${totalUsers}</p>
                </div>
 
-               <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
-                 <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+               <div className="bg-zinc-900 text-white p-5 rounded-lg h-[109px]  shadow relative">
+                 <p className="text-sm font-medium text-[rgba(255, 255, 255, 0.75)] pb-2">
                   Active Streams
-                </p>
+                 </p>
                  <p className="text-2xl font-semibold">14</p>
                </div>
 
-               <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                 <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+               <div className="bg-zinc-900 text-white p-5 rounded-lg h-[109px]  shadow">
+                 <p className="text-sm font-medium text-[rgba(255, 255, 255, 0.75)] pb-2">
                    Active Bets
                  </p>
                  <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
                </div>
 
-              <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-                 <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              <div className="bg-zinc-900 text-white p-5 rounded-lg h-[109px]  shadow">
+                 <p className="text-sm font-medium text-[rgba(255, 255, 255, 0.75)] pb-2">
                    Time Live
                  </p>
-            <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
+                <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
                </div>
              </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left - Video & Actions */}
-        <div className="col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4">
           <div>
             <h2 className="text-lg font-semibold mb-2">My Epic Stream - Playing Valorant all day</h2>
             <VideoPlayer playbackId={''} />
           </div>
 
           {/* Activity Feed + Mod Actions */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-black p-4 rounded-md">
               <h3 className="font-bold mb-2">Activity Feed</h3>
               <p>Anyone else bet:<br /><strong>50 Stream Coins</strong></p>
@@ -68,7 +68,7 @@ const OverView = () => {
         </div>
 
         {/* Right - Live Chat */}
-        <div>
+        <div className="lg:col-span-1">
           <LiveChat />
         </div>
       </div>

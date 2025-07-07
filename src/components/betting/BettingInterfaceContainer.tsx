@@ -21,7 +21,7 @@ export const BettingInterfaceContainer = ({
   streamId,
   pendingBetsKey,
 }: BettingInterfaceContainerProps) => {
-  const userId = session?.user?.id;
+  const userId = session?.id;
   const [forceRefresh, setForceRefresh] = useState(0);
   const queryClient = useQueryClient();
 

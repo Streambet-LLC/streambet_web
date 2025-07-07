@@ -63,6 +63,7 @@ export const useBettingStateManager = (
 
     // Use the socket API to listen for betting state changes
     const socket = api.socket.connect();
+
     if (!socket) return;
 
     // Join the stream room

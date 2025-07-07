@@ -65,9 +65,7 @@ export const CommentList = ({ comments, commentsEndRef }: CommentListProps) => {
                   ? 'bg-green-500/5'
                   : isCancellation
                     ? 'bg-red-500/5'
-                    : isNew
-                      ? 'bg-primary/5'
-                      : ''
+                    : 'bg-[#18181b]'
               }`}
               variants={itemVariants}
               initial={index > comments.length - 4 ? 'hidden' : 'show'} // Only animate the last few comments

@@ -3,11 +3,20 @@ import { Button } from './ui/button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WalletDropdown } from './navigation/WalletDropdown';
 import { UserDropdown } from './navigation/UserDropdown';
-import { Home, Tv, Gift, Users } from 'lucide-react';
+import { Home, Tv, Gift, Users, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useAnimations } from '@/hooks/useAnimations';
 import { api } from '@/integrations/api/client';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from './ui/drawer';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { CurrencyType } from '@/enums';
 
 export const Navigation = () => {
   const navigate = useNavigate();
@@ -16,7 +25,10 @@ export const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [prevScrollY, setPrevScrollY] = useState(0);
   const [visible, setVisible] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { navVariants, buttonVariants } = useAnimations();
+  const { currency } = useCurrencyContext();
+  const isStreamCoins = currency === CurrencyType.STREAM_COINS;
 
   const { data: session } = useQuery({
     queryKey: ['session'],
@@ -76,10 +88,15 @@ export const Navigation = () => {
   const menuItems = [
     profile?.data?.role === 'admin' && { label: 'Dashboard', icon: undefined, path: '/admin' },
     { label: 'Home', icon: undefined, path: '/' },
-    { label: 'Streams', icon: undefined, path: '/streams' },
+    { label: 'Streams', icon: undefined, path: '/stream' },
     { label: 'Rewards', icon: undefined, path: '/rewards' },
     { label: 'Community', icon: undefined, path: '/community' },
   ].filter(Boolean);
+
+  const handleMenuItemClick = (path: string) => {
+    navigate(path);
+    setIsDrawerOpen(false);
+  };
 
   return (
     <motion.nav
@@ -90,9 +107,47 @@ export const Navigation = () => {
       className={`fixed top-0 w-full z-50 ${isScrolled ? 'bg-background/90 backdrop-blur-md shadow-md' : 'bg-background/60 backdrop-blur-sm'} transition-all duration-300`}
     >
       <div className="container flex h-16 items-center">
+        {/* Mobile Menu Toggle */}
+        <div className="md:hidden mr-3">
+          <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+            <DrawerTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-2">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle className="text-left">Menu</DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-4">
+                <div className="flex flex-col space-y-2">
+                  {menuItems.map((item, index) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <Button
+                        key={item.label}
+                        variant="ghost"
+                        className={`justify-start text-left ${
+                          isActive
+                            ? 'text-white bg-primary/10'
+                            : 'text-[#FFFFFF80] hover:text-white hover:bg-primary/5'
+                        }`}
+                        onClick={() => handleMenuItemClick(item.path)}
+                      >
+                        {item.icon}
+                        <span className="ml-2">{item.label}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </div>
+
         <motion.div variants={logoVariants} initial="hidden" animate="visible">
           <Link to="/" className="flex items-center">
-            <img src="./logo.svg" alt="Streambet Logo" className="h-8 w-[121px] object-contain" />
+            <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[121px] object-contain" />
           </Link>
         </motion.div>
 
@@ -113,7 +168,7 @@ export const Navigation = () => {
                   className={`flex items-center gap-2 font-light transition-colors px-3 py-2 ${
                     isActive
                       ? 'text-white'
-                      : 'text-[#FFFFFF80] hover:text-white'
+                      : 'text-[#FFFFFF80] hover:text-primary-foreground'
                   }`}
                   onClick={() => navigate(item.path)}
                 >
@@ -136,7 +191,7 @@ export const Navigation = () => {
           >
             {session ? (
               <>
-                <WalletDropdown walletBalance={profile?.data?.wallet_balance || 0} />
+                <WalletDropdown walletBalance={isStreamCoins ? session?.walletBalanceCoin || 0 : session?.walletBalanceToken || 0} />
 
                 <UserDropdown profile={profile?.data} user={session} onLogout={handleLogout} />
               </>

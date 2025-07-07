@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import api from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
 
 const ForgotPassword = () => {
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ const ForgotPassword = () => {
     setError(null);
 
     try {
-      const { error } = await api.auth.forgotPassword(email);
+      const { error } = await api.auth.forgotPassword(email, redirectParam || undefined);
 
       if (error) {
         throw error;
@@ -39,14 +41,16 @@ const ForgotPassword = () => {
       setIsSubmitting(false);
     }
   };
-console.log('error', error)
+
   return (
     <>
       <div className="auth-bg-gradient" />
       <div className="flex min-h-screen justify-center pt-16 pb-8">
         <div className="w-full max-w-md">
           <div className="mb-6">
-            <img src="/logo.svg" alt="StreamBet Logo" className="mb-8 w-[121px]" />
+            <Link to="/">
+              <img src="/logo.svg" alt="StreamBet Logo" className="mb-8 w-[121px]" />
+            </Link>
             <h1 className="text-3xl font-bold text-white text-left">Reset your password</h1>
             <p className="text-[#FFFFFFBF] mt-3 text-left font-light">
               Enter your email to receive a magic link
@@ -108,7 +112,7 @@ console.log('error', error)
             </CardContent>
 
             <CardFooter className="flex justify-center border-t border-gray-800 pt-4">
-              <Link to="/login" className="text-primary hover:underline flex items-center">
+              <Link to={redirectParam ? `/login?redirect=${redirectParam}` : "/login"} className="text-primary hover:underline flex items-center">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Login
               </Link>

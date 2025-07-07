@@ -31,8 +31,7 @@ const formSchema = z.object({
   username: z
     .string()
     .min(3, 'Username must be at least 3 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
-    .refine(val => !val.includes(' '), 'Username cannot contain spaces'),
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
   email: z.string().email().optional(),
   city: z.string().optional(),
   state: z
@@ -74,6 +73,7 @@ export const ProfileSection = ({
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | undefined>(undefined);
   const [avatarDeleted, setAvatarDeleted] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(formSchema),
@@ -148,16 +148,13 @@ export const ProfileSection = ({
   useEffect(() => {
     if (selectedAvatarFile)
     {
-      console.log('selectedAvatarFile set')
       setAvatarPreviewUrl(URL.createObjectURL(selectedAvatarFile));
       return () => URL.revokeObjectURL(avatarPreviewUrl!);
     } else if (currentAvatar)
     {
-      console.log('currentAvatar set')
       setAvatarPreviewUrl(currentAvatar);
     } else
     {
-      console.log('undefined set')
       setAvatarPreviewUrl(undefined);
     }
     // eslint-disable-next-line
@@ -313,7 +310,9 @@ export const ProfileSection = ({
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files && e.target.files.length > 0)
+    {
+      setAvatarDeleted(false);
       handleFileChange(e.target.files[0]);
     }
   };
@@ -335,8 +334,6 @@ export const ProfileSection = ({
     setAvatarDeleted(true);
   };
 
-  console.log('avatarPreviewUrl', avatarPreviewUrl);
-  console.log('currentAvatar', currentAvatar);
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -512,21 +509,32 @@ export const ProfileSection = ({
               <h2 className="text-md font-light text-white">Your photo</h2>
               <p className="text-sm text-[#FFFFFF] mt-1">This will be displayed on your profile.</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="flex flex-col sm:flex-row gap-4 items-center relative">
               {/* Left: Preview */}
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={avatarPreviewUrl ? (avatarPreviewUrl.includes('blob') ?  avatarPreviewUrl : getImageLink(avatarPreviewUrl)) : undefined} />
+              <Avatar className="h-20 w-20 relative">
+                <AvatarImage 
+                  src={avatarPreviewUrl ? (avatarPreviewUrl.includes('blob') ?  avatarPreviewUrl : getImageLink(avatarPreviewUrl)) : undefined}
+                  onLoadingStatusChange={(status) => setIsImageLoading(status === 'loading')}
+                />
                 <AvatarFallback>
                   {(session?.username?.[0] || session?.email?.[0] || 'U').toUpperCase()}
                 </AvatarFallback>
-              </Avatar>
-              {/* <div className="w-[120px] h-[120px] bg-[#808080] flex items-center justify-center rounded-full overflow-hidden border border-[#272727]">
-                {avatarPreviewUrl ? (
-                  <img src={avatarPreviewUrl} alt="Avatar preview" className="object-cover w-full h-full" />
-                ) : (
-                  <span className="text-white text-xs">No image</span>
+                {isImageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-full z-10">
+                    <Loader2 className="animate-spin h-8 w-8 text-[#0000ff]" />
+                  </div>
                 )}
-              </div> */}
+              </Avatar>
+              {/* Delete button positioned outside Avatar component, relative to parent div */}
+              {avatarPreviewUrl && !isUploading && (
+                <button
+                  type="button"
+                  className="absolute top-[20%] left-[60px] bg-gray-700 border border-gray-600 rounded-full h-5 w-5 flex items-center justify-center hover:bg-red-500 z-20"
+                  onClick={e => { e.stopPropagation(); handleDeleteAvatar(); }}
+                >
+                  <X className="h-4 w-4 text-white" />
+                </button>
+              )}
               {/* Right: Upload */}
               <div
                 className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''}`}
@@ -553,15 +561,7 @@ export const ProfileSection = ({
                         <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
                       )}
                     </div>
-                    {avatarPreviewUrl && !isUploading && (
-                      <button
-                        type="button"
-                        className="absolute -top-2 -right-2 bg-[#232323] rounded-full p-1 hover:bg-destructive"
-                        onClick={e => { e.stopPropagation(); handleDeleteAvatar(); }}
-                      >
-                        <X className="h-4 w-4 text-white" />
-                      </button>
-                    )}
+                    {/* Close button moved to Avatar preview */}
                   </div>
                   <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
                     <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
@@ -612,41 +612,21 @@ function PasswordChangeDialog({
     setError(null);
     if (step === 'old') {
       if (!oldPassword) {
-        toast({
-          title: 'Error',
-          description: 'Please enter your old password.',
-          variant: 'destructive',
-        });
+        setError('Please enter your old password.');
         return;
       }
       if (!validatePassword(oldPassword)) {
-        toast({
-          title: 'Error',
-          description:
-            'Old password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.',
-          variant: 'destructive',
-          duration: 8000,
-        });
+        setError('Old password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.');
         return;
       }
       setStep('new');
     } else if (step === 'new') {
       if (!newPassword) {
-        toast({
-          title: 'Error',
-          description: 'Please enter your new password.',
-          variant: 'destructive',
-        });
+        setError('Please enter your new password.');
         return;
       }
       if (!validatePassword(newPassword)) {
-        toast({
-          title: 'Error',
-          description:
-            'New password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.',
-          variant: 'destructive',
-          duration: 8000,
-        });
+        setError('New password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.');
         return;
       }
       handleProfileUpdate({ oldPassword, newPassword });

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { X, Upload } from 'lucide-react';
+import { X, Upload, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 
@@ -26,6 +26,7 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [preview, setPreview] = React.useState<string | undefined>(value);
     const [isDragging, setIsDragging] = React.useState(false);
+    const [isImageLoading, setIsImageLoading] = React.useState(false);
 
     React.useEffect(() => {
       setPreview(value);
@@ -116,11 +117,19 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
           )}
         >
           <Avatar className={cn(sizeClasses[size])}>
-            <AvatarImage src={preview} />
+            <AvatarImage
+              src={preview}
+              onLoadingStatusChange={(status) => setIsImageLoading(status === 'loading')}
+            />
             <AvatarFallback>
-            {profile?.data?.username?.[0]?.toUpperCase() || profile?.data?.email?.[0]?.toUpperCase() || <Upload className="h-6 w-6 text-muted-foreground" />}
+              {profile?.data?.username?.[0]?.toUpperCase() || profile?.data?.email?.[0]?.toUpperCase() || <Upload className="h-6 w-6 text-muted-foreground" />}
             </AvatarFallback>
           </Avatar>
+          {isImageLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-full z-10">
+              <Loader2 className="animate-spin h-6 w-6 text-blue" />
+            </div>
+          )}
           {preview && (
             <Button
               type="button"
