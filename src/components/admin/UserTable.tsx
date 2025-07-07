@@ -220,6 +220,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Token Balance</TableHead>
+                <TableHead>Stream Coins</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Email</TableHead>
@@ -249,6 +250,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     )}
                     </TableCell>
                     <TableCell>{user?.wallet?.freeTokens ? user?.wallet?.freeTokens?.toLocaleString('en-US'):'-'}</TableCell>
+                    <TableCell>{user?.wallet?.streamCoins ? user?.wallet?.streamCoins?.toLocaleString('en-US'):'-'}</TableCell>
                     <TableCell>
                       <span
                         className="px-2 py-1 rounded-md font-bold text-sm"
