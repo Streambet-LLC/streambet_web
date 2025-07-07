@@ -84,6 +84,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     if (!socket) return; // Only add listener if socket is available
 
     const resetBetData = () => {
+      setPlaceBet(true);
       setBetId(undefined);
       setUpdatedSliderMax({
         freeTokens: undefined,
@@ -138,6 +139,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socket.on('bettingLocked', (data) => {
       console.log('bettingLocked', data);
+      setPlaceBet(false);
       setLockedOptions(data?.locked)
       setLockedBet(data?.locked);
     });
@@ -309,7 +311,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           currencyType: data.currencyType,
         });
         setIsEditing(false);
-        setPlaceBet(true)
+        setPlaceBet(true);
         refetchBettingData();
         setResetKey(prev => prev + 1); // Increment resetKey on cancel
         toast({

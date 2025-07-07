@@ -42,7 +42,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
           <div className="flex items-center">
             <Button variant="ghost" className="gap-2 group" onClick={() => navigate('/transactions')}>
               <Wallet className="h-4 w-4 group-hover:text-black transition-colors" />
-              <span className="text-[#B4FF39] group-hover:text-black transition-colors">{(walletBalance || 0)?.toLocaleString('en-US')} Free Coins</span>
+              <span className="text-[#B4FF39] group-hover:text-black transition-colors">{Number(walletBalance)?.toLocaleString('en-US')} Free Coins</span>
             </Button>
           </div>
         ) : (
@@ -50,7 +50,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
             <div className="flex items-center gap-2 px-4 py-2">
               <Wallet className="h-4 w-4" />
               <div className="flex items-center">
-                <span className="text-green-500">{(walletBalance || 0)?.toLocaleString('en-US')} Stream Coins</span>
+                <span className="text-green-500">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</span>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
