@@ -472,7 +472,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             />
           )
         ) : 
-        <div className="relative mx-auto rounded-[16px] shadow-lg" style={{ border: '0.62px solid #2C2C2C' }}>
+        <div className="relative mx-auto rounded-[16px] shadow-lg p-5" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
           <div className='all-center flex justify-center items-center h-[100px] mt-8'>
           <img
               src="/icons/nobettingData.svg"
@@ -480,16 +480,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               className="w-[100%] h-[100%] object-contain"
             />
           </div>
-           <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-4 pb-4">No betting options available</p>
+           <p className="text-2xl font-bold text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4">No betting options available</p>
 
           </div>}
 
-        {/* <BettingInterface
-          key={`betting-${session?.id}-${streamId}-${refreshKey}-${Date.now()}`}
-          session={session}
-          stream={stream}
-          streamId={streamId}
-        /> */}
+
 
         {/* <div className="lg:hidden mt-4">
           <CommentSection session={session} streamId={streamId} showInputOnly={true} />
@@ -497,9 +492,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       </div>
 
       <div className="lg:col-span-1 flex flex-col h-full">
-        {/* <div className="flex-1 h-full sticky top-24">
+        <div className="flex-1 h-full sticky top-24">
           <CommentSection session={session} streamId={streamId} showInputOnly={false} />
-        </div> */}
+        </div>
       </div>
     </div>
   );

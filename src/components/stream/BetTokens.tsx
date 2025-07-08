@@ -137,7 +137,7 @@ export default function BetTokens({
     >
       <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
         <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
-          Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
+          Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
         </div>
         <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
@@ -183,6 +183,21 @@ export default function BetTokens({
             border: '0.56px solid rgba(186, 186, 186, 1)'
           }}
         />
+         <input
+          // type="number"
+          min={0}
+          max={sliderMax}
+          value={betAmount}
+          disabled={session == null || lockedOptions}
+          onChange={e => {
+            let value = Number(e.target.value);
+            if (isNaN(value)) value = 0;
+            if (value < 0) value = 0;
+            if (sliderMax !== undefined && value > sliderMax) value = sliderMax;
+            setBetAmount(value);
+          }}
+          className="w-[90px] bg-[#272727] mt-2 px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444]"
+  />
         {/* Custom Thumb Style with SVG image */}
         <style>
           {`
@@ -237,7 +252,7 @@ export default function BetTokens({
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
           </svg>
         ) : null}
-        {loading ? 'Placing bet...' : `Bet ${betAmount} on ${selectedColor}`}
+        {loading ? 'Placing bet...' : `Bet ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
       </button>
     </div>
   );
