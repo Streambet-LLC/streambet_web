@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import Chat from './Chat';
 
 interface StreamContentProps {
   streamId: string;
@@ -484,12 +485,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
           </div>}
 
-        {/* <BettingInterface
-          key={`betting-${session?.id}-${streamId}-${refreshKey}-${Date.now()}`}
-          session={session}
-          stream={stream}
-          streamId={streamId}
-        /> */}
 
         {/* <div className="lg:hidden mt-4">
           <CommentSection session={session} streamId={streamId} showInputOnly={true} />
@@ -497,9 +492,10 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       </div>
 
       <div className="lg:col-span-1 flex flex-col h-full">
-        {/* <div className="flex-1 h-full sticky top-24">
-          <CommentSection session={session} streamId={streamId} showInputOnly={false} />
-        </div> */}
+        <div className="flex-1 h-full sticky top-24">
+          {/* <CommentSection session={session} streamId={streamId} showInputOnly={false} /> */}
+          <Chat/>
+        </div>
       </div>
     </div>
   );
