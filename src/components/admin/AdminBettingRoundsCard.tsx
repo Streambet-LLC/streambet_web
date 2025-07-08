@@ -152,9 +152,8 @@ export const AdminBettingRoundsCard = ({
                     {/* Card Header */}
                     <CardHeader
                          className="flex flex-row items-center justify-between h-[50px] rounded-t-xl px-6 py-0 bg-[#000000B2]"
-                         style={{ borderBottom: '0.62px solid #2C2C2C' }}
                     >
-                         <span className="font-medium text-white/80 text-lg">Betting Rounds</span>
+                         <span className="font-medium [color:rgba(215,223,239,1)] text-lg">Betting Rounds</span>
                          {!isStreamEnded && <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                               <DialogTrigger asChild>
                                    <Button
@@ -234,7 +233,7 @@ export const AdminBettingRoundsCard = ({
                          </Dialog>}
                     </CardHeader>
                     {/* Card Content: Carousel */}
-                    <CardContent className="bg-transparent px-0 py-4">
+                    <CardContent className="bg-transparent px-0">
                          <div className="relative group" style={{ maxWidth: windowWidth < 768 ? '80vw' : '50vw' }}>
                               <Carousel
                                    setApi={setCarouselApi}
@@ -272,7 +271,7 @@ export const AdminBettingRoundsCard = ({
                                                        {/* Round Name */}
                                                        <div className="w-full flex flex-col items-center justify-center h-full">
                                                             <div
-                                                                 className={`text-center ${isCreated && !isActive ? 'text-[#FFFFFF30]' : 'text-white'} text-lg font-semibold truncate`}
+                                                                 className={`text-center text-white/75 text-lg font-semibold truncate`}
                                                                  style={{ fontWeight: 700 }}
                                                             >
                                                                  {round?.roundName}

@@ -536,10 +536,10 @@ export const AdminManagement = ({
     if (!validateForm())
     {
       // Scroll to first error after validation
-      setTimeout(() => scrollToFirstError(), 100);
+      setTimeout(() => scrollToFirstError(), 500);
       toast({
         title: 'Form error',
-        description: 'Please check your form for any validation error',
+        description: 'Please fill in all required fields.',
         variant: 'destructive'
       });
       return;
@@ -593,7 +593,7 @@ export const AdminManagement = ({
       setTimeout(() => scrollToFirstError(), 100);
       toast({
         title: 'Form error',
-        description: 'Please check your form for any validation error',
+        description: 'Please fill in all required fields',
         variant: 'destructive'
       });
       return;
@@ -675,7 +675,7 @@ export const AdminManagement = ({
                     }}
                     disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
                   >
-                    {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Edit stream') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
+                    {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Save') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
                   </Button>
                 )}
               </div>
