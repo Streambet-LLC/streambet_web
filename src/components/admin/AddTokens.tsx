@@ -3,14 +3,10 @@ import {
   Dialog,
   DialogTrigger,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
   DialogClose,
-  DialogOverlay,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft } from 'lucide-react';
+
 
 type WalletCellProps = {
     currentBalance: number;
@@ -27,17 +23,28 @@ const AddTokens: React.FC<WalletCellProps> = ({
 
   const [open, setOpen] = useState(false);
   const [adjustAmount, setAdjustAmount] = useState<string | any>('0');
-  const parsedAmount = parseInt(adjustAmount) || 0;
-  const newBalance = currentBalance + parsedAmount;
+  // Always parse as number for calculation
+  const parsedAmount = Number(adjustAmount) || 0;
+  const newBalance = Number(currentBalance) + parsedAmount;
+
+  console.log('adjustAmount', adjustAmount, 'parsedAmount', parsedAmount, 'newBalance', newBalance);
 
   const handleSave = () => {
     onSave(newBalance);
     setAdjustAmount(0);
     setOpen(false);
   };
+
+
+  const handleDialogChange = (open: boolean) => {
+    setOpen(open);
+    if (!open) {
+      setAdjustAmount(0);
+    }
+  };
   
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleDialogChange}>
         <DialogTrigger asChild>
             <div className="w-[18px] h-[18px]">
               <img
@@ -48,8 +55,6 @@ const AddTokens: React.FC<WalletCellProps> = ({
               />
             </div>
         </DialogTrigger>
-
-        {/* <DialogOverlay className="fixed inset-0 bg-black/0 backdrop-blur-sm" /> */}
   
         <DialogContent className="bg-[#0D0D0D] text-white sm:rounded-xl px-6 pt-4 pb-6 border-2 border-[#7AFF14]"  hideCloseButton style={{ background: '#0D0D0D',}}>
         <DialogClose asChild>
@@ -126,7 +131,7 @@ const AddTokens: React.FC<WalletCellProps> = ({
               <p className="text-sm text-[#FFFFFF] font-medium mb-2">Current Balance</p>
               <div className="bg-[#272727] w-[200px] px-3 py-2 rounded h-[35px] text-[#FFFFFF] text-sm font-light">
               <p className="text-sm  font-light">
-                {currentBalance?.toLocaleString('en-US')}
+                {Number(currentBalance)?.toLocaleString('en-US')}
               </p>
               </div>
             </div>
