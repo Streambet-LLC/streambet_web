@@ -161,6 +161,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setTimeout(() => {
         setShowWinnerAnimation(false);
       }, 5000);
+      setResetKey(prev => prev + 1);
       queryClient.prefetchQuery({ queryKey: ['session'] }); 
     });
 

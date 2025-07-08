@@ -107,6 +107,13 @@ export default function BetTokens({
   
 
   const handleBet = () => {
+    if (lockedOptions) {
+      toast({
+        variant: 'destructive',
+        description: 'Admin has locked the betting round',
+      });
+      return;
+    }
     const selectedOption = bettingData?.bettingRounds?.[0]?.bettingVariables?.find(option => option.name === selectedColor);
     if (!selectedOption) return;
 
@@ -230,7 +237,7 @@ export default function BetTokens({
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
           </svg>
         ) : null}
-        {loading ? 'Processing...' : `Bet ${betAmount} on ${selectedColor}`}
+        {loading ? 'Placing bet...' : `Bet ${betAmount} on ${selectedColor}`}
       </button>
     </div>
   );
