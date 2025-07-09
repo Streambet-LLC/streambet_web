@@ -112,7 +112,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
         <div className="space-y-4">
           {paginatedUsers?.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
-              No users found matching
+              No users found
             </div>
           ) : (
             paginatedUsers?.map(user => (

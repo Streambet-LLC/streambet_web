@@ -80,7 +80,7 @@ export default function LockTokens({
             </div>
             <div>
               <p className="text-xs text-[#606060] font-semibold text-center pb-1">Selected winner</p>
-              <p className="font-medium text-[16px] text-[#D7DFEF] text-center">{localOption}</p>
+              <p className="font-medium text-[16px] text-[#D7DFEF] text-center max-w-[120px] truncate" title={localOption}>{localOption}</p>
             </div>
             <div>
               <p className="text-xs text-[#606060] font-semibold text-center pb-1">Potential winnings:</p>
