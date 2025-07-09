@@ -6,6 +6,8 @@ import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Edit, Copy } from 'lucide-react';
 import { BettingRoundStatus } from '@/enums';
+import { toast } from '@/components/ui/use-toast';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
 
 interface BettingOption {
   optionId?: string;
@@ -39,6 +41,7 @@ export function BettingRounds({
  }: BettingRoundsProps) {
   const isMobile = useIsMobile();
   const [expandedRounds, setExpandedRounds] = useState<string[]>([]);
+  const [alertDialogIndex, setAlertDialogIndex] = useState<number | null>(null);
 
   const addNewRound = () => {
     const roundNumber = rounds.length + 1;
@@ -170,10 +173,33 @@ export function BettingRounds({
                               type="button"
                               className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                               style={{ height: 33, fontSize: '16px', fontWeight: 500 }}
-                              onClick={() => addNewOption(roundIndex)}
+                              onClick={() => {
+                                if (isNotCreatedStatus) {
+                                  setAlertDialogIndex(roundIndex);
+                                } else {
+                                  addNewOption(roundIndex);
+                                }
+                              }}
                             >
                               + New option
                             </Button>
+                            {alertDialogIndex === roundIndex && (
+                              <AlertDialog open={true} onOpenChange={(open) => { if (!open) setAlertDialogIndex(null); }}>
+                                <AlertDialogContent className="border border-primary">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Cannot add new option</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This round is already started by admin.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setAlertDialogIndex(null)}>
+                                      Cancel
+                                    </AlertDialogCancel>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
                             <Button
                               type="button"
                               className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"

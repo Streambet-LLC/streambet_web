@@ -37,6 +37,7 @@ import {
      AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { FabioBoldStyle } from '@/utils/font';
 
 // Helper for status priority
 const statusPriority = [
@@ -233,14 +234,14 @@ export const AdminBettingRoundsCard = ({
                          </Dialog>}
                     </CardHeader>
                     {/* Card Content: Carousel */}
-                    <CardContent className="bg-transparent px-0">
+                    <CardContent className="bg-transparent px-0 !p-0">
                          <div className="relative group" style={{ maxWidth: windowWidth < 768 ? '80vw' : '50vw' }}>
                               <Carousel
                                    setApi={setCarouselApi}
                                    opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}
-                                   className="w-full"
+                                   className="w-full px-1"
                               >
-                                   <CarouselContent className="flex items-center" style={{ paddingLeft: windowWidth < 640 ? 0 : 32 }}>
+                                   <CarouselContent className="flex items-center !ml-0">
                                         {rounds && rounds?.length > 0 ? rounds.map((round, idx) => {
                                              const status = (statusMap[round.roundId] || round.status || '').toLowerCase();
                                              const isWinner = status === BettingRoundStatus.CLOSED;
@@ -271,8 +272,8 @@ export const AdminBettingRoundsCard = ({
                                                        {/* Round Name */}
                                                        <div className="w-full flex flex-col items-center justify-center h-full">
                                                             <div
-                                                                 className={`text-center text-white/75 text-lg font-semibold truncate`}
-                                                                 style={{ fontWeight: 700 }}
+                                                                 className={`text-center text-white/75 text-[13.41px] truncate`}
+                                                                 style={FabioBoldStyle}
                                                             >
                                                                  {round?.roundName}
                                                             </div>
@@ -284,7 +285,7 @@ export const AdminBettingRoundsCard = ({
                                                                       disabled={isUpdatingAction}
                                                                       onClick={() => handleOpenRound(round.roundId)}
                                                                  >
-                                                                      {isUpdatingAction ? 'Opening...' : 'Open'}
+                                                                      {isUpdatingAction ? 'Opening...' : 'Open Round'}
                                                                  </Button>
                                                             )}
                                                             {/* Open: show betting options, lock bets button */}
@@ -418,8 +419,8 @@ export const AdminBettingRoundsCard = ({
                                                                                                </Avatar>
                                                                                                {/* Tooltip on username */}
                                                                                                <span
-                                                                                                    className="text-white text-xs font-semibold text-center truncate max-w-[60px] cursor-pointer"
-                                                                                                    style={{ fontFamily: 'Inter, sans-serif' }}
+                                                                                                    className="text-white text-[12px] text-center truncate max-w-[60px] cursor-pointer"
+                                                                                                    style={FabioBoldStyle}
                                                                                                     title={winner?.userName}
                                                                                                >
                                                                                                     {winner?.userName}
@@ -427,9 +428,9 @@ export const AdminBettingRoundsCard = ({
                                                                                           </div>
                                                                                      ))}
                                                                                 </div>
-                                                                                <div className="flex items-center mt-1">
-                                                                                     <span className="text-white text-sm font-normal ml-1">won</span>
-                                                                                     <span className="text-white text-sm font-normal ml-1">{isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
+                                                                                <div className="flex items-center mt-1 text-[12px]" style={FabioBoldStyle}>
+                                                                                     <span className="text-white ml-1">won</span>
+                                                                                     <span className="text-white ml-1">{isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
                                                                                      : `${Number(round?.winnerAmount?.freeTokens || 0)?.toLocaleString('en-US')} tokens`}</span>
                                                                                 </div>
                                                                            </div>
