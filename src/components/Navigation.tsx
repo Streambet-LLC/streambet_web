@@ -198,7 +198,14 @@ export const Navigation = () => {
             ) : (
               <>
                 <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-                  <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
+                  <Button variant="ghost" size="sm" onClick={() => {
+                    const isStreamPage = location.pathname.startsWith('/stream/');
+                    if (isStreamPage) {
+                      navigate(`/login?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+                    } else {
+                      navigate('/login');
+                    }
+                  }}>
                     Login
                   </Button>
                 </motion.div>
@@ -207,7 +214,14 @@ export const Navigation = () => {
                   <Button
                     size="sm"
                     className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    onClick={() => navigate('/signup')}
+                    onClick={() => {
+                      const isStreamPage = location.pathname.startsWith('/stream/');
+                      if (isStreamPage) {
+                        navigate(`/signup?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+                      } else {
+                        navigate('/signup');
+                      }
+                    }}
                   >
                     Sign Up
                   </Button>

@@ -140,7 +140,7 @@ export default function BetTokens({
           Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
         </div>
         <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
+          <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
             {bettingData?.bettingRounds?.[0]?.roundName}
             </span>
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
@@ -230,11 +230,12 @@ export default function BetTokens({
           <button
             key={option.id}
             onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
-            className={`flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 truncate ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             style={{ border: selectedColor === option.name ? '1px solid rgba(189, 255, 0, 1)' : '#242424',
                color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
              }}
             disabled={!isColorButtonsEnabled}
+            title={option.name}
           >
             {option.name}
           </button>
@@ -252,7 +253,11 @@ export default function BetTokens({
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
           </svg>
         ) : null}
-        {loading ? 'Placing bet...' : `Bet ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
+        {loading ? 'Placing bet...' : (
+          <div className="truncate inline-block align-middle px-4" title={selectedColor}>
+            {`Bet ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
+          </div>
+        )}
       </button>
     </div>
   );
