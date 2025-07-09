@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { FabioBoldStyle } from '@/utils/font';
 
 interface StreamContentProps {
   streamId: string;
@@ -321,6 +322,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
       <div className="lg:col-span-2 space-y-6">
         <StreamPlayer 
+        showInfo
         streamId={streamId} 
        />
 
@@ -480,7 +482,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               className="w-[100%] h-[100%] object-contain"
             />
           </div>
-           <p className="text-2xl font-bold text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4">No betting options available</p>
+           <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
 
           </div>}
 

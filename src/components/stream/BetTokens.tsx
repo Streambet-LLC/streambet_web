@@ -128,8 +128,9 @@ export default function BetTokens({
 
   return (
     <div
-      className="bg-[rgba(24, 24, 24, 1)] rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-base sm:text-base text-xs"
+      className="rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-base sm:text-base text-xs"
       style={{
+        background: 'rgba(24, 24, 24, 1)',
         border: '0.62px solid rgba(44, 44, 44, 1)',
         opacity: session == null ? 0.4 : 1,
         pointerEvents: session == null ? 'none' : 'auto',
@@ -174,9 +175,8 @@ export default function BetTokens({
               });
             }
           }}
-          className="w-full h-[25px] appearance-none rounded-full bg-transparent"
+          className="w-full h-[25px] appearance-none rounded-full bg-transparent bet-slider-gradient"
           style={{
-            // Hide default thumb for Firefox
             MozAppearance: 'none',
             WebkitAppearance: 'none',
             appearance: 'none',
@@ -201,6 +201,11 @@ export default function BetTokens({
         {/* Custom Thumb Style with SVG image */}
         <style>
           {`
+            input[type="range"].bet-slider-gradient {
+              background: linear-gradient(90deg, #7FFF00 0%, #32CD32 100%);
+              background-size: ${(betAmount/(sliderMax||1))*100}% 100%;
+              background-repeat: no-repeat;
+            }
             input[type="range"]::-webkit-slider-thumb {
               appearance: none;
               height: 32px;
@@ -219,6 +224,20 @@ export default function BetTokens({
               width: 32px;
               background: url('/icons/thumb.svg') no-repeat;
               cursor: pointer;
+            }
+            /* Track for Firefox */
+            input[type="range"].bet-slider-gradient::-moz-range-progress {
+              background: linear-gradient(90deg, #7FFF00 0%, #32CD32 100%);
+            }
+            input[type="range"].bet-slider-gradient::-moz-range-track {
+              background: #242424;
+            }
+            /* Track for IE */
+            input[type="range"].bet-slider-gradient::-ms-fill-lower {
+              background: linear-gradient(90deg, #7FFF00 0%, #32CD32 100%);
+            }
+            input[type="range"].bet-slider-gradient::-ms-fill-upper {
+              background: #242424;
             }
           `}
         </style>
@@ -254,7 +273,7 @@ export default function BetTokens({
           </svg>
         ) : null}
         {loading ? 'Placing bet...' : (
-          <div className="truncate inline-block align-middle px-4" title={selectedColor}>
+          <div className="truncate max-w-[50%] inline-block align-middle px-4" title={selectedColor}>
             {`Bet ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
           </div>
         )}

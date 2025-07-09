@@ -67,6 +67,7 @@ export const StreamInfoForm = ({
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     onFileChange(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -131,9 +132,21 @@ export const StreamInfoForm = ({
         <Label className="text-white font-light mb-3 block">Thumbnail</Label>
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           {/* Left: Preview */}
-          <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727]">
+          <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727] relative">
             {initialValues.thumbnailPreviewUrl ? (
-              <img src={getImageLink(initialValues.thumbnailPreviewUrl)} alt="Thumbnail preview" className="object-cover w-full h-full" />
+              <>
+                <img src={getImageLink(initialValues.thumbnailPreviewUrl)} alt="Thumbnail preview" className="object-cover w-full h-full" />
+                {!isUploading && (
+                  <button
+                    type="button"
+                    className="absolute top-1 right-1 z-10 bg-[#232323] rounded-full p-1 hover:bg-destructive"
+                    onClick={e => { e.stopPropagation(); onDeleteThumbnail(); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+                  >
+                    <XIcon className="h-4 w-4 text-white" />
+                  </button>
+                )}
+              </>
             ) : (
               <span className="text-white text-xs">No image</span>
             )}
@@ -164,15 +177,6 @@ export const StreamInfoForm = ({
                     <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
                   )}
                 </div>
-                {initialValues.thumbnailPreviewUrl && !isUploading && (
-                  <button
-                    type="button"
-                    className="absolute -top-2 -right-2 bg-[#232323] rounded-full p-1 hover:bg-destructive"
-                    onClick={e => { e.stopPropagation(); onDeleteThumbnail(); }}
-                  >
-                    <XIcon className="h-4 w-4 text-white" />
-                  </button>
-                )}
               </div>
               <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
                 <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
