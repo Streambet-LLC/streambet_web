@@ -28,6 +28,7 @@ export interface ValidationError {
 }
 
 interface BettingRoundsProps {
+  isSaving: boolean;
   rounds: BettingRound[];
   onRoundsChange: (rounds: BettingRound[]) => void;
   editStreamId?: string;
@@ -39,6 +40,7 @@ interface BettingRoundsProps {
 }
 
 export function BettingRounds({ 
+  isSaving,
   rounds, 
   onRoundsChange, 
   editStreamId, 
@@ -229,6 +231,7 @@ export function BettingRounds({
                                 type="button"
                                 className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                                 style={{ height: 33, fontSize: '16px', fontWeight: 500 }}
+                                disabled={isSaving}
                                 onClick={() => {
                                   if (isNotCreatedStatus) {
                                     setAlertDialogIndex(roundIndex);
@@ -418,6 +421,7 @@ export function BettingRounds({
           type="button"
           className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
           style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
+          disabled={isSaving}
           onClick={addNewRound}
         >
           + New round

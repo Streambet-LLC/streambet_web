@@ -9,6 +9,7 @@ import { CopyableInput } from '../ui/CopyableInput';
 import { getImageLink } from '@/utils/helper';
 
 interface StreamInfoFormProps {
+  isEdit?: boolean;
   initialValues: {
     title: string;
     description: string;
@@ -45,6 +46,7 @@ function formatTime12hr(time24) {
 }
 
 export const StreamInfoForm = ({
+  isEdit = false,
   initialValues,
   errors,
   isUploading,
@@ -122,6 +124,7 @@ export const StreamInfoForm = ({
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
           placeholder="Embed URL"
           value={initialValues.embeddedUrl}
+          disabled={isEdit && !!initialValues.embeddedUrl}
           onChange={e => onChange({ embeddedUrl: e.target.value })}
           required
         />

@@ -307,7 +307,7 @@ export const AdminBettingRoundsCard = ({
                                                        {/* Round Name */}
                                                        <div className="w-full flex flex-col items-center justify-center h-full">
                                                             <div
-                                                                 className={`text-center text-white/75 text-[13.41px] truncate max-w-full px-2`}
+                                                                 className={`text-center ${isActive || !isCreated ? 'text-white' : 'text-white/75'} text-[15px] truncate max-w-full px-2`}
                                                                  style={FabioBoldStyle}
                                                                  title={round?.roundName}
                                                             >

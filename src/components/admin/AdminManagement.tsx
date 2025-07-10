@@ -83,8 +83,13 @@ export const AdminManagement = ({
         {
           const bettingPayload = {
             streamId: editStreamId || response?.data?.id,
-            rounds: bettingRounds,
+            rounds: bettingRounds.map((round) => ({
+              roundId: round.roundId,
+              roundName: round.roundName,
+              options: round.options,
+            })),
           };
+          console.log('betting rounds', bettingPayload);
           createBetMutation.mutate(bettingPayload);
         }
       else
@@ -518,12 +523,34 @@ export const AdminManagement = ({
 
   async function handleCreateStream() {
     setValidationStarted(true);
-    // Validate betting rounds
+    
+    // Validation: check for rounds with no options
+    const errorIndices = bettingRounds
+      .map((round, idx) => (round.options.length === 0 ? idx : -1))
+      .filter(idx => idx !== -1);
+    
+    // Validate for duplicate round/option names
     const validationErrors = validateRounds(bettingRounds);
     setBettingValidationErrors(validationErrors);
-    if (validationErrors.length > 0) {
-      setShowBettingValidation(true);
+    setShowBettingValidation(true);
+    
+    if (errorIndices.length > 0) {
+      setBettingErrorRounds(errorIndices);
+      toast({ 
+        title: 'Validation Error', 
+        description: 'Each round must have at least one option. Please add options to all rounds before saving.', 
+        variant: 'destructive' 
+      });
       // Scroll to first error
+      setTimeout(() => {
+        const el = document.querySelector('[data-round-index="' + errorIndices[0] + '"]');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 500);
+      return;
+    }
+    
+    if (validationErrors.length > 0) {
+      // Scroll to first duplicate error
       setTimeout(() => {
         const first = validationErrors[0];
         const el = document.querySelector('[data-round-index="' + first.roundIndex + '"]');
@@ -622,7 +649,11 @@ export const AdminManagement = ({
 
   return (
     <div className="space-y-6">
-      {isCreateStream || editStreamId ? (
+      {isStreamLoading ? (
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <Loader2 className="animate-spin h-12 w-12 text-primary" />
+        </div>
+      ) : isCreateStream || editStreamId ? (
         <div className="flex justify-center items-center min-h-[60vh]">
           <Card className="w-full max-w-xl bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none">
             <CardContent className="p-4 !pt-2 sm:p-6">
@@ -633,6 +664,7 @@ export const AdminManagement = ({
                   variant="secondary"
                   className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
+                  disabled={createStreamMutation.isPending || createBetMutation.isPending}
                   onClick={() => {
                     if (createStep === 'betting') {
                       handleBackStep();
@@ -683,6 +715,7 @@ export const AdminManagement = ({
                 {/* Step 1: Info */}
                 {createStep === 'info' && (
                   <StreamInfoForm
+                  isEdit={!!editStreamId}
                     initialValues={{
                       title,
                       description,
@@ -755,6 +788,7 @@ export const AdminManagement = ({
                 {/* Step 2: Betting */}
                 {createStep === 'betting' && (
                   <BettingRounds
+                    isSaving={createStreamMutation.isPending || createBetMutation.isPending}
                     statusMap={betStreamData?.data?.rounds ? Object.fromEntries(betStreamData?.data?.rounds.map((r) => [r?.roundId, r?.status])) : {}}
                     rounds={bettingRounds}
                     onRoundsChange={handleRoundsChange}
