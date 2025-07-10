@@ -664,7 +664,7 @@ export const AdminManagement = ({
                   variant="secondary"
                   className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
-                  disabled={createStreamMutation.isPending || createBetMutation.isPending}
+                  disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
                   onClick={() => {
                     if (createStep === 'betting') {
                       handleBackStep();
@@ -788,7 +788,7 @@ export const AdminManagement = ({
                 {/* Step 2: Betting */}
                 {createStep === 'betting' && (
                   <BettingRounds
-                    isSaving={createStreamMutation.isPending || createBetMutation.isPending}
+                    isSaving={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
                     statusMap={betStreamData?.data?.rounds ? Object.fromEntries(betStreamData?.data?.rounds.map((r) => [r?.roundId, r?.status])) : {}}
                     rounds={bettingRounds}
                     onRoundsChange={handleRoundsChange}

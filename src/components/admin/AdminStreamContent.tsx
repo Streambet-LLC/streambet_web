@@ -350,6 +350,7 @@ export const AdminStreamContent = ({
                   </div>
                   <Separator className="my-4 bg-[#232323]" />
                   <StreamInfoForm
+                    isEdit
                     initialValues={editForm}
                     errors={editErrors}
                     isUploading={isUploading}

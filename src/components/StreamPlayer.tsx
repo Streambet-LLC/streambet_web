@@ -66,7 +66,7 @@ export const StreamPlayer = ({ streamId, showInfo = false }: StreamPlayerProps) 
                 textOverflow: 'ellipsis',
               }}
             >
-              {stream?.data?.title}
+              {stream?.data?.name}
             </span>
           </div>
         )}
