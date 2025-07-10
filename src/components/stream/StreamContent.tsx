@@ -577,7 +577,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       <div className="lg:col-span-1 flex flex-col h-full">
         <div className="flex-1 h-full sticky top-24">
           {/* <CommentSection session={session} streamId={streamId} showInputOnly={false} /> */}
-          <Chat/>
+          <Chat
+          sendMessageSocket={sendMessageSocket}
+          sendMessage={sendMessage}/>
         </div>
       </div>
     </div>

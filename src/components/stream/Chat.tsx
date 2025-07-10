@@ -13,7 +13,12 @@ const ALL_MESSAGES: Message[] = Array.from({ length: 10 }, (_, i) => ({
   name: 'Anyone else'
 }));
 
-export default function Chat() {
+interface Chat {
+  sendMessageSocket:(data: { sendMessage : string }) => void;
+  sendMessage:string
+}
+
+export default function Chat({sendMessageSocket,sendMessage}) {
   const [messages, setMessages] = useState<Message[]>(ALL_MESSAGES);
 
   const handleSend = (msg: string) => {
