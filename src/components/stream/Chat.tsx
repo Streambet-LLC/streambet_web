@@ -7,7 +7,7 @@ interface Message {
   name: string;
 }
 
-const ALL_MESSAGES: Message[] = Array.from({ length: 5 }, (_, i) => ({
+const ALL_MESSAGES: Message[] = Array.from({ length: 10 }, (_, i) => ({
   id: i + 1,
   text: `Message ${i + 1}`,
   name: 'Anyone else'
@@ -19,14 +19,11 @@ export default function Chat() {
   const handleSend = (msg: string) => {
     const newMsg: Message = { id: Date.now(), text: msg, name: 'You' };
     setMessages(prev => [...prev, newMsg]);
-    // setTimeout(() => {
-    //   const container = document.getElementById('scrollableDiv');
-    //   if (container) container.scrollTop = container.scrollHeight;
-    // }, 50);
+
   };
 
   return (
-    <div className="flex flex-col h-[150vh] bg-black text-white border border-zinc-700 rounded-[16px]">
+    <div className="flex flex-col max-h-[120vh] bg-black text-white border border-zinc-700 rounded-[16px]">
       <div className="p-4 text-sm font-semibold ">Live chat</div>
 
       <div
@@ -40,12 +37,12 @@ export default function Chat() {
             className="px-4 py-2 rounded-lg  mb-2 bg-[#181818]"
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-semibold text-lime-400">{msg.name}</span>
-              <span className="text-xs text-zinc-400 ml-2">
+              <span className="text-xs font-semibold text-[#606060]">{msg.name}</span>
+              <span className="text-[10px] text-[#FFFFFF] ml-2">
                 {new Date(msg.id).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
-            <span className="text-white text-sm">{msg.text}</span>
+            <span className="text-[#D7DFEF] text-xs font-medium">{msg.text}</span>
           </div>
         ))}
       </div>
