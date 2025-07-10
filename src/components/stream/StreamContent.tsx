@@ -12,7 +12,11 @@ import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+<<<<<<< HEAD
 import Chat from './Chat';
+=======
+import { FabioBoldStyle } from '@/utils/font';
+>>>>>>> 4bb4b514a9548eaabf976b46e4648046ebbdf34b
 
 interface StreamContentProps {
   streamId: string;
@@ -322,6 +326,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
       <div className="lg:col-span-2 space-y-6">
         <StreamPlayer 
+        showInfo
         streamId={streamId} 
        />
 
@@ -473,7 +478,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             />
           )
         ) : 
-        <div className="relative mx-auto rounded-[16px] shadow-lg" style={{ border: '0.62px solid #2C2C2C' }}>
+        <div className="relative mx-auto rounded-[16px] shadow-lg p-5" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
           <div className='all-center flex justify-center items-center h-[100px] mt-8'>
           <img
               src="/icons/nobettingData.svg"
@@ -481,7 +486,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               className="w-[100%] h-[100%] object-contain"
             />
           </div>
-           <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-4 pb-4">No betting options available</p>
+           <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
 
           </div>}
 

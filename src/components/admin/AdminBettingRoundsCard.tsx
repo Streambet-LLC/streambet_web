@@ -22,7 +22,7 @@ import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink, getMessage } from '@/utils/helper';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import api from '@/integrations/api/client';
-import { BettingRounds } from './BettingRounds';
+import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
 import { ArrowLeft } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -37,6 +37,7 @@ import {
      AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { FabioBoldStyle } from '@/utils/font';
 
 // Helper for status priority
 const statusPriority = [
@@ -53,8 +54,8 @@ function getActiveRoundIndex(betData) {
           );
           if (idx !== -1) return idx;
      }
-     // fallback to first
-     return 0;
+     // do nothing
+     return;
 }
 
 export const AdminBettingRoundsCard = ({
@@ -81,6 +82,7 @@ export const AdminBettingRoundsCard = ({
      const [showBettingValidation, setShowBettingValidation] = useState(false);
      const [bettingSaveLoading, setBettingSaveLoading] = useState(false);
      const { toast } = useToast();
+     const [bettingValidationErrors, setBettingValidationErrors] = useState<ValidationError[]>([]);
 
      useEffect(() => {
           setRounds(betData?.map((r) => ({ ...r })) || []);
@@ -98,7 +100,7 @@ export const AdminBettingRoundsCard = ({
      // Center carousel on active round
      React.useEffect(() => {
           if (carouselApi && typeof activeIdx === 'number') {
-               carouselApi.scrollTo(activeIdx);
+               setTimeout(() => carouselApi.scrollTo(activeIdx) ,500);
           }
      }, [carouselApi, activeIdx]);
 
@@ -152,10 +154,16 @@ export const AdminBettingRoundsCard = ({
                     {/* Card Header */}
                     <CardHeader
                          className="flex flex-row items-center justify-between h-[50px] rounded-t-xl px-6 py-0 bg-[#000000B2]"
-                         style={{ borderBottom: '0.62px solid #2C2C2C' }}
                     >
-                         <span className="font-medium text-white/80 text-lg">Betting Rounds</span>
-                         {!isStreamEnded && <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                         <span className="font-medium [color:rgba(215,223,239,1)] text-lg">Betting Rounds</span>
+                         {!isStreamEnded && <Dialog open={settingsOpen} onOpenChange={(open) => {
+                              setSettingsOpen(open);
+                              if (!open) {
+                                   setBettingValidationErrors([]);
+                                   setBettingErrorRounds([]);
+                                   setShowBettingValidation(false);
+                              }
+                         }}>
                               <DialogTrigger asChild>
                                    <Button
                                         className="!mt-0 ml-auto h-9 px-6 rounded-lg border border-[#2D343E] bg-[#0D0D0D] text-white/75 font-medium text-[14px] transition-colors duration-150"
@@ -167,7 +175,7 @@ export const AdminBettingRoundsCard = ({
                                         Betting Settings
                                    </Button>
                               </DialogTrigger>
-                              <DialogContent className="max-w-2xl winner-scrollbar overflow-y-auto max-h-[90vh] p-0 border border-primary no-dialog-close">
+                              <DialogContent className="max-w-2xl winner-scrollbar p-0 border border-primary no-dialog-close">
                                    <div className="p-6">
                                         {/* Back button at the very top */}
                                         <Button
@@ -192,22 +200,43 @@ export const AdminBettingRoundsCard = ({
                                                             const errorIndices = editableRounds
                                                               .map((round, idx) => (round.options.length === 0 ? idx : -1))
                                                               .filter(idx => idx !== -1);
+                                                            // Validate for duplicate round/option names
+                                                            const validationErrors = validateRounds(editableRounds);
+                                                            setBettingValidationErrors(validationErrors);
+                                                            setShowBettingValidation(true);
                                                             if (errorIndices.length > 0) {
-                                                              setBettingErrorRounds(errorIndices);
-                                                              setShowBettingValidation(true);
-                                                              toast({ 
-                                                                title: 'Validation Error', 
-                                                                description: 'Each round must have at least one option. Please add options to all rounds before saving.', 
-                                                                variant: 'destructive' 
-                                                              });
-                                                              return;
+                                                                 setBettingErrorRounds(errorIndices);
+                                                                 toast({ 
+                                                                   title: 'Validation Error', 
+                                                                   description: 'Each round must have at least one option. Please add options to all rounds before saving.', 
+                                                                   variant: 'destructive' 
+                                                                 });
+                                                                 // Scroll to first error
+                                                                 setTimeout(() => {
+                                                                   const el = document.querySelector('[data-round-index="' + errorIndices[0] + '"]');
+                                                                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                                 }, 500);
+                                                                 return;
+                                                            }
+                                                            if (validationErrors.length > 0) {
+                                                                 // Scroll to first duplicate error
+                                                                 setTimeout(() => {
+                                                                   const first = validationErrors[0];
+                                                                   const el = document.querySelector('[data-round-index="' + first.roundIndex + '"]');
+                                                                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                                 }, 500);
+                                                                 toast({
+                                                                   title: 'Validation Error',
+                                                                   description: validationErrors[0].message,
+                                                                   variant: 'destructive',
+                                                                 });
+                                                                 return;
                                                             }
                                                             setBettingSaveLoading(true);
                                                             try {
                                                                  await api.admin.updateBettingData({ streamId: editStreamId, rounds: editableRounds });
                                                                  refetchBetData();
                                                                  setSettingsOpen(false);
-                                                                 // Optionally refetch betting data here
                                                             } catch (e) {
                                                                  toast({ title: 'Error', description: getMessage(e) || 'Failed to update bet', variant: 'destructive' });
                                                             }
@@ -223,25 +252,31 @@ export const AdminBettingRoundsCard = ({
                                         <BettingRounds
                                              rounds={editableRounds}
                                              statusMap={statusMap}
-                                             onRoundsChange={setEditableRounds}
+                                             onRoundsChange={(newRounds) => {
+                                                  setEditableRounds(newRounds);
+                                                  // Revalidate immediately on any name change
+                                                  const validationErrors = validateRounds(newRounds);
+                                                  setBettingValidationErrors(validationErrors);
+                                             }}
                                              editStreamId={editStreamId}
                                              showValidationErrors={showBettingValidation}
                                              errorRounds={bettingErrorRounds}
                                              onErrorRoundsChange={setBettingErrorRounds}
+                                             validationErrors={bettingValidationErrors}
                                         />
                                    </div>
                               </DialogContent>
                          </Dialog>}
                     </CardHeader>
                     {/* Card Content: Carousel */}
-                    <CardContent className="bg-transparent px-0 py-4">
+                    <CardContent className="bg-transparent px-0 !p-0">
                          <div className="relative group" style={{ maxWidth: windowWidth < 768 ? '80vw' : '50vw' }}>
                               <Carousel
                                    setApi={setCarouselApi}
                                    opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}
-                                   className="w-full"
+                                   className="w-full px-1"
                               >
-                                   <CarouselContent className="flex items-center" style={{ paddingLeft: windowWidth < 640 ? 0 : 32 }}>
+                                   <CarouselContent className="flex items-center !ml-0">
                                         {rounds && rounds?.length > 0 ? rounds.map((round, idx) => {
                                              const status = (statusMap[round.roundId] || round.status || '').toLowerCase();
                                              const isWinner = status === BettingRoundStatus.CLOSED;
@@ -261,7 +296,7 @@ export const AdminBettingRoundsCard = ({
                                                             height: 185,
                                                             ...getBoxStyles(isActive, status),
                                                             flex: '0 0 auto',
-                                                            overflow: 'visible',
+                                                            overflow: 'hidden',
                                                             boxSizing: 'border-box',
                                                             borderRadius: 16,
                                                             marginTop: 12,
@@ -272,8 +307,9 @@ export const AdminBettingRoundsCard = ({
                                                        {/* Round Name */}
                                                        <div className="w-full flex flex-col items-center justify-center h-full">
                                                             <div
-                                                                 className={`text-center ${isCreated && !isActive ? 'text-[#FFFFFF30]' : 'text-white'} text-lg font-semibold truncate`}
-                                                                 style={{ fontWeight: 700 }}
+                                                                 className={`text-center text-white/75 text-[13.41px] truncate max-w-full px-2`}
+                                                                 style={FabioBoldStyle}
+                                                                 title={round?.roundName}
                                                             >
                                                                  {round?.roundName}
                                                             </div>
@@ -285,7 +321,7 @@ export const AdminBettingRoundsCard = ({
                                                                       disabled={isUpdatingAction}
                                                                       onClick={() => handleOpenRound(round.roundId)}
                                                                  >
-                                                                      {isUpdatingAction ? 'Opening...' : 'Open'}
+                                                                      {isUpdatingAction ? 'Opening...' : 'Open Round'}
                                                                  </Button>
                                                             )}
                                                             {/* Open: show betting options, lock bets button */}
@@ -297,11 +333,11 @@ export const AdminBettingRoundsCard = ({
                                                                       >
                                                                            Users are betting
                                                                       </div>
-                                                                      <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar">
+                                                                      <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar px-2">
                                                                            {round.options.map((opt) => (
                                                                                 <span
                                                                                      key={opt.id || opt.optionId || opt.option}
-                                                                                     className="px-4 py-1 rounded-full text-sm"
+                                                                                     className="px-4 py-1 rounded-full text-sm max-w-[120px] truncate"
                                                                                      style={{
                                                                                           background: '#242424',
                                                                                           color: '#fff',
@@ -309,6 +345,7 @@ export const AdminBettingRoundsCard = ({
                                                                                           fontWeight: 500,
                                                                                           backdropFilter: 'blur(8px)',
                                                                                      }}
+                                                                                     title={opt.option}
                                                                                 >
                                                                                      {opt.option}
                                                                                 </span>
@@ -333,13 +370,13 @@ export const AdminBettingRoundsCard = ({
                                                                       >
                                                                            Bets are locked - pick a winner
                                                                       </div>
-                                                                      <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar">
+                                                                      <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar px-2">
                                                                            {round.options.map((opt) => {
                                                                                 const isSelected = selectedOption[round.roundId] === (opt.id || opt.optionId);
                                                                                 return (
                                                                                      <button
                                                                                           key={opt.id || opt.optionId || opt.option}
-                                                                                          className={`px-4 py-1 rounded-full text-sm focus:outline-none transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                                                                                          className={`px-4 py-1 rounded-full text-sm max-w-[120px] truncate focus:outline-none transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
                                                                                           style={
                                                                                                isSelected
                                                                                                     ? {
@@ -354,6 +391,7 @@ export const AdminBettingRoundsCard = ({
                                                                                                     }
                                                                                           }
                                                                                           onClick={() => setSelectedOption((prev) => ({ ...prev, [round.roundId]: opt.id || opt.optionId }))}
+                                                                                          title={opt.option}
                                                                                      >
                                                                                           {opt.option}
                                                                                      </button>
@@ -408,7 +446,7 @@ export const AdminBettingRoundsCard = ({
                                                                       {round.winners && (isStreamCoins ? round.winners.streamCoins?.length > 0 : round.winners.freeTokens?.length > 0) ? (
                                                                            <div className="flex flex-col items-center w-full">
                                                                                 <div
-                                                                                     className="flex flex-row gap-4 overflow-x-auto pb-2 w-full max-w-full winner-scrollbar"
+                                                                                     className="flex flex-row gap-4 overflow-x-auto pb-2 w-full max-w-full winner-scrollbar px-2"
                                                                                      style={{ maxWidth: '100%', scrollbarWidth: 'thin' }}
                                                                                 >
                                                                                      {(isStreamCoins ? round.winners.streamCoins : round.winners.freeTokens)?.map((winner: any, idx: number) => (
@@ -419,8 +457,8 @@ export const AdminBettingRoundsCard = ({
                                                                                                </Avatar>
                                                                                                {/* Tooltip on username */}
                                                                                                <span
-                                                                                                    className="text-white text-xs font-semibold text-center truncate max-w-[60px] cursor-pointer"
-                                                                                                    style={{ fontFamily: 'Inter, sans-serif' }}
+                                                                                                    className="text-white text-[12px] text-center truncate max-w-[60px] cursor-pointer"
+                                                                                                    style={FabioBoldStyle}
                                                                                                     title={winner?.userName}
                                                                                                >
                                                                                                     {winner?.userName}
@@ -428,10 +466,13 @@ export const AdminBettingRoundsCard = ({
                                                                                           </div>
                                                                                      ))}
                                                                                 </div>
-                                                                                <div className="flex items-center mt-1">
-                                                                                     <span className="text-white text-sm font-normal ml-1">won</span>
-                                                                                     <span className="text-white text-sm font-normal ml-1">{isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
-                                                                                     : `${Number(round?.winnerAmount?.freeTokens || 0)?.toLocaleString('en-US')} tokens`}</span>
+                                                                                <div className="flex items-center mt-1 text-[12px] px-2" style={FabioBoldStyle}>
+                                                                                     <span className="text-white ml-1">won</span>
+                                                                                     <span className="text-white ml-1 truncate max-w-[120px]" title={isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
+                                                                                     : `${Number(round?.winnerAmount?.freeTokens || 0)?.toLocaleString('en-US')} tokens`}>
+                                                                                          {isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
+                                                                                          : `${Number(round?.winnerAmount?.freeTokens || 0)?.toLocaleString('en-US')} tokens`}
+                                                                                     </span>
                                                                                 </div>
                                                                            </div>
                                                                       ) : (<span className='text-center'>Round closed with no winner</span>)}

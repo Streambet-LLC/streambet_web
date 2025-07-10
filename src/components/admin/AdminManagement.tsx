@@ -22,7 +22,7 @@ import OverView from './OverView';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { CopyableInput } from '../ui/CopyableInput';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { BettingRounds } from './BettingRounds';
+import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
 import { BettingRoundStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
@@ -64,9 +64,11 @@ export const AdminManagement = ({
   // Betting rounds state
   const [bettingRounds, setBettingRounds] = useState<BettingRound[]>([]);
 
-  // Add error state for betting rounds
+  // Add error state for betting
   const [bettingErrorRounds, setBettingErrorRounds] = useState<number[]>([]);
   const [showBettingValidation, setShowBettingValidation] = useState(false);
+
+  const [bettingValidationErrors, setBettingValidationErrors] = useState<ValidationError[]>([]);
 
   const tabs = [
     { key: 'livestreams', label: 'Livestreams' },
@@ -515,32 +517,22 @@ export const AdminManagement = ({
   }
 
   async function handleCreateStream() {
-    // Validate betting rounds: no round should have 0 options
-    const errorIndices = bettingRounds
-      .map((r, idx) => (r.options.length === 0 ? idx : -1))
-      .filter(idx => idx !== -1);
-    if (errorIndices.length > 0) {
-      setBettingErrorRounds(errorIndices);
+    setValidationStarted(true);
+    // Validate betting rounds
+    const validationErrors = validateRounds(bettingRounds);
+    setBettingValidationErrors(validationErrors);
+    if (validationErrors.length > 0) {
       setShowBettingValidation(true);
+      // Scroll to first error
+      setTimeout(() => {
+        const first = validationErrors[0];
+        const el = document.querySelector('[data-round-index="' + first.roundIndex + '"]');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 500);
       toast({
-        title: 'Betting round error',
-        description: 'Each round must have at least one option.',
+        title: 'Validation Error',
+        description: validationErrors[0].message,
         variant: 'destructive',
-      });
-      return;
-    } else {
-      setBettingErrorRounds([]);
-      setShowBettingValidation(false);
-    }
-
-    if (!validateForm())
-    {
-      // Scroll to first error after validation
-      setTimeout(() => scrollToFirstError(), 100);
-      toast({
-        title: 'Form error',
-        description: 'Please check your form for any validation error',
-        variant: 'destructive'
       });
       return;
     }
@@ -593,7 +585,7 @@ export const AdminManagement = ({
       setTimeout(() => scrollToFirstError(), 100);
       toast({
         title: 'Form error',
-        description: 'Please check your form for any validation error',
+        description: 'Please fill in all required fields',
         variant: 'destructive'
       });
       return;
@@ -604,11 +596,17 @@ export const AdminManagement = ({
   // New: handle back from betting to info
   const handleBackStep = () => {
     setCreateStep('info');
+    setBettingValidationErrors([]);
+    setBettingErrorRounds([]);
+    setShowBettingValidation(false);
   };
 
   // Wrap setBettingRounds to auto-clear errors if all rounds have at least one option
   const handleRoundsChange = (newRounds: BettingRound[]) => {
     setBettingRounds(newRounds);
+    // Revalidate immediately on any name change
+    const validationErrors = validateRounds(newRounds);
+    setBettingValidationErrors(validationErrors);
     // If all rounds have at least one option, clear errors
     if (newRounds.every(r => r.options.length > 0)) {
       setBettingErrorRounds([]);
@@ -675,7 +673,7 @@ export const AdminManagement = ({
                     }}
                     disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
                   >
-                    {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Edit stream') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
+                    {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Save') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
                   </Button>
                 )}
               </div>
@@ -764,6 +762,7 @@ export const AdminManagement = ({
                     editStreamId={editStreamId}
                     showValidationErrors={showBettingValidation}
                     errorRounds={bettingErrorRounds}
+                    validationErrors={bettingValidationErrors}
                   />
                 )}
               </form>

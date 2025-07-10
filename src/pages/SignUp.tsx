@@ -54,6 +54,7 @@ export default function SignUp() {
   const [currentMonth, setCurrentMonth] = useState<Date | undefined>(undefined);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const lastClickTimeRef = useRef<number>(0);
+  const [avatarInputKey, setAvatarInputKey] = useState(0);
 
   const signupSchema = z.object({
     username: z
@@ -523,6 +524,7 @@ export default function SignUp() {
                       label=""
                       disabled={isUploading}
                       size="lg"
+                      key={avatarInputKey}
                     />
                   </div>
                   <motion.div variants={itemVariants} className="space-y-2">

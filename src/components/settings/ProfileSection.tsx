@@ -53,12 +53,14 @@ interface ProfileSectionProps {
   currentUsername: string;
   currentProfile?: Partial<ProfileFormData>;
   currentAvatar: any;
+  handleDeleteProfilePic?: VoidFunction;
 }
 
 export const ProfileSection = ({
   currentUsername,
   currentProfile,
   currentAvatar,
+  handleDeleteProfilePic,
 }: ProfileSectionProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -146,15 +148,12 @@ export const ProfileSection = ({
 
   // Update preview when selected file changes
   useEffect(() => {
-    if (selectedAvatarFile)
-    {
+    if (selectedAvatarFile) {
       setAvatarPreviewUrl(URL.createObjectURL(selectedAvatarFile));
       return () => URL.revokeObjectURL(avatarPreviewUrl!);
-    } else if (currentAvatar)
-    {
+    } else if (currentAvatar) {
       setAvatarPreviewUrl(currentAvatar);
-    } else
-    {
+    } else {
       setAvatarPreviewUrl(undefined);
     }
     // eslint-disable-next-line
@@ -175,7 +174,7 @@ export const ProfileSection = ({
 
       if (!session) throw new Error('User not found');
 
-      let profileImageUrl = '';
+      let profileImageUrl = session?.profileImageUrl || null;
 
       // Only upload if a new file is selected
       if (selectedAvatarFile) {
@@ -205,7 +204,7 @@ export const ProfileSection = ({
       } else if (!currentAvatar) {
         profileImageUrlToSave = null;
       } else {
-        profileImageUrlToSave = currentAvatar;
+        profileImageUrlToSave = profileImageUrl;
       }
 
       // Update profile with only the fields we want to keep
@@ -310,8 +309,7 @@ export const ProfileSection = ({
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0)
-    {
+    if (e.target.files && e.target.files.length > 0) {
       setAvatarDeleted(false);
       handleFileChange(e.target.files[0]);
     }
@@ -327,11 +325,13 @@ export const ProfileSection = ({
   };
 
   const handleDeleteAvatar = () => {
+    handleDeleteProfilePic();
     setSelectedAvatarFile(null);
     setAvatarPreviewUrl(undefined);
     setAvatarError(null);
     form.reset({ ...form.getValues(), avatar: undefined });
     setAvatarDeleted(true);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -343,14 +343,14 @@ export const ProfileSection = ({
           <p className="text-sm text-[#FFFFFFBF] mt-1">Update your photo and personal details here.</p>
         </div>
         <div className="flex gap-3">
-          <Button 
+          <Button
             onClick={handleCancel}
-            variant="outline" 
+            variant="outline"
             className="bg-[#272727] text-white border-[#272727] hover:bg-[#3a3a3a]"
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={form.handleSubmit(handleProfileUpdate)}
             disabled={isUpdating || !!avatarError || !form.formState.isValid}
             className="w-full"
@@ -380,9 +380,9 @@ export const ProfileSection = ({
                 <FormLabel className="text-white font-light">Username</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <Input 
-                      placeholder="Username" 
-                      {...field} 
+                    <Input
+                      placeholder="Username"
+                      {...field}
                       className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
                     />
                     {field?.value?.length >= 3 && !field?.value?.includes(' ') && (
@@ -457,9 +457,9 @@ export const ProfileSection = ({
               <FormItem>
                 <FormLabel className="text-white font-light">Email</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Email" 
-                    {...field} 
+                  <Input
+                    placeholder="Email"
+                    {...field}
                     disabled
                     className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400 opacity-50"
                   />
@@ -476,9 +476,9 @@ export const ProfileSection = ({
               <FormItem>
                 <FormLabel className="text-white font-light">State</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="State" 
-                    {...field} 
+                  <Input
+                    placeholder="State"
+                    {...field}
                     value={field.value || ''}
                     onChange={(e) => {
                       const value = e.target.value.replace(/^\s+/, ''); // Only trim leading spaces
@@ -511,30 +511,31 @@ export const ProfileSection = ({
             </div>
             <div className="flex flex-col sm:flex-row gap-4 items-center relative">
               {/* Left: Preview */}
-              <Avatar className="h-20 w-20 relative">
-                <AvatarImage 
-                  src={avatarPreviewUrl ? (avatarPreviewUrl.includes('blob') ?  avatarPreviewUrl : getImageLink(avatarPreviewUrl)) : undefined}
-                  onLoadingStatusChange={(status) => setIsImageLoading(status === 'loading')}
-                />
-                <AvatarFallback>
-                  {(session?.username?.[0] || session?.email?.[0] || 'U').toUpperCase()}
-                </AvatarFallback>
-                {isImageLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-full z-10">
-                    <Loader2 className="animate-spin h-8 w-8 text-[#0000ff]" />
-                  </div>
+              <div className="relative inline-block" style={{ width: 80, height: 80 }}>
+                <Avatar className="h-20 w-20">
+                  <AvatarImage
+                    src={avatarPreviewUrl ? (avatarPreviewUrl.includes('blob') ? avatarPreviewUrl : getImageLink(avatarPreviewUrl)) : undefined}
+                    onLoadingStatusChange={(status) => setIsImageLoading(status === 'loading')}
+                  />
+                  <AvatarFallback>
+                    {(session?.username?.[0] || session?.email?.[0] || 'U').toUpperCase()}
+                  </AvatarFallback>
+                  {isImageLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-full z-10">
+                      <Loader2 className="animate-spin h-8 w-8 text-[#0000ff]" />
+                    </div>
+                  )}
+                </Avatar>
+                {avatarPreviewUrl && !isUploading && (
+                  <button
+                    type="button"
+                    className="absolute top-2 right-4 -translate-y-1/2 translate-x-1/2 bg-red-900 border border-gray-600 rounded-full h-5 w-5 flex items-center justify-center hover:bg-red-500 z-20"
+                    onClick={e => { e.stopPropagation(); handleDeleteAvatar(); }}
+                  >
+                    <X className="h-4 w-4 text-white" />
+                  </button>
                 )}
-              </Avatar>
-              {/* Delete button positioned outside Avatar component, relative to parent div */}
-              {avatarPreviewUrl && !isUploading && (
-                <button
-                  type="button"
-                  className="absolute top-[20%] left-[60px] bg-gray-700 border border-gray-600 rounded-full h-5 w-5 flex items-center justify-center hover:bg-red-500 z-20"
-                  onClick={e => { e.stopPropagation(); handleDeleteAvatar(); }}
-                >
-                  <X className="h-4 w-4 text-white" />
-                </button>
-              )}
+              </div>
               {/* Right: Upload */}
               <div
                 className={`flex-1 w-full flex flex-col items-center justify-center bg-[#272727] rounded-xl py-4 px-2 cursor-pointer border border-[#121212] ${isDragging ? 'ring-2 ring-primary' : ''}`}

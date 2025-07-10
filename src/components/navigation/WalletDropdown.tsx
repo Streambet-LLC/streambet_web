@@ -50,7 +50,6 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
             <div className="flex items-center gap-2 px-4 py-2">
               <Wallet className="h-4 w-4" />
               <div className="flex items-center">
-                <span className="text-green-500">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</span>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -58,7 +57,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
                         className="ml-1 inline-flex items-center cursor-help"
                         onClick={e => e.stopPropagation()}
                       >
-                        <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-green-500">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</span>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-[250px]">
