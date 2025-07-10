@@ -51,6 +51,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
+  const [sendMessage, setSendmessage] = useState<string>();
   const queryClient = useQueryClient();
 
   // Ping-pong and reconnection refs
@@ -439,6 +440,24 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         });
       }
     }
+
+ // Mutation to send a message
+  const sendMessageSocket = (data: { message: string;}) => {
+    if (socket && socket.connected) {
+      console.log('Placing edit bet via socket:', data);
+      socket.emit('sendChatMessage', {
+        streamId: streamId,
+        message: sendMessage,
+        
+      });
+      
+    } else {
+      toast({
+        description: 'Socket not connected. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-screen">
