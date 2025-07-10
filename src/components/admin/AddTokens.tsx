@@ -139,7 +139,7 @@ const AddTokens: React.FC<WalletCellProps> = ({
               <p className="text-sm text-[#FFFFFF] font-medium mb-2">New Balance</p>
               <div className="bg-[#272727] w-[200px] px-3 py-2 rounded h-[35px] text-[#FFFFFF] text-sm font-light">
               <p className="text-sm font-light">
-                {newBalance === currentBalance ? '' : newBalance?.toLocaleString('en-US')}
+                {Number(newBalance) === Number(currentBalance) ? '' : newBalance?.toLocaleString('en-US')}
               </p>
               </div>
             </div>

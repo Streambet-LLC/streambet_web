@@ -108,7 +108,7 @@ export default function LockTokens({
         <div
           className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[250px] pointer-events-none z-0"
           style={{
-            background: 'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(189, 255, 0, 0.25) 0%, transparent 70%)',
+            background: 'radial-gradient(60% 100% at 50% 100%, rgba(189, 255, 0, 0.25) -140%, transparent 100%)',
           }}
         ></div>
       </div>

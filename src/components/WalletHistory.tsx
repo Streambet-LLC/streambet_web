@@ -153,7 +153,7 @@ console.log(paginatedUsers, 'paginatedUsers');
                     <TableCell className="text-left">{user?.type}</TableCell>
                     <TableCell className="text-right">
                       <span style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
-                        {user?.amount < 0 ? '-' : ''}${Math.abs(user?.amount)}
+                      {user?.amount < 0 ? '-' : ''}${Math.abs(user?.amount)?.toLocaleString('en-US')}
                       </span>
                     </TableCell>
                   </TableRow>

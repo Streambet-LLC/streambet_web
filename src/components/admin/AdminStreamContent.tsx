@@ -155,7 +155,7 @@ export const AdminStreamContent = ({
 
   useEffect(() => {
     fetchStreamData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamId]);
 
   // Populate form when streamInfo changes
@@ -232,16 +232,13 @@ export const AdminStreamContent = ({
       return;
     }
     let thumbnailImageUrl = streamInfo?.thumbnailUrl || '';
-    if (selectedThumbnailFile?.name)
-    {
-      try
-      {
+    if (selectedThumbnailFile?.name) {
+      try {
         setIsUploading(true);
         const response = await api.auth.uploadImage(selectedThumbnailFile, 'thumbnail');
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
-      } catch (error)
-      {
+      } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Error uploading stream thumbnail',
@@ -276,27 +273,26 @@ export const AdminStreamContent = ({
         </button>
       </div>
       {/* Responsive layout: stack on mobile, row on desktop */}
-      <div className="flex flex-col md:flex-row gap-4 w-full flex-1 items-stretch min-h-0" style={{minHeight:0, height:'calc(100vh - 80px)'}}>
+      <div className="flex flex-col md:flex-row gap-4 w-full flex-1 items-stretch min-h-0" style={{ minHeight: 0, height: 'calc(100vh - 80px)' }}>
         {/* Left: Video and betting */}
         <div className="flex-1 flex flex-col min-w-0 h-full order-1 md:order-none">
           {/* Stream name */}
           <span style={{ color: '#fff', fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{streamInfo?.streamName}</span>
           {/* View live link label below stream name */}
           <a href={streamInfo?.embeddedUrl} target='_blank'>
-          <div className="flex items-center mb-5 mt-1">
-            <ExternalLink size={16} className="mr-1" style={{ opacity: 0.5, color: '#fff' }} />
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 400, fontSize: 12 }}>
-              View live link
+            <div className="flex items-center mb-5 mt-1">
+              <ExternalLink size={16} className="mr-1" style={{ opacity: 0.5, color: '#fff' }} />
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 400, fontSize: 12 }}>
+                View live link
               </span>
             </div>
-            </a>
+          </a>
           <div className="relative">
-            <StreamPlayer streamId={streamId} />
-            {isStreamEnded && (
-              <div className="absolute inset-0 z-20 flex items-center border border-primary justify-center bg-black text-white text-2xl font-bold rounded-lg">
-                Stream has ended
+            {isStreamEnded ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+              <div className="relative w-full h-full flex items-center border border-primary justify-center bg-black text-white text-2xl font-bold rounded-lg">
+                Stream has ended.
               </div>
-            )}
+            </div> : <StreamPlayer streamId={streamId} />}
           </div>
           <AdminBettingRoundsCard
             editStreamId={streamId}

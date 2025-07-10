@@ -80,7 +80,7 @@ export const ProfileSettings = () => {
         </CardContent>
       </Card> */}
 
-      <ProfileSection currentUsername={profile?.data?.username} currentAvatar={avatarLink} />
+      <ProfileSection currentUsername={profile?.data?.username} currentAvatar={avatarLink} handleDeleteProfilePic={() => form.setValue('avatar', null)} />
       {/* <PasswordSection /> */}
     </div>
   );
