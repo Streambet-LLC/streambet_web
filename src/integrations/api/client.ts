@@ -502,7 +502,7 @@ export const socketAPI = {
 
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
-      socket = io(API_URL.replace('/api', ''), {
+      socket = io(API_URL.replace(/\/api(?!.*\/api)/, ''), {
         transports: ["websocket"],
         auth: { token }
       });

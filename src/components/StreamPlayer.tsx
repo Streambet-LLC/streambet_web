@@ -45,7 +45,7 @@ export const StreamPlayer = ({ streamId, showInfo = false }: StreamPlayerProps) 
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Overlay Header */}
-        {!isHovered && (
+        {showInfo && !isHovered && (
           <div
             className="absolute top-0 left-0 w-full flex items-center px-6"
             style={{
