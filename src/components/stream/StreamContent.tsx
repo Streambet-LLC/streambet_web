@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import LockTokens from './LockTokens';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,36 +52,103 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
   const queryClient = useQueryClient();
 
-  useEffect(() => {
+  // Ping-pong and reconnection refs
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pongTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
+  const pingInterval = 30000; // 30 seconds
+  const pongTimeout = 10000; // 10 seconds to wait for pong response
+
+  // Function to start ping-pong mechanism
+  const startPingPong = (socketInstance: any) => {
+    if (!socketInstance) return;
+
+    // Clear any existing intervals
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current);
+    }
+    if (pongTimeoutRef.current) {
+      clearTimeout(pongTimeoutRef.current);
+    }
+
+    // Set up ping interval
+    pingIntervalRef.current = setInterval(() => {
+      if (socketInstance.connected) {
+        console.log('Sending ping to keep socket alive...');
+        socketInstance.emit('ping');
+        
+        // Set up pong timeout
+        pongTimeoutRef.current = setTimeout(() => {
+          console.log('No pong received, socket may be dead. Attempting reconnection...');
+          handleSocketReconnection();
+        }, pongTimeout);
+      }
+    }, pingInterval);
+
+    // Listen for pong response
+    socketInstance.on('pong', () => {
+      console.log('Pong received, socket is alive');
+      if (pongTimeoutRef.current) {
+        clearTimeout(pongTimeoutRef.current);
+        pongTimeoutRef.current = null;
+      }
+    });
+  };
+
+  // Function to handle socket reconnection
+  const handleSocketReconnection = () => {
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      console.log('Max reconnection attempts reached');
+      toast({
+        description: 'Connection lost. Please refresh the page.',
+        variant: 'destructive',
+        duration: 10000,
+      });
+      return;
+    }
+
+    console.log(`Attempting to reconnect... (${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+    reconnectAttemptsRef.current++;
+
+    // Clear existing socket
+    if (socket) {
+      socket.off('pong');
+      socket.disconnect();
+    }
+
+    // Create new socket connection
     const newSocket = api.socket.connect();
-    setSocket(newSocket);
-    api.socket.joinStream(streamId, newSocket);
-  
-    return () => {
-      api.socket.leaveStream(streamId, newSocket);
-      api.socket.disconnect();
-      setSocket(null);
-    };
-  }, [streamId]);
+    if (newSocket) {
+      setSocket(newSocket);
+      api.socket.joinStream(streamId, newSocket);
+      startPingPong(newSocket);
+      
+      // Reset reconnection attempts on successful connection
+      newSocket.on('connect', () => {
+        console.log('Socket reconnected successfully');
+        reconnectAttemptsRef.current = 0;
+        toast({
+          description: 'Connection restored',
+          variant: 'default',
+          duration: 3000,
+        });
+      });
 
-  // Query to get the betting data for the stream
-  const { data: bettingData, refetch: refetchBettingData, isFetching: fetchingBettingData} = useQuery({
-    queryKey: ['bettingData', streamId, session?.id],
-    queryFn: async () => {
-      if (!session?.id) return null;
-      const data = await api.betting.getBettingData(streamId, session.id);
-      return data?.data;
-    },
-    enabled: !!session?.id,
-  });
+      // Set up event listeners for the new socket
+      setupSocketEventListeners(newSocket);
+    } else {
+      // Retry reconnection after delay
+      reconnectTimeoutRef.current = setTimeout(() => {
+        handleSocketReconnection();
+      }, 3000);
+    }
+  };
 
-  useEffect(() => {
-    setTotalPot(currency === CurrencyType.STREAM_COINS ? totalPotCoins ?? (bettingData?.roundTotalBetsCoinAmount || 0) : totalPotTokens ?? (bettingData?.roundTotalBetsTokenAmount || 0));
-    setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED);
-  },[bettingData, currency, totalPotCoins, totalPotTokens]);
-
-  useEffect(() => {
-    if (!socket) return; // Only add listener if socket is available
+  // Function to setup socket event listeners
+  const setupSocketEventListeners = (socketInstance: any) => {
+    if (!socketInstance) return;
 
     const resetBetData = () => {
       setTotalPotTokens(undefined);
@@ -128,21 +195,21 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     };
 
     // For all users
-    socket.on('bettingUpdate', handler);
+    socketInstance.on('bettingUpdate', handler);
     
-    socket.on('potentialAmountUpdate', (data) => {
+    socketInstance.on('potentialAmountUpdate', (data) => {
       console.log('potentialAmountUpdate', data);
       const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
       setPotentialWinnings(isStreamCoins ? data?.potentialCoinWinningAmount : data?.potentialTokenWinningAmount);
     });
 
-    socket.on('bettingLocked', (data) => {
+    socketInstance.on('bettingLocked', (data) => {
       console.log('bettingLocked', data);
       setLockedOptions(data?.locked)
       setLockedBet(data?.locked);
     });
 
-    socket.on('winnerDeclared', (data) => { 
+    socketInstance.on('winnerDeclared', (data) => { 
       toast({
         title: 'Round Closed',
         description: `${data?.winnerName} has selected as winning bet option!`,
@@ -166,12 +233,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       queryClient.prefetchQuery({ queryKey: ['session'] }); 
     });
 
-    socket.on('betPlaced', (update) => {
+    socketInstance.on('betPlaced', (update) => {
       console.log('betPlaced', update);
       processPlacedBet(update);
     });
 
-    socket.on('betOpened', (update) => {
+    socketInstance.on('betOpened', (update) => {
       console.log('betOpened', update);
       toast({
         description:"New betting options available!",
@@ -180,7 +247,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       resetBetData();
     });
 
-    socket.on('betCancelledByAdmin', (update) => {
+    socketInstance.on('betCancelledByAdmin', (update) => {
       console.log('betCancelledByAdmin', update);
       queryClient.prefetchQuery({ queryKey: ['session'] });
       toast({
@@ -191,7 +258,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       resetBetData();
     });
 
-    socket.on('betCancelled', (update) => {
+    socketInstance.on('betCancelled', (update) => {
       console.log('betCancelled', update);
       queryClient.prefetchQuery({ queryKey: ['session'] });
       setUpdatedSliderMax({
@@ -205,12 +272,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       resetBetData();
     });
 
-    socket.on('betEdited', (update) => {
+    socketInstance.on('betEdited', (update) => {
       console.log('betEdited', update);
       processPlacedBet(update);
     });
 
-    socket.on('streamEnded', (update) => {
+    socketInstance.on('streamEnded', (update) => {
       console.log('streamEnded', update);
       toast({
         description:"Stream has ended.",
@@ -219,8 +286,66 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       });
       navigate('/');
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket, toast]);
+
+    // Handle disconnection events
+    socketInstance.on('disconnect', (reason: string) => {
+      console.log('Socket disconnected:', reason);
+      if (reason !== 'io client disconnect') {
+        // Only attempt reconnection if it wasn't an intentional disconnect
+        handleSocketReconnection();
+      }
+    });
+
+    socketInstance.on('connect_error', (error: any) => {
+      console.log('Socket connection error:', error);
+      handleSocketReconnection();
+    });
+  };
+
+  useEffect(() => {
+    const newSocket = api.socket.connect();
+    setSocket(newSocket);
+    api.socket.joinStream(streamId, newSocket);
+    
+    // Start ping-pong mechanism
+    startPingPong(newSocket);
+    
+    // Setup event listeners
+    setupSocketEventListeners(newSocket);
+  
+    return () => {
+      // Cleanup ping-pong intervals
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+      }
+      if (pongTimeoutRef.current) {
+        clearTimeout(pongTimeoutRef.current);
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      
+      api.socket.leaveStream(streamId, newSocket);
+      api.socket.disconnect();
+      setSocket(null);
+    };
+  }, [streamId]);
+
+  // Query to get the betting data for the stream
+  const { data: bettingData, refetch: refetchBettingData, isFetching: fetchingBettingData} = useQuery({
+    queryKey: ['bettingData', streamId, session?.id],
+    queryFn: async () => {
+      if (!session?.id) return null;
+      const data = await api.betting.getBettingData(streamId, session.id);
+      return data?.data;
+    },
+    enabled: !!session?.id,
+  });
+
+  useEffect(() => {
+    setTotalPot(currency === CurrencyType.STREAM_COINS ? totalPotCoins ?? (bettingData?.roundTotalBetsCoinAmount || 0) : totalPotTokens ?? (bettingData?.roundTotalBetsTokenAmount || 0));
+    setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED);
+  },[bettingData, currency, totalPotCoins, totalPotTokens]);
 
   // Query to get selected betting round data
   const { data: getRoundData, refetch: refetchRoundData} = useQuery({
@@ -247,12 +372,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     }
   }, [getRoundData, hasSocketUpdate]);
 
-
   // Mutation to place a bet
   const placedBetSocket = (data: { bettingVariableId: string; amount: number; currencyType: string }) => {
     setLoading(true);
     console.log('Placing bet via socket:', data);
-    if (socket) {
+    if (socket && socket.connected) {
       setUpdatedCurrency(data.currencyType as CurrencyType);
       socket.emit('placeBet', {
         bettingVariableId: data.bettingVariableId,
@@ -271,7 +395,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
    // Mutation to edit a bet
   const editBetSocket = (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
     setLoading(true);
-    if (socket) {
+    if (socket && socket.connected) {
       console.log('Placing edit bet via socket:', data);
       setUpdatedCurrency(data.newCurrencyType as CurrencyType);
       socket.emit('editBet', {
@@ -297,7 +421,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
   // Cancel bet mutation
     const cancelBetSocket = (data: { betId: string; currencyType: string }) => {
-      if (socket) {
+      if (socket && socket.connected) {
         console.log('Placing cancel bet via socket:', data);
         socket.emit('cancelBet', {
           betId:data?.betId,
@@ -314,7 +438,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         });
       }
     }
-
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

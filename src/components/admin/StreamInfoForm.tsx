@@ -122,6 +122,7 @@ export const StreamInfoForm = ({
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
           placeholder="Embed URL"
           value={initialValues.embeddedUrl}
+          disabled={!!initialValues.embeddedUrl}
           onChange={e => onChange({ embeddedUrl: e.target.value })}
           required
         />

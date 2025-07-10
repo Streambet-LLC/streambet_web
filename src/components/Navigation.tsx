@@ -18,7 +18,11 @@ import {
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { CurrencyType } from '@/enums';
 
-export const Navigation = () => {
+interface NavigationProps {
+  onDashboardClick?: () => void;
+}
+
+export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -94,6 +98,9 @@ export const Navigation = () => {
   ].filter(Boolean);
 
   const handleMenuItemClick = (path: string) => {
+    if (path === '/admin' && onDashboardClick) {
+      onDashboardClick();
+    }
     navigate(path);
     setIsDrawerOpen(false);
   };
@@ -170,7 +177,7 @@ export const Navigation = () => {
                       ? 'text-white'
                       : 'text-[#FFFFFF80] hover:text-primary-foreground'
                   }`}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => handleMenuItemClick(item.path)}
                 >
                   {item.icon}
                   <span>{item.label}</span>
