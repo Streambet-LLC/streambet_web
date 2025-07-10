@@ -143,7 +143,7 @@ console.log(paginatedUsers, 'paginatedUsers');
               {paginatedUsers?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
-                    No users found matching
+                    No transactions history found matching
                   </TableCell>
                 </TableRow>
               ) : (

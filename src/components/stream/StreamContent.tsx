@@ -52,60 +52,14 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
   const queryClient = useQueryClient();
 
-  // Ping-pong and reconnection refs
-  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const pongTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
-  const pingInterval = 30000; // 30 seconds
-  const pongTimeout = 10000; // 10 seconds to wait for pong response
-
-  // Function to start ping-pong mechanism
-  const startPingPong = (socketInstance: any) => {
-    if (!socketInstance) return;
-
-    // Clear any existing intervals
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-    }
-    if (pongTimeoutRef.current) {
-      clearTimeout(pongTimeoutRef.current);
-    }
-
-    // Set up ping interval
-    pingIntervalRef.current = setInterval(() => {
-      if (socketInstance.connected) {
-        console.log('Sending ping to keep socket alive...');
-        socketInstance.emit('ping');
-        
-        // Set up pong timeout
-        pongTimeoutRef.current = setTimeout(() => {
-          console.log('No pong received, socket may be dead. Attempting reconnection...');
-          handleSocketReconnection();
-        }, pongTimeout);
-      }
-    }, pingInterval);
-
-    // Listen for pong response
-    socketInstance.on('pong', () => {
-      console.log('Pong received, socket is alive');
-      if (pongTimeoutRef.current) {
-        clearTimeout(pongTimeoutRef.current);
-        pongTimeoutRef.current = null;
-      }
-    });
-  };
 
   // Function to handle socket reconnection
   const handleSocketReconnection = () => {
     if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
       console.log('Max reconnection attempts reached');
-      toast({
-        description: 'Connection lost. Please refresh the page.',
-        variant: 'destructive',
-        duration: 10000,
-      });
       return;
     }
 
@@ -123,17 +77,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     if (newSocket) {
       setSocket(newSocket);
       api.socket.joinStream(streamId, newSocket);
-      startPingPong(newSocket);
       
       // Reset reconnection attempts on successful connection
       newSocket.on('connect', () => {
         console.log('Socket reconnected successfully');
         reconnectAttemptsRef.current = 0;
-        toast({
-          description: 'Connection restored',
-          variant: 'default',
-          duration: 3000,
-        });
       });
 
       // Set up event listeners for the new socket
@@ -307,20 +255,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     setSocket(newSocket);
     api.socket.joinStream(streamId, newSocket);
     
-    // Start ping-pong mechanism
-    startPingPong(newSocket);
-    
     // Setup event listeners
     setupSocketEventListeners(newSocket);
   
     return () => {
       // Cleanup ping-pong intervals
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-      }
-      if (pongTimeoutRef.current) {
-        clearTimeout(pongTimeoutRef.current);
-      }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
