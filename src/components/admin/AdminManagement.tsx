@@ -715,6 +715,7 @@ export const AdminManagement = ({
                 {/* Step 1: Info */}
                 {createStep === 'info' && (
                   <StreamInfoForm
+                  isEdit={!!editStreamId}
                     initialValues={{
                       title,
                       description,
