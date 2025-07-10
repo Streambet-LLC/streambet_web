@@ -12,11 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
-<<<<<<< HEAD
 import Chat from './Chat';
-=======
 import { FabioBoldStyle } from '@/utils/font';
->>>>>>> 4bb4b514a9548eaabf976b46e4648046ebbdf34b
 
 interface StreamContentProps {
   streamId: string;
@@ -321,7 +318,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-screen">
 
       
       <div className="lg:col-span-2 space-y-6">
