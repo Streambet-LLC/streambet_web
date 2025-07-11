@@ -103,7 +103,6 @@ console.log(paginatedUsers, 'paginatedUsers');
                     </span>
                   </div>
 
-                  {/* Status */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Type</span>
                     <span
@@ -113,8 +112,17 @@ console.log(paginatedUsers, 'paginatedUsers');
                     </span>
                   </div>
 
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Stream Name</span>
+                    <span
+                      className="px-2 py-1 rounded-md font-bold text-xs"
+                    >
+                      {user.type}
+                    </span>
+                  </div>
+
                  
-                  {/* Created Date */}
+                  
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Amount</span>
                     <span className="text-sm" style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
@@ -136,6 +144,7 @@ console.log(paginatedUsers, 'paginatedUsers');
               <TableRow>
                 <TableHead className="text-left">Date</TableHead>
                 <TableHead className="text-left">Type</TableHead>
+                {/* <TableHead className="text-left">Stream Name</TableHead> */}
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
@@ -151,6 +160,7 @@ console.log(paginatedUsers, 'paginatedUsers');
                   <TableRow key={user.id}>
                     <TableCell className="text-left">{user?.createdat ? new Date(user.createdat).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</TableCell>
                     <TableCell className="text-left">{user?.type}</TableCell>
+                    {/* <TableCell className="text-left">{user?.type}</TableCell> */}
                     <TableCell className="text-right">
                       <span style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
                       {user?.amount < 0 ? '-' : ''}${Math.abs(user?.amount)?.toLocaleString('en-US')}
