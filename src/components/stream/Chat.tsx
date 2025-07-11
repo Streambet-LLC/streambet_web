@@ -1,58 +1,106 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChatInput } from './ChatInput';
+import { getImageLink } from '@/utils/helper';
+
 
 interface Message {
   id: number;
   text: string;
   name: string;
+  imageURL?: string;
+  timestamp: string;
 }
 
-const ALL_MESSAGES: Message[] = Array.from({ length: 10 }, (_, i) => ({
-  id: i + 1,
-  text: `Message ${i + 1}`,
-  name: 'Anyone else'
-}));
-
-interface Chat {
-  sendMessageSocket:(data: { sendMessage : string }) => void;
-  sendMessage:string
+interface IncomingMessage {
+  type: string;
+  username: string;
+  message: string;
+  imageURL: string;
+  timestamp: string;
 }
 
-export default function Chat({sendMessageSocket,sendMessage}) {
-  const [messages, setMessages] = useState<Message[]>(ALL_MESSAGES);
+interface ChatProps {
+  sendMessageSocket: (data: { message: string; imageURL: string }) => void;
+  sendMessage?: string;
+  newSocketMessage?: IncomingMessage; 
+  session:any;
+}
 
-  const handleSend = (msg: string) => {
-    const newMsg: Message = { id: Date.now(), text: msg, name: 'You' };
+export default function Chat({ sendMessageSocket, newSocketMessage,session }: ChatProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+
+  const handleSend = (message: string, imageURL: string) => {
+    sendMessageSocket({ message, imageURL });
+  };
+
+  console.log(session,'session')
+
+  const addNewMessage = (data: IncomingMessage) => {
+    const newMsg: Message = {
+      id: Date.now(),
+      text: data.message,
+      name: data.username === session?.username ? 'You' : data.username,
+      imageURL: data.imageURL,
+      timestamp: data.timestamp,
+    };
     setMessages(prev => [...prev, newMsg]);
+  };
 
+  useEffect(() => {
+    if (newSocketMessage) {
+      addNewMessage(newSocketMessage);
+    }
+  }, [newSocketMessage]);
+
+  useEffect(() => {
+    // Scroll to bottom
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   };
 
   return (
-    <div className="flex flex-col max-h-[120vh] bg-black text-white border border-zinc-700 rounded-[16px]">
-      <div className="p-4 text-sm font-semibold ">Live chat</div>
+    <div className="flex flex-col max-h-[120vh] min-h-[80vh] bg-black text-white border border-zinc-700 rounded-[16px]">
+      <div className="p-4 text-sm font-semibold">Live chat</div>
 
       <div
+        ref={scrollRef}
         id="scrollableDiv"
         className="flex-1 h-screen overflow-y-auto px-4 py-2 space-y-2 bg-['rgba(36, 36, 36, 1)']"
-        style={{ display: 'flex', flexDirection: 'column-reverse', backgroundColor: 'rgba(24, 24, 24, 1)' }}
+        style={{ backgroundColor: 'rgba(24, 24, 24, 1)' }}
       >
-        {messages.slice().reverse().map(msg => (
-          <div
-            key={msg.id}
-            className="px-4 py-2 rounded-lg  mb-2 bg-[#181818]"
-          >
+        {messages.map(msg => (
+          <div key={msg.id} className="px-4 py-2 rounded-lg mb-2 bg-[#181818]">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-[#606060]">{msg.name}</span>
-              <span className="text-[10px] text-[#FFFFFF] ml-2">
-                {new Date(msg.id).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              <span className="text-sm font-semibold"
+               style={{ color: msg.name === 'You' ? '#BDFF00' : '#606060' }}>{msg.name}</span>
+              <span className="text-xs text-[#FFFFFF] ml-2">
+                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
             <span className="text-[#D7DFEF] text-xs font-medium">{msg.text}</span>
+            {msg.imageURL && (
+              <img 
+              onLoad={() => {
+                if (scrollRef.current) {
+                  scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                }
+              }}
+              src={getImageLink(msg.imageURL)} alt="chat media" className="mt-1 rounded max-w-[200px]" />
+            )}
           </div>
         ))}
       </div>
 
-      <ChatInput onSend={handleSend} />
+      <ChatInput onSend={handleSend} onImageAdd={scrollToBottom}/>
     </div>
   );
 }
