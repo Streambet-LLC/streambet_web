@@ -339,7 +339,7 @@ export const ProfileSection = ({
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-lg font-light text-white">Settings</h2>
+          <h2 className="text-lg font-light text-white">Profile settings</h2>
           <p className="text-sm text-[#FFFFFFBF] mt-1">Update your photo and personal details here.</p>
         </div>
         <div className="flex gap-3">

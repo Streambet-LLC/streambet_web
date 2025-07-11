@@ -10,6 +10,8 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { getImageLink } from '@/utils/helper';
+import { TabSwitch } from '@/components/navigation/TabSwitch';
+import { NotificationSettings } from './NotificationSettings';
 
 const formSchema = z.object({
   avatar: z.any().optional(),
@@ -18,6 +20,7 @@ const formSchema = z.object({
 export const ProfileSettings = () => {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -60,28 +63,30 @@ export const ProfileSettings = () => {
 
   const avatarLink = form.watch('avatar');
 
+  const tabs = [
+    { key: 'profile', label: 'Profile' },
+    { key: 'notifications', label: 'Notifications' },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* <Card>
-        <CardHeader>
-          <CardTitle>Profile Picture</CardTitle>
-          <CardDescription>Update your profile picture</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <FormProvider {...form}>
-            <AvatarUploadField
-              form={form}
-              name="avatar"
-              label=""
-              disabled={isUploading}
-              size="lg"
-            />
-          </FormProvider>
-        </CardContent>
-      </Card> */}
+      <TabSwitch
+        tabs={tabs}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
 
-      <ProfileSection currentUsername={profile?.data?.username} currentAvatar={avatarLink} handleDeleteProfilePic={() => form.setValue('avatar', null)} />
-      {/* <PasswordSection /> */}
+      {activeTab === 'profile' && (
+        <ProfileSection 
+          currentUsername={profile?.data?.username} 
+          currentAvatar={avatarLink} 
+          handleDeleteProfilePic={() => form.setValue('avatar', null)} 
+        />
+      )}
+
+      {activeTab === 'notifications' && (
+        <NotificationSettings />
+      )}
     </div>
   );
 };

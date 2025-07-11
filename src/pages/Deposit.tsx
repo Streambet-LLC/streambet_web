@@ -11,6 +11,7 @@ import { PayPalButtonsWrapper } from '@/components/deposit/PayPalButtons';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const Deposit = () => {
   const [amount, setAmount] = useState('');
@@ -20,15 +21,7 @@ const Deposit = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
-    },
-  });
+  const { session } = useAuthContext();
 
   const { data: profile } = useQuery({
     queryKey: ['profile', session?.user?.id],

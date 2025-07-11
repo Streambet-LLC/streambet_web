@@ -11,6 +11,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import { cn } from '@/lib/utils';
 import { UpcomingStreams } from '@/components/stream/UpcomingStreams';
 import { TabSwitch } from '@/components/navigation/TabSwitch';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
@@ -29,15 +30,7 @@ const Index = () => {
 
   const isLive = activeTab === 'live';
 
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
-    },
-  });
+  const { session } = useAuthContext();
 
   const { data: profile } = useQuery({
     queryKey: ['profile', session?.user?.id],
