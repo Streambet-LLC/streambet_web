@@ -1,56 +1,25 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProfileSection } from './ProfileSection';
-import { PasswordSection } from './PasswordSection';
-import { AvatarUploadField } from '@/components/AvatarUploadField';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { getImageLink } from '@/utils/helper';
 import { TabSwitch } from '@/components/navigation/TabSwitch';
 import { NotificationSettings } from './NotificationSettings';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const formSchema = z.object({
   avatar: z.any().optional(),
 });
 
 export const ProfileSettings = () => {
-  const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const { session } = useAuthContext();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       avatar: undefined,
-    },
-  });
-
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
-    },
-  });
-
-  const { data: profile } = useQuery({
-    queryKey: ['profile', session?.id],
-    enabled: !!session?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session?.id)
-        .single();
-
-      if (error) throw error;
-      return data;
     },
   });
 
@@ -78,7 +47,7 @@ export const ProfileSettings = () => {
 
       {activeTab === 'profile' && (
         <ProfileSection 
-          currentUsername={profile?.data?.username} 
+          currentUsername={session?.username} 
           currentAvatar={avatarLink} 
           handleDeleteProfilePic={() => form.setValue('avatar', null)} 
         />

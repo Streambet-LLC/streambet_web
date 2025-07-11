@@ -111,16 +111,6 @@ export default function SignUp() {
     setCurrentMonth(new Date());
   }, []);
 
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
-    },
-  });
-
   const signupMutation = useMutation({
     mutationFn: async (userData: {
       username: string;

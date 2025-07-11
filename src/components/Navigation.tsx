@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WalletDropdown } from './navigation/WalletDropdown';
 import { UserDropdown } from './navigation/UserDropdown';
-import { Home, Tv, Gift, Users, Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useAnimations } from '@/hooks/useAnimations';
@@ -37,15 +37,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const { currency } = useCurrencyContext();
   const isStreamCoins = currency === CurrencyType.STREAM_COINS;
 
-  const { session, refetchSession } = useAuthContext();
-  const { data: profile } = useQuery({
-    queryKey: ['profile', session?.id],
-    enabled: !!session?.id,
-    queryFn: async () => {
-      const data = await api.user.getProfile();
-      return data;
-    },
-  });
+  const { session } = useAuthContext();
 
   // Handle scroll behavior for hiding/showing navbar
   useEffect(() => {
@@ -94,7 +86,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   };
 
   const menuItems = [
-    profile?.data?.role === 'admin' && { label: 'Dashboard', icon: undefined, path: '/admin' },
+    session?.role === 'admin' && { label: 'Dashboard', icon: undefined, path: '/admin' },
     { label: 'Home', icon: undefined, path: '/' },
     { label: 'Streams', icon: undefined, path: '/stream' },
     { label: 'Rewards', icon: undefined, path: '/rewards' },
@@ -204,7 +196,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
               <>
                 <WalletDropdown walletBalance={isStreamCoins ? session?.walletBalanceCoin || 0 : session?.walletBalanceToken || 0} />
 
-                <UserDropdown profile={profile?.data} user={session} onLogout={handleLogout} />
+                <UserDropdown profile={session} onLogout={handleLogout} />
               </>
             ) : (
               <>

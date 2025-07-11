@@ -21,6 +21,7 @@ interface AuthContextType {
   refetchSession: () => Promise<any>;
   isLoading: boolean;
   isError: boolean;
+  isFetching,
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,12 +31,12 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const queryClient = useQueryClient();
 
   const { 
     data: session, 
     refetch: refetchSession, 
-    isLoading, 
+    isLoading,
+    isFetching,
     isError 
   } = useQuery({
     queryKey: ['session'],
@@ -43,14 +44,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const { data } = await api.auth.getSession();
       return data;
     },
-    retry: 1,
-    refetchOnWindowFocus: false,
   });
 
   const value: AuthContextType = {
     session: session || null,
     refetchSession,
     isLoading,
+    isFetching,
     isError,
   };
 

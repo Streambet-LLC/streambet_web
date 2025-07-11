@@ -32,21 +32,6 @@ const Index = () => {
 
   const { session } = useAuthContext();
 
-  const { data: profile } = useQuery({
-    queryKey: ['profile', session?.user?.id],
-    enabled: !!session?.user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session!.user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const { data: streams, refetch: refetchStreams } = useQuery({
     queryKey: ['userStreams'],
     queryFn: async () => {
@@ -197,7 +182,7 @@ const Index = () => {
                     key={stream.id}
                     stream={stream}
                     isLive={isLive}
-                    isAdmin={profile?.role === 'admin'}
+                    isAdmin={session?.role === 'admin'}
                     showAdminControls={false}
                   />
                 ))}

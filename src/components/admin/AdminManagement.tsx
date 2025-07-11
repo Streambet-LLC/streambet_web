@@ -323,7 +323,10 @@ export const AdminManagement = ({
       refetchBetStreamData();
     },
     onError: (error: any) => {
-      toast({ title: 'Error', description: getMessage(error) || 'Failed to update bet', variant: 'destructive' });
+      const errorMessage: string = getMessage(error) || 'Failed to update bet';
+      toast({ title: errorMessage?.toLowerCase()?.includes('cannot lock') ? 'Not able to lock round' : `Error in updating the round status`, 
+      description: errorMessage, 
+      variant: 'destructive' });
     },
   });
 
@@ -343,7 +346,7 @@ export const AdminManagement = ({
       refetchBetStreamData();
     },
     onError: (error: any) => {
-      toast({ title: 'Error', description: getMessage(error) || 'Failed to update bet', variant: 'destructive' });
+      toast({ title: 'Failed to cancel round', description: getMessage(error) || 'Failed to update bet', variant: 'destructive' });
     },
   });
 

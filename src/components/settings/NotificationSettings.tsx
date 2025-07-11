@@ -1,19 +1,49 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useMutation } from '@tanstack/react-query';
+import api from '@/integrations/api/client';
+import { getMessage } from '@/utils/helper';
+import { useToast } from '@/hooks/use-toast';
 
 export const NotificationSettings = () => {
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [inAppNotifications, setInAppNotifications] = useState(false);
+  const { session, isFetching, refetchSession } = useAuthContext();
+  const { toast } = useToast();
+
+  const {isPending: isUpdatingPreference, mutate: updateNotificationPreferences} = useMutation({
+    mutationFn: (payload: any) => api.user.updateNotificationPreferences(payload),
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Notification preference has updated!' });
+      refetchSession();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
+    },
+  });
+
+  useEffect(() => {
+    if (session) {
+      setEmailNotifications(session.notificationPreferences?.emailNotification);
+      setInAppNotifications(session.notificationPreferences?.inAppNotification);
+    }
+  }, [session, refetchSession]);
 
   const handleEmailNotificationsChange = (checked: boolean) => {
     setEmailNotifications(checked);
+    updateNotificationPreferences({
+      emailNotification: checked,
+    });
   };
 
   const handleInAppNotificationsChange = (checked: boolean) => {
     setInAppNotifications(checked);
+    updateNotificationPreferences({
+      inAppNotification: checked,
+    });
   };
 
   return (
@@ -37,6 +67,7 @@ export const NotificationSettings = () => {
               </div>
               <Switch
                 id="email-notifications"
+                disabled={isUpdatingPreference || isFetching}
                 checked={emailNotifications}
                 onCheckedChange={handleEmailNotificationsChange}
               />
@@ -50,6 +81,7 @@ export const NotificationSettings = () => {
               </div>
               <Switch
                 id="in-app-notifications"
+                disabled={isUpdatingPreference || isFetching}
                 checked={inAppNotifications}
                 onCheckedChange={handleInAppNotificationsChange}
               />
