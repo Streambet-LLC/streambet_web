@@ -1,3 +1,5 @@
+import { format } from 'date-fns';
+
 /**
  * @param messageData
  * @returns message from API response
@@ -60,4 +62,19 @@ export function formatDateTimeForISO(date: Date | null, time: string): string | 
 
   // Format as ISO 8601 string
   return dateTime.toISOString();
+};
+
+export function formatTime(dateString: string) {
+  const date = new Date(dateString);
+  return format(date, 'h:mm a');
+};
+
+export function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return format(date, 'EEEE, MMM do');
+};
+
+export function formatDateTime(dateString: string) {
+  const date = new Date(dateString);
+  return format(date, 'EEEE, MMM do h:mm a');
 };

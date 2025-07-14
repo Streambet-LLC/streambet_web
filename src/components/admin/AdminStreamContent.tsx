@@ -12,7 +12,7 @@ import { BettingRounds } from './BettingRounds';
 import { Separator } from '@/components/ui/separator';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateTimeForISO, getMessage } from '@/utils/helper';
+import { formatDateTime, formatDateTimeForISO, getMessage } from '@/utils/helper';
 
 interface AdminStreamContentProps {
   streamId: string;
@@ -260,7 +260,9 @@ export const AdminStreamContent = ({
     createStreamMutation.mutate(payload);
   };
 
+  const isStreamScheduled = streamInfo?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = streamInfo?.status === StreamStatus.ENDED;
+
 
   return (
     <div className="flex flex-col gap-0 h-full px-6 md:px-12" style={{ overflowX: 'hidden' }}>
@@ -288,13 +290,14 @@ export const AdminStreamContent = ({
             </div>
           </a>
           <div className="relative">
-            {isStreamEnded ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-              <div className="relative w-full h-full flex items-center border border-primary justify-center bg-black text-white text-2xl font-bold rounded-lg">
-                Stream has ended.
+            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+              <div className={` px-2 relative w-full h-full flex items-center border border-primary justify-center bg-black text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
+                {isStreamScheduled ? `Stream scheduled on ${formatDateTime(streamInfo?.scheduledStartTime)}.` : 'Stream has ended.'}
               </div>
             </div> : <StreamPlayer streamId={streamId} />}
           </div>
           <AdminBettingRoundsCard
+            isStreamScheduled={isStreamScheduled}
             editStreamId={streamId}
             isStreamEnded={isStreamEnded}
             isUpdatingAction={isUpdatingAction}

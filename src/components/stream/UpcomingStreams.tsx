@@ -1,25 +1,15 @@
 import { Table, TableBody, TableCell, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
-import { Clock } from 'lucide-react';
-import { format } from 'date-fns';
-import React from 'react';
-import { getImageLink } from '@/utils/helper';
+import { formatDate, formatTime, getImageLink } from '@/utils/helper';
+import { useNavigate } from 'react-router-dom';
 
 interface UpcomingStreamsProps {
   streams: any;
 }
 
-function formatTime(dateString: string) {
-  const date = new Date(dateString);
-  return format(date, 'h:mm a');
-}
-
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return format(date, 'EEEE, MMM do');
-}
-
 export const UpcomingStreams = ({ streams }: UpcomingStreamsProps) => {
+  const navigate = useNavigate();
+
   return (
     <div className="mx-auto rounded-md border overflow-x-auto max-w-[750px]">
       <Table className="bg-[#0D0D0D] min-w-[600px]">
@@ -64,10 +54,9 @@ export const UpcomingStreams = ({ streams }: UpcomingStreamsProps) => {
                       type="button"
                       className="bg-[#272727] text-white font-medium rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors gap-2"
                       style={{ width: 142, height: 44, fontSize: '16px', fontWeight: 500 }}
-                      onClick={() => {/* TODO: Remind me logic */}}
+                      onClick={() => navigate(`/stream/${stream?.id}`)}
                     >
-                      <Clock className="w-5 h-5 mr-1" />
-                      Remind me
+                      Place bet
                     </Button>
                   </div>
                 </TableCell>

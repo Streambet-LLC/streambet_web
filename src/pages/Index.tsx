@@ -42,7 +42,7 @@ const Index = () => {
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: '' }),
         pagination: true,
-        streamStatus: isLive ? 'live' : 'live',
+        streamStatus: isLive ? 'live' : 'scheduled',
       });
       return response;
     },
