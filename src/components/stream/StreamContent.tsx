@@ -157,8 +157,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socketInstance.on('bettingLocked', (data) => {
       console.log('bettingLocked', data);
-      setLockedOptions(data?.locked)
-      setLockedBet(data?.locked);
+      setLockedOptions(data?.lockedStatus)
+      setLockedBet(data?.lockedStatus);
     });
 
     socketInstance.on('winnerDeclared', (data) => { 

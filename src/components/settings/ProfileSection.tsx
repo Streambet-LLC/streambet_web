@@ -25,6 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const formSchema = z.object({
   name: z.string().optional(),
@@ -76,6 +77,7 @@ export const ProfileSection = ({
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | undefined>(undefined);
   const [avatarDeleted, setAvatarDeleted] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  const { session } = useAuthContext();
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(formSchema),
@@ -88,16 +90,6 @@ export const ProfileSection = ({
       avatar: currentAvatar,
     },
     mode: 'onChange',
-  });
-
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
-    },
   });
 
   useEffect(() => {
@@ -223,7 +215,7 @@ export const ProfileSection = ({
 
       if (updateError) throw updateError;
 
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['session'] });
       toast({
         title: 'Success',
         description: 'Profile updated successfully',
@@ -339,7 +331,7 @@ export const ProfileSection = ({
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-lg font-light text-white">Settings</h2>
+          <h2 className="text-lg font-light text-white">Profile settings</h2>
           <p className="text-sm text-[#FFFFFFBF] mt-1">Update your photo and personal details here.</p>
         </div>
         <div className="flex gap-3">

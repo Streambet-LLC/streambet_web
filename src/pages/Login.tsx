@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,10 +13,10 @@ import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/integrations/api/client';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
-import { GeolocationResult, verifyUserLocation } from '@/integrations/api/geolocation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getMessage } from '@/utils/helper';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email/Username is required'),
@@ -25,7 +25,6 @@ const loginSchema = z.object({
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -33,44 +32,8 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [locationStatus, setLocationStatus] = useState<GeolocationResult | null>(null);
-  const [isCheckingLocation, setIsCheckingLocation] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
-  const googleLoginRef = useRef<HTMLDivElement>(null);
-
-  // Parse query params
-  // const searchParams = new URLSearchParams(location.search);
-  const from = searchParams.get('from');
-  const streamId = searchParams.get('id');
-
-  // Check user location on component mount
-  useEffect(() => {
-    const checkLocation = async () => {
-      setIsCheckingLocation(true);
-      try {
-        const result = await verifyUserLocation();
-        setLocationStatus(result);
-
-        if (!result.allowed) {
-          toast({
-            variant: 'destructive',
-            title: 'Location Restricted',
-            description: result.error,
-          });
-        }
-      } catch (error) {
-        console.error('Location check failed:', error);
-        setLocationStatus({
-          allowed: true,
-          error: 'Could not verify location. Proceeding anyway.',
-        });
-      } finally {
-        setIsCheckingLocation(false);
-      }
-    };
-
-    checkLocation();
-  }, [toast]);
+  const { locationResult } = useLocationRestriction();
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { identifier: string; password: string; remember_me?: boolean, redirect?: string }) => {
@@ -128,13 +91,13 @@ export default function Login() {
 
   // Display location restriction warning if needed
   const renderLocationWarning = () => {
-    if (!locationStatus) return null;
+    if (!locationResult) return null;
 
-    if (!locationStatus?.allowed) {
+    if (!locationResult?.allowed) {
       return (
         <Alert variant="destructive" className="mb-4">
           <AlertTitle>Location Restricted</AlertTitle>
-          <AlertDescription>{locationStatus?.error}</AlertDescription>
+          <AlertDescription>{locationResult?.error}</AlertDescription>
         </Alert>
       );
     }
@@ -146,11 +109,11 @@ export default function Login() {
     e.preventDefault();
 
     // Don't proceed if location is restricted
-    if (locationStatus && !locationStatus.allowed) {
+    if (locationResult && !locationResult.allowed) {
       toast({
         variant: 'destructive',
         title: 'Location Restricted',
-        description: locationStatus?.error,
+        description: locationResult?.error,
       });
       return;
     }
@@ -178,11 +141,11 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     // Don't proceed if location is restricted
-    if (locationStatus && !locationStatus.allowed) {
+    if (locationResult && !locationResult.allowed) {
       toast({
         variant: 'destructive',
         title: 'Location Restricted',
-        description: locationStatus.error,
+        description: locationResult.error,
       });
       return;
     }

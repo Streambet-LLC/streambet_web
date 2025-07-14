@@ -23,7 +23,8 @@ import VerifyEmail from './pages/auth/VerifyEmail';
 import NotFound from './pages/NotFound';
 import VerifyEmailNotice from './pages/auth/VerifyEmailNotice';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
-import { BettingStatusProvider } from './contexts/BettingStatusContext';
+import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 
 // Create a client
@@ -67,8 +68,9 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BettingStatusProvider>
-          <CurrencyProvider>
+      <LocationRestrictionProvider>
+        <CurrencyProvider>
+          <AuthProvider>
             <BrowserRouter>
               <TooltipProvider>
                 <Toaster />
@@ -97,8 +99,9 @@ const App = () => {
                 </Routes>
               </TooltipProvider>
             </BrowserRouter>
-          </CurrencyProvider>
-      </BettingStatusProvider>
+          </AuthProvider>
+        </CurrencyProvider>
+      </LocationRestrictionProvider>
     </QueryClientProvider>
   );
 };

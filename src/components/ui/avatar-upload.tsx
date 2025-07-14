@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface AvatarUploadProps {
   value?: string;
@@ -27,6 +28,7 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
     const [preview, setPreview] = React.useState<string | undefined>(value);
     const [isDragging, setIsDragging] = React.useState(false);
     const [isImageLoading, setIsImageLoading] = React.useState(false);
+    const { session } = useAuthContext();
 
     React.useEffect(() => {
       setPreview(value);
@@ -92,15 +94,6 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
       }
     };
 
-    const { data: session } = useQuery<any>({
-      queryKey: ['session'],
-      enabled: false,
-    });
-  
-    const { data: profile } = useQuery<any>({
-      queryKey: ['profile', session?.id],
-      enabled: !!session?.id,
-    });
 
     return (
       <div ref={ref} className={cn('relative inline-block', className)}>
@@ -122,7 +115,7 @@ export const AvatarUpload = React.forwardRef<HTMLDivElement, AvatarUploadProps>(
               onLoadingStatusChange={(status) => setIsImageLoading(status === 'loading')}
             />
             <AvatarFallback>
-              {profile?.data?.username?.[0]?.toUpperCase() || profile?.data?.email?.[0]?.toUpperCase() || <Upload className="h-6 w-6 text-muted-foreground" />}
+              {session?.username?.[0]?.toUpperCase() || session?.email?.[0]?.toUpperCase() || <Upload className="h-6 w-6 text-muted-foreground" />}
             </AvatarFallback>
           </Avatar>
           {isImageLoading && (

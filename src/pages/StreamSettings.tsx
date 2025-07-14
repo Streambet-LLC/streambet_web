@@ -6,37 +6,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const StreamSettings = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: stream, refetch } = useStreamData(id!);
-
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
-    },
-  });
-
-  const { data: profile } = useQuery({
-    queryKey: ['profile', session?.user?.id],
-    enabled: !!session?.user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session!.user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { session } = useAuthContext();
 
   useEffect(() => {
     if (!session) {
@@ -49,7 +26,7 @@ const StreamSettings = () => {
       return;
     }
 
-    if (profile && profile?.data?.role !== 'admin') {
+    if (session && session?.role !== 'admin') {
       toast({
         title: 'Access Denied',
         description: 'Only administrators can access stream settings',
@@ -57,9 +34,9 @@ const StreamSettings = () => {
       });
       navigate('/');
     }
-  }, [session, profile, navigate, toast]);
+  }, [session, navigate, toast]);
 
-  if (!stream || profile?.data?.role !== 'admin') return null;
+  if (!stream || session?.role !== 'admin') return null;
 
   return (
     <div className="min-h-screen bg-background">

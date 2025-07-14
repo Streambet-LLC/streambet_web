@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Navigation } from '@/components/Navigation';
 import api from '@/integrations/api/client';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const Stream = () => {
   const { id } = useParams();
@@ -23,14 +24,8 @@ const Stream = () => {
   const [pageVisibility, setPageVisibility] = useState(document.visibilityState);
   const refetchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Query to get the current user session
-  const { data: session, isLoading: isSessionLoading } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-    const sessionResponse = await supabase.auth.getSession();
-      return sessionResponse;
-    },
-  });
+  // Get session from AuthContext
+  const { session, isLoading: isSessionLoading } = useAuthContext();
 
 
 

@@ -18,11 +18,10 @@ type Profile = any;
 
 interface UserDropdownProps {
   profile: Profile | null;
-  user: any;
   onLogout: () => void;
 }
 
-export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => {
+export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
 
   const [isImageLoading, setIsImageLoading] = React.useState(false);
   return (
@@ -65,11 +64,11 @@ export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => 
               <Tooltip>
                 <TooltipTrigger asChild>
                   <p className="text-xs leading-none text-muted-foreground truncate max-w-[180px] cursor-help pb-[1px]">
-                    {user?.email}
+                    {profile?.email}
                   </p>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {user?.email}
+                  {profile?.email}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

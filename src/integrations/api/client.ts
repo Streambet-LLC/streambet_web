@@ -298,7 +298,7 @@ export const userAPI = {
 
   // Update notification preferences
   updateNotificationPreferences: async (preferences: any) => {
-    const response = await apiClient.patch('/users/me/notification-preferences', preferences);
+    const response = await apiClient.patch('/users/notification-settings', preferences);
     return response.data;
   },
 };

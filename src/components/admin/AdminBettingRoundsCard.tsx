@@ -250,6 +250,7 @@ export const AdminBettingRoundsCard = ({
                                         </div>
                                         <Separator className="my-4 bg-[#232323]" />
                                         <BettingRounds
+                                             isSaving={bettingSaveLoading}
                                              rounds={editableRounds}
                                              statusMap={statusMap}
                                              onRoundsChange={(newRounds) => {
@@ -315,14 +316,45 @@ export const AdminBettingRoundsCard = ({
                                                             </div>
                                                             {/* Created: show Open button */}
                                                             {isActive && isCreated && (
-                                                                 <Button
-                                                                      className="mt-4 w-32 rounded-full bg-primary text-black font-bold"
-                                                                      style={{ height: '30px' }}
-                                                                      disabled={isUpdatingAction}
-                                                                      onClick={() => handleOpenRound(round.roundId)}
-                                                                 >
-                                                                      {isUpdatingAction ? 'Opening...' : 'Open Round'}
-                                                                 </Button>
+                                                                 <div className="flex flex-row gap-2 w-full mt-4">
+                                                                     <Button
+                                                                         className="rounded-full font-bold w-1/2"
+                                                                         style={{ height: '30px' }}
+                                                                         disabled={isUpdatingAction}
+                                                                         onClick={() => handleOpenRound(round.roundId)}
+                                                                     >
+                                                                         {isUpdatingAction ? 'Opening...' : 'Open Round'}
+                                                                     </Button>
+                                                                     <AlertDialog>
+                                                                         <AlertDialogTrigger asChild>
+                                                                             <Button
+                                                                                 className="rounded-full font-bold w-1/2"
+                                                                                 style={{ height: '30px' }}
+                                                                                 variant="destructive"
+                                                                                 disabled={isUpdatingAction || isBetRoundCancelling}
+                                                                             >
+                                                                                 {isBetRoundCancelling ? 'Cancelling...' : 'Cancel Round'}
+                                                                             </Button>
+                                                                         </AlertDialogTrigger>
+                                                                         <AlertDialogContent className='border border-primary'>
+                                                                             <AlertDialogHeader>
+                                                                                 <AlertDialogTitle>Cancel Round</AlertDialogTitle>
+                                                                                 <AlertDialogDescription>
+                                                                                     Are you sure to cancel this round?
+                                                                                 </AlertDialogDescription>
+                                                                             </AlertDialogHeader>
+                                                                             <AlertDialogFooter>
+                                                                                 <AlertDialogCancel>Dismiss</AlertDialogCancel>
+                                                                                 <AlertDialogAction
+                                                                                     className="bg-destructive text-white hover:bg-destructive/90"
+                                                                                     onClick={() => handleCancelRound(round.roundId)}
+                                                                                 >
+                                                                                     Confirm
+                                                                                 </AlertDialogAction>
+                                                                             </AlertDialogFooter>
+                                                                         </AlertDialogContent>
+                                                                     </AlertDialog>
+                                                                 </div>
                                                             )}
                                                             {/* Open: show betting options, lock bets button */}
                                                             {isActive && isOpen && (
@@ -351,14 +383,45 @@ export const AdminBettingRoundsCard = ({
                                                                                 </span>
                                                                            ))}
                                                                       </div>
-                                                                      <Button
-                                                                           className="w-full rounded-full bg-primary text-black font-bold"
-                                                                           style={{ height: '30px' }}
-                                                                           onClick={() => handleLockBets(round.roundId)}
-                                                                           disabled={isUpdatingAction}
-                                                                      >
-                                                                           {isUpdatingAction ? 'Locking...' : 'Lock Bets'}
-                                                                      </Button>
+                                                                      <div className="flex flex-row gap-2 w-full mt-2">
+                                                                          <Button
+                                                                              className="rounded-full font-bold w-1/2"
+                                                                              style={{ height: '30px' }}
+                                                                              onClick={() => handleLockBets(round.roundId)}
+                                                                              disabled={isUpdatingAction}
+                                                                          >
+                                                                              {isUpdatingAction ? 'Locking...' : 'Lock Bets'}
+                                                                          </Button>
+                                                                          <AlertDialog>
+                                                                              <AlertDialogTrigger asChild>
+                                                                                  <Button
+                                                                                      className="rounded-full font-bold w-1/2"
+                                                                                      style={{ height: '30px' }}
+                                                                                      variant="destructive"
+                                                                                      disabled={isUpdatingAction || isBetRoundCancelling}
+                                                                                  >
+                                                                                      {isBetRoundCancelling ? 'Cancelling...' : 'Cancel Round'}
+                                                                                  </Button>
+                                                                              </AlertDialogTrigger>
+                                                                              <AlertDialogContent className='border border-primary'>
+                                                                                  <AlertDialogHeader>
+                                                                                      <AlertDialogTitle>Cancel Round</AlertDialogTitle>
+                                                                                      <AlertDialogDescription>
+                                                                                          Are you sure to cancel this round?
+                                                                                      </AlertDialogDescription>
+                                                                                  </AlertDialogHeader>
+                                                                                  <AlertDialogFooter>
+                                                                                      <AlertDialogCancel>Dismiss</AlertDialogCancel>
+                                                                                      <AlertDialogAction
+                                                                                          className="bg-destructive text-white hover:bg-destructive/90"
+                                                                                          onClick={() => handleCancelRound(round.roundId)}
+                                                                                      >
+                                                                                          Confirm
+                                                                                      </AlertDialogAction>
+                                                                                  </AlertDialogFooter>
+                                                                              </AlertDialogContent>
+                                                                          </AlertDialog>
+                                                                      </div>
                                                                  </div>
                                                             )}
                                                             {/* Locked: show options, enable selection, end round button */}
