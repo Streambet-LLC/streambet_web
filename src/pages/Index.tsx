@@ -17,7 +17,9 @@ const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [activeTab, setActiveTab] = useState('live');
 
-  const [currentPage, setCurrentPage] = useState(1);
+  // Store last page per tab
+  const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1 });
+  const currentPage = tabPages[activeTab] || 1;
   const itemsPerPage = 9;
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
@@ -40,9 +42,8 @@ const Index = () => {
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: '' }),
         pagination: true,
-        streamStatus: isLive ? 'live' : 'scheduled',
+        streamStatus: isLive ? 'live' : 'live',
       });
-
       return response;
     },
     refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
@@ -50,15 +51,28 @@ const Index = () => {
 
   useEffect(() => {
     refetchStreams()
-  }, [currentPage, refetchStreams]);
+  }, [currentPage, activeTab, refetchStreams]);
 
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages)
-    {
-      setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setTabPages(prev => ({ ...prev, [activeTab]: page }));
     }
+  };
+
+  // Handle tab switch: save current page, reset to 1 if switching, restore if returning
+  const handleTabSwitch = (tabKey: string) => {
+    setTabPages(prev => {
+      // If switching to a new tab, reset to 1 if not visited before, else restore last page
+      if (tabKey === activeTab) return prev;
+      return {
+        ...prev,
+        [activeTab]: currentPage, // Save current page for current tab
+        [tabKey]: prev[tabKey] || 1, // Restore or reset
+      };
+    });
+    setActiveTab(tabKey);
   };
 
   const updateThumbnails = async () => {
@@ -158,12 +172,11 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Commented as CR */}
-          {/* <TabSwitch
+          <TabSwitch
             className='!justify-center !mt-12 !mb-14'
             tabs={tabs}
             activeTab={activeTab}
-            setActiveTab={setActiveTab} /> */}
+            setActiveTab={handleTabSwitch} />
 
           <div className="mt-16">
 

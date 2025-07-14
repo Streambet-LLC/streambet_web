@@ -66,6 +66,7 @@ apiClient.interceptors.response.use(
       originalRequest.url.endsWith('/auth/refresh')
     )
     {
+      console.log('interceptor .use session timeout');
       alert('Session has been expired! Please relogin');
       await authAPI.signOut();
       window.location.href = '/login';
@@ -112,6 +113,7 @@ apiClient.interceptors.response.use(
         } catch (refreshError)
         {
           // If refresh fails, show alert and logout
+          console.log('catch (refreshError) line 113');
           alert('Session has been expired! Please relogin');
           await authAPI.signOut();
           window.location.href = '/login';
@@ -120,6 +122,7 @@ apiClient.interceptors.response.use(
       } else
       {
         // If already retried once, or no refreshToken, show alert and logout
+        console.log('else line 125');
         alert('Session has been expired! Please relogin');
         await authAPI.signOut();
         window.location.href = '/login';
