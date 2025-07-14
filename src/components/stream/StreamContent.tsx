@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import Chat from './Chat';
 import { FabioBoldStyle } from '@/utils/font';
 
 interface StreamContentProps {
@@ -50,7 +51,10 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
+  const [sendMessage, setSendmessage] = useState<string>();
+  const [messageList, setMessageList] = useState<any>();
   const queryClient = useQueryClient();
+
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -225,6 +229,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       processPlacedBet(update);
     });
 
+    socketInstance.on('newMessage', (update) => {
+      console.log('newMessage', update);
+      setMessageList(update)
+    });
+
     socketInstance.on('streamEnded', (update) => {
       console.log('streamEnded', update);
       toast({
@@ -378,8 +387,27 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       }
     }
 
+ // Mutation to send a message
+  const sendMessageSocket = (data: { message: string;imageURL:string;}) => {
+    if (socket && socket.connected) {
+      console.log('send message socket', data);
+      socket.emit('sendChatMessage', {
+        streamId: streamId,
+        message: data?.message,
+        imageURL:data?.imageURL,
+        timestamp: new Date(),
+      });
+      
+    } else {
+      toast({
+        description: 'Socket not connected. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-screen">
 
       
       <div className="lg:col-span-2 space-y-6">
@@ -549,15 +577,21 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           </div>}
 
 
-
-        {/* <div className="lg:hidden mt-4">
-          <CommentSection session={session} streamId={streamId} showInputOnly={true} />
-        </div> */}
+        <div className="lg:hidden mt-4">
+          {/* <Chat
+            sendMessageSocket={sendMessageSocket}
+            newSocketMessage={messageList}
+            session={session}/> */}
+        </div>
       </div>
 
-      <div className="lg:col-span-1 flex flex-col h-full">
+      <div className="lg:col-span-1 flex flex-col h-full mb-5">
         <div className="flex-1 h-full sticky top-24">
-          <CommentSection session={session} streamId={streamId} showInputOnly={false} />
+          {/* <CommentSection session={session} streamId={streamId} showInputOnly={false} /> */}
+          <Chat
+          sendMessageSocket={sendMessageSocket}
+          newSocketMessage={messageList}
+          session={session}/>
         </div>
       </div>
     </div>

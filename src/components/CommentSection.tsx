@@ -184,6 +184,8 @@ export const CommentSection = ({
     );
   }
 
+  console.log('comments', comments);
+
   return (
     <motion.div
       variants={scaleVariants}
@@ -268,12 +270,12 @@ export const CommentSection = ({
                 className="flex flex-col items-center justify-center py-10 space-y-4 text-center"
               >
                 <MessageSquare size={40} className="text-muted" />
-                <div>
+                {/* <div>
                   <p className="text-muted-foreground">Coming Soon!</p>
                   <p className="text-sm text-muted-foreground/70">
                     Yet to develop :)
                   </p>
-                </div>
+                </div> */}
               </motion.div>
             ) : (
               <CommentList comments={comments} commentsEndRef={commentsEndRef} />
@@ -343,7 +345,7 @@ export const CommentSection = ({
           onCommentChange={handleCommentChange}
           onEmojiSelect={handleEmojiSelect}
           onSubmit={handleSubmitComment}
-          isDisabled={true}
+          isDisabled={false}
         />
       </motion.div>
     </motion.div>
