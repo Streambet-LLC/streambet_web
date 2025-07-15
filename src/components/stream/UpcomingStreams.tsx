@@ -26,11 +26,11 @@ export const UpcomingStreams = ({ streams }: UpcomingStreamsProps) => {
                         src={getImageLink(stream.thumbnailURL)}
                         alt={stream.streamName}
                         className="object-contain w-full h-full"
-                        style={{ maxWidth: 115, maxHeight: 72, borderRadius: 8 }}
+                        style={{ maxWidth: 115, maxHeight: 72, borderRadius: 12 }}
                       />
                     </div>
                     {/* Stream Name */}
-                    <div className="flex-1 flex items-center justify-center h-full">
+                    <div className="flex items-center justify-center h-full ml-2">
                       <span
                         className="font-[700] text-[14px] text-white text-center w-full"
                         style={{ color: 'rgba(255,255,255,1)' }}
