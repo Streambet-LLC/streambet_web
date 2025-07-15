@@ -389,7 +389,7 @@ export function BettingRounds({
                       {errorRounds.includes(roundIndex) && (
                         <TableRow>
                           <TableCell colSpan={2} className="border-none px-4 py-2 !text-destructive text-xs">
-                            Each round must have at least one option.
+                            Each round must have at least two options.
                           </TableCell>
                         </TableRow>
                       )}

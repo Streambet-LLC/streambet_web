@@ -1,5 +1,4 @@
 import { Navigation } from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
 import { StreamCard } from '@/components/StreamCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -152,6 +151,7 @@ const Index = () => {
         clearInterval(refreshInterval.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streams]);
 
   useEffect(() => {

@@ -529,7 +529,7 @@ export const AdminManagement = ({
     
     // Validation: check for rounds with no options
     const errorIndices = bettingRounds
-      .map((round, idx) => (round.options.length === 0 ? idx : -1))
+      .map((round, idx) => (round.options.length < 2 ? idx : -1))
       .filter(idx => idx !== -1);
     
     // Validate for duplicate round/option names
@@ -541,7 +541,7 @@ export const AdminManagement = ({
       setBettingErrorRounds(errorIndices);
       toast({ 
         title: 'Validation Error', 
-        description: 'Each round must have at least one option. Please add options to all rounds before saving.', 
+        description: 'Each round must have at least two options. Please add options to all rounds before saving.', 
         variant: 'destructive' 
       });
       // Scroll to first error
@@ -823,8 +823,30 @@ export const AdminManagement = ({
       /> : (
         <>
           {/* Top bar (tabs, search, create button) only when not creating stream */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-12">
+          {/* Users Card */}
+          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+            <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Users</span>
+            <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+          </div>
+          {/* Active Streams Card */}
+          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+            <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Active Streams</span>
+            <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+          </div>
+          {/* Active Bets Card */}
+          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+            <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Active Bets</span>
+            <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+          </div>
+          {/* Time Live Card */}
+          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+            <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Time Live</span>
+            <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+          </div>
+        </div>
           <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}>
-            <TabSwitch tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+            <TabSwitch tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} className='ml-4' />
 
             {activeTab === 'users' && (
               <div className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`} style={{ border: '1px solid #2D343E' }}>
@@ -857,7 +879,14 @@ export const AdminManagement = ({
                 <button
                   type="button"
                   className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
-                  onClick={() => setIsCreateStream(true)}
+                  onClick={() => {
+                    resetForm();
+                    setIsCreateStream(true);
+                    setEditStreamId('');
+                    setViewStreamId('');
+                    setCreateStep('info');
+                    setBettingRounds([]);
+                  }}
                 >
                   {isMobile ? 'Create Livestream' : 'Create new livestream'}
                 </button>
