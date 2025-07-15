@@ -37,7 +37,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const { currency } = useCurrencyContext();
   const isStreamCoins = currency === CurrencyType.STREAM_COINS;
 
-  const { session } = useAuthContext();
+  const { session, refetchSession } = useAuthContext();
 
   // Handle scroll behavior for hiding/showing navbar
   useEffect(() => {
@@ -63,6 +63,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
     await api.auth.signOut();
     queryClient.clear();
     navigate('/login');
+    refetchSession();
   };
 
   useEffect(() => {

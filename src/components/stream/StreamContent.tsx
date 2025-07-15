@@ -51,7 +51,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
-  const [sendMessage, setSendmessage] = useState<string>();
   const [messageList, setMessageList] = useState<any>();
   const queryClient = useQueryClient();
 
@@ -73,7 +72,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     // Clear existing socket
     if (socket) {
       socket.off('pong');
-      socket.disconnect();
+      // socket.disconnect();
     }
 
     // Create new socket connection
@@ -274,7 +273,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       }
       
       api.socket.leaveStream(streamId, newSocket);
-      api.socket.disconnect();
+      // api.socket.disconnect();
       setSocket(null);
     };
   }, [streamId]);

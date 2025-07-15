@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getMessage } from '@/utils/helper';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email/Username is required'),
@@ -34,13 +35,14 @@ export default function Login() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [rememberMe, setRememberMe] = useState(false);
   const { locationResult } = useLocationRestriction();
+  const { refetchSession } = useAuthContext();
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { identifier: string; password: string; remember_me?: boolean, redirect?: string }) => {
       return await api.auth.login(credentials);
     },
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['session'] });
+      refetchSession();
       if (redirectParam) {
         navigate(redirectParam);
       } 
