@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -27,7 +27,6 @@ const loginSchema = z.object({
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const redirectParam = searchParams.get('redirect');
   const [email, setEmail] = useState('');

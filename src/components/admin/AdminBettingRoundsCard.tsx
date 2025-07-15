@@ -59,6 +59,7 @@ function getActiveRoundIndex(betData) {
 }
 
 export const AdminBettingRoundsCard = ({
+     isStreamScheduled,
      isStreamEnded,
      isUpdatingAction,
      isBetRoundCancelling,
@@ -117,7 +118,7 @@ export const AdminBettingRoundsCard = ({
           if (isActive) {
                return {
                     background: '#000',
-                    border: 'none',
+                    border: '1px solid #BDFF00',
                     boxShadow: '0 4px 16px 0 #BDFF004F, 0 -2px 8px 0 #BDFF004F',
                     borderRadius,
                     position: 'relative' as const,
@@ -387,7 +388,18 @@ export const AdminBettingRoundsCard = ({
                                                                           <Button
                                                                               className="rounded-full font-bold w-1/2"
                                                                               style={{ height: '30px' }}
-                                                                              onClick={() => handleLockBets(round.roundId)}
+                                                                              onClick={() => {
+                                                                                if (isStreamScheduled) {
+                                                                                     toast({
+                                                                                          title: 'Scheduled stream',
+                                                                                          description: 'Cannot lock bet of scheduled stream. You need to wait till stream goes live.',
+                                                                                          variant: 'destructive',
+                                                                                          duration: 7000,
+                                                                                     });
+                                                                                     return;
+                                                                                }
+                                                                                handleLockBets(round.roundId);
+                                                                           }}
                                                                               disabled={isUpdatingAction}
                                                                           >
                                                                               {isUpdatingAction ? 'Locking...' : 'Lock Bets'}
@@ -548,7 +560,7 @@ export const AdminBettingRoundsCard = ({
                                                                  </div>
                                                             )}
                                                        </div>
-                                                       {isActive && (
+                                                       {/* {isActive && (
                                                             <div
                                                                  style={{
                                                                       position: 'absolute',
@@ -568,7 +580,7 @@ export const AdminBettingRoundsCard = ({
                                                                       zIndex: 3,
                                                                  }}
                                                             />
-                                                       )}
+                                                       )} */}
                                                   </CarouselItem>
                                              );
                                         }) : (
