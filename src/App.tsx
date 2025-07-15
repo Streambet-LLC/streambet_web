@@ -25,6 +25,7 @@ import VerifyEmailNotice from './pages/auth/VerifyEmailNotice';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { BettingStatusProvider } from './contexts/BettingStatusContext';
 
 
 // Create a client
@@ -69,38 +70,40 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <LocationRestrictionProvider>
-        <CurrencyProvider>
-          <AuthProvider>
-            <BrowserRouter>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                {/* <WelcomeModal open={showWelcomeModal} onOpenChange={setShowWelcomeModal} /> */}
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/stream/:id" element={<Stream />} />
-                  <Route path="/stream/:id/settings" element={<StreamSettings />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/deposit" element={<Deposit />} />
-                  <Route path="/withdraw" element={<Withdraw />} />
-                  <Route path="/transactions" element={<Transactions />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/faq" element={<FAQ />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/auth/google-callback" element={<GoogleCallback />} />
-                  <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
-                  <Route path="/auth/verify-email" element={<VerifyEmail />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </TooltipProvider>
-            </BrowserRouter>
-          </AuthProvider>
-        </CurrencyProvider>
+          <CurrencyProvider>
+            <AuthProvider>
+                <BettingStatusProvider>
+              <BrowserRouter>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  {/* <WelcomeModal open={showWelcomeModal} onOpenChange={setShowWelcomeModal} /> */}
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/stream/:id" element={<Stream />} />
+                    <Route path="/stream/:id/settings" element={<StreamSettings />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<SignUp />} />
+                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/deposit" element={<Deposit />} />
+                    <Route path="/withdraw" element={<Withdraw />} />
+                    <Route path="/transactions" element={<Transactions />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/faq" element={<FAQ />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/auth/google-callback" element={<GoogleCallback />} />
+                    <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
+                    <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </TooltipProvider>
+              </BrowserRouter>
+                </BettingStatusProvider>
+            </AuthProvider>
+          </CurrencyProvider>
       </LocationRestrictionProvider>
     </QueryClientProvider>
   );

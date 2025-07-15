@@ -35,7 +35,6 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
     sendMessageSocket({ message, imageURL });
   };
 
-  console.log(session,'session')
 
   const addNewMessage = (data: IncomingMessage) => {
     const newMsg: Message = {

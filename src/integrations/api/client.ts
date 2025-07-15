@@ -501,19 +501,20 @@ export const socketAPI = {
   // Connect to WebSocket
   connect: () => {
     const token = localStorage.getItem('refreshToken');
+    console.log("socket connection iniiated")
     if (!token) return null;
-
+ console.log("socket connected confirmed")
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
-      // socket = io('https://020ddae7d217.ngrok-free.app', {
-      //   transports: ["websocket"],
-      //   auth: { token }
-      // });
-
-      socket = io(API_URL.replace(/\/api(?!.*\/api)/, ''), {
+      socket = io('https://179fe5ef77db.ngrok-free.app', {
         transports: ["websocket"],
         auth: { token }
       });
+
+      // socket = io(API_URL.replace(/\/api(?!.*\/api)/, ''), {
+      //   transports: ["websocket"],
+      //   auth: { token }
+      // });
 
 
       socket.on('connect', () => {
@@ -535,6 +536,7 @@ export const socketAPI = {
   disconnect: () => {
     if (socket)
     {
+      console.log("socket disconnection called")
       socket.disconnect();
       socket = null;
     }
@@ -563,7 +565,13 @@ export const socketAPI = {
     }
   },
 
-
+  // To get all betting updates
+  joinCommonStream: (socket:any) => {
+  console.log(socket,'joinCommonStream joined')
+    if (socket) {
+      socket.emit('joinStreamBet','streambet');
+    }
+  },
 
   // Subscribe to betting updates
   onBettingUpdate: (callback: (data: any) => void) => {

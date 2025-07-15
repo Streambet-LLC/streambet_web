@@ -72,7 +72,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     // Clear existing socket
     if (socket) {
       socket.off('pong');
-      socket.disconnect();
+      // socket.disconnect();
     }
 
     // Create new socket connection
@@ -273,7 +273,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       }
       
       api.socket.leaveStream(streamId, newSocket);
-      api.socket.disconnect();
+      // api.socket.disconnect();
       setSocket(null);
     };
   }, [streamId]);

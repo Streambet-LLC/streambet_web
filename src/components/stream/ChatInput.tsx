@@ -111,8 +111,9 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
           // type="text"
           value={message}
           onChange={e => setMessage(e.target.value)}
-          className="w-full bg-[#212121] text-white px-4 py-2 rounded-lg outline-none resize-none h-10"
-       
+          className="w-full bg-[#212121] text-white px-4 py-2 rounded-lg outline-none resize-none"
+          rows={1}
+          // style={{ maxHeight: 5 * 24 }}
         />
 
       </div>
