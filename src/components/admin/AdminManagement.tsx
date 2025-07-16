@@ -1,26 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Search } from 'lucide-react';
 import { UserTable } from './UserTable';
 import { StreamTable } from './StreamTable';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import api, { adminAPI } from '@/integrations/api/client';
-import { ArrowLeft, X as XIcon } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import { formatDateTimeForISO, getImageLink, getMessage } from '@/utils/helper';
 import OverView from './OverView';
 import { TabSwitch } from '../navigation/TabSwitch';
-import { CopyableInput } from '../ui/CopyableInput';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
@@ -59,7 +53,6 @@ export const AdminManagement = ({
   const [embeddedUrl, setEmbeddedUrl] = useState('');
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
-  const startTimeRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Betting rounds state
@@ -142,11 +135,6 @@ export const AdminManagement = ({
     return date.getDate() === today.getDate() &&
       date.getMonth() === today.getMonth() &&
       date.getFullYear() === today.getFullYear();
-  };
-
-  const getCurrentTime = () => {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   };
 
   const isTimeValid = (time: string, date: Date | null) => {
@@ -678,7 +666,10 @@ export const AdminManagement = ({
                 Pot Value
               </span>
               <span className="font-semibold text-[20px] sm:text-[24px] text-white" style={{ fontWeight: 600, color: 'rgba(255,255,255,1)' }}>
-                0
+                {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg> : 0}
               </span>
             </div>
             {/* Card 2 */}
@@ -687,7 +678,10 @@ export const AdminManagement = ({
                 Platform Vig
               </span>
               <span className="font-semibold text-[20px] sm:text-[24px] text-white" style={{ fontWeight: 600, color: 'rgba(255,255,255,1)' }}>
-                0
+                {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg> : 0}
               </span>
             </div>
             {/* Card 3 */}
@@ -696,7 +690,10 @@ export const AdminManagement = ({
                 Users
               </span>
               <span className="font-semibold text-[20px] sm:text-[24px] text-white" style={{ fontWeight: 600, color: 'rgba(255,255,255,1)' }}>
-                0
+                {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg> : 0}
               </span>
             </div>
             {/* Card 4 */}
@@ -705,7 +702,10 @@ export const AdminManagement = ({
                 Time Streaming
               </span>
               <span className="font-semibold text-[20px] sm:text-[24px] text-white" style={{ fontWeight: 600, color: 'rgba(255,255,255,1)' }}>
-                0
+                {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg> : 0}
               </span>
             </div>
           </div>
