@@ -18,8 +18,9 @@ import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
-import { BettingRoundStatus } from '@/enums';
+import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
 interface BettingOption {
   optionId?: string;
@@ -63,6 +64,8 @@ export const AdminManagement = ({
   const [showBettingValidation, setShowBettingValidation] = useState(false);
 
   const [bettingValidationErrors, setBettingValidationErrors] = useState<ValidationError[]>([]);
+  const { currency } = useCurrencyContext();
+  const isStreamCoins = currency === CurrencyType.STREAM_COINS;
 
   const tabs = [
     { key: 'livestreams', label: 'Livestreams' },
@@ -268,6 +271,17 @@ export const AdminManagement = ({
     setErrors(newErrors);
     return isValid;
   };
+
+  const {
+    data: adminAnalytics,
+    isFetching: isAdminAnalyticsLoading,
+  } = useQuery({
+    queryKey: ['adminAnalytics'],
+    queryFn: async () => {
+        const response = await adminAPI.getAdminAnalyticsData();
+        return response?.data;
+    },
+  });
 
   const {
     data: betStreamData,
@@ -669,7 +683,7 @@ export const AdminManagement = ({
                 {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg> : 0}
+                </svg> : ((isStreamCoins ? streamAnalytics?.totalBetValue?.coins : streamAnalytics?.totalBetValue?.freeTokens) || 0)?.toLocaleString('en-US')}
               </span>
             </div>
             {/* Card 2 */}
@@ -681,7 +695,7 @@ export const AdminManagement = ({
                 {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg> : 0}
+                </svg> : streamAnalytics?.platformVig}
               </span>
             </div>
             {/* Card 3 */}
@@ -693,7 +707,7 @@ export const AdminManagement = ({
                 {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg> : 0}
+                </svg> : (streamAnalytics?.totalUsers || 0)?.toLocaleString('en-US')}
               </span>
             </div>
             {/* Card 4 */}
@@ -705,7 +719,7 @@ export const AdminManagement = ({
                 {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg> : 0}
+                </svg> : streamAnalytics?.totalStreamTime}
               </span>
             </div>
           </div>
@@ -882,22 +896,34 @@ export const AdminManagement = ({
               {/* Users Card */}
               <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
                 <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Users</span>
-                <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+                {isAdminAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg> : <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>{adminAnalytics?.totalUsers}</span>}
               </div>
               {/* Active Streams Card */}
               <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
                 <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Active Streams</span>
-                <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+                {isAdminAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg> : <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>{adminAnalytics?.totalLiveStreams}</span>}
               </div>
               {/* Active Bets Card */}
               <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
                 <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Active Bets</span>
-                <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+                {isAdminAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg> : <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>{adminAnalytics?.totalActiveBets}</span>}
               </div>
               {/* Time Live Card */}
               <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
                 <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Time Live</span>
-                <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+                {isAdminAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg> : <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>{adminAnalytics?.totalLiveTime}</span>}
               </div>
             </div>
             <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}>
@@ -952,35 +978,6 @@ export const AdminManagement = ({
             {/* Tab Content */}
             {activeTab === 'overview' && (
               <OverView />
-              // <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-              //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-              //       Users
-              //     </p>
-              //     <p className="text-2xl font-semibold">${totalUsers}</p>
-              //   </div>
-
-              //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
-              //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-              //       Active Streams
-              //     </p>
-              //     <p className="text-2xl font-semibold">14</p>
-              //   </div>
-
-              //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-              //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-              //       Active Bets
-              //     </p>
-              //     <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
-              //   </div>
-
-              //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-              //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-              //       Time Live
-              //     </p>
-              //     <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
-              //   </div>
-              // </div>
             )}
 
             {activeTab === 'livestreams' && (

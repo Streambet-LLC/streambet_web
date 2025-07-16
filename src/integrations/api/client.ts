@@ -696,10 +696,16 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Get analytics data for admin dashboard
+  getAdminAnalyticsData: async () => {
+    const response = await apiClient.get(`/admin/analytics/summary`);
+    return response.data;
+  },
+
   // Get stream analytics based on stream ID
-  getStreamAnalytics: async (id: string) => {
-    const response = await apiClient.get(`/admin/streams/${id}/analytics`);
-    return response;
+  getStreamAnalytics: async (streamId: string) => {
+    const response = await apiClient.get(`/admin/analytics/stream/${streamId}`);
+    return response.data;
   },
 
   // Create betting options for stream

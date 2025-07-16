@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -12,24 +11,17 @@ import {
   Pagination,
   PaginationContent,
   PaginationItem,
-  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from '../ui/pagination';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import api from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
-import { Switch } from '@/components/ui/switch';
-import { DeleteUserDialog } from './DeleteUserDialog';
 import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing, ArrowLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { StreamStatus } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
 import { BettingRoundStatus } from '@/enums';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
 
 interface Props {
   streams: any;
