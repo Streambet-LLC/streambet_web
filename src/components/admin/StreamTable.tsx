@@ -22,12 +22,14 @@ import api from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { DeleteUserDialog } from './DeleteUserDialog';
-import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing } from 'lucide-react';
+import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing, ArrowLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { StreamStatus } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
 import { BettingRoundStatus } from '@/enums';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 
 interface Props {
   streams: any;
@@ -36,6 +38,7 @@ interface Props {
   setEditStreamId: (streamId: string) => void;
   currentPage: number;
   setCurrentPage: (page: number) => void;
+  setStreamAnalyticsId: (id: string) => void;
 }
 
 const BettingStatusBadge = ({ status }: { status?: string }) => {
@@ -133,23 +136,10 @@ export const StreamTable: React.FC<Props> = ({
   setEditStreamId,
   currentPage,
   setCurrentPage,
+  setStreamAnalyticsId,
 }) => {
   const isMobile = useIsMobile();
   const itemsPerPage = 7;
-
-  // const { data: streams, refetch: refetchStreams } = useQuery({
-  //   queryKey: ['streams'],
-  //   queryFn: async () => {
-  //     const data = await api.admin.getUsers({
-  //       range: `[${rangeStart},${rangeEnd}]`,
-  //       sort: '["createdAt","DESC"]',
-  //       filter: JSON.stringify({ q: searchStreamQuery }),
-  //       pagination: true,
-  //     })
-  //     return data;
-  //   },
-  //   enabled: false,
-  // });
 
   useEffect(() => {
     const rangeStart = (currentPage - 1) * itemsPerPage;
@@ -157,25 +147,17 @@ export const StreamTable: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
-  // const mutation = useMutation({
-  //   mutationFn: async ({ userId, userStatus }: { userId: string; userStatus: boolean }) => {
-  //     return await api.admin.updateUsersStatus({ userId, userStatus });
-  //   },
-  //   onSuccess: () => {
-  //     refetchProfiles();
-  //   },
-  // });
-
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
-  };
+  };  
 
   return (
     <div>
+      {/* Table and Card View below, update ChartNoAxesColumnIncreasing triggers */}
       {isMobile ? (
         // Mobile Card View
         <div className="space-y-4">
@@ -248,7 +230,16 @@ export const StreamTable: React.FC<Props> = ({
                         </TooltipTrigger>
                         <TooltipContent>Manage stream</TooltipContent>
                       </Tooltip>
-                      <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <ChartNoAxesColumnIncreasing
+                            size={16}
+                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                            onClick={() => setStreamAnalyticsId(stream?.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>Stream analytics</TooltipContent>
+                      </Tooltip>
                       <Lock color="#FFFFFFBF" size={16} className="cursor-pointer" />
                       <Play color="#FFFFFFBF" size={16} className="cursor-pointer" />
                     </div>
@@ -314,7 +305,16 @@ export const StreamTable: React.FC<Props> = ({
                         </TooltipTrigger>
                         <TooltipContent>Manage stream</TooltipContent>
                       </Tooltip>
-                      <ChartNoAxesColumnIncreasing color="#FFFFFFBF" size={18} />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <ChartNoAxesColumnIncreasing
+                            size={18}
+                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                            onClick={() => setStreamAnalyticsId(stream?.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>Stream analytics</TooltipContent>
+                      </Tooltip>
                       <Lock color="#FFFFFFBF" size={18} />
                       <Play color="#FFFFFFBF" size={18} />
                     </div>

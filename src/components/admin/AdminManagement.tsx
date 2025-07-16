@@ -51,6 +51,7 @@ export const AdminManagement = ({
   const [isCreateStream, setIsCreateStream] = useState(false);
   const [viewStreamId, setViewStreamId] = useState('');
   const [editStreamId, setEditStreamId] = useState('');
+  const [streamAnalyticsId, setStreamAnalyticsId] = useState('');
 
   // Create livestream form state
   const [title, setTitle] = useState('');
@@ -79,21 +80,18 @@ export const AdminManagement = ({
     mutationFn: (payload: any) => editStreamId ? api.admin.updateStream(editStreamId, payload)
       : api.admin.createStream(payload),
     onSuccess: (response) => {
-      if (bettingRounds.length > 0)
-        {
-          const bettingPayload = {
-            streamId: editStreamId || response?.data?.id,
-            rounds: bettingRounds.map((round) => ({
-              roundId: round.roundId,
-              roundName: round.roundName,
-              options: round.options,
-            })),
-          };
-          console.log('betting rounds', bettingPayload);
-          createBetMutation.mutate(bettingPayload);
-        }
-      else
-      {
+      if (bettingRounds.length > 0) {
+        const bettingPayload = {
+          streamId: editStreamId || response?.data?.id,
+          rounds: bettingRounds.map((round) => ({
+            roundId: round.roundId,
+            roundName: round.roundName,
+            options: round.options,
+          })),
+        };
+        createBetMutation.mutate(bettingPayload);
+      }
+      else {
         toast({ title: 'Success', description: 'Stream saved successfully!' });
         handleResetAll();
       }
@@ -199,8 +197,7 @@ export const AdminManagement = ({
     setBettingRounds([]);
 
     // Clear the file input
-    if (fileInputRef.current)
-    {
+    if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
 
@@ -214,17 +211,13 @@ export const AdminManagement = ({
   }
 
   function scrollToFirstError() {
-    if (errors.title && titleRef.current)
-    {
+    if (errors.title && titleRef.current) {
       titleRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.embeddedUrl && embeddedUrlRef.current)
-    {
+    } else if (errors.embeddedUrl && embeddedUrlRef.current) {
       embeddedUrlRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.thumbnail && thumbnailRef.current)
-    {
+    } else if (errors.thumbnail && thumbnailRef.current) {
       thumbnailRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (errors.startDate && startDateRef.current)
-    {
+    } else if (errors.startDate && startDateRef.current) {
       startDateRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
@@ -256,37 +249,30 @@ export const AdminManagement = ({
 
     let isValid = true;
 
-    if (!title)
-    {
+    if (!title) {
       newErrors.title = 'Title is required';
       isValid = false;
     }
-    else if (title?.trim().length < 3 || title?.trim().length > 70)
-    {
+    else if (title?.trim().length < 3 || title?.trim().length > 70) {
       newErrors.title = 'Title must be 3-70 characters';
       isValid = false;
     }
 
-    if (!embeddedUrl?.trim() || (!embeddedUrl?.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick')))
-    {
+    if (!embeddedUrl?.trim() || (!embeddedUrl?.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))) {
       newErrors.embeddedUrl = 'Embed URL is required and should be valid';
       isValid = false;
     }
-    if (!selectedThumbnailFile && !thumbnailPreviewUrl)
-    {
+    if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
       newErrors.thumbnail = 'Thumbnail is required';
       isValid = false;
     }
-    if (!startDateObj)
-    {
+    if (!startDateObj) {
       newErrors.startDate = 'Start date is required';
       isValid = false;
-    } else if (!startTime)
-    {
+    } else if (!startTime) {
       newErrors.startDate = 'Start time is required';
       isValid = false;
-    } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj))
-    {
+    } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
       newErrors.startDate = 'Cannot select past time for today';
       isValid = false;
     }
@@ -303,8 +289,7 @@ export const AdminManagement = ({
     queryKey: ['adminBetStreamData'],
     queryFn: async () => {
       const streamId = viewStreamId || editStreamId;
-      if (streamId)
-      {
+      if (streamId) {
         const response = await adminAPI.getStreamBetData(streamId);
         return response?.data;
       }
@@ -317,6 +302,26 @@ export const AdminManagement = ({
     refetchBetStreamData();
   }, [viewStreamId, editStreamId, refetchBetStreamData]);
 
+  const {
+    data: streamAnalytics,
+    isFetching: isStreamAnalyticsLoading,
+    refetch: refetchStreamAnalytics,
+  } = useQuery({
+    queryKey: ['adminStreamAnalytics'],
+    queryFn: async () => {
+      if (streamAnalyticsId) {
+        const response = await adminAPI.getStreamAnalytics(streamAnalyticsId);
+        return response?.data;
+      }
+      return undefined;
+    },
+    enabled: false,
+  });
+
+  useEffect(() => {
+    refetchStreamAnalytics();
+  }, [streamAnalyticsId, refetchStreamAnalytics]);
+
   const { isPending: isBetStatusUpdating, mutateAsync: betStatusUpdate } = useMutation({
     mutationFn: ({ streamId, payload }: { streamId: string, payload: any }) => api.admin.updateBetStatus(streamId, payload),
     onSuccess: () => {
@@ -324,9 +329,11 @@ export const AdminManagement = ({
     },
     onError: (error: any) => {
       const errorMessage: string = getMessage(error) || 'Failed to update bet';
-      toast({ title: errorMessage?.toLowerCase()?.includes('cannot lock') ? 'Not able to lock round' : `Error in updating the round status`, 
-      description: errorMessage, 
-      variant: 'destructive' });
+      toast({
+        title: errorMessage?.toLowerCase()?.includes('cannot lock') ? 'Not able to lock round' : `Error in updating the round status`,
+        description: errorMessage,
+        variant: 'destructive'
+      });
     },
   });
 
@@ -371,8 +378,7 @@ export const AdminManagement = ({
   } = useQuery({
     queryKey: ['adminStreamData'],
     queryFn: async () => {
-      if (editStreamId)
-      {
+      if (editStreamId) {
         const response = await adminAPI.getStream(editStreamId);
         return response?.data;
       }
@@ -392,7 +398,7 @@ export const AdminManagement = ({
   const handleLockBets = (streamId: string) => {
     betStatusUpdate({ streamId, payload: { newStatus: BettingRoundStatus.LOCKED } });
   };
-  
+
   const handleEndRound = (optionId: string) => {
     betDeclareWinner(optionId);
   };
@@ -402,22 +408,19 @@ export const AdminManagement = ({
   };
 
   useEffect(() => {
-    if (!isStreamLoading && streamData)
-    {
+    if (!isStreamLoading && streamData) {
       setTitle(streamData?.streamName);
       setDescription(streamData?.description);
       setEmbeddedUrl(streamData?.embeddedUrl);
       setBettingRounds(streamData?.rounds || []);
 
       // Set thumbnail if available
-      if (streamData.thumbnailUrl)
-      {
+      if (streamData.thumbnailUrl) {
         setThumbnailPreviewUrl(getImageLink(streamData.thumbnailUrl));
       }
 
       // Set start date and time if scheduledStartTime is available
-      if (streamData.scheduledStartTime)
-      {
+      if (streamData.scheduledStartTime) {
         const date = new Date(streamData.scheduledStartTime);
         setStartDateObj(date);
 
@@ -438,8 +441,7 @@ export const AdminManagement = ({
   }
   async function handleFile(file: File) {
     // Validate file type
-    if (!file.type.startsWith('image/'))
-    {
+    if (!file.type.startsWith('image/')) {
       setErrors({
         ...errors,
         thumbnail: 'Please upload an image file',
@@ -450,8 +452,7 @@ export const AdminManagement = ({
       return;
     }
     // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024)
-    {
+    if (file.size > 5 * 1024 * 1024) {
       setErrors({
         ...errors,
         thumbnail: 'Please upload an image smaller than 5MB',
@@ -475,12 +476,10 @@ export const AdminManagement = ({
       img.onload = () => {
         URL.revokeObjectURL(img.src);
         const isValidSize = img.width <= 1920 && img.height <= 1080;
-        if (!isValidSize)
-        {
+        if (!isValidSize) {
           setErrors(errors => ({ ...errors, thumbnail: 'Image must be maximum 1920x1080px' }));
           resolve(false);
-        } else
-        {
+        } else {
           resolve(true);
         }
       };
@@ -494,8 +493,7 @@ export const AdminManagement = ({
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0])
-    {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
   }
@@ -518,31 +516,30 @@ export const AdminManagement = ({
       startDate: '',
     });
     // Clear the file input to allow reselection
-    if (fileInputRef.current)
-    {
+    if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   }
 
   async function handleCreateStream() {
     setValidationStarted(true);
-    
+
     // Validation: check for rounds with no options
     const errorIndices = bettingRounds
       .map((round, idx) => (round.options.length < 2 ? idx : -1))
       .filter(idx => idx !== -1);
-    
+
     // Validate for duplicate round/option names
     const validationErrors = validateRounds(bettingRounds);
     setBettingValidationErrors(validationErrors);
     setShowBettingValidation(true);
-    
+
     if (errorIndices.length > 0) {
       setBettingErrorRounds(errorIndices);
-      toast({ 
-        title: 'Validation Error', 
-        description: 'Each round must have at least two options. Please add options to all rounds before saving.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Validation Error',
+        description: 'Each round must have at least two options. Please add options to all rounds before saving.',
+        variant: 'destructive'
       });
       // Scroll to first error
       setTimeout(() => {
@@ -551,7 +548,7 @@ export const AdminManagement = ({
       }, 500);
       return;
     }
-    
+
     if (validationErrors.length > 0) {
       // Scroll to first duplicate error
       setTimeout(() => {
@@ -569,16 +566,13 @@ export const AdminManagement = ({
 
     let thumbnailImageUrl = streamData?.thumbnailUrl || '';
 
-    if (selectedThumbnailFile?.name)
-    {
-      try
-      {
+    if (selectedThumbnailFile?.name) {
+      try {
         setIsUploading(true);
         const response = await api.auth.uploadImage(selectedThumbnailFile, 'thumbnail');
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
-      } catch (error)
-      {
+      } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Error uploading stream thumbnail',
@@ -604,6 +598,7 @@ export const AdminManagement = ({
     setIsCreateStream(false);
     setViewStreamId('');
     setEditStreamId('');
+    setStreamAnalyticsId('');
     setCreateStep('info');
     resetForm();
     setBettingRounds([]);
@@ -656,298 +651,359 @@ export const AdminManagement = ({
         <div className="flex items-center justify-center min-h-[60vh] w-full">
           <Loader2 className="animate-spin h-12 w-12 text-primary" />
         </div>
-      ) : isCreateStream || editStreamId ? (
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <Card className="w-full max-w-xl bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none">
-            <CardContent className="p-4 !pt-2 sm:p-6">
-              {/* Back button only at top */}
-              <div className="mb-6">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
-                  style={{ borderRadius: '10px', fontWeight: 400 }}
-                  disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
-                  onClick={() => {
-                    if (createStep === 'betting') {
-                      handleBackStep();
-                    } else {
-                      handleResetAll();
-                    }
-                  }}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-0" /> Back
-                </Button>
-              </div>
-              {/* Label and Create button in same row */}
-              <div className="flex flex-row items-center justify-between mb-6">
-                <span className="text-lg text-white font-light">{createStep === 'betting' ? (editStreamId ? 'Edit your betting options' : 'Create your betting options') : (editStreamId ? 'Manage Livestream' : 'Create new livestream')}</span>
-                {/* Step 1: Next button, Step 2: Submit button */}
-                {createStep === 'info' ? (
+      ) : streamAnalyticsId ? <div className="flex flex-col items-center justify-center min-h-[60vh] w-full px-2 sm:px-0">
+        <div className="flex flex-col rounded-2xl w-full max-w-xl bg-[#0D0D0D] border-none shadow-lg px-3 sm:px-6 pt-4 sm:pt-[16px] pb-8 sm:pb-[48px]">
+          {/* Header */}
+          <div className="mb-4 sm:mb-6">
+            <Button
+              type="button"
+              variant="secondary"
+              className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none text-sm sm:text-base"
+              style={{ borderRadius: '10px', fontWeight: 400 }}
+              disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+              onClick={() => setStreamAnalyticsId('')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-0" /> Back
+            </Button>
+          </div>
+          <span className="text-base sm:text-lg text-white font-[500]">
+            My Live Stream Analytics
+          </span>
+          <Separator className="bg-[#222] my-4 sm:my-5" />
+          {/* Body */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            {/* Card 1 */}
+            <div className="rounded-xl bg-[#161616] h-[100px] sm:h-[114px] p-4 sm:p-6 flex flex-col justify-between">
+              <span className="font-medium text-[13px] sm:text-[14px] text-white/75" style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>
+                Pot Value
+              </span>
+              <span className="font-semibold text-[20px] sm:text-[24px] text-white" style={{ fontWeight: 600, color: 'rgba(255,255,255,1)' }}>
+                0
+              </span>
+            </div>
+            {/* Card 2 */}
+            <div className="rounded-xl bg-[#161616] h-[100px] sm:h-[114px] p-4 sm:p-6 flex flex-col justify-between">
+              <span className="font-medium text-[13px] sm:text-[14px] text-white/75" style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>
+                Platform Vig
+              </span>
+              <span className="font-semibold text-[20px] sm:text-[24px] text-white" style={{ fontWeight: 600, color: 'rgba(255,255,255,1)' }}>
+                0
+              </span>
+            </div>
+            {/* Card 3 */}
+            <div className="rounded-xl bg-[#161616] h-[100px] sm:h-[114px] p-4 sm:p-6 flex flex-col justify-between">
+              <span className="font-medium text-[13px] sm:text-[14px] text-white/75" style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>
+                Users
+              </span>
+              <span className="font-semibold text-[20px] sm:text-[24px] text-white" style={{ fontWeight: 600, color: 'rgba(255,255,255,1)' }}>
+                0
+              </span>
+            </div>
+            {/* Card 4 */}
+            <div className="rounded-xl bg-[#161616] h-[100px] sm:h-[114px] p-4 sm:p-6 flex flex-col justify-between">
+              <span className="font-medium text-[13px] sm:text-[14px] text-white/75" style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>
+                Time Streaming
+              </span>
+              <span className="font-semibold text-[20px] sm:text-[24px] text-white" style={{ fontWeight: 600, color: 'rgba(255,255,255,1)' }}>
+                0
+              </span>
+            </div>
+          </div>
+        </div>
+      </div> :
+        isCreateStream || editStreamId ? (
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <Card className="w-full max-w-xl bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none">
+              <CardContent className="p-4 !pt-2 sm:p-6">
+                {/* Back button only at top */}
+                <div className="mb-6">
                   <Button
                     type="button"
-                    className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[79px] h-[40px]"
-                    style={{ borderRadius: '10px' }}
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      setValidationStarted(true);
-                      await handleNextStep();
-                    }}
+                    variant="secondary"
+                    className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
+                    style={{ borderRadius: '10px', fontWeight: 400 }}
                     disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                    onClick={() => {
+                      if (createStep === 'betting') {
+                        handleBackStep();
+                      } else {
+                        handleResetAll();
+                      }
+                    }}
                   >
-                    Next
+                    <ArrowLeft className="h-4 w-4 mr-0" /> Back
                   </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
-                    style={{ borderRadius: '10px' }}
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      await handleCreateStream();
-                    }}
-                    disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
-                  >
-                    {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Save') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
-                  </Button>
-                )}
+                </div>
+                {/* Label and Create button in same row */}
+                <div className="flex flex-row items-center justify-between mb-6">
+                  <span className="text-lg text-white font-light">{createStep === 'betting' ? (editStreamId ? 'Edit your betting options' : 'Create your betting options') : (editStreamId ? 'Manage Livestream' : 'Create new livestream')}</span>
+                  {/* Step 1: Next button, Step 2: Submit button */}
+                  {createStep === 'info' ? (
+                    <Button
+                      type="button"
+                      className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[79px] h-[40px]"
+                      style={{ borderRadius: '10px' }}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        setValidationStarted(true);
+                        await handleNextStep();
+                      }}
+                      disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                    >
+                      Next
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
+                      style={{ borderRadius: '10px' }}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        await handleCreateStream();
+                      }}
+                      disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                    >
+                      {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Save') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
+                    </Button>
+                  )}
+                </div>
+                <Separator className="my-4 bg-[#232323]" />
+                {/* Form fields */}
+                <form className="space-y-8" onSubmit={e => e.preventDefault()}>
+                  {/* Step 1: Info */}
+                  {createStep === 'info' && (
+                    <StreamInfoForm
+                      isEdit={!!editStreamId}
+                      initialValues={{
+                        title,
+                        description,
+                        embeddedUrl,
+                        thumbnailPreviewUrl,
+                        startDateObj,
+                        startTime,
+                        streamId: editStreamId || undefined,
+                      }}
+                      errors={errors}
+                      isUploading={isUploading}
+                      loading={createStreamMutation.isPending || createBetMutation.isPending}
+                      isDragging={isDragging}
+                      onChange={fields => {
+                        if (!validationStarted) {
+                          if ('title' in fields) setTitle(fields.title ?? '');
+                          if ('description' in fields) setDescription(fields.description ?? '');
+                          if ('embeddedUrl' in fields) setEmbeddedUrl(fields.embeddedUrl ?? '');
+                          if ('startDateObj' in fields) setStartDateObj(fields.startDateObj ?? null);
+                          if ('startTime' in fields) setStartTime(fields.startTime ?? '');
+                          return;
+                        }
+                        const newErrors = { ...errors };
+                        if ('title' in fields) {
+                          setTitle(fields.title ?? '');
+                          const value = fields.title ?? '';
+                          if (!value) newErrors.title = 'Title is required';
+                          else if (value.trim().length < 3 || value.trim().length > 70) newErrors.title = 'Title must be 3-70 characters';
+                          else newErrors.title = '';
+                        }
+                        if ('description' in fields) {
+                          setDescription(fields.description ?? '');
+                          // No validation for description
+                        }
+                        if ('embeddedUrl' in fields) {
+                          setEmbeddedUrl(fields.embeddedUrl ?? '');
+                          const value = fields.embeddedUrl ?? '';
+                          if (!value.trim() || (!value.includes('http') && !value.includes('www') && !value.includes('kick')))
+                            newErrors.embeddedUrl = 'Embed URL is required and should be valid';
+                          else newErrors.embeddedUrl = '';
+                        }
+                        if ('startDateObj' in fields) {
+                          setStartDateObj(fields.startDateObj ?? null);
+                          const date = fields.startDateObj ?? null;
+                          if (!date) newErrors.startDate = 'Start date is required';
+                          else if (!startTime) newErrors.startDate = 'Start time is required';
+                          else if (isToday(date) && !isTimeValid(startTime, date)) newErrors.startDate = 'Cannot select past time for today';
+                          else newErrors.startDate = '';
+                        }
+                        if ('startTime' in fields) {
+                          setStartTime(fields.startTime ?? '');
+                          const value = fields.startTime ?? '';
+                          if (!startDateObj) newErrors.startDate = 'Start date is required';
+                          else if (!value) newErrors.startDate = 'Start time is required';
+                          else if (isToday(startDateObj) && !isTimeValid(value, startDateObj)) newErrors.startDate = 'Cannot select past time for today';
+                          else newErrors.startDate = '';
+                        }
+                        setErrors(newErrors);
+                      }}
+                      onFileChange={file => handleFileChange({ target: { files: file ? [file] : [] } } as any)}
+                      onSubmit={async () => {
+                        setValidationStarted(true);
+                        await handleNextStep();
+                      }}
+                      onDeleteThumbnail={handleDeleteThumbnail}
+                      onStartDateChange={handleStartDateChange}
+                      onStartTimeChange={handleStartTimeChange}
+                    />
+                  )}
+                  {/* Step 2: Betting */}
+                  {createStep === 'betting' && (
+                    <BettingRounds
+                      isSaving={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                      statusMap={betStreamData?.data?.rounds ? Object.fromEntries(betStreamData?.data?.rounds.map((r) => [r?.roundId, r?.status])) : {}}
+                      rounds={bettingRounds}
+                      onRoundsChange={handleRoundsChange}
+                      onErrorRoundsChange={(errorRounds) => setBettingErrorRounds(errorRounds)}
+                      editStreamId={editStreamId}
+                      showValidationErrors={showBettingValidation}
+                      errorRounds={bettingErrorRounds}
+                      validationErrors={bettingValidationErrors}
+                    />
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        ) : viewStreamId ? <AdminStreamContent
+          streamId={viewStreamId}
+          session={session}
+          betData={betStreamData?.data?.rounds}
+          isStreamEnding={isStreamEnding}
+          isBetRoundCancelling={isBetRoundCancelling}
+          isUpdatingAction={isBetStatusUpdating || isDeclareWinnerUpdating || isBetStreamLoading}
+          handleOpenRound={handleOpenRound}
+          handleLockBets={handleLockBets}
+          handleEndRound={handleEndRound}
+          handleCancelRound={handleCancelRound}
+          handleEndStream={initiateEndStream}
+          refetchBetData={refetchBetStreamData}
+          handleBack={() => handleResetAll()}
+        /> : (
+          <>
+            {/* Top bar (tabs, search, create button) only when not creating stream */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-12">
+              {/* Users Card */}
+              <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+                <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Users</span>
+                <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
               </div>
-              <Separator className="my-4 bg-[#232323]" />
-              {/* Form fields */}
-              <form className="space-y-8" onSubmit={e => e.preventDefault()}>
-                {/* Step 1: Info */}
-                {createStep === 'info' && (
-                  <StreamInfoForm
-                  isEdit={!!editStreamId}
-                    initialValues={{
-                      title,
-                      description,
-                      embeddedUrl,
-                      thumbnailPreviewUrl,
-                      startDateObj,
-                      startTime,
-                      streamId: editStreamId || undefined,
-                    }}
-                    errors={errors}
-                    isUploading={isUploading}
-                    loading={createStreamMutation.isPending || createBetMutation.isPending}
-                    isDragging={isDragging}
-                    onChange={fields => {
-                      if (!validationStarted) {
-                        if ('title' in fields) setTitle(fields.title ?? '');
-                        if ('description' in fields) setDescription(fields.description ?? '');
-                        if ('embeddedUrl' in fields) setEmbeddedUrl(fields.embeddedUrl ?? '');
-                        if ('startDateObj' in fields) setStartDateObj(fields.startDateObj ?? null);
-                        if ('startTime' in fields) setStartTime(fields.startTime ?? '');
-                        return;
-                      }
-                      const newErrors = { ...errors };
-                      if ('title' in fields) {
-                        setTitle(fields.title ?? '');
-                        const value = fields.title ?? '';
-                        if (!value) newErrors.title = 'Title is required';
-                        else if (value.trim().length < 3 || value.trim().length > 70) newErrors.title = 'Title must be 3-70 characters';
-                        else newErrors.title = '';
-                      }
-                      if ('description' in fields) {
-                        setDescription(fields.description ?? '');
-                        // No validation for description
-                      }
-                      if ('embeddedUrl' in fields) {
-                        setEmbeddedUrl(fields.embeddedUrl ?? '');
-                        const value = fields.embeddedUrl ?? '';
-                        if (!value.trim() || (!value.includes('http') && !value.includes('www') && !value.includes('kick')))
-                          newErrors.embeddedUrl = 'Embed URL is required and should be valid';
-                        else newErrors.embeddedUrl = '';
-                      }
-                      if ('startDateObj' in fields) {
-                        setStartDateObj(fields.startDateObj ?? null);
-                        const date = fields.startDateObj ?? null;
-                        if (!date) newErrors.startDate = 'Start date is required';
-                        else if (!startTime) newErrors.startDate = 'Start time is required';
-                        else if (isToday(date) && !isTimeValid(startTime, date)) newErrors.startDate = 'Cannot select past time for today';
-                        else newErrors.startDate = '';
-                      }
-                      if ('startTime' in fields) {
-                        setStartTime(fields.startTime ?? '');
-                        const value = fields.startTime ?? '';
-                        if (!startDateObj) newErrors.startDate = 'Start date is required';
-                        else if (!value) newErrors.startDate = 'Start time is required';
-                        else if (isToday(startDateObj) && !isTimeValid(value, startDateObj)) newErrors.startDate = 'Cannot select past time for today';
-                        else newErrors.startDate = '';
-                      }
-                      setErrors(newErrors);
-                    }}
-                    onFileChange={file => handleFileChange({ target: { files: file ? [file] : [] } } as any)}
-                    onSubmit={async () => {
-                      setValidationStarted(true);
-                      await handleNextStep();
-                    }}
-                    onDeleteThumbnail={handleDeleteThumbnail}
-                    onStartDateChange={handleStartDateChange}
-                    onStartTimeChange={handleStartTimeChange}
-                  />
-                )}
-                {/* Step 2: Betting */}
-                {createStep === 'betting' && (
-                  <BettingRounds
-                    isSaving={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
-                    statusMap={betStreamData?.data?.rounds ? Object.fromEntries(betStreamData?.data?.rounds.map((r) => [r?.roundId, r?.status])) : {}}
-                    rounds={bettingRounds}
-                    onRoundsChange={handleRoundsChange}
-                    onErrorRoundsChange={(errorRounds) => setBettingErrorRounds(errorRounds)}
-                    editStreamId={editStreamId}
-                    showValidationErrors={showBettingValidation}
-                    errorRounds={bettingErrorRounds}
-                    validationErrors={bettingValidationErrors}
-                  />
-                )}
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      ) : viewStreamId ? <AdminStreamContent
-            streamId={viewStreamId}
-            session={session}
-            betData={betStreamData?.data?.rounds}
-            isStreamEnding={isStreamEnding}
-            isBetRoundCancelling={isBetRoundCancelling}
-            isUpdatingAction={isBetStatusUpdating || isDeclareWinnerUpdating || isBetStreamLoading}
-            handleOpenRound={handleOpenRound}
-            handleLockBets={handleLockBets}
-            handleEndRound={handleEndRound}
-            handleCancelRound={handleCancelRound}
-            handleEndStream={initiateEndStream}
-            refetchBetData={refetchBetStreamData}
-            handleBack={() => handleResetAll()}
-      /> : (
-        <>
-          {/* Top bar (tabs, search, create button) only when not creating stream */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-12">
-          {/* Users Card */}
-          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
-            <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Users</span>
-            <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
-          </div>
-          {/* Active Streams Card */}
-          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
-            <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Active Streams</span>
-            <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
-          </div>
-          {/* Active Bets Card */}
-          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
-            <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Active Bets</span>
-            <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
-          </div>
-          {/* Time Live Card */}
-          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
-            <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Time Live</span>
-            <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
-          </div>
-        </div>
-          <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}>
-            <TabSwitch tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} className='ml-4' />
-
-            {activeTab === 'users' && (
-              <div className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`} style={{ border: '1px solid #2D343E' }}>
-                <Input
-                  id="search-users"
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchUserQuery}
-                  onChange={e => setSearchUserQuery(e.target.value)}
-                  className="pl-9 rounded-md"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              {/* Active Streams Card */}
+              <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+                <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Active Streams</span>
+                <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
               </div>
-            )}
+              {/* Active Bets Card */}
+              <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+                <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Active Bets</span>
+                <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+              </div>
+              {/* Time Live Card */}
+              <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+                <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, fontSize: 14, textAlign: 'left' }}>Time Live</span>
+                <span style={{ color: 'rgba(255,255,255,1)', fontWeight: 600, fontSize: 24, textAlign: 'left' }}>0</span>
+              </div>
+            </div>
+            <div className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}>
+              <TabSwitch tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} className='ml-4' />
 
-            {activeTab === 'livestreams' && (
-              <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-end'} w-full`}>
-                <div className={`relative rounded-md ${isMobile ? 'w-full' : 'mr-2'}`} style={{ border: '1px solid #2D343E' }}>
+              {activeTab === 'users' && (
+                <div className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`} style={{ border: '1px solid #2D343E' }}>
                   <Input
-                    id="search-streams"
+                    id="search-users"
                     type="text"
-                    placeholder="Search streams..."
-                    value={searchStreamQuery}
-                    onChange={e => setSearchStreamQuery(e.target.value)}
+                    placeholder="Search users..."
+                    value={searchUserQuery}
+                    onChange={e => setSearchUserQuery(e.target.value)}
                     className="pl-9 rounded-md"
-                    style={isMobile ? {} : { minWidth: 180 }}
                   />
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
-                <button
-                  type="button"
-                  className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
-                  onClick={() => {
-                    resetForm();
-                    setIsCreateStream(true);
-                    setEditStreamId('');
-                    setViewStreamId('');
-                    setCreateStep('info');
-                    setBettingRounds([]);
-                  }}
-                >
-                  {isMobile ? 'Create Livestream' : 'Create new livestream'}
-                </button>
+              )}
+
+              {activeTab === 'livestreams' && (
+                <div className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-end'} w-full`}>
+                  <div className={`relative rounded-md ${isMobile ? 'w-full' : 'mr-2'}`} style={{ border: '1px solid #2D343E' }}>
+                    <Input
+                      id="search-streams"
+                      type="text"
+                      placeholder="Search streams..."
+                      value={searchStreamQuery}
+                      onChange={e => setSearchStreamQuery(e.target.value)}
+                      className="pl-9 rounded-md"
+                      style={isMobile ? {} : { minWidth: 180 }}
+                    />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <button
+                    type="button"
+                    className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
+                    onClick={() => {
+                      resetForm();
+                      setIsCreateStream(true);
+                      setEditStreamId('');
+                      setViewStreamId('');
+                      setCreateStep('info');
+                      setBettingRounds([]);
+                    }}
+                  >
+                    {isMobile ? 'Create Livestream' : 'Create new livestream'}
+                  </button>
+                </div>
+              )}
+            </div>
+            <Separator className="!mt-1" />
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+              <OverView />
+              // <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+              //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              //       Users
+              //     </p>
+              //     <p className="text-2xl font-semibold">${totalUsers}</p>
+              //   </div>
+
+              //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
+              //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              //       Active Streams
+              //     </p>
+              //     <p className="text-2xl font-semibold">14</p>
+              //   </div>
+
+              //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+              //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              //       Active Bets
+              //     </p>
+              //     <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
+              //   </div>
+
+              //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
+              //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+              //       Time Live
+              //     </p>
+              //     <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
+              //   </div>
+              // </div>
+            )}
+
+            {activeTab === 'livestreams' && (
+              <div className="space-y-4">
+                <StreamTable
+                  streams={streams}
+                  setStreamAnalyticsId={setStreamAnalyticsId}
+                  refetchStreams={refetchStreams}
+                  setViewStreamId={setViewStreamId}
+                  setEditStreamId={setEditStreamId}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                />
               </div>
             )}
-          </div>
-          <Separator className="!mt-1" />
-          {/* Tab Content */}
-          {activeTab === 'overview' && (
-            <OverView />
-            // <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-            //       Users
-            //     </p>
-            //     <p className="text-2xl font-semibold">${totalUsers}</p>
-            //   </div>
 
-            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow relative">
-            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-            //       Active Streams
-            //     </p>
-            //     <p className="text-2xl font-semibold">14</p>
-            //   </div>
-
-            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-            //       Active Bets
-            //     </p>
-            //     <p className="text-2xl font-semibold">${activeBets.toFixed(2)}</p>
-            //   </div>
-
-            //   <div className="bg-zinc-900 text-white p-4 rounded-lg shadow">
-            //     <p className="text-sm font-medium pb-1" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-            //       Time Live
-            //     </p>
-            //     <p className="text-2xl font-semibold">{totalLiveTime.toLocaleString()} hours</p>
-            //   </div>
-            // </div>
-          )}
-
-          {activeTab === 'livestreams' && (
-            <div className="space-y-4">
-              <StreamTable
-                streams={streams}
-                refetchStreams={refetchStreams}
-                setViewStreamId={setViewStreamId}
-                setEditStreamId={setEditStreamId}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-              />
-            </div>
-          )}
-
-          {activeTab === 'users' && (
-            <div className="space-y-4">
-              <UserTable searchUserQuery={searchUserQuery} />
-            </div>
-          )}
-        </>
-      )}
+            {activeTab === 'users' && (
+              <div className="space-y-4">
+                <UserTable searchUserQuery={searchUserQuery} />
+              </div>
+            )}
+          </>
+        )}
     </div>
   );
 };

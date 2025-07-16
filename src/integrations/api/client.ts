@@ -696,6 +696,12 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Get stream analytics based on stream ID
+  getStreamAnalytics: async (id: string) => {
+    const response = await apiClient.get(`/admin/streams/${id}/analytics`);
+    return response;
+  },
+
   // Create betting options for stream
   createBettingData: async (payload: any) => {
     const response = await apiClient.post(`/admin/betting-variables`, payload);
