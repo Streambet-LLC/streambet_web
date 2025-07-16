@@ -9,12 +9,13 @@ import api from '@/integrations/api/client';
 import LockTokens from './LockTokens';
 import { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { BettingRoundStatus, CurrencyType } from '@/enums';
+import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Chat from './Chat';
 import { FabioBoldStyle } from '@/utils/font';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
+import { formatDateTime } from '@/utils/helper';
 
 interface StreamContentProps {
   streamId: string;
@@ -56,10 +57,10 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [messageList, setMessageList] = useState<any>();
   const queryClient = useQueryClient();
 
-
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
+  const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
 
   console.log(socketConnect,'socketConnect in stream')
 
@@ -428,10 +429,13 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
       
       <div className="lg:col-span-2 space-y-6">
-        <StreamPlayer 
-        showInfo
-        streamId={streamId} 
-       />
+      <div className="relative">
+            {isStreamScheduled ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+              <div className={` px-2 relative w-full h-full flex items-center border border-primary justify-center bg-black text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
+                {isStreamScheduled ? `Stream '${stream?.name}' scheduled on ${formatDateTime(stream?.scheduledStartTime)}.` : 'Stream has ended.'}
+              </div>
+            </div> : <StreamPlayer showInfo streamId={streamId} />}
+          </div>
 
        {session == null &&
       <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">

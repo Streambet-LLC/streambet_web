@@ -1,23 +1,16 @@
 
 import { useParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useStreamData } from '@/hooks/useStreamData';
-import { useStreamSubscriptions } from '@/hooks/useStreamSubscriptions';
-import { useBetDeletionListener } from '@/hooks/useBetDeletionListener';
 import { useAuthStateChangeHandler } from '@/hooks/useAuthStateChangeHandler';
 import { StreamContent } from '@/components/stream/StreamContent';
 import { useEffect, useRef, useState } from 'react';
-import { useToast } from '@/components/ui/use-toast';
 import { Navigation } from '@/components/Navigation';
-import api from '@/integrations/api/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 
 const Stream = () => {
   const { id } = useParams();
   const streamId = id;
-  // const streamId = 'ab58330d-e10c-433b-8b0b-df259a1878de';
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const prevUserIdRef = useRef<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);

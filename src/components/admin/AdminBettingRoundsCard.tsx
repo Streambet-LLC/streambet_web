@@ -199,7 +199,7 @@ export const AdminBettingRoundsCard = ({
                                                        onClick={async () => {
                                                             // Validation: check for rounds with no options
                                                             const errorIndices = editableRounds
-                                                              .map((round, idx) => (round.options.length === 0 ? idx : -1))
+                                                              .map((round, idx) => (round.options.length < 2 ? idx : -1))
                                                               .filter(idx => idx !== -1);
                                                             // Validate for duplicate round/option names
                                                             const validationErrors = validateRounds(editableRounds);
@@ -209,7 +209,7 @@ export const AdminBettingRoundsCard = ({
                                                                  setBettingErrorRounds(errorIndices);
                                                                  toast({ 
                                                                    title: 'Validation Error', 
-                                                                   description: 'Each round must have at least one option. Please add options to all rounds before saving.', 
+                                                                   description: 'Each round must have at least two options. Please add options to all rounds before saving.', 
                                                                    variant: 'destructive' 
                                                                  });
                                                                  // Scroll to first error
