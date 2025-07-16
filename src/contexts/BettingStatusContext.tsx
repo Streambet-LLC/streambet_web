@@ -5,15 +5,15 @@ import { useAuthContext } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface BettingStatusContextType {
-  currency: CurrencyType;
-  setCurrency: (currency: CurrencyType) => void;
+  socketConnect:any;
+  setSocketConect: (socketConnect: any) => void;
 }
 
 const BettingStatusContext = createContext<BettingStatusContextType | undefined>(undefined);
 
 export const BettingStatusProvider = ({ children }: { children: ReactNode }) => {
-  const [currency, setCurrency] = useState<CurrencyType>(CurrencyType.FREE_TOKENS);
-  const [socket, setSocket] = useState<any>(null);
+
+  const [socketConnect, setSocketConect] = useState<any>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { session } = useAuthContext()
   const { toast } = useToast();
@@ -21,6 +21,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
   const maxReconnectAttempts = 5;
 
  const handleSocketReconnection = () => {
+  console.log("Reconnecting socket")
     if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
       console.log('Max reconnection attempts reached');
       return;
@@ -29,15 +30,14 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
     reconnectAttemptsRef.current++;
 
     // Clear existing socket
-    if (socket) {
-      socket.off('pong');
-      socket.disconnect();
+    if (socketConnect) {
+      socketConnect.off('pong');
     }
 
     // Create new socket connection
     const newSocket = api.socket.connect();
     if (newSocket) {
-      setSocket(newSocket);
+      setSocketConect(newSocket);
       api.socket.joinCommonStream(newSocket);
       // Reset reconnection attempts on successful connection
       newSocket.on('connect', () => {
@@ -55,7 +55,8 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
 
     const setupSocketEventListeners = (socketInstance: any) => {
       if (!socketInstance) return;
-
+      socketInstance?.off('botMessage');
+      socketInstance?.off('connect_error');
     // Handle disconnection events
       socketInstance.on('botMessage', (update: any) => {
         console.log('all botMessages', update);
@@ -72,32 +73,37 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
     };
   
     useEffect(() => {
-      console.log(session,'context session')
+      console.log("socket useEffect in conext")
       if(session){
-      const newSocket = api.socket.connect();
-      console.log(newSocket,'newSocket in betting context')
-      api.socket.joinCommonStream(newSocket);
-      setSocket(newSocket);
-      // Setup event listeners
-      setupSocketEventListeners(newSocket);
+        
+        const newSocket = api.socket.connect();
+        console.log(newSocket,'newSocket in betting context')
+        api.socket.joinCommonStream(newSocket);
+        setSocketConect(newSocket);
+        // Setup event listeners
+        setupSocketEventListeners(newSocket);
       }
       else{
         api.socket.disconnect();
       }
     
-      // return () => {
-      //   // Cleanup ping-pong intervals
-      //   if (reconnectTimeoutRef.current) {
-      //     clearTimeout(reconnectTimeoutRef.current);
-      //   }
-      //   api.socket.disconnect();
-      //   setSocket(null);
-      // };
+      return () => {
+        // Cleanup ping-pong intervals
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+        if (socketConnect) {
+          socketConnect.off('botMessage');
+          socketConnect.off('connect_error');
+          socketConnect.disconnect();
+        }
+        setSocketConect(null);
+      };
     }, [session]);
 
 
   return (
-    <BettingStatusContext.Provider value={{ currency, setCurrency }}>
+    <BettingStatusContext.Provider value={{ socketConnect, setSocketConect }}>
       {children}
     </BettingStatusContext.Provider>
   );

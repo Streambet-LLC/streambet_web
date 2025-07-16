@@ -503,10 +503,11 @@ export const socketAPI = {
     const token = localStorage.getItem('refreshToken');
     console.log("socket connection iniiated")
     if (!token) return null;
- console.log("socket connected confirmed")
+    console.log("socket connected confirmed")
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
-      // socket = io('https://179fe5ef77db.ngrok-free.app', {
+      console.log("socket inside if conditi in client")
+      // socket = io('https://913dd4ba8686.ngrok-free.app', {
       //   transports: ["websocket"],
       //   auth: { token }
       // });
@@ -531,7 +532,7 @@ export const socketAPI = {
     }
     return socket;
   },
-
+  // getSocket: () => socket,
   // Disconnect WebSocket
   disconnect: () => {
     if (socket)
@@ -544,8 +545,9 @@ export const socketAPI = {
 
   // Join a stream room
   joinStream: (streamId: string,socket:any) => {
-  // console.log(socket,'socket in joinStream')
+ 
     if (socket) {
+       console.log(socket,'client socket in joinStream')
       socket.emit('joinStream', streamId);
     }
   },

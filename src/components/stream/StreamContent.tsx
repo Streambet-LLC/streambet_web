@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Chat from './Chat';
 import { FabioBoldStyle } from '@/utils/font';
+import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 
 interface StreamContentProps {
   streamId: string;
@@ -26,6 +27,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
+  const { socketConnect } = useBettingStatusContext();
   const [betId, setBetId] = useState<string | undefined>();
   const [placedBet, setPlaceBet] = useState(true); // show BetTokens when true, LockTokens when false
   const [resetKey, setResetKey] = useState(0); // Add resetKey state
@@ -45,7 +47,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [loading, setLoading] = useState<boolean>(false);    // Loader state when data is being fetched from socket           
   const [winnerOption, setWinnerOption] = useState<boolean>(); 
   // Socket reference
-  const [socket, setSocket] = useState<any>(null);
+  // const [socket, setSocket] = useState<any>(null);
   const [showWinnerAnimation, setShowWinnerAnimation] = useState(false);
   // Track if last update came from socket then no need to execute getRoundData useEffect
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
@@ -59,6 +61,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
 
+  console.log(socketConnect,'socketConnect in stream')
+
   // Function to handle socket reconnection
   const handleSocketReconnection = () => {
     if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
@@ -70,25 +74,25 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     reconnectAttemptsRef.current++;
 
     // Clear existing socket
-    if (socket) {
-      socket.off('pong');
+    if (socketConnect) {
+      socketConnect.off('pong');
       // socket.disconnect();
     }
 
     // Create new socket connection
-    const newSocket = api.socket.connect();
-    if (newSocket) {
-      setSocket(newSocket);
-      api.socket.joinStream(streamId, newSocket);
+    // const newSocket = api.socket.connect();
+    if (socketConnect) {
+      // setSocket(socketConnect);
+      api.socket.joinStream(streamId, socketConnect);
       
       // Reset reconnection attempts on successful connection
-      newSocket.on('connect', () => {
+      socketConnect.on('connect', () => {
         console.log('Socket reconnected successfully');
         reconnectAttemptsRef.current = 0;
       });
 
       // Set up event listeners for the new socket
-      setupSocketEventListeners(newSocket);
+      setupSocketEventListeners(socketConnect);
     } else {
       // Retry reconnection after delay
       reconnectTimeoutRef.current = setTimeout(() => {
@@ -100,6 +104,13 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
     if (!socketInstance) return;
+
+    // Remove previous listeners to prevent duplicates
+      //  socketInstance?.off('betPlaced');
+      //  socketInstance?.off('betEdited');
+      //  socketInstance?.off('betOpened');
+      //  socketInstance?.off('betCancelledByAdmin');
+    
 
     const resetBetData = () => {
       setTotalPotTokens(undefined);
@@ -132,7 +143,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setIsEditing(false);
       setPlaceBet(false);
       toast({
-        description:"Bet placed successfuly",
+        description:update?.message,
         variant: 'default',
       });
     };
@@ -204,7 +215,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       toast({
         description:"Current betting round cancelled by admin.",
         variant: 'destructive',
-        duration: 6000,
+        duration: 4000,
       });
       resetBetData();
     });
@@ -217,7 +228,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
       });
       toast({
-        description:"Bet cancelled",
+        description:update?.message,
         variant: 'default',
       });
       resetBetData();
@@ -259,12 +270,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   };
 
   useEffect(() => {
-    const newSocket = api.socket.connect();
-    setSocket(newSocket);
-    api.socket.joinStream(streamId, newSocket);
+    // const newSocket = api.socket.connect();
+    // setSocket(socketConnect);
+    api.socket.joinStream(streamId, socketConnect);
     
     // Setup event listeners
-    setupSocketEventListeners(newSocket);
+    setupSocketEventListeners(socketConnect);
   
     return () => {
       // Cleanup ping-pong intervals
@@ -272,9 +283,16 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         clearTimeout(reconnectTimeoutRef.current);
       }
       
-      api.socket.leaveStream(streamId, newSocket);
+      api.socket.leaveStream(streamId, socketConnect);
       // api.socket.disconnect();
-      setSocket(null);
+      if (socketConnect) {
+        socketConnect?.off('betPlaced');
+        socketConnect?.off('betEdited');
+        socketConnect?.off('betOpened');
+        socketConnect?.off('betCancelled');
+        socketConnect?.off('betCancelledByAdmin');
+      }
+      // setSocket(null);
     };
   }, [streamId]);
 
@@ -323,9 +341,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const placedBetSocket = (data: { bettingVariableId: string; amount: number; currencyType: string }) => {
     setLoading(true);
     console.log('Placing bet via socket:', data);
-    if (socket && socket.connected) {
+    if (socketConnect && socketConnect.connected) {
       setUpdatedCurrency(data.currencyType as CurrencyType);
-      socket.emit('placeBet', {
+      socketConnect.emit('placeBet', {
         bettingVariableId: data.bettingVariableId,
         amount: data.amount,
         currencyType: data.currencyType,
@@ -342,10 +360,10 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
    // Mutation to edit a bet
   const editBetSocket = (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
     setLoading(true);
-    if (socket && socket.connected) {
+    if (socketConnect && socketConnect.connected) {
       console.log('Placing edit bet via socket:', data);
       setUpdatedCurrency(data.newCurrencyType as CurrencyType);
-      socket.emit('editBet', {
+      socketConnect.emit('editBet', {
         betId: betId ?? getRoundData?.betId,
         newBettingVariableId: data.newBettingVariableId,
         newAmount: data.newAmount,
@@ -368,9 +386,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
   // Cancel bet mutation
     const cancelBetSocket = (data: { betId: string; currencyType: string }) => {
-      if (socket && socket.connected) {
+      if (socketConnect && socketConnect.connected) {
         console.log('Placing cancel bet via socket:', data);
-        socket.emit('cancelBet', {
+        socketConnect.emit('cancelBet', {
           betId:data?.betId,
           currencyType: data.currencyType,
         });
@@ -388,9 +406,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
  // Mutation to send a message
   const sendMessageSocket = (data: { message: string;imageURL:string;}) => {
-    if (socket && socket.connected) {
+    if (socketConnect && socketConnect.connected) {
       console.log('send message socket', data);
-      socket.emit('sendChatMessage', {
+      socketConnect.emit('sendChatMessage', {
         streamId: streamId,
         message: data?.message,
         imageURL:data?.imageURL,
@@ -558,7 +576,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               potentialWinnings={potentialWinnings}
               selectedAmount={selectedAmount}
               selectedWinner={selectedWinner}
-              socket={socket}
+              socket={socketConnect}
               lockedBet={lockedBet}
             />
           )
