@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 interface BettingStatusContextType {
   socketConnect:any;
   setSocketConect: (socketConnect: any) => void;
+  handleSocketReconnection: () => void;
 }
 
 const BettingStatusContext = createContext<BettingStatusContextType | undefined>(undefined);
@@ -57,7 +58,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       if (!socketInstance) return;
       socketInstance?.off('botMessage');
       socketInstance?.off('connect_error');
-      console.log("main context listi")
+
     // Handle disconnection events
       socketInstance.on('botMessage', (update: any) => {
         console.log('all botMessages', update);
@@ -79,7 +80,6 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
         if(!socketConnect){
           console.log('Adding new socket');
           const newSocket = api.socket.connect();
-          console.log(newSocket,'newSocket in betting context')
           api.socket.joinCommonStream(newSocket);
           setSocketConect(newSocket);
           // Setup event listeners
@@ -110,7 +110,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
 
 
   return (
-    <BettingStatusContext.Provider value={{ socketConnect, setSocketConect }}>
+    <BettingStatusContext.Provider value={{ socketConnect, setSocketConect,handleSocketReconnection }}>
       {children}
     </BettingStatusContext.Provider>
   );

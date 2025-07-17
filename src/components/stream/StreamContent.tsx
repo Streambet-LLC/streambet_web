@@ -28,7 +28,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
-  const { socketConnect } = useBettingStatusContext();
+  const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
   const [betId, setBetId] = useState<string | undefined>();
   const [placedBet, setPlaceBet] = useState(true); // show BetTokens when true, LockTokens when false
   const [resetKey, setResetKey] = useState(0); // Add resetKey state
@@ -62,45 +62,44 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const maxReconnectAttempts = 5;
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
 
-  console.log(socketConnect,'socketConnect in stream')
 
   // Function to handle socket reconnection
-  const handleSocketReconnection = () => {
-    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      console.log('Max reconnection attempts reached');
-      return;
-    }
+  // const handleSocketReconnection = () => {
+  //   if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+  //     console.log('Max reconnection attempts reached');
+  //     return;
+  //   }
 
-    console.log(`Attempting to reconnect... (${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
-    reconnectAttemptsRef.current++;
+  //   console.log(`Attempting to reconnect... (${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+  //   reconnectAttemptsRef.current++;
 
-    // Clear existing socket
-    if (socketConnect) {
-      socketConnect.off('pong');
-      // socket.disconnect();
-    }
+  //   // Clear existing socket
+  //   if (socketConnect) {
+  //     socketConnect.off('pong');
+  //     // socket.disconnect();
+  //   }
 
-    // Create new socket connection
-    // const newSocket = api.socket.connect();
-    if (socketConnect) {
-      // setSocket(socketConnect);
-      api.socket.joinStream(streamId, socketConnect);
+  //   // Create new socket connection
+  //   // const newSocket = api.socket.connect();
+  //   if (socketConnect) {
+  //     // setSocket(socketConnect);
+  //     api.socket.joinStream(streamId, socketConnect);
       
-      // Reset reconnection attempts on successful connection
-      socketConnect.on('connect', () => {
-        console.log('Socket reconnected successfully');
-        reconnectAttemptsRef.current = 0;
-      });
+  //     // Reset reconnection attempts on successful connection
+  //     socketConnect.on('connect', () => {
+  //       console.log('Socket reconnected successfully');
+  //       reconnectAttemptsRef.current = 0;
+  //     });
 
-      // Set up event listeners for the new socket
-      setupSocketEventListeners(socketConnect);
-    } else {
-      // Retry reconnection after delay
-      reconnectTimeoutRef.current = setTimeout(() => {
-        handleSocketReconnection();
-      }, 3000);
-    }
-  };
+  //     // Set up event listeners for the new socket
+  //     setupSocketEventListeners(socketConnect);
+  //   } else {
+  //     // Retry reconnection after delay
+  //     reconnectTimeoutRef.current = setTimeout(() => {
+  //       handleSocketReconnection();
+  //     }, 3000);
+  //   }
+  // };
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
@@ -262,12 +261,14 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('Socket disconnected:', reason);
       if (reason !== 'io client disconnect') {
         // Only attempt reconnection if it wasn't an intentional disconnect
+        api.socket.joinStream(streamId, socketConnect);
         handleSocketReconnection();
       }
     });
 
     socketInstance.on('connect_error', (error: any) => {
       console.log('Socket connection error:', error);
+      api.socket.joinStream(streamId, socketConnect);
       handleSocketReconnection();
     });
   };
@@ -296,17 +297,17 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
       // api.socket.disconnect();
       if (socketConnect) {
-        socketConnect?.off('bettingUpdate');
-        socketConnect?.off('potentialAmountUpdate');
-          socketConnect?.off('bettingLocked');
+            socketConnect?.off('bettingUpdate');
+            socketConnect?.off('potentialAmountUpdate');
+            socketConnect?.off('bettingLocked');
             socketConnect?.off('winnerDeclared');
             socketConnect?.off('newMessage');
-               socketConnect?.off('streamEnded');
-        socketConnect?.off('betPlaced');
-        socketConnect?.off('betEdited');
-        socketConnect?.off('betOpened');
-        socketConnect?.off('betCancelled');
-        socketConnect?.off('betCancelledByAdmin');
+            socketConnect?.off('streamEnded');
+            socketConnect?.off('betPlaced');
+            socketConnect?.off('betEdited');
+            socketConnect?.off('betOpened');
+            socketConnect?.off('betCancelled');
+            socketConnect?.off('betCancelledByAdmin');
       }
       // setSocket(null);
     },
