@@ -507,7 +507,7 @@ export const socketAPI = {
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
       console.log("socket inside if conditi in client")
-      // socket = io('https://913dd4ba8686.ngrok-free.app', {
+      // socket = io('https://dfc410e14cc3.ngrok-free.app', {
       //   transports: ["websocket"],
       //   auth: { token }
       // });
@@ -554,7 +554,9 @@ export const socketAPI = {
 
   // Leave a stream room
   leaveStream: (streamId: string,socket:any) => {
+   console.log(streamId,"leave stream with id",socket)
     if (socket) {
+ console.log("leave stream initiated")
       socket.emit('leaveStream', streamId);
     }
   },

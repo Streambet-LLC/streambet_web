@@ -104,6 +104,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
+    console.log("setUp event list in stream content")
     if (!socketInstance) return;
 
     // Remove previous listeners to prevent duplicates
@@ -240,6 +241,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       processPlacedBet(update);
     });
 
+    console.log('list to new mess')
     socketInstance.on('newMessage', (update) => {
       console.log('newMessage', update);
       setMessageList(update)
@@ -273,20 +275,33 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   useEffect(() => {
     // const newSocket = api.socket.connect();
     // setSocket(socketConnect);
+    console.log('socketConnect value',  socketConnect);
+    if(socketConnect){
     api.socket.joinStream(streamId, socketConnect);
     
     // Setup event listeners
     setupSocketEventListeners(socketConnect);
+    }
   
-    return () => {
+   
+  }, [streamId,socketConnect]);
+
+  useEffect (()=> () => {
       // Cleanup ping-pong intervals
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
       
       api.socket.leaveStream(streamId, socketConnect);
+
       // api.socket.disconnect();
       if (socketConnect) {
+        socketConnect?.off('bettingUpdate');
+        socketConnect?.off('potentialAmountUpdate');
+          socketConnect?.off('bettingLocked');
+            socketConnect?.off('winnerDeclared');
+            socketConnect?.off('newMessage');
+               socketConnect?.off('streamEnded');
         socketConnect?.off('betPlaced');
         socketConnect?.off('betEdited');
         socketConnect?.off('betOpened');
@@ -294,8 +309,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         socketConnect?.off('betCancelledByAdmin');
       }
       // setSocket(null);
-    };
-  }, [streamId]);
+    },
+  [])
 
   // Query to get the betting data for the stream
   const { data: bettingData, refetch: refetchBettingData, isFetching: fetchingBettingData} = useQuery({
@@ -342,7 +357,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const placedBetSocket = (data: { bettingVariableId: string; amount: number; currencyType: string }) => {
     setLoading(true);
     console.log('Placing bet via socket:', data);
-    if (socketConnect && socketConnect.connected) {
+    if (socketConnect) {
       setUpdatedCurrency(data.currencyType as CurrencyType);
       socketConnect.emit('placeBet', {
         bettingVariableId: data.bettingVariableId,

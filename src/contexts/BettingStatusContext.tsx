@@ -15,7 +15,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
 
   const [socketConnect, setSocketConect] = useState<any>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { session } = useAuthContext()
+  const { session, isFetching } = useAuthContext()
   const { toast } = useToast();
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
@@ -57,6 +57,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       if (!socketInstance) return;
       socketInstance?.off('botMessage');
       socketInstance?.off('connect_error');
+      console.log("main context listi")
     // Handle disconnection events
       socketInstance.on('botMessage', (update: any) => {
         console.log('all botMessages', update);
@@ -73,33 +74,39 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
     };
   
     useEffect(() => {
-      console.log("socket useEffect in conext")
+      if (!isFetching) {
       if(session){
-        
-        const newSocket = api.socket.connect();
-        console.log(newSocket,'newSocket in betting context')
-        api.socket.joinCommonStream(newSocket);
-        setSocketConect(newSocket);
-        // Setup event listeners
-        setupSocketEventListeners(newSocket);
+        if(!socketConnect){
+          console.log('Adding new socket');
+          const newSocket = api.socket.connect();
+          console.log(newSocket,'newSocket in betting context')
+          api.socket.joinCommonStream(newSocket);
+          setSocketConect(newSocket);
+          // Setup event listeners
+          setupSocketEventListeners(newSocket);
+        }
       }
-      else{
+      else {
         api.socket.disconnect();
-      }
-    
-      return () => {
-        // Cleanup ping-pong intervals
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-        }
-        if (socketConnect) {
-          socketConnect.off('botMessage');
-          socketConnect.off('connect_error');
-          socketConnect.disconnect();
-        }
         setSocketConect(null);
-      };
-    }, [session]);
+      }
+    }
+    
+//       return () => {
+// console.log('clearing socket to null')
+//         // Cleanup ping-pong intervals
+//         if (reconnectTimeoutRef.current) {
+//           clearTimeout(reconnectTimeoutRef.current);
+//         }
+//         if (socketConnect) {
+//                   console.log("Clearing socket connection")
+//           socketConnect.off('botMessage');
+//           socketConnect.off('connect_error');
+//           socketConnect.disconnect();
+//         }
+//         setSocketConect(null);
+//       };
+    }, [session, isFetching]);
 
 
   return (

@@ -38,57 +38,57 @@ const Stream = () => {
   };
 
   // Track page visibility to refresh comments when returning to the page
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      const wasHidden = pageVisibility === 'hidden';
-      setPageVisibility(document.visibilityState);
+  // useEffect(() => {
+  //   const handleVisibilityChange = () => {
+  //     const wasHidden = pageVisibility === 'hidden';
+  //     setPageVisibility(document.visibilityState);
 
-      // If the page was hidden and is now visible, refresh comments
-      if (wasHidden && document.visibilityState === 'visible' && streamId) {
-        console.log('Page became visible, refreshing comments');
-        debouncedRefetch(['comments', streamId], 500);
-      }
-    };
+  //     // If the page was hidden and is now visible, refresh comments
+  //     if (wasHidden && document.visibilityState === 'visible' && streamId) {
+  //       console.log('Page became visible, refreshing comments');
+  //       debouncedRefetch(['comments', streamId], 500);
+  //     }
+  //   };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+  //   document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (refetchTimerRef.current) {
-        clearTimeout(refetchTimerRef.current);
-      }
-    };
-  }, [pageVisibility, queryClient, streamId]);
+  //   return () => {
+  //     document.removeEventListener('visibilitychange', handleVisibilityChange);
+  //     if (refetchTimerRef.current) {
+  //       clearTimeout(refetchTimerRef.current);
+  //     }
+  //   };
+  // }, [pageVisibility, queryClient, streamId]);
 
   // Invalidate relevant queries when user changes
-  useEffect(() => {
-    const currentUserId = session?.id;
+  // useEffect(() => {
+  //   const currentUserId = session?.id;
 
-    if (currentUserId !== prevUserIdRef.current) {
-      console.log(
-        'User changed from',
-        prevUserIdRef.current,
-        'to',
-        currentUserId,
-        'ensuring fresh data'
-      );
-      prevUserIdRef.current = currentUserId;
+  //   if (currentUserId !== prevUserIdRef.current) {
+  //     console.log(
+  //       'User changed from',
+  //       prevUserIdRef.current,
+  //       'to',
+  //       currentUserId,
+  //       'ensuring fresh data'
+  //     );
+  //     prevUserIdRef.current = currentUserId;
 
-      // Reset and invalidate all relevant queries
-      queryClient.resetQueries({
-        queryKey: ['existing-bet'],
-        exact: false,
-      });
+  //     // Reset and invalidate all relevant queries
+  //     queryClient.resetQueries({
+  //       queryKey: ['existing-bet'],
+  //       exact: false,
+  //     });
 
-      debouncedRefetch(['comments', streamId], 100);
+  //     debouncedRefetch(['comments', streamId], 100);
 
-      if (currentUserId) {
-        debouncedRefetch(['profile', currentUserId], 100);
-      }
+  //     if (currentUserId) {
+  //       debouncedRefetch(['profile', currentUserId], 100);
+  //     }
 
-      debouncedRefetch(['stream-total-bets', streamId], 100);
-    }
-  }, [session?.id, streamId, queryClient]);
+  //     debouncedRefetch(['stream-total-bets', streamId], 100);
+  //   }
+  // }, [session?.id, streamId, queryClient]);
 
   // Watch for auth state changes
   // useEffect(() => {
@@ -133,20 +133,20 @@ const Stream = () => {
   // const { refreshKey } = useBetDeletionListener(streamId!, session?.id);
 
   // Setup auth change handler
-  useAuthStateChangeHandler(streamId);
+  // useAuthStateChangeHandler(streamId);
 
   // Mark initialization as complete and force a refresh of comments
-  useEffect(() => {
-    if (!isInitialized && !isSessionLoading && stream) {
-      console.log('Stream page initialized, refreshing comments');
-      setIsInitialized(true);
+  // useEffect(() => {
+  //   if (!isInitialized && !isSessionLoading && stream) {
+  //     console.log('Stream page initialized, refreshing comments');
+  //     setIsInitialized(true);
 
-      // Force comments to refresh after initialization - with delay to prevent overloading
-      setTimeout(() => {
-        debouncedRefetch(['comments', streamId], 500);
-      }, 500);
-    }
-  }, [isSessionLoading, stream, isInitialized, queryClient, streamId]);
+  //     // Force comments to refresh after initialization - with delay to prevent overloading
+  //     setTimeout(() => {
+  //       debouncedRefetch(['comments', streamId], 500);
+  //     }, 500);
+  //   }
+  // }, [isSessionLoading, stream, isInitialized, queryClient, streamId]);
 
   // if (!streamId) {
   //   console.error('No stream ID available');

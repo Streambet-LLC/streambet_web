@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDateTime, formatDateTimeForISO, getMessage } from '@/utils/helper';
 import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
+import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 
 interface AdminStreamContentProps {
   streamId: string;
@@ -125,7 +126,7 @@ export const AdminStreamContent = ({
     // Socket reference
   const [socket, setSocket] = useState<any>(null);
    const [messageList, setMessageList] = useState<any>();
-
+ const { socketConnect } = useBettingStatusContext();
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const reconnectAttemptsRef = useRef(0);
     const maxReconnectAttempts = 5;
@@ -147,19 +148,19 @@ export const AdminStreamContent = ({
       }
   
       // Create new socket connection
-      const newSocket = api.socket.connect();
-      if (newSocket) {
-        setSocket(newSocket);
-        api.socket.joinStream(streamId, newSocket);
+      // const newSocket = api.socket.connect();
+      if (socketConnect) {
+        setSocket(socketConnect);
+        api.socket.joinStream(streamId, socketConnect);
         
         // Reset reconnection attempts on successful connection
-        newSocket.on('connect', () => {
+        socketConnect.on('connect', () => {
           console.log('Socket reconnected successfully');
           reconnectAttemptsRef.current = 0;
         });
   
         // Set up event listeners for the new socket
-        setupSocketEventListeners(newSocket);
+        setupSocketEventListeners(socketConnect);
       } else {
         // Retry reconnection after delay
         reconnectTimeoutRef.current = setTimeout(() => {
@@ -204,12 +205,12 @@ export const AdminStreamContent = ({
       };
 
       useEffect(() => {
-        const newSocket = api.socket.connect();
-        setSocket(newSocket);
-        api.socket.joinStream(streamId, newSocket);
+        // const newSocket = api.socket.connect();
+        setSocket(socketConnect);
+        api.socket.joinStream(streamId, socketConnect);
         
         // Setup event listeners
-        setupSocketEventListeners(newSocket);
+        setupSocketEventListeners(socketConnect);
       
         return () => {
           // Cleanup ping-pong intervals
@@ -217,7 +218,7 @@ export const AdminStreamContent = ({
             clearTimeout(reconnectTimeoutRef.current);
           }
           
-          api.socket.leaveStream(streamId, newSocket);
+          api.socket.leaveStream(streamId, socketConnect);
           api.socket.disconnect();
           setSocket(null);
         };
