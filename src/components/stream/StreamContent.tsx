@@ -586,6 +586,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             />
           ) : (
               <LockTokens
+              isStreamScheduled={isStreamScheduled}
               updatedBetId={betId}
               bettingData={bettingData}
               cancelBet={cancelBetSocket}
