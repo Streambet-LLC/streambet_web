@@ -38,6 +38,7 @@ interface LockTokens {
   selectedAmount?: number;
   socket?: any; // Optional socket connection if needed
   lockedBet?: boolean; // Track if bet is locked
+  isStreamScheduled?: boolean;
 }
 
 export default function LockTokens({ 
@@ -51,7 +52,9 @@ export default function LockTokens({
   getRoundData,
   updatedBetId,
   handleBetEdit, 
-  resetKey}: LockTokens) {
+  resetKey,
+  isStreamScheduled,
+}: LockTokens) {
   const [localBetAmount, setLocalBetAmount] = useState(selectedAmount || 0);
   const [localOption, setLocalOption] = useState(selectedWinner || "");
 
@@ -88,7 +91,7 @@ export default function LockTokens({
             </div>
           </div>
           <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-14 pb-4">
-            {lockedBet ? 'Bets are locked. Good luck!' : 'Bets will be locked soon'}
+            {lockedBet ? 'Bets are locked. Good luck!' : isStreamScheduled ? 'Bets will be locked once stream goes live' : 'Bets will be locked soon'}
           </p>
         </div>
         {!lockedBet && (

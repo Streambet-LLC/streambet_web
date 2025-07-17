@@ -45,7 +45,6 @@ export default function SignUp() {
   const [isOlder, setIsOlder] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [isCheckingLocation, setIsCheckingLocation] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isGoogleLogin, setIsGoogleLogin] = useState(false);
   const [userNameCheck, setUserNameCheck] = useState('');
@@ -55,7 +54,7 @@ export default function SignUp() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const lastClickTimeRef = useRef<number>(0);
   const [avatarInputKey, setAvatarInputKey] = useState(0);
-  const { locationResult } = useLocationRestriction();
+  const { locationResult, isCheckingLocation } = useLocationRestriction();
 
 
   const signupSchema = z.object({
