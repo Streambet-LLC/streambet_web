@@ -66,6 +66,7 @@ apiClient.interceptors.response.use(
       originalRequest.url.endsWith('/auth/refresh')
     )
     {
+      console.log('interceptor .use session timeout');
       alert('Session has been expired! Please relogin');
       await authAPI.signOut();
       window.location.href = '/login';
@@ -112,6 +113,7 @@ apiClient.interceptors.response.use(
         } catch (refreshError)
         {
           // If refresh fails, show alert and logout
+          console.log('catch (refreshError) line 113');
           alert('Session has been expired! Please relogin');
           await authAPI.signOut();
           window.location.href = '/login';
@@ -120,6 +122,7 @@ apiClient.interceptors.response.use(
       } else
       {
         // If already retried once, or no refreshToken, show alert and logout
+        console.log('else line 125');
         alert('Session has been expired! Please relogin');
         await authAPI.signOut();
         window.location.href = '/login';
@@ -298,7 +301,7 @@ export const userAPI = {
 
   // Update notification preferences
   updateNotificationPreferences: async (preferences: any) => {
-    const response = await apiClient.patch('/users/me/notification-preferences', preferences);
+    const response = await apiClient.patch('/users/notification-settings', preferences);
     return response.data;
   },
 };
@@ -498,14 +501,22 @@ export const socketAPI = {
   // Connect to WebSocket
   connect: () => {
     const token = localStorage.getItem('refreshToken');
+    console.log("socket connection iniiated")
     if (!token) return null;
-
+    console.log("socket connected confirmed")
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
+      console.log("socket inside if conditi in client")
+      // socket = io('https://dfc410e14cc3.ngrok-free.app', {
+      //   transports: ["websocket"],
+      //   auth: { token }
+      // });
+
       socket = io(API_URL.replace(/\/api(?!.*\/api)/, ''), {
         transports: ["websocket"],
         auth: { token }
       });
+
 
       socket.on('connect', () => {
         console.log('WebSocket connected');
@@ -521,11 +532,12 @@ export const socketAPI = {
     }
     return socket;
   },
-
+  // getSocket: () => socket,
   // Disconnect WebSocket
   disconnect: () => {
     if (socket)
     {
+      console.log("socket disconnection called")
       socket.disconnect();
       socket = null;
     }
@@ -533,15 +545,18 @@ export const socketAPI = {
 
   // Join a stream room
   joinStream: (streamId: string,socket:any) => {
-  // console.log(socket,'socket in joinStream')
+ 
     if (socket) {
+       console.log(socket,'client socket in joinStream')
       socket.emit('joinStream', streamId);
     }
   },
 
   // Leave a stream room
   leaveStream: (streamId: string,socket:any) => {
+   console.log(streamId,"leave stream with id",socket)
     if (socket) {
+ console.log("leave stream initiated")
       socket.emit('leaveStream', streamId);
     }
   },
@@ -554,7 +569,13 @@ export const socketAPI = {
     }
   },
 
-
+  // To get all betting updates
+  joinCommonStream: (socket:any) => {
+  console.log(socket,'joinCommonStream joined')
+    if (socket) {
+      socket.emit('joinStreamBet','streambet');
+    }
+  },
 
   // Subscribe to betting updates
   onBettingUpdate: (callback: (data: any) => void) => {
@@ -676,6 +697,18 @@ export const adminAPI = {
   // Delete stream
   deleteStream: async (streamId: string) => {
     const response = await apiClient.delete(`/admin/streams/${streamId}`);
+    return response.data;
+  },
+
+  // Get analytics data for admin dashboard
+  getAdminAnalyticsData: async () => {
+    const response = await apiClient.get(`/admin/analytics/summary`);
+    return response.data;
+  },
+
+  // Get stream analytics based on stream ID
+  getStreamAnalytics: async (streamId: string) => {
+    const response = await apiClient.get(`/admin/analytics/stream/${streamId}`);
     return response.data;
   },
 

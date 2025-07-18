@@ -249,8 +249,8 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       </span>
                     )}
                     </TableCell>
-                    <TableCell>{user?.wallet?.freeTokens ? user?.wallet?.freeTokens?.toLocaleString('en-US'):'-'}</TableCell>
-                    <TableCell>{user?.wallet?.streamCoins ? user?.wallet?.streamCoins?.toLocaleString('en-US'):'-'}</TableCell>
+                    <TableCell>{user?.wallet?.freeTokens ? Number(user?.wallet?.freeTokens)?.toLocaleString('en-US') : '-'}</TableCell>
+                    <TableCell>{user?.wallet?.streamCoins ? Number(user?.wallet?.streamCoins)?.toLocaleString('en-US'):'-'}</TableCell>
                     <TableCell>
                       <span
                         className="px-2 py-1 rounded-md font-bold text-sm"

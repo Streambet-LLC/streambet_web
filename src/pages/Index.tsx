@@ -1,5 +1,4 @@
 import { Navigation } from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
 import { StreamCard } from '@/components/StreamCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -11,12 +10,17 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import { cn } from '@/lib/utils';
 import { UpcomingStreams } from '@/components/stream/UpcomingStreams';
 import { TabSwitch } from '@/components/navigation/TabSwitch';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [activeTab, setActiveTab] = useState('live');
 
-  const [currentPage, setCurrentPage] = useState(1);
+  // Store last page per tab
+  const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1 });
+  const currentPage = tabPages[activeTab] || 1;
   const itemsPerPage = 9;
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
@@ -29,32 +33,9 @@ const Index = () => {
 
   const isLive = activeTab === 'live';
 
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
-    },
-  });
+  const { session } = useAuthContext();
 
-  const { data: profile } = useQuery({
-    queryKey: ['profile', session?.user?.id],
-    enabled: !!session?.user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session!.user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: streams, refetch: refetchStreams } = useQuery({
+  const { data: streams, refetch: refetchStreams, isLoading } = useQuery({
     queryKey: ['userStreams'],
     queryFn: async () => {
       const response = await api.userStream.getStreams({
@@ -64,23 +45,43 @@ const Index = () => {
         pagination: true,
         streamStatus: isLive ? 'live' : 'scheduled',
       });
-
       return response;
     },
     refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
   });
 
+  // State to hold the current streams data for display
+  const [streamsData, setStreamsData] = useState<any>(undefined);
+
   useEffect(() => {
-    refetchStreams()
-  }, [currentPage, refetchStreams]);
+    setStreamsData(undefined); // Clear data immediately on tab/page change
+    refetchStreams();
+  }, [currentPage, activeTab, refetchStreams]);
+
+  useEffect(() => {
+    if (streams) setStreamsData(streams);
+  }, [streams]);
 
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages)
-    {
-      setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setTabPages(prev => ({ ...prev, [activeTab]: page }));
     }
+  };
+
+  // Handle tab switch: save current page, reset to 1 if switching, restore if returning
+  const handleTabSwitch = (tabKey: string) => {
+    setTabPages(prev => {
+      // If switching to a new tab, reset to 1 if not visited before, else restore last page
+      if (tabKey === activeTab) return prev;
+      return {
+        ...prev,
+        [activeTab]: currentPage, // Save current page for current tab
+        [tabKey]: prev[tabKey] || 1, // Restore or reset
+      };
+    });
+    setActiveTab(tabKey);
   };
 
   const updateThumbnails = async () => {
@@ -150,6 +151,7 @@ const Index = () => {
         clearInterval(refreshInterval.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streams]);
 
   useEffect(() => {
@@ -180,16 +182,53 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Commented as CR */}
-          {/* <TabSwitch
+          <TabSwitch
             className='!justify-center !mt-12 !mb-14'
             tabs={tabs}
             activeTab={activeTab}
-            setActiveTab={setActiveTab} /> */}
+            setActiveTab={handleTabSwitch} />
 
           <div className="mt-16">
 
-            {(!streams || streams.data?.length === 0) && isLive ? (
+            {(isLoading || streamsData === undefined) ? (
+              isLive ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-[320px] w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="mx-auto rounded-md border overflow-x-auto max-w-[750px]">
+                  <Table className="bg-[#0D0D0D] min-w-[600px]">
+                    <TableBody>
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <TableRow key={i} className="h-[96px]">
+                          <TableCell className="w-[220px] min-w-[220px]">
+                            <div className="flex items-center gap-0 h-[96px]">
+                              <Skeleton className="w-[115px] h-[72px] rounded-lg" />
+                              <div className="flex items-center justify-center h-full ml-2 w-full">
+                                <Skeleton className="h-4 w-24" />
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[160px] min-w-[160px]">
+                            <div className="flex flex-col justify-center h-full gap-1">
+                              <Skeleton className="h-4 w-16 mb-2" />
+                              <Skeleton className="h-4 w-20" />
+                            </div>
+                          </TableCell>
+                          <TableCell className="w-[160px] min-w-[160px]">
+                            <div className="flex items-center justify-center h-full">
+                              <Skeleton className="h-10 w-32 rounded-lg" />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )
+            ) : (!streamsData || streamsData.data?.length === 0) && isLive ? (
               <Alert variant="default" className="bg-muted">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>No Live Streams</AlertTitle>
@@ -199,19 +238,19 @@ const Index = () => {
               </Alert>
             ) : isLive ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {streams.data?.map(stream => (
+                {streamsData.data?.map(stream => (
                   <StreamCard
                     key={stream.id}
                     stream={stream}
                     isLive={isLive}
-                    isAdmin={profile?.role === 'admin'}
+                    isAdmin={session?.role === 'admin'}
                     showAdminControls={false}
                   />
                 ))}
               </div>
             ) : (
               <div>
-                <UpcomingStreams streams={streams?.data} />
+                <UpcomingStreams streams={streamsData?.data} />
               </div>
             )}
           </div>

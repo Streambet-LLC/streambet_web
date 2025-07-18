@@ -59,6 +59,7 @@ function getActiveRoundIndex(betData) {
 }
 
 export const AdminBettingRoundsCard = ({
+     isStreamScheduled,
      isStreamEnded,
      isUpdatingAction,
      isBetRoundCancelling,
@@ -117,7 +118,7 @@ export const AdminBettingRoundsCard = ({
           if (isActive) {
                return {
                     background: '#000',
-                    border: 'none',
+                    border: '1px solid #BDFF00',
                     boxShadow: '0 4px 16px 0 #BDFF004F, 0 -2px 8px 0 #BDFF004F',
                     borderRadius,
                     position: 'relative' as const,
@@ -198,7 +199,7 @@ export const AdminBettingRoundsCard = ({
                                                        onClick={async () => {
                                                             // Validation: check for rounds with no options
                                                             const errorIndices = editableRounds
-                                                              .map((round, idx) => (round.options.length === 0 ? idx : -1))
+                                                              .map((round, idx) => (round.options.length < 2 ? idx : -1))
                                                               .filter(idx => idx !== -1);
                                                             // Validate for duplicate round/option names
                                                             const validationErrors = validateRounds(editableRounds);
@@ -208,7 +209,7 @@ export const AdminBettingRoundsCard = ({
                                                                  setBettingErrorRounds(errorIndices);
                                                                  toast({ 
                                                                    title: 'Validation Error', 
-                                                                   description: 'Each round must have at least one option. Please add options to all rounds before saving.', 
+                                                                   description: 'Each round must have at least two options. Please add options to all rounds before saving.', 
                                                                    variant: 'destructive' 
                                                                  });
                                                                  // Scroll to first error
@@ -250,6 +251,7 @@ export const AdminBettingRoundsCard = ({
                                         </div>
                                         <Separator className="my-4 bg-[#232323]" />
                                         <BettingRounds
+                                             isSaving={bettingSaveLoading}
                                              rounds={editableRounds}
                                              statusMap={statusMap}
                                              onRoundsChange={(newRounds) => {
@@ -315,14 +317,45 @@ export const AdminBettingRoundsCard = ({
                                                             </div>
                                                             {/* Created: show Open button */}
                                                             {isActive && isCreated && (
-                                                                 <Button
-                                                                      className="mt-4 w-32 rounded-full bg-primary text-black font-bold"
-                                                                      style={{ height: '30px' }}
-                                                                      disabled={isUpdatingAction}
-                                                                      onClick={() => handleOpenRound(round.roundId)}
-                                                                 >
-                                                                      {isUpdatingAction ? 'Opening...' : 'Open Round'}
-                                                                 </Button>
+                                                                 <div className="flex flex-row gap-2 w-full mt-4">
+                                                                     <Button
+                                                                         className="rounded-full font-bold w-1/2"
+                                                                         style={{ height: '30px' }}
+                                                                         disabled={isUpdatingAction}
+                                                                         onClick={() => handleOpenRound(round.roundId)}
+                                                                     >
+                                                                         {isUpdatingAction ? 'Opening...' : 'Open Round'}
+                                                                     </Button>
+                                                                     <AlertDialog>
+                                                                         <AlertDialogTrigger asChild>
+                                                                             <Button
+                                                                                 className="rounded-full font-bold w-1/2"
+                                                                                 style={{ height: '30px' }}
+                                                                                 variant="destructive"
+                                                                                 disabled={isUpdatingAction || isBetRoundCancelling}
+                                                                             >
+                                                                                 {isBetRoundCancelling ? 'Cancelling...' : 'Cancel Round'}
+                                                                             </Button>
+                                                                         </AlertDialogTrigger>
+                                                                         <AlertDialogContent className='border border-primary'>
+                                                                             <AlertDialogHeader>
+                                                                                 <AlertDialogTitle>Cancel Round</AlertDialogTitle>
+                                                                                 <AlertDialogDescription>
+                                                                                     Are you sure to cancel this round?
+                                                                                 </AlertDialogDescription>
+                                                                             </AlertDialogHeader>
+                                                                             <AlertDialogFooter>
+                                                                                 <AlertDialogCancel>Dismiss</AlertDialogCancel>
+                                                                                 <AlertDialogAction
+                                                                                     className="bg-destructive text-white hover:bg-destructive/90"
+                                                                                     onClick={() => handleCancelRound(round.roundId)}
+                                                                                 >
+                                                                                     Confirm
+                                                                                 </AlertDialogAction>
+                                                                             </AlertDialogFooter>
+                                                                         </AlertDialogContent>
+                                                                     </AlertDialog>
+                                                                 </div>
                                                             )}
                                                             {/* Open: show betting options, lock bets button */}
                                                             {isActive && isOpen && (
@@ -351,14 +384,56 @@ export const AdminBettingRoundsCard = ({
                                                                                 </span>
                                                                            ))}
                                                                       </div>
-                                                                      <Button
-                                                                           className="w-full rounded-full bg-primary text-black font-bold"
-                                                                           style={{ height: '30px' }}
-                                                                           onClick={() => handleLockBets(round.roundId)}
-                                                                           disabled={isUpdatingAction}
-                                                                      >
-                                                                           {isUpdatingAction ? 'Locking...' : 'Lock Bets'}
-                                                                      </Button>
+                                                                      <div className="flex flex-row gap-2 w-full mt-2">
+                                                                          <Button
+                                                                              className="rounded-full font-bold w-1/2"
+                                                                              style={{ height: '30px' }}
+                                                                              onClick={() => {
+                                                                                if (isStreamScheduled) {
+                                                                                     toast({
+                                                                                          title: 'Scheduled stream',
+                                                                                          description: 'Cannot lock bet of scheduled stream. You need to wait till stream goes live.',
+                                                                                          variant: 'destructive',
+                                                                                          duration: 7000,
+                                                                                     });
+                                                                                     return;
+                                                                                }
+                                                                                handleLockBets(round.roundId);
+                                                                           }}
+                                                                              disabled={isUpdatingAction}
+                                                                          >
+                                                                              {isUpdatingAction ? 'Locking...' : 'Lock Bets'}
+                                                                          </Button>
+                                                                          <AlertDialog>
+                                                                              <AlertDialogTrigger asChild>
+                                                                                  <Button
+                                                                                      className="rounded-full font-bold w-1/2"
+                                                                                      style={{ height: '30px' }}
+                                                                                      variant="destructive"
+                                                                                      disabled={isUpdatingAction || isBetRoundCancelling}
+                                                                                  >
+                                                                                      {isBetRoundCancelling ? 'Cancelling...' : 'Cancel Round'}
+                                                                                  </Button>
+                                                                              </AlertDialogTrigger>
+                                                                              <AlertDialogContent className='border border-primary'>
+                                                                                  <AlertDialogHeader>
+                                                                                      <AlertDialogTitle>Cancel Round</AlertDialogTitle>
+                                                                                      <AlertDialogDescription>
+                                                                                          Are you sure to cancel this round?
+                                                                                      </AlertDialogDescription>
+                                                                                  </AlertDialogHeader>
+                                                                                  <AlertDialogFooter>
+                                                                                      <AlertDialogCancel>Dismiss</AlertDialogCancel>
+                                                                                      <AlertDialogAction
+                                                                                          className="bg-destructive text-white hover:bg-destructive/90"
+                                                                                          onClick={() => handleCancelRound(round.roundId)}
+                                                                                      >
+                                                                                          Confirm
+                                                                                      </AlertDialogAction>
+                                                                                  </AlertDialogFooter>
+                                                                              </AlertDialogContent>
+                                                                          </AlertDialog>
+                                                                      </div>
                                                                  </div>
                                                             )}
                                                             {/* Locked: show options, enable selection, end round button */}
@@ -485,7 +560,7 @@ export const AdminBettingRoundsCard = ({
                                                                  </div>
                                                             )}
                                                        </div>
-                                                       {isActive && (
+                                                       {/* {isActive && (
                                                             <div
                                                                  style={{
                                                                       position: 'absolute',
@@ -505,7 +580,7 @@ export const AdminBettingRoundsCard = ({
                                                                       zIndex: 3,
                                                                  }}
                                                             />
-                                                       )}
+                                                       )} */}
                                                   </CarouselItem>
                                              );
                                         }) : (

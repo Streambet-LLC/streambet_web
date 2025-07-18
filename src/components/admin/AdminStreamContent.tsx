@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StreamPlayer } from '@/components/StreamPlayer';
 import { CommentSection } from '@/components/CommentSection';
 import { AdminBettingRoundsCard } from './AdminBettingRoundsCard';
@@ -12,7 +12,10 @@ import { BettingRounds } from './BettingRounds';
 import { Separator } from '@/components/ui/separator';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateTimeForISO, getMessage } from '@/utils/helper';
+import { formatDateTime, formatDateTimeForISO, getMessage } from '@/utils/helper';
+import Chat from '../stream/Chat';
+import { useNavigate } from 'react-router-dom';
+import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 
 interface AdminStreamContentProps {
   streamId: string;
@@ -111,6 +114,7 @@ export const AdminStreamContent = ({
   refetchBetData,
   handleBack,
 }: AdminStreamContentProps) => {
+  const navigate = useNavigate();
   const [streamInfo, setStreamInfo] = useState<any>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [endStreamDialogOpen, setEndStreamDialogOpen] = useState(false);
@@ -119,6 +123,109 @@ export const AdminStreamContent = ({
   const [bettingErrorRounds, setBettingErrorRounds] = useState([]);
   const [showBettingValidation, setShowBettingValidation] = useState(false);
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
+    // Socket reference
+  const [socket, setSocket] = useState<any>(null);
+   const [messageList, setMessageList] = useState<any>();
+ const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
+    const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const reconnectAttemptsRef = useRef(0);
+    const maxReconnectAttempts = 5;
+  
+    // Function to handle socket reconnection
+    // const handleSocketReconnection = () => {
+    //   if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+    //     console.log('Max reconnection attempts reached');
+    //     return;
+    //   }
+  
+    //   console.log(`Attempting to reconnect... (${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+    //   reconnectAttemptsRef.current++;
+  
+    //   // Clear existing socket
+    //   if (socket) {
+    //     socket.off('pong');
+    //     socket.disconnect();
+    //   }
+  
+    //   // Create new socket connection
+    //   // const newSocket = api.socket.connect();
+    //   if (socketConnect) {
+    //     setSocket(socketConnect);
+    //     api.socket.joinStream(streamId, socketConnect);
+        
+    //     // Reset reconnection attempts on successful connection
+    //     socketConnect.on('connect', () => {
+    //       console.log('Socket reconnected successfully');
+    //       reconnectAttemptsRef.current = 0;
+    //     });
+  
+    //     // Set up event listeners for the new socket
+    //     setupSocketEventListeners(socketConnect);
+    //   } else {
+    //     // Retry reconnection after delay
+    //     reconnectTimeoutRef.current = setTimeout(() => {
+    //       handleSocketReconnection();
+    //     }, 3000);
+    //   }
+    // };
+
+
+     // Function to setup socket event listeners
+      const setupSocketEventListeners = (socketInstance: any) => {
+        if (!socketInstance) return;
+    
+        socketInstance.on('newMessage', (update) => {
+          console.log('newMessage', update);
+          setMessageList(update)
+        });
+    
+        socketInstance.on('streamEnded', (update) => {
+          console.log('streamEnded', update);
+          toast({
+            description:"Stream has ended.",
+            variant: 'destructive',
+            duration: 10000,
+          });
+          navigate('/');
+        });
+    
+        // Handle disconnection events
+        socketInstance.on('disconnect', (reason: string) => {
+          console.log('Socket disconnected:', reason);
+          if (reason !== 'io client disconnect') {
+             api.socket.joinStream(streamId, socketConnect);
+            // Only attempt reconnection if it wasn't an intentional disconnect
+            handleSocketReconnection();
+          }
+        });
+    
+        socketInstance.on('connect_error', (error: any) => {
+          console.log('Socket connection error:', error);
+           api.socket.joinStream(streamId, socketConnect);
+          handleSocketReconnection();
+        });
+      };
+
+      useEffect(() => {
+        // const newSocket = api.socket.connect();
+        setSocket(socketConnect);
+        api.socket.joinStream(streamId, socketConnect);
+        
+        // Setup event listeners
+        setupSocketEventListeners(socketConnect);
+      
+        return () => {
+          // Cleanup ping-pong intervals
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+          }
+          
+          api.socket.leaveStream(streamId, socketConnect);
+          api.socket.disconnect();
+          setSocket(null);
+        };
+      }, [streamId]);
+  
 
   // Stream info form state for editing
   const [editForm, setEditForm] = useState({
@@ -260,7 +367,29 @@ export const AdminStreamContent = ({
     createStreamMutation.mutate(payload);
   };
 
+  const isStreamScheduled = streamInfo?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = streamInfo?.status === StreamStatus.ENDED;
+
+   // Mutation to send a message
+  const sendMessageSocket = (data: { message: string;imageURL:string;}) => {
+    if (socket && socket.connected) {
+      console.log('send message socket', data);
+      socket.emit('sendChatMessage', {
+        streamId: streamId,
+        message: data?.message,
+        imageURL:data?.imageURL,
+        timestamp: new Date(),
+      });
+      
+    } else {
+      toast({
+        description: 'Socket not connected. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }
+
+
 
   return (
     <div className="flex flex-col gap-0 h-full px-6 md:px-12" style={{ overflowX: 'hidden' }}>
@@ -288,13 +417,14 @@ export const AdminStreamContent = ({
             </div>
           </a>
           <div className="relative">
-            {isStreamEnded ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-              <div className="relative w-full h-full flex items-center border border-primary justify-center bg-black text-white text-2xl font-bold rounded-lg">
-                Stream has ended.
+            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+              <div className={` px-2 relative w-full h-full flex items-center border border-primary justify-center bg-black text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
+                {isStreamScheduled ? `Stream scheduled on ${formatDateTime(streamInfo?.scheduledStartTime)}.` : 'Stream has ended.'}
               </div>
             </div> : <StreamPlayer streamId={streamId} />}
           </div>
           <AdminBettingRoundsCard
+            isStreamScheduled={isStreamScheduled}
             editStreamId={streamId}
             isStreamEnded={isStreamEnded}
             isUpdatingAction={isUpdatingAction}
@@ -366,14 +496,14 @@ export const AdminStreamContent = ({
                 </div>
               </DialogContent>
             </Dialog>
-            <Button
+            {!isStreamScheduled&&<Button
               className="h-10 px-6 rounded-lg bg-destructive text-white font-bold text-[14px]"
               style={{ fontWeight: 700, borderRadius: '10px', background: '#FF1418', height: 40 }}
               disabled={isStreamEnding}
               onClick={() => setEndStreamDialogOpen(true)}
             >
               {isStreamEnding ? 'Ending...' : 'End stream'}
-            </Button>
+            </Button>}
           </div>
           {/* End Stream Confirmation Dialog */}
           <Dialog open={endStreamDialogOpen} onOpenChange={setEndStreamDialogOpen}>
@@ -404,7 +534,11 @@ export const AdminStreamContent = ({
           </Dialog>
           <div className="flex-1 min-h-0 flex flex-col h-full">
             <div className="h-full" style={{ maxWidth: 320, width: '100%' }}>
-              <CommentSection session={session} streamId={streamId} showInputOnly={false} />
+               <Chat
+                        sendMessageSocket={sendMessageSocket}
+                        newSocketMessage={messageList}
+                        session={session}/>
+              {/* <CommentSection session={session} streamId={streamId} showInputOnly={false} /> */}
             </div>
           </div>
         </div>

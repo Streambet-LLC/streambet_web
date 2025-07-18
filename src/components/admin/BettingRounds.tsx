@@ -263,6 +263,7 @@ export function BettingRounds({
                                 type="button"
                                 className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                                 style={{ height: 33, fontSize: '16px', fontWeight: 500 }}
+                                disabled={isSaving}
                                 onClick={() => duplicateRound(roundIndex)}
                               >
                                 <Copy className="h-4 w-4 mr-1" /> Duplicate
@@ -388,7 +389,7 @@ export function BettingRounds({
                       {errorRounds.includes(roundIndex) && (
                         <TableRow>
                           <TableCell colSpan={2} className="border-none px-4 py-2 !text-destructive text-xs">
-                            Each round must have at least one option.
+                            Each round must have at least two options.
                           </TableCell>
                         </TableRow>
                       )}

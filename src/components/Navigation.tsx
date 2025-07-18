@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WalletDropdown } from './navigation/WalletDropdown';
 import { UserDropdown } from './navigation/UserDropdown';
-import { Home, Tv, Gift, Users, Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useAnimations } from '@/hooks/useAnimations';
@@ -17,6 +17,8 @@ import {
 } from './ui/drawer';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { CurrencyType } from '@/enums';
+import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface NavigationProps {
   onDashboardClick?: () => void;
@@ -31,24 +33,11 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const [visible, setVisible] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { navVariants, buttonVariants } = useAnimations();
+  const { locationResult, isCheckingLocation } = useLocationRestriction();
   const { currency } = useCurrencyContext();
   const isStreamCoins = currency === CurrencyType.STREAM_COINS;
 
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const { data } = await api.auth.getSession();
-      return data;
-    },
-  });
-  const { data: profile } = useQuery({
-    queryKey: ['profile', session?.id],
-    enabled: !!session?.id,
-    queryFn: async () => {
-      const data = await api.user.getProfile();
-      return data;
-    },
-  });
+  const { session, refetchSession } = useAuthContext();
 
   // Handle scroll behavior for hiding/showing navbar
   useEffect(() => {
@@ -74,7 +63,15 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
     await api.auth.signOut();
     queryClient.clear();
     navigate('/login');
+    refetchSession();
   };
+
+  useEffect(() => {
+    if (!isCheckingLocation && session && !locationResult?.allowed) {
+      handleLogout();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCheckingLocation, locationResult, session]);
 
   const logoVariants = {
     hidden: { opacity: 0, x: -20 },
@@ -90,7 +87,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   };
 
   const menuItems = [
-    profile?.data?.role === 'admin' && { label: 'Dashboard', icon: undefined, path: '/admin' },
+    session?.role === 'admin' && { label: 'Dashboard', icon: undefined, path: '/admin' },
     { label: 'Home', icon: undefined, path: '/' },
     { label: 'Streams', icon: undefined, path: '/stream' },
     { label: 'Rewards', icon: undefined, path: '/rewards' },
@@ -200,7 +197,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
               <>
                 <WalletDropdown walletBalance={isStreamCoins ? session?.walletBalanceCoin || 0 : session?.walletBalanceToken || 0} />
 
-                <UserDropdown profile={profile?.data} user={session} onLogout={handleLogout} />
+                <UserDropdown profile={session} onLogout={handleLogout} />
               </>
             ) : (
               <>

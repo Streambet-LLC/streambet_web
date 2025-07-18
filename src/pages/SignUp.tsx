@@ -30,6 +30,7 @@ import { decodeIdToken, getMessage } from '@/utils/helper';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -44,8 +45,6 @@ export default function SignUp() {
   const [isOlder, setIsOlder] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [locationStatus, setLocationStatus] = useState<GeolocationResult | null>(null);
-  const [isCheckingLocation, setIsCheckingLocation] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isGoogleLogin, setIsGoogleLogin] = useState(false);
   const [userNameCheck, setUserNameCheck] = useState('');
@@ -55,6 +54,8 @@ export default function SignUp() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const lastClickTimeRef = useRef<number>(0);
   const [avatarInputKey, setAvatarInputKey] = useState(0);
+  const { locationResult, isCheckingLocation } = useLocationRestriction();
+
 
   const signupSchema = z.object({
     username: z
@@ -104,49 +105,10 @@ export default function SignUp() {
     },
   });
 
-  // Check user location on component mount
-  useEffect(() => {
-    const checkLocation = async () => {
-      setIsCheckingLocation(true);
-      try {
-        const result = await verifyUserLocation();
-        setLocationStatus(result);
-
-        if (!result.allowed) {
-          toast({
-            variant: 'destructive',
-            title: 'Location Restricted',
-            description: result.error,
-          });
-        }
-      } catch (error) {
-        console.error('Location check failed:', error);
-        setLocationStatus({
-          allowed: true,
-          error: 'Could not verify location. Proceeding anyway.',
-        });
-      } finally {
-        setIsCheckingLocation(false);
-      }
-    };
-
-    checkLocation();
-  }, [toast]);
-
   // Initialize currentMonth when component mounts
   useEffect(() => {
     setCurrentMonth(new Date());
   }, []);
-
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
-    },
-  });
 
   const signupMutation = useMutation({
     mutationFn: async (userData: {
@@ -257,11 +219,11 @@ export default function SignUp() {
     e.preventDefault();
 
     // Don't proceed if location is restricted
-    if (locationStatus && !locationStatus.allowed) {
+    if (locationResult && !locationResult.allowed) {
       toast({
         variant: 'destructive',
         title: 'Location Restricted',
-        description: locationStatus.error,
+        description: locationResult.error,
       });
       return;
     }
@@ -329,41 +291,18 @@ export default function SignUp() {
       tosAccepted,
       isOlder,
       profileImageUrl: profileImageUrl || undefined,
-      lastKnownIp: locationStatus?.ip_address,
+      lastKnownIp: locationResult?.ip_address,
       redirect: redirectParam || undefined,
-    });
-  };
-
-  const handleLoginSuccess = async (credentialResponse: any) => {
-    const userResponse = decodeIdToken(credentialResponse?.credential);
-    const googleResponseFromAPI: any = await api.auth.googleCallback(
-      credentialResponse?.credential
-    );
-    if (userResponse) {
-      if (userResponse.name) setUsername(userResponse.given_name);
-      if (userResponse.email) setEmail(userResponse.email);
-      // if (userResponse.picture) form.setValue('avatar', userResponse.picture);
-    }
-
-    window?.scrollTo({ top: 0, behavior: 'smooth' });
-    setIsGoogleLogin(true);
-  };
-
-  const handleLoginFailure = () => {
-    toast({
-      variant: 'destructive',
-      title: 'Error signup with google',
-      description: 'Please try again',
     });
   };
 
   const handleGoogleLogin = async () => {
     // Don't proceed if location is restricted
-    if (locationStatus && !locationStatus.allowed) {
+    if (locationResult && !locationResult.allowed) {
       toast({
         variant: 'destructive',
         title: 'Location Restricted',
-        description: locationStatus.error,
+        description: locationResult.error,
       });
       return;
     }
@@ -425,13 +364,13 @@ export default function SignUp() {
 
   // Display location restriction warning if needed
   const renderLocationWarning = () => {
-    if (!locationStatus) return null;
+    if (!locationResult) return null;
 
-    if (!locationStatus?.allowed) {
+    if (!locationResult?.allowed) {
       return (
         <Alert variant="destructive" className="mb-4">
           <AlertTitle>Location Restricted</AlertTitle>
-          <AlertDescription>{locationStatus.error}</AlertDescription>
+          <AlertDescription>{locationResult.error}</AlertDescription>
         </Alert>
       );
     }
@@ -536,7 +475,7 @@ export default function SignUp() {
                         value={username}
                         onChange={e => setUsername(e.target.value)}
                         className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.username ? 'border-destructive' : ''} ${username.length >= 3 && !username.includes(' ') ? 'pr-10' : ''} border-0 focus:border-0 focus:ring-0`}
-                        disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                        disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
                       />
                       {username.length >= 3 && !username.includes(' ') && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -610,7 +549,7 @@ export default function SignUp() {
                       disabled={
                         isCheckingLocation ||
                         isGoogleLogin ||
-                        (locationStatus && !locationStatus.allowed)
+                        (locationResult && !locationResult.allowed)
                       }
                     />
                     {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
@@ -624,7 +563,7 @@ export default function SignUp() {
                       placeholder="Enter your password"
                       onChange={e => setPassword(e.target.value)}
                       className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
-                      disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                      disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
                     />
                     {errors.password && (
                       <p className="text-destructive text-sm">{errors.password}</p>
@@ -647,7 +586,7 @@ export default function SignUp() {
                             placeholder="Select your date of birth"
                             readOnly
                             className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) pl-10 ${errors.dob ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
-                            disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                            disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
                             onClick={handleInputClick}
                           />
                         </div>
@@ -699,7 +638,7 @@ export default function SignUp() {
                       id="tosAccepted"
                       checked={tosAccepted}
                       onCheckedChange={checked => setTosAccepted(checked as boolean)}
-                      disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                      disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
                     />
                     <Label htmlFor="tosAccepted" className="text-sm pt-2 pb-2">
                       I accept the{' '}
@@ -721,7 +660,7 @@ export default function SignUp() {
                       id="isOlder"
                       checked={isOlder}
                       onCheckedChange={checked => setIsOlder(checked as boolean)}
-                      disabled={isCheckingLocation || (locationStatus && !locationStatus.allowed)}
+                      disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
                     />
                     <Label htmlFor="isOlder" className="text-sm">
                       I confirm that I am 18 years of age or older
@@ -738,7 +677,7 @@ export default function SignUp() {
                           signupMutation.isPending ||
                           isUploading ||
                           isCheckingLocation ||
-                          (locationStatus && !locationStatus.allowed)
+                          (locationResult && !locationResult.allowed)
                         }
                       >
                         {isCheckingLocation
@@ -757,7 +696,7 @@ export default function SignUp() {
                       disabled={
                         googleLoginMutation.isPending ||
                         isCheckingLocation ||
-                        (locationStatus && !locationStatus.allowed)
+                        (locationResult && !locationResult.allowed)
                       }
                     >
                       <span className="mr-2">
