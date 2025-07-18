@@ -63,6 +63,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       socketInstance.on('botMessage', (update: any) => {
         console.log('all botMessages', update);
           toast({
+          title: update?.title,
           description:update?.message,
           variant: 'default',
         });
