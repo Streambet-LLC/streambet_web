@@ -64,6 +64,12 @@ build:
   artifacts:
     paths:
       - dist/
+  only:
+  - dev
+  - qa
+  - beta
+  - stag
+  - prod
 
 # --------------------------
 # Common deploy template
