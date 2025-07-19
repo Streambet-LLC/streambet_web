@@ -66,9 +66,9 @@ build:
       - dist/
 
 # --------------------------
-# Deploy Job
+# Common deploy template
 # --------------------------
-deploy:
+.deploy_template: &deploy_template
   stage: deploy
   <<: *setup_env
   dependencies:
@@ -84,11 +84,43 @@ deploy:
 
     - echo "Invalidating CloudFront cache for $CLOUDFRONT_ID"
     - aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "/*"
-  only:
-    - dev
-    - qa
-    - beta
-    - stag
-    - prod
+
+# --------------------------
+# Deploy Jobs
+# --------------------------
+
+deploy_dev:
+  <<: *deploy_template
   environment:
-    name: $CI_COMMIT_REF_NAME
+    name: dev
+    url: https://streambetdev.revyrie.co
+  only: [dev]
+
+deploy_qa:
+  <<: *deploy_template
+  environment:
+    name: qa
+    url: https://streambetqa.revyrie.co
+  only: [qa]
+
+deploy_beta:
+  <<: *deploy_template
+  environment:
+    name: beta
+    url: https://streambet.revyrie.co
+  only: [beta]
+
+deploy_stag:
+  <<: *deploy_template
+  environment:
+    name: stag
+    url: https://stag.streambet.tv
+  only: [stag]
+
+deploy_prod:
+  <<: *deploy_template
+  environment:
+    name: prod
+    url: https://www.streambet.tv
+  only: [prod]
+  when: manual
