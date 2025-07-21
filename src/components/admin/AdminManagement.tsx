@@ -152,6 +152,18 @@ export const AdminManagement = ({
     return selectedTime > now;
   };
 
+  // Extracted validation for start date and time
+  function validateStartDateTime(date: Date | null, time: string): string {
+    if (!date) {
+      return 'Start date is required';
+    } else if (!time) {
+      return 'Start time is required';
+    } else if (isToday(date) && !isTimeValid(time, date)) {
+      return 'Cannot select past time for today';
+    }
+    return '';
+  }
+
   // Remove direct validateForm calls from handlers
   const handleStartDateChange = (date: Date | null) => {
     setStartDateObj(date);
@@ -850,15 +862,7 @@ export const AdminManagement = ({
                             setStartTime(time);
                           }
 
-                          if (!date) {
-                            newErrors.startDate = 'Start date is required';
-                          } else if (!time) {
-                            newErrors.startDate = 'Start time is required';
-                          } else if (isToday(date) && !isTimeValid(time, date)) {
-                            newErrors.startDate = 'Cannot select past time for today';
-                          } else {
-                            newErrors.startDate = '';
-                          }
+                          newErrors.startDate = validateStartDateTime(date, time);
                         }
                         setErrors(newErrors);
                       }}
