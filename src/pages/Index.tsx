@@ -21,7 +21,7 @@ const Index = () => {
   // Store last page per tab
   const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1 });
   const currentPage = tabPages[activeTab] || 1;
-  const itemsPerPage = 9;
+  const itemsPerPage = activeTab === 'live' ? 9 : 6;
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
   const rangeEnd = itemsPerPage;
@@ -203,7 +203,7 @@ const Index = () => {
                     <TableBody>
                       {Array.from({ length: 4 }).map((_, i) => (
                         <TableRow key={i} className="h-[96px]">
-                          <TableCell className="w-[220px] min-w-[220px]">
+                          <TableCell className="w-[220px] min-w-[220px] py-0">
                             <div className="flex items-center gap-0 h-[96px]">
                               <Skeleton className="w-[115px] h-[72px] rounded-lg" />
                               <div className="flex items-center justify-center h-full ml-2 w-full">
