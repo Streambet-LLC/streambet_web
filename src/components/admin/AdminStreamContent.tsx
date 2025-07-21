@@ -300,21 +300,23 @@ export const AdminStreamContent = ({
       return updated;
     });
   };
+
   const handleEditFileChange = (file) => {
     setSelectedThumbnailFile(file);
-    // Implement file upload logic here, update thumbnailPreviewUrl and setIsUploading as needed
-    // For now, just set preview URL if file is present
     if (file) {
       const url = URL.createObjectURL(file);
       setEditForm((prev) => ({ ...prev, thumbnailPreviewUrl: url }));
     }
   };
+
   const handleEditDeleteThumbnail = () => {
     setEditForm((prev) => ({ ...prev, thumbnailPreviewUrl: '' }));
   };
+
   const handleEditStartDateChange = (date) => {
     setEditForm((prev) => ({ ...prev, startDateObj: date }));
   };
+
   const handleEditStartTimeChange = (e) => {
     setEditForm((prev) => ({ ...prev, startTime: e.target.value }));
   };
@@ -330,6 +332,14 @@ export const AdminStreamContent = ({
       toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
     },
   });
+
+  // Add useEffect for validation
+  useEffect(() => {
+    if (settingsOpen) { // Only validate when settings dialog is open
+      const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile);
+      setEditErrors(newErrors);
+    }
+  }, [editForm.title, editForm.embeddedUrl, editForm.thumbnailPreviewUrl, editForm.startDateObj, editForm.startTime, selectedThumbnailFile, settingsOpen]);
 
   const handleEditSubmit = async () => {
     // Run validation first

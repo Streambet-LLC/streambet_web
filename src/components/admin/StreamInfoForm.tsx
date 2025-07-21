@@ -221,7 +221,18 @@ export const StreamInfoForm = ({
             <Calendar
               mode="single"
               selected={initialValues.startDateObj || undefined}
-              onSelect={onStartDateChange}
+              onSelect={date => {
+                if (date) {
+                  // Set both date and time in a single onChange call to ensure atomic update
+                  onChange({ 
+                    startDateObj: date, 
+                    startTime: initialValues.startTime || '00:00' 
+                  });
+                } else {
+                  onChange({ startDateObj: null, startTime: '' });
+                }
+                onStartDateChange(date);
+              }}
               initialFocus
               showOutsideDays
               disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}

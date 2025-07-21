@@ -152,19 +152,14 @@ export const AdminManagement = ({
     return selectedTime > now;
   };
 
-  // Add handler for start date changes
+  // Remove direct validateForm calls from handlers
   const handleStartDateChange = (date: Date | null) => {
     setStartDateObj(date);
-    // Reset end date and time when start date changes
-    setStartTime('');
-    validateForm();
   };
 
-  // Add handler for start time changes
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = e.target.value;
     setStartTime(newTime);
-    validateForm();
   };
 
   function resetForm() {
@@ -647,6 +642,13 @@ export const AdminManagement = ({
     setCurrentPage(1);
   }, [searchStreamQuery]);
 
+  // Add useEffect for validation
+  useEffect(() => {
+    if (validationStarted) {
+      validateForm();
+    }
+  }, [title, embeddedUrl, startDateObj, startTime, selectedThumbnailFile, thumbnailPreviewUrl]);
+
   return (
     <div className="space-y-6">
       {isStreamLoading ? (
@@ -806,7 +808,12 @@ export const AdminManagement = ({
                           if ('title' in fields) setTitle(fields.title ?? '');
                           if ('description' in fields) setDescription(fields.description ?? '');
                           if ('embeddedUrl' in fields) setEmbeddedUrl(fields.embeddedUrl ?? '');
-                          if ('startDateObj' in fields) setStartDateObj(fields.startDateObj ?? null);
+                          if ('startDateObj' in fields) {
+                            setStartDateObj(fields.startDateObj ?? null);
+                            if (fields.startDateObj && !startTime) {
+                              setStartTime('00:00');
+                            }
+                          }
                           if ('startTime' in fields) setStartTime(fields.startTime ?? '');
                           return;
                         }
@@ -829,21 +836,29 @@ export const AdminManagement = ({
                             newErrors.embeddedUrl = 'Embed URL is required and should be valid';
                           else newErrors.embeddedUrl = '';
                         }
-                        if ('startDateObj' in fields) {
-                          setStartDateObj(fields.startDateObj ?? null);
-                          const date = fields.startDateObj ?? null;
-                          if (!date) newErrors.startDate = 'Start date is required';
-                          else if (!startTime) newErrors.startDate = 'Start time is required';
-                          else if (isToday(date) && !isTimeValid(startTime, date)) newErrors.startDate = 'Cannot select past time for today';
-                          else newErrors.startDate = '';
-                        }
-                        if ('startTime' in fields) {
-                          setStartTime(fields.startTime ?? '');
-                          const value = fields.startTime ?? '';
-                          if (!startDateObj) newErrors.startDate = 'Start date is required';
-                          else if (!value) newErrors.startDate = 'Start time is required';
-                          else if (isToday(startDateObj) && !isTimeValid(value, startDateObj)) newErrors.startDate = 'Cannot select past time for today';
-                          else newErrors.startDate = '';
+                        if ('startDateObj' in fields || 'startTime' in fields) {
+                          const date = 'startDateObj' in fields ? fields.startDateObj : startDateObj;
+                          const time = 'startTime' in fields ? fields.startTime : startTime;
+                          
+                          if ('startDateObj' in fields) {
+                            setStartDateObj(date);
+                            if (date && !time) {
+                              setStartTime('00:00');
+                            }
+                          }
+                          if ('startTime' in fields) {
+                            setStartTime(time);
+                          }
+
+                          if (!date) {
+                            newErrors.startDate = 'Start date is required';
+                          } else if (!time) {
+                            newErrors.startDate = 'Start time is required';
+                          } else if (isToday(date) && !isTimeValid(time, date)) {
+                            newErrors.startDate = 'Cannot select past time for today';
+                          } else {
+                            newErrors.startDate = '';
+                          }
                         }
                         setErrors(newErrors);
                       }}
