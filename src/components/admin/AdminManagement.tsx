@@ -18,7 +18,7 @@ import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
-import { BettingRoundStatus, CurrencyType } from '@/enums';
+import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
@@ -54,6 +54,7 @@ export const AdminManagement = ({
   const [embeddedUrl, setEmbeddedUrl] = useState('');
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
+  const [isLiveStream, setIsLiveStream] = useState(false);
   const { toast } = useToast();
 
   // Betting rounds state
@@ -158,7 +159,7 @@ export const AdminManagement = ({
       return 'Start date is required';
     } else if (!time) {
       return 'Start time is required';
-    } else if (isToday(date) && !isTimeValid(time, date)) {
+    } else if (!isLiveStream && isToday(date) && !isTimeValid(time, date)) {
       return 'Cannot select past time for today';
     }
     return '';
@@ -190,9 +191,12 @@ export const AdminManagement = ({
     setThumbnailError(null);
     setIsDragging(false);
     setIsUploading(false);
+    setIsLiveStream(false);
 
     // Reset betting rounds
     setBettingRounds([]);
+
+    setValidationStarted(false);
 
     // Clear the file input
     if (fileInputRef.current) {
@@ -270,7 +274,7 @@ export const AdminManagement = ({
     } else if (!startTime) {
       newErrors.startDate = 'Start time is required';
       isValid = false;
-    } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+    } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
       newErrors.startDate = 'Cannot select past time for today';
       isValid = false;
     }
@@ -422,6 +426,7 @@ export const AdminManagement = ({
       setDescription(streamData?.description);
       setEmbeddedUrl(streamData?.embeddedUrl);
       setBettingRounds(streamData?.rounds || []);
+      setIsLiveStream(streamData?.status === StreamStatus.LIVE);
 
       // Set thumbnail if available
       if (streamData.thumbnailUrl) {
@@ -801,6 +806,7 @@ export const AdminManagement = ({
                   {/* Step 1: Info */}
                   {createStep === 'info' && (
                     <StreamInfoForm
+                      isLive={isLiveStream}
                       isEdit={!!editStreamId}
                       initialValues={{
                         title,
@@ -986,6 +992,15 @@ export const AdminManagement = ({
                       setViewStreamId('');
                       setCreateStep('info');
                       setBettingRounds([]);
+                      setErrors({
+                        title: '',
+                        embeddedUrl: '',
+                        thumbnail: '',
+                        startDate: '',
+                      });
+                      setBettingErrorRounds([]);
+                      setBettingValidationErrors([]);
+                      setShowBettingValidation(false);
                     }}
                   >
                     {isMobile ? 'Create Livestream' : 'Create new livestream'}
