@@ -105,14 +105,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const setupSocketEventListeners = (socketInstance: any) => {
     console.log("setUp event list in stream content")
     if (!socketInstance) return;
-
-    // Remove previous listeners to prevent duplicates
-      //  socketInstance?.off('betPlaced');
-      //  socketInstance?.off('betEdited');
-      //  socketInstance?.off('betOpened');
-      //  socketInstance?.off('betCancelledByAdmin');
     
-
     const resetBetData = () => {
       setTotalPotTokens(undefined);
       setTotalPotCoins(undefined);
@@ -143,10 +136,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setSelectedWinner(update?.selectedWinner);
       setIsEditing(false);
       setPlaceBet(false);
-      toast({
-        description:update?.message,
-        variant: 'default',
-      });
+      if (update?.message) {
+        toast({
+          description: update.message,
+          variant: 'default',
+        });
+      }
     };
   
     const handler = (update: any) => {
@@ -228,10 +223,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
         streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
       });
+      if (update?.message){
       toast({
         description:update?.message,
         variant: 'default',
       });
+    }
       resetBetData();
     });
 
@@ -261,15 +258,17 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('Socket disconnected:', reason);
       if (reason !== 'io client disconnect') {
         // Only attempt reconnection if it wasn't an intentional disconnect
+          handleSocketReconnection();
         api.socket.joinStream(streamId, socketConnect);
-        handleSocketReconnection();
+      
       }
     });
 
     socketInstance.on('connect_error', (error: any) => {
       console.log('Socket connection error:', error);
+       handleSocketReconnection();
       api.socket.joinStream(streamId, socketConnect);
-      handleSocketReconnection();
+     
     });
   };
 
@@ -601,18 +600,20 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               lockedBet={lockedBet}
             />
           )
-        ) : 
-        <div className="relative mx-auto rounded-[16px] shadow-lg p-5" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
-          <div className='all-center flex justify-center items-center h-[100px] mt-8'>
-          <img
-              src="/icons/nobettingData.svg"
-              alt="lock left"
-              className="w-[100%] h-[100%] object-contain"
-            />
-          </div>
-           <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
-
-          </div>}
+        ) : (
+          session != null && (
+            <div className="relative mx-auto rounded-[16px] shadow-lg p-5" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+              <div className='all-center flex justify-center items-center h-[100px] mt-8'>
+                <img
+                  src="/icons/nobettingData.svg"
+                  alt="lock left"
+                  className="w-[100%] h-[100%] object-contain"
+                />
+              </div>
+              <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
+            </div>
+          )
+        )}
 
 
         <div className="lg:hidden mt-4">

@@ -244,7 +244,13 @@ export default function BetTokens({
       </div>
 
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pb-1">
+      <div
+        className={`grid gap-2 pb-1 ${
+          bettingData?.bettingRounds?.[0]?.bettingVariables?.length === 2
+            ? 'grid-cols-2' // center the two buttons
+            : 'grid-cols-2 sm:grid-cols-4'
+        }`}
+      >
         {bettingData?.bettingRounds?.[0]?.bettingVariables?.map((option: any, idx: number) => (
           <button
             key={option.id}

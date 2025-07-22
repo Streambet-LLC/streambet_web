@@ -99,7 +99,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
         ))}
       </div>
 
-      <ChatInput onSend={handleSend} onImageAdd={scrollToBottom}/>
+      {session != null && (<ChatInput onSend={handleSend} onImageAdd={scrollToBottom}/>)}
     </div>
   );
 }

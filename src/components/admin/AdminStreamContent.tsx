@@ -125,11 +125,10 @@ export const AdminStreamContent = ({
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
     // Socket reference
   const [socket, setSocket] = useState<any>(null);
-   const [messageList, setMessageList] = useState<any>();
- const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
+  const [messageList, setMessageList] = useState<any>();
+  const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const reconnectAttemptsRef = useRef(0);
-    const maxReconnectAttempts = 5;
+
   
     // Function to handle socket reconnection
     // const handleSocketReconnection = () => {
@@ -208,7 +207,7 @@ export const AdminStreamContent = ({
 
       useEffect(() => {
         // const newSocket = api.socket.connect();
-        setSocket(socketConnect);
+        // setSocket(socketConnect);
         api.socket.joinStream(streamId, socketConnect);
         
         // Setup event listeners
@@ -222,7 +221,7 @@ export const AdminStreamContent = ({
           
           api.socket.leaveStream(streamId, socketConnect);
           api.socket.disconnect();
-          setSocket(null);
+          // setSocket(null);
         };
       }, [streamId]);
   
@@ -372,9 +371,9 @@ export const AdminStreamContent = ({
 
    // Mutation to send a message
   const sendMessageSocket = (data: { message: string;imageURL:string;}) => {
-    if (socket && socket.connected) {
-      console.log('send message socket', data);
-      socket.emit('sendChatMessage', {
+    console.log(socketConnect, 'socket in sendMessageSocket');
+    if (socketConnect && socketConnect.connected) {
+      socketConnect.emit('sendChatMessage', {
         streamId: streamId,
         message: data?.message,
         imageURL:data?.imageURL,
