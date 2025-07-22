@@ -63,7 +63,7 @@ function isTimeValid(time, date) {
 }
 
 // Validation function for stream settings form
-function validateForm({ title, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime }, selectedThumbnailFile) {
+function validateForm({ title, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime }, selectedThumbnailFile, isLiveStream) {
   const newErrors = {
     title: '',
     embeddedUrl: '',
@@ -92,7 +92,7 @@ function validateForm({ title, embeddedUrl, thumbnailPreviewUrl, startDateObj, s
   } else if (!startTime) {
     newErrors.startDate = 'Start time is required';
     isValid = false;
-  } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+  } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
     newErrors.startDate = 'Cannot select past time for today';
     isValid = false;
   }
@@ -299,21 +299,23 @@ export const AdminStreamContent = ({
       return updated;
     });
   };
+
   const handleEditFileChange = (file) => {
     setSelectedThumbnailFile(file);
-    // Implement file upload logic here, update thumbnailPreviewUrl and setIsUploading as needed
-    // For now, just set preview URL if file is present
     if (file) {
       const url = URL.createObjectURL(file);
       setEditForm((prev) => ({ ...prev, thumbnailPreviewUrl: url }));
     }
   };
+
   const handleEditDeleteThumbnail = () => {
     setEditForm((prev) => ({ ...prev, thumbnailPreviewUrl: '' }));
   };
+
   const handleEditStartDateChange = (date) => {
     setEditForm((prev) => ({ ...prev, startDateObj: date }));
   };
+
   const handleEditStartTimeChange = (e) => {
     setEditForm((prev) => ({ ...prev, startTime: e.target.value }));
   };
@@ -330,9 +332,17 @@ export const AdminStreamContent = ({
     },
   });
 
+  // Add useEffect for validation
+  useEffect(() => {
+    if (settingsOpen) { // Only validate when settings dialog is open
+      const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile, isLiveStream);
+      setEditErrors(newErrors);
+    }
+  }, [editForm.title, editForm.embeddedUrl, editForm.thumbnailPreviewUrl, editForm.startDateObj, editForm.startTime, selectedThumbnailFile, settingsOpen]);
+
   const handleEditSubmit = async () => {
     // Run validation first
-    const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile);
+    const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile, isLiveStream);
     setEditErrors(newErrors);
     if (!isValid) {
       return;
@@ -367,6 +377,7 @@ export const AdminStreamContent = ({
   };
 
   const isStreamScheduled = streamInfo?.status === StreamStatus.SCHEDULED;
+  const isLiveStream = streamInfo?.status === StreamStatus.LIVE;
   const isStreamEnded = streamInfo?.status === StreamStatus.ENDED;
 
    // Mutation to send a message
@@ -479,6 +490,7 @@ export const AdminStreamContent = ({
                   </div>
                   <Separator className="my-4 bg-[#232323]" />
                   <StreamInfoForm
+                    isLive={isLiveStream}
                     isEdit
                     initialValues={editForm}
                     errors={editErrors}

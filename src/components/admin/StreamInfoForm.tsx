@@ -7,8 +7,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, X as XIcon, Loader2 } from 'lucide-react';
 import { CopyableInput } from '../ui/CopyableInput';
 import { getImageLink } from '@/utils/helper';
+import { useToast } from '@/hooks/use-toast';
 
 interface StreamInfoFormProps {
+  isLive?: boolean;
   isEdit?: boolean;
   initialValues: {
     title: string;
@@ -46,6 +48,7 @@ function formatTime12hr(time24) {
 }
 
 export const StreamInfoForm = ({
+  isLive = false,
   isEdit = false,
   initialValues,
   errors,
@@ -61,6 +64,7 @@ export const StreamInfoForm = ({
 }: StreamInfoFormProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbnailRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // Drag and drop handlers
   const handleUploadClick = () => {
@@ -199,6 +203,17 @@ export const StreamInfoForm = ({
               type="button"
               className={`w-full bg-[#272727] text-[#D7DFEF] pl-10 mt-2 flex items-center h-10 rounded-md relative ${errors.startDate ? 'border border-red-500' : 'border-none'}`}
               style={{ textAlign: 'left' }}
+              onClick={e => {
+                if (isLive) {
+                  e.preventDefault();
+                  toast({
+                    title: 'You cannot edit scheduled date of live stream',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+              }}
+              disabled={isUploading}
             >
               <span className="absolute left-3 top-1/2 -translate-y-1/2">
                 <CalendarIcon className="h-5 w-5 text-white" />
@@ -206,7 +221,7 @@ export const StreamInfoForm = ({
               <span className={initialValues.startDateObj ? '' : 'text-[#FFFFFFBF]'}>
                 {initialValues.startDateObj ? initialValues.startDateObj.toLocaleDateString() + (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '') : 'Pick a date'}
               </span>
-              {(initialValues.startDateObj || initialValues.startTime) && (
+              {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
                 <button
                   type="button"
                   className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
@@ -221,7 +236,18 @@ export const StreamInfoForm = ({
             <Calendar
               mode="single"
               selected={initialValues.startDateObj || undefined}
-              onSelect={onStartDateChange}
+              onSelect={date => {
+                if (date) {
+                  // Set both date and time in a single onChange call to ensure atomic update
+                  onChange({ 
+                    startDateObj: date, 
+                    startTime: initialValues.startTime || '00:00' 
+                  });
+                } else {
+                  onChange({ startDateObj: null, startTime: '' });
+                }
+                onStartDateChange(date);
+              }}
               initialFocus
               showOutsideDays
               disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
