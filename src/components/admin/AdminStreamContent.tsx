@@ -127,46 +127,7 @@ export const AdminStreamContent = ({
   const [socket, setSocket] = useState<any>(null);
   const [messageList, setMessageList] = useState<any>();
   const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
-    const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  
-    // Function to handle socket reconnection
-    // const handleSocketReconnection = () => {
-    //   if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-    //     console.log('Max reconnection attempts reached');
-    //     return;
-    //   }
-  
-    //   console.log(`Attempting to reconnect... (${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
-    //   reconnectAttemptsRef.current++;
-  
-    //   // Clear existing socket
-    //   if (socket) {
-    //     socket.off('pong');
-    //     socket.disconnect();
-    //   }
-  
-    //   // Create new socket connection
-    //   // const newSocket = api.socket.connect();
-    //   if (socketConnect) {
-    //     setSocket(socketConnect);
-    //     api.socket.joinStream(streamId, socketConnect);
-        
-    //     // Reset reconnection attempts on successful connection
-    //     socketConnect.on('connect', () => {
-    //       console.log('Socket reconnected successfully');
-    //       reconnectAttemptsRef.current = 0;
-    //     });
-  
-    //     // Set up event listeners for the new socket
-    //     setupSocketEventListeners(socketConnect);
-    //   } else {
-    //     // Retry reconnection after delay
-    //     reconnectTimeoutRef.current = setTimeout(() => {
-    //       handleSocketReconnection();
-    //     }, 3000);
-    //   }
-    // };
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 
      // Function to setup socket event listeners
@@ -206,8 +167,6 @@ export const AdminStreamContent = ({
       };
 
       useEffect(() => {
-        // const newSocket = api.socket.connect();
-        // setSocket(socketConnect);
         api.socket.joinStream(streamId, socketConnect);
         
         // Setup event listeners
@@ -221,7 +180,6 @@ export const AdminStreamContent = ({
           
           api.socket.leaveStream(streamId, socketConnect);
           api.socket.disconnect();
-          // setSocket(null);
         };
       }, [streamId]);
   

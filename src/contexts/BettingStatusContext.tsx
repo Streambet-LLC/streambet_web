@@ -93,20 +93,19 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       }
     }
     
-//       return () => {
-// console.log('clearing socket to null')
-//         // Cleanup ping-pong intervals
-//         if (reconnectTimeoutRef.current) {
-//           clearTimeout(reconnectTimeoutRef.current);
-//         }
-//         if (socketConnect) {
-//                   console.log("Clearing socket connection")
-//           socketConnect.off('botMessage');
-//           socketConnect.off('connect_error');
-//           socketConnect.disconnect();
-//         }
-//         setSocketConect(null);
-//       };
+      return () => {
+        // Cleanup ping-pong intervals
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+        if (socketConnect) {
+          socketConnect.off('botMessage');
+          socketConnect.off('connect_error');
+          socketConnect.disconnect();
+        }
+        setSocketConect(null);
+      };
+
     }, [session, isFetching]);
 
 
