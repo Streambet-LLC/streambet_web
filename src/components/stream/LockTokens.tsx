@@ -87,7 +87,7 @@ export default function LockTokens({
             </div>
             <div>
               <p className="text-xs text-[#606060] font-semibold text-center pb-1">Potential winnings:</p>
-              <p className="font-medium text-[16px] text-[#BDFF00] text-center">${Number(Math.round(Number(potentialWinnings ?? 0))).toLocaleString('en-US')}</p>
+              <p className="font-medium text-[16px] text-[#BDFF00] text-center">{Number(Math.round(Number(potentialWinnings ?? 0))).toLocaleString('en-US')}</p>
             </div>
           </div>
           <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-14 pb-4">

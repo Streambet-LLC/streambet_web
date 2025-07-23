@@ -40,7 +40,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
     const newMsg: Message = {
       id: Date.now(),
       text: data.message,
-      name: data.username === session?.username ? 'You' : data.username,
+      name: data.username === session?.username ? 'Me' : data.username,
       imageURL: data.imageURL,
       timestamp: data.timestamp,
     };
@@ -67,7 +67,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
   };
 
   return (
-    <div className="flex flex-col max-h-[120vh] min-h-[80vh] bg-black text-white border border-zinc-700 rounded-[16px]">
+    <div className="flex flex-col max-h-[100vh] min-h-[80vh] bg-black text-white border border-zinc-700 rounded-[16px]">
       <div className="p-4 text-sm font-semibold">Live chat</div>
 
       <div
@@ -80,7 +80,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
           <div key={msg.id} className="px-4 py-2 rounded-lg mb-2 bg-[#181818]">
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm font-semibold"
-               style={{ color: msg.name === 'You' ? '#BDFF00' : '#606060' }}>{msg.name}</span>
+               style={{ color: msg.name === 'Me' ? '#BDFF00' : '#606060' }}>{msg.name}</span>
               <span className="text-xs text-[#FFFFFF] ml-2">
                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>

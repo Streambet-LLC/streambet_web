@@ -3,6 +3,9 @@ import { useState, useRef, useEffect } from 'react';
 import EmojiPicker from 'emoji-picker-react';
 import { Smile, ImagePlus } from 'lucide-react';
 import api from '@/integrations/api/client';
+import { FabioNormalStyle } from '@/utils/font';
+import Picker from '@emoji-mart/react'
+import data from '@emoji-mart/data'
 
 interface ChatInputProps {
   onSend: (msg: string, imageUrl?: string) => void;
@@ -32,7 +35,8 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
   };
 
   const onEmojiClick = (emojiData: any) => {
-    setMessage(prev => prev + emojiData.emoji);
+    console.log(emojiData,'here emoji data');
+    setMessage((prev) => prev + emojiData.emoji);
     setShowEmoji(false);
     inputRef.current?.focus();
   };
@@ -100,18 +104,33 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
       />
 
       {showEmoji && (
-        <div className="absolute bottom-16 left-4 z-10">
-          <EmojiPicker onEmojiClick={onEmojiClick} searchDisabled={true}/>
+        <div  ref={emojiPickerRef} className="custom-emoji-picker absolute bottom-16 left-4 z-10">
+          <Picker
+            data={data}
+            onEmojiSelect={(emoji) => {
+              console.log(emoji.native); // 👇 Native emoji character
+              setMessage(prev => prev + emoji.native);
+              setShowEmoji(false);
+              inputRef.current?.focus();
+            }}
+            // onClickOutside={() => setShowEmoji(false)}
+            previewPosition="none"
+            theme="dark"
+          />
+          {/* <EmojiPicker onEmojiClick={onEmojiClick} searchDisabled={true}/> */}
         </div>
       )}
 
       <div className="flex-1 flex flex-col gap-1">
         <textarea
+       style={{
+  fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, EmojiOne Color, FabioXM, sans-serif'
+  }}
           ref={inputRef}
           // type="text"
           value={message}
           onChange={e => setMessage(e.target.value)}
-          className="w-full bg-[#212121] text-white px-4 py-2 rounded-lg outline-none resize-none"
+          className="w-full bg-[#212121] text-white px-4 py-2 rounded-lg outline-none resize-none font-emoji"
           rows={1}
           // style={{ maxHeight: 5 * 24 }}
         />

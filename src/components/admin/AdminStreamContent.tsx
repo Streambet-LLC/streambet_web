@@ -166,22 +166,36 @@ export const AdminStreamContent = ({
         });
       };
 
-      useEffect(() => {
-        api.socket.joinStream(streamId, socketConnect);
-        
-        // Setup event listeners
-        setupSocketEventListeners(socketConnect);
+useEffect(() => {
+    // const newSocket = api.socket.connect();
+    // setSocket(socketConnect);
+    console.log('socketConnect value',  socketConnect);
+    if(socketConnect){
+    api.socket.joinStream(streamId, socketConnect);
+    
+    // Setup event listeners
+    setupSocketEventListeners(socketConnect);
+    }
+  
+   
+  }, [streamId,socketConnect]);
+
+  useEffect (()=> () => {
+      // Cleanup ping-pong intervals
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       
-        return () => {
-          // Cleanup ping-pong intervals
-          if (reconnectTimeoutRef.current) {
-            clearTimeout(reconnectTimeoutRef.current);
-          }
-          
-          api.socket.leaveStream(streamId, socketConnect);
-          api.socket.disconnect();
-        };
-      }, [streamId]);
+      api.socket.leaveStream(streamId, socketConnect);
+
+      // api.socket.disconnect();
+      if (socketConnect) {
+            socketConnect?.off('newMessage');
+            socketConnect?.off('streamEnded');
+      }
+      // setSocket(null);
+    },
+  [])
   
 
   // Stream info form state for editing

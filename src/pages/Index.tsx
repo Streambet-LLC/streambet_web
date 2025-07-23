@@ -52,14 +52,18 @@ const Index = () => {
 
   // State to hold the current streams data for display
   const [streamsData, setStreamsData] = useState<any>(undefined);
-
+  const [loader, setLoader] = useState(true);
   useEffect(() => {
     setStreamsData(undefined); // Clear data immediately on tab/page change
+    setLoader(true);
     refetchStreams();
   }, [currentPage, activeTab, refetchStreams]);
 
   useEffect(() => {
-    if (streams) setStreamsData(streams);
+    if (streams){
+      setStreamsData(streams);
+      setLoader(false);
+    } 
   }, [streams]);
 
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
@@ -163,6 +167,7 @@ const Index = () => {
       });
     }
   }, [streams]);
+  console.log(streamsData,"streamsData",loader);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -190,7 +195,7 @@ const Index = () => {
 
           <div className="mt-16">
 
-            {(isLoading || streamsData === undefined) ? (
+            {(loader) ? (
               isLive ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Array.from({ length: 6 }).map((_, i) => (
@@ -228,7 +233,7 @@ const Index = () => {
                   </Table>
                 </div>
               )
-            ) : (!streamsData || streamsData.data?.length === 0) && isLive ? (
+            ) : isLive && (!streamsData || streamsData.data?.length === 0)  ? (
               <Alert variant="default" className="bg-muted">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>No Live Streams</AlertTitle>

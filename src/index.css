@@ -92,6 +92,14 @@
   }
 }
 
+/* Change font for emoji picker headings */
+
+.custom-emoji-picker .category {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: bold; /* Optional: make headings bold */
+  font-size: 1rem;   /* Optional: adjust size */
+}
+
 .betting-slider {
   @apply w-full h-2 bg-secondary rounded-full appearance-none cursor-pointer;
 }

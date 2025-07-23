@@ -13,6 +13,7 @@ export const UpcomingStreams = ({ streams }: UpcomingStreamsProps) => {
   // Helper to truncate stream name for mobile
   const truncate = (str: string, n: number) => (str?.length > n ? str.slice(0, n - 1) + '…' : str);
 
+  console.log(streams,'streams in UpcomingStreams');
   // Mobile card layout
   return (
     <div className="mx-auto rounded-md border overflow-x-auto max-w-[900px] w-full">

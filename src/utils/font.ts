@@ -1,10 +1,11 @@
 export const FabioNormalStyle = { 
-    fontFamily: 'FabioXM, sans-serif', 
-    fontVariant: 'normal',
-    fontFeatureSettings: 'normal',
-    fontWeight: 400,
-    fontStyle: 'normal'
+  fontFamily: 'FabioXM, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif',
+  fontVariant: 'normal',
+  fontFeatureSettings: 'normal',
+  fontWeight: 400,
+  fontStyle: 'normal'
 };
+
 
 export const FabioMediumStyle = { 
     fontFamily: 'FabioXM, sans-serif', 
