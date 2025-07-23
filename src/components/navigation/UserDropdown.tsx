@@ -21,9 +21,9 @@ interface UserDropdownProps {
   onLogout: () => void;
 }
 
-export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
-
+export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => {
   const [isImageLoading, setIsImageLoading] = React.useState(false);
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

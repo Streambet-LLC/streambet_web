@@ -178,7 +178,7 @@ const Index = () => {
           <div className="max-w-3xl mx-auto text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold">
               Bet on the internet's <br />
-              <span className="text-[#BDFF00]">stupidest</span> moments
+              <span className="text-[#BDFF00]">randomest</span> moments
             </h1>
             <p className='text-[#FFFFFFBF]'>
               Live betting for games created on the internet.
