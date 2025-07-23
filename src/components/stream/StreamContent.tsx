@@ -566,7 +566,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           </AnimatePresence>
 
         {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
-        {bettingData?.bettingRounds && bettingData.bettingRounds.length > 0 ? (
+        {bettingData?.bettingRounds && bettingData.bettingRounds.length && bettingData.bettingRounds[0]?.status === 'open' && !lockedBet  ? (
           placedBet ? (
             <BetTokens
               session={session}
@@ -616,21 +616,16 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         )}
 
 
-        <div className="lg:hidden mt-4">
-          {/* <Chat
-            sendMessageSocket={sendMessageSocket}
-            newSocketMessage={messageList}
-            session={session}/> */}
-        </div>
       </div>
 
       <div className="lg:col-span-1 flex flex-col h-full mb-5">
         <div className="flex-1 h-full sticky top-24">
-          {/* <CommentSection session={session} streamId={streamId} showInputOnly={false} /> */}
+        <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat
           sendMessageSocket={sendMessageSocket}
           newSocketMessage={messageList}
           session={session}/>
+        </div>
         </div>
       </div>
     </div>

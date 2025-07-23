@@ -184,7 +184,7 @@ export const StreamTable: React.FC<Props> = ({
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Users:</span>
                     <span className="text-sm font-medium">
-                      {stream?.viewerCount || '0'}
+                      {stream?.userBetCount || '0'}
                     </span>
                   </div>
 
@@ -264,7 +264,7 @@ export const StreamTable: React.FC<Props> = ({
                   <TableCell>
                     <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
                   </TableCell>
-                  <TableCell>{stream?.viewerCount}</TableCell>
+                  <TableCell>{stream?.userBetCount}</TableCell>
                   <TableCell>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <Tooltip>

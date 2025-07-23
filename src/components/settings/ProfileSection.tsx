@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { getImageLink, getMessage } from '@/utils/helper';
-import { useDebounce } from '@/lib/utils';
+import { US_STATES, useDebounce } from '@/lib/utils';
 import api from '@/integrations/api/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -26,6 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useAuthContext } from '@/contexts/AuthContext';
+import Select from 'react-select';
 
 const formSchema = z.object({
   name: z.string().optional(),
@@ -326,6 +327,15 @@ export const ProfileSection = ({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const stateOptions = US_STATES.map(s => ({
+  value: s.abbreviation,
+  label: s.name
+}));
+
+// const selectedOption = stateOptions.find(
+//   (option) => option.value === field.value
+// );
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -460,29 +470,61 @@ export const ProfileSection = ({
               </FormItem>
             )}
           />
+<FormField
+  control={form.control}
+  name="state"
+  render={({ field }) => {
+    const selectedOption = stateOptions.find(
+      (option) => option.value === field.value
+    );
 
-          <FormField
-            control={form.control}
-            name="state"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-white font-light">State</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="State"
-                    {...field}
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/^\s+/, ''); // Only trim leading spaces
-                      field.onChange(value);
-                    }}
-                    className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+    return (
+      <FormItem>
+        <FormLabel className="text-white font-light block mb-1">
+          State
+        </FormLabel>
+        <FormControl>
+          <Select
+            options={stateOptions}
+            value={selectedOption} // 👈 convert string to full object
+            onChange={(selected) => field.onChange(selected?.value || '')}
+            placeholder="State"
+            styles={{
+              control: (base) => ({
+                ...base,
+                backgroundColor: '#272727',
+                color: 'white',
+                borderColor: '#272727',
+              }),
+              menu: (base) => ({
+                ...base,
+                backgroundColor: '#272727',
+                color: 'white',
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isFocused ? '#333' : '#272727',
+                color: 'white',
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: 'white',
+              }),
+              input: (base) => ({
+                ...base,
+                color: 'white',
+              }),
+              placeholder: (base) => ({
+                ...base,
+                color: '#aaa',
+              }),
+            }}
           />
+        </FormControl>
+      </FormItem>
+    );
+  }}
+/>
 
           {/* Password Change Section - moved below state field */}
           <div className="flex items-center justify-between mt-2">
