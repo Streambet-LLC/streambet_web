@@ -1,5 +1,5 @@
 export const FabioNormalStyle = { 
-  fontFamily: 'FabioXM, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif',
+  fontFamily: 'FabioXM, sans-serif',
   fontVariant: 'normal',
   fontFeatureSettings: 'normal',
   fontWeight: 400,

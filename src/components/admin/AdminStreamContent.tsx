@@ -188,12 +188,10 @@ useEffect(() => {
       
       api.socket.leaveStream(streamId, socketConnect);
 
-      // api.socket.disconnect();
       if (socketConnect) {
             socketConnect?.off('newMessage');
             socketConnect?.off('streamEnded');
       }
-      // setSocket(null);
     },
   [])
   
