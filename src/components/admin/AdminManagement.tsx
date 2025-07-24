@@ -809,18 +809,6 @@ export const AdminManagement = ({
                     >
                       + New round
                     </Button>
-                    // <Button
-                    //   type="submit"
-                    //   className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
-                    //   style={{ borderRadius: '10px' }}
-                    //   onClick={async (e) => {
-                    //     e.preventDefault();
-                    //     await handleCreateStream();
-                    //   }}
-                    //   disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
-                    // >
-                    //   {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Save') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
-                    // </Button>
                   )}
                 </div>
                 <Separator className="my-4 bg-[#232323]" />
