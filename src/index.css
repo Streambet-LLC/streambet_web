@@ -100,6 +100,13 @@
   font-size: 1rem;   /* Optional: adjust size */
 }
 
+.emoji-mart-category-label-text {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+
 .betting-slider {
   @apply w-full h-2 bg-secondary rounded-full appearance-none cursor-pointer;
 }

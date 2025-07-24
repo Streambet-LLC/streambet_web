@@ -6,6 +6,8 @@ import api from '@/integrations/api/client';
 import { FabioNormalStyle } from '@/utils/font';
 import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data'
+import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatInputProps {
   onSend: (msg: string, imageUrl?: string) => void;
@@ -22,9 +24,11 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null); 
 
+  const { socketConnect } = useBettingStatusContext();
+  const { toast } = useToast();
 
   const handleSend = () => {
-    if (message.trim() || imageUrl) {
+    if (socketConnect && (message.trim() || imageUrl)) {
       onSend(message, imageUrl);
       setMessage('');
       setImageUrl(null)
@@ -33,6 +37,7 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+
 
   const onEmojiClick = (emojiData: any) => {
     console.log(emojiData,'here emoji data');
@@ -46,8 +51,21 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+       // Check file type
+    if (!file.type.startsWith('image/')) {
+      // Show toast for invalid file type
+      toast({
+        description: 'Only image files are allowed.',
+        variant: 'destructive',
+      });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
       if (file.size > 1024 * 1024) {
-        alert('Image size must be less than 1MB');
+        toast({
+          description: 'Image size must be less than 1MB',
+          variant: 'destructive',
+        });
         return;
       }
       setImageFile(file);
@@ -108,12 +126,10 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
           <Picker
             data={data}
             onEmojiSelect={(emoji) => {
-              console.log(emoji.native); // 👇 Native emoji character
               setMessage(prev => prev + emoji.native);
-              setShowEmoji(false);
+              // setShowEmoji(false);
               inputRef.current?.focus();
             }}
-            // onClickOutside={() => setShowEmoji(false)}
             previewPosition="none"
             theme="dark"
           />
@@ -123,16 +139,14 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
 
       <div className="flex-1 flex flex-col gap-1">
         <textarea
-       style={{
-  fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, EmojiOne Color, FabioXM, sans-serif'
-  }}
+          style={{
+          fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, EmojiOne Color, FabioXM, sans-serif'
+          }}
           ref={inputRef}
-          // type="text"
           value={message}
           onChange={e => setMessage(e.target.value)}
           className="w-full bg-[#212121] text-white px-4 py-2 rounded-lg outline-none resize-none font-emoji"
           rows={1}
-          // style={{ maxHeight: 5 * 24 }}
         />
 
       </div>

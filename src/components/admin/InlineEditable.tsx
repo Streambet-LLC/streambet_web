@@ -8,6 +8,7 @@ import {
   DialogFooter,
   DialogClose
 } from '@/components/ui/dialog';
+import { Edit } from 'lucide-react';
 
 interface InlineEditableProps {
   value: string;
@@ -57,6 +58,10 @@ export function InlineEditable({
       setError(`Must be at least ${minLength} characters`);
       return;
     }
+    if (trimmedValue.length > 50) {
+    setError('Must be at most 50 characters');
+    return;
+    }
     if (trimmedValue !== value) {
       onSave(trimmedValue);
     }
@@ -96,6 +101,7 @@ export function InlineEditable({
             {error}
           </div>
         )}
+        
       </div>
     );
   }
@@ -110,6 +116,7 @@ export function InlineEditable({
       >
         {value}
       </span>
+        <Edit onClick={handleClick} className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2" />
       <Dialog open={showNotEditableDialog} onOpenChange={setShowNotEditableDialog}>
         <DialogContent className='border-2 border-[#7AFF14]' style={{ background: '#0D0D0D' }}>
           <DialogHeader>

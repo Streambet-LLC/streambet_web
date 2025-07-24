@@ -37,6 +37,8 @@ interface BettingRoundsProps {
   statusMap?: any;
   onErrorRoundsChange?: (errorRounds: number[]) => void;
   validationErrors?: ValidationError[];
+  createStream?:boolean;
+  handleCreateStream?: () => void;
 }
 
 export function BettingRounds({ 
@@ -48,7 +50,9 @@ export function BettingRounds({
   errorRounds = [],
   statusMap,
   onErrorRoundsChange,
-  validationErrors
+  validationErrors,
+  createStream,
+  handleCreateStream
  }: BettingRoundsProps) {
   const isMobile = useIsMobile();
   const [expandedRounds, setExpandedRounds] = useState<string[]>([]);
@@ -350,7 +354,7 @@ export function BettingRounds({
                                       style={{ color: isDuplicateOption ? '#ef4444' : '#FFFFFFBF', maxWidth: '180px' }}
                                       minLength={2}
                                     />
-                                    <Edit className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2" />
+                                    {/* <Edit className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2" /> */}
                                   </div>
                                 </div>
                               </TableCell>
@@ -416,8 +420,23 @@ export function BettingRounds({
           No betting rounds created yet. Click "+ New round" to get started.
         </div>
       )}
-      {/* New round button at bottom center */}
-      <div className="flex justify-center mt-8">
+       {createStream ? (
+         <div className="flex justify-center mt-8">
+         <Button
+            type="submit"
+            className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
+            style={{ borderRadius: '10px' }}
+            onClick={async (e) => {
+                  e.preventDefault();
+                  await handleCreateStream();
+                  }}
+            disabled={isSaving}
+            >
+            {editStreamId ? (isSaving ? 'Saving...' : 'Save') : (isSaving) ? 'Creating...' : 'Create stream'}
+          </Button>
+        </div>
+       ):
+       <div className="flex justify-center mt-8">
         <Button
           type="button"
           className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
@@ -427,7 +446,10 @@ export function BettingRounds({
         >
           + New round
         </Button>
-      </div>
+      </div>}
+      {/* New round button at bottom center */}
+      
+     
     </div>
   );
 }

@@ -666,6 +666,20 @@ export const AdminManagement = ({
     }
   }, [title, embeddedUrl, startDateObj, startTime, selectedThumbnailFile, thumbnailPreviewUrl]);
 
+
+    const addNewRound = () => {
+    const roundNumber = bettingRounds.length + 1;
+    const roundNames = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
+    const defaultName = roundNumber <= roundNames.length ? `${roundNames[roundNumber - 1]} round` : `Round ${roundNumber}`;
+    
+    const newRound: BettingRound = {
+      roundName: defaultName,
+      options: []
+    };
+    
+    handleRoundsChange([...bettingRounds, newRound]);
+  };
+
   return (
     <div className="space-y-6">
       {isStreamLoading ? (
@@ -786,18 +800,27 @@ export const AdminManagement = ({
                       Next
                     </Button>
                   ) : (
-                    <Button
-                      type="submit"
-                      className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
-                      style={{ borderRadius: '10px' }}
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        await handleCreateStream();
-                      }}
+                     <Button
+                      type="button"
+                      className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
+                      style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
                       disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                      onClick={addNewRound}
                     >
-                      {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Save') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
+                      + New round
                     </Button>
+                    // <Button
+                    //   type="submit"
+                    //   className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
+                    //   style={{ borderRadius: '10px' }}
+                    //   onClick={async (e) => {
+                    //     e.preventDefault();
+                    //     await handleCreateStream();
+                    //   }}
+                    //   disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                    // >
+                    //   {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Save') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
+                    // </Button>
                   )}
                 </div>
                 <Separator className="my-4 bg-[#232323]" />
@@ -894,6 +917,8 @@ export const AdminManagement = ({
                       showValidationErrors={showBettingValidation}
                       errorRounds={bettingErrorRounds}
                       validationErrors={bettingValidationErrors}
+                      createStream={true}
+                      handleCreateStream={handleCreateStream}
                     />
                   )}
                 </form>

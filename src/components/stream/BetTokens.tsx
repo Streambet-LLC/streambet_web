@@ -141,14 +141,20 @@ export default function BetTokens({
           Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
         </div>
         <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
+          {/* <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
             {bettingData?.bettingRounds?.[0]?.roundName}
-            </span>
+            </span> */}
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
             Total Pot: {`${totalPot} ${isStreamCoins ? ' Stream Coins' : ' Free Tokens'}`}
             </span>
         </div>
+       
       </div>
+       <div>
+           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[200px]" title={bettingData?.bettingRounds?.[0]?.roundName}>
+            {bettingData?.bettingRounds?.[0]?.roundName}
+            </span>
+        </div>
 
       <div className="relative w-full pt-2 pb-2">
         <input

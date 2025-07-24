@@ -103,7 +103,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
-    console.log("setUp event list in stream content")
     if (!socketInstance) return;
     
     const resetBetData = () => {
@@ -145,7 +144,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     };
   
     const handler = (update: any) => {
-      console.log('bettingUpdate', update);
       setTotalPotCoins(update?.totalBetsCoinAmount);
       setTotalPotTokens(update?.totalBetsTokenAmount);
       setLoading(false);
@@ -258,7 +256,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('Socket disconnected:', reason);
       if (reason !== 'io client disconnect') {
         // Only attempt reconnection if it wasn't an intentional disconnect
-          handleSocketReconnection();
+          // handleSocketReconnection();
         api.socket.joinStream(streamId, socketConnect);
       
       }
@@ -266,7 +264,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socketInstance.on('connect_error', (error: any) => {
       console.log('Socket connection error:', error);
-       handleSocketReconnection();
+      //  handleSocketReconnection();
       api.socket.joinStream(streamId, socketConnect);
      
     });
@@ -423,7 +421,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
  // Mutation to send a message
   const sendMessageSocket = (data: { message: string;imageURL:string;}) => {
     if (socketConnect && socketConnect.connected) {
-      console.log('send message socket', data);
       socketConnect.emit('sendChatMessage', {
         streamId: streamId,
         message: data?.message,
@@ -433,7 +430,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
     } else {
       toast({
-        description: 'Socket not connected. Please try again.',
+        description: 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
     }
@@ -624,7 +621,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           <Chat
           sendMessageSocket={sendMessageSocket}
           newSocketMessage={messageList}
-          session={session}/>
+          session={session}
+         />
         </div>
         </div>
       </div>

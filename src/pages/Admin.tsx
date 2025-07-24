@@ -21,7 +21,8 @@ const Admin = () => {
     setResetKey((prev) => prev + 1);
   }, [queryClient]);
 
-  if (profile && profile.role !== 'admin') {
+
+  if ((profile && profile.role !== 'admin') || profile === null) {
     return <Navigate to="/" replace />;
   }
 

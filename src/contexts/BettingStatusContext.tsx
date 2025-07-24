@@ -19,7 +19,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
   const { session, isFetching } = useAuthContext()
   const { toast } = useToast();
   const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
+  const maxReconnectAttempts = 1;
 
  const handleSocketReconnection = () => {
   console.log("Reconnecting socket")
@@ -48,9 +48,9 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
 
     } else {
       // Retry reconnection after delay
-      reconnectTimeoutRef.current = setTimeout(() => {
-        handleSocketReconnection();
-      }, 3000);
+      // reconnectTimeoutRef.current = setTimeout(() => {
+      //   handleSocketReconnection();
+      // }, 3000);
     }
   };
 
@@ -70,9 +70,21 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       });
   
       socketInstance.on('connect_error', (error: any) => {
-        console.log('Socket connection error:', error);
+        console.log('debug123=Socket connection error:', error);
         handleSocketReconnection();
       });
+
+      socketInstance.on('reconnect_attempt', (attemptNumber) => {
+      console.log('debug123=Trying to reconnect...', attemptNumber);
+    });
+    
+    socketInstance.on('reconnect_error', (err) => {
+      console.error('debug123=Reconnect error:', err);
+    });
+    
+    socketInstance.on('reconnect_failed', () => {
+      console.log('debug123=Reconnection failed');
+    });
     };
   
     useEffect(() => {

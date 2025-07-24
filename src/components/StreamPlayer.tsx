@@ -118,7 +118,7 @@ export const StreamPlayer = ({ streamId, showInfo = false }: StreamPlayerProps) 
         </div>
       )}
       <div className="relative w-full h-full">
-       <ReactPlayer url={stream?.data?.embeddedUrl} controls={true} width={'100%'} height={'100%'}/>
+       <ReactPlayer url={stream?.data?.embeddedUrl} controls={true} width={'100%'} height={'100%'}  playing={true}/>
     </div>
     </div>
   );
