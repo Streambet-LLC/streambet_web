@@ -40,7 +40,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
     const newMsg: Message = {
       id: Date.now(),
       text: data.message,
-      name: data.username === session?.username ? 'You' : data.username,
+      name: data.username === session?.username ? 'Me' : data.username,
       imageURL: data.imageURL,
       timestamp: data.timestamp,
     };
@@ -49,6 +49,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
 
   useEffect(() => {
     if (newSocketMessage) {
+      console.log(newSocketMessage,'newSocketMessage')
       addNewMessage(newSocketMessage);
     }
   }, [newSocketMessage]);
@@ -67,7 +68,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
   };
 
   return (
-    <div className="flex flex-col max-h-[120vh] min-h-[80vh] bg-black text-white border border-zinc-700 rounded-[16px]">
+    <div className="flex flex-col max-h-[100vh] min-h-[80vh] bg-black text-white border border-zinc-700 rounded-[16px]">
       <div className="p-4 text-sm font-semibold">Live chat</div>
 
       <div
@@ -76,30 +77,63 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
         className="flex-1 h-screen overflow-y-auto px-4 py-2 space-y-2 bg-['rgba(36, 36, 36, 1)']"
         style={{ backgroundColor: 'rgba(24, 24, 24, 1)' }}
       >
-        {messages.map(msg => (
-          <div key={msg.id} className="px-4 py-2 rounded-lg mb-2 bg-[#181818]">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-semibold"
-               style={{ color: msg.name === 'You' ? '#BDFF00' : '#606060' }}>{msg.name}</span>
-              <span className="text-xs text-[#FFFFFF] ml-2">
-                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-            <span className="text-[#D7DFEF] text-xs font-medium">{msg.text}</span>
-            {msg.imageURL && (
-              <img 
-              onLoad={() => {
-                if (scrollRef.current) {
-                  scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                }
-              }}
-              src={getImageLink(msg.imageURL)} alt="chat media" className="mt-1 rounded max-w-[200px]" />
-            )}
-          </div>
-        ))}
+       {messages.map(msg => (
+  <div key={msg.id} className="px-4 py-2 rounded-lg mb-2 bg-[#181818]">
+    {/* Name and timestamp row */}
+    <div className="flex items-center justify-between mb-1">
+      <span
+        className="text-sm font-semibold"
+        style={{ color: msg.name === 'Me' ? '#BDFF00' : '#606060' }}
+      >
+        {msg.name}
+      </span>
+      <span className="text-xs text-[#FFFFFF] ml-2">
+        {new Date(msg.timestamp).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        })}
+      </span>
+    </div>
+
+    {/* Message content */}
+    <div className="text-[#D7DFEF] text-xs font-medium break-words w-[250px] leading-normal">
+      {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+        /^https?:\/\/[^\s]+$/.test(part) ? (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 underline break-all"
+          >
+            {part}
+          </a>
+        ) : (
+          part
+        )
+      )}
+    </div>
+
+    {/* Image (if any) */}
+    {msg.imageURL && (
+      <img
+        onLoad={() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          }
+        }}
+        src={getImageLink(msg.imageURL)}
+        alt="chat media"
+        className="mt-1 rounded max-w-[200px]"
+      />
+    )}
+  </div>
+))}
+
       </div>
 
-      <ChatInput onSend={handleSend} onImageAdd={scrollToBottom}/>
+      {session != null && (<ChatInput onSend={handleSend} onImageAdd={scrollToBottom}/>)}
     </div>
   );
 }

@@ -103,16 +103,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
-    console.log("setUp event list in stream content")
     if (!socketInstance) return;
-
-    // Remove previous listeners to prevent duplicates
-      //  socketInstance?.off('betPlaced');
-      //  socketInstance?.off('betEdited');
-      //  socketInstance?.off('betOpened');
-      //  socketInstance?.off('betCancelledByAdmin');
     
-
     const resetBetData = () => {
       setTotalPotTokens(undefined);
       setTotalPotCoins(undefined);
@@ -143,14 +135,15 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setSelectedWinner(update?.selectedWinner);
       setIsEditing(false);
       setPlaceBet(false);
-      toast({
-        description:update?.message,
-        variant: 'default',
-      });
+      if (update?.message) {
+        toast({
+          description: update.message,
+          variant: 'default',
+        });
+      }
     };
   
     const handler = (update: any) => {
-      console.log('bettingUpdate', update);
       setTotalPotCoins(update?.totalBetsCoinAmount);
       setTotalPotTokens(update?.totalBetsTokenAmount);
       setLoading(false);
@@ -228,10 +221,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
         streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
       });
+      if (update?.message){
       toast({
         description:update?.message,
         variant: 'default',
       });
+    }
       resetBetData();
     });
 
@@ -261,15 +256,17 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('Socket disconnected:', reason);
       if (reason !== 'io client disconnect') {
         // Only attempt reconnection if it wasn't an intentional disconnect
+          // handleSocketReconnection();
         api.socket.joinStream(streamId, socketConnect);
-        handleSocketReconnection();
+      
       }
     });
 
     socketInstance.on('connect_error', (error: any) => {
       console.log('Socket connection error:', error);
+      //  handleSocketReconnection();
       api.socket.joinStream(streamId, socketConnect);
-      handleSocketReconnection();
+     
     });
   };
 
@@ -424,7 +421,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
  // Mutation to send a message
   const sendMessageSocket = (data: { message: string;imageURL:string;}) => {
     if (socketConnect && socketConnect.connected) {
-      console.log('send message socket', data);
       socketConnect.emit('sendChatMessage', {
         streamId: streamId,
         message: data?.message,
@@ -434,7 +430,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
     } else {
       toast({
-        description: 'Socket not connected. Please try again.',
+        description: 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
     }
@@ -567,7 +563,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           </AnimatePresence>
 
         {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
-        {bettingData?.bettingRounds && bettingData.bettingRounds.length > 0 ? (
+        {bettingData?.bettingRounds && bettingData.bettingRounds.length && bettingData.bettingRounds[0]?.status === 'open' && !lockedBet  ? (
           placedBet ? (
             <BetTokens
               session={session}
@@ -601,35 +597,33 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               lockedBet={lockedBet}
             />
           )
-        ) : 
-        <div className="relative mx-auto rounded-[16px] shadow-lg p-5" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
-          <div className='all-center flex justify-center items-center h-[100px] mt-8'>
-          <img
-              src="/icons/nobettingData.svg"
-              alt="lock left"
-              className="w-[100%] h-[100%] object-contain"
-            />
-          </div>
-           <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
+        ) : (
+          session != null && (
+            <div className="relative mx-auto rounded-[16px] shadow-lg p-5" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+              <div className='all-center flex justify-center items-center h-[100px] mt-8'>
+                <img
+                  src="/icons/nobettingData.svg"
+                  alt="lock left"
+                  className="w-[100%] h-[100%] object-contain"
+                />
+              </div>
+              <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
+            </div>
+          )
+        )}
 
-          </div>}
 
-
-        <div className="lg:hidden mt-4">
-          {/* <Chat
-            sendMessageSocket={sendMessageSocket}
-            newSocketMessage={messageList}
-            session={session}/> */}
-        </div>
       </div>
 
       <div className="lg:col-span-1 flex flex-col h-full mb-5">
         <div className="flex-1 h-full sticky top-24">
-          {/* <CommentSection session={session} streamId={streamId} showInputOnly={false} /> */}
+        <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat
           sendMessageSocket={sendMessageSocket}
           newSocketMessage={messageList}
-          session={session}/>
+          session={session}
+         />
+        </div>
         </div>
       </div>
     </div>

@@ -21,7 +21,7 @@ const Index = () => {
   // Store last page per tab
   const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1 });
   const currentPage = tabPages[activeTab] || 1;
-  const itemsPerPage = 9;
+  const itemsPerPage = activeTab === 'live' ? 9 : 6;
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
   const rangeEnd = itemsPerPage;
@@ -52,14 +52,18 @@ const Index = () => {
 
   // State to hold the current streams data for display
   const [streamsData, setStreamsData] = useState<any>(undefined);
-
+  const [loader, setLoader] = useState(true);
   useEffect(() => {
     setStreamsData(undefined); // Clear data immediately on tab/page change
+    setLoader(true);
     refetchStreams();
   }, [currentPage, activeTab, refetchStreams]);
 
   useEffect(() => {
-    if (streams) setStreamsData(streams);
+    if (streams){
+      setStreamsData(streams);
+      setLoader(false);
+    } 
   }, [streams]);
 
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
@@ -163,6 +167,7 @@ const Index = () => {
       });
     }
   }, [streams]);
+  console.log(streamsData,"streamsData",loader);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -173,7 +178,7 @@ const Index = () => {
           <div className="max-w-3xl mx-auto text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold">
               Bet on the internet's <br />
-              <span className="text-[#BDFF00]">stupidest</span> moments
+              <span className="text-[#BDFF00]">randomest</span> moments
             </h1>
             <p className='text-[#FFFFFFBF]'>
               Live betting for games created on the internet.
@@ -190,7 +195,7 @@ const Index = () => {
 
           <div className="mt-16">
 
-            {(isLoading || streamsData === undefined) ? (
+            {(loader) ? (
               isLive ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Array.from({ length: 6 }).map((_, i) => (
@@ -203,7 +208,7 @@ const Index = () => {
                     <TableBody>
                       {Array.from({ length: 4 }).map((_, i) => (
                         <TableRow key={i} className="h-[96px]">
-                          <TableCell className="w-[220px] min-w-[220px]">
+                          <TableCell className="w-[220px] min-w-[220px] py-0">
                             <div className="flex items-center gap-0 h-[96px]">
                               <Skeleton className="w-[115px] h-[72px] rounded-lg" />
                               <div className="flex items-center justify-center h-full ml-2 w-full">
@@ -228,7 +233,7 @@ const Index = () => {
                   </Table>
                 </div>
               )
-            ) : (!streamsData || streamsData.data?.length === 0) && isLive ? (
+            ) : isLive && (!streamsData || streamsData.data?.length === 0)  ? (
               <Alert variant="default" className="bg-muted">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>No Live Streams</AlertTitle>

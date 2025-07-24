@@ -63,7 +63,7 @@ function isTimeValid(time, date) {
 }
 
 // Validation function for stream settings form
-function validateForm({ title, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime }, selectedThumbnailFile) {
+function validateForm({ title, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime }, selectedThumbnailFile, isLiveStream) {
   const newErrors = {
     title: '',
     embeddedUrl: '',
@@ -92,7 +92,7 @@ function validateForm({ title, embeddedUrl, thumbnailPreviewUrl, startDateObj, s
   } else if (!startTime) {
     newErrors.startDate = 'Start time is required';
     isValid = false;
-  } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+  } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
     newErrors.startDate = 'Cannot select past time for today';
     isValid = false;
   }
@@ -125,49 +125,9 @@ export const AdminStreamContent = ({
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
     // Socket reference
   const [socket, setSocket] = useState<any>(null);
-   const [messageList, setMessageList] = useState<any>();
- const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
-    const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const reconnectAttemptsRef = useRef(0);
-    const maxReconnectAttempts = 5;
-  
-    // Function to handle socket reconnection
-    // const handleSocketReconnection = () => {
-    //   if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-    //     console.log('Max reconnection attempts reached');
-    //     return;
-    //   }
-  
-    //   console.log(`Attempting to reconnect... (${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
-    //   reconnectAttemptsRef.current++;
-  
-    //   // Clear existing socket
-    //   if (socket) {
-    //     socket.off('pong');
-    //     socket.disconnect();
-    //   }
-  
-    //   // Create new socket connection
-    //   // const newSocket = api.socket.connect();
-    //   if (socketConnect) {
-    //     setSocket(socketConnect);
-    //     api.socket.joinStream(streamId, socketConnect);
-        
-    //     // Reset reconnection attempts on successful connection
-    //     socketConnect.on('connect', () => {
-    //       console.log('Socket reconnected successfully');
-    //       reconnectAttemptsRef.current = 0;
-    //     });
-  
-    //     // Set up event listeners for the new socket
-    //     setupSocketEventListeners(socketConnect);
-    //   } else {
-    //     // Retry reconnection after delay
-    //     reconnectTimeoutRef.current = setTimeout(() => {
-    //       handleSocketReconnection();
-    //     }, 3000);
-    //   }
-    // };
+  const [messageList, setMessageList] = useState<any>();
+  const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 
      // Function to setup socket event listeners
@@ -206,25 +166,34 @@ export const AdminStreamContent = ({
         });
       };
 
-      useEffect(() => {
-        // const newSocket = api.socket.connect();
-        setSocket(socketConnect);
-        api.socket.joinStream(streamId, socketConnect);
-        
-        // Setup event listeners
-        setupSocketEventListeners(socketConnect);
+useEffect(() => {
+    // const newSocket = api.socket.connect();
+    // setSocket(socketConnect);
+    console.log('socketConnect value',  socketConnect);
+    if(socketConnect){
+    api.socket.joinStream(streamId, socketConnect);
+    
+    // Setup event listeners
+    setupSocketEventListeners(socketConnect);
+    }
+  
+   
+  }, [streamId,socketConnect]);
+
+  useEffect (()=> () => {
+      // Cleanup ping-pong intervals
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       
-        return () => {
-          // Cleanup ping-pong intervals
-          if (reconnectTimeoutRef.current) {
-            clearTimeout(reconnectTimeoutRef.current);
-          }
-          
-          api.socket.leaveStream(streamId, socketConnect);
-          api.socket.disconnect();
-          setSocket(null);
-        };
-      }, [streamId]);
+      api.socket.leaveStream(streamId, socketConnect);
+
+      if (socketConnect) {
+            socketConnect?.off('newMessage');
+            socketConnect?.off('streamEnded');
+      }
+    },
+  [])
   
 
   // Stream info form state for editing
@@ -300,21 +269,23 @@ export const AdminStreamContent = ({
       return updated;
     });
   };
+
   const handleEditFileChange = (file) => {
     setSelectedThumbnailFile(file);
-    // Implement file upload logic here, update thumbnailPreviewUrl and setIsUploading as needed
-    // For now, just set preview URL if file is present
     if (file) {
       const url = URL.createObjectURL(file);
       setEditForm((prev) => ({ ...prev, thumbnailPreviewUrl: url }));
     }
   };
+
   const handleEditDeleteThumbnail = () => {
     setEditForm((prev) => ({ ...prev, thumbnailPreviewUrl: '' }));
   };
+
   const handleEditStartDateChange = (date) => {
     setEditForm((prev) => ({ ...prev, startDateObj: date }));
   };
+
   const handleEditStartTimeChange = (e) => {
     setEditForm((prev) => ({ ...prev, startTime: e.target.value }));
   };
@@ -331,9 +302,17 @@ export const AdminStreamContent = ({
     },
   });
 
+  // Add useEffect for validation
+  useEffect(() => {
+    if (settingsOpen) { // Only validate when settings dialog is open
+      const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile, isLiveStream);
+      setEditErrors(newErrors);
+    }
+  }, [editForm.title, editForm.embeddedUrl, editForm.thumbnailPreviewUrl, editForm.startDateObj, editForm.startTime, selectedThumbnailFile, settingsOpen]);
+
   const handleEditSubmit = async () => {
     // Run validation first
-    const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile);
+    const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile, isLiveStream);
     setEditErrors(newErrors);
     if (!isValid) {
       return;
@@ -368,13 +347,14 @@ export const AdminStreamContent = ({
   };
 
   const isStreamScheduled = streamInfo?.status === StreamStatus.SCHEDULED;
+  const isLiveStream = streamInfo?.status === StreamStatus.LIVE;
   const isStreamEnded = streamInfo?.status === StreamStatus.ENDED;
 
    // Mutation to send a message
   const sendMessageSocket = (data: { message: string;imageURL:string;}) => {
-    if (socket && socket.connected) {
-      console.log('send message socket', data);
-      socket.emit('sendChatMessage', {
+    console.log(socketConnect, 'socket in sendMessageSocket');
+    if (socketConnect && socketConnect.connected) {
+      socketConnect.emit('sendChatMessage', {
         streamId: streamId,
         message: data?.message,
         imageURL:data?.imageURL,
@@ -480,6 +460,7 @@ export const AdminStreamContent = ({
                   </div>
                   <Separator className="my-4 bg-[#232323]" />
                   <StreamInfoForm
+                    isLive={isLiveStream}
                     isEdit
                     initialValues={editForm}
                     errors={editErrors}

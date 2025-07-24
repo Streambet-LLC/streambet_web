@@ -18,7 +18,7 @@ import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
-import { BettingRoundStatus, CurrencyType } from '@/enums';
+import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
@@ -54,6 +54,7 @@ export const AdminManagement = ({
   const [embeddedUrl, setEmbeddedUrl] = useState('');
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
+  const [isLiveStream, setIsLiveStream] = useState(false);
   const { toast } = useToast();
 
   // Betting rounds state
@@ -152,19 +153,26 @@ export const AdminManagement = ({
     return selectedTime > now;
   };
 
-  // Add handler for start date changes
+  // Extracted validation for start date and time
+  function validateStartDateTime(date: Date | null, time: string): string {
+    if (!date) {
+      return 'Start date is required';
+    } else if (!time) {
+      return 'Start time is required';
+    } else if (!isLiveStream && isToday(date) && !isTimeValid(time, date)) {
+      return 'Cannot select past time for today';
+    }
+    return '';
+  }
+
+  // Remove direct validateForm calls from handlers
   const handleStartDateChange = (date: Date | null) => {
     setStartDateObj(date);
-    // Reset end date and time when start date changes
-    setStartTime('');
-    validateForm();
   };
 
-  // Add handler for start time changes
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = e.target.value;
     setStartTime(newTime);
-    validateForm();
   };
 
   function resetForm() {
@@ -183,9 +191,12 @@ export const AdminManagement = ({
     setThumbnailError(null);
     setIsDragging(false);
     setIsUploading(false);
+    setIsLiveStream(false);
 
     // Reset betting rounds
     setBettingRounds([]);
+
+    setValidationStarted(false);
 
     // Clear the file input
     if (fileInputRef.current) {
@@ -263,7 +274,7 @@ export const AdminManagement = ({
     } else if (!startTime) {
       newErrors.startDate = 'Start time is required';
       isValid = false;
-    } else if (isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+    } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
       newErrors.startDate = 'Cannot select past time for today';
       isValid = false;
     }
@@ -415,6 +426,7 @@ export const AdminManagement = ({
       setDescription(streamData?.description);
       setEmbeddedUrl(streamData?.embeddedUrl);
       setBettingRounds(streamData?.rounds || []);
+      setIsLiveStream(streamData?.status === StreamStatus.LIVE);
 
       // Set thumbnail if available
       if (streamData.thumbnailUrl) {
@@ -647,6 +659,27 @@ export const AdminManagement = ({
     setCurrentPage(1);
   }, [searchStreamQuery]);
 
+  // Add useEffect for validation
+  useEffect(() => {
+    if (validationStarted) {
+      validateForm();
+    }
+  }, [title, embeddedUrl, startDateObj, startTime, selectedThumbnailFile, thumbnailPreviewUrl]);
+
+
+    const addNewRound = () => {
+    const roundNumber = bettingRounds.length + 1;
+    const roundNames = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
+    const defaultName = roundNumber <= roundNames.length ? `${roundNames[roundNumber - 1]} round` : `Round ${roundNumber}`;
+    
+    const newRound: BettingRound = {
+      roundName: defaultName,
+      options: []
+    };
+    
+    handleRoundsChange([...bettingRounds, newRound]);
+  };
+
   return (
     <div className="space-y-6">
       {isStreamLoading ? (
@@ -707,7 +740,7 @@ export const AdminManagement = ({
                 {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg> : (streamAnalytics?.totalUsers || 0)?.toLocaleString('en-US')}
+                </svg> : (streamAnalytics?.totalBetPlacedUsers || 0)?.toLocaleString('en-US')}
               </span>
             </div>
             {/* Card 4 */}
@@ -767,17 +800,14 @@ export const AdminManagement = ({
                       Next
                     </Button>
                   ) : (
-                    <Button
-                      type="submit"
-                      className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
-                      style={{ borderRadius: '10px' }}
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        await handleCreateStream();
-                      }}
+                     <Button
+                      type="button"
+                      className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
+                      style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
                       disabled={createStreamMutation.isPending || createBetMutation.isPending || isUploading}
+                      onClick={addNewRound}
                     >
-                      {editStreamId ? (createStreamMutation.isPending || createBetMutation.isPending || isUploading ? 'Saving...' : 'Save') : (createStreamMutation.isPending || createBetMutation.isPending || isUploading) ? 'Creating...' : 'Create stream'}
+                      + New round
                     </Button>
                   )}
                 </div>
@@ -787,6 +817,7 @@ export const AdminManagement = ({
                   {/* Step 1: Info */}
                   {createStep === 'info' && (
                     <StreamInfoForm
+                      isLive={isLiveStream}
                       isEdit={!!editStreamId}
                       initialValues={{
                         title,
@@ -806,7 +837,12 @@ export const AdminManagement = ({
                           if ('title' in fields) setTitle(fields.title ?? '');
                           if ('description' in fields) setDescription(fields.description ?? '');
                           if ('embeddedUrl' in fields) setEmbeddedUrl(fields.embeddedUrl ?? '');
-                          if ('startDateObj' in fields) setStartDateObj(fields.startDateObj ?? null);
+                          if ('startDateObj' in fields) {
+                            setStartDateObj(fields.startDateObj ?? null);
+                            if (fields.startDateObj && !startTime) {
+                              setStartTime('00:00');
+                            }
+                          }
                           if ('startTime' in fields) setStartTime(fields.startTime ?? '');
                           return;
                         }
@@ -829,21 +865,21 @@ export const AdminManagement = ({
                             newErrors.embeddedUrl = 'Embed URL is required and should be valid';
                           else newErrors.embeddedUrl = '';
                         }
-                        if ('startDateObj' in fields) {
-                          setStartDateObj(fields.startDateObj ?? null);
-                          const date = fields.startDateObj ?? null;
-                          if (!date) newErrors.startDate = 'Start date is required';
-                          else if (!startTime) newErrors.startDate = 'Start time is required';
-                          else if (isToday(date) && !isTimeValid(startTime, date)) newErrors.startDate = 'Cannot select past time for today';
-                          else newErrors.startDate = '';
-                        }
-                        if ('startTime' in fields) {
-                          setStartTime(fields.startTime ?? '');
-                          const value = fields.startTime ?? '';
-                          if (!startDateObj) newErrors.startDate = 'Start date is required';
-                          else if (!value) newErrors.startDate = 'Start time is required';
-                          else if (isToday(startDateObj) && !isTimeValid(value, startDateObj)) newErrors.startDate = 'Cannot select past time for today';
-                          else newErrors.startDate = '';
+                        if ('startDateObj' in fields || 'startTime' in fields) {
+                          const date = 'startDateObj' in fields ? fields.startDateObj : startDateObj;
+                          const time = 'startTime' in fields ? fields.startTime : startTime;
+                          
+                          if ('startDateObj' in fields) {
+                            setStartDateObj(date);
+                            if (date && !time) {
+                              setStartTime('00:00');
+                            }
+                          }
+                          if ('startTime' in fields) {
+                            setStartTime(time);
+                          }
+
+                          newErrors.startDate = validateStartDateTime(date, time);
                         }
                         setErrors(newErrors);
                       }}
@@ -869,6 +905,8 @@ export const AdminManagement = ({
                       showValidationErrors={showBettingValidation}
                       errorRounds={bettingErrorRounds}
                       validationErrors={bettingValidationErrors}
+                      createStream={true}
+                      handleCreateStream={handleCreateStream}
                     />
                   )}
                 </form>
@@ -967,6 +1005,15 @@ export const AdminManagement = ({
                       setViewStreamId('');
                       setCreateStep('info');
                       setBettingRounds([]);
+                      setErrors({
+                        title: '',
+                        embeddedUrl: '',
+                        thumbnail: '',
+                        startDate: '',
+                      });
+                      setBettingErrorRounds([]);
+                      setBettingValidationErrors([]);
+                      setShowBettingValidation(false);
                     }}
                   >
                     {isMobile ? 'Create Livestream' : 'Create new livestream'}

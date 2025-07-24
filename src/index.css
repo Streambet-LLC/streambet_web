@@ -92,6 +92,21 @@
   }
 }
 
+/* Change font for emoji picker headings */
+
+.custom-emoji-picker .category {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: bold; /* Optional: make headings bold */
+  font-size: 1rem;   /* Optional: adjust size */
+}
+
+.emoji-mart-category-label-text {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+
 .betting-slider {
   @apply w-full h-2 bg-secondary rounded-full appearance-none cursor-pointer;
 }
@@ -241,4 +256,8 @@ body, * {
 /* Hide dialog close button for custom popups (Stream Settings & Betting Settings) */
 .no-dialog-close > button.absolute.right-4.top-4 {
   display: none !important;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2);
 }

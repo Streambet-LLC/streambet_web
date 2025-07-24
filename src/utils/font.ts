@@ -1,10 +1,11 @@
 export const FabioNormalStyle = { 
-    fontFamily: 'FabioXM, sans-serif', 
-    fontVariant: 'normal',
-    fontFeatureSettings: 'normal',
-    fontWeight: 400,
-    fontStyle: 'normal'
+  fontFamily: 'FabioXM, sans-serif',
+  fontVariant: 'normal',
+  fontFeatureSettings: 'normal',
+  fontWeight: 400,
+  fontStyle: 'normal'
 };
+
 
 export const FabioMediumStyle = { 
     fontFamily: 'FabioXM, sans-serif', 
