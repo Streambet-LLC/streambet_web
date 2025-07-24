@@ -116,7 +116,11 @@ export function InlineEditable({
       >
         {value}
       </span>
-        <Edit onClick={handleClick} className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2" />
+       <span 
+        className={`cursor-pointer`} onClick={handleClick}>
+        <Edit  className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2" />
+        </span>
+
       <Dialog open={showNotEditableDialog} onOpenChange={setShowNotEditableDialog}>
         <DialogContent className='border-2 border-[#7AFF14]' style={{ background: '#0D0D0D' }}>
           <DialogHeader>
