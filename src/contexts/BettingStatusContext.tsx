@@ -19,39 +19,40 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
   const { session, isFetching } = useAuthContext()
   const { toast } = useToast();
   const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 1;
+  const maxReconnectAttempts = 3;
 
+  // Commented as reconnection is handled in the socket connection logic in client.ts
  const handleSocketReconnection = () => {
-  console.log("Reconnecting socket")
-    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      console.log('Max reconnection attempts reached');
-      return;
-    }
+  // console.log("Reconnecting socket")
+  //   if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+  //     console.log('Max reconnection attempts reached');
+  //     return;
+  //   }
 
-    reconnectAttemptsRef.current++;
+  //   reconnectAttemptsRef.current++;
 
-    // Clear existing socket
-    if (socketConnect) {
-      socketConnect.off('pong');
-    }
+  //   // Clear existing socket
+  //   if (socketConnect) {
+  //     socketConnect.off('pong');
+  //   }
 
-    // Create new socket connection
-    const newSocket = api.socket.connect();
-    if (newSocket) {
-      setSocketConect(newSocket);
-      api.socket.joinCommonStream(newSocket);
-      // Reset reconnection attempts on successful connection
-      newSocket.on('connect', () => {
-        console.log('Common Socket reconnected successfully');
-        reconnectAttemptsRef.current = 0;
-      });
+  //   // Create new socket connection
+  //   const newSocket = api.socket.connect();
+  //   if (newSocket) {
+  //     setSocketConect(newSocket);
+  //     api.socket.joinCommonStream(newSocket);
+  //     // Reset reconnection attempts on successful connection
+  //     newSocket.on('connect', () => {
+  //       console.log('Common Socket reconnected successfully');
+  //       reconnectAttemptsRef.current = 0;
+  //     });
 
-    } else {
-      // Retry reconnection after delay
-      // reconnectTimeoutRef.current = setTimeout(() => {
-      //   handleSocketReconnection();
-      // }, 3000);
-    }
+  //   } else {
+  //     // Retry reconnection after delay
+  //     reconnectTimeoutRef.current = setTimeout(() => {
+  //       handleSocketReconnection();
+  //     }, 3000);
+  //   }
   };
 
     const setupSocketEventListeners = (socketInstance: any) => {

@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from 'react';
 import EmojiPicker from 'emoji-picker-react';
 import { Smile, ImagePlus } from 'lucide-react';
 import api from '@/integrations/api/client';
-import { FabioNormalStyle } from '@/utils/font';
 import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data'
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
@@ -132,6 +131,7 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
             }}
             previewPosition="none"
             theme="dark"
+            header={false}
           />
           {/* <EmojiPicker onEmojiClick={onEmojiClick} searchDisabled={true}/> */}
         </div>
