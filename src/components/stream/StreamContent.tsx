@@ -28,7 +28,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
-  const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
+  const { socketConnect } = useBettingStatusContext();
   const [betId, setBetId] = useState<string | undefined>();
   const [placedBet, setPlaceBet] = useState(true); // show BetTokens when true, LockTokens when false
   const [resetKey, setResetKey] = useState(0); // Add resetKey state
@@ -48,7 +48,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [loading, setLoading] = useState<boolean>(false);    // Loader state when data is being fetched from socket           
   const [winnerOption, setWinnerOption] = useState<boolean>(); 
   // Socket reference
-  // const [socket, setSocket] = useState<any>(null);
   const [showWinnerAnimation, setShowWinnerAnimation] = useState(false);
   // Track if last update came from socket then no need to execute getRoundData useEffect
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
@@ -58,48 +57,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const queryClient = useQueryClient();
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
 
-
-  // Function to handle socket reconnection
-  // const handleSocketReconnection = () => {
-  //   if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-  //     console.log('Max reconnection attempts reached');
-  //     return;
-  //   }
-
-  //   console.log(`Attempting to reconnect... (${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
-  //   reconnectAttemptsRef.current++;
-
-  //   // Clear existing socket
-  //   if (socketConnect) {
-  //     socketConnect.off('pong');
-  //     // socket.disconnect();
-  //   }
-
-  //   // Create new socket connection
-  //   // const newSocket = api.socket.connect();
-  //   if (socketConnect) {
-  //     // setSocket(socketConnect);
-  //     api.socket.joinStream(streamId, socketConnect);
-      
-  //     // Reset reconnection attempts on successful connection
-  //     socketConnect.on('connect', () => {
-  //       console.log('Socket reconnected successfully');
-  //       reconnectAttemptsRef.current = 0;
-  //     });
-
-  //     // Set up event listeners for the new socket
-  //     setupSocketEventListeners(socketConnect);
-  //   } else {
-  //     // Retry reconnection after delay
-  //     reconnectTimeoutRef.current = setTimeout(() => {
-  //       handleSocketReconnection();
-  //     }, 3000);
-  //   }
-  // };
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
@@ -266,14 +225,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('Socket connection error:', error);
       //  handleSocketReconnection();
       api.socket.joinStream(streamId, socketConnect);
+      setLoading(false);
      
     });
   };
 
   useEffect(() => {
-    // const newSocket = api.socket.connect();
-    // setSocket(socketConnect);
-    console.log('socketConnect value',  socketConnect);
     if(socketConnect){
     api.socket.joinStream(streamId, socketConnect);
     
@@ -354,7 +311,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   // Mutation to place a bet
   const placedBetSocket = (data: { bettingVariableId: string; amount: number; currencyType: string }) => {
     setLoading(true);
-    console.log('Placing bet via socket:', data);
     if (socketConnect) {
       setUpdatedCurrency(data.currencyType as CurrencyType);
       socketConnect.emit('placeBet', {
@@ -365,9 +321,10 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
     } else {
       toast({
-        description: 'Socket not connected. Please try again.',
+        description: 'Attempting to reconnect....Please try again later.',
         variant: 'destructive',
       });
+      setLoading(false);
     }
   }
 
@@ -375,7 +332,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const editBetSocket = (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
     setLoading(true);
     if (socketConnect && socketConnect.connected) {
-      console.log('Placing edit bet via socket:', data);
       setUpdatedCurrency(data.newCurrencyType as CurrencyType);
       socketConnect.emit('editBet', {
         betId: betId ?? getRoundData?.betId,
@@ -386,7 +342,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
     } else {
       toast({
-        description: 'Socket not connected. Please try again.',
+        description: 'Attempting to reconnect....Please try again later.',
         variant: 'destructive',
       });
     }
@@ -401,7 +357,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   // Cancel bet mutation
     const cancelBetSocket = (data: { betId: string; currencyType: string }) => {
       if (socketConnect && socketConnect.connected) {
-        console.log('Placing cancel bet via socket:', data);
         socketConnect.emit('cancelBet', {
           betId:data?.betId,
           currencyType: data.currencyType,
@@ -430,17 +385,17 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
     } else {
       toast({
-        description: 'Something went wrong. Please try again.',
+        description: 'Message not sent.Attempting to reconnect....Please try again later.',
         variant: 'destructive',
       });
     }
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-screen">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-screen h-full">
 
       
-      <div className="lg:col-span-2 space-y-6">
+      <div className="lg:col-span-2 space-y-6 max-h-[100vh] h-full">
       <div className="relative">
             {isStreamScheduled ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
               <div className={` px-2 relative w-full h-full flex items-center border border-primary justify-center bg-black text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
@@ -563,7 +518,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           </AnimatePresence>
 
         {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
-        {bettingData?.bettingRounds && bettingData.bettingRounds.length && bettingData.bettingRounds[0]?.status === 'open' && !lockedBet  ? (
+        {bettingData?.bettingRounds && bettingData.bettingRounds.length  ? (
           placedBet ? (
             <BetTokens
               session={session}
@@ -580,6 +535,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               selectedWinner={selectedWinner}
               isEditing={isEditing}
               updatedCurrency={updatedCurrency}
+              lockedBet={lockedBet}
             />
           ) : (
               <LockTokens
@@ -599,7 +555,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           )
         ) : (
           session != null && (
-            <div className="relative mx-auto rounded-[16px] shadow-lg p-5" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+            <div className="relative mx-auto rounded-[16px] shadow-lg p-5 h-[240px]" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
               <div className='all-center flex justify-center items-center h-[100px] mt-8'>
                 <img
                   src="/icons/nobettingData.svg"
@@ -615,7 +571,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
       </div>
 
-      <div className="lg:col-span-1 flex flex-col h-full mb-5">
+      <div className="lg:col-span-1 flex flex-col mb-5 h-full">
         <div className="flex-1 h-full sticky top-24">
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat

@@ -201,7 +201,10 @@ export const StreamInfoForm = ({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className={`w-full bg-[#272727] text-[#D7DFEF] pl-10 mt-2 flex items-center h-10 rounded-md relative ${errors.startDate ? 'border border-red-500' : 'border-none'}`}
+               className={`w-full pl-10 mt-2 flex items-center h-10 rounded-md relative
+      ${errors.startDate ? 'border border-red-500' : 'border-none'}
+      ${isLive ? 'bg-[#232323] opacity-60 cursor-not-allowed' : 'bg-[#272727] text-[#D7DFEF]'}
+    `}
               style={{ textAlign: 'left' }}
               onClick={e => {
                 if (isLive) {
