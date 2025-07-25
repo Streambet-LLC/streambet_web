@@ -153,7 +153,7 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
 
       <button
         onClick={handleSend}
-        className="ml-2 bg-[#BDFF00] text-[#000000] px-5 py-3 rounded-[32px] font-semibold text-xs"
+        className="ml-2 bg-[#BDFF00] text-[#000000] px-5 py-3 rounded-[32px] font-semibold text-sm"
       >
         Send
       </button>

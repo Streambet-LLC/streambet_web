@@ -5,6 +5,7 @@ import api from "@/integrations/api/client";
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useBettingStreamUpdates } from "@/hooks/useBettingStreamUpdates";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import { FabioBoldStyle } from "@/utils/font";
 
 interface BettingVariable {
   id: string;
@@ -53,6 +54,7 @@ interface BetTokensProps {
   selectedWinner?: string; // Optional prop for selected winner
   isEditing?: boolean; // Optional prop to indicate if it's an editing state
   updatedCurrency?: string; // Optional prop for updated currency type
+  lockedBet?: boolean; // Optional prop to indicate if the bet is locked
 }
 
 export default function BetTokens({ 
@@ -70,7 +72,8 @@ export default function BetTokens({
   placeBet,
   getRoundData,
   editBetMutation, 
-  resetKey
+  resetKey,
+  lockedBet
 }: BetTokensProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
@@ -125,8 +128,11 @@ export default function BetTokens({
     }
   };
 
+  console.log(lockedBet,bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN,'betingggggggggg')
 
   return (
+    <div>
+      {(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet)  ? (
     <div
       className="rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-base sm:text-base text-xs"
       style={{
@@ -139,11 +145,15 @@ export default function BetTokens({
       <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
         <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
           Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
+          <span className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
+          {isStreamCoins
+            ? `Avaliable Stream Coins: ${Number(bettingData?.walletCoin).toLocaleString('en-US')}`
+            : `Avaliable Tokens: ${Number(bettingData?.walletFreeToken).toLocaleString('en-US')}`
+          }
+            </span>
         </div>
+        
         <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          {/* <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
-            {bettingData?.bettingRounds?.[0]?.roundName}
-            </span> */}
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
             Total Pot: {`${totalPot} ${isStreamCoins ? ' Stream Coins' : ' Free Tokens'}`}
             </span>
@@ -290,6 +300,19 @@ export default function BetTokens({
           </div>
         )}
       </button>
+    </div>):(
+
+      <div className="relative mx-auto rounded-[16px] shadow-lg p-5" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+                  <div className='all-center flex justify-center items-center h-[100px] mt-8'>
+                    <img
+                      src="/icons/nobettingData.svg"
+                      alt="lock left"
+                      className="w-[100%] h-[100%] object-contain"
+                    />
+                  </div>
+                  <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
+                </div>
+    )}
     </div>
   );
 }

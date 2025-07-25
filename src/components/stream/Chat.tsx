@@ -49,7 +49,6 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
 
   useEffect(() => {
     if (newSocketMessage) {
-      console.log(newSocketMessage,'newSocketMessage')
       addNewMessage(newSocketMessage);
     }
   }, [newSocketMessage]);
@@ -68,13 +67,13 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
   };
 
   return (
-    <div className="flex flex-col max-h-[100vh] min-h-[80vh] bg-black text-white border border-zinc-700 rounded-[16px]">
+    <div className="flex flex-col max-h-[700px] min-h-[400px] bg-black text-white border border-zinc-700 rounded-[16px]">
       <div className="p-4 text-sm font-semibold">Live chat</div>
 
       <div
         ref={scrollRef}
         id="scrollableDiv"
-        className="flex-1 h-screen overflow-y-auto px-4 py-2 space-y-2 bg-['rgba(36, 36, 36, 1)']"
+        className="flex-1 overflow-y-auto px-4 py-2 space-y-2 bg-['rgba(36, 36, 36, 1)'] chat-scroll-hide"
         style={{ backgroundColor: 'rgba(24, 24, 24, 1)' }}
       >
        {messages.map(msg => (
@@ -97,7 +96,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
     </div>
 
     {/* Message content */}
-    <div className="text-[#D7DFEF] text-xs font-medium break-words w-[250px] leading-normal">
+    <div className="text-[#D7DFEF] text-[13px] font-medium break-words w-[250px] leading-normal">
       {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
         /^https?:\/\/[^\s]+$/.test(part) ? (
           <a
