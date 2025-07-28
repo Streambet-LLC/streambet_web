@@ -169,7 +169,13 @@ export const AdminBettingRoundsCard = ({
                                    <Button
                                         className="!mt-0 ml-auto h-9 px-6 rounded-lg border border-[#2D343E] bg-[#0D0D0D] text-white/75 font-medium text-[14px] transition-colors duration-150"
                                         style={{ fontWeight: 500, borderRadius: '10px' }}
-                                        onClick={() => setSettingsOpen(true)}
+                                        onClick={() => {
+                                             setSettingsOpen(true);
+                                             // Reset all betting-related error messages when opening settings
+                                             setBettingValidationErrors([]);
+                                             setBettingErrorRounds([]);
+                                             setShowBettingValidation(false);
+                                        }}
                                         onMouseOver={e => (e.currentTarget.style.color = '#000')}
                                         onMouseOut={e => (e.currentTarget.style.color = '')}
                                    >
@@ -388,18 +394,7 @@ export const AdminBettingRoundsCard = ({
                                                                           <Button
                                                                               className="rounded-full font-bold w-1/2"
                                                                               style={{ height: '30px' }}
-                                                                              onClick={() => {
-                                                                                if (isStreamScheduled) {
-                                                                                     toast({
-                                                                                          title: 'Scheduled stream',
-                                                                                          description: 'Cannot lock bet of scheduled stream. You need to wait till stream goes live.',
-                                                                                          variant: 'destructive',
-                                                                                          duration: 7000,
-                                                                                     });
-                                                                                     return;
-                                                                                }
-                                                                                handleLockBets(round.roundId);
-                                                                           }}
+                                                                              onClick={() => handleLockBets(round.roundId)}
                                                                               disabled={isUpdatingAction}
                                                                           >
                                                                               {isUpdatingAction ? 'Locking...' : 'Lock Bets'}

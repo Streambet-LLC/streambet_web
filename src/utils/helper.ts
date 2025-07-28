@@ -78,3 +78,46 @@ export function formatDateTime(dateString: string) {
   const date = new Date(dateString);
   return format(date, 'EEEE, MMM do h:mm a');
 };
+
+// Check if the device is online
+export const isOnline = (): boolean => {
+  return navigator.onLine;
+};
+
+// Check if the error is related to network connectivity
+export const isNetworkError = (error: any): boolean => {
+  if (!isOnline()) {
+    return true;
+  }
+  
+  // Check for common network error patterns
+  const errorMessage = error?.message?.toLowerCase() || '';
+  const errorCode = error?.code?.toLowerCase() || '';
+  
+  return (
+    errorMessage.includes('network') ||
+    errorMessage.includes('fetch') ||
+    errorMessage.includes('connection') ||
+    errorMessage.includes('timeout') ||
+    errorMessage.includes('offline') ||
+    errorCode.includes('net::') ||
+    errorCode.includes('err_network') ||
+    errorCode.includes('err_connection')
+  );
+};
+
+// Get appropriate error message based on connection status
+export const getConnectionErrorMessage = (error?: any, networkStatus?: { isOnline?: boolean }): string => {
+  // Use provided network status or check current status
+  const isCurrentlyOnline = networkStatus?.isOnline !== undefined ? networkStatus.isOnline : isOnline();
+  
+  if (!isCurrentlyOnline) {
+    return 'No internet connection. Please check your network and try again.';
+  }
+  
+  if (error && isNetworkError(error)) {
+    return 'Connection lost. Please check your internet connection and try again.';
+  }
+  
+  return 'Something went wrong. Please try again.';
+};

@@ -96,7 +96,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session }: Ch
     </div>
 
     {/* Message content */}
-    <div className="text-[#D7DFEF] text-[13px] font-medium break-words w-[250px] leading-normal">
+    <div className="text-[#D7DFEF] text-[13px] font-medium break-words w-[190px] leading-normal">
       {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
         /^https?:\/\/[^\s]+$/.test(part) ? (
           <a

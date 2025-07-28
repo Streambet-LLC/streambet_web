@@ -21,7 +21,7 @@ interface UserDropdownProps {
   onLogout: () => void;
 }
 
-export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => {
+export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
   const [isImageLoading, setIsImageLoading] = React.useState(false);
   
   return (
@@ -77,6 +77,10 @@ export const UserDropdown = ({ profile, user, onLogout }: UserDropdownProps) => 
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/settings">Settings</Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link to="/betting-history">Bet history</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
