@@ -15,7 +15,8 @@ import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Chat from './Chat';
 import { FabioBoldStyle } from '@/utils/font';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
-import { formatDateTime } from '@/utils/helper';
+import { formatDateTime, getConnectionErrorMessage } from '@/utils/helper';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface StreamContentProps {
   streamId: string;
@@ -29,6 +30,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
   const { socketConnect } = useBettingStatusContext();
+  const { isConnected: isNetworkConnected } = useNetworkStatus();
   const [betId, setBetId] = useState<string | undefined>();
   const [placedBet, setPlaceBet] = useState(true); // show BetTokens when true, LockTokens when false
   const [resetKey, setResetKey] = useState(0); // Add resetKey state
@@ -321,7 +323,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
     } else {
       toast({
-        description: 'Attempting to reconnect....Please try again later.',
+        description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
         variant: 'destructive',
       });
       setLoading(false);
@@ -342,7 +344,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
     } else {
       toast({
-        description: 'Attempting to reconnect....Please try again later.',
+        description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
         variant: 'destructive',
       });
     }
@@ -367,7 +369,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         setResetKey(prev => prev + 1); // Increment resetKey on cancel
       } else {
         toast({
-          description: 'Socket not connected. Please try again.',
+          description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
           variant: 'destructive',
         });
       }
@@ -385,7 +387,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
     } else {
       toast({
-        description: 'Message not sent.Attempting to reconnect....Please try again later.',
+        description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
         variant: 'destructive',
       });
     }
@@ -572,7 +574,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       </div>
 
       <div className="lg:col-span-1 flex flex-col mb-5 h-full">
-        <div className="flex-1 h-full sticky top-24">
+        <div className="flex-1 h-full sticky top-24 max-w-[320px]">
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat
           sendMessageSocket={sendMessageSocket}

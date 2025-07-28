@@ -12,10 +12,11 @@ import { BettingRounds } from './BettingRounds';
 import { Separator } from '@/components/ui/separator';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateTime, formatDateTimeForISO, getMessage } from '@/utils/helper';
+import { formatDateTime, formatDateTimeForISO, getMessage, getConnectionErrorMessage } from '@/utils/helper';
 import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface AdminStreamContentProps {
   streamId: string;
@@ -115,6 +116,7 @@ export const AdminStreamContent = ({
   handleBack,
 }: AdminStreamContentProps) => {
   const navigate = useNavigate();
+  const { isConnected: isNetworkConnected } = useNetworkStatus();
   const [streamInfo, setStreamInfo] = useState<any>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [endStreamDialogOpen, setEndStreamDialogOpen] = useState(false);
@@ -363,7 +365,7 @@ useEffect(() => {
       
     } else {
       toast({
-        description: 'Socket not connected. Please try again.',
+        description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
         variant: 'destructive',
       });
     }
@@ -514,12 +516,11 @@ useEffect(() => {
             </DialogContent>
           </Dialog>
           <div className="flex-1 min-h-0 flex flex-col h-full">
-            <div className="h-full" style={{ maxWidth: 320, width: '100%' }}>
+            <div className="h-full w-full max-w-[320px]">
                <Chat
                         sendMessageSocket={sendMessageSocket}
                         newSocketMessage={messageList}
                         session={session}/>
-              {/* <CommentSection session={session} streamId={streamId} showInputOnly={false} /> */}
             </div>
           </div>
         </div>

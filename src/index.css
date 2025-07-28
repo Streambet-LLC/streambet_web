@@ -244,7 +244,7 @@ body::-webkit-scrollbar, *::-webkit-scrollbar {
   width: 7px !important;
 }
 body::-webkit-scrollbar-thumb, *::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, #BDFF00 60%, #242424 100%) !important;
+  background: linear-gradient(90deg, #808080 60%, #242424 100%) !important;
   border-radius: 6px !important;
   border: 2px solid #181818 !important;
 }
@@ -256,7 +256,7 @@ body::-webkit-scrollbar-button, *::-webkit-scrollbar-button {
 }
 /* Firefox support */
 body, * {
-  scrollbar-color: #BDFF00 rgba(24, 24, 24, 0.5) !important;
+  scrollbar-color: #808080 rgba(24, 24, 24, 0.5) !important;
   scrollbar-width: thin !important;
 }
 
@@ -265,7 +265,7 @@ body, * {
   height: 7px !important;
 }
 .winner-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, #BDFF00 60%, #242424 100%) !important;
+  background: linear-gradient(90deg, #808080 60%, #242424 100%) !important;
   border-radius: 6px !important;
   border: 2px solid #181818 !important;
 }
@@ -277,7 +277,7 @@ body, * {
 }
 /* Firefox support */
 .winner-scrollbar {
-  scrollbar-color: #BDFF00 rgba(24, 24, 24, 0.5) !important;
+  scrollbar-color: #808080 rgba(24, 24, 24, 0.5) !important;
   scrollbar-width: thin !important;
 }
 

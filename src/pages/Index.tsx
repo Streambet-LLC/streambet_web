@@ -35,8 +35,8 @@ const Index = () => {
 
   const { session } = useAuthContext();
 
-  const { data: streams, refetch: refetchStreams, isLoading } = useQuery({
-    queryKey: ['userStreams'],
+  const { data: streams, refetch: refetchStreams, isLoading, isFetching } = useQuery({
+    queryKey: ['userStreams', activeTab, currentPage],
     queryFn: async () => {
       const response = await api.userStream.getStreams({
         range: `[${rangeStart},${rangeEnd}]`,
@@ -53,18 +53,38 @@ const Index = () => {
   // State to hold the current streams data for display
   const [streamsData, setStreamsData] = useState<any>(undefined);
   const [loader, setLoader] = useState(true);
+  
+  // Clear data and refetch when tab or page changes
   useEffect(() => {
     setStreamsData(undefined); // Clear data immediately on tab/page change
     setLoader(true);
-    refetchStreams();
-  }, [currentPage, activeTab, refetchStreams]);
+  }, [currentPage, activeTab]);
 
+  // Update streamsData when new data arrives
   useEffect(() => {
     if (streams){
+      // Only update if the data is for the current tab
       setStreamsData(streams);
       setLoader(false);
-    } 
-  }, [streams]);
+    } else if (isLoading) {
+      setLoader(true);
+    }
+  }, [streams, isLoading, isFetching]);
+
+  // Handle component mount and navigation back - ensure proper state synchronization
+  useEffect(() => {
+    // When component mounts or when navigating back, ensure we start with clean state
+    setStreamsData(undefined);
+    setLoader(true);
+    // Force a refetch to ensure we have the correct data for the current tab
+    refetchStreams();
+    
+    // Cleanup function to reset state when component unmounts
+    return () => {
+      setStreamsData(undefined);
+      setLoader(true);
+    };
+  }, []); // Empty dependency array means this runs only on mount
 
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
@@ -241,9 +261,17 @@ const Index = () => {
                   Uh-oh! Looks like there aren't any streams happening right now. Check back later!
                 </AlertDescription>
               </Alert>
+            ) : !isLive && (!streamsData || streamsData.data?.length === 0) ? (
+              <Alert variant="default" className="bg-muted">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No Upcoming Streams</AlertTitle>
+                <AlertDescription>
+                  No upcoming streams scheduled at the moment. Check back later!
+                </AlertDescription>
+              </Alert>
             ) : isLive ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {streamsData&&streamsData.data?.map(stream => (
+                {streamsData && streamsData.data?.map(stream => (
                   <StreamCard
                     key={stream.id}
                     stream={stream}
@@ -259,7 +287,7 @@ const Index = () => {
               </div>
             )}
           </div>
-          {streams?.data?.length > 0 && <Pagination className='!justify-center'>
+          {streamsData?.data?.length > 0 && <Pagination className='!justify-center'>
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious

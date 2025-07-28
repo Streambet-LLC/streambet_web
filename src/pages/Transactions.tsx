@@ -3,35 +3,26 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
 import { WalletHistory } from '@/components/WalletHistory';
+import { CurrencyType } from '@/enums';
+import { useAuthContext } from '@/contexts/AuthContext';
 
-const Transactions = () => {
+const Transactions = ({currencyType}: {currencyType?: CurrencyType}) => {
   const navigate = useNavigate();
-
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      console.log('Current session:', session);
-      return session;
-    },
-  });
+  const { session, isFetching } = useAuthContext();
 
   // Redirect if not logged in
   useEffect(() => {
-    if (session === null) {
-      navigate('/login');
+    if (!isFetching && session === null) {
+      navigate('/login?redirect=/transactions');
     }
-  }, [session, navigate]);
+  }, [session, navigate, isFetching]);
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container pt-24 pb-8">
-        {session && <WalletHistory searchUserQuery={''} />}
+        {session && <WalletHistory searchUserQuery={''} currencyType={currencyType} />}
       </main>
     </div>
   );

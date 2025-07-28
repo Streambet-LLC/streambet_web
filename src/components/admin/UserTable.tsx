@@ -24,6 +24,7 @@ import { DeleteUserDialog } from './DeleteUserDialog';
 import AddTokens from './AddTokens';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 
 interface Props {
@@ -37,6 +38,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
   const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
+  const { refetchSession } = useAuthContext();
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
   const rangeEnd = itemsPerPage;
@@ -75,6 +77,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     },
     onSuccess: () => {
       refetchProfiles();
+      refetchSession();
     },
   });
 

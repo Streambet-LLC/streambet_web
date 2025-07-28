@@ -196,7 +196,7 @@ export const StreamInfoForm = ({
       </div>
       {/* Start date */}
       <div>
-        <Label className="text-white font-light mb-3 block">Start date</Label>
+        <Label className="text-white font-light mb-3 block">Start date & time</Label>
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -222,7 +222,7 @@ export const StreamInfoForm = ({
                 <CalendarIcon className="h-5 w-5 text-white" />
               </span>
               <span className={initialValues.startDateObj ? '' : 'text-[#FFFFFFBF]'}>
-                {initialValues.startDateObj ? initialValues.startDateObj.toLocaleDateString() + (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '') : 'Pick a date'}
+                {initialValues.startDateObj ? initialValues.startDateObj.toLocaleDateString() + (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '') : 'Pick a date & time'}
               </span>
               {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
                 <button
