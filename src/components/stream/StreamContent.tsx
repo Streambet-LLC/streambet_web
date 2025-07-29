@@ -580,6 +580,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           sendMessageSocket={sendMessageSocket}
           newSocketMessage={messageList}
           session={session}
+          streamId={streamId}
          />
         </div>
         </div>
