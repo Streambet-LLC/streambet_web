@@ -68,7 +68,6 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
     }
   };
 
-  console.log(messages, 'messages');
 
   useEffect(() => {
     fetchMessages();
