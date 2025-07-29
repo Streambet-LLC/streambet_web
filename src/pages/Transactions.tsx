@@ -18,7 +18,7 @@ const Transactions = ({currencyType}: {currencyType?: CurrencyType}) => {
       navigate(isTransaction ? '/login?redirect=/transactions' : '/login?redirect=/betting-history');
     }
   }, [session, navigate, isFetching, currencyType]);
-console.log(session);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
