@@ -143,11 +143,6 @@ export const AdminStreamContent = ({
     
         socketInstance.on('streamEnded', (update) => {
           console.log('streamEnded', update);
-          toast({
-            description:"Stream has ended.",
-            variant: 'destructive',
-            duration: 10000,
-          });
           navigate('/');
         });
     
