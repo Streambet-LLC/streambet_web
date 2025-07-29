@@ -14,9 +14,10 @@ const Transactions = ({currencyType}: {currencyType?: CurrencyType}) => {
   // Redirect if not logged in
   useEffect(() => {
     if (!isFetching && session === null) {
-      navigate('/login?redirect=/transactions');
+      const isTransaction = currencyType === CurrencyType.STREAM_COINS;
+      navigate(isTransaction ? '/login?redirect=/transactions' : '/login?redirect=/betting-history');
     }
-  }, [session, navigate, isFetching]);
+  }, [session, navigate, isFetching, currencyType]);
 
   return (
     <div className="min-h-screen bg-background">
