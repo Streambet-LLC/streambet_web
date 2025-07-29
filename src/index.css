@@ -95,15 +95,89 @@
 /* Change font for emoji picker headings */
 
 .custom-emoji-picker .category {
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: 'inter', system-ui, sans-serif !important;
+  text-transform: uppercase !important;
   font-weight: bold; /* Optional: make headings bold */
   font-size: 1rem;   /* Optional: adjust size */
 }
 
 .emoji-mart-category-label-text {
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: 'inter', system-ui, sans-serif !important;
+  text-transform: uppercase !important;
   font-weight: bold;
   font-size: 1rem;
+}
+
+/* Override font-family for all emoji picker elements to fix casing issues */
+.custom-emoji-picker * {
+  font-family: 'inter', system-ui, sans-serif !important;
+}
+
+/* Specific overrides for emoji picker components */
+.custom-emoji-picker .emoji-mart-category-label,
+.custom-emoji-picker .emoji-mart-category-label-text,
+.custom-emoji-picker .emoji-mart-search,
+.custom-emoji-picker .emoji-mart-search input,
+.custom-emoji-picker .emoji-mart-scroll,
+.custom-emoji-picker .emoji-mart-preview,
+.custom-emoji-picker .emoji-mart-preview-name,
+.custom-emoji-picker .emoji-mart-preview-shortname,
+.custom-emoji-picker .emoji-mart-preview-emoticon {
+  font-family: 'inter', system-ui, sans-serif !important;
+}
+
+/* Override font-family for emoji-picker-element web component */
+.custom-emoji-picker em-emoji-picker {
+  font-family: 'inter', system-ui, sans-serif !important;
+}
+
+/* Target all elements within the emoji-picker-element */
+.custom-emoji-picker em-emoji-picker * {
+  font-family: 'inter', system-ui, sans-serif !important;
+}
+
+/* Specific overrides for emoji-picker-element components */
+.custom-emoji-picker em-emoji-picker .category,
+.custom-emoji-picker em-emoji-picker .category-label,
+.custom-emoji-picker em-emoji-picker .search,
+.custom-emoji-picker em-emoji-picker .search input,
+.custom-emoji-picker em-emoji-picker .preview,
+.custom-emoji-picker em-emoji-picker .preview-name,
+.custom-emoji-picker em-emoji-picker .preview-shortname {
+  font-family: 'inter', system-ui, sans-serif !important;
+}
+
+/* Override font-family for emoji-picker-react components */
+.custom-emoji-picker .EmojiPickerReact,
+.custom-emoji-picker .EmojiPickerReact * {
+  font-family: 'inter', system-ui, sans-serif !important;
+}
+
+/* Override font-family for any emoji picker within the custom container */
+.custom-emoji-picker [class*="emoji"],
+.custom-emoji-picker [class*="Emoji"],
+.custom-emoji-picker [class*="picker"] {
+  font-family: 'inter', system-ui, sans-serif !important;
+}
+
+/* Universal override for any element within the emoji picker container */
+.custom-emoji-picker * {
+  font-family: 'inter', system-ui, sans-serif !important;
+}
+
+/* Specific overrides for @emoji-mart/react components */
+.custom-emoji-picker [data-testid="emoji-mart"],
+.custom-emoji-picker [data-testid="emoji-mart"] * {
+  font-family: 'inter', system-ui, sans-serif !important;
+}
+
+/* Override any CSS custom properties that might be setting font-family */
+.custom-emoji-picker {
+  --font-family: 'inter', system-ui, sans-serif !important;
+}
+
+.custom-emoji-picker * {
+  --font-family: 'inter', system-ui, sans-serif !important;
 }
 
 
