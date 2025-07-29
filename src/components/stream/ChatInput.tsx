@@ -121,7 +121,7 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
       />
 
       {showEmoji && (
-        <div  ref={emojiPickerRef} className="custom-emoji-picker absolute bottom-16 left-4 z-10">
+        <div ref={emojiPickerRef} className="custom-emoji-picker absolute bottom-16 left-4 z-10">
           <Picker
             data={data}
             onEmojiSelect={(emoji) => {
