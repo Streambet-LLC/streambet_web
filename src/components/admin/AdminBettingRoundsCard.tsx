@@ -473,18 +473,7 @@ export const AdminBettingRoundsCard = ({
                                                                                 className="rounded-full font-bold w-1/2"
                                                                                 style={{ height: '30px' }}
                                                                                 disabled={!selectedOption[round.roundId] || isUpdatingAction}
-                                                                                onClick={() => {
-                                                                                     if (isStreamScheduled) {
-                                                                                          toast({
-                                                                                               title: 'Scheduled stream',
-                                                                                               description: 'Cannot declare winner of scheduled stream. You need to wait till stream goes live.',
-                                                                                               variant: 'destructive',
-                                                                                               duration: 7000,
-                                                                                          });
-                                                                                          return;
-                                                                                     }
-                                                                                     handleEndRound(selectedOption[round.roundId]);
-                                                                                }}
+                                                                                onClick={() => handleEndRound(selectedOption[round.roundId])}
                                                                            >
                                                                                 {isUpdatingAction ? 'Ending...' : 'End Round'}
                                                                            </Button>

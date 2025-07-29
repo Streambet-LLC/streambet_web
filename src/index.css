@@ -92,16 +92,43 @@
   }
 }
 
-/* Change font for emoji picker headings */
+/* Emoji picker font overrides - comprehensive approach */
 
-.custom-emoji-picker .category {
+/* Direct font-family overrides for all emoji picker elements */
+.custom-emoji-picker,
+.custom-emoji-picker *,
+.custom-emoji-picker .emoji-mart-category-label,
+.custom-emoji-picker .emoji-mart-category-label-text,
+.custom-emoji-picker .emoji-mart-search,
+.custom-emoji-picker .emoji-mart-search input,
+.custom-emoji-picker .emoji-mart-scroll,
+.custom-emoji-picker .emoji-mart-preview,
+.custom-emoji-picker .emoji-mart-preview-name,
+.custom-emoji-picker .emoji-mart-preview-shortname,
+.custom-emoji-picker .emoji-mart-preview-emoticon,
+.custom-emoji-picker em-emoji-picker,
+.custom-emoji-picker em-emoji-picker *,
+.custom-emoji-picker .EmojiPickerReact,
+.custom-emoji-picker .EmojiPickerReact *,
+.custom-emoji-picker [data-testid="emoji-mart"],
+.custom-emoji-picker [data-testid="emoji-mart"] *,
+.custom-emoji-picker [class*="emoji"],
+.custom-emoji-picker [class*="Emoji"],
+.custom-emoji-picker [class*="picker"] {
   font-family: 'Inter', system-ui, sans-serif !important;
-  font-weight: bold; /* Optional: make headings bold */
-  font-size: 1rem;   /* Optional: adjust size */
 }
 
-.emoji-mart-category-label-text {
-  font-family: 'Inter', system-ui, sans-serif !important;
+/* Override CSS custom properties that might be setting font-family */
+.custom-emoji-picker,
+.custom-emoji-picker * {
+  --font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+/* Specific styling for category labels */
+.custom-emoji-picker .category,
+.custom-emoji-picker .emoji-mart-category-label,
+.custom-emoji-picker .emoji-mart-category-label-text {
+  text-transform: uppercase;
   font-weight: bold;
   font-size: 1rem;
 }
