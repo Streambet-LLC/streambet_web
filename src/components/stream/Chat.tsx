@@ -53,17 +53,15 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
    const fetchMessages = async () => {
     if (!session?.id || !streamId) return;
 
-    const rangeEnd = 20;
+
     try {
-      const res = await api.socket.getChatMessages(streamId, `[${rangeStart + newMessageCount},${rangeEnd}]`);
+      const res = await api.socket.getChatMessages(streamId, `[${rangeStart + newMessageCount},${LIMIT}]`);
       const newMessages = res?.data?.map(formatIncoming) || [];
       if (newMessages.length < LIMIT) {
         setHasMore(false);
       }
-      // setNewMessageCount(0);
       setMessages(prev => [...newMessages.reverse(), ...prev]);
       setRangeStart(prev => prev + LIMIT);
-      // setNewMessageCount(0);
     } catch (err) {
       console.error('Failed to fetch messages:', err);
       setHasMore(false);
