@@ -196,7 +196,7 @@ export default function Login() {
         >
           <div className="mb-6">
             <Link to="/">
-              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-6" />
+              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-6 w-[155px]" />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left mb-4">Log in</h1>
             <p className="text-[#FFFFFFBF] mt-2 text-left mb-4">

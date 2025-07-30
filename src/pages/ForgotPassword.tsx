@@ -49,7 +49,7 @@ const ForgotPassword = () => {
         <div className="w-full max-w-md">
           <div className="mb-6">
             <Link to="/">
-              <img src="/logo.svg" alt="StreamBet Logo" className="mb-8 w-[121px]" />
+              <img src="/logo.svg" alt="StreamBet Logo" className="mb-8 w-[135px]" />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left">Reset your password</h1>
             <p className="text-[#FFFFFFBF] mt-3 text-left font-light">
