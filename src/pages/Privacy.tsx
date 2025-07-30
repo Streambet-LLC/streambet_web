@@ -14,10 +14,10 @@ const Privacy = () => {
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold tracking-tight">Privacy Policy</h1>
             <p className="text-muted-foreground">
-              Effective Date: [Insert Launch Date]
+              Effective Date: {new Date().toLocaleDateString()}
             </p>
             <p className="text-muted-foreground">
-              Last Updated: [Insert Most Recent Update]
+              Last Updated: {new Date().toLocaleDateString()}
             </p>
           </div>
 
@@ -110,7 +110,7 @@ const Privacy = () => {
                 title: "4. Age and Jurisdiction Restrictions",
                 content: (
                   <>
-                    <p className="text-muted-foreground mb-2">Streambet.tv is intended for users 21 years of age or older. We do not knowingly collect data from individuals under 21.</p>
+                    <p className="text-muted-foreground mb-2">Streambet.tv is intended for users 18 years of age or older. We do not knowingly collect data from individuals under 21.</p>
                     <p className="text-muted-foreground mb-2">Access to Streambet.tv is geo-fenced. Users located in the following U.S. states are prohibited:</p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>Idaho, Michigan, Montana, Nevada, New York, and Washington</li>
