@@ -191,7 +191,6 @@ useEffect(() => {
       }
     },
   [])
-  
 
   // Stream info form state for editing
   const [editForm, setEditForm] = useState({
@@ -230,6 +229,13 @@ useEffect(() => {
     fetchStreamData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamId]);
+
+  useEffect(()=>{
+    if (!isUpdatingAction){
+      fetchStreamData()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[isUpdatingAction])
 
   // Populate form when streamInfo changes
   useEffect(() => {
