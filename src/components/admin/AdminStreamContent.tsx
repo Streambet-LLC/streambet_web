@@ -231,11 +231,11 @@ useEffect(() => {
   }, [streamId]);
 
   useEffect(()=>{
-    if (!isUpdatingAction){
+    if (!isUpdatingAction) {
       fetchStreamData()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[isUpdatingAction])
+  }, [isUpdatingAction])
 
   // Populate form when streamInfo changes
   useEffect(() => {
