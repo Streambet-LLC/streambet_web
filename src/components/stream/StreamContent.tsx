@@ -15,7 +15,7 @@ import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Chat from './Chat';
 import { FabioBoldStyle } from '@/utils/font';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
-import { formatDateTime, getConnectionErrorMessage } from '@/utils/helper';
+import { formatDateTime, getConnectionErrorMessage, getImageLink } from '@/utils/helper';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface StreamContentProps {
@@ -399,8 +399,22 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
       <div className="lg:col-span-2 space-y-6 max-h-[100vh] h-full">
       <div className="relative">
-            {isStreamScheduled ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-              <div className={` px-2 relative w-full h-full flex items-center border border-primary justify-center bg-black text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
+            {isStreamScheduled ? <div className="relative aspect-video rounded-lg overflow-hidden">
+              {/* Background thumbnail with low opacity */}
+              {isStreamScheduled && stream?.thumbnailUrl && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  style={{
+                    backgroundImage: `url(${getImageLink(encodeURIComponent(stream.thumbnailUrl))})`,
+                    opacity: 0.3
+                  }}
+                />
+              )}
+              {/* Fallback black background if no thumbnail */}
+              {!stream?.thumbnailUrl && (
+                <div className="absolute inset-0 bg-black" />
+              )}
+              <div className={`relative z-10 px-2 w-full h-full flex items-center border border-primary justify-center text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
                 {isStreamScheduled ? `Stream '${stream?.name}' scheduled on ${formatDateTime(stream?.scheduledStartTime)}.` : 'Stream has ended.'}
               </div>
             </div> : <StreamPlayer showInfo streamId={streamId} />}
