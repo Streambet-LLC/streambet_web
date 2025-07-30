@@ -827,6 +827,7 @@ export const AdminManagement = ({
                         startDateObj,
                         startTime,
                         streamId: editStreamId || undefined,
+                        bettingRoundStatus: streamData?.bettingRoundStatus || undefined,
                       }}
                       errors={errors}
                       isUploading={isUploading}

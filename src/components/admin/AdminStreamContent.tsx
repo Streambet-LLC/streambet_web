@@ -12,7 +12,7 @@ import { BettingRounds } from './BettingRounds';
 import { Separator } from '@/components/ui/separator';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateTime, formatDateTimeForISO, getMessage, getConnectionErrorMessage } from '@/utils/helper';
+import { formatDateTime, formatDateTimeForISO, getMessage, getConnectionErrorMessage, getImageLink } from '@/utils/helper';
 import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
@@ -394,8 +394,22 @@ useEffect(() => {
             </div>
           </a>
           <div className="relative">
-            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-              <div className={` px-2 relative w-full h-full flex items-center border border-primary justify-center bg-black text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
+            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video rounded-lg overflow-hidden">
+              {/* Background thumbnail with low opacity */}
+              {isStreamScheduled && streamInfo?.thumbnailUrl && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  style={{
+                    backgroundImage: `url(${getImageLink(encodeURIComponent(streamInfo.thumbnailUrl))})`,
+                    opacity: 0.3
+                  }}
+                />
+              )}
+              {/* Fallback black background if no thumbnail */}
+              {!streamInfo?.thumbnailUrl && (
+                <div className="absolute inset-0 bg-black" />
+              )}
+              <div className={`relative z-10 px-2 w-full h-full flex items-center border border-primary justify-center text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
                 {isStreamScheduled ? `Stream scheduled on ${formatDateTime(streamInfo?.scheduledStartTime)}.` : 'Stream has ended.'}
               </div>
             </div> : <StreamPlayer streamId={streamId} />}
@@ -459,7 +473,10 @@ useEffect(() => {
                   <StreamInfoForm
                     isLive={isLiveStream}
                     isEdit
-                    initialValues={editForm}
+                    initialValues={{
+                      ...editForm,
+                      bettingRoundStatus: streamInfo?.bettingRoundStatus || undefined,
+                    }}
                     errors={editErrors}
                     isUploading={isUploading}
                     loading={loading}
@@ -515,7 +532,8 @@ useEffect(() => {
                <Chat
                         sendMessageSocket={sendMessageSocket}
                         newSocketMessage={messageList}
-                        session={session}/>
+                        session={session}
+                        streamId={streamId}/>
             </div>
           </div>
         </div>

@@ -417,6 +417,15 @@ export default function SignUp() {
     }
   }, [form]);
 
+  const handleMonthOrYearChange = (date: Date) => {
+  // If a day is already selected, keep it; otherwise, set to the first day of the month
+  const newDate = dob
+    ? new Date(date.getFullYear(), date.getMonth(), dob.getDate())
+    : new Date(date.getFullYear(), date.getMonth(), 1);
+  setDob(newDate);
+  form.setValue('dob', newDate, { shouldValidate: true });
+};
+
   // Debounced click handler for opening the date picker
   const handleInputClick = useCallback(() => {
     const now = Date.now();
@@ -597,7 +606,11 @@ export default function SignUp() {
                           mode="single"
                           selected={dob}
                           month={currentMonth}
-                          onMonthChange={setCurrentMonth}
+                          onMonthChange={date => {
+                              setCurrentMonth(date);
+                              handleMonthOrYearChange(date);
+                            }}
+                          // onMonthChange={setCurrentMonth}
                           onSelect={handleDateSelect}
                           captionLayout="dropdown"
                           toDate={new Date()}

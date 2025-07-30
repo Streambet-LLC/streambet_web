@@ -80,6 +80,10 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
 
+         <DropdownMenuItem asChild>
+        <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Creator sign up</a>
+        </DropdownMenuItem>
+
         <DropdownMenuItem asChild>
           <Link to="/betting-history">Bet history</Link>
         </DropdownMenuItem>

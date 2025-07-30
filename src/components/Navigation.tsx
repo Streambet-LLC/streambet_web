@@ -89,9 +89,9 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const menuItems = [
     session?.role === 'admin' && { label: 'Dashboard', icon: undefined, path: '/admin' },
     { label: 'Home', icon: undefined, path: '/' },
-    { label: 'Streams', icon: undefined, path: '/stream' },
-    { label: 'Rewards', icon: undefined, path: '/rewards' },
-    { label: 'Community', icon: undefined, path: '/community' },
+    // { label: 'Streams', icon: undefined, path: '/stream' },
+    // { label: 'Rewards', icon: undefined, path: '/rewards' },
+    // { label: 'Community', icon: undefined, path: '/community' },
   ].filter(Boolean);
 
   const handleMenuItemClick = (path: string) => {
@@ -151,7 +151,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
 
         <motion.div variants={logoVariants} initial="hidden" animate="visible">
           <Link to="/" className="flex items-center">
-            <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[121px] object-contain" />
+            <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[165px] object-contain" />
           </Link>
         </motion.div>
 
