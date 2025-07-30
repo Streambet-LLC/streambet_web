@@ -137,7 +137,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
           hasMore={hasMore}
           inverse={true}
           scrollableTarget="scrollableDiv"
-          loader={<p className="text-center text-xs text-gray-400">Loading more...</p>}
+          loader={false}
         >
           {messages.map(msg => (
             <div key={msg.id} className="px-4 py-2 rounded-lg mb-2 bg-[#181818]">

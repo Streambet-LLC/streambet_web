@@ -515,7 +515,8 @@ useEffect(() => {
                <Chat
                         sendMessageSocket={sendMessageSocket}
                         newSocketMessage={messageList}
-                        session={session}/>
+                        session={session}
+                        streamId={streamId}/>
             </div>
           </div>
         </div>

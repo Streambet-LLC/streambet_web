@@ -13,6 +13,7 @@ import { TabSwitch } from '@/components/navigation/TabSwitch';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { Footer } from '@/components/Footer';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
@@ -187,7 +188,6 @@ const Index = () => {
       });
     }
   }, [streams]);
-  console.log(streamsData,"streamsData",loader);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -312,7 +312,7 @@ const Index = () => {
         </div>
       </main>
 
-      {/* <Footer /> */}
+      <Footer />
     </div>
   );
 };
