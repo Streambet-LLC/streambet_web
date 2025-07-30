@@ -110,7 +110,7 @@ const Privacy = () => {
                 title: "4. Age and Jurisdiction Restrictions",
                 content: (
                   <>
-                    <p className="text-muted-foreground mb-2">Streambet.tv is intended for users 18 years of age or older. We do not knowingly collect data from individuals under 21.</p>
+                    <p className="text-muted-foreground mb-2">Streambet.tv is intended for users 18 years of age or older. We do not knowingly collect data from individuals under 18.</p>
                     <p className="text-muted-foreground mb-2">Access to Streambet.tv is geo-fenced. Users located in the following U.S. states are prohibited:</p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>Idaho, Michigan, Montana, Nevada, New York, and Washington</li>
