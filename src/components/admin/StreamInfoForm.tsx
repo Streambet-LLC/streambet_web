@@ -8,6 +8,7 @@ import { Calendar as CalendarIcon, X as XIcon, Loader2 } from 'lucide-react';
 import { CopyableInput } from '../ui/CopyableInput';
 import { getImageLink } from '@/utils/helper';
 import { useToast } from '@/hooks/use-toast';
+import { BettingRoundStatus } from '@/enums';
 
 interface StreamInfoFormProps {
   isLive?: boolean;
@@ -20,6 +21,7 @@ interface StreamInfoFormProps {
     startDateObj: Date | null;
     startTime: string;
     streamId?: string;
+    bettingRoundStatus?: BettingRoundStatus;
   };
   errors: {
     title?: string;
@@ -128,7 +130,7 @@ export const StreamInfoForm = ({
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
           placeholder="Embed URL"
           value={initialValues.embeddedUrl}
-          disabled={isEdit && !!initialValues.embeddedUrl}
+          disabled={isEdit && !!initialValues.embeddedUrl && initialValues.bettingRoundStatus === BettingRoundStatus.LOCKED}
           onChange={e => onChange({ embeddedUrl: e.target.value })}
           required
         />
