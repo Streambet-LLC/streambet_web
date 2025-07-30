@@ -255,7 +255,7 @@ export default function Login() {
                       {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
                     </Button>
                   </motion.div>
-                  <motion.div variants={itemVariants}>
+                  {/* <motion.div variants={itemVariants}>
                     <Button
                       type="button"
                       className="w-full h-[44px] flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
@@ -279,10 +279,7 @@ export default function Login() {
                       </span>
                       Sign in with Google
                     </Button>
-                    {/* <div ref={googleLoginRef} className="hidden">
-                      <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
-                    </div> */}
-                  </motion.div>
+                  </motion.div> */}
                 </CardContent>
               </form>
               <CardFooter className="flex flex-col space-y-2">
