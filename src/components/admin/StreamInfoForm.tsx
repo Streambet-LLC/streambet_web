@@ -8,6 +8,7 @@ import { Calendar as CalendarIcon, X as XIcon, Loader2 } from 'lucide-react';
 import { CopyableInput } from '../ui/CopyableInput';
 import { getImageLink } from '@/utils/helper';
 import { useToast } from '@/hooks/use-toast';
+import { BettingRoundStatus } from '@/enums';
 
 interface StreamInfoFormProps {
   isLive?: boolean;
@@ -20,6 +21,7 @@ interface StreamInfoFormProps {
     startDateObj: Date | null;
     startTime: string;
     streamId?: string;
+    bettingRoundStatus?: BettingRoundStatus;
   };
   errors: {
     title?: string;
@@ -128,7 +130,7 @@ export const StreamInfoForm = ({
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
           placeholder="Embed URL"
           value={initialValues.embeddedUrl}
-          disabled={isEdit && !!initialValues.embeddedUrl}
+          disabled={isEdit && !!initialValues.embeddedUrl && initialValues.bettingRoundStatus === BettingRoundStatus.LOCKED}
           onChange={e => onChange({ embeddedUrl: e.target.value })}
           required
         />
@@ -196,7 +198,7 @@ export const StreamInfoForm = ({
       </div>
       {/* Start date */}
       <div>
-        <Label className="text-white font-light mb-3 block">Start date</Label>
+        <Label className="text-white font-light mb-3 block">Start date & time</Label>
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -222,7 +224,7 @@ export const StreamInfoForm = ({
                 <CalendarIcon className="h-5 w-5 text-white" />
               </span>
               <span className={initialValues.startDateObj ? '' : 'text-[#FFFFFFBF]'}>
-                {initialValues.startDateObj ? initialValues.startDateObj.toLocaleDateString() + (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '') : 'Pick a date'}
+                {initialValues.startDateObj ? initialValues.startDateObj.toLocaleDateString() + (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '') : 'Pick a date & time'}
               </span>
               {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
                 <button

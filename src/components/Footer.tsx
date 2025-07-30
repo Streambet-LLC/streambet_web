@@ -8,9 +8,9 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-[#B4FF39]">Streambet</h3>
+            <img src="/logo.svg" alt="StreamBet Logo" className="mb-8 w-[155px]" />
             <p className="text-sm text-muted-foreground">
-              Live betting for games created by the internet.
+              Live betting for games created on the internet.
             </p>
           </div>
 
@@ -28,7 +28,8 @@ export const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/terms"
+                  // to="/terms"
+                  to=""
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Terms of Service

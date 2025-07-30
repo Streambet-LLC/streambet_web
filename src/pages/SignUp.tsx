@@ -417,6 +417,15 @@ export default function SignUp() {
     }
   }, [form]);
 
+  const handleMonthOrYearChange = (date: Date) => {
+  // If a day is already selected, keep it; otherwise, set to the first day of the month
+  const newDate = dob
+    ? new Date(date.getFullYear(), date.getMonth(), dob.getDate())
+    : new Date(date.getFullYear(), date.getMonth(), 1);
+  setDob(newDate);
+  form.setValue('dob', newDate, { shouldValidate: true });
+};
+
   // Debounced click handler for opening the date picker
   const handleInputClick = useCallback(() => {
     const now = Date.now();
@@ -443,7 +452,7 @@ export default function SignUp() {
         >
           <div className="mb-6">
             <Link to="/">
-              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-4" />
+              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-4 w-[155px]" />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left">Create an account</h1>
             <p className="text-[#FFFFFFBF] mt-2 text-left">
@@ -597,7 +606,11 @@ export default function SignUp() {
                           mode="single"
                           selected={dob}
                           month={currentMonth}
-                          onMonthChange={setCurrentMonth}
+                          onMonthChange={date => {
+                              setCurrentMonth(date);
+                              handleMonthOrYearChange(date);
+                            }}
+                          // onMonthChange={setCurrentMonth}
                           onSelect={handleDateSelect}
                           captionLayout="dropdown"
                           toDate={new Date()}

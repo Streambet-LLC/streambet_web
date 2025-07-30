@@ -228,7 +228,6 @@ export function BettingRounds({
                                 style={{ fontSize: '16px', color: hasRoundError ? '#ef4444' : '#FFFFFFBF', maxWidth: '200px' }}
                                 minLength={2}
                               />
-                              <Edit className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <Button
@@ -354,7 +353,6 @@ export function BettingRounds({
                                       style={{ color: isDuplicateOption ? '#ef4444' : '#FFFFFFBF', maxWidth: '180px' }}
                                       minLength={2}
                                     />
-                                    {/* <Edit className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2" /> */}
                                   </div>
                                 </div>
                               </TableCell>

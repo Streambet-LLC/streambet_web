@@ -607,6 +607,14 @@ export const socketAPI = {
 
   // Get the socket instance
   getSocket: () => socket,
+
+
+// Get all messages for a stream
+  getChatMessages: async (streamId?: any,page?:any) => {
+    const response = await apiClient.get(`/chat/messages?streamId=${streamId}&range=${page}&sort=["createdAt","DESC"]`);
+    return response.data;
+  },
+  
 };
 
 // Admin API

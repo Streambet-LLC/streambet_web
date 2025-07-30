@@ -26,6 +26,7 @@ import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { BettingStatusProvider } from './contexts/BettingStatusContext';
+import { CurrencyType } from './enums';
 
 
 // Create a client
@@ -87,7 +88,8 @@ const App = () => {
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/deposit" element={<Deposit />} />
                     <Route path="/withdraw" element={<Withdraw />} />
-                    <Route path="/transactions" element={<Transactions />} />
+                    <Route path="/transactions" element={<Transactions key='transactions' currencyType={CurrencyType.STREAM_COINS} />} />
+                    <Route path="/betting-history" element={<Transactions key='betting' />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />

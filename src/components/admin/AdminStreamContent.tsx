@@ -12,10 +12,11 @@ import { BettingRounds } from './BettingRounds';
 import { Separator } from '@/components/ui/separator';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateTime, formatDateTimeForISO, getMessage } from '@/utils/helper';
+import { formatDateTime, formatDateTimeForISO, getMessage, getConnectionErrorMessage, getImageLink } from '@/utils/helper';
 import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface AdminStreamContentProps {
   streamId: string;
@@ -115,6 +116,7 @@ export const AdminStreamContent = ({
   handleBack,
 }: AdminStreamContentProps) => {
   const navigate = useNavigate();
+  const { isConnected: isNetworkConnected } = useNetworkStatus();
   const [streamInfo, setStreamInfo] = useState<any>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [endStreamDialogOpen, setEndStreamDialogOpen] = useState(false);
@@ -141,11 +143,6 @@ export const AdminStreamContent = ({
     
         socketInstance.on('streamEnded', (update) => {
           console.log('streamEnded', update);
-          toast({
-            description:"Stream has ended.",
-            variant: 'destructive',
-            duration: 10000,
-          });
           navigate('/');
         });
     
@@ -363,7 +360,7 @@ useEffect(() => {
       
     } else {
       toast({
-        description: 'Socket not connected. Please try again.',
+        description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
         variant: 'destructive',
       });
     }
@@ -397,8 +394,22 @@ useEffect(() => {
             </div>
           </a>
           <div className="relative">
-            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-              <div className={` px-2 relative w-full h-full flex items-center border border-primary justify-center bg-black text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
+            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video rounded-lg overflow-hidden">
+              {/* Background thumbnail with low opacity */}
+              {isStreamScheduled && streamInfo?.thumbnailUrl && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                  style={{
+                    backgroundImage: `url(${getImageLink(encodeURIComponent(streamInfo.thumbnailUrl))})`,
+                    opacity: 0.3
+                  }}
+                />
+              )}
+              {/* Fallback black background if no thumbnail */}
+              {!streamInfo?.thumbnailUrl && (
+                <div className="absolute inset-0 bg-black" />
+              )}
+              <div className={`relative z-10 px-2 w-full h-full flex items-center border border-primary justify-center text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
                 {isStreamScheduled ? `Stream scheduled on ${formatDateTime(streamInfo?.scheduledStartTime)}.` : 'Stream has ended.'}
               </div>
             </div> : <StreamPlayer streamId={streamId} />}
@@ -462,7 +473,10 @@ useEffect(() => {
                   <StreamInfoForm
                     isLive={isLiveStream}
                     isEdit
-                    initialValues={editForm}
+                    initialValues={{
+                      ...editForm,
+                      bettingRoundStatus: streamInfo?.bettingRoundStatus || undefined,
+                    }}
                     errors={editErrors}
                     isUploading={isUploading}
                     loading={loading}
@@ -514,12 +528,12 @@ useEffect(() => {
             </DialogContent>
           </Dialog>
           <div className="flex-1 min-h-0 flex flex-col h-full">
-            <div className="h-full" style={{ maxWidth: 320, width: '100%' }}>
+            <div className="h-full w-full max-w-[320px]">
                <Chat
                         sendMessageSocket={sendMessageSocket}
                         newSocketMessage={messageList}
-                        session={session}/>
-              {/* <CommentSection session={session} streamId={streamId} showInputOnly={false} /> */}
+                        session={session}
+                        streamId={streamId}/>
             </div>
           </div>
         </div>
