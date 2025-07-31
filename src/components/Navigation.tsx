@@ -120,10 +120,10 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
               </Button>
             </DrawerTrigger>
             <DrawerContent>
-              <DrawerHeader>
+              <DrawerHeader className="border-b">
                 <DrawerTitle className="text-left">Menu</DrawerTitle>
               </DrawerHeader>
-              <div className="px-4 pb-4">
+              <div className="flex-1 p-4">
                 <div className="flex flex-col space-y-2">
                   {menuItems.map((item, index) => {
                     const isActive = location.pathname === item.path;
@@ -131,7 +131,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
                       <Button
                         key={item.label}
                         variant="ghost"
-                        className={`justify-start text-left ${
+                        className={`justify-start text-left h-12 ${
                           isActive
                             ? 'text-white bg-primary/10'
                             : 'text-[#FFFFFF80] hover:text-white hover:bg-primary/5'
@@ -144,6 +144,34 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
                     );
                   })}
                 </div>
+                
+                {/* Add user actions at the bottom if logged in */}
+                {session && (
+                  <div className="mt-8 pt-4 border-t">
+                    <div className="flex flex-col space-y-2">
+                      <Button
+                        variant="ghost"
+                        className="justify-start text-left h-12 text-[#FFFFFF80] hover:text-white hover:bg-primary/5"
+                        onClick={() => {
+                          navigate('/settings');
+                          setIsDrawerOpen(false);
+                        }}
+                      >
+                        <span>Settings</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="justify-start text-left h-12 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        onClick={() => {
+                          handleLogout();
+                          setIsDrawerOpen(false);
+                        }}
+                      >
+                        <span>Logout</span>
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </DrawerContent>
           </Drawer>
