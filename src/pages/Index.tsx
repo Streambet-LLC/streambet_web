@@ -14,10 +14,12 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Footer } from '@/components/Footer';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [activeTab, setActiveTab] = useState('live');
+
 
   // Store last page per tab
   const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1 });
@@ -38,17 +40,21 @@ const Index = () => {
 
   const { data: streams, refetch: refetchStreams, isLoading, isFetching } = useQuery({
     queryKey: ['userStreams', activeTab, currentPage],
+  
     queryFn: async () => {
+      if( activeTab === 'live') {
       const response = await api.userStream.getStreams({
         range: `[${rangeStart},${rangeEnd}]`,
-        sort: isLive ? '["createdAt","DESC"]' : '["scheduledStartTime","ASC"]',
+        sort:  '["createdAt","DESC"]' ,
         filter: JSON.stringify({ q: '' }),
         pagination: true,
-        streamStatus: isLive ? 'live' : 'scheduled',
+        streamStatus: 'live' ,
       });
       return response;
+    }
+    return null;
     },
-    refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
+    // refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
   });
 
   // State to hold the current streams data for display
@@ -60,6 +66,7 @@ const Index = () => {
     setStreamsData(undefined); // Clear data immediately on tab/page change
     setLoader(true);
   }, [currentPage, activeTab]);
+  
 
   // Update streamsData when new data arrives
   useEffect(() => {
@@ -67,7 +74,11 @@ const Index = () => {
       // Only update if the data is for the current tab
       setStreamsData(streams);
       setLoader(false);
-    } else if (isLoading) {
+    } 
+    else if (streams===null) {
+      setLoader(false);
+    }
+    else if (isLoading) {
       setLoader(true);
     }
   }, [streams, isLoading, isFetching]);
@@ -189,6 +200,45 @@ const Index = () => {
     }
   }, [streams]);
 
+
+const [upcomingStreamData, setUpcomingStreamData] = useState([]);
+const [hasMoreUpcoming, setHasMoreUpcoming] = useState(true);
+const [rangeUpcomingStart, setRangeUpcomingStart] = useState(0);
+const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
+
+const fetchUpcomingMore = async () => {
+  try {
+    setIsLoadingUpcoming(true);
+    const response = await api.userStream.getStreams({
+      range: `[${rangeUpcomingStart},${6}]`,
+      sort: '["scheduledStartTime","ASC"]',
+      filter: JSON.stringify({ q: '' }),
+      pagination: true,
+      streamStatus: 'scheduled',
+    });
+
+    const newData = response?.data || [];
+
+    if (newData?.length < 6) {
+      setHasMoreUpcoming(false); // No more data
+    }
+
+    setUpcomingStreamData((prev: any[] = []) => [...prev, ...newData]);
+    setRangeUpcomingStart(prev => prev + 6);
+  } catch (err) {
+    console.error('Failed to fetch messages:', err);
+    setHasMoreUpcoming(false);
+  } finally {
+    setIsLoadingUpcoming(false);
+  }
+};
+
+useEffect(() => {
+  if (activeTab === 'upcoming' && upcomingStreamData.length === 0) {
+    fetchUpcomingMore();
+  }
+}, [activeTab]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
@@ -261,15 +311,17 @@ const Index = () => {
                   Uh-oh! Looks like there aren't any streams happening right now. Check back later!
                 </AlertDescription>
               </Alert>
-            ) : !isLive && (!streamsData || streamsData.data?.length === 0) ? (
-              <Alert variant="default" className="bg-muted">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No Upcoming Streams</AlertTitle>
-                <AlertDescription>
-                  No upcoming streams scheduled at the moment. Check back later!
-                </AlertDescription>
-              </Alert>
-            ) : isLive ? (
+            ) 
+            // : 
+            // !isLive && (!streamsData || streamsData.data?.length === 0) ? (
+            //   <Alert variant="default" className="bg-muted">
+            //     <AlertCircle className="h-4 w-4" />
+            //     <AlertTitle>No Upcoming Streams</AlertTitle>
+            //     <AlertDescription>
+            //       No upcoming streams scheduled at the moment. Check back later!
+            //     </AlertDescription>
+            //   </Alert>
+             : isLive ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {streamsData && streamsData.data?.map(stream => (
                   <StreamCard
@@ -283,11 +335,19 @@ const Index = () => {
               </div>
             ) : (
               <div>
-                <UpcomingStreams streams={streamsData?.data} />
+              
+        <UpcomingStreams 
+         upcomingStreams={upcomingStreamData}
+         fetchMore={fetchUpcomingMore}
+         hasMore={hasMoreUpcoming}
+         isLoading={isLoadingUpcoming && upcomingStreamData.length === 0}
+        // streams={streamsData?.data} 
+        />
+              
               </div>
             )}
           </div>
-          {streamsData?.data?.length > 0 && <Pagination className='!justify-center'>
+          {streamsData?.data?.length > 0 && isLive && <Pagination className='!justify-center'>
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
