@@ -73,7 +73,7 @@ export default function LockTokens({
     };
 
   return (
-    <div className="h-[250px] relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]" style={{ border: '0.62px solid #181818' }}>
+    <div className="h-[260px] relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]" style={{ border: '0.62px solid #181818' }}>
       <div className="relative z-10 h-full flex flex-col justify-between">
         <div>
           <div className="bg-[#242424] flex justify-between items-center rounded-t-2xl p-5 pl-[55px] pr-[55px]">
