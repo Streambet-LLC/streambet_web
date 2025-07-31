@@ -58,6 +58,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [messageList, setMessageList] = useState<any>();
   const queryClient = useQueryClient();
 
+
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
 
@@ -354,6 +355,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const handleBetEdit = () => {
     setIsEditing(true);
     setPlaceBet(true); // Show BetTokens (edit mode)
+    refetchRoundData(); // when canceling and placcing bet,then editing we need to refetch round data
   }
 
   // Cancel bet mutation
@@ -392,6 +394,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       });
     }
   }
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-screen h-full">
