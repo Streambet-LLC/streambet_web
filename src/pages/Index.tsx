@@ -41,7 +41,7 @@ const Index = () => {
     queryFn: async () => {
       const response = await api.userStream.getStreams({
         range: `[${rangeStart},${rangeEnd}]`,
-        sort: '["createdAt","DESC"]',
+        sort: isLive ? '["createdAt","DESC"]' : '["scheduledStartTime","ASC"]',
         filter: JSON.stringify({ q: '' }),
         pagination: true,
         streamStatus: isLive ? 'live' : 'scheduled',
