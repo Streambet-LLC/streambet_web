@@ -3,9 +3,9 @@ import { useToast } from '@/components/ui/use-toast';
 import { useMutation } from "@tanstack/react-query";
 import api from "@/integrations/api/client";
 import { BettingRoundStatus, CurrencyType } from '@/enums';
-import { useBettingStreamUpdates } from "@/hooks/useBettingStreamUpdates";
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { FabioBoldStyle } from "@/utils/font";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 interface BettingVariable {
   id: string;
@@ -30,6 +30,8 @@ interface BettingData {
   walletCoin?: number;
   roundTotalBetsTokenAmount:number
   status?: BettingRoundStatus;
+  userBetFreeTokens?: number;
+  userBetStreamCoins?: number;
 }
 
 interface getRoundData {
@@ -82,6 +84,7 @@ export default function BetTokens({
   const [sliderMax, setSliderMax] = useState<number | undefined>();
   const isStreamCoins = currency === CurrencyType.STREAM_COINS;
 
+  
   const handleColorClick = (color: string) => {
     setSelectedColor(color);
   };
@@ -89,16 +92,21 @@ export default function BetTokens({
   const isColorButtonsEnabled = betAmount > 0;
   const isBetButtonEnabled = selectedColor !== "";
 
+
    useEffect(() => {
     // if (getRoundData) {
       const isStreamCoins = currency === CurrencyType.STREAM_COINS;
-      setSliderMax(isStreamCoins ? updatedSliderMax?.streamCoins ?? bettingData?.walletCoin 
-        : updatedSliderMax?.freeTokens ?? bettingData?.walletFreeToken);
+      // setSliderMax(isStreamCoins ? updatedSliderMax?.streamCoins ?? bettingData?.walletCoin 
+      //   : updatedSliderMax?.freeTokens ?? bettingData?.walletFreeToken);
+         setSliderMax(isStreamCoins ?  Number(bettingData?.walletCoin) + Number(bettingData?.userBetStreamCoins)
+        :  Number(bettingData?.walletFreeToken) + Number(bettingData?.userBetFreeTokens));
       setSelectedColor(selectedWinner);
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax]);
+  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData]);
+
+
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
@@ -128,7 +136,6 @@ export default function BetTokens({
     }
   };
 
-  console.log(lockedBet,bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN,'betingggggggggg')
 
   return (
     <div>
@@ -147,8 +154,8 @@ export default function BetTokens({
           Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
           <span className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
           {isStreamCoins
-            ? `Avaliable Stream Coins: ${Number(bettingData?.walletCoin).toLocaleString('en-US')}`
-            : `Avaliable Tokens: ${Number(bettingData?.walletFreeToken).toLocaleString('en-US')}`
+            ? `Avaliable Stream Coins: ${Number(session?.walletBalanceCoin).toLocaleString('en-US')}`
+            : `Avaliable Tokens: ${Number(session?.walletBalanceToken).toLocaleString('en-US')}`
           }
             </span>
         </div>

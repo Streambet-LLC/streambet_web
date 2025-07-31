@@ -73,6 +73,31 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCheckingLocation, locationResult, session]);
 
+  // Cleanup effect to restore body state when component unmounts
+  useEffect(() => {
+    return () => {
+      // Restore body state if component unmounts while drawer is open
+      const body = document.body;
+      if (body.style.position === 'fixed') {
+        const scrollY = body.style.top;
+        body.style.position = '';
+        body.style.top = '';
+        body.style.left = '';
+        body.style.right = '';
+        body.style.width = '';
+        body.style.overflow = '';
+        
+        if (scrollY) {
+          window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
+        
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+          (body.style as any).webkitOverflowScrolling = 'touch';
+        }
+      }
+    };
+  }, []);
+
   const logoVariants = {
     hidden: { opacity: 0, x: -20 },
     visible: {
@@ -98,8 +123,54 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
     if (path === '/admin' && onDashboardClick) {
       onDashboardClick();
     }
-    navigate(path);
+    // Add a small delay to ensure the drawer is fully closed before navigation
+    setTimeout(() => {
+      navigate(path);
+    }, 100);
     setIsDrawerOpen(false);
+  };
+
+  // Handle drawer open/close to prevent iOS scroll issues and click problems
+  const handleDrawerOpenChange = (open: boolean) => {
+    setIsDrawerOpen(open);
+    
+    // Prevent background scrolling and blinking
+    const body = document.body;
+    
+    if (open) {
+      // Store current scroll position
+      const scrollY = window.scrollY;
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollY}px`;
+      body.style.left = '0';
+      body.style.right = '0';
+      body.style.width = '100%';
+      body.style.overflow = 'hidden';
+      
+      // On iOS, also handle webkit overflow scrolling
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        (body.style as any).webkitOverflowScrolling = 'auto';
+      }
+    } else {
+      // Restore scroll position and body state
+      const scrollY = body.style.top;
+      body.style.position = '';
+      body.style.top = '';
+      body.style.left = '';
+      body.style.right = '';
+      body.style.width = '';
+      body.style.overflow = '';
+      
+      // Restore scroll position
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+      
+      // On iOS, restore webkit overflow scrolling
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        (body.style as any).webkitOverflowScrolling = 'touch';
+      }
+    }
   };
 
   return (
@@ -113,17 +184,17 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
       <div className="container flex h-16 items-center">
         {/* Mobile Menu Toggle */}
         <div className="md:hidden mr-3">
-          <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <Drawer open={isDrawerOpen} onOpenChange={handleDrawerOpenChange}>
             <DrawerTrigger asChild>
               <Button variant="ghost" size="sm" className="p-2">
                 <Menu className="h-5 w-5" />
               </Button>
             </DrawerTrigger>
             <DrawerContent>
-              <DrawerHeader>
+              <DrawerHeader className="border-b">
                 <DrawerTitle className="text-left">Menu</DrawerTitle>
               </DrawerHeader>
-              <div className="px-4 pb-4">
+              <div className="flex-1 p-4">
                 <div className="flex flex-col space-y-2">
                   {menuItems.map((item, index) => {
                     const isActive = location.pathname === item.path;
@@ -131,7 +202,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
                       <Button
                         key={item.label}
                         variant="ghost"
-                        className={`justify-start text-left ${
+                        className={`justify-start text-left h-12 ${
                           isActive
                             ? 'text-white bg-primary/10'
                             : 'text-[#FFFFFF80] hover:text-white hover:bg-primary/5'
@@ -144,6 +215,38 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
                     );
                   })}
                 </div>
+                
+                {/* Add user actions at the bottom if logged in */}
+                {session && (
+                  <div className="mt-8 pt-4 border-t">
+                    <div className="flex flex-col space-y-2">
+                      <Button
+                        variant="ghost"
+                        className="justify-start text-left h-12 text-[#FFFFFF80] hover:text-white hover:bg-primary/5"
+                        onClick={() => {
+                          setTimeout(() => {
+                            navigate('/settings');
+                          }, 100);
+                          setIsDrawerOpen(false);
+                        }}
+                      >
+                        <span>Settings</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="justify-start text-left h-12 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        onClick={() => {
+                          setTimeout(() => {
+                            handleLogout();
+                          }, 100);
+                          setIsDrawerOpen(false);
+                        }}
+                      >
+                        <span>Logout</span>
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </DrawerContent>
           </Drawer>
