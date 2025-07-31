@@ -83,7 +83,7 @@ export default function BetTokens({
   const [selectedColor, setSelectedColor] = useState("");
   const [sliderMax, setSliderMax] = useState<number | undefined>();
   const isStreamCoins = currency === CurrencyType.STREAM_COINS;
-  console.log(session,'session')
+
   
   const handleColorClick = (color: string) => {
     setSelectedColor(color);
@@ -94,7 +94,6 @@ export default function BetTokens({
 
 
    useEffect(() => {
-    console.log('after edit')
     // if (getRoundData) {
       const isStreamCoins = currency === CurrencyType.STREAM_COINS;
       // setSliderMax(isStreamCoins ? updatedSliderMax?.streamCoins ?? bettingData?.walletCoin 
