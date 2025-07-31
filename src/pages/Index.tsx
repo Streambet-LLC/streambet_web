@@ -54,7 +54,7 @@ const Index = () => {
     }
     return null;
     },
-    // refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
+    refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
   });
 
   // State to hold the current streams data for display
