@@ -140,7 +140,7 @@ const MobileStreamItem = ({ stream }: { stream: any }) => {
 
 export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading = false }: UpcomingStreamsProps) => {
  
-console.log(upcomingStreams,'upcomingStreams')
+
   return (
     <div className="mx-auto rounded-md border overflow-x-auto  max-w-[900px]  w-full">
         <InfiniteScroll
