@@ -75,8 +75,7 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
         <div className="flex items-center justify-center h-full">
           <Button
             type="button"
-            className="bg-[#272727] text-white font-medium rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors gap-2"
-            style={{ width: 142, height: 44, fontSize: '16px', fontWeight: 500 }}
+            className="w-[142px] h-[44px] text-base font-medium"
             onClick={() => navigate(`/stream/${stream?.id}`)}
           >
             Place bet
@@ -128,8 +127,7 @@ const MobileStreamItem = ({ stream }: { stream: any }) => {
       </div>
       <Button
         type="button"
-        className="bg-[#272727] text-white font-medium rounded-lg border-none text-base flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors gap-2 mt-2"
-        style={{ width: '100%', height: 40, fontSize: '15px', fontWeight: 500 }}
+        className="w-full h-[40px] text-base font-medium mt-2"
         onClick={() => navigate(`/stream/${stream?.id}`)}
       >
         Place bet

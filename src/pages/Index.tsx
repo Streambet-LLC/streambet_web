@@ -14,11 +14,11 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Footer } from '@/components/Footer';
-import InfiniteScroll from 'react-infinite-scroll-component';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [activeTab, setActiveTab] = useState('live');
+  const isInitialLoad = useRef(true);
 
 
   // Store last page per tab
@@ -80,6 +80,13 @@ const Index = () => {
     }
     else if (isLoading) {
       setLoader(true);
+    }
+
+    if (!isLoading && !isFetching) {
+      if (isInitialLoad.current && (!streams || streams?.data?.length === 0)) {
+        setActiveTab('upcoming');
+      }
+      isInitialLoad.current = false;
     }
   }, [streams, isLoading, isFetching]);
 
