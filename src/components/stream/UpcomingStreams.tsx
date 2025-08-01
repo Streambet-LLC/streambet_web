@@ -154,11 +154,6 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
                   loader={false}
                   scrollableTarget="upcoming-streams-container"
                   style={{ overflow: 'visible' }}
-                  endMessage={
-                    <p className="text-center py-4 text-[#999]">
-                      <b>No more upcoming streams</b>
-                    </p>
-                  }
                 >
       {/* Desktop Table Layout */}
       <div className="hidden md:block">
