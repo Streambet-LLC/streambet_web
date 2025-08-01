@@ -205,10 +205,13 @@ const [upcomingStreamData, setUpcomingStreamData] = useState([]);
 const [hasMoreUpcoming, setHasMoreUpcoming] = useState(true);
 const [rangeUpcomingStart, setRangeUpcomingStart] = useState(0);
 const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
+const loadingUpcomingRef = useRef(false);
 
 const fetchUpcomingMore = async () => {
+  if (loadingUpcomingRef.current || !hasMoreUpcoming) return;
+  loadingUpcomingRef.current = true;
+  setIsLoadingUpcoming(true);
   try {
-    setIsLoadingUpcoming(true);
     const response = await api.userStream.getStreams({
       range: `[${rangeUpcomingStart},${6}]`,
       sort: '["scheduledStartTime","ASC"]',
@@ -218,11 +221,9 @@ const fetchUpcomingMore = async () => {
     });
 
     const newData = response?.data || [];
-
     if (newData?.length < 6) {
       setHasMoreUpcoming(false); // No more data
     }
-
     setUpcomingStreamData((prev: any[] = []) => [...prev, ...newData]);
     setRangeUpcomingStart(prev => prev + 6);
   } catch (err) {
@@ -230,6 +231,7 @@ const fetchUpcomingMore = async () => {
     setHasMoreUpcoming(false);
   } finally {
     setIsLoadingUpcoming(false);
+    loadingUpcomingRef.current = false;
   }
 };
 
@@ -237,6 +239,7 @@ useEffect(() => {
   if (activeTab === 'upcoming' && upcomingStreamData.length === 0) {
     fetchUpcomingMore();
   }
+  // eslint-disable-next-line
 }, [activeTab]);
 
   return (
