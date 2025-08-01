@@ -591,7 +591,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       </div>
 
       <div className="lg:col-span-1 flex flex-col mb-5 h-full">
-        <div className="flex-1 h-full sticky top-24 max-w-[320px]">
+        <div className="flex-1 h-full sticky top-24 ">
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat
           sendMessageSocket={sendMessageSocket}
