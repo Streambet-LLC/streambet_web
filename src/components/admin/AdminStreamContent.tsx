@@ -375,7 +375,7 @@ useEffect(() => {
 
 
   return (
-    <div className="flex flex-col gap-0 h-full px-6 md:px-12" style={{ overflowX: 'hidden' }}>
+    <div className="flex flex-col gap-0 h-full px-6 md:px-12">
       {/* Back button at the very top */}
       <div className="flex items-center mb-1">
         <button type="button" className="p-1" style={{ lineHeight: 0 }}
