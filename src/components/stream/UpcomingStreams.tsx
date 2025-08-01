@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
 import { formatDate, formatTime, getImageLink } from '@/utils/helper';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import api from '@/integrations/api/client';
 import { useQuery } from '@tanstack/react-query';
@@ -139,20 +139,26 @@ const MobileStreamItem = ({ stream }: { stream: any }) => {
 };
 
 export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading = false }: UpcomingStreamsProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
  
-
   return (
-    <div className="mx-auto rounded-md border overflow-x-auto  max-w-[900px]  w-full">
+    <div 
+      ref={containerRef}
+      id="upcoming-streams-container"
+      className="mx-auto rounded-md border overflow-x-auto max-w-[950px] w-full max-h-[400px] overflow-y-auto"
+    >
         <InfiniteScroll
                   dataLength={upcomingStreams?.length || 0}
                   next={fetchMore}
                   hasMore={hasMore}
                   loader={false}
-                  // endMessage={
-                  //   <p className="text-center py-4 text-[#999]">
-                  //     <b>No more upcoming streams</b>
-                  //   </p>
-                  // }
+                  scrollableTarget="upcoming-streams-container"
+                  style={{ overflow: 'visible' }}
+                  endMessage={
+                    <p className="text-center py-4 text-[#999]">
+                      <b>No more upcoming streams</b>
+                    </p>
+                  }
                 >
       {/* Desktop Table Layout */}
       <div className="hidden md:block">
@@ -190,13 +196,9 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
             ) 
             : (
               <TableRow>
-                   <Alert variant="default" className="bg-muted">
-                <AlertCircle className="h-4 w-4" />
-                 <AlertTitle>No Upcoming Streams</AlertTitle>
-                 <AlertDescription>
-                   No upcoming streams scheduled at the moment. Check back later!
-                </AlertDescription>
-              </Alert>
+                <TableCell colSpan={3} className="text-center py-0 text-muted-foreground">
+                  No stream(s) available to display
+                </TableCell>
               </TableRow>
             )
             }
