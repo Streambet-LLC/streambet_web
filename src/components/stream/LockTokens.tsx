@@ -120,12 +120,12 @@ export default function LockTokens({
           <img
             src="/icons/lock1.svg"
             alt="lock left"
-            className="absolute top-20  left-0 w-[220px] h-[180px] z-10"
+            className="absolute top-20  left-0 w-[220px] h-[180px]"
           />
           <img
             src="/icons/lock2.svg"
             alt="lock right"
-            className="absolute bottom-9 right-0 w-[100px] h-auto z-10"
+            className="absolute bottom-9 right-0 w-[100px] h-auto"
           />
         </>
       )}
