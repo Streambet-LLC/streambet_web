@@ -145,7 +145,7 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
     <div 
       ref={containerRef}
       id="upcoming-streams-container"
-      className="mx-auto rounded-md border overflow-x-auto max-w-[950px] w-full max-h-[400px] overflow-y-auto"
+      className="mx-auto rounded-md border overflow-x-auto max-w-[950px] w-full max-h-[500px] overflow-y-auto"
     >
         <InfiniteScroll
                   dataLength={upcomingStreams?.length || 0}
