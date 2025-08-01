@@ -309,16 +309,37 @@ export default function BetTokens({
       </button>
     </div>):(
 
-      <div className="relative mx-auto rounded-[16px] shadow-lg p-5" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
-                  <div className='all-center flex justify-center items-center h-[100px] mt-8'>
-                    <img
-                      src="/icons/nobettingData.svg"
-                      alt="lock left"
-                      className="w-[100%] h-[100%] object-contain"
-                    />
-                  </div>
-                  <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
-                </div>
+       <div className="h-[220px] relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]" style={{ border: '0.62px solid #181818' }}>
+      <div className="relative z-10 h-full flex flex-col justify-between">
+        <div>
+        
+          <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-20 pb-4">
+             Betting is locked for this round
+          </p>
+        </div>
+
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[250px] pointer-events-none z-0"
+          style={{
+            background: 'radial-gradient(60% 100% at 50% 100%, rgba(189, 255, 0, 0.25) -140%, transparent 100%)',
+          }}
+        ></div>
+      </div>
+
+        <>
+          <img
+            src="/icons/lock1.svg"
+            alt="lock left"
+            className="absolute top-10  left-0 w-[120px] sm:w-[220px] h-[180px] "
+          />
+          <img
+            src="/icons/lock2.svg"
+            alt="lock right"
+            className="absolute bottom-9 right-0 w-[80px] sm:w-[100px] h-auto"
+          />
+        </>
+
+    </div>
     )}
     </div>
   );
