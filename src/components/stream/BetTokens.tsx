@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from '@/components/ui/use-toast';
 import { useMutation } from "@tanstack/react-query";
 import api from "@/integrations/api/client";
@@ -6,6 +6,7 @@ import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { FabioBoldStyle } from "@/utils/font";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BettingVariable {
   id: string;
@@ -79,10 +80,40 @@ export default function BetTokens({
 }: BetTokensProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
+  const isMobile = useIsMobile();
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
   const [sliderMax, setSliderMax] = useState<number | undefined>();
+  const [isTabletRange, setIsTabletRange] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const optionsContainerRef = useRef<HTMLDivElement>(null);
   const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+
+  // Check for tablet range (773px to 1024px)
+  useEffect(() => {
+    const checkTabletRange = () => {
+      setIsTabletRange(window.innerWidth >= 773 && window.innerWidth <= 1024);
+    };
+    
+    checkTabletRange();
+    window.addEventListener('resize', checkTabletRange);
+    
+    return () => window.removeEventListener('resize', checkTabletRange);
+  }, []);
+
+  // Check if scroll is needed
+  useEffect(() => {
+    const checkScrollNeeded = () => {
+      if (optionsContainerRef.current) {
+        const { scrollHeight, clientHeight } = optionsContainerRef.current;
+        setShowScrollIndicator(scrollHeight > clientHeight);
+      }
+    };
+
+    // Check after a short delay to ensure DOM is updated
+    const timer = setTimeout(checkScrollNeeded, 100);
+    return () => clearTimeout(timer);
+  }, [bettingData?.bettingRounds?.[0]?.bettingVariables]);
 
   
   const handleColorClick = (color: string) => {
@@ -267,27 +298,51 @@ export default function BetTokens({
       </div>
 
 
-      <div
-        className={`grid gap-2 pb-1 ${
-          bettingData?.bettingRounds?.[0]?.bettingVariables?.length === 2
-            ? 'grid-cols-2' // center the two buttons
-            : 'grid-cols-2 sm:grid-cols-4'
-        }`}
-      >
-        {bettingData?.bettingRounds?.[0]?.bettingVariables?.map((option: any, idx: number) => (
-          <button
-            key={option.id}
-            onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
-            className={`flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 truncate ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-            style={{ border: selectedColor === option.name ? '1px solid rgba(189, 255, 0, 1)' : '#242424',
-               color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
-             }}
-            disabled={!isColorButtonsEnabled}
-            title={option.name}
-          >
-            {option.name}
-          </button>
-        ))}
+      <div className="relative">
+        <div
+          ref={optionsContainerRef}
+          className={`${
+            isMobile 
+              ? 'grid grid-cols-2 gap-2 pb-1 overflow-y-auto max-h-[200px]' 
+              : isTabletRange
+              ? 'grid grid-cols-2 gap-2 pb-1 overflow-y-auto max-h-[200px]'
+              : `grid gap-2 pb-1 ${
+                  bettingData?.bettingRounds?.[0]?.bettingVariables?.length === 2
+                    ? 'grid-cols-2' // center the two buttons
+                    : 'grid-cols-2 sm:grid-cols-4'
+                }`
+          }`}
+        >
+          {bettingData?.bettingRounds?.[0]?.bettingVariables?.map((option: any, idx: number) => (
+            <button
+              key={option.id}
+              onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
+              className={`${
+                isMobile || isTabletRange
+                  ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 truncate' 
+                  : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 truncate'
+              } ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              style={{ border: selectedColor === option.name ? '1px solid rgba(189, 255, 0, 1)' : '#242424',
+                 color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
+               }}
+              disabled={!isColorButtonsEnabled}
+              title={option.name}
+            >
+              {option.name}
+            </button>
+          ))}
+        </div>
+        
+        {/* Scroll indicator */}
+        {showScrollIndicator && (isMobile || isTabletRange) && (
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-gradient-to-t from-[#242424] to-transparent h-6 w-full pointer-events-none flex items-center justify-center">
+            <div className="flex space-x-1">
+              <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
+              <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+          </div>
+        )}
       </div>
 
       <button
