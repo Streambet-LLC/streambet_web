@@ -53,7 +53,7 @@ export const Footer = () => {
               href="mailto:jeff@streambet.tv"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              jeff@streambet.tv
+              info@streambet.tv
             </a>
           </div>
 

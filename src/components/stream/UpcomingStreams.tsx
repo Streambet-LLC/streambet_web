@@ -154,6 +154,7 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
                   loader={false}
                   scrollableTarget="upcoming-streams-container"
                   style={{ overflow: 'visible' }}
+                  scrollThreshold={0.8}
                   endMessage={
                     <p className="text-center py-4 text-[#999]">
                       <b>No more upcoming streams</b>

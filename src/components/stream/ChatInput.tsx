@@ -145,6 +145,12 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
           ref={inputRef}
           value={message}
           onChange={e => setMessage(e.target.value)}
+            onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           className="w-full bg-[#212121] text-white px-4 py-2 rounded-lg outline-none resize-none font-emoji"
           rows={1}
         />
