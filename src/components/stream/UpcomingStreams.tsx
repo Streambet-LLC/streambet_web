@@ -145,7 +145,7 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
     <div 
       ref={containerRef}
       id="upcoming-streams-container"
-      className="mx-auto rounded-md border overflow-x-auto max-w-[950px] w-full max-h-[400px] overflow-y-auto"
+      className="mx-auto rounded-md border overflow-x-auto max-w-[950px] w-full max-h-[500px] overflow-y-auto"
     >
         <InfiniteScroll
                   dataLength={upcomingStreams?.length || 0}
@@ -154,11 +154,6 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
                   loader={false}
                   scrollableTarget="upcoming-streams-container"
                   style={{ overflow: 'visible' }}
-                  endMessage={
-                    <p className="text-center py-4 text-[#999]">
-                      <b>No more upcoming streams</b>
-                    </p>
-                  }
                 >
       {/* Desktop Table Layout */}
       <div className="hidden md:block">
