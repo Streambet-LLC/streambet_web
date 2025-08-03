@@ -2,20 +2,47 @@ import { Navigation } from '@/components/Navigation';
 import { Card } from '@/components/ui/card';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { AmountInput } from '@/components/deposit/AmountInput';
-import { PayPalButtonsWrapper } from '@/components/deposit/PayPalButtons';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { CoinFlowPurchaseComponent } from '@/components/deposit/CoinFlowPurchase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CoinFlowWithdrawComponent } from '@/components/deposit/CoinFlowWithdraw';
+
+// Mock API function to simulate profile data
+const mockGetProfile = async (userId: string) => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Return mock profile data
+  return {
+    id: userId,
+    email: 'user@example.com',
+    tos_accepted: true,
+    wallet_balance: 1000,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+};
+
+// Mock API function to simulate updating TOS acceptance
+const mockUpdateTosAccepted = async (userId: string) => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Return success
+  return { success: true };
+};
 
 const Deposit = () => {
-  const [amount, setAmount] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [isDepositProcessing, setIsDepositProcessing] = useState(false);
+  const [isWithdrawProcessing, setIsWithdrawProcessing] = useState(false);
   const [acceptTos, setAcceptTos] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -27,84 +54,9 @@ const Deposit = () => {
     queryKey: ['profile', session?.user?.id],
     enabled: !!session?.user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session!.user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
+      return await mockGetProfile(session!.user.id);
     },
   });
-
-  const { data: paypalConfig, isLoading: isLoadingConfig } = useQuery({
-    queryKey: ['paypal-config'],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('paypal', {
-        body: { action: 'get_client_id' },
-      });
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const handleCreateOrder = async () => {
-    try {
-      setIsProcessing(true);
-      const { data, error } = await supabase.functions.invoke('paypal', {
-        body: {
-          action: 'create_order',
-          amount: Number(amount),
-        },
-      });
-
-      if (error) throw error;
-      return data.id;
-    } catch (error) {
-      console.error('Error creating order:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to create order. Please try again.',
-        variant: 'destructive',
-      });
-      setIsProcessing(false);
-      throw error;
-    }
-  };
-
-  const handleCaptureOrder = async (orderId: string) => {
-    try {
-      const { error } = await supabase.functions.invoke('paypal', {
-        body: {
-          action: 'capture_order',
-          orderId,
-        },
-      });
-
-      if (error) throw error;
-
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
-
-      toast({
-        title: 'Success',
-        description: 'Payment completed successfully!',
-      });
-
-      setAmount('');
-    } catch (error) {
-      console.error('Error capturing order:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to process payment. Please try again.',
-        variant: 'destructive',
-      });
-      throw error;
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   // Redirect if not logged in
   if (!session) {
@@ -112,113 +64,54 @@ const Deposit = () => {
     return null;
   }
 
-  const handleAcceptTos = async () => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ tos_accepted: true })
-        .eq('id', session.user.id);
-
-      if (error) throw error;
-
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
-
-      toast({
-        title: 'Terms of Service Accepted',
-        description: 'You can now proceed with your deposit.',
-      });
-    } catch (error) {
-      console.error('Error accepting TOS:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to accept Terms of Service. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  if (!profile?.tos_accepted) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="container pt-24 pb-8">
-          <h1 className="text-3xl font-bold mb-8">Accept Terms of Service</h1>
-
-          <Card className="max-w-md mx-auto p-6 space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="tos"
-                  checked={acceptTos}
-                  onCheckedChange={checked => setAcceptTos(checked as boolean)}
-                />
-                <Label htmlFor="tos">
-                  I accept the Terms of Service and confirm that I am at least 21 years old
-                </Label>
-              </div>
-
-              <Button onClick={handleAcceptTos} disabled={!acceptTos} className="w-full">
-                Accept and Continue
-              </Button>
-            </div>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
-  if (isLoadingConfig) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="container pt-24 pb-8">
-          <h1 className="text-3xl font-bold mb-8">Deposit Funds</h1>
-          <Card className="max-w-md mx-auto p-6">
-            <p>Loading payment options...</p>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
-  if (!paypalConfig?.clientId) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="container pt-24 pb-8">
-          <h1 className="text-3xl font-bold mb-8">Deposit Funds</h1>
-          <Card className="max-w-md mx-auto p-6">
-            <p>Error loading payment options. Please try again later.</p>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
+  
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container pt-24 pb-8">
-        <h1 className="text-3xl font-bold mb-8">Deposit Funds</h1>
+        <h1 className="text-3xl font-bold mb-8">CoinFlow Payment</h1>
 
-        <Card className="max-w-md mx-auto p-6 space-y-6">
-          <AmountInput amount={amount} onChange={setAmount} disabled={isProcessing} />
-
-          <PayPalScriptProvider
-            options={{
-              clientId: paypalConfig.clientId,
-              currency: 'USD',
-              intent: 'capture',
-              components: 'buttons',
-            }}
-          >
-            <PayPalButtonsWrapper
-              amount={amount}
-              isProcessing={isProcessing}
-              onCreateOrder={handleCreateOrder}
-              onCaptureOrder={handleCaptureOrder}
-            />
-          </PayPalScriptProvider>
+        <Card className="max-w-2xl mx-auto p-6 space-y-6">
+          <Tabs defaultValue="deposit" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="deposit">Deposit</TabsTrigger>
+              <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="deposit" className="space-y-6">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Deposit Funds</h2>
+                <p className="text-muted-foreground">
+                  Add funds to your account using CoinFlow's secure payment system.
+                </p>
+                
+                <AmountInput amount={depositAmount} onChange={setDepositAmount} disabled={isDepositProcessing} />
+                
+                <CoinFlowPurchaseComponent
+                  amount={depositAmount}
+                  isProcessing={isDepositProcessing}
+                  onProcessingChange={setIsDepositProcessing}
+                />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="withdraw" className="space-y-6">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Withdraw Funds</h2>
+                <p className="text-muted-foreground">
+                  Withdraw your funds using CoinFlow's secure withdrawal system.
+                </p>
+                
+                <AmountInput amount={withdrawAmount} onChange={setWithdrawAmount} disabled={isWithdrawProcessing} />
+                
+                <CoinFlowWithdrawComponent
+                  amount={withdrawAmount}
+                  isProcessing={isWithdrawProcessing}
+                  onProcessingChange={setIsWithdrawProcessing}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
         </Card>
       </main>
     </div>

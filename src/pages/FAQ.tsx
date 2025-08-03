@@ -21,7 +21,7 @@ const FAQ = () => {
             <AccordionItem value="deposits">
               <AccordionTrigger>What is the minimum deposit amount?</AccordionTrigger>
               <AccordionContent>
-                The minimum deposit amount is $2. You can deposit using PayPal.
+                The minimum deposit amount is $2. You can deposit using CoinFlow.
               </AccordionContent>
             </AccordionItem>
 
@@ -63,7 +63,7 @@ const FAQ = () => {
             <AccordionItem value="withdrawals">
               <AccordionTrigger>How do withdrawals work?</AccordionTrigger>
               <AccordionContent>
-                Withdrawals are processed via PayPal within 24 hours of request.
+                Withdrawals are processed via CoinFlow within 24 hours of request.
               </AccordionContent>
             </AccordionItem>
 
