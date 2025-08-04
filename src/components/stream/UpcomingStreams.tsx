@@ -73,6 +73,9 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
       {/* Third column: Remind Me Button */}
       <TableCell className="w-[160px] min-w-[160px] py-0">
         <div className="flex items-center justify-center h-full">
+
+         
+
           <Button
             type="button"
             className="w-[142px] h-[44px] text-base font-medium"
@@ -80,7 +83,19 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
           >
             Place bet
           </Button>
+
+         <div className="w-[18px] h-[18px] ml-9" 
+        //  onClick={() => navigate(`/stream/${stream?.id}`)}
+         >
+            <img
+              src="/icons/Trash.svg"
+              className="w-[100%] h-[100%] object-contain cursor-pointer"
+              // onClick={() => setIsDeleteDialogOpen(true)}
+            />
+          </div>
         </div>
+
+        
       </TableCell>
     </TableRow>
   );

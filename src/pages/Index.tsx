@@ -263,7 +263,7 @@ useEffect(() => {
             <p className='text-[#FFFFFFBF]'>
               Live betting for games created on the internet.
               <br />
-              Bet on the unexpected.
+                <p className='text-[#FFFFFFBF] font-bold'>Bet on the unexpected.</p>
             </p>
           </div>
 
