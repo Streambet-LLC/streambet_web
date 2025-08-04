@@ -1,6 +1,5 @@
 
 import { useState, useRef, useEffect } from 'react';
-import EmojiPicker from 'emoji-picker-react';
 import { Smile, ImagePlus } from 'lucide-react';
 import api from '@/integrations/api/client';
 import Picker from '@emoji-mart/react'
@@ -37,15 +36,6 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
     }
   };
 
-
-  const onEmojiClick = (emojiData: any) => {
-    console.log(emojiData,'here emoji data');
-    setMessage((prev) => prev + emojiData.emoji);
-    setShowEmoji(false);
-    inputRef.current?.focus();
-  };
-
-  
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

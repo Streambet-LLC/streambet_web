@@ -412,7 +412,7 @@ export default function SignUp() {
       setTimeout(() => {
         setDob(date);
         form.setValue('dob', date, { shouldValidate: true });
-        setIsDatePickerOpen(false);
+        // setIsDatePickerOpen(false);
       }, 50);
     }
   }, [form]);
