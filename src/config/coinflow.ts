@@ -17,7 +17,7 @@ export const COINFLOW_CONFIG = {
   THEME: 'dark',
   
   // API endpoints (if needed)
-  API_BASE_URL: 'https://api.coinflow.com',
+  API_BASE_URL: 'https://api-sandbox.coinflow.cash',
   
   // Webhook settings
   WEBHOOK_URL: '/api/coinflow/webhook',
