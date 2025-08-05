@@ -13,8 +13,17 @@ interface EndedStreamsProps {
   isLoading?: boolean;
 }
 
+interface Stream {
+    id: string;
+    streamName: string;
+    thumbnailURL: string;
+    scheduledStartTime: string;
+    endTime: string;
+}
+    
+
 // Desktop Stream Item Component
-const DesktopStreamItem = ({ stream }: { stream: any }) => {
+const DesktopStreamItem = ({ stream }: { stream: Stream }) => {
   const navigate = useNavigate();
   const [imageLoading, setImageLoading] = useState(true);
 
