@@ -701,7 +701,7 @@ export default function SignUp() {
                       </Button>
                     </motion.div>
                   </div>
-                  {/* <motion.div variants={itemVariants}>
+                  <motion.div variants={itemVariants}>
                     <Button
                       type="button"
                       className="w-full flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
@@ -729,7 +729,7 @@ export default function SignUp() {
                       </span>
                       Sign in with Google
                     </Button>
-                  </motion.div> */}
+                  </motion.div>
                 </form>
               </FormProvider>
             </CardContent>
