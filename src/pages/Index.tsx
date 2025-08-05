@@ -9,6 +9,7 @@ import api from '@/integrations/api/client';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
 import { UpcomingStreams } from '@/components/stream/UpcomingStreams';
+import { EndedStreams } from '@/components/stream/EndedStreams';
 import { TabSwitch } from '@/components/navigation/TabSwitch';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,7 +23,7 @@ const Index = () => {
 
 
   // Store last page per tab
-  const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1 });
+  const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1, ended: 1 });
   const currentPage = tabPages[activeTab] || 1;
   const itemsPerPage = activeTab === 'live' ? 9 : 6;
 
@@ -32,6 +33,7 @@ const Index = () => {
   const tabs = [
     { key: 'live', label: 'Live' },
     { key: 'upcoming', label: 'Upcoming' },
+    { key: 'ended', label: 'Ended' },
   ];
 
   const isLive = activeTab === 'live';
@@ -125,12 +127,24 @@ const Index = () => {
       };
     });
     setActiveTab(tabKey);
+    
+    // Reset infinite scroll data when switching tabs
+    if (tabKey === 'upcoming') {
+      console.log('Switching to upcoming tab, data length:', upcomingStreamData.length);
+      if (upcomingStreamData.length === 0) {
+        fetchUpcomingMore();
+      }
+    }
+    if (tabKey === 'ended') {
+      console.log('Switching to ended tab, data length:', endedStreamData.length);
+      if (endedStreamData.length === 0) {
+        fetchEndedMore();
+      }
+    }
   };
 
   const updateThumbnails = async () => {
     if (!streams || streams.data?.length === 0) return;
-
-    console.log('Updating thumbnails for active streams');
 
     for (const stream of streams)
     {
@@ -138,8 +152,6 @@ const Index = () => {
       {
         if (stream.is_live)
         {
-          console.log('Updating thumbnail for live stream:', stream.id);
-
           // Update Livepeer stream thumbnails
           if (stream.platform === 'custom' && stream.livepeer_stream_id)
           {
@@ -197,22 +209,17 @@ const Index = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streams]);
 
-  useEffect(() => {
-    if (streams)
-    {
-      console.log('All streams with live status:');
-      streams.data?.forEach(stream => {
-        console.log(`${stream.id}: is_live=${stream.is_live}, title=${stream.title}`);
-      });
-    }
-  }, [streams]);
-
-
 const [upcomingStreamData, setUpcomingStreamData] = useState([]);
 const [hasMoreUpcoming, setHasMoreUpcoming] = useState(true);
 const [rangeUpcomingStart, setRangeUpcomingStart] = useState(0);
 const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
 const loadingUpcomingRef = useRef(false);
+
+const [endedStreamData, setEndedStreamData] = useState([]);
+const [hasMoreEnded, setHasMoreEnded] = useState(true);
+const [rangeEndedStart, setRangeEndedStart] = useState(0);
+const [isLoadingEnded, setIsLoadingEnded] = useState(false);
+const loadingEndedRef = useRef(false);
 
 const fetchUpcomingMore = async () => {
   if (loadingUpcomingRef.current || !hasMoreUpcoming) return;
@@ -242,9 +249,41 @@ const fetchUpcomingMore = async () => {
   }
 };
 
+const fetchEndedMore = async () => {
+  if (loadingEndedRef.current || !hasMoreEnded) return;
+  loadingEndedRef.current = true;
+  setIsLoadingEnded(true);
+  try {
+    const response = await api.userStream.getStreams({
+      range: `[${rangeEndedStart},${6}]`,
+      sort: '["createdAt","DESC"]',
+      filter: JSON.stringify({ q: '' }),
+      pagination: true,
+      streamStatus: 'ended',
+    });
+
+    const newData = response?.data || [];
+    
+    if (newData?.length < 6) {
+      setHasMoreEnded(false); // No more data
+    }
+    setEndedStreamData((prev: any[] = []) => [...prev, ...newData]);
+    setRangeEndedStart(prev => prev + 6);
+  } catch (err) {
+    console.error('Failed to fetch ended streams:', err);
+    setHasMoreEnded(false);
+  } finally {
+    setIsLoadingEnded(false);
+    loadingEndedRef.current = false;
+  }
+};
+
 useEffect(() => {
   if (activeTab === 'upcoming' && upcomingStreamData.length === 0) {
     fetchUpcomingMore();
+  }
+  if (activeTab === 'ended' && endedStreamData.length === 0) {
+    fetchEndedMore();
   }
   // eslint-disable-next-line
 }, [activeTab]);
@@ -343,19 +382,25 @@ useEffect(() => {
                   />
                 ))}
               </div>
-            ) : (
+            ) : activeTab === 'upcoming' ? (
               <div>
-              
-        <UpcomingStreams 
-         upcomingStreams={upcomingStreamData}
-         fetchMore={fetchUpcomingMore}
-         hasMore={hasMoreUpcoming}
-         isLoading={isLoadingUpcoming && upcomingStreamData.length === 0}
-        // streams={streamsData?.data} 
-        />
-              
+                <UpcomingStreams 
+                  upcomingStreams={upcomingStreamData}
+                  fetchMore={fetchUpcomingMore}
+                  hasMore={hasMoreUpcoming}
+                  isLoading={isLoadingUpcoming && upcomingStreamData.length === 0}
+                />
               </div>
-            )}
+            ) : activeTab === 'ended' ? (
+              <div>
+                <EndedStreams 
+                  endedStreams={endedStreamData}
+                  fetchMore={fetchEndedMore}
+                  hasMore={hasMoreEnded}
+                  isLoading={isLoadingEnded && endedStreamData.length === 0}
+                />
+              </div>
+            ) : null}
           </div>
           {streamsData?.data?.length > 0 && isLive && <Pagination className='!justify-center'>
             <PaginationContent>

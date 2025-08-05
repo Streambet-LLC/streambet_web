@@ -30,19 +30,19 @@ interface ChatProps {
   newSocketMessage?: IncomingMessage; 
   session:any;
   streamId?: string;
+  isDisabled?: boolean;
 }
 
 
 const LIMIT = 20;
 
-export default function Chat({ sendMessageSocket, newSocketMessage,session,streamId }: ChatProps) {
+export default function Chat({ sendMessageSocket, newSocketMessage,session,streamId, isDisabled = false }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [rangeStart, setRangeStart] = useState(0);
   const [newMessageCount, setNewMessageCount] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);  // To show the latest sending message at the bottom
   const scrollRef = useRef<HTMLDivElement | null>(null);
-
 
    const formatIncoming = (data: any): Message => ({
     id: data?.id,
@@ -201,7 +201,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
       </div>
 
 
-      {session != null && (<ChatInput onSend={handleSend} onImageAdd={scrollToBottom}/>)}
+      {session != null && (<ChatInput onSend={handleSend} onImageAdd={scrollToBottom} isDisabled={isDisabled} />)}
     </div>
   );
 }

@@ -8,11 +8,12 @@ import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface ChatInputProps {
+  isDisabled?: boolean;
   onSend: (msg: string, imageUrl?: string) => void;
   onImageAdd?: () => void;
 }
 
-export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
+export const ChatInput = ({ onSend,onImageAdd, isDisabled = false }: ChatInputProps) => {
   const [message, setMessage] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -129,6 +130,7 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
 
       <div className="flex-1 flex flex-col gap-1">
         <textarea
+          disabled={isDisabled}
           style={{
           fontFamily: 'Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, EmojiOne Color, FabioXM, sans-serif'
           }}
@@ -136,10 +138,10 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
           value={message}
           onChange={e => setMessage(e.target.value)}
             onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
           }}
           className="w-full bg-[#212121] text-white px-4 py-2 rounded-lg outline-none resize-none font-emoji"
           rows={1}
@@ -148,6 +150,7 @@ export const ChatInput = ({ onSend,onImageAdd }: ChatInputProps) => {
       </div>
 
       <button
+        disabled={isDisabled}
         onClick={handleSend}
         className="ml-2 bg-[#BDFF00] text-[#000000] px-5 py-3 rounded-[32px] font-semibold text-sm"
       >
