@@ -6,19 +6,18 @@ import { useState, useRef } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '../ui/skeleton';
 
-interface EndedStreamsProps {
-  endedStreams?: any;
-  fetchMore?: () => void;
-  hasMore?: boolean;
-  isLoading?: boolean;
-}
-
 interface Stream {
     id: string;
     streamName: string;
     thumbnailURL: string;
     scheduledStartTime: string;
     endTime: string;
+}
+interface EndedStreamsProps {
+  endedStreams?: Stream[];
+  fetchMore?: () => void;
+  hasMore?: boolean;
+  isLoading?: boolean;
 }
     
 
