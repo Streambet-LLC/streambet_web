@@ -60,8 +60,8 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
       {/* Second column: Time and Date */}
       <TableCell className="w-[160px] min-w-[160px] py-0">
         <div className="flex flex-col justify-center h-full gap-1">
-          <span className="font-normal text-[14px]" style={{ fontWeight: 400 }}>{formatTime(stream.scheduledStartTime)}</span>
-          <span className="font-normal text-[14px] text-[#FFFFFFBF]" style={{ fontWeight: 400 }}>{formatDate(stream.scheduledStartTime)}</span>
+          <span className="font-normal text-[14px]" style={{ fontWeight: 400 }}>{stream.endTime ? formatTime(stream.endTime) : ''}</span>
+          <span className="font-normal text-[14px] text-[#FFFFFFBF]" style={{ fontWeight: 400 }}>{stream.endTime ? formatDate(stream.endTime) : ''}</span>
         </div>
       </TableCell>
       {/* Third column: View Stream Button */}
@@ -115,8 +115,8 @@ const MobileStreamItem = ({ stream }: { stream: any }) => {
         </div>
         <div className="flex-1 flex flex-col">
           <span className="font-bold text-[15px] text-white leading-tight truncate">{truncate(stream.streamName, 25)}</span>
-          <span className="text-xs text-[#FFFFFFBF] mt-1">{formatDate(stream.scheduledStartTime)}</span>
-          <span className="text-xs text-white">{formatTime(stream.scheduledStartTime)}</span>
+          <span className="text-xs text-[#FFFFFFBF] mt-1">{stream.endTime ? formatDate(stream.endTime) : ''}</span>
+          <span className="text-xs text-white">{stream.endTime ? formatTime(stream.endTime) : ''}</span>
         </div>
       </div>
       <Button
