@@ -20,11 +20,6 @@ interface DeleteStreamDialogProps {
 }
 
 export function DeleteStreamDialog({ streamName, onConfirm, isDeleting, isOpen, onOpenChange }: DeleteStreamDialogProps) {
-  // Close dialog when deletion is complete (no longer in progress)
-  useEffect(() => {
-      onOpenChange(isOpen);
-  }, [isDeleting, isOpen, onOpenChange]);
-
   const handleConfirm = () => {
     onConfirm();
     // Don't close dialog immediately - let the parent component handle closing after success
