@@ -11,7 +11,6 @@ import Admin from './pages/Admin';
 import Deposit from './pages/Deposit';
 import Withdraw from './pages/Withdraw';
 import Transactions from './pages/Transactions';
-import StreamSettings from './pages/StreamSettings';
 import Settings from './pages/Settings';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -82,7 +81,6 @@ const App = () => {
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/stream/:id" element={<Stream />} />
-                    <Route path="/stream/:id/settings" element={<StreamSettings />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<SignUp />} />
                     <Route path="/admin" element={<Admin />} />
