@@ -11,7 +11,6 @@ import { ThumbnailUpload } from './stream/ThumbnailUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CommentSection } from './CommentSection';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './ui/resizable';
 
 interface StreamSettingsProps {
@@ -112,7 +111,7 @@ export const StreamSettings = ({ stream, onUpdate, session }: StreamSettingsProp
 
             <ResizablePanel defaultSize={30} minSize={25}>
               <Card className="p-6 h-full">
-                {stream.id && <CommentSection streamId={stream.id} session={session} />}
+             
               </Card>
             </ResizablePanel>
           </ResizablePanelGroup>

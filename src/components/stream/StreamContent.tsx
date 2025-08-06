@@ -1,10 +1,7 @@
 import { StreamPlayer } from '@/components/StreamPlayer';
-import { BettingInterface } from '@/components/BettingInterface';
-import { CommentSection } from '@/components/CommentSection';
-import { StreamDetails } from '@/components/stream/StreamDetails';
 import BetTokens from './BetTokens';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import LockTokens from './LockTokens';
 import { useEffect, useState, useRef } from 'react';
@@ -196,7 +193,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       processPlacedBet(update);
     });
 
-    console.log('list to new mess')
     socketInstance.on('newMessage', (update) => {
       console.log('newMessage', update);
       setMessageList(update)
@@ -217,7 +213,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('Socket disconnected:', reason);
       if (reason !== 'io client disconnect') {
         // Only attempt reconnection if it wasn't an intentional disconnect
-          // handleSocketReconnection();
         api.socket.joinStream(streamId, socketConnect);
       
       }
@@ -225,7 +220,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socketInstance.on('connect_error', (error: any) => {
       console.log('Socket connection error:', error);
-      //  handleSocketReconnection();
       api.socket.joinStream(streamId, socketConnect);
       setLoading(false);
      
@@ -251,7 +245,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
       api.socket.leaveStream(streamId, socketConnect);
 
-      // api.socket.disconnect();
       if (socketConnect) {
             socketConnect?.off('bettingUpdate');
             socketConnect?.off('potentialAmountUpdate');
@@ -265,7 +258,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             socketConnect?.off('betCancelled');
             socketConnect?.off('betCancelledByAdmin');
       }
-      // setSocket(null);
     },
   [])
 
@@ -402,7 +394,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       <div className="lg:col-span-2 space-y-6 max-h-[100vh] h-full">
       <div className="relative">
             {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video rounded-lg overflow-hidden">
-              {/* Background thumbnail with low opacity */}
               {isStreamScheduled && stream?.thumbnailUrl && (
                 <div 
                   className="absolute inset-0 bg-cover bg-center bg-no-repeat"

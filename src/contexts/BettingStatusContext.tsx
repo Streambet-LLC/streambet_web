@@ -92,7 +92,6 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       if (!isFetching) {
       if(session){
         if(!socketConnect){
-          console.log('Adding new socket');
           const newSocket = api.socket.connect();
           api.socket.joinCommonStream(newSocket);
           setSocketConect(newSocket);

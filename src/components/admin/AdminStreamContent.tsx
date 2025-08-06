@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { StreamPlayer } from '@/components/StreamPlayer';
-import { CommentSection } from '@/components/CommentSection';
 import { AdminBettingRoundsCard } from './AdminBettingRoundsCard';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
