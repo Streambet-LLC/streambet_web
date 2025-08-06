@@ -58,10 +58,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [messageList, setMessageList] = useState<any>();
   const queryClient = useQueryClient();
 
-
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
-
+  const isStreamEnded = stream?.status === StreamStatus.ENDED;
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
@@ -402,7 +401,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
       <div className="lg:col-span-2 space-y-6 max-h-[100vh] h-full">
       <div className="relative">
-            {isStreamScheduled ? <div className="relative aspect-video rounded-lg overflow-hidden">
+            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video rounded-lg overflow-hidden">
               {/* Background thumbnail with low opacity */}
               {isStreamScheduled && stream?.thumbnailUrl && (
                 <div 
@@ -537,7 +536,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           </AnimatePresence>
 
         {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
-        {bettingData?.bettingRounds && bettingData.bettingRounds.length  ? (
+        {!isStreamEnded && bettingData?.bettingRounds && bettingData.bettingRounds.length  ? (
           placedBet ? (
             <BetTokens
               session={session}
@@ -594,10 +593,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         <div className="flex-1 h-full sticky top-24 md:max-w-[320px]">
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat
-          sendMessageSocket={sendMessageSocket}
-          newSocketMessage={messageList}
-          session={session}
-          streamId={streamId}
+            isDisabled={isStreamEnded}
+            sendMessageSocket={sendMessageSocket}
+            newSocketMessage={messageList}
+            session={session}
+            streamId={streamId}
          />
         </div>
         </div>

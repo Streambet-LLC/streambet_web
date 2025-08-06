@@ -700,7 +700,7 @@ export const adminAPI = {
 
   // Delete stream
   deleteStream: async (streamId: string) => {
-    const response = await apiClient.delete(`/admin/streams/${streamId}`);
+    const response = await apiClient.delete(`/admin/stream/scheduled/delete/${streamId}`);
     return response.data;
   },
 
