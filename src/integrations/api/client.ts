@@ -1,11 +1,10 @@
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 import { decodeIdToken } from '@/utils/helper';
+import { toast } from '@/hooks/use-toast';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-console.log(API_URL,'API_URL')
 
 // Create axios instance
 const apiClient = axios.create({
@@ -67,7 +66,11 @@ apiClient.interceptors.response.use(
     )
     {
       console.log('interceptor .use session timeout');
-      alert('Session has been expired! Please relogin');
+      toast({
+        title: 'Session Expired',
+        description: 'Session has been expired! Please relogin',
+        variant: 'destructive'
+      });
       await authAPI.signOut();
       window.location.href = '/login';
       return Promise.reject(error);
@@ -112,18 +115,26 @@ apiClient.interceptors.response.use(
           }
         } catch (refreshError)
         {
-          // If refresh fails, show alert and logout
+          // If refresh fails, show toast and logout
           console.log('catch (refreshError) line 113');
-          alert('Session has been expired! Please relogin');
+          toast({
+            title: 'Session Expired',
+            description: 'Session has been expired! Please relogin',
+            variant: 'destructive'
+          });
           await authAPI.signOut();
           window.location.href = '/login';
           return Promise.reject(refreshError);
         }
       } else
       {
-        // If already retried once, or no refreshToken, show alert and logout
+        // If already retried once, or no refreshToken, show toast and logout
         console.log('else line 125');
-        alert('Session has been expired! Please relogin');
+        toast({
+          title: 'Session Expired',
+          description: 'Session has been expired! Please relogin',
+          variant: 'destructive'
+        });
         await authAPI.signOut();
         window.location.href = '/login';
         return Promise.reject(error);
