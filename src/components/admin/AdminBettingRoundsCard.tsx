@@ -150,7 +150,7 @@ export const AdminBettingRoundsCard = ({
           <div className="flex flex-col items-center w-full mt-4">
                <Card
                     className={`rounded-xl border-[0.62px] border-[#2C2C2C] ${cardWidth} bg-[#181818] shadow-none`}
-                    style={{ width: '100%' }}
+                    style={{ width: windowWidth < 640 ? 'calc(100vw - 50px)' : '100%' }}
                >
                     {/* Card Header */}
                     <CardHeader
@@ -278,13 +278,13 @@ export const AdminBettingRoundsCard = ({
                     </CardHeader>
                     {/* Card Content: Carousel */}
                     <CardContent className="bg-transparent px-0 !p-0">
-                         <div className="relative group" style={{ maxWidth: windowWidth < 768 ? 'calc(100% - 50px)' : '50vw' }}>
+                         <div className="relative group w-full max-w-full md:max-w-[50vw]">
                               <Carousel
                                    setApi={setCarouselApi}
                                    opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}
-                                   className="w-full px-1"
+                                   className="w-full"
                               >
-                                   <CarouselContent className="flex items-center !ml-0">
+                                   <CarouselContent className="flex items-center !ml-0 md:-ml-4">
                                         {rounds && rounds?.length > 0 ? rounds.map((round, idx) => {
                                              const status = (statusMap[round.roundId] || round.status || '').toLowerCase();
                                              const isWinner = status === BettingRoundStatus.CLOSED;
@@ -296,7 +296,7 @@ export const AdminBettingRoundsCard = ({
                                              return (
                                                   <CarouselItem
                                                        key={round?.roundId || idx}
-                                                       className="flex flex-col items-center justify-between mx-2 rounded-[16px] !px-2 !py-1"
+                                                       className={`flex flex-col items-center justify-between rounded-[16px] !px-2 !py-1 ${windowWidth >= 640 ? 'mx-2' : ''}`}
                                                        style={{
                                                             width: slideWidth,
                                                             minWidth: slideWidth,

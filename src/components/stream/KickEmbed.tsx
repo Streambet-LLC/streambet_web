@@ -29,7 +29,7 @@ export const KickEmbed = ({ embedUrl }: KickEmbedProps) => {
     // Make sure we don't prepend "player." again if the channelName already contains it
     channelName = channelName.replace(/^player\./, '');
 
-    const finalUrl = `https://player.kick.com/${channelName}`;
+    const finalUrl = `https://player.kick.com/${channelName}?autoplay=true`;
 
     return finalUrl;
   };
