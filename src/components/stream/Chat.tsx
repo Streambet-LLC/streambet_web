@@ -146,15 +146,15 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
           scrollableTarget="scrollableDiv"
           loader={false}
         >
-       {messages.map(msg => {
+       {messages?.map(msg => {
   // Check if it's a system message
-  const isSystemMessage = (msg.text === '' || !msg.text) && !!msg.systemMessage;
+  const isSystemMessage = (msg?.text === '' || !msg.text) && !!msg.systemMessage;
 
   if (isSystemMessage) {
     return (
       <div key={msg.id} className="w-full flex justify-center">
         <div className="text-xs text-[#8C8C8C] italic text-center py-1">
-          {msg.systemMessage}
+          {msg?.systemMessage}
         </div>
       </div>
     );
@@ -167,18 +167,18 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
         <div className="flex items-center">
           <img
             src={getImageLink(msg.profileImageUrl)}
-            alt={msg.name}
+            alt={msg?.name}
             className="w-6 h-6 rounded-full mr-2 object-cover"
           />
           <span
             className="text-sm font-semibold"
             style={{ color: msg.name === 'Me' ? '#BDFF00' : '#606060' }}
           >
-            {msg.name}
+            {msg?.name}
           </span>
         </div>
         <span className="text-xs text-[#FFFFFF] ml-2">
-          {new Date(msg.timestamp).toLocaleTimeString([], {
+          {new Date(msg?.timestamp).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
             hour12: true,
@@ -187,7 +187,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
       </div>
 
       <div className="text-[#D7DFEF] text-[13px] font-medium break-words w-[190px] leading-normal ml-[32px]">
-        {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+        {msg?.text?.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
           /^https?:\/\/[^\s]+$/.test(part) ? (
             <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline break-all">
               {part}
