@@ -1,5 +1,4 @@
 import { StreamCard } from '@/components/StreamCard';
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -14,12 +13,14 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { MainLayout } from '@/components/layout';
+import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
+import { StreamEventType } from '@/enums';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [activeTab, setActiveTab] = useState('live');
   const isInitialLoad = useRef(true);
-
+  const { socketConnect } = useBettingStatusContext();
 
   // Store last page per tab
   const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1, ended: 1 });
@@ -55,8 +56,76 @@ const Index = () => {
     }
     return null;
     },
-    refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
+    // refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
   });
+
+
+   const setupSocketEventListeners = (socketInstance: any) => {
+        if (!socketInstance) return;
+        socketInstance?.off('streamListUpdated');
+        socketInstance?.off('connect_error');
+  
+      // Handle disconnection events
+        socketInstance.on('streamListUpdated', (update: any) => {
+          console.log('streamListUpdated', update);
+
+          if (update?.event) {
+            switch (update.event) {
+              case StreamEventType.STREAM_CREATED:
+                 // call live and upcoming
+                refetchStreams();
+                setRangeUpcomingStart(0);
+                setUpcomingStreamData([]);
+                setHasMoreUpcoming(true);
+                fetchUpcomingMore();
+                break;
+              case StreamEventType.STREAM_UPDATED:
+                // call live and upcoming
+                refetchStreams();
+                setRangeUpcomingStart(0);
+                setUpcomingStreamData([]);
+                setHasMoreUpcoming(true);
+                fetchUpcomingMore();
+                break;
+              case StreamEventType.STREAM_ENDED:
+                // call live and ended
+                refetchStreams();
+                setRangeEndedStart(0);
+                setEndedStreamData([]);
+                setHasMoreEnded(true);
+                fetchEndedMore();
+                break;
+              case StreamEventType.STREAM_DELETED:
+                // Call upcoming
+                setRangeUpcomingStart(0);
+                setUpcomingStreamData([]);
+                setHasMoreUpcoming(true);
+                fetchUpcomingMore();
+
+                break;
+              default:
+                console.log('Unknown stream event:', update.event);
+            }
+          }
+        });
+    
+        socketInstance.on('connect_error', (error: any) => {
+          console.log('debug123=Socket connection error:', error);
+        });
+
+      };
+    
+      useEffect(() => {
+          if(socketConnect){
+            setupSocketEventListeners(socketConnect);
+          }
+        return () => {
+          if (socketConnect) {
+            socketConnect.off('streamListUpdated');
+            socketConnect.off('connect_error');
+          }
+        };
+      }, [socketConnect]);
 
   // State to hold the current streams data for display
   const [streamsData, setStreamsData] = useState<any>(undefined);

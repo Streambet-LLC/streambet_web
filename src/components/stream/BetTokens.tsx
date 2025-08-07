@@ -1,11 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useToast } from '@/components/ui/use-toast';
-import { useMutation } from "@tanstack/react-query";
-import api from "@/integrations/api/client";
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
-import { FabioBoldStyle } from "@/utils/font";
-import { useAuthContext } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BettingVariable {
@@ -55,9 +51,9 @@ interface BetTokensProps {
   loading?: boolean; // Optional prop to indicate loading state
   selectedAmount?: number; // Optional prop for selected amount
   selectedWinner?: string; // Optional prop for selected winner
-  isEditing?: boolean; // Optional prop to indicate if it's an editing state
-  updatedCurrency?: string; // Optional prop for updated currency type
-  lockedBet?: boolean; // Optional prop to indicate if the bet is locked
+  isEditing?: boolean; // to indicate if it's an editing state
+  updatedCurrency?: string; // for updated currency type
+  lockedBet?: boolean; // to indicate if the bet is locked
 }
 
 export default function BetTokens({ 
@@ -238,7 +234,6 @@ export default function BetTokens({
           }}
         />
          <input
-          // type="number"
           min={0}
           max={sliderMax}
           value={betAmount}
@@ -252,7 +247,6 @@ export default function BetTokens({
           }}
           className="w-[90px] bg-[#272727] mt-2 px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444]"
   />
-        {/* Custom Thumb Style with SVG image */}
         <style>
           {`
             input[type="range"].bet-slider-gradient {
