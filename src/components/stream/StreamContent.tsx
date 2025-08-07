@@ -162,7 +162,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     });
 
     socketInstance.on('betCancelledByAdmin', (update) => {
-      console.log('betCancelledByAdmin', update);
       queryClient.prefetchQuery({ queryKey: ['session'] });
       toast({
         description:"Current betting round cancelled by admin.",
@@ -173,7 +172,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     });
 
     socketInstance.on('betCancelled', (update) => {
-      console.log('betCancelled', update);
       queryClient.prefetchQuery({ queryKey: ['session'] });
       setUpdatedSliderMax({
         freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
@@ -189,17 +187,14 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     });
 
     socketInstance.on('betEdited', (update) => {
-      console.log('betEdited', update);
       processPlacedBet(update);
     });
 
     socketInstance.on('newMessage', (update) => {
-      console.log('newMessage', update);
       setMessageList(update)
     });
 
     socketInstance.on('streamEnded', (update) => {
-      console.log('streamEnded', update);
       toast({
         description:"Stream has ended.",
         variant: 'destructive',
