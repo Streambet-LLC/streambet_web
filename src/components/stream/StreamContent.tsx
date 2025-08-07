@@ -149,7 +149,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socketInstance.on('betPlaced', (update) => {
       console.log('betPlaced', update);
+      if(update?.bet?.userId === session?.id) {
       processPlacedBet(update);
+      }
     });
 
     socketInstance.on('betOpened', (update) => {
@@ -172,22 +174,28 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     });
 
     socketInstance.on('betCancelled', (update) => {
-      queryClient.prefetchQuery({ queryKey: ['session'] });
-      setUpdatedSliderMax({
-        freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
-        streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
-      });
-      if (update?.message){
-      toast({
-        description:update?.message,
-        variant: 'default',
-      });
+      console.log(update,'betCancelled')
+       if(update?.bet?.userId === session?.id) {
+          queryClient.prefetchQuery({ queryKey: ['session'] });
+          setUpdatedSliderMax({
+            freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
+            streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
+          });
+          if (update?.message){
+          toast({
+            description:update?.message,
+            variant: 'default',
+          });
+        }
+          resetBetData();
     }
-      resetBetData();
     });
 
     socketInstance.on('betEdited', (update) => {
-      processPlacedBet(update);
+      console.log('betEdited',update)
+      if(update?.bet?.userId === session?.id) {
+        processPlacedBet(update);
+      }
     });
 
     socketInstance.on('newMessage', (update) => {
