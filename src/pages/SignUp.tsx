@@ -31,6 +31,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
+import { AuthLayout } from '@/components/layout';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -441,24 +442,12 @@ export default function SignUp() {
   }, []);
 
   return (
-    <>
-      <div className="auth-bg-gradient" />
-      <div className="container flex justify-center min-h-screen pt-16 pb-8">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="w-full max-w-md"
-        >
-          <div className="mb-6">
-            <Link to="/">
-              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-4 w-[155px]" />
-            </Link>
-            <h1 className="text-3xl font-bold text-white text-left">Create an account</h1>
-            <p className="text-[#FFFFFFBF] mt-2 text-left">
-              Enter your details below to create an account
-            </p>
-          </div>
+    <AuthLayout title="Create an account" subtitle="Enter your details below to create an account">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
           <Card className="bg-transparent border-0 p-0">
             <CardContent className="p-0">
               {renderLocationWarning()}
@@ -746,19 +735,6 @@ export default function SignUp() {
             </CardFooter>
           </Card>
         </motion.div>
-      </div>
-      <div
-        style={{
-          position: 'fixed',
-          left: 20,
-          bottom: 20,
-          color: '#FFFFFF',
-          fontSize: '0.95rem',
-          zIndex: 10,
-        }}
-      >
-        © Streambet 2025
-      </div>
-    </>
-  );
+      </AuthLayout>
+    );
 }

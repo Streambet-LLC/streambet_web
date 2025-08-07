@@ -584,14 +584,6 @@ export const socketAPI = {
     }
   },
 
-  // Subscribe to betting updates
-  onBettingUpdate: (callback: (data: any) => void) => {
-    if (socket)
-    {
-      socket.on('bettingUpdate', callback);
-    }
-  },
-
   // Subscribe to chat messages
   onChatMessage: (callback: (data: any) => void) => {
     if (socket)

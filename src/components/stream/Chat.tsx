@@ -176,7 +176,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
               </div>
 
               <div className="text-[#D7DFEF] text-[13px] font-medium break-words w-[190px] leading-normal ml-[32px]">
-                {msg.text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                {msg?.text?.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
                   /^https?:\/\/[^\s]+$/.test(part) ? (
                     <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline break-all">
                       {part}

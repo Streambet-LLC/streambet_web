@@ -2,7 +2,7 @@
 import { useParams } from 'react-router-dom';
 import { useStreamData } from '@/hooks/useStreamData';
 import { StreamContent } from '@/components/stream/StreamContent';
-import { Navigation } from '@/components/Navigation';
+import { MainLayout } from '@/components/layout';
 import { useAuthContext } from '@/contexts/AuthContext';
 
 const Stream = () => {
@@ -15,19 +15,14 @@ const Stream = () => {
   // Get stream data
   const { data: stream, refetch } = useStreamData(streamId!);
 
-
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-
-      <main className="container pt-24 pb-8">
-        <StreamContent
-          streamId={streamId}
-          session={session}
-          stream={stream?.data}
-        />
-      </main>
-    </div>
+    <MainLayout showFooter={false}>
+      <StreamContent
+        streamId={streamId}
+        session={session}
+        stream={stream?.data}
+      />
+    </MainLayout>
   );
 };
 

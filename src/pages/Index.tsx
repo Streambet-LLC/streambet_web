@@ -1,4 +1,3 @@
-import { Navigation } from '@/components/Navigation';
 import { StreamCard } from '@/components/StreamCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -14,7 +13,7 @@ import { TabSwitch } from '@/components/navigation/TabSwitch';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { Footer } from '@/components/Footer';
+import { MainLayout } from '@/components/layout';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
@@ -223,146 +222,140 @@ useEffect(() => {
 }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation />
+    <MainLayout>
+      <div className="space-y-8">
+        <div className="max-w-3xl mx-auto text-center space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold">
+            Bet on the internet's <br />
+            <span className="text-[#BDFF00]">randomest</span> moments
+          </h1>
+          <p className='text-[#FFFFFFBF]'>
+            Live betting for games created on the internet.
+            <br />
+              <span className='text-[#FFFFFFBF] font-bold'>Bet on the unexpected.</span>
+          </p>
+        </div>
 
-      <main className="container flex-1 pt-24 pb-8">
-        <div className="space-y-8">
-          <div className="max-w-3xl mx-auto text-center space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold">
-              Bet on the internet's <br />
-              <span className="text-[#BDFF00]">randomest</span> moments
-            </h1>
-            <p className='text-[#FFFFFFBF]'>
-              Live betting for games created on the internet.
-              <br />
-                <span className='text-[#FFFFFFBF] font-bold'>Bet on the unexpected.</span>
-            </p>
-          </div>
+        <TabSwitch
+          className='!justify-center !mt-12 !mb-14'
+          tabs={tabs}
+          activeTab={activeTab}
+          setActiveTab={handleTabSwitch} />
 
-          <TabSwitch
-            className='!justify-center !mt-12 !mb-14'
-            tabs={tabs}
-            activeTab={activeTab}
-            setActiveTab={handleTabSwitch} />
+        <div className="mt-16">
 
-          <div className="mt-16">
-
-            {(loader) ? (
-              isLive ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className="h-[320px] w-full" />
-                  ))}
-                </div>
-              ) : (
-                <div className="mx-auto rounded-md border overflow-x-auto max-w-[750px]">
-                  <Table className="bg-[#0D0D0D] min-w-[600px]">
-                    <TableBody>
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <TableRow key={i} className="h-[96px]">
-                          <TableCell className="w-[220px] min-w-[220px] py-0">
-                            <div className="flex items-center gap-0 h-[96px]">
-                              <Skeleton className="w-[115px] h-[72px] rounded-lg" />
-                              <div className="flex items-center justify-center h-full ml-2 w-full">
-                                <Skeleton className="h-4 w-24" />
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="w-[160px] min-w-[160px]">
-                            <div className="flex flex-col justify-center h-full gap-1">
-                              <Skeleton className="h-4 w-16 mb-2" />
-                              <Skeleton className="h-4 w-20" />
-                            </div>
-                          </TableCell>
-                          <TableCell className="w-[160px] min-w-[160px]">
-                            <div className="flex items-center justify-center h-full">
-                              <Skeleton className="h-10 w-32 rounded-lg" />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )
-            ) : isLive && (!streamsData || streamsData.data?.length === 0)  ? (
-              <Alert variant="default" className="bg-muted">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No Live Streams</AlertTitle>
-                <AlertDescription>
-                  Uh-oh! Looks like there aren't any streams happening right now. Check back later!
-                </AlertDescription>
-              </Alert>
-            ) 
-            // : 
-            // !isLive && (!streamsData || streamsData.data?.length === 0) ? (
-            //   <Alert variant="default" className="bg-muted">
-            //     <AlertCircle className="h-4 w-4" />
-            //     <AlertTitle>No Upcoming Streams</AlertTitle>
-            //     <AlertDescription>
-            //       No upcoming streams scheduled at the moment. Check back later!
-            //     </AlertDescription>
-            //   </Alert>
-             : isLive ? (
+          {(loader) ? (
+            isLive ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {streamsData && streamsData.data?.map(stream => (
-                  <StreamCard
-                    key={stream.id}
-                    stream={stream}
-                    isLive={isLive}
-                    isAdmin={session?.role === 'admin'}
-                    showAdminControls={false}
-                  />
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-[320px] w-full" />
                 ))}
               </div>
-            ) : activeTab === 'upcoming' ? (
-              <div>
-                <UpcomingStreams 
-                  upcomingStreams={upcomingStreamData}
-                  fetchMore={fetchUpcomingMore}
-                  hasMore={hasMoreUpcoming}
-                  isLoading={isLoadingUpcoming && upcomingStreamData.length === 0}
-                />
+            ) : (
+              <div className="mx-auto rounded-md border overflow-x-auto max-w-[750px]">
+                <Table className="bg-[#0D0D0D] min-w-[600px]">
+                  <TableBody>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <TableRow key={i} className="h-[96px]">
+                        <TableCell className="w-[220px] min-w-[220px] py-0">
+                          <div className="flex items-center gap-0 h-[96px]">
+                            <Skeleton className="w-[115px] h-[72px] rounded-lg" />
+                            <div className="flex items-center justify-center h-full ml-2 w-full">
+                              <Skeleton className="h-4 w-24" />
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="w-[160px] min-w-[160px]">
+                          <div className="flex flex-col justify-center h-full gap-1">
+                            <Skeleton className="h-4 w-16 mb-2" />
+                            <Skeleton className="h-4 w-20" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="w-[160px] min-w-[160px]">
+                          <div className="flex items-center justify-center h-full">
+                            <Skeleton className="h-10 w-32 rounded-lg" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            ) : activeTab === 'ended' ? (
-              <div>
-                <EndedStreams 
-                  endedStreams={endedStreamData}
-                  fetchMore={fetchEndedMore}
-                  hasMore={hasMoreEnded}
-                  isLoading={isLoadingEnded && endedStreamData.length === 0}
+            )
+          ) : isLive && (!streamsData || streamsData.data?.length === 0)  ? (
+            <Alert variant="default" className="bg-muted">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>No Live Streams</AlertTitle>
+              <AlertDescription>
+                Uh-oh! Looks like there aren't any streams happening right now. Check back later!
+              </AlertDescription>
+            </Alert>
+          ) 
+          // : 
+          // !isLive && (!streamsData || streamsData.data?.length === 0) ? (
+          //   <Alert variant="default" className="bg-muted">
+          //     <AlertCircle className="h-4 w-4" />
+          //     <AlertTitle>No Upcoming Streams</AlertTitle>
+          //     <AlertDescription>
+          //       No upcoming streams scheduled at the moment. Check back later!
+          //     </AlertDescription>
+          //   </Alert>
+           : isLive ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {streamsData && streamsData.data?.map(stream => (
+                <StreamCard
+                  key={stream.id}
+                  stream={stream}
+                  isLive={isLive}
+                  isAdmin={session?.role === 'admin'}
+                  showAdminControls={false}
                 />
-              </div>
-            ) : null}
-          </div>
-          {streamsData?.data?.length > 0 && isLive && <Pagination className='!justify-center'>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  className={cn(
-                    'text-white border-white hover:bg-white/10',
-                    currentPage === 1 && 'pointer-events-none opacity-50'
-                  )}
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  className={cn(
-                    'text-white border-white hover:bg-white/10',
-                    currentPage === totalPages && 'pointer-events-none opacity-50'
-                  )}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>}
+              ))}
+            </div>
+          ) : activeTab === 'upcoming' ? (
+            <div>
+              <UpcomingStreams 
+                upcomingStreams={upcomingStreamData}
+                fetchMore={fetchUpcomingMore}
+                hasMore={hasMoreUpcoming}
+                isLoading={isLoadingUpcoming && upcomingStreamData.length === 0}
+              />
+            </div>
+          ) : activeTab === 'ended' ? (
+            <div>
+              <EndedStreams 
+                endedStreams={endedStreamData}
+                fetchMore={fetchEndedMore}
+                hasMore={hasMoreEnded}
+                isLoading={isLoadingEnded && endedStreamData.length === 0}
+              />
+            </div>
+          ) : null}
         </div>
-      </main>
-
-      <Footer />
-    </div>
+        {streamsData?.data?.length > 0 && isLive && <Pagination className='!justify-center'>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => handlePageChange(currentPage - 1)}
+                className={cn(
+                  'text-white border-white hover:bg-white/10',
+                  currentPage === 1 && 'pointer-events-none opacity-50'
+                )}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => handlePageChange(currentPage + 1)}
+                className={cn(
+                  'text-white border-white hover:bg-white/10',
+                  currentPage === totalPages && 'pointer-events-none opacity-50'
+                )}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>}
+      </div>
+    </MainLayout>
   );
 };
 

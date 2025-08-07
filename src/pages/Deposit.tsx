@@ -1,4 +1,3 @@
-import { Navigation } from '@/components/Navigation';
 import { Card } from '@/components/ui/card';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { MainLayout } from '@/components/layout';
 
 const Deposit = () => {
   const [amount, setAmount] = useState('');
@@ -139,89 +139,77 @@ const Deposit = () => {
 
   if (!profile?.tos_accepted) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="container pt-24 pb-8">
-          <h1 className="text-3xl font-bold mb-8">Accept Terms of Service</h1>
+      <MainLayout>
+        <h1 className="text-3xl font-bold mb-8">Accept Terms of Service</h1>
 
-          <Card className="max-w-md mx-auto p-6 space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="tos"
-                  checked={acceptTos}
-                  onCheckedChange={checked => setAcceptTos(checked as boolean)}
-                />
-                <Label htmlFor="tos">
-                  I accept the Terms of Service and confirm that I am at least 21 years old
-                </Label>
-              </div>
-
-              <Button onClick={handleAcceptTos} disabled={!acceptTos} className="w-full">
-                Accept and Continue
-              </Button>
+        <Card className="max-w-md mx-auto p-6 space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="tos"
+                checked={acceptTos}
+                onCheckedChange={checked => setAcceptTos(checked as boolean)}
+              />
+              <Label htmlFor="tos">
+                I accept the Terms of Service and confirm that I am at least 21 years old
+              </Label>
             </div>
-          </Card>
-        </main>
-      </div>
+
+            <Button onClick={handleAcceptTos} disabled={!acceptTos} className="w-full">
+              Accept and Continue
+            </Button>
+          </div>
+        </Card>
+      </MainLayout>
     );
   }
 
   if (isLoadingConfig) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="container pt-24 pb-8">
-          <h1 className="text-3xl font-bold mb-8">Deposit Funds</h1>
-          <Card className="max-w-md mx-auto p-6">
-            <p>Loading payment options...</p>
-          </Card>
-        </main>
-      </div>
+      <MainLayout>
+        <h1 className="text-3xl font-bold mb-8">Deposit Funds</h1>
+        <Card className="max-w-md mx-auto p-6">
+          <p>Loading payment options...</p>
+        </Card>
+      </MainLayout>
     );
   }
 
   if (!paypalConfig?.clientId) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="container pt-24 pb-8">
-          <h1 className="text-3xl font-bold mb-8">Deposit Funds</h1>
-          <Card className="max-w-md mx-auto p-6">
-            <p>Error loading payment options. Please try again later.</p>
-          </Card>
-        </main>
-      </div>
+      <MainLayout>
+        <h1 className="text-3xl font-bold mb-8">Deposit Funds</h1>
+        <Card className="max-w-md mx-auto p-6">
+          <p>Error loading payment options. Please try again later.</p>
+        </Card>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="container pt-24 pb-8">
-        <h1 className="text-3xl font-bold mb-8">Deposit Funds</h1>
+    <MainLayout>
+      <h1 className="text-3xl font-bold mb-8">Deposit Funds</h1>
 
-        <Card className="max-w-md mx-auto p-6 space-y-6">
-          <AmountInput amount={amount} onChange={setAmount} disabled={isProcessing} />
+      <Card className="max-w-md mx-auto p-6 space-y-6">
+        <AmountInput amount={amount} onChange={setAmount} disabled={isProcessing} />
 
-          <PayPalScriptProvider
-            options={{
-              clientId: paypalConfig.clientId,
-              currency: 'USD',
-              intent: 'capture',
-              components: 'buttons',
-            }}
-          >
-            <PayPalButtonsWrapper
-              amount={amount}
-              isProcessing={isProcessing}
-              onCreateOrder={handleCreateOrder}
-              onCaptureOrder={handleCaptureOrder}
-            />
-          </PayPalScriptProvider>
-        </Card>
-      </main>
-    </div>
+        <PayPalScriptProvider
+          options={{
+            clientId: paypalConfig.clientId,
+            currency: 'USD',
+            intent: 'capture',
+            components: 'buttons',
+          }}
+        >
+          <PayPalButtonsWrapper
+            amount={amount}
+            isProcessing={isProcessing}
+            onCreateOrder={handleCreateOrder}
+            onCaptureOrder={handleCaptureOrder}
+          />
+        </PayPalScriptProvider>
+      </Card>
+    </MainLayout>
   );
 };
 
