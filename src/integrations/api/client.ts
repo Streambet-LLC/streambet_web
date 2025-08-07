@@ -65,14 +65,15 @@ apiClient.interceptors.response.use(
       originalRequest.url.endsWith('/auth/refresh')
     )
     {
-      console.log('interceptor .use session timeout');
       toast({
+        id: 'session-expired',
         title: 'Session Expired',
         description: 'Session has been expired! Please relogin',
         variant: 'destructive'
       });
       await authAPI.signOut();
-      window.location.href = '/login';
+      // Dispatch custom event for navigation without page refresh
+      window.dispatchEvent(new CustomEvent('navigateToLogin'));
       return Promise.reject(error);
     }
 
@@ -116,27 +117,29 @@ apiClient.interceptors.response.use(
         } catch (refreshError)
         {
           // If refresh fails, show toast and logout
-          console.log('catch (refreshError) line 113');
           toast({
+            id: 'session-expired',
             title: 'Session Expired',
             description: 'Session has been expired! Please relogin',
             variant: 'destructive'
           });
           await authAPI.signOut();
-          window.location.href = '/login';
+          // Dispatch custom event for navigation without page refresh
+          window.dispatchEvent(new CustomEvent('navigateToLogin'));
           return Promise.reject(refreshError);
         }
       } else
       {
         // If already retried once, or no refreshToken, show toast and logout
-        console.log('else line 125');
         toast({
+          id: 'session-expired',
           title: 'Session Expired',
           description: 'Session has been expired! Please relogin',
           variant: 'destructive'
         });
         await authAPI.signOut();
-        window.location.href = '/login';
+        // Dispatch custom event for navigation without page refresh
+        window.dispatchEvent(new CustomEvent('navigateToLogin'));
         return Promise.reject(error);
       }
     }
@@ -262,9 +265,6 @@ export const authAPI = {
 
   // Handle OAuth
   googleAuth: async () => {
-    // const response = await apiClient.get('/auth/google');
-    // console.log('response', response?.data);
-    // return response.data;
     window.location.href = `${API_URL}/auth/google`;
   },
 

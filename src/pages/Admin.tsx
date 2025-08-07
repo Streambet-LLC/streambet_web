@@ -15,6 +15,7 @@ const Admin = () => {
   } = useStreamManagement();
   const queryClient = useQueryClient();
   const [resetKey, setResetKey] = useState(0);
+  const [isStreamContent, setIsStreamContent] = useState(false);
 
   const handleDashboardClick = useCallback(() => {
     queryClient.clear();
@@ -26,7 +27,7 @@ const Admin = () => {
   }
 
   return (
-    <AdminLayout onDashboardClick={handleDashboardClick}>
+    <AdminLayout onDashboardClick={handleDashboardClick} isStreamContent={isStreamContent}>
       <AdminManagement
         key={resetKey}
         session={profile}
@@ -34,6 +35,7 @@ const Admin = () => {
         refetchStreams={(range) => handleRefetchStreams(range)}
         searchStreamQuery={searchStreamQuery}
         setSearchStreamQuery={setSearchStreamQuery}
+        onStreamContentChange={setIsStreamContent}
       />
     </AdminLayout>
   );

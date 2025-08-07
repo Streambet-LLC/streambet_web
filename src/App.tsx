@@ -26,6 +26,7 @@ import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionConte
 import { AuthProvider } from '@/contexts/AuthContext';
 import { BettingStatusProvider } from './contexts/BettingStatusContext';
 import { CurrencyType } from './enums';
+import { NavigationListener } from '@/components/NavigationListener';
 
 
 // Create a client
@@ -77,6 +78,7 @@ const App = () => {
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
+                  <NavigationListener />
                   {/* <WelcomeModal open={showWelcomeModal} onOpenChange={setShowWelcomeModal} /> */}
                   <Routes>
                     <Route path="/" element={<Index />} />

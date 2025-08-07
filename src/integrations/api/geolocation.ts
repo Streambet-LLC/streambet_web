@@ -2,19 +2,13 @@ import axios from 'axios';
 
 // List of states where online gambling is restricted
 const RESTRICTED_STATES = [
-  'WA', // Washington
-  'NV', // Nevada
-  'ID', // Idaho
-  'MT', // Montana
-  'OR', // Oregon
-  'UT', // Utah
-  'AZ', // Arizona
-  'SD', // South Dakota
-  'IA', // Iowa
+  'CT', // Connecticut
+  'DE', // Delaware
   'LA', // Louisiana
-  'AL', // Alabama
-  'SC', // South Carolina
-  'HI', // Hawaii
+  'MI', // Michigan
+  'MT', // Montana
+  'WA', // Washington
+  'WV', // West Virginia
 ];
 
 export interface GeolocationResult {

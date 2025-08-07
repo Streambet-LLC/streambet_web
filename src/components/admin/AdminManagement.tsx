@@ -38,7 +38,9 @@ export const AdminManagement = ({
   streams,
   refetchStreams,
   searchStreamQuery,
-  setSearchStreamQuery }) => {
+  setSearchStreamQuery,
+  onStreamContentChange
+}) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('livestreams');
   const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
@@ -125,6 +127,14 @@ export const AdminManagement = ({
 
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | undefined>(undefined);
+
+  // Notify parent when stream content is being rendered
+  useEffect(() => {
+    if (onStreamContentChange) {
+      onStreamContentChange(!!viewStreamId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewStreamId]);
 
   // Refs for error scrolling
   const titleRef = useRef<HTMLInputElement>(null);
