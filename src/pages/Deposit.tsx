@@ -1,4 +1,3 @@
-import { Navigation } from '@/components/Navigation';
 import { Card } from '@/components/ui/card';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,6 +11,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { CoinFlowPurchaseComponent } from '@/components/deposit/CoinFlowPurchase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CoinFlowWithdrawComponent } from '@/components/deposit/CoinFlowWithdraw';
+import { MainLayout } from '@/components/layout';
 
 // Mock API function to simulate profile data
 const mockGetProfile = async (userId: string) => {
@@ -66,9 +66,7 @@ const Deposit = () => {
 
   
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="container pt-24 pb-8">
+    <MainLayout>
         <h1 className="text-3xl font-bold mb-8">CoinFlow Payment</h1>
 
         <Card className="max-w-2xl mx-auto p-6 space-y-6">
@@ -113,8 +111,7 @@ const Deposit = () => {
             </TabsContent>
           </Tabs>
         </Card>
-      </main>
-    </div>
+      </MainLayout>
   );
 };
 

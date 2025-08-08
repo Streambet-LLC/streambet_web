@@ -37,3 +37,10 @@ export enum StreamStatus {
   INACTIVE = 'inactive',
   SCHEDULED = 'scheduled'
 };
+
+export enum StreamEventType {
+  STREAM_CREATED = 'stream_created',
+  STREAM_UPDATED = 'stream_updated',
+  STREAM_ENDED = 'stream_ended',
+  STREAM_DELETED = 'stream_deleted',
+};

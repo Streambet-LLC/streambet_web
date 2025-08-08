@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -16,12 +16,15 @@ import {
 } from '../ui/pagination';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing, ArrowLeft } from 'lucide-react';
+import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { StreamStatus } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
 import { BettingRoundStatus } from '@/enums';
+import { useMutation } from '@tanstack/react-query';
+import api from '@/integrations/api/client';
+import { DeleteStreamDialog } from './DeleteStreamDialog';
 
 interface Props {
   streams: any;
@@ -132,6 +135,7 @@ export const StreamTable: React.FC<Props> = ({
 }) => {
   const isMobile = useIsMobile();
   const itemsPerPage = 7;
+  const [deletingStreamId, setDeletingStreamId] = useState<string | null>(null);
 
   useEffect(() => {
     const rangeStart = (currentPage - 1) * itemsPerPage;
@@ -145,7 +149,48 @@ export const StreamTable: React.FC<Props> = ({
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
-  };  
+  };
+
+  const { mutate: deleteStream, isPending: isDeletingStream } = useMutation({
+    mutationFn: async (streamId: string) => {
+      await api.admin.deleteStream(streamId);
+    },
+    onSuccess: () => {
+      toast({
+        description: "Stream deleted successfully",
+        variant: 'default',
+      });
+      // Refetch streams after successful deletion
+      const rangeStart = (currentPage - 1) * itemsPerPage;
+      refetchStreams(`[${rangeStart},${itemsPerPage}]`);
+      setDeletingStreamId(null);
+      setDeleteDialogOpen(false);
+      setStreamToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.response?.data?.message || "Failed to delete stream",
+        variant: 'destructive',
+      });
+      setDeletingStreamId(null);
+      setDeleteDialogOpen(false);
+      setStreamToDelete(null);
+    },
+  });
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [streamToDelete, setStreamToDelete] = useState<any>(null);
+
+  const handleDeleteStream = (streamId: string) => {
+    setDeletingStreamId(streamId);
+    deleteStream(streamId);
+  };
+
+  const handleOpenDeleteDialog = (stream: any) => {
+    setStreamToDelete(stream);
+    setDeleteDialogOpen(true);
+  };
 
   return (
     <div>
@@ -232,8 +277,20 @@ export const StreamTable: React.FC<Props> = ({
                         </TooltipTrigger>
                         <TooltipContent>Stream analytics</TooltipContent>
                       </Tooltip>
-                      <Lock color="#FFFFFFBF" size={16} className="cursor-pointer" />
-                      <Play color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                                             {/* <Lock color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                       <Play color="#FFFFFFBF" size={16} className="cursor-pointer" /> */}
+                       {stream?.streamStatus === StreamStatus.SCHEDULED && (
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <Trash2 
+                               size={16} 
+                               className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                               onClick={() => handleOpenDeleteDialog(stream)}
+                             />
+                           </TooltipTrigger>
+                           <TooltipContent>Delete stream</TooltipContent>
+                         </Tooltip>
+                       )}
                     </div>
                   </div>
                 </CardContent>
@@ -307,8 +364,20 @@ export const StreamTable: React.FC<Props> = ({
                         </TooltipTrigger>
                         <TooltipContent>Stream analytics</TooltipContent>
                       </Tooltip>
-                      <Lock color="#FFFFFFBF" size={18} />
-                      <Play color="#FFFFFFBF" size={18} />
+                                             {/* <Lock color="#FFFFFFBF" size={18} />
+                       <Play color="#FFFFFFBF" size={18} /> */}
+                       {stream?.streamStatus === StreamStatus.SCHEDULED && (
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <Trash2 
+                               size={18}
+                               className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                               onClick={() => handleOpenDeleteDialog(stream)}
+                             />
+                           </TooltipTrigger>
+                           <TooltipContent>Delete stream</TooltipContent>
+                         </Tooltip>
+                       )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -349,33 +418,44 @@ export const StreamTable: React.FC<Props> = ({
           </Pagination>
         </div>}
 
-      {/* <div className="flex w-full justify-between bg-black rounded-md mt-4">
-        <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-          Page {currentPage} of {totalPages}
-        </div>
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => handlePageChange(currentPage - 1)}
-                className={cn(
-                  'text-white border-white hover:bg-white/10',
-                  currentPage === 1 && 'pointer-events-none opacity-50'
-                )}
-              />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => handlePageChange(currentPage + 1)}
-                className={cn(
-                  'text-white border-white hover:bg-white/10',
-                  currentPage === streams?.total && 'pointer-events-none opacity-50'
-                )}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      </div> */}
-    </div>
-  );
-};
+             {/* <div className="flex w-full justify-between bg-black rounded-md mt-4">
+         <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+           Page {currentPage} of {totalPages}
+         </div>
+         <Pagination>
+           <PaginationContent>
+             <PaginationItem>
+               <PaginationPrevious
+                 onClick={() => handlePageChange(currentPage - 1)}
+                 className={cn(
+                   'text-white border-white hover:bg-white/10',
+                   currentPage === 1 && 'pointer-events-none opacity-50'
+                 )}
+               />
+             </PaginationItem>
+             <PaginationItem>
+               <PaginationNext
+                 onClick={() => handlePageChange(currentPage + 1)}
+                 className={cn(
+                   'text-white border-white hover:bg-white/10',
+                   currentPage === streams?.total && 'pointer-events-none opacity-50'
+                 )}
+               />
+             </PaginationItem>
+           </PaginationContent>
+         </Pagination>
+       </div> */}
+
+       {/* Delete Stream Dialog */}
+       {streamToDelete && (
+         <DeleteStreamDialog
+           streamName={streamToDelete?.streamName}
+           onConfirm={() => handleDeleteStream(streamToDelete?.id)}
+           isDeleting={isDeletingStream && deletingStreamId === streamToDelete?.id}
+           isOpen={deleteDialogOpen}
+           onOpenChange={setDeleteDialogOpen}
+         />
+       )}
+     </div>
+   );
+ };

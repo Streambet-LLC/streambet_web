@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { StreamPlayer } from '@/components/StreamPlayer';
-import { CommentSection } from '@/components/CommentSection';
 import { AdminBettingRoundsCard } from './AdminBettingRoundsCard';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -534,12 +533,12 @@ useEffect(() => {
             </DialogContent>
           </Dialog>
           <div className="flex-1 min-h-0 flex flex-col h-full">
-            <div className="h-full w-full max-w-[320px]">
+            <div className="h-full w-full md:max-w-[320px]">
                <Chat
-                        sendMessageSocket={sendMessageSocket}
-                        newSocketMessage={messageList}
-                        session={session}
-                        streamId={streamId}/>
+                  sendMessageSocket={sendMessageSocket}
+                  newSocketMessage={messageList}
+                  session={session}
+                  streamId={streamId} />
             </div>
           </div>
         </div>

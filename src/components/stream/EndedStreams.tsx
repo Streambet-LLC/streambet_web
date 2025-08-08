@@ -5,34 +5,26 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '../ui/skeleton';
-import { useCurrencyContext } from '@/contexts/CurrencyContext';
-import { CurrencyType } from '@/enums';
 
-interface UpcomingStreamsProps {
-  upcomingStreams?: any;
+interface Stream {
+    id: string;
+    streamName: string;
+    thumbnailURL: string;
+    scheduledStartTime: string;
+    endTime: string;
+}
+interface EndedStreamsProps {
+  endedStreams?: Stream[];
   fetchMore?: () => void;
   hasMore?: boolean;
-  isLoading?: boolean; // Add loading prop
+  isLoading?: boolean;
 }
+    
 
 // Desktop Stream Item Component
-const DesktopStreamItem = ({ stream }: { stream: any }) => {
+const DesktopStreamItem = ({ stream }: { stream: Stream }) => {
   const navigate = useNavigate();
   const [imageLoading, setImageLoading] = useState(true);
-  const { currency } = useCurrencyContext();
-  const isStreamCoins = CurrencyType.STREAM_COINS === currency;
-
-  // Get total pot value based on currency type
-  const totalPotAmount = Number(isStreamCoins 
-    ? stream.totalBetsCoinAmount || 0 
-    : stream.totalBetsTokenAmount || 0);
-  const currencyLabel = isStreamCoins ? 'coins' : 'tokens';
-  
-  // Format number with comma separators for en-US locale
-  const formattedAmount = totalPotAmount.toLocaleString('en-US');
-  
-  // Get text color based on currency type (matching toggle label colors)
-  const textColor = isStreamCoins ? 'text-green-500' : 'text-[#B4FF39]';
 
   return (
     <TableRow className="h-[96px]">
@@ -76,19 +68,11 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
       {/* Second column: Time and Date */}
       <TableCell className="w-[160px] min-w-[160px] py-0">
         <div className="flex flex-col justify-center h-full gap-1">
-          <span className="font-normal text-[14px]" style={{ fontWeight: 400 }}>{formatTime(stream.scheduledStartTime)}</span>
-          <span className="font-normal text-[14px] text-[#FFFFFFBF]" style={{ fontWeight: 400 }}>{formatDate(stream.scheduledStartTime)}</span>
+          <span className="font-normal text-[14px]" style={{ fontWeight: 400 }}>{stream.endTime ? formatTime(stream.endTime) : ''}</span>
+          <span className="font-normal text-[14px] text-[#FFFFFFBF]" style={{ fontWeight: 400 }}>{stream.endTime ? formatDate(stream.endTime) : ''}</span>
         </div>
       </TableCell>
-      {/* Third column: Total Pot */}
-      <TableCell className="w-[140px] min-w-[140px] py-0">
-        <div className="flex flex-col justify-center h-full gap-1">
-          <span className={`font-bold text-[14px] ${textColor}`} style={{ fontWeight: 700 }}>
-            {formattedAmount} {currencyLabel}
-          </span>
-        </div>
-      </TableCell>
-      {/* Fourth column: Place Bet Button */}
+      {/* Third column: View Stream Button */}
       <TableCell className="w-[160px] min-w-[160px] py-0">
         <div className="flex items-center justify-center h-full">
           <Button
@@ -96,7 +80,7 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
             className="w-[142px] h-[44px] text-base font-medium"
             onClick={() => navigate(`/stream/${stream?.id}`)}
           >
-            Place bet
+            View stream
           </Button>
         </div>
       </TableCell>
@@ -108,20 +92,6 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
 const MobileStreamItem = ({ stream }: { stream: any }) => {
   const navigate = useNavigate();
   const [imageLoading, setImageLoading] = useState(true);
-  const { currency } = useCurrencyContext();
-  const isStreamCoins = CurrencyType.STREAM_COINS === currency;
-
-  // Get total pot value based on currency type
-  const totalPotAmount = isStreamCoins 
-    ? stream.totalBetsCoinAmount || 0 
-    : stream.totalBetsTokenAmount || 0;
-  const currencyLabel = isStreamCoins ? 'coins' : 'tokens';
-  
-  // Format number with comma separators for en-US locale
-  const formattedAmount = totalPotAmount.toLocaleString('en-US');
-  
-  // Get text color based on currency type (matching toggle label colors)
-  const textColor = isStreamCoins ? 'text-green-500' : 'text-[#B4FF39]';
 
   // Helper to truncate stream name for mobile
   const truncate = (str: string, n: number) => (str?.length > n ? str.slice(0, n - 1) + '…' : str);
@@ -153,42 +123,36 @@ const MobileStreamItem = ({ stream }: { stream: any }) => {
         </div>
         <div className="flex-1 flex flex-col">
           <span className="font-bold text-[15px] text-white leading-tight truncate">{truncate(stream.streamName, 25)}</span>
-          <span className="text-xs text-[#FFFFFFBF] mt-1">{formatDate(stream.scheduledStartTime)}</span>
-          <span className="text-xs text-white">{formatTime(stream.scheduledStartTime)}</span>
+          <span className="text-xs text-[#FFFFFFBF] mt-1">{stream.endTime ? formatDate(stream.endTime) : ''}</span>
+          <span className="text-xs text-white">{stream.endTime ? formatTime(stream.endTime) : ''}</span>
         </div>
-      </div>
-      {/* Total Pot for Mobile */}
-      <div className="flex justify-between items-center px-1">
-        <span className={`text-sm font-bold ${textColor}`}>
-          {formattedAmount} {currencyLabel}
-        </span>
       </div>
       <Button
         type="button"
         className="w-full h-[40px] text-base font-medium mt-2"
         onClick={() => navigate(`/stream/${stream?.id}`)}
       >
-        Place bet
+        View stream
       </Button>
     </div>
   );
 };
 
-export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading = false }: UpcomingStreamsProps) => {
+export const EndedStreams = ({ endedStreams, fetchMore, hasMore, isLoading = false }: EndedStreamsProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
  
   return (
     <div 
       ref={containerRef}
-      id="upcoming-streams-container"
+      id="ended-streams-container"
       className="mx-auto rounded-md border overflow-x-auto max-w-[950px] w-full max-h-[500px] overflow-y-auto"
     >
         <InfiniteScroll
-                  dataLength={upcomingStreams?.length || 0}
+                  dataLength={endedStreams?.length || 0}
                   next={fetchMore}
                   hasMore={hasMore}
                   loader={false}
-                  scrollableTarget="upcoming-streams-container"
+                  scrollableTarget="ended-streams-container"
                   style={{ overflow: 'visible' }}
                 >
       {/* Desktop Table Layout */}
@@ -213,9 +177,6 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
                       <Skeleton className="h-4 w-20" />
                     </div>
                   </TableCell>
-                  <TableCell className="w-[140px] min-w-[140px]">
-                      <Skeleton className="h-4 w-20" />
-                  </TableCell>
                   <TableCell className="w-[160px] min-w-[160px]">
                     <div className="flex items-center justify-center h-full">
                       <Skeleton className="h-10 w-32 rounded-lg" />
@@ -223,15 +184,15 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
                   </TableCell>
                 </TableRow>
               ))
-            ) : upcomingStreams?.length ? (
-              upcomingStreams?.map((stream: any) => (
+            ) : endedStreams?.length ? (
+              endedStreams?.map((stream: any) => (
                 <DesktopStreamItem key={stream?.id} stream={stream} />
               ))
             ) 
             : (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-0 text-muted-foreground">
-                  No stream(s) available to display
+                <TableCell colSpan={3} className="text-center py-0 text-muted-foreground">
+                  No ended streams available to display
                 </TableCell>
               </TableRow>
             )
@@ -254,23 +215,19 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
                     <Skeleton className="h-3 w-20" />
                   </div>
                 </div>
-                <div className="flex justify-between items-center px-1">
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-4 w-20" />
-                </div>
                 <Skeleton className="h-10 w-full rounded-lg" />
               </div>
             ))
-          ) : upcomingStreams?.length ? (
-            upcomingStreams?.map((stream: any) => (
+          ) : endedStreams?.length ? (
+            endedStreams?.map((stream: any) => (
               <MobileStreamItem key={stream?.id} stream={stream} />
             ))
           ) : (
-            <div className="text-center text-muted-foreground py-8 text-base">No stream(s) available to display</div>
+            <div className="text-center text-muted-foreground py-8 text-base">No ended streams available to display</div>
           )}
         </div>
       </div>
       </InfiniteScroll>
     </div>
   );
-};
+}; 

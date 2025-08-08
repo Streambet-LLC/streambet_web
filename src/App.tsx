@@ -11,7 +11,6 @@ import Admin from './pages/Admin';
 import Deposit from './pages/Deposit';
 import Withdraw from './pages/Withdraw';
 import Transactions from './pages/Transactions';
-import StreamSettings from './pages/StreamSettings';
 import Settings from './pages/Settings';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -27,6 +26,7 @@ import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionConte
 import { AuthProvider } from '@/contexts/AuthContext';
 import { BettingStatusProvider } from './contexts/BettingStatusContext';
 import { CurrencyType } from './enums';
+import { NavigationListener } from '@/components/NavigationListener';
 
 
 // Create a client
@@ -78,11 +78,11 @@ const App = () => {
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
+                  <NavigationListener />
                   {/* <WelcomeModal open={showWelcomeModal} onOpenChange={setShowWelcomeModal} /> */}
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/stream/:id" element={<Stream />} />
-                    <Route path="/stream/:id/settings" element={<StreamSettings />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<SignUp />} />
                     <Route path="/admin" element={<Admin />} />

@@ -210,7 +210,7 @@ export const StreamCard = ({
                 </div>
               )}
             </div>
-            <p className="font-semibold text-[#D7DFEF] text-[15px] mb-5">
+            <p className="font-semibold text-[#D7DFEF] text-[15px] mb-5 items-center h-10 ">
                 {stream.streamName}
             </p>
             <div className='!mb-3 !mt-5'>

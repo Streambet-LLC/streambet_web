@@ -1,6 +1,4 @@
-import { Navigation } from '@/components/Navigation';
 import { StreamCard } from '@/components/StreamCard';
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -9,20 +7,23 @@ import api from '@/integrations/api/client';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
 import { UpcomingStreams } from '@/components/stream/UpcomingStreams';
+import { EndedStreams } from '@/components/stream/EndedStreams';
 import { TabSwitch } from '@/components/navigation/TabSwitch';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { Footer } from '@/components/Footer';
+import { MainLayout } from '@/components/layout';
+import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
+import { StreamEventType } from '@/enums';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
   const [activeTab, setActiveTab] = useState('live');
   const isInitialLoad = useRef(true);
-
+  const { socketConnect } = useBettingStatusContext();
 
   // Store last page per tab
-  const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1 });
+  const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1, ended: 1 });
   const currentPage = tabPages[activeTab] || 1;
   const itemsPerPage = activeTab === 'live' ? 9 : 6;
 
@@ -32,6 +33,7 @@ const Index = () => {
   const tabs = [
     { key: 'live', label: 'Live' },
     { key: 'upcoming', label: 'Upcoming' },
+    { key: 'ended', label: 'Ended' },
   ];
 
   const isLive = activeTab === 'live';
@@ -54,8 +56,76 @@ const Index = () => {
     }
     return null;
     },
-    refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
+    // refetchInterval: 10000, // Refresh more frequently (every 10 seconds)
   });
+
+
+   const setupSocketEventListeners = (socketInstance: any) => {
+        if (!socketInstance) return;
+        socketInstance?.off('streamListUpdated');
+        socketInstance?.off('connect_error');
+  
+      // Handle disconnection events
+        socketInstance.on('streamListUpdated', (update: any) => {
+          console.log('streamListUpdated', update);
+
+          if (update?.event) {
+            switch (update.event) {
+              case StreamEventType.STREAM_CREATED:
+                 // call live and upcoming
+                refetchStreams();
+                setRangeUpcomingStart(0);
+                setUpcomingStreamData([]);
+                setHasMoreUpcoming(true);
+                fetchUpcomingMore();
+                break;
+              case StreamEventType.STREAM_UPDATED:
+                // call live and upcoming
+                refetchStreams();
+                setRangeUpcomingStart(0);
+                setUpcomingStreamData([]);
+                setHasMoreUpcoming(true);
+                fetchUpcomingMore();
+                break;
+              case StreamEventType.STREAM_ENDED:
+                // call live and ended
+                refetchStreams();
+                setRangeEndedStart(0);
+                setEndedStreamData([]);
+                setHasMoreEnded(true);
+                fetchEndedMore();
+                break;
+              case StreamEventType.STREAM_DELETED:
+                // Call upcoming
+                setRangeUpcomingStart(0);
+                setUpcomingStreamData([]);
+                setHasMoreUpcoming(true);
+                fetchUpcomingMore();
+
+                break;
+              default:
+                console.log('Unknown stream event:', update.event);
+            }
+          }
+        });
+    
+        socketInstance.on('connect_error', (error: any) => {
+          console.log('debug123=Socket connection error:', error);
+        });
+
+      };
+    
+      useEffect(() => {
+          if(socketConnect){
+            setupSocketEventListeners(socketConnect);
+          }
+        return () => {
+          if (socketConnect) {
+            socketConnect.off('streamListUpdated');
+            socketConnect.off('connect_error');
+          }
+        };
+      }, [socketConnect]);
 
   // State to hold the current streams data for display
   const [streamsData, setStreamsData] = useState<any>(undefined);
@@ -125,94 +195,33 @@ const Index = () => {
       };
     });
     setActiveTab(tabKey);
-  };
-
-  const updateThumbnails = async () => {
-    if (!streams || streams.data?.length === 0) return;
-
-    console.log('Updating thumbnails for active streams');
-
-    for (const stream of streams)
-    {
-      try
-      {
-        if (stream.is_live)
-        {
-          console.log('Updating thumbnail for live stream:', stream.id);
-
-          // Update Livepeer stream thumbnails
-          if (stream.platform === 'custom' && stream.livepeer_stream_id)
-          {
-            const { error } = await supabase.functions.invoke('update-thumbnail', {
-              body: { streamId: stream.id },
-            });
-
-            if (error)
-            {
-              console.error('Error updating thumbnail for stream:', stream.id, error);
-            }
-          }
-
-          // Update Kick stream thumbnails
-          if (stream.platform === 'kick' && stream.embed_url)
-          {
-            const { error } = await supabase.functions.invoke('capture-thumbnail', {
-              body: {
-                streamId: stream.id,
-                embedUrl: stream.embed_url,
-              },
-            });
-
-            if (error)
-            {
-              console.error('Error capturing Kick stream thumbnail:', error);
-            }
-          }
-        }
-      } catch (error)
-      {
-        console.error('Failed to update thumbnail for stream:', stream.id, error);
+    
+    // Reset infinite scroll data when switching tabs
+    if (tabKey === 'upcoming') {
+      console.log('Switching to upcoming tab, data length:', upcomingStreamData.length);
+      if (upcomingStreamData.length === 0) {
+        fetchUpcomingMore();
       }
     }
-
-    // Refetch streams to get updated thumbnail URLs
-    refetchStreams();
-  };
-
-  useEffect(() => {
-    // On first load, capture thumbnails
-    updateThumbnails();
-
-    // Set up regular refresh every 60 seconds
-    refreshInterval.current = setInterval(() => {
-      updateThumbnails();
-    }, 60000); // Every 60 seconds
-
-    return () => {
-      if (refreshInterval.current)
-      {
-        clearInterval(refreshInterval.current);
+    if (tabKey === 'ended') {
+      console.log('Switching to ended tab, data length:', endedStreamData.length);
+      if (endedStreamData.length === 0) {
+        fetchEndedMore();
       }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streams]);
-
-  useEffect(() => {
-    if (streams)
-    {
-      console.log('All streams with live status:');
-      streams.data?.forEach(stream => {
-        console.log(`${stream.id}: is_live=${stream.is_live}, title=${stream.title}`);
-      });
     }
-  }, [streams]);
-
+  };
 
 const [upcomingStreamData, setUpcomingStreamData] = useState([]);
 const [hasMoreUpcoming, setHasMoreUpcoming] = useState(true);
 const [rangeUpcomingStart, setRangeUpcomingStart] = useState(0);
 const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
 const loadingUpcomingRef = useRef(false);
+
+const [endedStreamData, setEndedStreamData] = useState([]);
+const [hasMoreEnded, setHasMoreEnded] = useState(true);
+const [rangeEndedStart, setRangeEndedStart] = useState(0);
+const [isLoadingEnded, setIsLoadingEnded] = useState(false);
+const loadingEndedRef = useRef(false);
 
 const fetchUpcomingMore = async () => {
   if (loadingUpcomingRef.current || !hasMoreUpcoming) return;
@@ -242,148 +251,180 @@ const fetchUpcomingMore = async () => {
   }
 };
 
+const fetchEndedMore = async () => {
+  if (loadingEndedRef.current || !hasMoreEnded) return;
+  loadingEndedRef.current = true;
+  setIsLoadingEnded(true);
+  try {
+    const response = await api.userStream.getStreams({
+      range: `[${rangeEndedStart},${6}]`,
+      sort: '["createdAt","DESC"]',
+      filter: JSON.stringify({ q: '' }),
+      pagination: true,
+      streamStatus: 'ended',
+    });
+
+    const newData = response?.data || [];
+    
+    if (newData?.length < 6) {
+      setHasMoreEnded(false); // No more data
+    }
+    setEndedStreamData((prev: any[] = []) => [...prev, ...newData]);
+    setRangeEndedStart(prev => prev + 6);
+  } catch (err) {
+    console.error('Failed to fetch ended streams:', err);
+    setHasMoreEnded(false);
+  } finally {
+    setIsLoadingEnded(false);
+    loadingEndedRef.current = false;
+  }
+};
+
 useEffect(() => {
   if (activeTab === 'upcoming' && upcomingStreamData.length === 0) {
     fetchUpcomingMore();
+  }
+  if (activeTab === 'ended' && endedStreamData.length === 0) {
+    fetchEndedMore();
   }
   // eslint-disable-next-line
 }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navigation />
+    <MainLayout>
+      <div className="space-y-8">
+        <div className="max-w-3xl mx-auto text-center space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold">
+            Bet on the internet's <br />
+            <span className="text-[#BDFF00]">randomest</span> moments
+          </h1>
+          <p className='text-[#FFFFFFBF]'>
+            Live betting for games created on the internet.
+            <br />
+              <span className='text-[#FFFFFFBF] font-bold'>Bet on the unexpected.</span>
+          </p>
+        </div>
 
-      <main className="container flex-1 pt-24 pb-8">
-        <div className="space-y-8">
-          <div className="max-w-3xl mx-auto text-center space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold">
-              Bet on the internet's <br />
-              <span className="text-[#BDFF00]">randomest</span> moments
-            </h1>
-            <p className='text-[#FFFFFFBF]'>
-              Live betting for games created on the internet.
-              <br />
-              Bet on the unexpected.
-            </p>
-          </div>
+        <TabSwitch
+          className='!justify-center !mt-12 !mb-14'
+          tabs={tabs}
+          activeTab={activeTab}
+          setActiveTab={handleTabSwitch} />
 
-          <TabSwitch
-            className='!justify-center !mt-12 !mb-14'
-            tabs={tabs}
-            activeTab={activeTab}
-            setActiveTab={handleTabSwitch} />
+        <div className="mt-16">
 
-          <div className="mt-16">
-
-            {(loader) ? (
-              isLive ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className="h-[320px] w-full" />
-                  ))}
-                </div>
-              ) : (
-                <div className="mx-auto rounded-md border overflow-x-auto max-w-[750px]">
-                  <Table className="bg-[#0D0D0D] min-w-[600px]">
-                    <TableBody>
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <TableRow key={i} className="h-[96px]">
-                          <TableCell className="w-[220px] min-w-[220px] py-0">
-                            <div className="flex items-center gap-0 h-[96px]">
-                              <Skeleton className="w-[115px] h-[72px] rounded-lg" />
-                              <div className="flex items-center justify-center h-full ml-2 w-full">
-                                <Skeleton className="h-4 w-24" />
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="w-[160px] min-w-[160px]">
-                            <div className="flex flex-col justify-center h-full gap-1">
-                              <Skeleton className="h-4 w-16 mb-2" />
-                              <Skeleton className="h-4 w-20" />
-                            </div>
-                          </TableCell>
-                          <TableCell className="w-[160px] min-w-[160px]">
-                            <div className="flex items-center justify-center h-full">
-                              <Skeleton className="h-10 w-32 rounded-lg" />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )
-            ) : isLive && (!streamsData || streamsData.data?.length === 0)  ? (
-              <Alert variant="default" className="bg-muted">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No Live Streams</AlertTitle>
-                <AlertDescription>
-                  Uh-oh! Looks like there aren't any streams happening right now. Check back later!
-                </AlertDescription>
-              </Alert>
-            ) 
-            // : 
-            // !isLive && (!streamsData || streamsData.data?.length === 0) ? (
-            //   <Alert variant="default" className="bg-muted">
-            //     <AlertCircle className="h-4 w-4" />
-            //     <AlertTitle>No Upcoming Streams</AlertTitle>
-            //     <AlertDescription>
-            //       No upcoming streams scheduled at the moment. Check back later!
-            //     </AlertDescription>
-            //   </Alert>
-             : isLive ? (
+          {(loader) ? (
+            isLive ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {streamsData && streamsData.data?.map(stream => (
-                  <StreamCard
-                    key={stream.id}
-                    stream={stream}
-                    isLive={isLive}
-                    isAdmin={session?.role === 'admin'}
-                    showAdminControls={false}
-                  />
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-[320px] w-full" />
                 ))}
               </div>
             ) : (
-              <div>
-              
-        <UpcomingStreams 
-         upcomingStreams={upcomingStreamData}
-         fetchMore={fetchUpcomingMore}
-         hasMore={hasMoreUpcoming}
-         isLoading={isLoadingUpcoming && upcomingStreamData.length === 0}
-        // streams={streamsData?.data} 
-        />
-              
+              <div className="mx-auto rounded-md border overflow-x-auto max-w-[750px]">
+                <Table className="bg-[#0D0D0D] min-w-[600px]">
+                  <TableBody>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <TableRow key={i} className="h-[96px]">
+                        <TableCell className="w-[220px] min-w-[220px] py-0">
+                          <div className="flex items-center gap-0 h-[96px]">
+                            <Skeleton className="w-[115px] h-[72px] rounded-lg" />
+                            <div className="flex items-center justify-center h-full ml-2 w-full">
+                              <Skeleton className="h-4 w-24" />
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="w-[160px] min-w-[160px]">
+                          <div className="flex flex-col justify-center h-full gap-1">
+                            <Skeleton className="h-4 w-16 mb-2" />
+                            <Skeleton className="h-4 w-20" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="w-[160px] min-w-[160px]">
+                          <div className="flex items-center justify-center h-full">
+                            <Skeleton className="h-10 w-32 rounded-lg" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            )}
-          </div>
-          {streamsData?.data?.length > 0 && isLive && <Pagination className='!justify-center'>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  className={cn(
-                    'text-white border-white hover:bg-white/10',
-                    currentPage === 1 && 'pointer-events-none opacity-50'
-                  )}
+            )
+          ) : isLive && (!streamsData || streamsData.data?.length === 0)  ? (
+            <Alert variant="default" className="bg-muted">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>No Live Streams</AlertTitle>
+              <AlertDescription>
+                Uh-oh! Looks like there aren't any streams happening right now. Check back later!
+              </AlertDescription>
+            </Alert>
+          ) 
+          // : 
+          // !isLive && (!streamsData || streamsData.data?.length === 0) ? (
+          //   <Alert variant="default" className="bg-muted">
+          //     <AlertCircle className="h-4 w-4" />
+          //     <AlertTitle>No Upcoming Streams</AlertTitle>
+          //     <AlertDescription>
+          //       No upcoming streams scheduled at the moment. Check back later!
+          //     </AlertDescription>
+          //   </Alert>
+           : isLive ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {streamsData && streamsData.data?.map(stream => (
+                <StreamCard
+                  key={stream.id}
+                  stream={stream}
+                  isLive={isLive}
+                  isAdmin={session?.role === 'admin'}
+                  showAdminControls={false}
                 />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  className={cn(
-                    'text-white border-white hover:bg-white/10',
-                    currentPage === totalPages && 'pointer-events-none opacity-50'
-                  )}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>}
+              ))}
+            </div>
+          ) : activeTab === 'upcoming' ? (
+            <div>
+              <UpcomingStreams 
+                upcomingStreams={upcomingStreamData}
+                fetchMore={fetchUpcomingMore}
+                hasMore={hasMoreUpcoming}
+                isLoading={isLoadingUpcoming && upcomingStreamData.length === 0}
+              />
+            </div>
+          ) : activeTab === 'ended' ? (
+            <div>
+              <EndedStreams 
+                endedStreams={endedStreamData}
+                fetchMore={fetchEndedMore}
+                hasMore={hasMoreEnded}
+                isLoading={isLoadingEnded && endedStreamData.length === 0}
+              />
+            </div>
+          ) : null}
         </div>
-      </main>
-
-      <Footer />
-    </div>
+        {streamsData?.data?.length > 0 && isLive && <Pagination className='!justify-center'>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => handlePageChange(currentPage - 1)}
+                className={cn(
+                  'text-white border-white hover:bg-white/10',
+                  currentPage === 1 && 'pointer-events-none opacity-50'
+                )}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => handlePageChange(currentPage + 1)}
+                className={cn(
+                  'text-white border-white hover:bg-white/10',
+                  currentPage === totalPages && 'pointer-events-none opacity-50'
+                )}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>}
+      </div>
+    </MainLayout>
   );
 };
 

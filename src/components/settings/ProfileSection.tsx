@@ -201,18 +201,14 @@ export const ProfileSection = ({
       }
 
       // Update profile with only the fields we want to keep
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          username: data.username,
-          state: data.state?.trim(),
-          profileImageUrl: profileImageUrlToSave,
-          // Set hidden fields to undefined
-          name: undefined,
-          city: undefined,
-        })
-        .eq('id', session?.id)
-        .execute();
+      const { error: updateError } = await api.user.updateProfile({
+        username: data.username,
+        state: data.state?.trim(),
+        profileImageUrl: profileImageUrlToSave,
+        // Set hidden fields to undefined
+        name: undefined,
+        city: undefined,
+      });
 
       if (updateError) throw updateError;
 
@@ -247,14 +243,10 @@ export const ProfileSection = ({
       if (!session) throw new Error('User not found');
 
       // Update profile password
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          currentPassword: data?.oldPassword,
-          newPassword: data?.newPassword,
-        })
-        .eq('id', session?.id)
-        .execute();
+      const { error: updateError } = await api.user.updateProfile({
+        currentPassword: data?.oldPassword,
+        newPassword: data?.newPassword,
+      });
 
       if (updateError) throw updateError;
 
@@ -500,6 +492,7 @@ export const ProfileSection = ({
                 ...base,
                 backgroundColor: '#272727',
                 color: 'white',
+                zIndex: 30, // Ensure dropdown is above the close (X) button
               }),
               option: (base, state) => ({
                 ...base,

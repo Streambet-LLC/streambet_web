@@ -1,10 +1,7 @@
 import { StreamPlayer } from '@/components/StreamPlayer';
-import { BettingInterface } from '@/components/BettingInterface';
-import { CommentSection } from '@/components/CommentSection';
-import { StreamDetails } from '@/components/stream/StreamDetails';
 import BetTokens from './BetTokens';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import LockTokens from './LockTokens';
 import { useEffect, useState, useRef } from 'react';
@@ -58,10 +55,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [messageList, setMessageList] = useState<any>();
   const queryClient = useQueryClient();
 
-
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
-
+  const isStreamEnded = stream?.status === StreamStatus.ENDED;
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
@@ -153,7 +149,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socketInstance.on('betPlaced', (update) => {
       console.log('betPlaced', update);
+      if(update?.bet?.userId === session?.id) {
       processPlacedBet(update);
+      }
     });
 
     socketInstance.on('betOpened', (update) => {
@@ -166,7 +164,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     });
 
     socketInstance.on('betCancelledByAdmin', (update) => {
-      console.log('betCancelledByAdmin', update);
       queryClient.prefetchQuery({ queryKey: ['session'] });
       toast({
         description:"Current betting round cancelled by admin.",
@@ -177,34 +174,35 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     });
 
     socketInstance.on('betCancelled', (update) => {
-      console.log('betCancelled', update);
-      queryClient.prefetchQuery({ queryKey: ['session'] });
-      setUpdatedSliderMax({
-        freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
-        streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
-      });
-      if (update?.message){
-      toast({
-        description:update?.message,
-        variant: 'default',
-      });
+      console.log(update,'betCancelled')
+       if(update?.bet?.userId === session?.id) {
+          queryClient.prefetchQuery({ queryKey: ['session'] });
+          setUpdatedSliderMax({
+            freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
+            streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
+          });
+          if (update?.message){
+          toast({
+            description:update?.message,
+            variant: 'default',
+          });
+        }
+          resetBetData();
     }
-      resetBetData();
     });
 
     socketInstance.on('betEdited', (update) => {
-      console.log('betEdited', update);
-      processPlacedBet(update);
+      console.log('betEdited',update)
+      if(update?.bet?.userId === session?.id) {
+        processPlacedBet(update);
+      }
     });
 
-    console.log('list to new mess')
     socketInstance.on('newMessage', (update) => {
-      console.log('newMessage', update);
       setMessageList(update)
     });
 
     socketInstance.on('streamEnded', (update) => {
-      console.log('streamEnded', update);
       toast({
         description:"Stream has ended.",
         variant: 'destructive',
@@ -218,7 +216,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('Socket disconnected:', reason);
       if (reason !== 'io client disconnect') {
         // Only attempt reconnection if it wasn't an intentional disconnect
-          // handleSocketReconnection();
         api.socket.joinStream(streamId, socketConnect);
       
       }
@@ -226,7 +223,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socketInstance.on('connect_error', (error: any) => {
       console.log('Socket connection error:', error);
-      //  handleSocketReconnection();
       api.socket.joinStream(streamId, socketConnect);
       setLoading(false);
      
@@ -252,7 +248,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
       api.socket.leaveStream(streamId, socketConnect);
 
-      // api.socket.disconnect();
       if (socketConnect) {
             socketConnect?.off('bettingUpdate');
             socketConnect?.off('potentialAmountUpdate');
@@ -266,7 +261,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             socketConnect?.off('betCancelled');
             socketConnect?.off('betCancelledByAdmin');
       }
-      // setSocket(null);
     },
   [])
 
@@ -402,8 +396,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
       <div className="lg:col-span-2 space-y-6 max-h-[100vh] h-full">
       <div className="relative">
-            {isStreamScheduled ? <div className="relative aspect-video rounded-lg overflow-hidden">
-              {/* Background thumbnail with low opacity */}
+            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video rounded-lg overflow-hidden">
               {isStreamScheduled && stream?.thumbnailUrl && (
                 <div 
                   className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -537,7 +530,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           </AnimatePresence>
 
         {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
-        {bettingData?.bettingRounds && bettingData.bettingRounds.length  ? (
+        {!isStreamEnded && bettingData?.bettingRounds && bettingData.bettingRounds.length  ? (
           placedBet ? (
             <BetTokens
               session={session}
@@ -594,10 +587,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         <div className="flex-1 h-full sticky top-24 md:max-w-[320px]">
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat
-          sendMessageSocket={sendMessageSocket}
-          newSocketMessage={messageList}
-          session={session}
-          streamId={streamId}
+            isDisabled={isStreamEnded}
+            sendMessageSocket={sendMessageSocket}
+            newSocketMessage={messageList}
+            session={session}
+            streamId={streamId}
          />
         </div>
         </div>

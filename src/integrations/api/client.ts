@@ -1,11 +1,10 @@
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 import { decodeIdToken } from '@/utils/helper';
+import { toast } from '@/hooks/use-toast';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-console.log(API_URL,'API_URL')
 
 // Create axios instance
 const apiClient = axios.create({
@@ -66,10 +65,15 @@ apiClient.interceptors.response.use(
       originalRequest.url.endsWith('/auth/refresh')
     )
     {
-      console.log('interceptor .use session timeout');
-      alert('Session has been expired! Please relogin');
+      toast({
+        id: 'session-expired',
+        title: 'Session Expired',
+        description: 'Session has been expired! Please relogin',
+        variant: 'destructive'
+      });
       await authAPI.signOut();
-      window.location.href = '/login';
+      // Dispatch custom event for navigation without page refresh
+      window.dispatchEvent(new CustomEvent('navigateToLogin'));
       return Promise.reject(error);
     }
 
@@ -112,20 +116,30 @@ apiClient.interceptors.response.use(
           }
         } catch (refreshError)
         {
-          // If refresh fails, show alert and logout
-          console.log('catch (refreshError) line 113');
-          alert('Session has been expired! Please relogin');
+          // If refresh fails, show toast and logout
+          toast({
+            id: 'session-expired',
+            title: 'Session Expired',
+            description: 'Session has been expired! Please relogin',
+            variant: 'destructive'
+          });
           await authAPI.signOut();
-          window.location.href = '/login';
+          // Dispatch custom event for navigation without page refresh
+          window.dispatchEvent(new CustomEvent('navigateToLogin'));
           return Promise.reject(refreshError);
         }
       } else
       {
-        // If already retried once, or no refreshToken, show alert and logout
-        console.log('else line 125');
-        alert('Session has been expired! Please relogin');
+        // If already retried once, or no refreshToken, show toast and logout
+        toast({
+          id: 'session-expired',
+          title: 'Session Expired',
+          description: 'Session has been expired! Please relogin',
+          variant: 'destructive'
+        });
         await authAPI.signOut();
-        window.location.href = '/login';
+        // Dispatch custom event for navigation without page refresh
+        window.dispatchEvent(new CustomEvent('navigateToLogin'));
         return Promise.reject(error);
       }
     }
@@ -251,9 +265,6 @@ export const authAPI = {
 
   // Handle OAuth
   googleAuth: async () => {
-    // const response = await apiClient.get('/auth/google');
-    // console.log('response', response?.data);
-    // return response.data;
     window.location.href = `${API_URL}/auth/google`;
   },
 
@@ -573,14 +584,6 @@ export const socketAPI = {
     }
   },
 
-  // Subscribe to betting updates
-  onBettingUpdate: (callback: (data: any) => void) => {
-    if (socket)
-    {
-      socket.on('bettingUpdate', callback);
-    }
-  },
-
   // Subscribe to chat messages
   onChatMessage: (callback: (data: any) => void) => {
     if (socket)
@@ -700,7 +703,7 @@ export const adminAPI = {
 
   // Delete stream
   deleteStream: async (streamId: string) => {
-    const response = await apiClient.delete(`/admin/streams/${streamId}`);
+    const response = await apiClient.delete(`/admin/stream/scheduled/delete/${streamId}`);
     return response.data;
   },
 

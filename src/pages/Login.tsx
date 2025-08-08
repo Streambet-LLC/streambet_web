@@ -18,6 +18,7 @@ import { getMessage } from '@/utils/helper';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { AuthLayout } from '@/components/layout';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email/Username is required'),
@@ -185,129 +186,104 @@ export default function Login() {
   };
 
   return (
-    <>
-      <div className="auth-bg-gradient" />
-      <div className="container flex justify-center min-h-screen pt-16 pb-8">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="w-full max-w-md"
-        >
-          <div className="mb-6">
-            <Link to="/">
-              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-6 w-[155px]" />
-            </Link>
-            <h1 className="text-3xl font-bold text-white text-left mb-4">Log in</h1>
-            <p className="text-[#FFFFFFBF] mt-2 text-left mb-4">
-              Welcome back! Please enter your details.
-            </p>
-          </div>
-          <motion.div variants={itemVariants}>
-            <Card className="bg-transparent border-0 p-0">
-              {renderLocationWarning()}
-              <form onSubmit={handleSubmit}>
-                <CardContent className="space-y-4 p-0">
-                  <motion.div variants={itemVariants} className="space-y-2">
-                    <Label htmlFor="email" className='pb-2'>Email or Username</Label>
-                    <Input
-                      id="email"
-                      placeholder="Enter your email or username"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      className={`bg-[#272727]/80 text-white placeholder:text-gray-400 ${errors.email ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 h-[44px]`}
-                    />
-                    {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="space-y-2">
-                    <Label htmlFor="password" className='pb-2'>Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder='Enter your password'
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className={`bg-[#272727]/80 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 h-[44px]`}
-                    />
-                    {errors.password && (
-                      <p className="text-destructive text-sm">{errors.password}</p>
-                    )}
-                  </motion.div>
-                  {/* Remember me and Forgot password link */}
-                  <div className="flex items-center justify-between pt-2 pb-2">
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="rememberMe"
-                        checked={rememberMe}
-                        onCheckedChange={checked => setRememberMe(!!checked)}
-                        className="appearance-none w-4 h-4 border-[1.5px] border-[#D0D5DD] rounded-sm bg-white checked:bg-white checked:border-[#D0D5DD] checked:before:content-['✔'] checked:before:text-black checked:before:text-[10px] checked:before:block checked:before:text-center mr-2"
-                      />
-                      <Label htmlFor="rememberMe" className="text-sm select-none font-medium text-white">
-                        Remember for 30 days
-                      </Label>
-                    </div>
-                    <Link to={redirectParam ? `/forgot-password?redirect=${redirectParam}` : "/forgot-password"} className="text-sm text-primary hover:underline">
-                      Forgot password
-                    </Link>
-                  </div>
-                  <motion.div variants={itemVariants}>
-                    <Button type="submit" className="w-full h-[44px]" disabled={loginMutation.isPending}>
-                      {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
-                    </Button>
-                  </motion.div>
-                  {/* <motion.div variants={itemVariants}>
-                    <Button
-                      type="button"
-                      className="w-full h-[44px] flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
-                      onClick={handleGoogleLogin}
-                      disabled={googleLoginMutation.isPending}
-                    >
-                      <span className="mr-2">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <g clipPath="url(#clip0_17_40)">
-                            <path d="M19.805 10.2305C19.805 9.55078 19.7484 8.90078 19.6484 8.27344H10.2V12.0563H15.6016C15.36 13.2813 14.6016 14.2938 13.5234 14.9938V17.2438H16.6016C18.3984 15.5938 19.805 13.1875 19.805 10.2305Z" fill="#4285F4"/>
-                            <path d="M10.2 20C12.7 20 14.7734 19.1688 16.6016 17.2438L13.5234 14.9938C12.5234 15.6688 11.2734 16.0813 10.2 16.0813C7.80156 16.0813 5.77344 14.4063 5.04844 12.2438H1.85156V14.5563C3.67031 17.7313 6.70156 20 10.2 20Z" fill="#34A853"/>
-                            <path d="M5.04844 12.2438C4.85156 11.6688 4.73594 11.0563 4.73594 10.4188C4.73594 9.78125 4.85156 9.16875 5.04844 8.59375V6.28125H1.85156C1.15625 7.55625 0.75 8.93125 0.75 10.4188C0.75 11.9063 1.15625 13.2813 1.85156 14.5563L5.04844 12.2438Z" fill="#FBBC05"/>
-                            <path d="M10.2 4.75625C11.3984 4.75625 12.4766 5.16875 13.3047 5.95625L16.6641 2.59375C14.7734 0.84375 12.7 0 10.2 0C6.70156 0 3.67031 2.26875 1.85156 5.44375L5.04844 7.75625C5.77344 5.59375 7.80156 4.75625 10.2 4.75625Z" fill="#EA4335"/>
-                          </g>
-                          <defs>
-                            <clipPath id="clip0_17_40">
-                              <rect width="19.0556" height="20" fill="white" transform="translate(0.75)"/>
-                            </clipPath>
-                          </defs>
-                        </svg>
-                      </span>
-                      Sign in with Google
-                    </Button>
-                  </motion.div> */}
-                </CardContent>
-              </form>
-              <CardFooter className="flex flex-col space-y-2">
-                <motion.div variants={itemVariants} className="text-center w-full mt-7">
-                  <p className="text-sm text-muted-foreground">
-                    Don't have an account?{' '}
-                    <Link to={redirectParam ? `/signup?redirect=${redirectParam}` : "/signup"} className="text-primary hover:underline">
-                      Sign up
-                    </Link>
-                  </p>
-                </motion.div>
-              </CardFooter>
-            </Card>
-          </motion.div>
-        </motion.div>
-      </div>
-      <div
-        style={{
-          position: 'fixed',
-          left: 20,
-          bottom: 20,
-          color: '#FFFFFF',
-          fontSize: '0.95rem',
-          zIndex: 10,
-        }}
+    <AuthLayout title="Log in" subtitle="Welcome back! Please enter your details.">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
       >
-        © Streambet 2025
-      </div>
-    </>
+        <motion.div variants={itemVariants}>
+          <Card className="bg-transparent border-0 p-0">
+            {renderLocationWarning()}
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4 p-0">
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label htmlFor="email" className='pb-2'>Email or Username</Label>
+                  <Input
+                    id="email"
+                    placeholder="Enter your email or username"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className={`bg-[#272727]/80 text-white placeholder:text-gray-400 ${errors.email ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 h-[44px]`}
+                  />
+                  {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label htmlFor="password" className='pb-2'>Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder='Enter your password'
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className={`bg-[#272727]/80 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 h-[44px]`}
+                  />
+                  {errors.password && (
+                    <p className="text-destructive text-sm">{errors.password}</p>
+                  )}
+                </motion.div>
+                {/* Remember me and Forgot password link */}
+                <div className="flex items-center justify-between pt-2 pb-2">
+                  <div className="flex items-center">
+                    <Checkbox
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onCheckedChange={checked => setRememberMe(!!checked)}
+                      className="appearance-none w-4 h-4 border-[1.5px] border-[#D0D5DD] rounded-sm bg-white checked:bg-white checked:border-[#D0D5DD] checked:before:content-['✔'] checked:before:text-black checked:before:text-[10px] checked:before:block checked:before:text-center mr-2"
+                    />
+                    <Label htmlFor="rememberMe" className="text-sm select-none font-medium text-white">
+                      Remember for 30 days
+                    </Label>
+                  </div>
+                  <Link to={redirectParam ? `/forgot-password?redirect=${redirectParam}` : "/forgot-password"} className="text-sm text-primary hover:underline">
+                    Forgot password
+                  </Link>
+                </div>
+                <motion.div variants={itemVariants}>
+                  <Button type="submit" className="w-full h-[44px]" disabled={loginMutation.isPending}>
+                    {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+                  </Button>
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <Button
+                    type="button"
+                    className="w-full h-[44px] flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
+                    onClick={handleGoogleLogin}
+                    disabled={googleLoginMutation.isPending}
+                  >
+                    <span className="mr-2">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clipPath="url(#clip0_17_40)">
+                          <path d="M19.805 10.2305C19.805 9.55078 19.7484 8.90078 19.6484 8.27344H10.2V12.0563H15.6016C15.36 13.2813 14.6016 14.2938 13.5234 14.9938V17.2438H16.6016C18.3984 15.5938 19.805 13.1875 19.805 10.2305Z" fill="#4285F4"/>
+                          <path d="M10.2 20C12.7 20 14.7734 19.1688 16.6016 17.2438L13.5234 14.9938C12.5234 15.6688 11.2734 16.0813 10.2 16.0813C7.80156 16.0813 5.77344 14.4063 5.04844 12.2438H1.85156V14.5563C3.67031 17.7313 6.70156 20 10.2 20Z" fill="#34A853"/>
+                          <path d="M5.04844 12.2438C4.85156 11.6688 4.73594 11.0563 4.73594 10.4188C4.73594 9.78125 4.85156 9.16875 5.04844 8.59375V6.28125H1.85156C1.15625 7.55625 0.75 8.93125 0.75 10.4188C0.75 11.9063 1.15625 13.2813 1.85156 14.5563L5.04844 12.2438Z" fill="#FBBC05"/>
+                          <path d="M10.2 4.75625C11.3984 4.75625 12.4766 5.16875 13.3047 5.95625L16.6641 2.59375C14.7734 0.84375 12.7 0 10.2 0C6.70156 0 3.67031 2.26875 1.85156 5.44375L5.04844 7.75625C5.77344 5.59375 7.80156 4.75625 10.2 4.75625Z" fill="#EA4335"/>
+                        </g>
+                        <defs>
+                          <clipPath id="clip0_17_40">
+                            <rect width="19.0556" height="20" fill="white" transform="translate(0.75)"/>
+                          </clipPath>
+                        </defs>
+                      </svg>
+                    </span>
+                    Sign in with Google
+                  </Button>
+                </motion.div>
+              </CardContent>
+            </form>
+            <CardFooter className="flex flex-col space-y-2">
+              <motion.div variants={itemVariants} className="text-center w-full mt-7">
+                <p className="text-sm text-muted-foreground">
+                  Don't have an account?{' '}
+                  <Link to={redirectParam ? `/signup?redirect=${redirectParam}` : "/signup"} className="text-primary hover:underline">
+                    Sign up
+                  </Link>
+                </p>
+              </motion.div>
+            </CardFooter>
+          </Card>
+        </motion.div>
+      </motion.div>
+    </AuthLayout>
   );
 }

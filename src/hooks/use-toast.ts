@@ -132,10 +132,24 @@ function dispatch(action: Action) {
   });
 }
 
-type Toast = Omit<ToasterToast, 'id'>;
+type Toast = Omit<ToasterToast, 'id'> & { id?: string };
 
-function toast({ ...props }: Toast) {
-  const id = genId();
+function toast({ id: customId, ...props }: Toast) {
+  const id = customId || genId();
+
+  // Check if a toast with this ID already exists to prevent duplicates
+  if (customId && memoryState.toasts.some(t => t.id === customId)) {
+    // Return existing toast's dismiss function without creating a new toast
+    return {
+      id: customId,
+      dismiss: () => dispatch({ type: 'DISMISS_TOAST', toastId: customId }),
+      update: (props: ToasterToast) =>
+        dispatch({
+          type: 'UPDATE_TOAST',
+          toast: { ...props, id: customId },
+        }),
+    };
+  }
 
   const update = (props: ToasterToast) =>
     dispatch({
