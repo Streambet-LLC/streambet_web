@@ -3,6 +3,7 @@ import { ChatInput } from './ChatInput';
 import { getImageLink } from '@/utils/helper';
 import api from '@/integrations/api/client';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import Bugsnag from '@bugsnag/js';
 
 interface Message {
   id: number;
@@ -70,7 +71,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
       setMessages(prev => [...newMessages.reverse(), ...prev]);
       setRangeStart(prev => prev + LIMIT);
     } catch (err) {
-      console.error('Failed to fetch messages:', err);
+      Bugsnag.notify(err); 
       setHasMore(false);
     }
   };

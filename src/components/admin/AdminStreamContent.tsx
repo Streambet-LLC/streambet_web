@@ -16,6 +16,7 @@ import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import Bugsnag from '@bugsnag/js';
 
 interface AdminStreamContentProps {
   streamId: string;
@@ -220,6 +221,7 @@ useEffect(() => {
       const streamData = await api.admin.getStream(streamId);
       setStreamInfo(streamData?.data || undefined);
     } catch (e) {
+      Bugsnag.notify(e); 
       setStreamInfo(undefined);
     }
   };
@@ -327,6 +329,7 @@ useEffect(() => {
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
       } catch (error) {
+        Bugsnag.notify(error); 
         toast({
           variant: 'destructive',
           title: 'Error uploading stream thumbnail',

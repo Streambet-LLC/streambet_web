@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getMessage } from '@/utils/helper';
 import { Loader2 } from 'lucide-react';
+import Bugsnag from '@bugsnag/js';
 
 const VerifyEmail: React.FC = () => {
   const location = useLocation();
@@ -43,6 +44,7 @@ const VerifyEmail: React.FC = () => {
         navigate(redirectParam ? `/login?redirect=${redirectParam}` : '/login');
       })
       .catch((err) => {
+        Bugsnag.notify(error);
         toast({ title: 'Verification failed', description: 'Invalid or expired token', variant: 'destructive' });
         setError(getMessage(err) || 'Invalid or expired token');
         setLoading(false);

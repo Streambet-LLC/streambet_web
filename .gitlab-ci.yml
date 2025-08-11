@@ -56,9 +56,13 @@ build:
 
     - export VITE_API_URL=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
     - export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_BUGSNAG_SERVER=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_BUGSNAG_SERVER" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_BUGSNAG_KEY=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_BUGSNAG_KEY" --with-decryption --query "Parameter.Value" --output text)
 
     - echo "VITE_API_URL=$VITE_API_URL"
     - echo "VITE_S3_BASE_URL=$VITE_S3_BASE_URL"
+    - echo "VITE_BUGSNAG_SERVER=$ VITE_BUGSNAG_SERVER"
+    - echo "VITE_BUGSNAG_KEY=$VITE_BUGSNAG_KEY"
 
     - VITE_API_URL=$VITE_API_URL VITE_S3_BASE_URL=$VITE_S3_BASE_URL npm ci && npm run build
   artifacts:

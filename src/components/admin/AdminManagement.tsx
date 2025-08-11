@@ -21,6 +21,7 @@ import { AdminStreamContent } from './AdminStreamContent';
 import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import Bugsnag from '@bugsnag/js';
 
 interface BettingOption {
   optionId?: string;
@@ -597,6 +598,7 @@ export const AdminManagement = ({
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
       } catch (error) {
+        Bugsnag.notify(error); 
         toast({
           variant: 'destructive',
           title: 'Error uploading stream thumbnail',

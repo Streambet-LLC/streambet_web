@@ -23,6 +23,8 @@
     }
   },
   "dependencies": {
+    "@bugsnag/js": "^8.4.0",
+    "@bugsnag/plugin-react": "^8.4.0",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@hookform/resolvers": "^3.9.0",

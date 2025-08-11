@@ -27,6 +27,7 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Select from 'react-select';
+import Bugsnag from '@bugsnag/js';
 
 const formSchema = z.object({
   name: z.string().optional(),
@@ -176,6 +177,7 @@ export const ProfileSection = ({
           const response = await api.auth.uploadImage(selectedAvatarFile);
           profileImageUrl = response?.data?.Key;
         } catch (error) {
+          Bugsnag.notify(error); 
           toast({
             variant: 'destructive',
             title: 'Error uploading profile picture',
@@ -227,6 +229,7 @@ export const ProfileSection = ({
         setAvatarPreviewUrl(undefined);
       }
     } catch (error: any) {
+      Bugsnag.notify(error); 
       toast({
         title: 'Error',
         description: getMessage(error),
@@ -256,6 +259,7 @@ export const ProfileSection = ({
       });
       setOpen(false);
     } catch (error: any) {
+      Bugsnag.notify(error); 
       toast({
         title: 'Error',
         description: getMessage(error),
