@@ -58,6 +58,11 @@ apiClient.interceptors.response.use(
   async error => {
     // Report error to Bugsnag
     Bugsnag.notify(error);
+   // Report unexpected errors to Bugsnag (exclude expected 401s which trigger refresh)-code rabbit suggestion
+   if (!(error?.response?.status === 401)) {
+      Bugsnag.notify(error instanceof Error ? error : new Error(String(error)));
+    }
+
     const originalRequest = error.config;
 
     // Prevent infinite loop: do not refresh for /auth/refresh itself

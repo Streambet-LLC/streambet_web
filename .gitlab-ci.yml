@@ -61,8 +61,7 @@ build:
 
     - echo "VITE_API_URL=$VITE_API_URL"
     - echo "VITE_S3_BASE_URL=$VITE_S3_BASE_URL"
-    - echo "VITE_BUGSNAG_SERVER=$ VITE_BUGSNAG_SERVER"
-    - echo "VITE_BUGSNAG_KEY=$VITE_BUGSNAG_KEY"
+
 
     - VITE_API_URL=$VITE_API_URL VITE_S3_BASE_URL=$VITE_S3_BASE_URL npm ci && npm run build
   artifacts:
