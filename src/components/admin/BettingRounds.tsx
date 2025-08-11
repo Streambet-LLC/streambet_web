@@ -463,13 +463,13 @@ export function validateRounds(rounds: BettingRound[]): ValidationError[] {
     }
   });
   rounds.forEach((round, roundIndex) => {
-    if (duplicateRoundNames.has(round.roundName.toLowerCase().trim())) {
-      errors.push({
-        type: 'round',
-        roundIndex,
-        message: 'Round name must be unique'
-      });
-    }
+    // if (duplicateRoundNames.has(round.roundName.toLowerCase().trim())) {
+    //   errors.push({
+    //     type: 'round',
+    //     roundIndex,
+    //     message: 'Round name must be unique'
+    //   });
+    // }
     // Check for duplicate option names within the same round
     const optionNames = round.options.map(option => option.option.toLowerCase().trim());
     const nameCounts = optionNames.reduce((acc, name) => {
