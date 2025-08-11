@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { getImageLink, getMessage } from '@/utils/helper';
-import { US_STATES, useDebounce } from '@/lib/utils';
+import { useDebounce } from '@/lib/utils';
 import api from '@/integrations/api/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Select from 'react-select';
 import Bugsnag from '@bugsnag/js';
+import { US_STATES } from '@/utils/constants';
 
 const formSchema = z.object({
   name: z.string().optional(),
