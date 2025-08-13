@@ -98,7 +98,7 @@ export const CoinFlowPurchaseComponent = ({
       <div className="w-full" style={{ height: '950px' }}>
         <CoinflowPurchase
           env="sandbox"
-          blockchain="eth"
+          blockchain="solana"
           email={session?.user?.email || ''}
           onSuccess={handleSuccess}
           merchantId={getMerchantId()}
