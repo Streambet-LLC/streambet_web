@@ -10,7 +10,7 @@ export const COINFLOW_CONFIG = {
   BLOCKCHAIN: 'solana',
   
   // Supported payment methods
-  SUPPORTED_PAYMENT_METHODS: ['card', 'bank'],
+  SUPPORTED_PAYMENT_METHODS: ['card', 'bank', 'googlePay', 'applePay'],
   
   // Theme settings
   THEME: 'dark',
