@@ -3,7 +3,7 @@ stages:
   - deploy
 
 default:
-  image: node:20
+  image: node:22-alpine
   cache:
     paths:
       - node_modules/
@@ -14,7 +14,7 @@ default:
 .setup_env: &setup_env
   before_script:
     - echo "Branch - $CI_COMMIT_REF_NAME"
-    - apt-get update && apt-get install -y curl jq python3 python3-pip
+    - apk add --no-cache curl jq python3 py3-pip
     - pip3 install awscli --break-system-packages
 
     # Determine AWS Account
