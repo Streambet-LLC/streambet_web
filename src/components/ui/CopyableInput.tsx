@@ -3,6 +3,7 @@ import { Input } from './input';
 import { Copy, Check } from 'lucide-react';
 import { toast } from './use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import Bugsnag from '@bugsnag/js';
 
 interface CopyableInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   value: string;
@@ -21,6 +22,7 @@ export const CopyableInput = React.forwardRef<HTMLInputElement, CopyableInputPro
         toast({ title: toastMessage });
         setTimeout(() => setCopied(false), 1500);
       } catch (error) {
+        Bugsnag.notify(error); 
         // Fallback for older browsers or mobile devices
         const textArea = document.createElement('textarea');
         textArea.value = value;
@@ -32,6 +34,7 @@ export const CopyableInput = React.forwardRef<HTMLInputElement, CopyableInputPro
           toast({ title: toastMessage });
           setTimeout(() => setCopied(false), 1500);
         } catch (err) {
+          Bugsnag.notify(err); 
           toast({ title: 'Failed to copy', variant: 'destructive' });
         }
         document.body.removeChild(textArea);

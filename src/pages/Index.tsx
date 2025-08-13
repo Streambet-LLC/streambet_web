@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { MainLayout } from '@/components/layout';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 import { StreamEventType } from '@/enums';
+import Bugsnag from '@bugsnag/js';
 
 const Index = () => {
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
@@ -243,7 +244,7 @@ const fetchUpcomingMore = async () => {
     setUpcomingStreamData((prev: any[] = []) => [...prev, ...newData]);
     setRangeUpcomingStart(prev => prev + 6);
   } catch (err) {
-    console.error('Failed to fetch messages:', err);
+   Bugsnag.notify(err); 
     setHasMoreUpcoming(false);
   } finally {
     setIsLoadingUpcoming(false);
@@ -272,6 +273,7 @@ const fetchEndedMore = async () => {
     setEndedStreamData((prev: any[] = []) => [...prev, ...newData]);
     setRangeEndedStart(prev => prev + 6);
   } catch (err) {
+    Bugsnag.notify(err); 
     console.error('Failed to fetch ended streams:', err);
     setHasMoreEnded(false);
   } finally {

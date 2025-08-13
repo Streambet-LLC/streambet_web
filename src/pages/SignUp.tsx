@@ -32,6 +32,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { AuthLayout } from '@/components/layout';
+import Bugsnag from '@bugsnag/js';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -183,6 +184,7 @@ export default function SignUp() {
             [fieldName]: error.errors[0].message,
           }));
         }
+         Bugsnag.notify(error); 
       }
     };
 
@@ -203,6 +205,7 @@ export default function SignUp() {
       setErrors({});
       return true;
     } catch (error) {
+       Bugsnag.notify(error); 
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
         error.errors.forEach(err => {
@@ -272,6 +275,7 @@ export default function SignUp() {
         profileImageUrl = response?.data?.Key;
         setIsUploading(false);
       } catch (error) {
+         Bugsnag.notify(error); 
         toast({
           variant: 'destructive',
           title: 'Error uploading profile picture',

@@ -27,6 +27,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { BettingStatusProvider } from './contexts/BettingStatusContext';
 import { CurrencyType } from './enums';
 import { NavigationListener } from '@/components/NavigationListener';
+import BugSnagErrorBoundary from './bugsnag';
 
 
 // Create a client
@@ -69,6 +70,7 @@ const App = () => {
   // }, []);
 
   return (
+    <BugSnagErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <LocationRestrictionProvider>
           <CurrencyProvider>
@@ -108,6 +110,7 @@ const App = () => {
           </CurrencyProvider>
       </LocationRestrictionProvider>
     </QueryClientProvider>
+    </BugSnagErrorBoundary>
   );
 };
 

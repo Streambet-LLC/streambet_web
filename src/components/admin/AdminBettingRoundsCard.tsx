@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
+import Bugsnag from '@bugsnag/js';
 
 // Helper for status priority
 const statusPriority = [
@@ -245,6 +246,7 @@ export const AdminBettingRoundsCard = ({
                                                                  refetchBetData();
                                                                  setSettingsOpen(false);
                                                             } catch (e) {
+                                                                 Bugsnag.notify(e); 
                                                                  toast({ title: 'Error', description: getMessage(e) || 'Failed to update bet', variant: 'destructive' });
                                                             }
                                                             setBettingSaveLoading(false);

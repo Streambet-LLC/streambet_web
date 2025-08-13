@@ -2,6 +2,7 @@ import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 import { decodeIdToken } from '@/utils/helper';
 import { toast } from '@/hooks/use-toast';
+import Bugsnag from '@bugsnag/js';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -55,6 +56,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   response => response,
   async error => {
+    // Report error to Bugsnag
+    Bugsnag.notify(error);
+   // Report unexpected errors to Bugsnag (exclude expected 401s which trigger refresh)-code rabbit suggestion
+   if (!(error?.response?.status === 401)) {
+      Bugsnag.notify(error instanceof Error ? error : new Error(String(error)));
+    }
+
     const originalRequest = error.config;
 
     // Prevent infinite loop: do not refresh for /auth/refresh itself
