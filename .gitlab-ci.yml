@@ -3,7 +3,7 @@ stages:
   - deploy
 
 default:
-  image: node:22-alpine
+  image: node:22
   cache:
     paths:
       - node_modules/
