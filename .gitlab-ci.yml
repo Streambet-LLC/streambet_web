@@ -3,7 +3,7 @@ stages:
   - deploy
 
 default:
-  image: node:20-bullseye
+  image: node:22-alpine
   cache:
     paths:
       - node_modules/
