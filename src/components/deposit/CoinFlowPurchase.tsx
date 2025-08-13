@@ -74,16 +74,10 @@ export const CoinFlowPurchaseComponent = ({
     console.log('Wallet address:', wallet?.address);
   }, [amount, isWalletReady, wallet]);
 
-  // Force re-render of CoinFlow when amount changes
-  useEffect(() => {
-    if (showCoinFlow && amount) {
-      console.log('Forcing CoinFlow re-render with new amount:', amount);
-    }
-  }, [amount, showCoinFlow]);
-
   const handleSuccess = async (data: any) => {
     try {
       console.log('data after payment success', data);
+      // { paymentId: "8cdaf1d4-de4a-45ec-96d3-d1c27f3a0e0a" } is the response
       toast({
         title: 'Payment Successful!',
         description: `Your deposit of $${amount} has been processed.`,
@@ -138,12 +132,15 @@ export const CoinFlowPurchaseComponent = ({
           onSuccess={handleSuccess}
           merchantId={getMerchantId()}
           wallet={wallet}
-          amount={Number(amount)}
+          subtotal={{
+            cents: Math.floor(parseFloat(amount) * 100),
+            currency: 'USD'
+          }}
           // Additional props that might be needed for proper initialization
           currency={getDefaultCurrency()}
           walletAddress={wallet.address}
           // Force re-render when amount changes
-          key={`coinflow-${amount}-${Date.now()}`}
+          key={`coinflow-${amount}`}
           onError={(error: any) => {
             console.error('CoinFlow error:', error);
             toast({
