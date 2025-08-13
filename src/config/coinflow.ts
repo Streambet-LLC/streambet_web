@@ -4,11 +4,10 @@ export const COINFLOW_CONFIG = {
   ENV: 'sandbox', // or 'production'
   
   // Credentials (provided by backend team)
-  MERCHANT_ID: 'sbtestaccount',
-  SECRET_KEY: 'coinflow_sandbox_008c12a1604e4bcc83733730715c95dd_95dee748645f43b2a910bf0288e144ec',
+  MERCHANT_ID: 'streambet',
   
   // Blockchain settings
-  BLOCKCHAIN: 'eth',
+  BLOCKCHAIN: 'solana',
   
   // Supported payment methods
   SUPPORTED_PAYMENT_METHODS: ['card', 'bank'],
