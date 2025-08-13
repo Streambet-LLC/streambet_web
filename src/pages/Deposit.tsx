@@ -27,19 +27,9 @@ const mockGetProfile = async (userId: string) => {
 const Deposit = () => {
   const [depositAmount, setDepositAmount] = useState('');
   const [isDepositProcessing, setIsDepositProcessing] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   const { session } = useAuthContext();
-
-  const { data: profile } = useQuery({
-    queryKey: ['profile', session?.user?.id],
-    enabled: !!session?.user?.id,
-    queryFn: async () => {
-      return await mockGetProfile(session!.user.id);
-    },
-  });
 
   // Redirect if not logged in
   if (!session) {

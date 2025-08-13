@@ -4,8 +4,7 @@
 
 The CoinFlow integration is now complete using the official CoinFlow React components with your provided credentials:
 
-- **Merchant ID:** `sbtestaccount`
-- **Secret Key:** `coinflow_sandbox_008c12a1604e4bcc83733730715c95dd_95dee748645f43b2a910bf0288e144ec`
+- **Merchant ID:** `streambet`
 - **Environment:** Sandbox
 
 ## 🧪 How to Test

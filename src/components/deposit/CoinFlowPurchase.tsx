@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
-import { getMerchantId } from '@/config/coinflow';
+import { getMerchantId, getCoinFlowEnv, getBlockchain, getDefaultCurrency } from '@/config/coinflow';
 import { useCoinFlowWallet } from '@/utils/coinflowWallet';
 
 interface CoinFlowPurchaseProps {
@@ -57,10 +57,33 @@ export const CoinFlowPurchaseComponent = ({
   const queryClient = useQueryClient();
   const { session } = useAuthContext();
   const [showCoinFlow, setShowCoinFlow] = useState(false);
+  const [isWalletReady, setIsWalletReady] = useState(false);
   const wallet = useCoinFlowWallet();
+
+  // Ensure wallet is ready before showing CoinFlow
+  useEffect(() => {
+    if (wallet && wallet.address) {
+      setIsWalletReady(true);
+    }
+  }, [wallet]);
+
+  // Debug logging when amount changes
+  useEffect(() => {
+    console.log('Amount changed:', amount);
+    console.log('Wallet ready:', isWalletReady);
+    console.log('Wallet address:', wallet?.address);
+  }, [amount, isWalletReady, wallet]);
+
+  // Force re-render of CoinFlow when amount changes
+  useEffect(() => {
+    if (showCoinFlow && amount) {
+      console.log('Forcing CoinFlow re-render with new amount:', amount);
+    }
+  }, [amount, showCoinFlow]);
 
   const handleSuccess = async (data: any) => {
     try {
+      console.log('data after payment success', data);
       toast({
         title: 'Payment Successful!',
         description: `Your deposit of $${amount} has been processed.`,
@@ -94,17 +117,33 @@ export const CoinFlowPurchaseComponent = ({
   };
 
   if (showCoinFlow) {
+    // Debug logging to help troubleshoot
+    console.log('CoinFlow props being passed:', {
+      env: getCoinFlowEnv(),
+      blockchain: getBlockchain(),
+      email: session?.user?.email || '',
+      merchantId: getMerchantId(),
+      wallet: wallet,
+      amount: Number(amount),
+      currency: getDefaultCurrency(),
+      walletAddress: wallet.address
+    });
+
     return (
       <div className="w-full" style={{ height: '950px' }}>
         <CoinflowPurchase
-          env="sandbox"
-          blockchain="solana"
+          env={getCoinFlowEnv()}
+          blockchain={getBlockchain()}
           email={session?.user?.email || ''}
           onSuccess={handleSuccess}
           merchantId={getMerchantId()}
           wallet={wallet}
-          // Add additional props that might be needed
           amount={Number(amount)}
+          // Additional props that might be needed for proper initialization
+          currency={getDefaultCurrency()}
+          walletAddress={wallet.address}
+          // Force re-render when amount changes
+          key={`coinflow-${amount}-${Date.now()}`}
           onError={(error: any) => {
             console.error('CoinFlow error:', error);
             toast({
@@ -112,6 +151,10 @@ export const CoinFlowPurchaseComponent = ({
               description: 'There was an error processing your payment. Please try again.',
               variant: 'destructive',
             });
+            onProcessingChange(false);
+            setShowCoinFlow(false);
+          }}
+          onClose={() => {
             onProcessingChange(false);
             setShowCoinFlow(false);
           }}
@@ -124,15 +167,15 @@ export const CoinFlowPurchaseComponent = ({
     <div className="w-full space-y-4">
       <Button
         onClick={handlePurchaseClick}
-        disabled={isProcessing || !amount || Number(amount) <= 0}
+        disabled={isProcessing || !amount || Number(amount) <= 0 || !isWalletReady}
         className="w-full"
         size="lg"
       >
-        Pay with CoinFlow - ${amount}
+        {!isWalletReady ? 'Initializing...' : `Pay with CoinFlow - $${amount}`}
       </Button>
       
       <div className="text-sm text-muted-foreground text-center">
-        Secure payment powered by CoinFlow
+        {!isWalletReady ? 'Preparing payment system...' : 'Secure payment powered by CoinFlow'}
       </div>
     </div>
   );

@@ -23,6 +23,11 @@ export const COINFLOW_CONFIG = {
   
   // Redirect settings
   REDIRECT_URL: '/deposit',
+  
+  // Additional CoinFlow specific settings
+  DEFAULT_CURRENCY: 'USD',
+  SUPPORTED_CURRENCIES: ['USD'],
+  SUPPORTED_BLOCKCHAINS: ['solana'],
 };
 
 // Helper function to get CoinFlow environment
@@ -38,4 +43,9 @@ export const getMerchantId = () => {
 // Helper function to get blockchain
 export const getBlockchain = () => {
   return COINFLOW_CONFIG.BLOCKCHAIN;
+};
+
+// Helper function to get default currency
+export const getDefaultCurrency = () => {
+  return COINFLOW_CONFIG.DEFAULT_CURRENCY;
 }; 
