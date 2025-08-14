@@ -577,6 +577,24 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               </div>
               <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
             </div>
+
+          //   <div className="flex gap-4 p-6 rounded-[16px] shadow-lg" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+
+          //   <div className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48">
+          //     <p className="text-white font-semibold text-lg">Round 1</p>
+          //     <div className="flex items-center gap-2 mt-2">
+          //       <img src="/icons/won.svg" alt="avatar" className="w-7 h-7 rounded-full"/>
+          //       <p className="text-white font-bold">MisterRough</p>
+          //       <span className="text-white text-sm font-medium">won $32,431.10</span>
+          //     </div>
+          //   </div>
+            
+          //   <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[rgba(189, 255, 0, 1)] shadow-[0_0_20px_#a3e635]">
+          //     <p className="text-white font-medium">Round 2 is coming up!</p>
+          //   </div>
+
+          // </div>
+
           )
         )}
 
@@ -585,6 +603,24 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
       <div className="lg:col-span-1 flex flex-col mb-5 h-full">
         <div className="flex-1 h-full sticky top-24 md:max-w-[320px]">
+             {/* <div className="border p-4 mb-3 border-zinc-700 rounded-[16px]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-3 h-3 bg-gray-300 rounded-full"></span>
+              <span className="text-sm text-gray-400">Epic Streamer</span>
+            </div>
+            <h2 className="text-lg font-semibold leading-tight pt-2 pb-2">
+              Playing Valorant All Day Stream MR BEAST 2025
+            </h2>
+
+            <p className="text-sm mt-1 leading-6 font-semibold" style={{ color: 'rgba(96, 96, 96, 1)' }}>
+              Playing Valorant All Day Stream MR BEAST 2025 today forever hahah come bet your coins and win BIG !!!!!
+            </p>
+
+            <div className="flex items-center gap-1 mt-3 text-sm">
+            <img src="/icons/person.svg" alt="coin" className="w-4 h-4" />
+              <span>30.2k watching</span>
+            </div>
+      </div> */}
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat
             isDisabled={isStreamEnded}
