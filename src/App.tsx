@@ -90,7 +90,7 @@ const App = () => {
                     <Route path="/signup" element={<SignUp />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/deposit" element={<Deposit />} />
-                     <Route path="/Purchase" element={<Purchase />} />
+                     <Route path="/purchase" element={<Purchase />} />
                     <Route path="/withdraw" element={<Withdraw />} />
                     <Route path="/transactions" element={<Transactions key='transactions' currencyType={CurrencyType.STREAM_COINS} />} />
                     <Route path="/betting-history" element={<Transactions key='betting' />} />
