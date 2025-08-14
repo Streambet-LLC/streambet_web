@@ -127,14 +127,19 @@ export const AdminStreamContent = ({
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
     // Socket reference
   const [socket, setSocket] = useState<any>(null);
+  const [bettingUpdate, setBettingUpdate] = useState<any>(null);
   const [messageList, setMessageList] = useState<any>();
   const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-
      // Function to setup socket event listeners
       const setupSocketEventListeners = (socketInstance: any) => {
         if (!socketInstance) return;
+
+        socketInstance.on('bettingUpdate', (update: any) => {
+        console.log('bettingUpdate', update);
+          setBettingUpdate(update);
+      });
     
         socketInstance.on('newMessage', (update) => {
           console.log('newMessage', update);
@@ -434,6 +439,8 @@ useEffect(() => {
             handleEndRound={handleEndRound}
             handleCancelRound={handleCancelRound}
             refetchBetData={refetchBetData}
+            streamInfo={streamInfo}
+            bettingUpdate={bettingUpdate}
           />
         </div>
         {/* Right: Chat and controls */}
