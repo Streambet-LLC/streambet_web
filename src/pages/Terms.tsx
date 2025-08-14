@@ -60,7 +60,7 @@ const Terms = () => {
                 content: (
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Minimum deposit amount is $2</li>
-                    <li>All transactions are processed through PayPal</li>
+                    <li>All transactions are processed through CoinFlow</li>
                     <li>Withdrawals are processed within 24 hours</li>
                     <li>We reserve the right to request verification documents</li>
                   </ul>

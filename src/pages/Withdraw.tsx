@@ -1,34 +1,72 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { Card } from '@/components/ui/card';
+import { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { AmountInput } from '@/components/deposit/AmountInput';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { CoinFlowWithdrawComponent } from '@/components/deposit/CoinFlowWithdraw';
 import { MainLayout } from '@/components/layout';
 
+// Mock API function to simulate profile data
+const mockGetProfile = async (userId: string) => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Return mock profile data
+  return {
+    id: userId,
+    email: 'user@example.com',
+    tos_accepted: true,
+    wallet_balance: 1000,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+};
+
 const Withdraw = () => {
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [isWithdrawProcessing, setIsWithdrawProcessing] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { isFetching, session } = useAuthContext();
+  const { session } = useAuthContext();
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile', session?.user?.id],
+    enabled: !!session?.user?.id,
+    queryFn: async () => {
+      return await mockGetProfile(session!.user.id);
+    },
+  });
 
   // Redirect if not logged in
-  useEffect(() => {
-    if (!isFetching && session === null) {
-      navigate('/login?redirect=/withdraw');
-    }
-  }, [isFetching, session, navigate]);
-
-  const handleSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['session'] });
-  };
-
-  if (!session) return null;
+  if (!session) {
+    navigate('/login');
+    return null;
+  }
 
   return (
     <MainLayout>
-      <div className="max-w-md mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Withdraw Funds</h1>
-        <span>Withdraw page</span>
-      </div>
+      <h1 className="text-3xl font-bold mb-8">Withdraw Funds</h1>
+
+      <Card className="max-w-2xl mx-auto p-6 space-y-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Withdraw Funds</h2>
+          <p className="text-muted-foreground">
+            Withdraw your funds using CoinFlow's secure withdrawal system.
+          </p>
+          
+          <AmountInput amount={withdrawAmount} onChange={setWithdrawAmount} disabled={isWithdrawProcessing} />
+          
+          <CoinFlowWithdrawComponent
+            amount={withdrawAmount}
+            isProcessing={isWithdrawProcessing}
+            onProcessingChange={setIsWithdrawProcessing}
+          />
+        </div>
+      </Card>
     </MainLayout>
   );
 };
