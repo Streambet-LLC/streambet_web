@@ -34,6 +34,14 @@ interface AdminStreamContentProps {
   handleBack: VoidFunction;
 }
 
+type BettingTotals = {
+  totalTokenBet?: number;
+  totalTokenAmount?: number;
+  totalCoinBet?: number;
+  totalCoinAmount?: number;
+};
+
+
 // Helper to parse YYYY-MM-DD as local date
 function parseLocalDate(dateStr) {
   if (!dateStr) return null;
@@ -127,7 +135,7 @@ export const AdminStreamContent = ({
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
     // Socket reference
   const [socket, setSocket] = useState<any>(null);
-  const [bettingUpdate, setBettingUpdate] = useState<any>(null);
+  const [bettingUpdate, setBettingUpdate] = useState<BettingTotals | null>(null);
   const [messageList, setMessageList] = useState<any>();
   const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);

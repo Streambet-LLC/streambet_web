@@ -59,6 +59,8 @@ function getActiveRoundIndex(betData) {
      return;
 }
 
+
+
 export const AdminBettingRoundsCard = ({
      isStreamScheduled,
      isStreamEnded,
@@ -381,7 +383,6 @@ export const AdminBettingRoundsCard = ({
                                                                       >
                                                                            Users are betting
                                                                       </div>
-
                                                                      <div className="flex items-center gap-3 mb-2">
                                                                            <div className=" items-center gap-1">
                                                                                 <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
@@ -392,9 +393,7 @@ export const AdminBettingRoundsCard = ({
                                                                                      <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
                                                                                      <span>{bettingUpdate ? bettingUpdate?.totalTokenAmount : streamInfo?.totalTokenAmount}</span>
                                                                                 </div>
-                                                                           
                                                                            </div>
-
                                                                            <div className=" items-center gap-2">
                                                                            <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
                                                                                 <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
@@ -406,8 +405,6 @@ export const AdminBettingRoundsCard = ({
                                                                            </div>
                                                                            </div>
                                                                       </div>
-
-                                                                      
                                                                       <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar px-2">
                                                                            {round.options.map((opt) => (
                                                                                 <span
