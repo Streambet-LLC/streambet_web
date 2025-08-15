@@ -74,5 +74,5 @@ const generateMockSolanaSignature = (): string => {
 // Hook to get CoinFlow wallet
 export const useCoinFlowWallet = (): CoinFlowWallet => {
   const { session } = useAuthContext();
-  return createCoinFlowWallet(session?.user?.id);
+  return createCoinFlowWallet(session?.id);
 }; 

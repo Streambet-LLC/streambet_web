@@ -128,7 +128,7 @@ export const CoinFlowPurchaseComponent = ({
         <CoinflowPurchase
           env={getCoinFlowEnv()}
           blockchain={getBlockchain()}
-          email={session?.user?.email || ''}
+          email={session?.email || ''}
           onSuccess={handleSuccess}
           merchantId={getMerchantId()}
           wallet={wallet}

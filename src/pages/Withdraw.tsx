@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui/card';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,9 @@ import { AmountInput } from '@/components/deposit/AmountInput';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { CoinFlowWithdrawComponent } from '@/components/deposit/CoinFlowWithdraw';
 import { MainLayout } from '@/components/layout';
+import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 
 // Mock API function to simulate profile data
 const mockGetProfile = async (userId: string) => {
@@ -27,9 +30,9 @@ const mockGetProfile = async (userId: string) => {
 const Withdraw = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isWithdrawProcessing, setIsWithdrawProcessing] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const endpoint = "https://api.devnet.solana.com"; // Sandbox/devnet endpoint
+  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
 
   const { session } = useAuthContext();
 
@@ -60,11 +63,17 @@ const Withdraw = () => {
           
           <AmountInput amount={withdrawAmount} onChange={setWithdrawAmount} disabled={isWithdrawProcessing} />
           
-          <CoinFlowWithdrawComponent
-            amount={withdrawAmount}
-            isProcessing={isWithdrawProcessing}
-            onProcessingChange={setIsWithdrawProcessing}
-          />
+          <ConnectionProvider endpoint={endpoint}>
+            <WalletProvider wallets={wallets} autoConnect>
+              <WalletModalProvider>
+                <CoinFlowWithdrawComponent
+                  amount={withdrawAmount}
+                  isProcessing={isWithdrawProcessing}
+                  onProcessingChange={setIsWithdrawProcessing}
+                />
+              </WalletModalProvider>
+            </WalletProvider>
+          </ConnectionProvider>
         </div>
       </Card>
     </MainLayout>

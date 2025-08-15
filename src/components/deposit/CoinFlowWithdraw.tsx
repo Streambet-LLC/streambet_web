@@ -1,140 +1,96 @@
-import { useToast } from '@/components/ui/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAuthContext } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
-import { getMerchantId } from '@/config/coinflow';
-import { useCoinFlowWallet } from '@/utils/coinflowWallet';
+import { useState, useEffect, useMemo } from "react";
+import { WalletModalButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
+import { CoinflowWithdraw } from "@coinflowlabs/react";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
-interface CoinFlowWithdrawProps {
-  amount: string;
-  isProcessing: boolean;
-  onProcessingChange: (processing: boolean) => void;
+// This will likely be moved to a config file
+function getMerchantId() {
+  // Example placeholder merchant ID - replace with your actual merchant ID
+  return "streambet"; // Or from your actual config
 }
 
-// Dynamic import to handle potential dependency issues
-const CoinflowWithdraw = ({ ...props }: any) => {
-  const [Component, setComponent] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    import('@coinflowlabs/react')
-      .then((module) => {
-        setComponent(() => module.CoinflowWithdraw);
-      })
-      .catch((err) => {
-        console.error('Failed to load CoinFlow component:', err);
-        setError('CoinFlow component failed to load');
-      });
-  }, []);
-
-  if (error) {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-red-500 mb-2">CoinFlow component unavailable</p>
-        <p className="text-sm text-gray-600">Please try again later or contact support.</p>
-      </div>
-    );
-  }
-
-  if (!Component) {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-gray-600">Loading CoinFlow component...</p>
-      </div>
-    );
-  }
-
-  return <Component {...props} />;
-};
-
-export const CoinFlowWithdrawComponent = ({ 
-  amount, 
-  isProcessing, 
-  onProcessingChange 
-}: CoinFlowWithdrawProps) => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { session } = useAuthContext();
+export const CoinFlowWithdrawComponent = ({ amount, isProcessing, onProcessingChange }) => {
   const [showCoinFlow, setShowCoinFlow] = useState(false);
-  const wallet = useCoinFlowWallet();
+  const wallet = useWallet();
+  const connection = useConnection();
+  const { session } = useAuthContext();
+  const { toast } = useToast();
 
-  const handleSuccess = async (data: any) => {
-    try {
-      toast({
-        title: 'Withdrawal Successful!',
-        description: `Your withdrawal of $${amount} has been processed.`,
-      });
-      
-      onProcessingChange(false);
-      setShowCoinFlow(false);
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-    } catch (error) {
-      console.error('Error processing withdrawal success:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to process withdrawal. Please contact support.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleWithdrawClick = () => {
-    if (!amount || Number(amount) <= 0) {
-      toast({
-        title: 'Invalid Amount',
-        description: 'Please enter a valid amount to proceed.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  // When "Withdraw with CoinFlow" is clicked
+  const startWithdrawal = () => {
     setShowCoinFlow(true);
-    onProcessingChange(true);
+    if (!wallet.connected) {
+      // Trigger Phantom connect if not already connected
+      // The WalletModalProvider will handle showing the modal
+      wallet.connect().catch(console.error);
+    }
   };
 
-  if (showCoinFlow) {
-    return (
-      <div className="w-full" style={{ height: '950px' }}>
-        <CoinflowWithdraw
-          env="sandbox"
-          blockchain="solana"
-          email={session?.user?.email || ''}
-          onSuccess={handleSuccess}
-          merchantId={getMerchantId()}
-          wallet={wallet}
-          // Add additional props that might be needed
-          amount={Number(amount)}
-          onError={(error: any) => {
-            console.error('CoinFlow error:', error);
-            toast({
-              title: 'Withdrawal Error',
-              description: 'There was an error processing your withdrawal. Please try again.',
-              variant: 'destructive',
-            });
-            onProcessingChange(false);
-            setShowCoinFlow(false);
-          }}
-        />
-      </div>
-    );
-  }
+  // If user just connected wallet, show Coinflow UI automatically
+  useEffect(() => {
+    if (wallet.connected && showCoinFlow) {
+      onProcessingChange(true);
+    }
+  }, [wallet.connected, showCoinFlow, onProcessingChange]);
+
+  const handleSuccess = (data: any) => { // Type data correctly
+    onProcessingChange(false);
+    setShowCoinFlow(false);
+    toast({
+      title: 'Withdrawal Successful!',
+      description: `Your withdrawal of $${amount} has been processed.`,
+    });
+    // Invalidate queries or update state as needed
+  };
 
   return (
-    <div className="w-full space-y-4">
-      <Button
-        onClick={handleWithdrawClick}
-        disabled={isProcessing || !amount || Number(amount) <= 0}
-        className="w-full"
-        size="lg"
-        variant="outline"
-      >
-        Withdraw with CoinFlow - ${amount}
-      </Button>
-      
-      <div className="text-sm text-muted-foreground text-center">
-        Secure withdrawal powered by CoinFlow
-      </div>
+    <div className="space-y-4">
+      {!showCoinFlow && (
+        <button
+          onClick={startWithdrawal}
+          disabled={!amount || Number(amount) <= 0 || isProcessing}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" // Use your actual button styles
+        >
+          Withdraw with CoinFlow
+        </button>
+      )}
+
+      {showCoinFlow && !!wallet.publicKey && (
+        <div className="w-full" style={{ height: "950px" }}>
+          {!wallet.connected && (
+            <div className="text-center space-y-2">
+              <WalletModalButton />
+              <p className="mt-2 text-sm text-gray-500">
+                Connect your wallet to proceed with withdrawal.
+              </p>
+            </div>
+          )}
+
+          {wallet.connected && (
+            <CoinflowWithdraw
+              env="sandbox"
+              blockchain="solana"
+              lockAmount
+              connection={connection.connection} // Use connection.connection to get the actual Connection object
+              email={session?.email || ""}
+              onSuccess={handleSuccess}
+              merchantId={getMerchantId()}
+              wallet={{
+                publicKey: wallet.publicKey,
+                signTransaction: wallet.signTransaction,
+                sendTransaction: (transaction: any) =>
+                  wallet.sendTransaction(
+                    transaction,
+                    connection.connection
+                  ),
+              }}
+              amount={Number(amount)}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
-}; 
+} 
