@@ -59,6 +59,8 @@ function getActiveRoundIndex(betData) {
      return;
 }
 
+
+
 export const AdminBettingRoundsCard = ({
      isStreamScheduled,
      isStreamEnded,
@@ -71,6 +73,8 @@ export const AdminBettingRoundsCard = ({
      handleCancelRound,
      editStreamId,
      refetchBetData,
+     streamInfo,
+     bettingUpdate
 }) => {
      const [carouselApi, setCarouselApi] = useState(null);
      const [settingsOpen, setSettingsOpen] = useState(false);
@@ -95,6 +99,10 @@ export const AdminBettingRoundsCard = ({
                options: r.options
           })) || []);
      }, [betData]);
+
+
+     console.log('bettingUpdate', bettingUpdate);
+
 
      // Find active round index
      const activeIdx = useMemo(() => getActiveRoundIndex(rounds), [rounds]);
@@ -133,6 +141,7 @@ export const AdminBettingRoundsCard = ({
           };
      };
 
+     console.log(streamInfo?.data?.totalCoinAmount,'streamInfo')
      // Responsive width for card
      const cardWidth = 'w-full';
 
@@ -303,7 +312,7 @@ export const AdminBettingRoundsCard = ({
                                                             width: slideWidth,
                                                             minWidth: slideWidth,
                                                             maxWidth: 280,
-                                                            height: 185,
+                                                            height: 250,
                                                             ...getBoxStyles(isActive, status),
                                                             flex: '0 0 auto',
                                                             overflow: 'hidden',
@@ -373,6 +382,28 @@ export const AdminBettingRoundsCard = ({
                                                                            style={{ fontFamily: 'FabioXM, Inter, sans-serif', fontWeight: 700 }}
                                                                       >
                                                                            Users are betting
+                                                                      </div>
+                                                                     <div className="flex items-center gap-3 mb-2">
+                                                                           <div className=" items-center gap-1">
+                                                                                <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
+                                                                                     <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
+                                                                                     <span>{bettingUpdate ? bettingUpdate?.totalTokenBet : streamInfo?.totalTokenBet} token bet</span>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
+                                                                                     <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
+                                                                                     <span>{bettingUpdate ? bettingUpdate?.totalTokenAmount : streamInfo?.totalTokenAmount}</span>
+                                                                                </div>
+                                                                           </div>
+                                                                           <div className=" items-center gap-2">
+                                                                           <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
+                                                                                <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
+                                                                                <span>{bettingUpdate ? bettingUpdate?.totalCoinBet : streamInfo?.totalCoinBet} coin bet</span>
+                                                                           </div>
+                                                                           <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
+                                                                                <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
+                                                                                <span>{bettingUpdate ? bettingUpdate?.totalCoinAmount :streamInfo?.totalCoinAmount}</span>
+                                                                           </div>
+                                                                           </div>
                                                                       </div>
                                                                       <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar px-2">
                                                                            {round.options.map((opt) => (

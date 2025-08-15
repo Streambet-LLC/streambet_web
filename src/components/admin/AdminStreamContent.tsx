@@ -34,6 +34,14 @@ interface AdminStreamContentProps {
   handleBack: VoidFunction;
 }
 
+type BettingTotals = {
+  totalTokenBet?: number;
+  totalTokenAmount?: number;
+  totalCoinBet?: number;
+  totalCoinAmount?: number;
+};
+
+
 // Helper to parse YYYY-MM-DD as local date
 function parseLocalDate(dateStr) {
   if (!dateStr) return null;
@@ -127,14 +135,19 @@ export const AdminStreamContent = ({
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
     // Socket reference
   const [socket, setSocket] = useState<any>(null);
+  const [bettingUpdate, setBettingUpdate] = useState<BettingTotals | null>(null);
   const [messageList, setMessageList] = useState<any>();
   const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-
      // Function to setup socket event listeners
       const setupSocketEventListeners = (socketInstance: any) => {
         if (!socketInstance) return;
+
+        socketInstance.on('bettingUpdate', (update: any) => {
+        console.log('bettingUpdate', update);
+          setBettingUpdate(update);
+      });
     
         socketInstance.on('newMessage', (update) => {
           console.log('newMessage', update);
@@ -434,6 +447,8 @@ useEffect(() => {
             handleEndRound={handleEndRound}
             handleCancelRound={handleCancelRound}
             refetchBetData={refetchBetData}
+            streamInfo={streamInfo}
+            bettingUpdate={bettingUpdate}
           />
         </div>
         {/* Right: Chat and controls */}
