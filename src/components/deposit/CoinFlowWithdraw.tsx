@@ -57,7 +57,7 @@ export const CoinFlowWithdrawComponent = ({ amount, isProcessing, onProcessingCh
         </button>
       )}
 
-      {showCoinFlow && !!wallet.publicKey && (
+      {showCoinFlow && (
         <div className="w-full" style={{ height: "950px" }}>
           {!wallet.connected && (
             <div className="text-center space-y-2">
