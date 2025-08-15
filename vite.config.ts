@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { componentTagger } from 'lovable-tagger';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -9,7 +10,20 @@ export default defineConfig(({ mode }) => ({
     host: '::',
     port: 8080,
   },
-  plugins: [react(), mode === 'development' && componentTagger()].filter(Boolean),
+  plugins: [
+    react(), 
+    mode === 'development' && componentTagger(),
+    nodePolyfills({
+      // Whether to polyfill `global`
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+      // Whether to polyfill specific globals
+      protocolImports: true,
+    }),
+  ].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -18,19 +32,11 @@ export default defineConfig(({ mode }) => ({
   define: {
     global: 'globalThis',
     'process.env': {},
+    'process.browser': true,
   },
   build: {
     rollupOptions: {
-      external: ['buffer'],
-      plugins: [
-        // @ts-ignore
-        // This plugin is specifically for handling Node.js built-ins in browser environments
-        // and it might need to be installed if not already present.
-        // For 'buffer', it often means a polyfill is needed.
-        // A common approach is to use 'rollup-plugin-node-polyfills' or similar,
-        // but for 'buffer' specifically, Vite's direct 'define' and 'resolve.alias' with 'buffer' polyfill can work.
-        // If this doesn't work, consider adding `rollup-plugin-node-polyfills` and configuring it.
-      ],
+      plugins: [],
     },
   },
   optimizeDeps: {
@@ -38,7 +44,15 @@ export default defineConfig(({ mode }) => ({
       "@solana/wallet-adapter-wallets",
       "@solana/wallet-adapter-phantom",
       "@solana/wallet-adapter-react",
-      "@solana/wallet-adapter-react-ui"
-    ]
+      "@solana/wallet-adapter-react-ui",
+      "buffer",
+      "process",
+    ],
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis'
+      }
+    }
   }
 }));
