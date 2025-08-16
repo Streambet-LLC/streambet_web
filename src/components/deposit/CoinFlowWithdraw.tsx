@@ -72,11 +72,12 @@ export const CoinFlowWithdrawComponent = ({ amount, isProcessing, onProcessingCh
             <CoinflowWithdraw
               env="sandbox"
               blockchain="solana"
-              lockAmount
+              // lockAmount
               connection={connection.connection} // Use connection.connection to get the actual Connection object
               email={session?.email || ""}
               onSuccess={handleSuccess}
               merchantId={getMerchantId()}
+              transactionSigner="BxrstB2XcoeubuBk8K5eiYjAdNrk5YDdbrbm74uNinAm"
               wallet={{
                 publicKey: wallet.publicKey,
                 signTransaction: wallet.signTransaction,
