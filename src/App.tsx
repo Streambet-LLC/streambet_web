@@ -28,7 +28,6 @@ import { BettingStatusProvider } from './contexts/BettingStatusContext';
 import { CurrencyType } from './enums';
 import { NavigationListener } from '@/components/NavigationListener';
 import BugSnagErrorBoundary from './bugsnag';
-import Purchase from './pages/Purchase';
 
 
 // Create a client
@@ -90,7 +89,6 @@ const App = () => {
                     <Route path="/signup" element={<SignUp />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/deposit" element={<Deposit />} />
-                     <Route path="/purchase" element={<Purchase />} />
                     <Route path="/withdraw" element={<Withdraw />} />
                     <Route path="/transactions" element={<Transactions key='transactions' currencyType={CurrencyType.STREAM_COINS} />} />
                     <Route path="/betting-history" element={<Transactions key='betting' />} />

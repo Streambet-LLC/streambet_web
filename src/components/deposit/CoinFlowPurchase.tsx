@@ -1,91 +1,61 @@
 import { useToast } from '@/components/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
-import { getMerchantId, getCoinFlowEnv, getBlockchain, getDefaultCurrency } from '@/config/coinflow';
-import { useCoinFlowWallet } from '@/utils/coinflowWallet';
+import { getMerchantId, getCoinFlowEnv, getBlockchain } from '@/config/coinflow';
+import { useNavigate } from 'react-router-dom';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useConnection } from '@solana/wallet-adapter-react';
+import { CoinflowEnvs, CoinflowPurchase, Currency, PaymentMethods } from "@coinflowlabs/react";
+import { Transaction, VersionedTransaction } from '@solana/web3.js';
+import { WalletModalButton } from '@solana/wallet-adapter-react-ui';
 
 interface CoinFlowPurchaseProps {
-  amount: string;
-  isProcessing: boolean;
-  onProcessingChange: (processing: boolean) => void;
-}
-
-// Dynamic import to handle potential dependency issues
-const CoinflowPurchase = ({ ...props }: any) => {
-  const [Component, setComponent] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    import('@coinflowlabs/react')
-      .then((module) => {
-        setComponent(() => module.CoinflowPurchase);
-      })
-      .catch((err) => {
-        console.error('Failed to load CoinFlow component:', err);
-        setError('CoinFlow component failed to load');
-      });
-  }, []);
-
-  if (error) {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-red-500 mb-2">CoinFlow component unavailable</p>
-        <p className="text-sm text-gray-600">Please try again later or contact support.</p>
-      </div>
-    );
-  }
-
-  if (!Component) {
-    return (
-      <div className="p-4 text-center">
-        <p className="text-gray-600">Loading CoinFlow component...</p>
-      </div>
-    );
-  }
-
-  return <Component {...props} />;
+  amount: number;
+  setDepositeAmount: (amount: number) => void;
 };
 
 export const CoinFlowPurchaseComponent = ({ 
-  amount, 
-  isProcessing, 
-  onProcessingChange 
+  amount,
+  setDepositeAmount,
 }: CoinFlowPurchaseProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { session } = useAuthContext();
   const [showCoinFlow, setShowCoinFlow] = useState(false);
-  const [isWalletReady, setIsWalletReady] = useState(false);
-  const wallet = useCoinFlowWallet();
+  const solanaWallet = useWallet();
+  const { connection } = useConnection();
+  const navigate = useNavigate();
 
-  // Ensure wallet is ready before showing CoinFlow
+  // Create a Coinflow-compatible wallet wrapper
+  const coinflowWallet = {
+    publicKey: solanaWallet.publicKey,
+    signTransaction: solanaWallet.signTransaction,
+    sendTransaction: async <T extends Transaction | VersionedTransaction>(transaction: T) => {
+      if (!solanaWallet.sendTransaction) {
+        throw new Error('Wallet does not support sending transactions');
+      }
+      return await solanaWallet.sendTransaction(transaction, connection);
+    },
+    signMessage: solanaWallet.signMessage
+  };
+
   useEffect(() => {
-    if (wallet && wallet.address) {
-      setIsWalletReady(true);
+    setShowCoinFlow(true);
+    if (amount > 0 && !solanaWallet.connected) {
+      solanaWallet.connect().catch(console.error);
     }
-  }, [wallet]);
-
-  // Debug logging when amount changes
-  useEffect(() => {
-    console.log('Amount changed:', amount);
-    console.log('Wallet ready:', isWalletReady);
-    console.log('Wallet address:', wallet?.address);
-  }, [amount, isWalletReady, wallet]);
+  }, [amount, solanaWallet])
 
   const handleSuccess = async (data: any) => {
     try {
-      console.log('data after payment success', data);
       // { paymentId: "8cdaf1d4-de4a-45ec-96d3-d1c27f3a0e0a" } is the response
       toast({
         title: 'Payment Successful!',
         description: `Your deposit of $${amount} has been processed.`,
       });
-      
-      onProcessingChange(false);
-      setShowCoinFlow(false);
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['session'] });
+      navigate('/');
     } catch (error) {
       console.error('Error processing payment success:', error);
       toast({
@@ -96,84 +66,81 @@ export const CoinFlowPurchaseComponent = ({
     }
   };
 
-  const handlePurchaseClick = () => {
-    if (!amount || Number(amount) <= 0) {
-      toast({
-        title: 'Invalid Amount',
-        description: 'Please enter a valid amount to proceed.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setShowCoinFlow(true);
-    onProcessingChange(true);
-  };
-
   if (showCoinFlow) {
-    // Debug logging to help troubleshoot
-    console.log('CoinFlow props being passed:', {
-      env: getCoinFlowEnv(),
-      blockchain: getBlockchain(),
-      email: session?.user?.email || '',
-      merchantId: getMerchantId(),
-      wallet: wallet,
-      amount: Number(amount),
-      currency: getDefaultCurrency(),
-      walletAddress: wallet.address
-    });
-
     return (
       <div className="w-full" style={{ height: '950px' }}>
-        <CoinflowPurchase
-          env={getCoinFlowEnv()}
-          blockchain={getBlockchain()}
+        {!solanaWallet.connected ? (
+            <div className="flex justify-center items-center flex-col text-center space-y-2">
+              <WalletModalButton />
+              <p className="mt-2 text-sm text-gray-500">
+                Connect your wallet to proceed with coin purchase.
+              </p>
+            </div>
+          ) : <CoinflowPurchase
+          wallet={coinflowWallet}
+          connection={connection}
+          env={getCoinFlowEnv() as CoinflowEnvs}
+          blockchain='solana'
           email={session?.email || ''}
           onSuccess={handleSuccess}
           merchantId={getMerchantId()}
-          wallet={wallet}
           subtotal={{
-            cents: Math.floor(parseFloat(amount) * 100),
-            currency: 'USD'
+            cents: Math.floor(amount * 100),
+            currency: Currency.USD
           }}
-          // Additional props that might be needed for proper initialization
-          currency={getDefaultCurrency()}
-          walletAddress={wallet.address}
           // Force re-render when amount changes
           key={`coinflow-${amount}`}
-          onError={(error: any) => {
-            console.error('CoinFlow error:', error);
-            toast({
-              title: 'Payment Error',
-              description: 'There was an error processing your payment. Please try again.',
-              variant: 'destructive',
-            });
-            onProcessingChange(false);
-            setShowCoinFlow(false);
-          }}
-          onClose={() => {
-            onProcessingChange(false);
-            setShowCoinFlow(false);
-          }}
-        />
+          allowedPaymentMethods={[PaymentMethods.card]}
+        />}
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-4">
-      <Button
-        onClick={handlePurchaseClick}
-        disabled={isProcessing || !amount || Number(amount) <= 0 || !isWalletReady}
-        className="w-full"
-        size="lg"
-      >
-        {!isWalletReady ? 'Initializing...' : `Pay with CoinFlow - $${amount}`}
-      </Button>
-      
-      <div className="text-sm text-muted-foreground text-center">
-        {!isWalletReady ? 'Preparing payment system...' : 'Secure payment powered by CoinFlow'}
+    <div className="w-full space-y-6">
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setDepositeAmount(0)}
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
+            aria-label="Go back"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-5 h-5"
+            >
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          <div className="flex-1" />
+        </div>
+        
+        <h3 className="text-xl font-semibold">Connect Your Wallet</h3>
+        <p className="text-muted-foreground">
+          To proceed with your purchase coins with ${amount}, please connect your wallet.
+        </p>
+        
+        <button
+          onClick={() => solanaWallet.connect().catch(console.error)}
+          disabled={solanaWallet.connecting}
+          className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {solanaWallet.connecting ? 'Connecting...' : 'Connect Wallet'}
+        </button>
+        
+        {solanaWallet.wallet && (
+          <p className="text-sm text-muted-foreground">
+            Selected: {solanaWallet.wallet.adapter.name}
+          </p>
+        )}
       </div>
     </div>
   );
-}; 
+};
