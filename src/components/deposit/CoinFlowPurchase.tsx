@@ -31,7 +31,7 @@ export const CoinFlowPurchaseComponent = ({
   const coinflowWallet = {
     publicKey: solanaWallet.publicKey,
     signTransaction: solanaWallet.signTransaction,
-    sendTransaction: async <T extends Transaction | VersionedTransaction>(transaction: T) => {
+    sendTransaction: async (transaction: Transaction | VersionedTransaction) => {
       if (!solanaWallet.sendTransaction) {
         throw new Error('Wallet does not support sending transactions');
       }
