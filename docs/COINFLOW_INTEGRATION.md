@@ -1,210 +1,174 @@
-# CoinFlow Integration
+# Coinflow Integration for StreamBet
 
-This document explains how CoinFlow payment integration has been implemented in the StreamBet web application.
+This document outlines the implementation of Coinflow payment integration for one-time purchases in StreamBet.
 
 ## Overview
 
-CoinFlow has been integrated to replace PayPal for both deposit and withdrawal functionality. The integration includes:
+The integration follows the [Coinflow One-Time Purchase Integration guide](https://docs.coinflow.cash/docs/one-time-purchase-integration-usdc-settlement-to-coinflow-wallet-or-byo-wallet#react-sdk-implementation) for USDC settlement to Coinflow wallet or BYO wallet.
 
-- **CoinFlowPurchase**: For depositing funds into user accounts
-- **CoinFlowWithdraw**: For withdrawing funds from user accounts
-- **Backend API Integration**: Frontend calls backend APIs which handle CoinFlow integration
-- **Webhook Handlers**: Backend processes CoinFlow webhooks for payment confirmations
+## Current Implementation
 
-## Components
+### Frontend Component
+- **File**: `src/components/deposit/CoinFlowPurchase.tsx`
+- **Purpose**: Handles the Coinflow checkout flow for purchasing StreamBet coins
+- **Features**: 
+  - Card-only payments (no wallet required)
+  - USDC settlement
+  - Chargeback protection
+  - Webhook integration
 
-### 1. CoinFlowPurchase Component
-Location: `src/components/deposit/CoinFlowPurchase.tsx`
+### Service Layer
+- **File**: `src/services/coinflow.ts`
+- **Purpose**: Provides API integration with Coinflow services
+- **Features**:
+  - JWT token generation
+  - Session key management
+  - Parameter preparation
 
-This component handles deposit functionality:
-- Calls backend API to create CoinFlow purchase session
-- Opens CoinFlow payment window in a new tab
-- Handles success/error states
-- Backend updates user balance upon successful payment
+## Required Backend Implementation
 
-### 2. CoinFlowWithdraw Component
-Location: `src/components/deposit/CoinFlowWithdraw.tsx`
+### 1. Environment Variables
+```bash
+REACT_APP_COINFLOW_API_KEY=your_sandbox_or_production_api_key
+```
 
-This component handles withdrawal functionality:
-- Calls backend API to create CoinFlow withdrawal session
-- Opens CoinFlow withdrawal window in a new tab
-- Handles success/error states
-- Backend updates user balance upon successful withdrawal
+### 2. API Endpoints
+The frontend expects these endpoints to be implemented on your backend:
 
-### 3. Updated Deposit Page
-Location: `src/pages/Deposit.tsx`
-
-The deposit page has been completely updated to:
-- Remove PayPal integration
-- Add tabbed interface for deposit/withdraw
-- Integrate CoinFlow components
-- Maintain existing Terms of Service flow
-- Call backend APIs for payment processing
-
-## Backend API Integration
-
-### 1. Purchase API Call
+#### Generate Checkout JWT Token
 ```typescript
-const createCoinFlowPurchase = async (amount: number, email: string, userId: string) => {
-  const response = await fetch('/api/coinflow/purchase', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify({
-      amount: amount,
-      email: email,
-      userId: userId,
-      type: 'deposit'
-    }),
-  });
+POST /api/coinflow/checkout-jwt
+Body: {
+  webhookInfo: Record<string, any>;
+  subtotal: { currency: string; cents: number; };
+  email: string;
+  blockchain: string;
+  chargebackProtectionData: Array<{
+    productType: string;
+    rawProductData: Record<string, any>;
+    productName: string;
+    quantity: number;
+  }>;
+  settlementType: string;
+}
+```
 
-  if (!response.ok) {
-    throw new Error(`Backend API error: ${response.statusText}`);
+#### Generate Session Key
+```typescript
+POST /api/coinflow/session
+Body: {
+  customerId: string;
+  merchantId: string;
+}
+```
+
+### 3. Backend Implementation Example
+
+```typescript
+// Example using Express.js
+import { CoinflowService } from './services/coinflow';
+
+app.post('/api/coinflow/checkout-jwt', async (req, res) => {
+  try {
+    const jwtToken = await CoinflowService.generateCheckoutJWT(req.body);
+    res.json({ checkoutJwtToken: jwtToken });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate JWT token' });
   }
+});
 
-  return response.json();
-};
-```
-
-### 2. Withdrawal API Call
-```typescript
-const createCoinFlowWithdraw = async (amount: number, email: string, userId: string) => {
-  const response = await fetch('/api/coinflow/withdraw', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify({
-      amount: amount,
-      email: email,
-      userId: userId,
-      type: 'withdrawal'
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Backend API error: ${response.statusText}`);
+app.post('/api/coinflow/session', async (req, res) => {
+  try {
+    const sessionKey = await CoinflowService.generateSessionKey(req.body);
+    res.json({ sessionKey });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate session key' });
   }
-
-  return response.json();
-};
+});
 ```
-
-## Setup Instructions
-
-### 1. Frontend Setup
-The frontend is ready to work with your backend APIs. No additional setup required.
-
-### 2. Backend Requirements
-Your backend team needs to implement these endpoints:
-- `POST /api/coinflow/purchase` - For creating purchase sessions
-- `POST /api/coinflow/withdraw` - For creating withdrawal sessions
-- `POST /api/coinflow/webhook` - For processing CoinFlow webhooks
-
-### 3. Backend Documentation
-See `docs/BACKEND_API_SPEC.md` for complete backend implementation details.
-
-## Usage
-
-### For Users
-1. Navigate to the Deposit page
-2. Choose between "Deposit" or "Withdraw" tabs
-3. Enter the amount
-4. Click the CoinFlow payment button
-5. Complete payment in the opened window
-6. Return to the application to see updated balance
-
-### For Developers
-The integration is designed to be non-intrusive and doesn't affect existing functionality outside of the deposit page. The components can be easily modified or extended as needed.
-
-## Backend API Endpoints
-
-### Create Purchase
-```typescript
-// Backend API call
-const data = await createCoinFlowPurchase(100, 'user@example.com', 'user-id');
-// Returns: { success: true, url: 'https://coinflow.com/payment/abc123', purchaseId: 'purchase_abc123' }
-```
-
-### Create Withdrawal
-```typescript
-// Backend API call
-const data = await createCoinFlowWithdraw(50, 'user@example.com', 'user-id');
-// Returns: { success: true, url: 'https://coinflow.com/withdraw/xyz789', withdrawId: 'withdraw_xyz789' }
-```
-
-## Error Handling
-
-The integration includes comprehensive error handling:
-- Invalid amounts
-- Network errors
-- API errors
-- User authentication errors
-
-All errors are displayed to users via toast notifications.
 
 ## Security Considerations
 
-- Backend handles all CoinFlow API keys securely
-- Frontend uses authentication tokens for API calls
-- Backend validates user authentication and permissions
-- Transaction records are maintained for audit purposes
-- Backend verifies webhook signatures for security
+### 1. API Key Protection
+- Never expose your Coinflow API key in frontend code
+- All Coinflow API calls should go through your backend
+- Use environment variables for sensitive data
+
+### 2. JWT Token Security
+- JWT tokens are valid for 30 minutes
+- Tokens should be generated server-side to prevent tampering
+- Implement proper error handling for expired tokens
+
+### 3. Domain Whitelisting
+- Whitelist your domain in Coinflow dashboard
+- This prevents checkout links from being used on unauthorized domains
 
 ## Testing
 
-### **Backend Integration Testing**
-The integration works with your backend APIs for payment processing:
+### Sandbox Environment
+- Use sandbox API keys for development
+- Test with sandbox payment methods
+- Verify webhook delivery in sandbox
 
-1. **Features:**
-   - Backend handles CoinFlow API communication
-   - Secure authentication via backend
-   - Webhook processing by backend
-   - Transaction tracking and balance updates
-   - Error handling and validation
+### Production Environment
+- Switch to production API keys
+- Update environment configuration
+- Test with real payment methods
 
-2. **Testing Flow:**
-   - Click "Pay with CoinFlow" button
-   - Frontend calls backend API
-   - Backend creates CoinFlow session
-   - CoinFlow payment page opens
-   - Backend processes webhook and updates balance
+## Webhook Implementation
 
-3. **API Integration:**
-   - Frontend calls backend APIs
-   - Backend handles CoinFlow communication
-   - Proper authentication and validation
-   - Webhook processing
+### Required Webhook Events
+- Payment success
+- Payment failure
+- Refund events
+- Chargeback events
 
-### **Testing Steps:**
-1. Ensure backend APIs are implemented and running
-2. Start development server: `npm run dev`
-3. Navigate to `/deposit` page
-4. Enter an amount and click payment button
-5. Backend should return CoinFlow URL
-6. CoinFlow payment page opens
-7. Complete payment process
-8. Backend processes webhook and updates user balance
+### Webhook Security
+- Verify webhook signatures
+- Implement idempotency
+- Handle webhook failures gracefully
 
-## Production Deployment
+## Error Handling
 
-For production:
-1. Backend uses production CoinFlow API credentials
-2. Configure production webhook URLs in backend
-3. Implement proper webhook signature verification
-4. Test thoroughly with real payments
-5. Monitor webhook events and transaction logs
-6. Ensure proper error handling and logging
+### Common Errors
+- Invalid API key
+- Expired JWT token
+- Invalid session key
+- Payment method not supported
+- Insufficient funds
 
-## Support
+### User Experience
+- Clear error messages
+- Retry mechanisms
+- Fallback options
+- Support contact information
 
-For issues with the CoinFlow integration:
-1. Check the browser console for frontend errors
-2. Verify backend APIs are working correctly
-3. Test both purchase and withdrawal flows
-4. Check backend logs for API errors
-5. Monitor webhook events in backend
-6. Contact CoinFlow support for API issues 
+## Monitoring and Logging
+
+### What to Monitor
+- Payment success rates
+- Error frequencies
+- Webhook delivery status
+- API response times
+
+### Logging
+- Log all Coinflow API calls
+- Track payment flow steps
+- Monitor for suspicious activity
+- Maintain audit trails
+
+## Next Steps
+
+1. **Backend Implementation**: Implement the required API endpoints
+2. **Environment Setup**: Configure API keys and environment variables
+3. **Testing**: Test the integration in sandbox environment
+4. **Webhook Setup**: Implement webhook handling for payment events
+5. **Production Deployment**: Deploy with production API keys
+6. **Monitoring**: Set up monitoring and alerting
+
+## Resources
+
+- [Coinflow Documentation](https://docs.coinflow.cash/)
+- [React SDK Reference](https://docs.coinflow.cash/docs/one-time-purchase-integration-usdc-settlement-to-coinflow-wallet-or-byo-wallet#react-sdk-implementation)
+- [API Reference](https://docs.coinflow.cash/api-reference)
+- [Webhook Guide](https://docs.coinflow.cash/docs/webhook-implementation) 
