@@ -603,24 +603,20 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
       <div className="lg:col-span-1 flex flex-col mb-5 h-full">
         <div className="flex-1 h-full sticky top-24 md:max-w-[320px]">
-             {/* <div className="border p-4 mb-3 border-zinc-700 rounded-[16px]">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-3 h-3 bg-gray-300 rounded-full"></span>
-              <span className="text-sm text-gray-400">Epic Streamer</span>
-            </div>
+          <div className="border p-4 mb-3 border-zinc-700 rounded-[16px]">
             <h2 className="text-lg font-semibold leading-tight pt-2 pb-2">
-              Playing Valorant All Day Stream MR BEAST 2025
+              {stream?.name}
             </h2>
 
             <p className="text-sm mt-1 leading-6 font-semibold" style={{ color: 'rgba(96, 96, 96, 1)' }}>
-              Playing Valorant All Day Stream MR BEAST 2025 today forever hahah come bet your coins and win BIG !!!!!
+              {stream?.description || `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.`}
             </p>
 
             <div className="flex items-center gap-1 mt-3 text-sm">
-            <img src="/icons/person.svg" alt="coin" className="w-4 h-4" />
-              <span>30.2k watching</span>
+              <img src="/icons/person.svg" alt="coin" className="w-4 h-4" />
+              <span>{stream?.viewersCount || 0} watching</span>
             </div>
-      </div> */}
+          </div>
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat
             isDisabled={isStreamEnded}

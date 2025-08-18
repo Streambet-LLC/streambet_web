@@ -508,6 +508,14 @@ export const bettingAPI = {
 export const userStreamAPI = {
   // Get all streams
   getStreams: async (params?: any) => {
+    const response = await apiClient.get(`/stream`, {
+      params
+    });
+    return response.data;
+  },
+
+  // Get all ended streams
+  getEndedStreams: async (params?: any) => {
     const response = await apiClient.get(`/stream/home`, {
       params
     });

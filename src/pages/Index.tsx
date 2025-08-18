@@ -18,26 +18,23 @@ import { StreamEventType } from '@/enums';
 import Bugsnag from '@bugsnag/js';
 
 const Index = () => {
-  const refreshInterval = useRef<NodeJS.Timeout | null>(null);
-  const [activeTab, setActiveTab] = useState('live');
-  const isInitialLoad = useRef(true);
+  const [activeTab, setActiveTab] = useState('streams');
   const { socketConnect } = useBettingStatusContext();
 
   // Store last page per tab
   const [tabPages, setTabPages] = useState<{ [key: string]: number }>({ live: 1, upcoming: 1, ended: 1 });
   const currentPage = tabPages[activeTab] || 1;
-  const itemsPerPage = activeTab === 'live' ? 9 : 6;
+  const itemsPerPage = activeTab === 'streams' ? 9 : 6;
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
   const rangeEnd = itemsPerPage;
 
   const tabs = [
-    { key: 'live', label: 'Live' },
-    { key: 'upcoming', label: 'Upcoming' },
-    { key: 'ended', label: 'Ended' },
+    { key: 'streams', label: 'Streams' },
+    { key: 'ended', label: 'Ended Streams' },
   ];
 
-  const isLive = activeTab === 'live';
+  const isStreams = activeTab === 'streams';
 
   const { session } = useAuthContext();
 
@@ -45,13 +42,12 @@ const Index = () => {
     queryKey: ['userStreams', activeTab, currentPage],
   
     queryFn: async () => {
-      if( activeTab === 'live') {
+      if(activeTab === 'streams') {
       const response = await api.userStream.getStreams({
         range: `[${rangeStart},${rangeEnd}]`,
-        sort:  '["createdAt","DESC"]' ,
+        sort:  '["scheduledStartTime","ASC"]' ,
         filter: JSON.stringify({ q: '' }),
         pagination: true,
-        streamStatus: 'live' ,
       });
       return response;
     }
@@ -102,7 +98,10 @@ const Index = () => {
                 setUpcomingStreamData([]);
                 setHasMoreUpcoming(true);
                 fetchUpcomingMore();
-
+                break;
+              case StreamEventType.STREAM_BET_UPDATED:
+                 // call live and upcoming
+                refetchStreams();
                 break;
               default:
                 console.log('Unknown stream event:', update.event);
@@ -141,23 +140,16 @@ const Index = () => {
 
   // Update streamsData when new data arrives
   useEffect(() => {
-    if (streams){
+    if (streams) {
       // Only update if the data is for the current tab
       setStreamsData(streams);
       setLoader(false);
     } 
-    else if (streams===null) {
+    else if (streams === null) {
       setLoader(false);
     }
     else if (isLoading) {
       setLoader(true);
-    }
-
-    if (!isLoading && !isFetching) {
-      if (isInitialLoad.current && (!streams || streams?.data?.length === 0)) {
-        setActiveTab('upcoming');
-      }
-      isInitialLoad.current = false;
     }
   }, [streams, isLoading, isFetching]);
 
@@ -257,7 +249,7 @@ const fetchEndedMore = async () => {
   loadingEndedRef.current = true;
   setIsLoadingEnded(true);
   try {
-    const response = await api.userStream.getStreams({
+    const response = await api.userStream.getEndedStreams({
       range: `[${rangeEndedStart},${6}]`,
       sort: '["createdAt","DESC"]',
       filter: JSON.stringify({ q: '' }),
@@ -316,7 +308,7 @@ useEffect(() => {
         <div className="mt-16">
 
           {(loader) ? (
-            isLive ? (
+            isStreams ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="h-[320px] w-full" />
@@ -353,7 +345,7 @@ useEffect(() => {
                 </Table>
               </div>
             )
-          ) : isLive && (!streamsData || streamsData.data?.length === 0)  ? (
+          ) : isStreams && (!streamsData || streamsData.data?.length === 0)  ? (
             <Alert variant="default" className="bg-muted">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>No Live Streams</AlertTitle>
@@ -361,23 +353,12 @@ useEffect(() => {
                 Uh-oh! Looks like there aren't any streams happening right now. Check back later!
               </AlertDescription>
             </Alert>
-          ) 
-          // : 
-          // !isLive && (!streamsData || streamsData.data?.length === 0) ? (
-          //   <Alert variant="default" className="bg-muted">
-          //     <AlertCircle className="h-4 w-4" />
-          //     <AlertTitle>No Upcoming Streams</AlertTitle>
-          //     <AlertDescription>
-          //       No upcoming streams scheduled at the moment. Check back later!
-          //     </AlertDescription>
-          //   </Alert>
-           : isLive ? (
+          ) : isStreams ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {streamsData && streamsData.data?.map(stream => (
                 <StreamCard
                   key={stream.id}
                   stream={stream}
-                  isLive={isLive}
                   isAdmin={session?.role === 'admin'}
                   showAdminControls={false}
                 />
@@ -403,7 +384,7 @@ useEffect(() => {
             </div>
           ) : null}
         </div>
-        {streamsData?.data?.length > 0 && isLive && <Pagination className='!justify-center'>
+        {streamsData?.data?.length > 0 && isStreams && <Pagination className='!justify-center'>
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious
