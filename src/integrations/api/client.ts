@@ -791,6 +791,15 @@ export const adminAPI = {
   },
 };
 
+// Payment API
+export const paymentAPI = {
+  // Get session key for purchase and withdraw
+  getSessionKey: async () => {
+    const response = await apiClient.get('/payments/coinflow/session-key');
+    return response.data;
+  },
+};
+
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,
@@ -800,6 +809,7 @@ export const api = {
   socket: socketAPI,
   admin: adminAPI,
   userStream: userStreamAPI,
+  payment: paymentAPI,
 };
 
 export default api;
