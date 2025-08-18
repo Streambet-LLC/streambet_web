@@ -43,4 +43,5 @@ export enum StreamEventType {
   STREAM_UPDATED = 'stream_updated',
   STREAM_ENDED = 'stream_ended',
   STREAM_DELETED = 'stream_deleted',
+  STREAM_BET_UPDATED = 'stream_bet_updated',
 };
