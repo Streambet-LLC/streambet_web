@@ -181,8 +181,8 @@ export default function BetTokens({
           Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
           <span className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
           {isStreamCoins
-            ? `Available Stream Coins: ${Number(session?.walletBalanceCoin).toLocaleString('en-US')}`
-            : `Available Tokens: ${Number(session?.walletBalanceToken).toLocaleString('en-US')}`
+            ? `Available Stream Coins: ${Number(session?.walletBalanceCoin || 0).toLocaleString('en-US')}`
+            : `Available Tokens: ${Number(session?.walletBalanceToken || 0).toLocaleString('en-US')}`
           }
             </span>
         </div>
