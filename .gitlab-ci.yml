@@ -58,9 +58,9 @@ build:
     - export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
     - export VITE_BUGSNAG_SERVER=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_BUGSNAG_SERVER" --with-decryption --query "Parameter.Value" --output text)
     - export VITE_BUGSNAG_KEY=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_BUGSNAG_KEY" --with-decryption --query "Parameter.Value" --output text)
-    - export VITE_COINFLOW_ENV==$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_COINFLOW_ENV" --with-decryption --query "Parameter.Value" --output text)
-    - export VITE_COINFLOW_MERCHANT_ID==$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_COINFLOW_MERCHANT_ID" --with-decryption --query "Parameter.Value" --output text)
-    - export VITE_COINFLOW_BLOCKCHAIN==$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_COINFLOW_BLOCKCHAIN" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_COINFLOW_ENV=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_COINFLOW_ENV" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_COINFLOW_MERCHANT_ID=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_COINFLOW_MERCHANT_ID" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_COINFLOW_BLOCKCHAIN=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_COINFLOW_BLOCKCHAIN" --with-decryption --query "Parameter.Value" --output text)
 
     - echo "VITE_BUGSNAG_SERVER=$VITE_BUGSNAG_SERVER"
     - echo "VITE_BUGSNAG_KEY=$VITE_BUGSNAG_KEY"
