@@ -407,6 +407,12 @@ export const walletAPI = {
     const response = await apiClient.post('/wallets/save-payment-method', params);
     return response.data;
   },
+
+  // Get coin packages
+  getCoinPackages: async () => {
+    const response = await apiClient.get('/coin-package');
+    return response.data;
+  },
 };
 
 // Betting API

@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 
@@ -15,6 +16,9 @@ export const MainLayout = ({
   showFooter = true,
   onDashboardClick 
 }: MainLayoutProps) => {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+  
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation onDashboardClick={onDashboardClick} />
@@ -23,7 +27,7 @@ export const MainLayout = ({
         {children}
       </main>
 
-      {showFooter && <Footer />}
+      {showFooter && isHomePage && <Footer />}
     </div>
   );
 }; 

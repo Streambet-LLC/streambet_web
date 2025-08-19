@@ -1,33 +1,18 @@
+import { PaymentMethods } from "@coinflowlabs/react";
+
 // CoinFlow Configuration
 export const COINFLOW_CONFIG = {
   // Environment
-  ENV: 'sandbox', // or 'production'
+  ENV: import.meta.env.VITE_COINFLOW_ENV,
   
   // Credentials (provided by backend team)
-  MERCHANT_ID: 'streambet',
+  MERCHANT_ID: import.meta.env.VITE_COINFLOW_MERCHANT_ID,
   
   // Blockchain settings
-  BLOCKCHAIN: 'solana',
+  BLOCKCHAIN: import.meta.env.VITE_COINFLOW_BLOCKCHAIN,
   
   // Supported payment methods
-  SUPPORTED_PAYMENT_METHODS: ['card', 'bank', 'googlePay', 'applePay'],
-  
-  // Theme settings
-  THEME: 'dark',
-  
-  // API endpoints (if needed)
-  API_BASE_URL: 'https://api-sandbox.coinflow.cash',
-  
-  // Webhook settings
-  WEBHOOK_URL: '/api/coinflow/webhook',
-  
-  // Redirect settings
-  REDIRECT_URL: '/deposit',
-  
-  // Additional CoinFlow specific settings
-  DEFAULT_CURRENCY: 'USD',
-  SUPPORTED_CURRENCIES: ['USD'],
-  SUPPORTED_BLOCKCHAINS: ['solana'],
+  SUPPORTED_PAYMENT_METHODS: [PaymentMethods.card],
 };
 
 // Helper function to get CoinFlow environment
@@ -45,7 +30,7 @@ export const getBlockchain = () => {
   return COINFLOW_CONFIG.BLOCKCHAIN;
 };
 
-// Helper function to get default currency
-export const getDefaultCurrency = () => {
-  return COINFLOW_CONFIG.DEFAULT_CURRENCY;
-}; 
+// Helper function to get supported payment methods
+export const getSupportedPaymentMethods = () => {
+  return COINFLOW_CONFIG.SUPPORTED_PAYMENT_METHODS;
+};

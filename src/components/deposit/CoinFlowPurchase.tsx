@@ -2,7 +2,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
-import { getMerchantId, getCoinFlowEnv } from '@/config/coinflow';
+import { getMerchantId, getCoinFlowEnv, getSupportedPaymentMethods } from '@/config/coinflow';
 import { useNavigate } from 'react-router-dom';
 import { CoinflowEnvs, CoinflowPurchase, Currency, SettlementType } from "@coinflowlabs/react";
 import api from '@/integrations/api/client';
@@ -106,6 +106,7 @@ export const CoinFlowPurchaseComponent = ({
           env={getCoinFlowEnv() as CoinflowEnvs}
           onSuccess={handleSuccess}
           settlementType={SettlementType.USDC}
+          allowedPaymentMethods={getSupportedPaymentMethods()}
           subtotal={{
             cents: Math.floor(amount * 100),
             currency: Currency.USD

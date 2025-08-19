@@ -7,7 +7,7 @@ Bugsnag.start({
     apiKey: `${import.meta.env.VITE_BUGSNAG_KEY}`,
     plugins: [new BugsnagPluginReact()],
     releaseStage: `${import.meta.env.VITE_BUGSNAG_SERVER}`,
-    enabledReleaseStages: ['Development','prod'],
+    enabledReleaseStages: ['prod'],
     appVersion: 'StreamBet',
 });
 
