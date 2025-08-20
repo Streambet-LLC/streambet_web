@@ -150,7 +150,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     socketInstance.on('betPlaced', (update) => {
       console.log('betPlaced', update);
       if(update?.bet?.userId === session?.id) {
-      processPlacedBet(update);
+        processPlacedBet(update);
       }
     });
 

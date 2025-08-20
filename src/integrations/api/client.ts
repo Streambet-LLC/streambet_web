@@ -63,6 +63,15 @@ apiClient.interceptors.response.use(
       Bugsnag.notify(error instanceof Error ? error : new Error(String(error)));
     }
 
+    if (error.response?.data?.message?.toLowerCase()?.includes('vpn/proxy')) {
+      toast({
+        id: 'vpn-proxy',
+        variant: 'destructive',
+        description: error.response?.data?.message,
+        duration: 7000,
+      });
+    }
+
     const originalRequest = error.config;
 
     // Prevent infinite loop: do not refresh for /auth/refresh itself
