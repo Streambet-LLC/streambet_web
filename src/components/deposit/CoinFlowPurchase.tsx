@@ -114,9 +114,9 @@ export const CoinFlowPurchaseComponent = ({
             currency: Currency.USD
           }}
           email={session?.email || ''}
-          // Force re-render when amount changes
           key={`coinflow-${amount}`}
           webhookInfo={{
+            user_id: session?.id,
             coin_package_id: packageId,
           }}
         />
