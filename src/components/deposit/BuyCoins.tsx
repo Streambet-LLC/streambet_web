@@ -4,7 +4,13 @@ import api from "@/integrations/api/client";
 import { getImageLink } from "@/utils/helper";
 import { useState } from "react";
 
-const BuyCoins = ({ setDepositAmount }: { setDepositAmount: (amount: number) => void }) => {
+const BuyCoins = ({ 
+  setDepositAmount,
+  setPackageId,
+ }: { 
+    setDepositAmount: (amount: number) => void,
+    setPackageId: (id: string) => void
+  }) => {
   const [imageLoadingStates, setImageLoadingStates] = useState<{ [key: number]: boolean }>({});
   const [imageErrorStates, setImageErrorStates] = useState<{ [key: number]: boolean }>({});
 
@@ -18,13 +24,6 @@ const BuyCoins = ({ setDepositAmount }: { setDepositAmount: (amount: number) => 
         return response?.data;
     },
   });
-
-  const coinOptions = [
-    { img: '/icons/coin1.svg', coins: 1000, amount: 20, promo: 'up to 32.32 stream cash' },
-    { img: '/icons/coin2.svg', coins: 5000, amount: 35, promo: 'up to 32.32 stream cash' },
-    { img: '/icons/coin3.svg', coins: 10000, amount: 55, promo: 'up to 32.32 stream cash' },
-    { img: '/icons/coin1.svg', coins: 25000, amount: 75, promo: 'up to 32.32 stream cash' },
-  ];
 
   const handleImageLoad = (index: number) => {
     setImageLoadingStates(prev => ({ ...prev, [index]: false }));
@@ -104,8 +103,11 @@ const BuyCoins = ({ setDepositAmount }: { setDepositAmount: (amount: number) => 
                   </div>
 
                   <button className="mt-2 bg-[#BDFF00] text-black font-semibold py-2 px-4 rounded-md w-full text-sm" 
-                    onClick={() => setDepositAmount(parseFloat(option.totalAmount || 0))}>
-                    Get started
+                    onClick={() => {
+                      setPackageId(option.id || '');
+                      setDepositAmount(parseFloat(option.totalAmount || 0));
+                    }}>
+                      Get started
                   </button>
                 </div>
               );

@@ -10,11 +10,13 @@ import { getMessage } from '@/utils/helper';
 
 interface CoinFlowPurchaseProps {
   amount: number;
+  packageId: string;
   setDepositeAmount: (amount: number) => void;
 };
 
 export const CoinFlowPurchaseComponent = ({
   amount,
+  packageId,
   setDepositeAmount,
 }: CoinFlowPurchaseProps) => {
   const { toast } = useToast();
@@ -114,6 +116,9 @@ export const CoinFlowPurchaseComponent = ({
           email={session?.email || ''}
           // Force re-render when amount changes
           key={`coinflow-${amount}`}
+          webhookInfo={{
+            coin_package_id: packageId,
+          }}
         />
       </div>
     </>
