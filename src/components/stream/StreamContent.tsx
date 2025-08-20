@@ -609,7 +609,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             </h2>
 
             <p className="text-sm mt-1 leading-6 font-semibold" style={{ color: 'rgba(96, 96, 96, 1)' }}>
-              {stream?.description || `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.`}
+              {stream?.description || '-NA-'}
             </p>
 
             <div className="flex items-center gap-1 mt-3 text-sm">
