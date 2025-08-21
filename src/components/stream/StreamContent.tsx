@@ -51,7 +51,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   // Track if last update came from socket then no need to execute getRoundData useEffect
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
-  const [isUserLooser, setIsUserLooser] = useState(false);
+  const [isUserLoser, setIsUserLoser] = useState(false);
   const [viewerCount, setViewerCount] = useState(null);
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
   const [messageList, setMessageList] = useState<any>();
@@ -149,12 +149,12 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       } else {
         setIsUserWinner(false);
       }
-      // Check if current session user is a looser
+      // Check if current session user is a loser
       if (Array.isArray(data?.losers) && session?.id) {
         const found = data.losers.some((l: any) => l.userId === session.id);
-        setIsUserLooser(found);
+        setIsUserLoser(found);
       } else {
-        setIsUserLooser(false);
+        setIsUserLoser(false);
       }
       // Hide the animation after 5 seconds
       setTimeout(() => {
@@ -546,7 +546,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               </motion.div>
               )} 
 
-              {showWinnerAnimation && isUserLooser && (
+              {showWinnerAnimation && isUserLoser && (
                 <motion.div
                   className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center overflow-hidden p-4"
                   initial={{ opacity: 0 }}
@@ -636,7 +636,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
             </div>
 
-            <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+            {/* <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
 
             <div className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0">
               <p className="text-white font-semibold text-lg">Round 1</p>
@@ -657,7 +657,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               <p className="text-white font-medium">Round 2 is coming up!</p>
             </div>
 
-          </div>
+          </div> */}
           </>
           )
         )}
