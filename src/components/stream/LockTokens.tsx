@@ -9,13 +9,13 @@ interface BettingVariable {
 interface BettingRound {
   id?: string;
   roundName?: string;
-  roundTotalBetsTokenAmount?: number;
+  roundTotalBetsGoldCoinAmount?: number;
   bettingVariables?: BettingVariable[];
 }
 
 interface BettingData {
   bettingRounds?: BettingRound[];
-  walletFreeToken?: number;
+  walletGoldCoin?: number;
 }
 
 interface getRoundData {

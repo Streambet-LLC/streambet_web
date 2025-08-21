@@ -124,8 +124,8 @@ export default function BetTokens({
 
    useEffect(() => {
       const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
-      setSliderMax(isSweepCoins ?  Number(bettingData?.walletSweepCoin) + Number(bettingData?.userBetSweepCoin)
-        :  Number(bettingData?.walletGoldCoin) + Number(bettingData?.userBetGoldCoins));
+      setSliderMax(isSweepCoins ?  Number(bettingData?.walletSweepCoin ?? 0) + Number(bettingData?.userBetSweepCoin ?? 0)
+        :  Number(bettingData?.walletGoldCoin ?? 0) + Number(bettingData?.userBetGoldCoins ?? 0));
       setSelectedColor(selectedWinner);
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
