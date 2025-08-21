@@ -51,6 +51,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   // Track if last update came from socket then no need to execute getRoundData useEffect
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
+  const [isUserLooser, setIsUserLooser] = useState(false);
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
   const [messageList, setMessageList] = useState<any>();
   const queryClient = useQueryClient();
@@ -116,7 +117,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     socketInstance.on('potentialAmountUpdate', (data) => {
       console.log('potentialAmountUpdate', data);
       const isSweepCoins = (updatedCurrency || currency) === CurrencyType.SWEEP_COINS;
-      setPotentialWinnings(isSweepCoins ? data?.potentialCoinWinningAmount : data?.potentialTokenWinningAmount);
+      setPotentialWinnings(isSweepCoins ? data?.potentialSweepCoinWinningAmount : data?.potentialGoldCoinWinningAmount);
     });
 
     socketInstance.on('bettingLocked', (data) => {
@@ -125,7 +126,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setLockedBet(data?.lockedStatus);
     });
 
-    socketInstance.on('winnerDeclared', (data) => { 
+    socketInstance.on('winnerDeclared', (data) => {
+      console.log('winner declared', data);
       toast({
         title: 'Round Closed',
         description: `${data?.winnerName} has selected as winning bet option!`,
@@ -140,6 +142,13 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         setIsUserWinner(found);
       } else {
         setIsUserWinner(false);
+      }
+      // Check if current session user is a looser
+      if (Array.isArray(data?.losers) && session?.id) {
+        const found = data.losers.some((l: any) => l.userId === session.id);
+        setIsUserLooser(found);
+      } else {
+        setIsUserLooser(false);
       }
       // Hide the animation after 5 seconds
       setTimeout(() => {
@@ -529,6 +538,45 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
                 </motion.div>
               </motion.div>
               )} 
+
+              {showWinnerAnimation && isUserLooser && (
+                <motion.div
+                  className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center overflow-hidden p-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {/* Subtle raining lines to suggest a loss (mobile-friendly) */}
+                  <motion.div className="absolute inset-0 pointer-events-none">
+                    {[...Array(12)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute w-[2px] h-6 sm:h-8 bg-blue-400/70 rounded-full"
+                        style={{ left: `${Math.random() * 100}%`, top: -20 }}
+                        initial={{ y: -50, opacity: 0 }}
+                        animate={{ y: '120%', opacity: [0, 1, 0.3, 0] }}
+                        transition={{ duration: 2 + (i % 4) * 0.2, repeat: Infinity, delay: i * 0.12, ease: 'easeIn' }}
+                      />
+                    ))}
+                  </motion.div>
+
+                  {/* Center message */}
+                  <motion.div
+                    className="relative z-10 bg-zinc-900/80 backdrop-blur text-white text-xl sm:text-2xl md:text-3xl font-bold px-6 py-4 sm:px-8 sm:py-5 rounded-xl shadow-xl border border-zinc-700"
+                    initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                  >
+                    <motion.div className='leading-[80px]'
+                      animate={{ x: [0, -4, 4, 0] }}
+                      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      This bet didn’t go your way 😕 <br />But the next one might be yours!
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+              )}
           </AnimatePresence>
 
         {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
@@ -623,7 +671,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
             <div className="flex items-center gap-1 mt-3 text-sm">
               <img src="/icons/person.svg" alt="coin" className="w-4 h-4" />
-              <span>{stream?.viewersCount || 0} watching</span>
+              <span>{stream?.viewerCount || 0} watching</span>
             </div>
           </div>
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
