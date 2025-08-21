@@ -52,6 +52,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
   const [isUserLooser, setIsUserLooser] = useState(false);
+  const [viewerCount, setViewerCount] = useState(null);
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
   const [messageList, setMessageList] = useState<any>();
   const queryClient = useQueryClient();
@@ -113,6 +114,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     // For all users
     socketInstance.on('bettingUpdate', handler);
+
+    socketInstance.on('viewerCountUpdate', (count) => { 
+      console.log('viewerCountUpdate', count);
+      setViewerCount(count);
+    });
     
     socketInstance.on('potentialAmountUpdate', (data) => {
       console.log('potentialAmountUpdate', data);
@@ -270,6 +276,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             socketConnect?.off('betOpened');
             socketConnect?.off('betCancelled');
             socketConnect?.off('betCancelledByAdmin');
+            socketConnect?.off('viewerCountUpdate');
       }
     },
   [])
@@ -671,7 +678,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
             <div className="flex items-center gap-1 mt-3 text-sm">
               <img src="/icons/person.svg" alt="coin" className="w-4 h-4" />
-              <span>{stream?.viewerCount || 0} watching</span>
+              <span>{viewerCount ?? (stream?.viewerCount || 0)} watching</span>
             </div>
           </div>
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
