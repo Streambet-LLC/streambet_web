@@ -47,3 +47,8 @@ export enum StreamEventType {
   STREAM_DELETED = 'stream_deleted',
   STREAM_BET_UPDATED = 'stream_bet_updated',
 };
+
+export enum HistoryType {
+  Transaction = 'transaction',
+  Bet = 'bet',
+};

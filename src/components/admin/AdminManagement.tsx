@@ -13,7 +13,6 @@ import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { formatDateTimeForISO, getImageLink, getMessage } from '@/utils/helper';
-import OverView from './OverView';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
@@ -1036,9 +1035,6 @@ export const AdminManagement = ({
             </div>
             <Separator className="!mt-1" />
             {/* Tab Content */}
-            {activeTab === 'overview' && (
-              <OverView />
-            )}
 
             {activeTab === 'livestreams' && (
               <div className="space-y-4">
