@@ -74,7 +74,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       // Handle purchase event
       socketInstance.on('purchaseSettled', (update: any) => {
         console.log('purchaseSettled', update);
-        queryClient.prefetchQuery({ queryKey: ['session'] });
+        queryClient.invalidateQueries({ queryKey: ['session'] });
           toast({
             id: 'purchase-completed',
             title: 'Purchase completed',

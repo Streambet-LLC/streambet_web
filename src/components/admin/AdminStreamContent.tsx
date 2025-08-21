@@ -145,7 +145,7 @@ export const AdminStreamContent = ({
         if (!socketInstance) return;
 
         socketInstance.on('bettingUpdate', (update: any) => {
-        console.log('bettingUpdate', update);
+        console.log('bettingUpdate admin', update);
           setBettingUpdate(update);
       });
     

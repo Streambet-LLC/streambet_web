@@ -277,7 +277,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   });
 
   useEffect(() => {
-    setTotalPot(currency === CurrencyType.SWEEP_COINS ? totalPotSweepCoins ?? (bettingData?.roundTotalBetsCoinAmount || 0) : totalPotGoldCoins ?? (bettingData?.roundTotalBetsTokenAmount || 0));
+    setTotalPot(currency === CurrencyType.SWEEP_COINS ? totalPotSweepCoins ?? (bettingData?.roundTotalBetsSweepCoinAmount || 0) : totalPotGoldCoins ?? (bettingData?.roundTotalBetsGoldCoinAmount || 0));
     setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED);
   },[bettingData, currency, totalPotSweepCoins, totalPotGoldCoins]);
 
@@ -553,6 +553,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             />
           ) : (
               <LockTokens
+              updatedCurrency={updatedCurrency}
               isStreamScheduled={isStreamScheduled}
               updatedBetId={betId}
               bettingData={bettingData}

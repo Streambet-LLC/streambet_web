@@ -123,7 +123,6 @@ export default function BetTokens({
 
 
    useEffect(() => {
-      console.log('betting data', bettingData);
       const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
       setSliderMax(isSweepCoins ?  Number(bettingData?.walletSweepCoin) + Number(bettingData?.userBetSweepCoin)
         :  Number(bettingData?.walletGoldCoin) + Number(bettingData?.userBetGoldCoins));

@@ -39,6 +39,7 @@ interface LockTokens {
   socket?: any; // Optional socket connection if needed
   lockedBet?: boolean; // Track if bet is locked
   isStreamScheduled?: boolean;
+  updatedCurrency: CurrencyType;
 }
 
 export default function LockTokens({ 
@@ -54,6 +55,7 @@ export default function LockTokens({
   handleBetEdit, 
   resetKey,
   isStreamScheduled,
+  updatedCurrency,
 }: LockTokens) {
   const [localBetAmount, setLocalBetAmount] = useState(selectedAmount || 0);
   const [localOption, setLocalOption] = useState(selectedWinner || "");
@@ -69,7 +71,7 @@ export default function LockTokens({
   }, [selectedAmount, selectedWinner]);
 
    const handleCancelBet = () => {
-    cancelBet({ betId: updatedBetId || getRoundData?.betId,currencyType: CurrencyType.GOLD_COINS });
+    cancelBet({ betId: updatedBetId || getRoundData?.betId, currencyType: updatedCurrency });
     };
 
   return (

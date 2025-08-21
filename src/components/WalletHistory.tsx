@@ -134,7 +134,6 @@ export const WalletHistory: React.FC<Props> = ({ currencyType }) => {
               <TableRow>
                 <TableHead className="text-left">Date</TableHead>
                 <TableHead className="text-left">Type</TableHead>
-                {/* <TableHead className="text-left">Stream Name</TableHead> */}
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
             </TableHeader>
@@ -150,7 +149,6 @@ export const WalletHistory: React.FC<Props> = ({ currencyType }) => {
                   <TableRow key={user.id}>
                     <TableCell className="text-left">{user?.createdat ? new Date(user.createdat).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</TableCell>
                     <TableCell className="text-left">{user?.type}</TableCell>
-                    {/* <TableCell className="text-left">{user?.type}</TableCell> */}
                     <TableCell className="text-right">
                       <span style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
                       {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.SWEEP_COINS ? ' Sweep Coin(s)' : ' Gold Coin(s)'}
