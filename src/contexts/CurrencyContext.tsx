@@ -9,7 +9,7 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
-  const [currency, setCurrency] = useState<CurrencyType>(CurrencyType.FREE_TOKENS);
+  const [currency, setCurrency] = useState<CurrencyType>(CurrencyType.GOLD_COINS);
 
   return (
     <CurrencyContext.Provider value={{ currency, setCurrency }}>

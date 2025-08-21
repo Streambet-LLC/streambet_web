@@ -72,7 +72,7 @@ export const WalletHistory: React.FC<Props> = ({ currencyType }) => {
   return (
     <div>
       <div className={`${isMobile ? 'block' : 'flex'}  items-center justify-between mb-8`}>
-        <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>{currencyType === CurrencyType.STREAM_COINS ? 'Transaction History' : 'Betting History'}</h1>
+        <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>{currencyType === CurrencyType.SWEEP_COINS ? 'Transaction History' : 'Betting History'}</h1>
         <div className={`relative rounded-md ${isMobile ? 'w-full' : 'ml-4'}`} style={{ border: '1px solid #2D343E', minWidth: isMobile ? undefined : 180 }}>
           <Input
             id="search-streams"
@@ -90,7 +90,7 @@ export const WalletHistory: React.FC<Props> = ({ currencyType }) => {
         <div className="space-y-4">
           {paginatedUsers?.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
-              {currencyType === CurrencyType.STREAM_COINS ? 'No transactions history found matching' : 'No betting history found matching'}
+              {currencyType === CurrencyType.SWEEP_COINS ? 'No transactions history found matching' : 'No betting history found matching'}
             </div>
           ) : (
             paginatedUsers?.map(user => (
@@ -116,7 +116,7 @@ export const WalletHistory: React.FC<Props> = ({ currencyType }) => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Amount</span>
                     <span className="text-sm" style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
-                      {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.STREAM_COINS ? ' Stream Coin(s)' : ' Free Token(s)'}
+                      {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.SWEEP_COINS ? ' Sweep Coin(s)' : ' Gold Coin(s)'}
                     </span>
                   </div>
 
@@ -142,7 +142,7 @@ export const WalletHistory: React.FC<Props> = ({ currencyType }) => {
               {paginatedUsers?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
-                    {currencyType === CurrencyType.STREAM_COINS ? 'No transactions history found matching' : 'No betting history found matching'}
+                    {currencyType === CurrencyType.SWEEP_COINS ? 'No transactions history found matching' : 'No betting history found matching'}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -153,7 +153,7 @@ export const WalletHistory: React.FC<Props> = ({ currencyType }) => {
                     {/* <TableCell className="text-left">{user?.type}</TableCell> */}
                     <TableCell className="text-right">
                       <span style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
-                      {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.STREAM_COINS ? ' Stream Coin(s)' : ' Free Token(s)'}
+                      {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.SWEEP_COINS ? ' Sweep Coin(s)' : ' Gold Coin(s)'}
                       </span>
                     </TableCell>
                   </TableRow>

@@ -11,29 +11,31 @@ interface BettingVariable {
 
 interface BettingRound {
   roundName?: string;
-  roundTotalBetsTokenAmount?: number;
+  roundTotalBetsGoldCoinAmount: number;
+  roundTotalBetsSweepCoinAmount: number;
   bettingVariables?: BettingVariable[];
   status?: BettingRoundStatus;
 }
 
 interface SliderMax {
-  freeTokens?: number;
-  streamCoins?: number;
+  goldCoins?: number;
+  sweepCoins?: number;
 }
 
 interface BettingData {
   bettingRounds?: BettingRound[];
-  walletFreeToken?: number;
-  walletCoin?: number;
-  roundTotalBetsTokenAmount:number
+  walletGoldCoin?: number;
+  walletSweepCoin?: number;
+  roundTotalBetsGoldCoinAmount: number;
+  roundTotalBetsSweepCoinAmount: number;
   status?: BettingRoundStatus;
-  userBetFreeTokens?: number;
-  userBetStreamCoins?: number;
+  userBetGoldCoins?: number;
+  userBetSweepCoin?: number;
 }
 
 interface getRoundData {
   betAmount?: number;
-  potentialFreeTokenAmt?: number;
+  potentialGoldCoinAmt?: number;
   optionName?: string;
 }
 
@@ -83,7 +85,7 @@ export default function BetTokens({
   const [isTabletRange, setIsTabletRange] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
-  const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+  const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   // Check for tablet range (773px to 1024px)
   useEffect(() => {
@@ -121,15 +123,12 @@ export default function BetTokens({
 
 
    useEffect(() => {
-    // if (getRoundData) {
-      const isStreamCoins = currency === CurrencyType.STREAM_COINS;
-      // setSliderMax(isStreamCoins ? updatedSliderMax?.streamCoins ?? bettingData?.walletCoin 
-      //   : updatedSliderMax?.freeTokens ?? bettingData?.walletFreeToken);
-         setSliderMax(isStreamCoins ?  Number(bettingData?.walletCoin) + Number(bettingData?.userBetStreamCoins)
-        :  Number(bettingData?.walletFreeToken) + Number(bettingData?.userBetFreeTokens));
+      console.log('betting data', bettingData);
+      const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
+      setSliderMax(isSweepCoins ?  Number(bettingData?.walletSweepCoin) + Number(bettingData?.userBetSweepCoin)
+        :  Number(bettingData?.walletGoldCoin) + Number(bettingData?.userBetGoldCoins));
       setSelectedColor(selectedWinner);
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
-    // }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData]);
 
@@ -178,18 +177,18 @@ export default function BetTokens({
     >
       <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
         <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
-          Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
+          Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}
           <span className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
-          {isStreamCoins
-            ? `Available Stream Coins: ${Number(session?.walletBalanceCoin || 0).toLocaleString('en-US')}`
-            : `Available Tokens: ${Number(session?.walletBalanceToken || 0).toLocaleString('en-US')}`
+          {isSweepCoins
+            ? `Available Sweep Coins: ${Number(session?.walletBalanceSweepCoin || 0).toLocaleString('en-US')}`
+            : `Available Gold Coins: ${Number(session?.walletBalanceGoldCoin || 0).toLocaleString('en-US')}`
           }
             </span>
         </div>
         
         <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-            Total Pot: {`${totalPot} ${isStreamCoins ? ' Stream Coins' : ' Free Tokens'}`}
+            Total Pot: {`${totalPot} ${isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}`}
             </span>
         </div>
        
@@ -215,7 +214,7 @@ export default function BetTokens({
             if (Number(sliderMax) === 0) {
               toast({
                 variant: 'destructive',
-                description: 'No Tokens available to bet',
+                description: 'No coins available to bet',
               });
             }
             if (lockedOptions) {

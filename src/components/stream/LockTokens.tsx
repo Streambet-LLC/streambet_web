@@ -20,7 +20,7 @@ interface BettingData {
 
 interface getRoundData {
   betAmount?: number;
-  potentialFreeTokenAmt?: number;
+  potentialGoldCoinAmt?: number;
   optionName?: string;
   betId?: string;
   status?: BettingRoundStatus;
@@ -69,7 +69,7 @@ export default function LockTokens({
   }, [selectedAmount, selectedWinner]);
 
    const handleCancelBet = () => {
-    cancelBet({ betId: updatedBetId || getRoundData?.betId,currencyType: CurrencyType.FREE_TOKENS });
+    cancelBet({ betId: updatedBetId || getRoundData?.betId,currencyType: CurrencyType.GOLD_COINS });
     };
 
   return (

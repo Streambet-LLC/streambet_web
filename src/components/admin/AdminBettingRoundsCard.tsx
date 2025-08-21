@@ -82,7 +82,7 @@ export const AdminBettingRoundsCard = ({
      const [selectedOption, setSelectedOption] = useState({}); // { [roundId]: optionId }
      const [statusMap, setStatusMap] = useState({});
      const { currency } = useCurrencyContext();
-     const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+     const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
      const [editableRounds, setEditableRounds] = useState([]);
      const [bettingErrorRounds, setBettingErrorRounds] = useState([]);
      const [showBettingValidation, setShowBettingValidation] = useState(false);
@@ -546,13 +546,13 @@ export const AdminBettingRoundsCard = ({
                                                             {isWinner && (
                                                                  <div className="flex flex-col items-center w-full mt-2">
                                                                       {/* Winner label: Avatar + username in a horizontal scrollable row */}
-                                                                      {round.winners && (isStreamCoins ? round.winners.streamCoins?.length > 0 : round.winners.freeTokens?.length > 0) ? (
+                                                                      {round.winners && (isSweepCoins ? round.winners.sweepCoins?.length > 0 : round.winners.goldCoins?.length > 0) ? (
                                                                            <div className="flex flex-col items-center w-full">
                                                                                 <div
                                                                                      className="flex flex-row gap-4 overflow-x-auto pb-2 w-full max-w-full winner-scrollbar px-2"
                                                                                      style={{ maxWidth: '100%', scrollbarWidth: 'thin' }}
                                                                                 >
-                                                                                     {(isStreamCoins ? round.winners.streamCoins : round.winners.freeTokens)?.map((winner: any, idx: number) => (
+                                                                                     {(isSweepCoins ? round.winners.sweepCoins : round.winners.goldCoins)?.map((winner: any, idx: number) => (
                                                                                           <div key={idx} className="flex flex-col items-center min-w-[70px]">
                                                                                                <Avatar className="h-10 w-10 mb-1">
                                                                                                     <AvatarImage src={getImageLink(winner?.avatar)} alt={winner?.userName} />
@@ -571,10 +571,10 @@ export const AdminBettingRoundsCard = ({
                                                                                 </div>
                                                                                 <div className="flex items-center mt-1 text-[12px] px-2" style={FabioBoldStyle}>
                                                                                      <span className="text-white ml-1">won</span>
-                                                                                     <span className="text-white ml-1 truncate max-w-[120px]" title={isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
-                                                                                     : `${Number(round?.winnerAmount?.freeTokens || 0)?.toLocaleString('en-US')} tokens`}>
-                                                                                          {isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
-                                                                                          : `${Number(round?.winnerAmount?.freeTokens || 0)?.toLocaleString('en-US')} tokens`}
+                                                                                     <span className="text-white ml-1 truncate max-w-[120px]" title={isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} coins` 
+                                                                                     : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} tokens`}>
+                                                                                          {isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} coins` 
+                                                                                          : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} tokens`}
                                                                                      </span>
                                                                                 </div>
                                                                            </div>

@@ -12,7 +12,7 @@ const Transactions = ({currencyType}: {currencyType?: CurrencyType}) => {
   // Redirect if not logged in
   useEffect(() => {
     if (!isFetching && session === null) {
-      const isTransaction = currencyType === CurrencyType.STREAM_COINS;
+      const isTransaction = currencyType === CurrencyType.SWEEP_COINS;
       navigate(isTransaction ? '/login?redirect=/transactions' : '/login?redirect=/betting-history');
     }
   }, [session, navigate, isFetching, currencyType]);

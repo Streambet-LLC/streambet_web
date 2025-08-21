@@ -20,19 +20,19 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
   const navigate = useNavigate();
   const [imageLoading, setImageLoading] = useState(true);
   const { currency } = useCurrencyContext();
-  const isStreamCoins = CurrencyType.STREAM_COINS === currency;
+  const isSweepCoins = CurrencyType.SWEEP_COINS === currency;
 
   // Get total pot value based on currency type
-  const totalPotAmount = Number(isStreamCoins 
+  const totalPotAmount = Number(isSweepCoins 
     ? stream.totalBetsCoinAmount || 0 
     : stream.totalBetsTokenAmount || 0);
-  const currencyLabel = isStreamCoins ? 'coins' : 'tokens';
+  const currencyLabel = isSweepCoins ? 'coins' : 'tokens';
   
   // Format number with comma separators for en-US locale
   const formattedAmount = totalPotAmount.toLocaleString('en-US');
   
   // Get text color based on currency type (matching toggle label colors)
-  const textColor = isStreamCoins ? 'text-green-500' : 'text-[#B4FF39]';
+  const textColor = isSweepCoins ? 'text-green-500' : 'text-[#B4FF39]';
 
   return (
     <TableRow className="h-[96px]">
@@ -109,19 +109,19 @@ const MobileStreamItem = ({ stream }: { stream: any }) => {
   const navigate = useNavigate();
   const [imageLoading, setImageLoading] = useState(true);
   const { currency } = useCurrencyContext();
-  const isStreamCoins = CurrencyType.STREAM_COINS === currency;
+  const isSweepCoins = CurrencyType.SWEEP_COINS === currency;
 
   // Get total pot value based on currency type
-  const totalPotAmount = isStreamCoins 
+  const totalPotAmount = isSweepCoins 
     ? stream.totalBetsCoinAmount || 0 
     : stream.totalBetsTokenAmount || 0;
-  const currencyLabel = isStreamCoins ? 'coins' : 'tokens';
+  const currencyLabel = isSweepCoins ? 'coins' : 'tokens';
   
   // Format number with comma separators for en-US locale
   const formattedAmount = totalPotAmount.toLocaleString('en-US');
   
   // Get text color based on currency type (matching toggle label colors)
-  const textColor = isStreamCoins ? 'text-green-500' : 'text-[#B4FF39]';
+  const textColor = isSweepCoins ? 'text-green-500' : 'text-[#B4FF39]';
 
   // Helper to truncate stream name for mobile
   const truncate = (str: string, n: number) => (str?.length > n ? str.slice(0, n - 1) + '…' : str);

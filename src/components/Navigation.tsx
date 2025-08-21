@@ -29,7 +29,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const { navVariants, buttonVariants } = useAnimations();
   const { locationResult, isCheckingLocation } = useLocationRestriction();
   const { currency } = useCurrencyContext();
-  const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+  const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   const { session, refetchSession } = useAuthContext();
 
@@ -235,7 +235,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
           >
             {session ? (
               <>
-                <WalletDropdown walletBalance={isStreamCoins ? session?.walletBalanceCoin || 0 : session?.walletBalanceToken || 0} />
+                <WalletDropdown walletBalance={isSweepCoins ? session?.walletBalanceSweepCoin || 0 : session?.walletBalanceGoldCoin || 0} />
 
                 <UserDropdown profile={session} onLogout={handleLogout} />
               </>

@@ -3,6 +3,7 @@ import { CurrencyType } from '@/enums';
 import api from '@/integrations/api/client';
 import { useAuthContext } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface BettingStatusContextType {
   socketConnect:any;
@@ -18,8 +19,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { session, isFetching } = useAuthContext()
   const { toast } = useToast();
-  const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 3;
+  const queryClient = useQueryClient();
 
   // Commented as reconnection is handled in the socket connection logic in client.ts
  const handleSocketReconnection = () => {
@@ -58,6 +58,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
     const setupSocketEventListeners = (socketInstance: any) => {
       if (!socketInstance) return;
       socketInstance?.off('botMessage');
+      socketInstance?.off('purchaseSettled');
       socketInstance?.off('connect_error');
 
     // Handle disconnection events
@@ -68,6 +69,19 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
           description:update?.message,
           variant: 'default',
         });
+      });
+
+      // Handle purchase event
+      socketInstance.on('purchaseSettled', (update: any) => {
+        console.log('purchaseSettled', update);
+        queryClient.prefetchQuery({ queryKey: ['session'] });
+          toast({
+            id: 'purchase-completed',
+            title: 'Purchase completed',
+            description: update?.message,
+            variant: 'default',
+            duration: 7000,
+          });
       });
   
       socketInstance.on('connect_error', (error: any) => {
@@ -112,6 +126,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
         }
         if (socketConnect) {
           socketConnect.off('botMessage');
+          socketConnect.off('purchaseSettled');
           socketConnect.off('connect_error');
           socketConnect.disconnect();
         }

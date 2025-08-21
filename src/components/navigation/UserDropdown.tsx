@@ -84,7 +84,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link to="/deposit">Buy Stream Coins</Link>
+          <Link to="/deposit">Buy Sweep Coins</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>

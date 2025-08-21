@@ -32,14 +32,14 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [placedBet, setPlaceBet] = useState(true); // show BetTokens when true, LockTokens when false
   const [resetKey, setResetKey] = useState(0); // Add resetKey state
   const [totalPot, setTotalPot] = useState(0); 
-  const [totalPotTokens, setTotalPotTokens] = useState(undefined);
-  const [totalPotCoins, setTotalPotCoins] = useState(undefined);
+  const [totalPotGoldCoins, setTotalPotGoldCoins] = useState(undefined);
+  const [totalPotSweepCoins, setTotalPotSweepCoins] = useState(undefined);
   const [potentialWinnings, setPotentialWinnings] = useState(0); 
   const [selectedAmount, setSelectedAmount] = useState(0); 
   const [selectedWinner, setSelectedWinner] = useState<string | undefined>("");
   const [updatedSliderMax, setUpdatedSliderMax] = useState({
-    freeTokens: undefined,
-    streamCoins: undefined,
+    goldCoins: undefined,
+    sweepCoins: undefined,
   }); 
   const [isEditing, setIsEditing] = useState(false);  //indicate if it's an editing state
   const [lockedOptions, setLockedOptions] = useState<boolean>(false);  // Track if bet is locked in BetTokens,tsx
@@ -64,13 +64,13 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     if (!socketInstance) return;
     
     const resetBetData = () => {
-      setTotalPotTokens(undefined);
-      setTotalPotCoins(undefined);
+      setTotalPotGoldCoins(undefined);
+      setTotalPotSweepCoins(undefined);
       setPlaceBet(true);
       setBetId(undefined);
       setUpdatedSliderMax({
-        freeTokens: undefined,
-        streamCoins: undefined,
+        goldCoins: undefined,
+        sweepCoins: undefined,
       });
       setLockedOptions(false);
       setLockedBet(false);
@@ -81,13 +81,14 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     };
 
     const processPlacedBet = (update) => {
+      console.log('update process bet placed', update);
       queryClient.prefetchQuery({ queryKey: ['session'] }); // To recall me api that will update currency amount near to toggle
-      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
-      setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
+      const isSweepCoins = (updatedCurrency || currency) === CurrencyType.SWEEP_COINS;
+      setPotentialWinnings(isSweepCoins ? update?.potentialSweepCoinWinningAmount : update?.potentialGoldCoinWinningAmount);
       setBetId(update?.bet?.id);
       setUpdatedSliderMax({
-        freeTokens: update?.updatedWalletBalance?.freeTokens || undefined,
-        streamCoins: update?.updatedWalletBalance?.streamCoins || undefined,
+        goldCoins: update?.updatedWalletBalance?.goldCoins || undefined,
+        sweepCoins: update?.updatedWalletBalance?.sweepCoins || undefined,
       });
       setSelectedAmount(update?.amount);
       setSelectedWinner(update?.selectedWinner);
@@ -102,8 +103,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     };
   
     const handler = (update: any) => {
-      setTotalPotCoins(update?.totalBetsCoinAmount);
-      setTotalPotTokens(update?.totalBetsTokenAmount);
+      console.log('bettingUpdate', update);
+      setTotalPotSweepCoins(update?.totalBetsSweepCoinAmount);
+      setTotalPotGoldCoins(update?.totalBetsGoldCoinAmount);
       setLoading(false);
       setHasSocketUpdate(true);
     };
@@ -113,8 +115,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     
     socketInstance.on('potentialAmountUpdate', (data) => {
       console.log('potentialAmountUpdate', data);
-      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
-      setPotentialWinnings(isStreamCoins ? data?.potentialCoinWinningAmount : data?.potentialTokenWinningAmount);
+      const isSweepCoins = (updatedCurrency || currency) === CurrencyType.SWEEP_COINS;
+      setPotentialWinnings(isSweepCoins ? data?.potentialCoinWinningAmount : data?.potentialTokenWinningAmount);
     });
 
     socketInstance.on('bettingLocked', (data) => {
@@ -178,8 +180,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
        if(update?.bet?.userId === session?.id) {
           queryClient.prefetchQuery({ queryKey: ['session'] });
           setUpdatedSliderMax({
-            freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
-            streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
+            goldCoins: update?.updatedWalletBalance?.goldCoins || 0,
+            sweepCoins: update?.updatedWalletBalance?.sweepCoins || 0,
           });
           if (update?.message){
           toast({
@@ -225,7 +227,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       console.log('Socket connection error:', error);
       api.socket.joinStream(streamId, socketConnect);
       setLoading(false);
-     
     });
   };
 
@@ -276,9 +277,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   });
 
   useEffect(() => {
-    setTotalPot(currency === CurrencyType.STREAM_COINS ? totalPotCoins ?? (bettingData?.roundTotalBetsCoinAmount || 0) : totalPotTokens ?? (bettingData?.roundTotalBetsTokenAmount || 0));
+    setTotalPot(currency === CurrencyType.SWEEP_COINS ? totalPotSweepCoins ?? (bettingData?.roundTotalBetsCoinAmount || 0) : totalPotGoldCoins ?? (bettingData?.roundTotalBetsTokenAmount || 0));
     setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED);
-  },[bettingData, currency, totalPotCoins, totalPotTokens]);
+  },[bettingData, currency, totalPotSweepCoins, totalPotGoldCoins]);
 
   // Query to get selected betting round data
   const { data: getRoundData, refetch: refetchRoundData} = useQuery({
@@ -291,10 +292,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   });
 
   useEffect(() => {
+    console.log('getRoundData', getRoundData);
     if (hasSocketUpdate) return;
     if (getRoundData) {
       setPlaceBet(false);
-      setPotentialWinnings(getRoundData?.currencyType === CurrencyType.FREE_TOKENS ? getRoundData?.potentialFreeTokenAmt : getRoundData?.potentialCoinAmt);
+      setPotentialWinnings(getRoundData?.currencyType === CurrencyType.GOLD_COINS ? getRoundData?.potentialGoldCoinAmt : getRoundData?.potentialSweepCoinAmt);
       setSelectedAmount(getRoundData?.betAmount);
       setSelectedWinner(getRoundData?.optionName);
       setLockedBet(getRoundData?.status === BettingRoundStatus.LOCKED);
@@ -566,7 +568,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             />
           )
         ) : (
-          session != null && (
+          session != null && (<>
             <div className="relative mx-auto rounded-[16px] shadow-lg p-5 h-[240px]" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
               <div className='all-center flex justify-center items-center h-[100px] mt-8'>
                 <img
@@ -578,23 +580,29 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
             </div>
 
-          //   <div className="flex gap-4 p-6 rounded-[16px] shadow-lg" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+            <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
 
-          //   <div className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48">
-          //     <p className="text-white font-semibold text-lg">Round 1</p>
-          //     <div className="flex items-center gap-2 mt-2">
-          //       <img src="/icons/won.svg" alt="avatar" className="w-7 h-7 rounded-full"/>
-          //       <p className="text-white font-bold">MisterRough</p>
-          //       <span className="text-white text-sm font-medium">won $32,431.10</span>
-          //     </div>
-          //   </div>
+            <div className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0">
+              <p className="text-white font-semibold text-lg">Round 1</p>
+              <div className="flex items-center gap-2 mt-2">
+                <img src="/icons/won.svg" alt="avatar" className="w-7 h-7 rounded-full"/>
+                <p className="text-white font-bold">MisterRough</p>
+                <span className="text-white text-sm font-medium">won $32,431.10</span>
+              </div>
+            </div>
             
-          //   <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[rgba(189, 255, 0, 1)] shadow-[0_0_20px_#a3e635]">
-          //     <p className="text-white font-medium">Round 2 is coming up!</p>
-          //   </div>
+            <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[rgba(189, 255, 0, 1)] shadow-[0_0_20px_#a3e635] shrink-0">
+              <p className="text-white font-medium">Round 2 is coming up!</p>
+            </div>
+            <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[rgba(189, 255, 0, 1)] shadow-[0_0_20px_#a3e635] shrink-0">
+              <p className="text-white font-medium">Round 2 is coming up!</p>
+            </div>
+            <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[rgba(189, 255, 0, 1)] shadow-[0_0_20px_#a3e635] shrink-0">
+              <p className="text-white font-medium">Round 2 is coming up!</p>
+            </div>
 
-          // </div>
-
+          </div>
+          </>
           )
         )}
 

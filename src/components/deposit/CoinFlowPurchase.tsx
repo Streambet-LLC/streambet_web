@@ -62,8 +62,10 @@ export const CoinFlowPurchaseComponent = ({
   const handleSuccess = async (data: any) => {
     try {
       toast({
+        id: 'purchase',
         title: 'Payment Successful!',
-        description: `Your deposit of $${amount} has been processed.`,
+        description: `Please wait till we get confirmation from payment provider`,
+        duration: 7000,
       });
       queryClient.invalidateQueries({ queryKey: ['session'] });
       navigate('/');
