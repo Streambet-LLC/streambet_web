@@ -21,6 +21,7 @@ const Stream = () => {
         streamId={streamId}
         session={session}
         stream={stream?.data}
+        refetchStream={() => refetch()}
       />
     </MainLayout>
   );

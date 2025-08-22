@@ -20,9 +20,16 @@ interface StreamContentProps {
   session: any;
   stream: any;
   refreshKey?: number;
+  refetchStream: VoidFunction;
 }
 
-export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamContentProps) => {
+export const StreamContent = ({ 
+  streamId, 
+  session, 
+  stream, 
+  refreshKey,
+  refetchStream
+}: StreamContentProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
@@ -177,7 +184,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         setShowWinnerAnimation(false);
       }, 5000);
       setResetKey(prev => prev + 1);
-      queryClient.prefetchQuery({ queryKey: ['session'] }); 
+      queryClient.prefetchQuery({ queryKey: ['session'] });
+      refetchStream();
     });
 
     socketInstance.on('betPlaced', (update) => {
@@ -204,6 +212,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         duration: 4000,
       });
       resetBetData();
+      refetchStream();
     });
 
     socketInstance.on('betCancelled', (update) => {
