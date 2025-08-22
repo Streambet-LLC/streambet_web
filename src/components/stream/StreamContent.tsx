@@ -55,11 +55,27 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [viewerCount, setViewerCount] = useState(null);
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
   const [messageList, setMessageList] = useState<any>();
+  const [roundDetails, setRoundDetails] = useState<any>();
   const queryClient = useQueryClient();
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = stream?.status === StreamStatus.ENDED;
+
+  const getRoundsData = (roundsData?: any) => {
+    const roundDetailsData = roundsData && roundsData?.length ? roundsData 
+      : (stream?.roundDetails || []);
+    const createdIndex = roundDetailsData?.findIndex((round) => 
+      round?.roundStatus === BettingRoundStatus.CREATED);
+    const updatedRounds = roundDetailsData?.filter((round, index) => 
+      round?.roundStatus !== BettingRoundStatus.OPEN && (createdIndex !== -1 ? 
+        index <= createdIndex : true));
+    return updatedRounds;
+  };
+
+  useEffect(() => {
+    setRoundDetails(getRoundsData());
+  }, [stream]);
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
@@ -214,9 +230,14 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         processPlacedBet(update);
       }
     });
-
+    
     socketInstance.on('newMessage', (update) => {
       setMessageList(update)
+    });
+
+    socketInstance.on('roundUpdated', (roundsData) => {
+      console.log('roundUpdated', roundsData);
+      setRoundDetails(getRoundsData(roundsData));
     });
 
     socketInstance.on('streamEnded', (update) => {
@@ -277,6 +298,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             socketConnect?.off('betCancelled');
             socketConnect?.off('betCancelledByAdmin');
             socketConnect?.off('viewerCountUpdate');
+            socketConnect?.off('roundUpdated');
       }
     },
   [])
@@ -625,7 +647,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
           )
         ) : (
           session != null && (<>
-            <div className="relative mx-auto rounded-[16px] shadow-lg p-5 h-[240px]" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+            {roundDetails?.length === 0 ? <div className="relative mx-auto rounded-[16px] shadow-lg p-5 h-[240px]" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
               <div className='all-center flex justify-center items-center h-[100px] mt-8'>
                 <img
                   src="/icons/nobettingData.svg"
@@ -634,30 +656,44 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
                 />
               </div>
               <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
-            </div>
+            </div> : <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
 
-            {/* <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
-
-            <div className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0">
-              <p className="text-white font-semibold text-lg">Round 1</p>
-              <div className="flex items-center gap-2 mt-2">
-                <img src="/icons/won.svg" alt="avatar" className="w-7 h-7 rounded-full"/>
-                <p className="text-white font-bold">MisterRough</p>
-                <span className="text-white text-sm font-medium">won $32,431.10</span>
-              </div>
-            </div>
-            
-            <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[rgba(189, 255, 0, 1)] shadow-[0_0_20px_#a3e635] shrink-0">
-              <p className="text-white font-medium">Round 2 is coming up!</p>
-            </div>
-            <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[rgba(189, 255, 0, 1)] shadow-[0_0_20px_#a3e635] shrink-0">
-              <p className="text-white font-medium">Round 2 is coming up!</p>
-            </div>
-            <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[rgba(189, 255, 0, 1)] shadow-[0_0_20px_#a3e635] shrink-0">
-              <p className="text-white font-medium">Round 2 is coming up!</p>
-            </div>
-
-          </div> */}
+            {roundDetails?.map(
+              round => {
+              const isRoundClosed = round?.roundStatus === BettingRoundStatus.CLOSED;
+              const isRoundCreated = round?.roundStatus === BettingRoundStatus.CREATED;
+              const isRoundCancelled = round?.roundStatus === BettingRoundStatus.CANCELLED;
+              const isRoundLocked = round?.roundStatus === BettingRoundStatus.LOCKED;
+              
+              if (isRoundClosed) {
+                return (
+                  <div className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0">
+                    <p className="text-white font-semibold text-lg">{round?.roundName}</p>
+                    <div className="flex flex-col items-center gap-2 mt-2">
+                      <p className="text-white font-bold">{round?.winningOption?.[0]?.variableName} as winner</p>
+                      <span className="text-white text-sm font-medium">won {round?.winningOption?.[0]?.totalGoldCoinAmt} gold coins</span>
+                      <span className="text-white text-sm font-medium">and {round?.winningOption?.[0]?.totalSweepCoinAmt} sweep coins</span>
+                    </div>
+                  </div>
+                )} else if (isRoundCancelled) {
+                return (
+                  <div className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0">
+                    <p className="text-white font-semibold text-lg">{round?.roundName} cancelled</p>
+                  </div>
+                )} else if (isRoundLocked) {
+                return (
+                <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 shadow-[0_0_20px_#a3e635] shrink-0">
+                  <p className="text-white font-medium">{round?.roundName} is locked</p>
+                </div>
+                )} else if (isRoundCreated) {
+                  return (
+                  <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[#BDFF00] shadow-[0_0_20px_#a3e635] shrink-0">
+                    <p className="text-white font-medium">{round?.roundName} is coming up!</p>
+                  </div>
+                  )}
+              })
+            }
+            </div>}
           </>
           )
         )}

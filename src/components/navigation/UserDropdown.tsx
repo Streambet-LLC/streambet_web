@@ -79,16 +79,16 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
 
-         <DropdownMenuItem asChild>
-        <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Creator Program</a>
+        <DropdownMenuItem asChild>
+          <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Creator Program</a>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link to="/deposit">Buy Sweep Coins</Link>
+          <Link to="/deposit">Buy Gold Coins</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <Link to="/withdraw">Redeem Stream Cash</Link>
+          <Link to="/withdraw">Redeem Sweep Coins</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>

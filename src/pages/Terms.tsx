@@ -1,9 +1,9 @@
 export default function StreambetTOS() {
   return (
-    <article className="mx-auto px-4 py-10 text-base leading-relaxed text-foreground">
+    <article className="mx-auto px-4 py-2 text-base leading-relaxed text-foreground">
       {/* PDF Viewer */}
-      <section aria-label="Terms PDF" className="mb-10">
-        <div className="h-[90vh]">
+      <section aria-label="Terms PDF">
+        <div className="h-[95vh]">
           <object
             data="/docs/terms.pdf#view=FitH"
             type="application/pdf"
