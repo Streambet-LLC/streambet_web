@@ -39,6 +39,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
 import Bugsnag from '@bugsnag/js';
+import { cleanTemporaryIds } from '@/utils/bettingRoundsUtils';
 
 // Helper for status priority
 const statusPriority = [
@@ -251,7 +252,10 @@ export const AdminBettingRoundsCard = ({
                                                             }
                                                             setBettingSaveLoading(true);
                                                             try {
-                                                                 await api.admin.updateBettingData({ streamId: editStreamId, rounds: editableRounds });
+                                                                 // Clean temporary option IDs before sending to API
+                                                                 const cleanedRounds = cleanTemporaryIds(editableRounds);
+                                                                 
+                                                                 await api.admin.updateBettingData({ streamId: editStreamId, rounds: cleanedRounds });
                                                                  refetchBetData();
                                                                  setSettingsOpen(false);
                                                             } catch (e) {

@@ -8,6 +8,7 @@ import { Navigate } from 'react-router-dom';
 const Admin = () => {
   const {
     profile,
+    isProfileFetching,
     streams,
     searchStreamQuery,
     handleRefetchStreams,
@@ -22,7 +23,7 @@ const Admin = () => {
     setResetKey((prev) => prev + 1);
   }, [queryClient]);
 
-  if ((profile && profile.role !== 'admin') || profile === null) {
+  if (!isProfileFetching && ((profile && profile.role !== 'admin') || profile === null)) {
     return <Navigate to="/" replace />;
   }
 

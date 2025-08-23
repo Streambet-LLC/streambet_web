@@ -21,6 +21,7 @@ import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
+import { cleanTemporaryIds } from '@/utils/bettingRoundsUtils';
 
 interface BettingOption {
   optionId?: string;
@@ -80,13 +81,12 @@ export const AdminManagement = ({
       : api.admin.createStream(payload),
     onSuccess: (response) => {
       if (bettingRounds.length > 0) {
+        // Clean temporary option IDs before sending to API
+        const cleanedRounds = cleanTemporaryIds(bettingRounds);
+        
         const bettingPayload = {
           streamId: editStreamId || response?.data?.id,
-          rounds: bettingRounds.map((round) => ({
-            roundId: round.roundId,
-            roundName: round.roundName,
-            options: round.options,
-          })),
+          rounds: cleanedRounds,
         };
         createBetMutation.mutate(bettingPayload);
       }

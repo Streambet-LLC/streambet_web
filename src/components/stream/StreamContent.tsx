@@ -66,6 +66,7 @@ export const StreamContent = ({
   const queryClient = useQueryClient();
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const currencyRef = useRef({ updatedCurrency, currency });
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = stream?.status === StreamStatus.ENDED;
 
@@ -83,6 +84,11 @@ export const StreamContent = ({
   useEffect(() => {
     setRoundDetails(getRoundsData());
   }, [stream]);
+
+  useEffect(() => {
+    // Keep ref updated with current values
+    currencyRef.current = { updatedCurrency, currency };
+  }, [updatedCurrency, currency]);
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
@@ -108,7 +114,9 @@ export const StreamContent = ({
     const processPlacedBet = (update) => {
       console.log('update process bet placed', update);
       queryClient.prefetchQuery({ queryKey: ['session'] }); // To recall me api that will update currency amount near to toggle
-      const isSweepCoins = (updatedCurrency || currency) === CurrencyType.SWEEP_COINS;
+      // Use ref to get current values
+      const { updatedCurrency: currentUpdatedCurrency, currency: currentCurrency } = currencyRef.current;
+      const isSweepCoins = (currentUpdatedCurrency || currentCurrency) === CurrencyType.SWEEP_COINS;
       setPotentialWinnings(isSweepCoins ? update?.potentialSweepCoinWinningAmount : update?.potentialGoldCoinWinningAmount);
       setBetId(update?.bet?.id);
       setUpdatedSliderMax({
@@ -145,7 +153,9 @@ export const StreamContent = ({
     
     socketInstance.on('potentialAmountUpdate', (data) => {
       console.log('potentialAmountUpdate', data);
-      const isSweepCoins = (updatedCurrency || currency) === CurrencyType.SWEEP_COINS;
+      // Use ref to get current values
+      const { updatedCurrency: currentUpdatedCurrency, currency: currentCurrency } = currencyRef.current;
+      const isSweepCoins = (currentUpdatedCurrency || currentCurrency) === CurrencyType.SWEEP_COINS;
       setPotentialWinnings(isSweepCoins ? data?.potentialSweepCoinWinningAmount : data?.potentialGoldCoinWinningAmount);
     });
 
@@ -277,14 +287,14 @@ export const StreamContent = ({
 
   useEffect(() => {
     if(socketConnect){
-    api.socket.joinStream(streamId, socketConnect);
-    
-    // Setup event listeners
-    setupSocketEventListeners(socketConnect);
+      api.socket.joinStream(streamId, socketConnect);
+      
+      // Setup event listeners
+      setupSocketEventListeners(socketConnect);
     }
   
    
-  }, [streamId,socketConnect]);
+  }, [streamId, socketConnect]);
 
   useEffect (()=> () => {
       // Cleanup ping-pong intervals
@@ -339,7 +349,6 @@ export const StreamContent = ({
   });
 
   useEffect(() => {
-    console.log('getRoundData', getRoundData);
     if (hasSocketUpdate) return;
     if (getRoundData) {
       setPlaceBet(false);
@@ -396,6 +405,7 @@ export const StreamContent = ({
 
 // Function to handle bet edit
   const handleBetEdit = () => {
+    setLoading(false);
     setIsEditing(true);
     setPlaceBet(true); // Show BetTokens (edit mode)
     refetchRoundData(); // when canceling and placcing bet,then editing we need to refetch round data
@@ -676,7 +686,7 @@ export const StreamContent = ({
               
               if (isRoundClosed) {
                 return (
-                  <div className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0">
+                  <div key={round?.id} className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0">
                     <p className="text-white font-semibold text-lg">{round?.roundName}</p>
                     <div className="flex flex-col items-center gap-2 mt-2">
                       <p className="text-white font-bold">{round?.winningOption?.[0]?.variableName} as winner</p>
@@ -686,17 +696,17 @@ export const StreamContent = ({
                   </div>
                 )} else if (isRoundCancelled) {
                 return (
-                  <div className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0">
+                  <div key={round?.id} className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0">
                     <p className="text-white font-semibold text-lg">{round?.roundName} cancelled</p>
                   </div>
                 )} else if (isRoundLocked) {
                 return (
-                <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 shadow-[0_0_20px_#a3e635] shrink-0">
+                <div key={round?.id} className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 shadow-[0_0_20px_#a3e635] shrink-0">
                   <p className="text-white font-medium">{round?.roundName} is locked</p>
                 </div>
                 )} else if (isRoundCreated) {
                   return (
-                  <div className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[#BDFF00] shadow-[0_0_20px_#a3e635] shrink-0">
+                  <div key={round?.id} className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[#BDFF00] shadow-[0_0_20px_#a3e635] shrink-0">
                     <p className="text-white font-medium">{round?.roundName} is coming up!</p>
                   </div>
                   )}

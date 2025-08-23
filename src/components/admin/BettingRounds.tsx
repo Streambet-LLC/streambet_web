@@ -8,6 +8,7 @@ import { Edit, Copy } from 'lucide-react';
 import { BettingRoundStatus } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
+import { TEMP_OPTION_PREFIX, cleanTemporaryIds, isTemporaryOptionId, getCleanedRounds } from '@/utils/bettingRoundsUtils';
 
 interface BettingOption {
   optionId?: string;
@@ -105,7 +106,7 @@ export function BettingRounds({
   const addNewOption = (roundIndex: number) => {
     const round = rounds[roundIndex];
     const optionNumber = round.options.length + 1;
-    const newOptionId = Date.now().toString() + Math.random().toString(36).slice(2);
+    const newOptionId = TEMP_OPTION_PREFIX + Date.now().toString() + Math.random().toString(36).slice(2);
     const newOption: BettingOption = {
       optionId: newOptionId,
       option: `Option ${optionNumber}`
@@ -315,6 +316,7 @@ export function BettingRounds({
                                   el &&
                                   lastAddedOption &&
                                   lastAddedOption.roundIndex === roundIndex &&
+                                  lastAddedOption.optionId.startsWith(TEMP_OPTION_PREFIX) &&
                                   lastAddedOption.optionId === option.optionId
                                 ) {
                                   setTimeout(() => {
@@ -328,6 +330,7 @@ export function BettingRounds({
                                       if (options) {
                                         const idx = options.findIndex(opt => opt.optionId === option.optionId);
                                         if (idx !== -1) {
+                                          // Remove the temporary optionId after scrolling
                                           const newOpt = { ...options[idx] };
                                           delete newOpt.optionId;
                                           options[idx] = newOpt;
