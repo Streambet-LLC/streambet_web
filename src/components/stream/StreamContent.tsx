@@ -292,35 +292,37 @@ export const StreamContent = ({
       // Setup event listeners
       setupSocketEventListeners(socketConnect);
     }
-  
-   
-  }, [streamId, socketConnect]);
 
-  useEffect (()=> () => {
-      // Cleanup ping-pong intervals
+    // Return cleanup function to remove event listeners and leave stream
+    return () => {
+      // Cleanup reconnect timeout
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
       
+      // Leave the stream
       api.socket.leaveStream(streamId, socketConnect);
 
+      // Remove all event listeners
       if (socketConnect) {
-            socketConnect?.off('bettingUpdate');
-            socketConnect?.off('potentialAmountUpdate');
-            socketConnect?.off('bettingLocked');
-            socketConnect?.off('winnerDeclared');
-            socketConnect?.off('newMessage');
-            socketConnect?.off('streamEnded');
-            socketConnect?.off('betPlaced');
-            socketConnect?.off('betEdited');
-            socketConnect?.off('betOpened');
-            socketConnect?.off('betCancelled');
-            socketConnect?.off('betCancelledByAdmin');
-            socketConnect?.off('viewerCountUpdate');
-            socketConnect?.off('roundUpdated');
+        socketConnect.off('bettingUpdate');
+        socketConnect.off('viewerCountUpdate');
+        socketConnect.off('potentialAmountUpdate');
+        socketConnect.off('bettingLocked');
+        socketConnect.off('winnerDeclared');
+        socketConnect.off('betPlaced');
+        socketConnect.off('betOpened');
+        socketConnect.off('betCancelledByAdmin');
+        socketConnect.off('betCancelled');
+        socketConnect.off('betEdited');
+        socketConnect.off('newMessage');
+        socketConnect.off('roundUpdated');
+        socketConnect.off('streamEnded');
+        socketConnect.off('disconnect');
+        socketConnect.off('connect_error');
       }
-    },
-  [])
+    };
+  }, [streamId, socketConnect]);
 
   // Query to get the betting data for the stream
   const { data: bettingData, refetch: refetchBettingData, isFetching: fetchingBettingData} = useQuery({
