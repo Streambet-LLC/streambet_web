@@ -666,8 +666,8 @@ export const adminAPI = {
     return response.data;
   },
 
-  updateUsersTokens: async (userId?: any, amount?: any) => {
-    const response = await apiClient.patch(`/admin/gold-coins`, userId, amount);
+  updateUserCoins: async (payload: { userId: string; amount: number }) => {
+    const response = await apiClient.patch(`/admin/gold-coins`, payload);
     return response.data;
   },
 

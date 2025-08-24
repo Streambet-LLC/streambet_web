@@ -73,7 +73,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
  
   const mutationTokens = useMutation({
     mutationFn: async ({ userId, amount }: { userId: string; amount: number }) => {
-      return await api.admin.updateUsersTokens({ userId, amount });
+      return await api.admin.updateUserCoins({ userId, amount });
     },
     onSuccess: () => {
       refetchProfiles();

@@ -9,7 +9,7 @@ import { Navigate } from 'react-router-dom';
 const Admin = () => {
   const {
     profile,
-    isProfileFetching,
+    isProfileLoading,
     streams,
     searchStreamQuery,
     handleRefetchStreams,
@@ -24,7 +24,7 @@ const Admin = () => {
     setResetKey((prev) => prev + 1);
   }, [queryClient]);
 
-  if (isProfileFetching) {
+  if (isProfileLoading) {
     return (
       <div className="min-h-screen bg-[#0A0A0A] p-6">
         {/* Analytics Cards Grid */}

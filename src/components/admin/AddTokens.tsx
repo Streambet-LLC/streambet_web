@@ -27,8 +27,6 @@ const AddTokens: React.FC<WalletCellProps> = ({
   const parsedAmount = Number(adjustAmount) || 0;
   const newBalance = Number(currentBalance) + parsedAmount;
 
-  console.log('adjustAmount', adjustAmount, 'parsedAmount', parsedAmount, 'newBalance', newBalance);
-
   const handleSave = () => {
     onSave(newBalance);
     setAdjustAmount(0);
