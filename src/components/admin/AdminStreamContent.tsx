@@ -177,8 +177,6 @@ export const AdminStreamContent = ({
       };
 
 useEffect(() => {
-    // const newSocket = api.socket.connect();
-    // setSocket(socketConnect);
     console.log('socketConnect value',  socketConnect);
     if(socketConnect){
     api.socket.joinStream(streamId, socketConnect);
@@ -202,8 +200,7 @@ useEffect(() => {
             socketConnect?.off('newMessage');
             socketConnect?.off('streamEnded');
       }
-    },
-  [])
+    }, []);
 
   // Stream info form state for editing
   const [editForm, setEditForm] = useState({

@@ -67,8 +67,23 @@ export const StreamContent = ({
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currencyRef = useRef({ updatedCurrency, currency });
+  const horizontalScrollRef = useRef<HTMLDivElement>(null);
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = stream?.status === StreamStatus.ENDED;
+
+  // Function to scroll to the last card with smooth animation
+  const scrollToLastCard = () => {
+    if (horizontalScrollRef.current && roundDetails && roundDetails.length > 0) {
+      setTimeout(() => {
+        if (horizontalScrollRef.current) {
+          horizontalScrollRef.current.scrollTo({
+            left: horizontalScrollRef.current.scrollWidth,
+            behavior: 'smooth'
+          });
+        }
+      }, 100); // 100ms delay to ensure the last card is rendered
+    }
+  };
 
   const getRoundsData = (roundsData?: any) => {
     const roundDetailsData = roundsData && roundsData?.length ? roundsData 
@@ -84,6 +99,11 @@ export const StreamContent = ({
   useEffect(() => {
     setRoundDetails(getRoundsData());
   }, [stream]);
+
+  // Effect to scroll to last card when roundDetails changes
+  useEffect(() => {
+    scrollToLastCard();
+  }, [roundDetails]);
 
   useEffect(() => {
     // Keep ref updated with current values
@@ -109,6 +129,7 @@ export const StreamContent = ({
       refetchBettingData();
       refetchRoundData();
       setIsEditing(false);
+      setLoading(false);
     };
 
     const processPlacedBet = (update) => {
@@ -251,12 +272,14 @@ export const StreamContent = ({
     });
     
     socketInstance.on('newMessage', (update) => {
-      setMessageList(update)
+      setMessageList(update);
     });
 
     socketInstance.on('roundUpdated', (roundsData) => {
-      console.log('roundUpdated', roundsData);
-      setRoundDetails(getRoundsData(roundsData));
+      console.log('roundUpdated', roundsData?.roundDetails);
+      setRoundDetails(getRoundsData(roundsData?.roundDetails));
+      // Scroll to last card after updating round details
+      setTimeout(() => scrollToLastCard(), 100);
     });
 
     socketInstance.on('streamEnded', (update) => {
@@ -266,6 +289,15 @@ export const StreamContent = ({
         duration: 10000,
       });
       navigate('/');
+    });
+
+    socketInstance.on('error', (error) => {
+      toast({
+        description: error?.message || 'An error occured. Refresh page and try again.',
+        variant: 'destructive',
+        duration: 7000,
+      });
+      setLoading(false);
     });
 
     // Handle disconnection events
@@ -286,7 +318,7 @@ export const StreamContent = ({
   };
 
   useEffect(() => {
-    if(socketConnect){
+    if(socketConnect) {
       api.socket.joinStream(streamId, socketConnect);
       
       // Setup event listeners
@@ -320,6 +352,7 @@ export const StreamContent = ({
         socketConnect.off('streamEnded');
         socketConnect.off('disconnect');
         socketConnect.off('connect_error');
+        socketConnect.off('error');
       }
     };
   }, [streamId, socketConnect]);
@@ -677,7 +710,7 @@ export const StreamContent = ({
                 />
               </div>
               <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
-            </div> : <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+            </div> : <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }} ref={horizontalScrollRef}>
 
             {roundDetails?.map(
               round => {
@@ -722,14 +755,14 @@ export const StreamContent = ({
 
       </div>
 
-      <div className="lg:col-span-1 flex flex-col mb-5 h-full">
+      <div className="lg:col-span-1 flex flex-col mb-5 h-full max-lg:mt-10">
         <div className="flex-1 h-full sticky top-24 md:max-w-[320px]">
           <div className="border p-4 mb-3 border-zinc-700 rounded-[16px]">
             <h2 className="text-lg font-semibold leading-tight pt-2 pb-2">
               {stream?.name}
             </h2>
 
-            <p className="text-sm mt-1 leading-6 font-semibold" style={{ color: 'rgba(96, 96, 96, 1)' }}>
+            <p className="text-sm mt-1 leading-6 font-semibold max-h-[150px] overflow-y-auto" style={{ color: 'rgba(96, 96, 96, 1)' }}>
               {stream?.description || '-NA-'}
             </p>
 

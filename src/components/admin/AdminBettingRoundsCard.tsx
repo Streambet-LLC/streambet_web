@@ -102,9 +102,6 @@ export const AdminBettingRoundsCard = ({
      }, [betData]);
 
 
-     console.log('bettingUpdate', bettingUpdate);
-
-
      // Find active round index
      const activeIdx = useMemo(() => getActiveRoundIndex(rounds), [rounds]);
 

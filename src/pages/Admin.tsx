@@ -79,10 +79,10 @@ const Admin = () => {
       </div>
     );
   }
+
   if (profile?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
-    
 
   return (
     <AdminLayout onDashboardClick={handleDashboardClick} isStreamContent={isStreamContent}>
