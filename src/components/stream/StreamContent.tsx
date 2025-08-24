@@ -67,6 +67,7 @@ export const StreamContent = ({
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currencyRef = useRef({ updatedCurrency, currency });
+  const initialRef = useRef(true);
   const horizontalScrollRef = useRef<HTMLDivElement>(null);
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = stream?.status === StreamStatus.ENDED;
@@ -167,8 +168,8 @@ export const StreamContent = ({
     // For all users
     socketInstance.on('bettingUpdate', handler);
 
-    socketInstance.on('viewerCountUpdate', (count) => { 
-      console.log('viewerCountUpdate', count);
+    socketInstance.on('viewerCountUpdated', (count) => { 
+      console.log('viewerCountUpdated', count);
       setViewerCount(count);
     });
     
@@ -338,7 +339,7 @@ export const StreamContent = ({
       // Remove all event listeners
       if (socketConnect) {
         socketConnect.off('bettingUpdate');
-        socketConnect.off('viewerCountUpdate');
+        socketConnect.off('viewerCountUpdated');
         socketConnect.off('potentialAmountUpdate');
         socketConnect.off('bettingLocked');
         socketConnect.off('winnerDeclared');
@@ -386,7 +387,10 @@ export const StreamContent = ({
   useEffect(() => {
     if (hasSocketUpdate) return;
     if (getRoundData) {
-      setPlaceBet(false);
+      if (initialRef.current) {
+        setPlaceBet(false);
+        initialRef.current = false;
+      }
       setPotentialWinnings(getRoundData?.currencyType === CurrencyType.GOLD_COINS ? getRoundData?.potentialGoldCoinAmt : getRoundData?.potentialSweepCoinAmt);
       setSelectedAmount(getRoundData?.betAmount);
       setSelectedWinner(getRoundData?.optionName);
