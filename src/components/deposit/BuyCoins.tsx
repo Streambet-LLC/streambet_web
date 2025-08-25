@@ -71,8 +71,9 @@ const BuyCoins = ({
               return (
                 <div
                   key={idx}
-                  className="bg-[#1C1C1C] rounded-lg p-4 flex flex-col items-center justify-between"
+                  className="bg-[#1C1C1C] rounded-lg p-4"
                 >
+                  <div className="flex gap-4">
                   <div className="relative w-[70px] h-[84px] mb-4 flex items-center justify-center">
                     {imageLoadingStates[idx] && (
                       <div className="absolute inset-0 bg-gray-700 rounded-lg animate-pulse"></div>
@@ -87,27 +88,30 @@ const BuyCoins = ({
                       onError={() => handleImageError(idx)}
                     />
                   </div>
-                  <div className="text-[24px] font-semibold mb-1 text-[#BDFF00]">
+                  <div className="flex flex-col my-auto leading-none">
+                  <div className="text-[24px] font-semibold text-[#BDFF00]">
                     {Number(option.goldCoinCount || 0)?.toLocaleString('en-US')} 
                   </div>
                   <span className="text-lg text-[#FFFFFF] mb-4">gold coins</span>
+                  </div>
+                  </div>
 
-                   <div className="flex items-center gap-2 bg-[#3B3E2B] rounded-md px-3 py-2 w-full mb-4">
-                    <div className="flex items-center justify-center w-6 h-6 text-sm font-bold">
+                  <div className="flex items-center bg-[#3B3E2B] rounded-md w-full mb-4 h-[50px]">
+                    <div className="flex items-center justify-center text-sm font-bold w-[60px] h-[60px]">
                      <img src="/icons/promo.svg" alt="coin-icon" />
                     </div>
                     <div className="flex flex-col leading-tight">
-                      <span className="text-xs font-bold text-[#0D0D0D] uppercase bg-[#BDFF00] mb-2 text-center w-14 rounded-sm">Promo</span>
-                      <span className="text-xs text-[#BDFF00]">up to 32.32 stream cash</span>
+                      <span className="text-xs font-bold text-[#0D0D0D] uppercase bg-[#BDFF00] text-center w-14 rounded-sm">Promo</span>
+                      <span className="text-xs text-[#BDFF00]">Get {Number(option.sweepCoinCount || 0)?.toLocaleString('en-US')} free sweep coins</span>
                     </div>
                   </div>
 
-                  <button className="mt-2 bg-[#BDFF00] text-black font-semibold py-2 px-4 rounded-md w-full text-sm" 
+                  <button className="mt-2 bg-[#BDFF00] text-black font-semibold py-2 px-4 rounded-full w-full text-sm" 
                     onClick={() => {
                       setPackageId(option.id || '');
                       setDepositAmount(parseFloat(option.totalAmount || 0));
                     }}>
-                      Get started
+                      ${option.totalAmount || 0}
                   </button>
                 </div>
               );

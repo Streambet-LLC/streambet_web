@@ -3,6 +3,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 interface BettingVariable {
   id: string;
@@ -79,6 +80,7 @@ export default function BetTokens({
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
   const isMobile = useIsMobile();
+
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
   const [sliderMax, setSliderMax] = useState<number | undefined>();
@@ -86,7 +88,7 @@ export default function BetTokens({
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
-
+console.log('session', session);
   // Check for tablet range (773px to 1024px)
   useEffect(() => {
     const checkTabletRange = () => {
@@ -121,17 +123,14 @@ export default function BetTokens({
   const isColorButtonsEnabled = betAmount > 0;
   const isBetButtonEnabled = selectedColor !== "";
 
-
    useEffect(() => {
       const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
-      setSliderMax(isSweepCoins ?  Number(bettingData?.walletSweepCoin ?? 0) + Number(bettingData?.userBetSweepCoin ?? 0)
-        :  Number(bettingData?.walletGoldCoin ?? 0) + Number(bettingData?.userBetGoldCoins ?? 0));
+      setSliderMax(isSweepCoins ? Number(bettingData?.walletSweepCoin ?? 0) + Number(bettingData?.userBetSweepCoin ?? 0)
+        : Number(bettingData?.walletGoldCoin ?? 0) + Number(bettingData?.userBetGoldCoins ?? 0));
       setSelectedColor(selectedWinner);
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData]);
-
-
+  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData, bettingData]);
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
@@ -141,7 +140,6 @@ export default function BetTokens({
     }
   }, [resetKey]);
   
-
   const handleBet = () => {
     if (lockedOptions) {
       toast({

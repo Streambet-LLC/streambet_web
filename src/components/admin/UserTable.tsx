@@ -290,7 +290,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                         }}
                       />
                     </TableCell>
-                    <TableCell className="cursor-pointer" title="Token Allocation">
+                    <TableCell className="cursor-pointer" title="Gold Coin Allocation">
                       <AddTokens
                         currentBalance={user?.wallet?.goldCoins}
                         username={user.username}

@@ -21,7 +21,7 @@ interface AuthContextType {
   refetchSession: () => Promise<any>;
   isLoading: boolean;
   isError: boolean;
-  isFetching,
+  isFetching: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
