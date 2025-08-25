@@ -83,6 +83,12 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
             duration: 7000,
           });
       });
+
+      // Handle refetch event for profile state update
+      socketInstance.on('refetchEvent', (update: any) => {
+        console.log('refetchEvent', update);
+        queryClient.invalidateQueries({ queryKey: ['session'] });
+      });
   
       socketInstance.on('connect_error', (error: any) => {
         console.log('debug123=Socket connection error:', error);
@@ -127,6 +133,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
         if (socketConnect) {
           socketConnect.off('botMessage');
           socketConnect.off('purchaseSettled');
+          socketConnect.off('refetchEvent');
           socketConnect.off('connect_error');
           socketConnect.disconnect();
         }
