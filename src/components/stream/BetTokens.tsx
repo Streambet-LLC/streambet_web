@@ -88,7 +88,7 @@ export default function BetTokens({
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
-console.log('session', session);
+
   // Check for tablet range (773px to 1024px)
   useEffect(() => {
     const checkTabletRange = () => {
