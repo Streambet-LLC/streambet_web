@@ -26,8 +26,8 @@ import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionConte
 import { AuthProvider } from '@/contexts/AuthContext';
 import { BettingStatusProvider } from './contexts/BettingStatusContext';
 import { HistoryType } from './enums';
-import { NavigationListener } from '@/components/NavigationListener';
 import BugSnagErrorBoundary from './bugsnag';
+import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 
 
 // Create a client
@@ -41,7 +41,6 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-
   return (
     <BugSnagErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -53,8 +52,7 @@ const App = () => {
                   <TooltipProvider>
                     <Toaster />
                     <Sonner />
-                    <NavigationListener />
-                    {/* <WelcomeModal open={showWelcomeModal} onOpenChange={setShowWelcomeModal} /> */}
+                    <LogoutEventHandlers />
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/stream/:id" element={<Stream />} />

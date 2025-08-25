@@ -70,6 +70,8 @@ apiClient.interceptors.response.use(
         description: error.response?.data?.message,
         duration: 7000,
       });
+      // Dispatch custom event for logout handling
+      window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
     }
 
     const originalRequest = error.config;
