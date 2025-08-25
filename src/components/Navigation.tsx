@@ -13,6 +13,7 @@ import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { CurrencyType } from '@/enums';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useLogout } from '@/hooks/useLogout';
 
 interface NavigationProps {
   onDashboardClick?: () => void;
@@ -32,6 +33,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   const { session, refetchSession } = useAuthContext();
+  const { handleLogout } = useLogout();
 
   // Handle scroll behavior for hiding/showing navbar
   useEffect(() => {
@@ -53,16 +55,14 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [prevScrollY]);
 
-  const handleLogout = async () => {
-    await api.auth.signOut();
-    queryClient.clear();
-    navigate('/login');
+  const handleLogoutWithRefetch = async () => {
+    await handleLogout();
     refetchSession();
   };
 
   useEffect(() => {
     if (!isCheckingLocation && session && !locationResult?.allowed) {
-      handleLogout();
+      handleLogoutWithRefetch();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCheckingLocation, locationResult, session]);
@@ -175,7 +175,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
                       className="justify-start text-left h-12 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                       onClick={() => {
                         setTimeout(() => {
-                          handleLogout();
+                          handleLogoutWithRefetch();
                         }, 100);
                         setIsDrawerOpen(false);
                       }}
@@ -237,7 +237,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
               <>
                 <WalletDropdown walletBalance={isSweepCoins ? session?.walletBalanceSweepCoin || 0 : session?.walletBalanceGoldCoin || 0} />
 
-                <UserDropdown profile={session} onLogout={handleLogout} />
+                <UserDropdown profile={session} onLogout={handleLogoutWithRefetch} />
               </>
             ) : (
               <>

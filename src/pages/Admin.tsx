@@ -10,6 +10,7 @@ const Admin = () => {
   const {
     profile,
     isProfileLoading,
+    isProfileFetching,
     streams,
     searchStreamQuery,
     handleRefetchStreams,
@@ -80,7 +81,7 @@ const Admin = () => {
     );
   }
 
-  if (profile?.role !== 'admin') {
+  if (!isProfileFetching && profile?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
 

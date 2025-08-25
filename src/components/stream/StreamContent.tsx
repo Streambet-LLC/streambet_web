@@ -69,7 +69,7 @@ export const StreamContent = ({
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currencyRef = useRef({ updatedCurrency, currency });
-  const initialRef = useRef(true);
+  const isEditRef = useRef(false);
   const horizontalScrollRef = useRef<HTMLDivElement>(null);
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = stream?.status === StreamStatus.ENDED;
@@ -395,9 +395,8 @@ export const StreamContent = ({
   useEffect(() => {
     if (hasSocketUpdate) return;
     if (getRoundData) {
-      if (initialRef.current) {
+      if (!isEditRef.current) {
         setPlaceBet(false);
-        initialRef.current = false;
       }
       setPotentialWinnings(getRoundData?.currencyType === CurrencyType.GOLD_COINS ? getRoundData?.potentialGoldCoinAmt : getRoundData?.potentialSweepCoinAmt);
       setSelectedAmount(getRoundData?.betAmount);
@@ -433,6 +432,7 @@ export const StreamContent = ({
    // Mutation to edit a bet
   const editBetSocket = (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
     setLoading(true);
+    isEditRef.current = false;
     if (socketConnect && socketConnect.connected) {
       setUpdatedCurrency(data.newCurrencyType as CurrencyType);
       socketConnect.emit('editBet', {
@@ -452,6 +452,7 @@ export const StreamContent = ({
 
 // Function to handle bet edit
   const handleBetEdit = () => {
+    isEditRef.current = true;
     setLoading(false);
     setIsEditing(true);
     setPlaceBet(true); // Show BetTokens (edit mode)
@@ -460,6 +461,7 @@ export const StreamContent = ({
 
   // Cancel bet mutation
     const cancelBetSocket = (data: { betId: string; currencyType: string }) => {
+      isEditRef.current = false;
       if (socketConnect && socketConnect.connected) {
         socketConnect.emit('cancelBet', {
           betId:data?.betId,
