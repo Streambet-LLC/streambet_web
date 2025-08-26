@@ -71,6 +71,7 @@ export const StreamContent = ({
   const currencyRef = useRef({ updatedCurrency, currency });
   const isEditRef = useRef(false);
   const horizontalScrollRef = useRef<HTMLDivElement>(null);
+  const isStreamLive = stream?.status === StreamStatus.LIVE;
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = stream?.status === StreamStatus.ENDED;
 
@@ -456,7 +457,13 @@ export const StreamContent = ({
     setLoading(false);
     setIsEditing(true);
     setPlaceBet(true); // Show BetTokens (edit mode)
-    refetchRoundData(); // when canceling and placcing bet,then editing we need to refetch round data
+    refetchRoundData(); // when canceling and placing bet,then editing we need to refetch round data
+  }
+
+  // Function to undo bet edit
+  const handleEditBack = () => {
+    setIsEditing(false);
+    setPlaceBet(false);
   }
 
   // Cancel bet mutation
@@ -695,6 +702,7 @@ export const StreamContent = ({
               isEditing={isEditing}
               updatedCurrency={updatedCurrency}
               lockedBet={lockedBet}
+              handleEditBack={handleEditBack}
             />
           ) : (
               <LockTokens
@@ -782,7 +790,7 @@ export const StreamContent = ({
 
             <div className="flex items-center gap-1 mt-3 text-sm">
               <img src="/icons/person.svg" alt="coin" className="w-4 h-4" />
-              <span>{viewerCount ?? (stream?.viewerCount || 0)} watching</span>
+              <span>{isStreamLive ? (viewerCount ?? (stream?.viewerCount || 0)) : 0} watching</span>
             </div>
           </div>
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>

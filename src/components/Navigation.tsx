@@ -133,6 +133,12 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
             onClose={() => setIsDrawerOpen(false)}
           >
             <div className="flex-1 overflow-y-auto p-4 pt-12">
+              {/* Logo for mobile */}
+              <div className="md:hidden mb-4 pl-4">
+                <Link to="/" className="flex items-center" onClick={() => setIsDrawerOpen(false)}>
+                  <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[165px] object-contain" />
+                </Link>
+              </div>
               <div className="flex flex-col space-y-2">
                 {menuItems.map((item, index) => {
                   const isActive = location.pathname === item.path;
@@ -189,7 +195,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
           </CustomDrawer>
         </div>
 
-        <motion.div variants={logoVariants} initial="hidden" animate="visible">
+        <motion.div variants={logoVariants} initial="hidden" animate="visible" className="hidden md:block">
           <Link to="/" className="flex items-center">
             <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[165px] object-contain" />
           </Link>

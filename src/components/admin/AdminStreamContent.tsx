@@ -7,7 +7,6 @@ import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog';
 import api from '@/integrations/api/client';
 import { StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
-import { BettingRounds } from './BettingRounds';
 import { Separator } from '@/components/ui/separator';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -201,6 +200,16 @@ useEffect(() => {
             socketConnect?.off('streamEnded');
       }
     }, []);
+
+    const handleEndRoundData = (optionId: string) => {
+      handleEndRound(optionId);
+      setBettingUpdate(null);
+    };
+
+    const handleCancelRoundData = (roundId: string) => {
+      handleCancelRound(roundId);
+      setBettingUpdate(null);
+    };
 
   // Stream info form state for editing
   const [editForm, setEditForm] = useState({
@@ -441,8 +450,8 @@ useEffect(() => {
             betData={betData}
             handleOpenRound={handleOpenRound}
             handleLockBets={handleLockBets}
-            handleEndRound={handleEndRound}
-            handleCancelRound={handleCancelRound}
+            handleEndRound={(optionId: string) => handleEndRoundData(optionId)}
+            handleCancelRound={(roundId: string) => handleCancelRoundData(roundId)}
             refetchBetData={refetchBetData}
             streamInfo={streamInfo}
             bettingUpdate={bettingUpdate}
