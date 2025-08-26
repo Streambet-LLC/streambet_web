@@ -226,7 +226,7 @@ export function BettingRounds({
                                 isNotCreatedStatus={isNotCreatedStatus}
                                 onSave={(newName) => updateRoundName(roundIndex, newName)}
                                 className={`text-white font-medium truncate ${hasRoundError ? 'text-destructive' : ''}`}
-                                style={{ fontSize: '16px', color: hasRoundError ? '#ef4444' : '#FFFFFFBF', maxWidth: '200px' }}
+                                style={{ fontSize: '16px', color: hasRoundError ? '#ef4444' : '#FFFFFFBF', maxWidth: '100%' }}
                                 minLength={2}
                               />
                             </div>
@@ -353,7 +353,7 @@ export function BettingRounds({
                                       value={option.option}
                                       onSave={(newName) => updateOptionName(roundIndex, optionIndex, newName)}
                                       className={`text-white text-sm font-normal truncate${isDuplicateOption ? ' text-destructive' : ''}`}
-                                      style={{ color: isDuplicateOption ? '#ef4444' : '#FFFFFFBF', maxWidth: '180px' }}
+                                      style={{ color: isDuplicateOption ? '#ef4444' : '#FFFFFFBF', maxWidth: '100%' }}
                                       minLength={2}
                                     />
                                   </div>
