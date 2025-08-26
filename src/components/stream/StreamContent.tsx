@@ -203,27 +203,32 @@ export const StreamContent = ({
         description: `${data?.winnerName} has selected as winning bet option!`,
         duration: 7000,
       });
-      resetBetData();
       setWinnerOption(data?.winnerName);
-      setShowWinnerAnimation(true);
-      // Check if current session user is a winner
-      if (Array.isArray(data?.winners) && session?.id) {
-        const found = data.winners.some((w: any) => w.userId === session.id);
-        setIsUserWinner(found);
-      } else {
-        setIsUserWinner(false);
+      const { updatedCurrency: currentUpdatedCurrency, currency: currentCurrency } = currencyRef.current;
+      const isSweepCoins = (currentUpdatedCurrency || currentCurrency) === CurrencyType.SWEEP_COINS;
+      const isVoided = isSweepCoins ? data?.voided?.sweepCoin : data?.voided?.goldCoin;
+      if (!isVoided) {
+        setShowWinnerAnimation(true);
+        // Check if current session user is a winner
+        if (Array.isArray(data?.winners) && session?.id) {
+          const found = data.winners.some((w: any) => w.userId === session.id);
+          setIsUserWinner(found);
+        } else {
+          setIsUserWinner(false);
+        }
+        // Check if current session user is a loser
+        if (Array.isArray(data?.losers) && session?.id) {
+          const found = data.losers.some((l: any) => l.userId === session.id);
+          setIsUserLoser(found);
+        } else {
+          setIsUserLoser(false);
+        }
+        // Hide the animation after 5 seconds
+        setTimeout(() => {
+          setShowWinnerAnimation(false);
+        }, 5000);
       }
-      // Check if current session user is a loser
-      if (Array.isArray(data?.losers) && session?.id) {
-        const found = data.losers.some((l: any) => l.userId === session.id);
-        setIsUserLoser(found);
-      } else {
-        setIsUserLoser(false);
-      }
-      // Hide the animation after 5 seconds
-      setTimeout(() => {
-        setShowWinnerAnimation(false);
-      }, 5000);
+      resetBetData();
       setResetKey(prev => prev + 1);
       queryClient.prefetchQuery({ queryKey: ['session'] });
       refetchStream();
