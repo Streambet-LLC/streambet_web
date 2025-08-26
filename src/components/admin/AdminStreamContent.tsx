@@ -201,13 +201,8 @@ useEffect(() => {
       }
     }, []);
 
-    const handleEndRoundData = (optionId: string) => {
-      handleEndRound(optionId);
-      setBettingUpdate(null);
-    };
-
-    const handleCancelRoundData = (roundId: string) => {
-      handleCancelRound(roundId);
+    const handleOpenRoundData = (streamId: string) => {
+      handleOpenRound(streamId);
       setBettingUpdate(null);
     };
 
@@ -448,10 +443,10 @@ useEffect(() => {
             isUpdatingAction={isUpdatingAction}
             isBetRoundCancelling={isBetRoundCancelling}
             betData={betData}
-            handleOpenRound={handleOpenRound}
+            handleOpenRound={(streamId: string) => handleOpenRoundData(streamId)}
             handleLockBets={handleLockBets}
-            handleEndRound={(optionId: string) => handleEndRoundData(optionId)}
-            handleCancelRound={(roundId: string) => handleCancelRoundData(roundId)}
+            handleEndRound={handleEndRound}
+            handleCancelRound={handleCancelRound}
             refetchBetData={refetchBetData}
             streamInfo={streamInfo}
             bettingUpdate={bettingUpdate}

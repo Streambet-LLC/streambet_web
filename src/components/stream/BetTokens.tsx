@@ -56,7 +56,7 @@ interface BetTokensProps {
   isEditing?: boolean; // to indicate if it's an editing state
   updatedCurrency?: string; // for updated currency type
   lockedBet?: boolean; // to indicate if the bet is locked
-  handleEditBack?: VoidFunction;
+  handleEditBack: VoidFunction;
 }
 
 export default function BetTokens({ 
