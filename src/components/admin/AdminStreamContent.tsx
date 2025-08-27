@@ -127,29 +127,29 @@ export const AdminStreamContent = ({
   const [streamInfo, setStreamInfo] = useState<any>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [endStreamDialogOpen, setEndStreamDialogOpen] = useState(false);
-  const [bettingSettingsOpen, setBettingSettingsOpen] = useState(false);
   const [editableRounds, setEditableRounds] = useState([]);
-  const [bettingErrorRounds, setBettingErrorRounds] = useState([]);
-  const [showBettingValidation, setShowBettingValidation] = useState(false);
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
-    // Socket reference
-  const [socket, setSocket] = useState<any>(null);
   const [bettingUpdate, setBettingUpdate] = useState<BettingTotals | null>(null);
   const [messageList, setMessageList] = useState<any>();
-  const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
+  const { socketConnect, handleSocketReconnection } = useBettingStatusContext();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
      // Function to setup socket event listeners
       const setupSocketEventListeners = (socketInstance: any) => {
         if (!socketInstance) return;
 
+        socketInstance.on('scheduledStreamUpdatedToLive', () => {
+          console.log('scheduledStreamUpdatedToLive admin');
+            fetchStreamData();
+        });
+
         socketInstance.on('bettingUpdate', (update: any) => {
         console.log('bettingUpdate admin', update);
           setBettingUpdate(update);
-      });
+        });
     
         socketInstance.on('newMessage', (update) => {
-          console.log('newMessage', update);
+          console.log('admin newMessage', update);
           setMessageList(update)
         });
     
@@ -198,6 +198,7 @@ useEffect(() => {
       if (socketConnect) {
             socketConnect?.off('newMessage');
             socketConnect?.off('streamEnded');
+            socketConnect?.off('scheduledStreamUpdatedToLive');
       }
     }, []);
 
@@ -226,9 +227,6 @@ useEffect(() => {
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-
-  // Add loading state for betting save
-  const [bettingSaveLoading, setBettingSaveLoading] = useState(false);
 
   async function fetchStreamData() {
     try {

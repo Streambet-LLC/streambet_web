@@ -142,6 +142,11 @@ export const StreamContent = ({
       setLoading(false);
     };
 
+    socketInstance.on('scheduledStreamUpdatedToLive', () => {
+      console.log('scheduledStreamUpdatedToLive');
+      refetchStream();
+    });
+
     const processPlacedBet = (update) => {
       console.log('update process bet placed', update);
       queryClient.prefetchQuery({ queryKey: ['session'] }); // To recall me api that will update currency amount near to toggle
@@ -287,6 +292,7 @@ export const StreamContent = ({
     });
     
     socketInstance.on('newMessage', (update) => {
+      console.log('newMessage', update);
       setMessageList(update);
     });
 
@@ -352,6 +358,7 @@ export const StreamContent = ({
 
       // Remove all event listeners
       if (socketConnect) {
+        socketConnect.off('scheduledStreamUpdatedToLive');
         socketConnect.off('bettingUpdate');
         socketConnect.off('viewerCountUpdated');
         socketConnect.off('potentialAmountUpdate');
@@ -749,7 +756,7 @@ export const StreamContent = ({
               if (isRoundClosed) {
                 return (
                   <div key={round?.id} className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0 px-2">
-                    <p className="text-white font-semibold text-lg">{round?.roundName}</p>
+                    <p className="text-white font-semibold text-lg line-clamp-3">{round?.roundName}</p>
                     <div className="flex flex-col items-center gap-2 mt-2">
                       <p className="text-white font-bold">{round?.winningOption?.[0]?.variableName} as winner</p>
                       <span className="text-white text-sm font-medium">won {round?.winningOption?.[0]?.totalGoldCoinAmt} gold coins</span>
@@ -759,17 +766,17 @@ export const StreamContent = ({
                 )} else if (isRoundCancelled) {
                 return (
                   <div key={round?.id} className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0 px-2">
-                    <p className="text-white font-semibold text-lg">{round?.roundName} cancelled</p>
+                    <p className="text-white font-semibold text-lg line-clamp-3">{round?.roundName} cancelled</p>
                   </div>
                 )} else if (isRoundLocked) {
                 return (
                 <div key={round?.id} className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 shadow-[0_0_20px_#a3e635] shrink-0 px-2">
-                  <p className="text-white font-medium">{round?.roundName} is locked</p>
+                  <p className="text-white font-medium line-clamp-3">{round?.roundName} is locked</p>
                 </div>
                 )} else if (isRoundCreated) {
                   return (
                   <div key={round?.id} className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[#BDFF00] shadow-[0_0_20px_#a3e635] shrink-0 px-2">
-                    <p className="text-white font-medium">{round?.roundName} is coming up!</p>
+                    <p className="text-white font-medium line-clamp-3">{round?.roundName} is coming up!</p>
                   </div>
                   )}
               })

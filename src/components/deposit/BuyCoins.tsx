@@ -96,11 +96,11 @@ const BuyCoins = ({
                   </div>
                   </div>
 
-                  <div className="flex items-center bg-[#3B3E2B] rounded-md w-full mb-4 h-[50px]">
+                  <div className="flex items-center bg-[#3B3E2B] rounded-md w-full mb-4 h-[70px]">
                     <div className="flex items-center justify-center text-sm font-bold w-[60px] h-[60px]">
                      <img src="/icons/promo.svg" alt="coin-icon" />
                     </div>
-                    <div className="flex flex-col leading-tight">
+                    <div className="flex flex-col gap-1">
                       <span className="text-xs font-bold text-[#0D0D0D] uppercase bg-[#BDFF00] text-center w-14 rounded-sm">Promo</span>
                       <span className="text-xs text-[#BDFF00]">Get {Number(option.sweepCoinCount || 0)?.toLocaleString('en-US')} free sweep coins</span>
                     </div>

@@ -175,11 +175,11 @@ export default function BetTokens({
     >
       <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
         <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
-          {isEditing && <div className="w-[14px] h-[14px] mb-3 gap-2 flex items-center cursor-pointer" onClick={() => handleEditBack()}>
+          {isEditing && <div className="w-[18px] h-[18px] mt-2 mb-4 gap-2 flex items-center cursor-pointer" onClick={() => handleEditBack()}>
                 <img
                     src="/icons/back.svg"
                     className="w-[100%] h-[100%] object-contain cursor-pointer"
-                /> <span className="text-sm font-medium">Back</span>
+                /> <span className="font-medium">Back</span>
           </div>}
           Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}
           <span className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>

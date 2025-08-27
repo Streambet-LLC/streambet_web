@@ -19,6 +19,7 @@ interface InlineEditableProps {
   placeholder?: string;
   style?: React.CSSProperties;
   isNotCreatedStatus?: boolean;
+  title?: string;
 }
 
 export function InlineEditable({ 
@@ -28,7 +29,8 @@ export function InlineEditable({
   minLength = 3,
   placeholder = 'Enter text...',
   isNotCreatedStatus,
-  style
+  style,
+  title
 }: InlineEditableProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
@@ -60,8 +62,8 @@ export function InlineEditable({
       setError(`Must be at least ${minLength} characters`);
       return;
     }
-    if (trimmedValue.length > 50) {
-    setError('Must be at most 50 characters');
+    if (trimmedValue.length > 250) {
+    setError('Must be at most 250 characters');
     return;
     }
     if (trimmedValue !== value) {
@@ -116,7 +118,7 @@ export function InlineEditable({
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
         <DialogContent className='border-2 border-[#BDFF00]' style={{ background: '#0D0D0D' }}>
           <DialogHeader>
-            <DialogTitle>Edit Value</DialogTitle>
+            <DialogTitle>{title || 'Edit Value'}</DialogTitle>
           </DialogHeader>
           <div className="py-2">
             <Input

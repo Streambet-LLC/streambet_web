@@ -222,6 +222,7 @@ export function BettingRounds({
                                 {expandedRounds.includes(getRoundValue(roundIndex)) ? '▼' : '▶'}
                               </Button>
                               <InlineEditable
+                                title="Edit Round Name"
                                 value={round.roundName}
                                 isNotCreatedStatus={isNotCreatedStatus}
                                 onSave={(newName) => updateRoundName(roundIndex, newName)}
@@ -349,6 +350,7 @@ export function BettingRounds({
                                 <div className="flex items-center gap-2 group min-w-0 h-full" style={{ height: 72 }}>
                                   <div className={`flex items-center w-full${isDuplicateOption ? ' border-destructive' : ''}`} style={{ height: 44, background: '#272727', borderRadius: 8, paddingLeft: 16, paddingRight: 16, border: isDuplicateOption ? '1px solid #ef4444' : 'none' }}>
                                     <InlineEditable
+                                      title="Edit Option Name"
                                       isNotCreatedStatus={isNotCreatedStatus}
                                       value={option.option}
                                       onSave={(newName) => updateOptionName(roundIndex, optionIndex, newName)}
