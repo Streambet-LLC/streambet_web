@@ -130,7 +130,7 @@ export default function Chat({ sendMessageSocket, newSocketMessage,session,strea
 
 
   return (
-    <div className="flex flex-col h-[730px] bg-black text-white border border-zinc-700 rounded-[16px]">
+    <div className="flex flex-col h-[610px] bg-black text-white border border-zinc-700 rounded-[16px]">
       <div className="p-4 text-sm font-semibold">Live chat</div>
 
       <div

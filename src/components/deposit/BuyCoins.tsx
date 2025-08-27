@@ -12,7 +12,6 @@ const BuyCoins = ({
     setPackageId: (id: string) => void
   }) => {
   const [imageLoadingStates, setImageLoadingStates] = useState<{ [key: number]: boolean }>({});
-  const [imageErrorStates, setImageErrorStates] = useState<{ [key: number]: boolean }>({});
 
   const {
     data: coinPackages,
@@ -27,20 +26,6 @@ const BuyCoins = ({
 
   const handleImageLoad = (index: number) => {
     setImageLoadingStates(prev => ({ ...prev, [index]: false }));
-  };
-
-  const handleImageError = (index: number) => {
-    setImageLoadingStates(prev => ({ ...prev, [index]: false }));
-    setImageErrorStates(prev => ({ ...prev, [index]: true }));
-  };
-
-  const getImageSrc = (option: any, index: number) => {
-    if (imageErrorStates[index]) {
-      // Fallback to original coin icons based on index
-      const fallbackIcons = ['/icons/coin1.png', '/icons/coin2.png', '/icons/coin3.png', '/icons/coin1.png'];
-      return fallbackIcons[index % fallbackIcons.length];
-    }
-    return getImageLink(option.imageUrl);
   };
 
   return (
@@ -79,13 +64,12 @@ const BuyCoins = ({
                       <div className="absolute inset-0 bg-gray-700 rounded-lg animate-pulse"></div>
                     )}
                     <img
-                      src={getImageSrc(option, idx)}
+                      src={getImageLink(option?.imageUrl)}
                       alt={`coin-${idx}`}
                       className={`w-[70px] h-[84px] object-contain transition-opacity duration-300 ${
                         imageLoadingStates[idx] ? 'opacity-0' : 'opacity-100'
                       }`}
                       onLoad={() => handleImageLoad(idx)}
-                      onError={() => handleImageError(idx)}
                     />
                   </div>
                   <div className="flex flex-col my-auto leading-none">
