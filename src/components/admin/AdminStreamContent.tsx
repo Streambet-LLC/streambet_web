@@ -137,6 +137,12 @@ export const AdminStreamContent = ({
      // Function to setup socket event listeners
       const setupSocketEventListeners = (socketInstance: any) => {
         if (!socketInstance) return;
+        socketInstance.off('scheduledStreamUpdatedToLive');
+        socketInstance.off('bettingUpdate');
+        socketInstance.off('newMessage');
+        socketInstance.off('streamEnded');
+        socketInstance.off('disconnect');
+        socketInstance.off('connect_error');
 
         socketInstance.on('scheduledStreamUpdatedToLive', () => {
           console.log('scheduledStreamUpdatedToLive admin');

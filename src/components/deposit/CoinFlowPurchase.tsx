@@ -118,7 +118,7 @@ export const CoinFlowPurchaseComponent = ({
           email={session?.email || ''}
           key={`coinflow-${amount}`}
           webhookInfo={{
-            env: import.meta.env.VITE_BUGSNAG_SERVER,
+            env: import.meta.env.VITE_BUGSNAG_SERVER || 'prod',
             user_id: session?.id,
             coin_package_id: packageId,
           }}
