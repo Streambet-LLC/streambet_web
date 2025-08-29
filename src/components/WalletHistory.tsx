@@ -26,7 +26,7 @@ interface Props {
 
 
 export const WalletHistory: React.FC<Props> = ({ historyType }) => {
-
+  const isTransaction = historyType === HistoryType.Transaction;
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,14 +37,19 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
   const rangeEnd = itemsPerPage;
   
   const { data: transactions, refetch: refetchTransactions } = useQuery({
-    queryKey: ['getTransactions'],
+    queryKey: isTransaction ? ['getTransactions'] : ['getUserBets'],
     queryFn: async () => {
-      const data = await api.wallet.getTransactions({
+      const data = isTransaction ? await api.wallet.getTransactions({
         range: `[${rangeStart},${rangeEnd}]`,
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: searchUserQuery }),
         pagination: true,
         historyType,
+      }) : await api.betting.getUserBets({
+        range: `[${rangeStart},${rangeEnd}]`,
+        sort: '["createdAt","DESC"]',
+        filter: JSON.stringify({ q: searchUserQuery }),
+        pagination: true,
       });
       return data;
     },
@@ -127,36 +132,81 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
       ) : (
         // Desktop Table View
         <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-left">Date</TableHead>
-                <TableHead className="text-left">Type</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedUsers?.length === 0 ? (
+          {isTransaction ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
-                    {historyType === HistoryType.Transaction ? 'No transactions history found matching' : 'No betting history found matching'}
-                  </TableCell>
+                  <TableHead className="text-left">Date</TableHead>
+                  <TableHead className="text-left">Type</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
-              ) : (
-                paginatedUsers?.map(user => (
-                  <TableRow key={user.id}>
-                    <TableCell className="text-left">{user?.createdat ? new Date(user.createdat).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</TableCell>
-                    <TableCell className="text-left">{user?.type}</TableCell>
-                    <TableCell className="text-right">
-                      <span style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
-                      {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.SWEEP_COINS ? ' Sweep Coin(s)' : ' Gold Coin(s)'}
-                      </span>
+              </TableHeader>
+              <TableBody>
+                {paginatedUsers?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                      No transactions history found matching
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  paginatedUsers?.map(user => (
+                    <TableRow key={user.id}>
+                      <TableCell className="text-left">{user?.createdat ? new Date(user.createdat).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</TableCell>
+                      <TableCell className="text-left">{user?.type}</TableCell>
+                      <TableCell className="text-right">
+                        <span style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
+                        {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.SWEEP_COINS ? ' Sweep Coin(s)' : ' Gold Coin(s)'}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-left">Date</TableHead>
+                  <TableHead className="text-left">Stream</TableHead>
+                  <TableHead className="text-left">Round</TableHead>
+                  <TableHead className="text-left">Option</TableHead>
+                  <TableHead className="text-left">Coin Type</TableHead>
+                  <TableHead className="text-left">Amount</TableHead>
+                  <TableHead className="text-left">Result</TableHead>
+                  <TableHead className="text-left">Won</TableHead>
+                  <TableHead className="text-left">Lost</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedUsers?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                      No betting history found matching
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedUsers?.map(user => (
+                    <TableRow key={user.id}>
+                      <TableCell className="text-[14px] text-left">{user?.date ? new Date(user.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</TableCell>
+                      <TableCell className="text-[14px] text-left">{user?.streamName}</TableCell>
+                      <TableCell className="text-[14px] text-left">{user?.roundName}</TableCell>
+                      <TableCell className="text-[14px] text-left">{user?.optionName}</TableCell>
+                      <TableCell className="text-[14px] text-left">{user?.coinType === CurrencyType.GOLD_COINS ? 'Gold coins' : 'Sweep coins'}</TableCell>
+                      <TableCell className="text-[14px] text-left">
+                        {Math.abs(user?.amountPlaced ?? 0)?.toLocaleString('en-US')}
+                      </TableCell>
+                      <TableCell className="text-[16px] text-left">
+                          <span className="px-2 py-1 bg-[#2C2C2C] rounded-md">
+                            {user?.status}
+                          </span>
+                        </TableCell>
+                      <TableCell className="text-[14px] text-left">{user?.amountWon}</TableCell>
+                      <TableCell className="text-[14px] text-left">{`${Number(user?.amountLost || 0) > 0 ? '-' : ''}${user?.amountLost}`}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>)}
         </div>
       )}
 
