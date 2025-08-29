@@ -16,7 +16,7 @@ import {
 } from '../ui/pagination';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing, Trash2 } from 'lucide-react';
+import { Eye, Pen, ChartNoAxesColumnIncreasing, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { StreamStatus } from '@/enums';

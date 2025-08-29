@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { CurrencyType } from '@/enums';
 import api from '@/integrations/api/client';
 import { useAuthContext } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +42,6 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
 
       // Handle purchase event
       socketInstance.on('purchaseSettled', (update: any) => {
-        console.log('purchaseSettled', update);
         queryClient.invalidateQueries({ queryKey: ['session'] });
           toast({
             id: 'purchase-completed',

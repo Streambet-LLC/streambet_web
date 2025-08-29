@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Instagram, Twitter, Gamepad2, Video, Youtube, MessageCircle } from 'lucide-react';
+import { Instagram, Gamepad2, Youtube } from 'lucide-react';
 
 export const Footer = () => {
   return (

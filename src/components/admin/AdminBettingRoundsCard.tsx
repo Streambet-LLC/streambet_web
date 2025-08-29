@@ -139,7 +139,6 @@ export const AdminBettingRoundsCard = ({
           };
      };
 
-     console.log(streamInfo?.data?.totalCoinAmount,'streamInfo')
      // Responsive width for card
      const cardWidth = 'w-full';
 
