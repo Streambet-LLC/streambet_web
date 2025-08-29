@@ -448,18 +448,19 @@ export const bettingAPI = {
     return response.data;
   },
 
-// Get betting options for a stream
-  getBettingData: async (streamId: string,userId?:string) => {
+  // Get betting options for a stream
+  getBettingData: async (streamId: string, userId?:string) => {
     const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}`);
     return response.data;
   },
-// Get data for seltected betting round
+
+  // Get data for selected betting round
   getBettingRoundData: async (roundId: string) => {
     const response = await apiClient.get(`/betting/potentialAmount/${roundId}`);
     return response.data;
   },
 
-// Edit a bet
+  // Edit a bet
     EditBet: async (betData: {
       betId: string;
       newBettingVariableId: string;
@@ -494,11 +495,9 @@ export const bettingAPI = {
     return response.data;
   },
 
-
-
   // Get user's betting history
-  getUserBets: async (active = false) => {
-    const response = await apiClient.get(`/betting/user-bets?active=${active}`);
+  getUserBets: async (params: any) => {
+    const response = await apiClient.get('/betting/history', { params });
     return response.data;
   },
 

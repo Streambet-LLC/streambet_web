@@ -21,39 +21,9 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Commented as reconnection is handled in the socket connection logic in client.ts
- const handleSocketReconnection = () => {
-  // console.log("Reconnecting socket")
-  //   if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-  //     console.log('Max reconnection attempts reached');
-  //     return;
-  //   }
-
-  //   reconnectAttemptsRef.current++;
-
-  //   // Clear existing socket
-  //   if (socketConnect) {
-  //     socketConnect.off('pong');
-  //   }
-
-  //   // Create new socket connection
-  //   const newSocket = api.socket.connect();
-  //   if (newSocket) {
-  //     setSocketConect(newSocket);
-  //     api.socket.joinCommonStream(newSocket);
-  //     // Reset reconnection attempts on successful connection
-  //     newSocket.on('connect', () => {
-  //       console.log('Common Socket reconnected successfully');
-  //       reconnectAttemptsRef.current = 0;
-  //     });
-
-  //   } else {
-  //     // Retry reconnection after delay
-  //     reconnectTimeoutRef.current = setTimeout(() => {
-  //       handleSocketReconnection();
-  //     }, 3000);
-  //   }
-  };
+    // This function is not used as reconnection is handled in the socket connection logic in client.ts
+    const handleSocketReconnection = () => {
+    };
 
     const setupSocketEventListeners = (socketInstance: any) => {
       if (!socketInstance) return;
