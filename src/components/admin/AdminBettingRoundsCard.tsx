@@ -139,7 +139,6 @@ export const AdminBettingRoundsCard = ({
           };
      };
 
-     console.log(streamInfo?.data?.totalCoinAmount,'streamInfo')
      // Responsive width for card
      const cardWidth = 'w-full';
 
@@ -313,7 +312,7 @@ export const AdminBettingRoundsCard = ({
                                                             width: slideWidth,
                                                             minWidth: slideWidth,
                                                             maxWidth: 280,
-                                                            height: 250,
+                                                            height: 270,
                                                             ...getBoxStyles(isActive, status),
                                                             flex: '0 0 auto',
                                                             overflow: 'hidden',
@@ -327,7 +326,7 @@ export const AdminBettingRoundsCard = ({
                                                        {/* Round Name */}
                                                        <div className="w-full flex flex-col items-center justify-center h-full">
                                                             <div
-                                                                 className={`text-center ${isActive || !isCreated ? 'text-white' : 'text-white/75'} text-[15px] truncate max-w-full px-2`}
+                                                                 className={`text-center ${isActive || !isCreated ? 'text-white' : 'text-white/75'} text-[15px] line-clamp-2 max-w-full px-2`}
                                                                  style={FabioBoldStyle}
                                                                  title={round?.roundName}
                                                             >

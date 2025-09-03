@@ -12,7 +12,6 @@ const BuyCoins = ({
     setPackageId: (id: string) => void
   }) => {
   const [imageLoadingStates, setImageLoadingStates] = useState<{ [key: number]: boolean }>({});
-  const [imageErrorStates, setImageErrorStates] = useState<{ [key: number]: boolean }>({});
 
   const {
     data: coinPackages,
@@ -27,20 +26,6 @@ const BuyCoins = ({
 
   const handleImageLoad = (index: number) => {
     setImageLoadingStates(prev => ({ ...prev, [index]: false }));
-  };
-
-  const handleImageError = (index: number) => {
-    setImageLoadingStates(prev => ({ ...prev, [index]: false }));
-    setImageErrorStates(prev => ({ ...prev, [index]: true }));
-  };
-
-  const getImageSrc = (option: any, index: number) => {
-    if (imageErrorStates[index]) {
-      // Fallback to original coin icons based on index
-      const fallbackIcons = ['/icons/coin1.png', '/icons/coin2.png', '/icons/coin3.png', '/icons/coin1.png'];
-      return fallbackIcons[index % fallbackIcons.length];
-    }
-    return getImageLink(option.imageUrl);
   };
 
   return (
@@ -79,13 +64,12 @@ const BuyCoins = ({
                       <div className="absolute inset-0 bg-gray-700 rounded-lg animate-pulse"></div>
                     )}
                     <img
-                      src={getImageSrc(option, idx)}
+                      src={getImageLink(option?.imageUrl)}
                       alt={`coin-${idx}`}
                       className={`w-[70px] h-[84px] object-contain transition-opacity duration-300 ${
                         imageLoadingStates[idx] ? 'opacity-0' : 'opacity-100'
                       }`}
                       onLoad={() => handleImageLoad(idx)}
-                      onError={() => handleImageError(idx)}
                     />
                   </div>
                   <div className="flex flex-col my-auto leading-none">
@@ -96,11 +80,11 @@ const BuyCoins = ({
                   </div>
                   </div>
 
-                  <div className="flex items-center bg-[#3B3E2B] rounded-md w-full mb-4 h-[50px]">
+                  <div className="flex items-center bg-[#3B3E2B] rounded-md w-full mb-4 h-[70px]">
                     <div className="flex items-center justify-center text-sm font-bold w-[60px] h-[60px]">
                      <img src="/icons/promo.svg" alt="coin-icon" />
                     </div>
-                    <div className="flex flex-col leading-tight">
+                    <div className="flex flex-col gap-1">
                       <span className="text-xs font-bold text-[#0D0D0D] uppercase bg-[#BDFF00] text-center w-14 rounded-sm">Promo</span>
                       <span className="text-xs text-[#BDFF00]">Get {Number(option.sweepCoinCount || 0)?.toLocaleString('en-US')} free sweep coins</span>
                     </div>

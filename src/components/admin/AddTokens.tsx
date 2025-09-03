@@ -33,7 +33,6 @@ const AddTokens: React.FC<WalletCellProps> = ({
     setOpen(false);
   };
 
-
   const handleDialogChange = (open: boolean) => {
     setOpen(open);
     if (!open) {

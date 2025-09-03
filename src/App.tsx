@@ -9,7 +9,6 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Admin from './pages/Admin';
 import Deposit from './pages/Deposit';
-import Withdraw from './pages/Withdraw';
 import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
 import Privacy from './pages/Privacy';

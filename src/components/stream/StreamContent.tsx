@@ -71,6 +71,7 @@ export const StreamContent = ({
   const currencyRef = useRef({ updatedCurrency, currency });
   const isEditRef = useRef(false);
   const horizontalScrollRef = useRef<HTMLDivElement>(null);
+  const isStreamLive = stream?.status === StreamStatus.LIVE;
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = stream?.status === StreamStatus.ENDED;
 
@@ -141,6 +142,11 @@ export const StreamContent = ({
       setLoading(false);
     };
 
+    socketInstance.on('scheduledStreamUpdatedToLive', () => {
+      console.log('scheduledStreamUpdatedToLive');
+      refetchStream();
+    });
+
     const processPlacedBet = (update) => {
       console.log('update process bet placed', update);
       queryClient.prefetchQuery({ queryKey: ['session'] }); // To recall me api that will update currency amount near to toggle
@@ -202,27 +208,32 @@ export const StreamContent = ({
         description: `${data?.winnerName} has selected as winning bet option!`,
         duration: 7000,
       });
-      resetBetData();
       setWinnerOption(data?.winnerName);
-      setShowWinnerAnimation(true);
-      // Check if current session user is a winner
-      if (Array.isArray(data?.winners) && session?.id) {
-        const found = data.winners.some((w: any) => w.userId === session.id);
-        setIsUserWinner(found);
-      } else {
-        setIsUserWinner(false);
+      const { updatedCurrency: currentUpdatedCurrency, currency: currentCurrency } = currencyRef.current;
+      const isSweepCoins = (currentUpdatedCurrency || currentCurrency) === CurrencyType.SWEEP_COINS;
+      const isVoided = isSweepCoins ? data?.voided?.sweepCoin : data?.voided?.goldCoin;
+      if (!isVoided) {
+        setShowWinnerAnimation(true);
+        // Check if current session user is a winner
+        if (Array.isArray(data?.winners) && session?.id) {
+          const found = data.winners.some((w: any) => w.userId === session.id);
+          setIsUserWinner(found);
+        } else {
+          setIsUserWinner(false);
+        }
+        // Check if current session user is a loser
+        if (Array.isArray(data?.losers) && session?.id) {
+          const found = data.losers.some((l: any) => l.userId === session.id);
+          setIsUserLoser(found);
+        } else {
+          setIsUserLoser(false);
+        }
+        // Hide the animation after 5 seconds
+        setTimeout(() => {
+          setShowWinnerAnimation(false);
+        }, 5000);
       }
-      // Check if current session user is a loser
-      if (Array.isArray(data?.losers) && session?.id) {
-        const found = data.losers.some((l: any) => l.userId === session.id);
-        setIsUserLoser(found);
-      } else {
-        setIsUserLoser(false);
-      }
-      // Hide the animation after 5 seconds
-      setTimeout(() => {
-        setShowWinnerAnimation(false);
-      }, 5000);
+      resetBetData();
       setResetKey(prev => prev + 1);
       queryClient.prefetchQuery({ queryKey: ['session'] });
       refetchStream();
@@ -281,6 +292,7 @@ export const StreamContent = ({
     });
     
     socketInstance.on('newMessage', (update) => {
+      console.log('newMessage', update);
       setMessageList(update);
     });
 
@@ -346,6 +358,7 @@ export const StreamContent = ({
 
       // Remove all event listeners
       if (socketConnect) {
+        socketConnect.off('scheduledStreamUpdatedToLive');
         socketConnect.off('bettingUpdate');
         socketConnect.off('viewerCountUpdated');
         socketConnect.off('potentialAmountUpdate');
@@ -456,7 +469,13 @@ export const StreamContent = ({
     setLoading(false);
     setIsEditing(true);
     setPlaceBet(true); // Show BetTokens (edit mode)
-    refetchRoundData(); // when canceling and placcing bet,then editing we need to refetch round data
+    refetchRoundData(); // when canceling and placing bet,then editing we need to refetch round data
+  }
+
+  // Function to undo bet edit
+  const handleEditBack = () => {
+    setIsEditing(false);
+    setPlaceBet(false);
   }
 
   // Cancel bet mutation
@@ -695,6 +714,7 @@ export const StreamContent = ({
               isEditing={isEditing}
               updatedCurrency={updatedCurrency}
               lockedBet={lockedBet}
+              handleEditBack={handleEditBack}
             />
           ) : (
               <LockTokens
@@ -736,7 +756,7 @@ export const StreamContent = ({
               if (isRoundClosed) {
                 return (
                   <div key={round?.id} className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0 px-2">
-                    <p className="text-white font-semibold text-lg">{round?.roundName}</p>
+                    <p className="text-white font-semibold text-lg line-clamp-3">{round?.roundName}</p>
                     <div className="flex flex-col items-center gap-2 mt-2">
                       <p className="text-white font-bold">{round?.winningOption?.[0]?.variableName} as winner</p>
                       <span className="text-white text-sm font-medium">won {round?.winningOption?.[0]?.totalGoldCoinAmt} gold coins</span>
@@ -746,17 +766,17 @@ export const StreamContent = ({
                 )} else if (isRoundCancelled) {
                 return (
                   <div key={round?.id} className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0 px-2">
-                    <p className="text-white font-semibold text-lg">{round?.roundName} cancelled</p>
+                    <p className="text-white font-semibold text-lg line-clamp-3">{round?.roundName} cancelled</p>
                   </div>
                 )} else if (isRoundLocked) {
                 return (
                 <div key={round?.id} className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 shadow-[0_0_20px_#a3e635] shrink-0 px-2">
-                  <p className="text-white font-medium">{round?.roundName} is locked</p>
+                  <p className="text-white font-medium line-clamp-3">{round?.roundName} is locked</p>
                 </div>
                 )} else if (isRoundCreated) {
                   return (
                   <div key={round?.id} className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[#BDFF00] shadow-[0_0_20px_#a3e635] shrink-0 px-2">
-                    <p className="text-white font-medium">{round?.roundName} is coming up!</p>
+                    <p className="text-white font-medium line-clamp-3">{round?.roundName} is coming up!</p>
                   </div>
                   )}
               })
@@ -782,7 +802,7 @@ export const StreamContent = ({
 
             <div className="flex items-center gap-1 mt-3 text-sm">
               <img src="/icons/person.svg" alt="coin" className="w-4 h-4" />
-              <span>{viewerCount ?? (stream?.viewerCount || 0)} watching</span>
+              <span>{isStreamLive ? (viewerCount ?? (stream?.viewerCount || 0)) : 0} watching</span>
             </div>
           </div>
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>

@@ -131,18 +131,21 @@ export function BettingRounds({
     setLastAddedOption({ roundIndex, optionId: newOptionId });
   };
 
+  // Function to edit option name
   const updateOptionName = (roundIndex: number, optionIndex: number, newName: string) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].options[optionIndex].option = newName;
     onRoundsChange(updatedRounds);
   };
 
+  // Function to delete option
   const deleteOption = (roundIndex: number, optionIndex: number) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].options = updatedRounds[roundIndex].options.filter((_, index) => index !== optionIndex);
     onRoundsChange(updatedRounds);
   };
 
+  // Function to toggle round expand and collapse
   const toggleRoundExpansion = (roundIndex: number) => {
     const roundValue = `round-${roundIndex}`;
     if (expandedRounds.includes(roundValue)) {
@@ -222,11 +225,12 @@ export function BettingRounds({
                                 {expandedRounds.includes(getRoundValue(roundIndex)) ? '▼' : '▶'}
                               </Button>
                               <InlineEditable
+                                title="Edit Round Name"
                                 value={round.roundName}
                                 isNotCreatedStatus={isNotCreatedStatus}
                                 onSave={(newName) => updateRoundName(roundIndex, newName)}
                                 className={`text-white font-medium truncate ${hasRoundError ? 'text-destructive' : ''}`}
-                                style={{ fontSize: '16px', color: hasRoundError ? '#ef4444' : '#FFFFFFBF', maxWidth: '200px' }}
+                                style={{ fontSize: '16px', color: hasRoundError ? '#ef4444' : '#FFFFFFBF', maxWidth: '100%' }}
                                 minLength={2}
                               />
                             </div>
@@ -349,11 +353,12 @@ export function BettingRounds({
                                 <div className="flex items-center gap-2 group min-w-0 h-full" style={{ height: 72 }}>
                                   <div className={`flex items-center w-full${isDuplicateOption ? ' border-destructive' : ''}`} style={{ height: 44, background: '#272727', borderRadius: 8, paddingLeft: 16, paddingRight: 16, border: isDuplicateOption ? '1px solid #ef4444' : 'none' }}>
                                     <InlineEditable
+                                      title="Edit Option Name"
                                       isNotCreatedStatus={isNotCreatedStatus}
                                       value={option.option}
                                       onSave={(newName) => updateOptionName(roundIndex, optionIndex, newName)}
                                       className={`text-white text-sm font-normal truncate${isDuplicateOption ? ' text-destructive' : ''}`}
-                                      style={{ color: isDuplicateOption ? '#ef4444' : '#FFFFFFBF', maxWidth: '180px' }}
+                                      style={{ color: isDuplicateOption ? '#ef4444' : '#FFFFFFBF', maxWidth: '100%' }}
                                       minLength={2}
                                     />
                                   </div>
