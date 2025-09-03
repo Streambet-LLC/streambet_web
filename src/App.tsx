@@ -8,8 +8,8 @@ import Stream from './pages/Stream';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Admin from './pages/Admin';
-import Deposit from './pages/Deposit';
-import Withdraw from './pages/Withdraw';
+// import Deposit from './pages/Deposit';
+// import Withdraw from './pages/Withdraw';
 import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
 import Privacy from './pages/Privacy';
@@ -59,8 +59,8 @@ const App = () => {
                       <Route path="/login" element={<Login />} />
                       <Route path="/signup" element={<SignUp />} />
                       <Route path="/admin" element={<Admin />} />
-                      <Route path="/deposit" element={<Deposit />} />
-                      <Route path="/withdraw" element={<Withdraw />} />
+                      {/* <Route path="/deposit" element={<Deposit />} />
+                      <Route path="/withdraw" element={<Withdraw />} /> */}
                       <Route path="/transactions" element={<Transactions key='transactions' historyType={HistoryType.Transaction} />} />
                       <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
                       <Route path="/settings" element={<Settings />} />
