@@ -28,6 +28,7 @@ import { BettingStatusProvider } from './contexts/BettingStatusContext';
 import { HistoryType } from './enums';
 import BugSnagErrorBoundary from './bugsnag';
 import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
+import Redeem from './components/withdraw/Redeem';
 
 
 // Create a client
@@ -60,7 +61,7 @@ const App = () => {
                       <Route path="/signup" element={<SignUp />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/deposit" element={<Deposit />} />
-                      <Route path="/withdraw" element={<Withdraw />} />
+                      <Route path="/withdraw" element={<Redeem />} />
                       <Route path="/transactions" element={<Transactions key='transactions' historyType={HistoryType.Transaction} />} />
                       <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
                       <Route path="/settings" element={<Settings />} />

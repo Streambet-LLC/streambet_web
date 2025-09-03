@@ -87,9 +87,9 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           <Link to="/deposit">Buy Gold Coins</Link>
         </DropdownMenuItem>
 
-        {/* <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild>
           <Link to="/withdraw">Redeem Sweep Coins</Link>
-        </DropdownMenuItem> */}
+        </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
           <Link to="/betting-history">Bet history</Link>

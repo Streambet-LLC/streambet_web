@@ -352,6 +352,13 @@ export const walletAPI = {
     return response.data;
   },
 
+  // Get redeemable amount from sweep coins
+  getRedeemableAmount: async (coins: number ) => {
+    const response = await apiClient.get(`/wallets/convert-sweep`, {
+      params: { coins },
+    });
+    return response.data;
+  },
 
   // Check if the user has a payment method saved
   hasPaymentMethod: async () => {
@@ -822,6 +829,12 @@ export const paymentAPI = {
   getSessionKey: async () => {
     const response = await apiClient.get('/payments/coinflow/session-key');
     return response.data;
+  },
+
+  // Get withdrawer data
+  getWithdrawerData: async () => {
+    const response = await apiClient.get('/payments/coinflow/withdrawer');
+    return response;
   },
 };
 
