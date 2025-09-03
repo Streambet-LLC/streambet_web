@@ -835,6 +835,14 @@ export const paymentAPI = {
     const response = await apiClient.get('/payments/coinflow/withdrawer');
     return response;
   },
+
+  // Get withdraw quote
+  getWithdrawQuote: async (amount: number) => {
+    const response = await apiClient.get('/payments/coinflow/withdrawer/quote', {
+      params: { amount },
+    });
+    return response.data;
+  },
 };
 
 // Export a single API object with all the services

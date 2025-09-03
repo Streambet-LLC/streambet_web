@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
 		AlertDialog,
@@ -11,9 +11,9 @@ import {
 		AlertDialogAction,
 		AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { Trash2 } from 'lucide-react';
-
-const TAX_RATE = 0.1; // 10% tax for example
+import { Trash2, Zap, Clock, CalendarClock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/integrations/api/client';
 
 export default function Withdraw({
 	amountToWithdraw,
@@ -22,12 +22,32 @@ export default function Withdraw({
 	const [selectedAccount, setSelectedAccount] = useState(null);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [accountToDelete, setAccountToDelete] = useState(null);
+	const [selectedSpeed, setSelectedSpeed] = useState<null | 'asap' | 'same_day' | 'standard'>(null);
+
+	const {
+        data: withdrawQuote,
+        isFetching: isWithdrawQuoteFetching,
+        refetch: getWithdrawQuote,
+    } = useQuery({
+        queryKey: ['withdrawQuote'],
+        queryFn: async () => {
+            const response = await api.payment.getWithdrawQuote(amountToWithdraw);
+            return response;
+        },
+        enabled: false,
+    });
 
 	// Simulate delete function
 	const handleDelete = () => {
 		// TODO: Replace with actual delete logic
 		setShowDeleteModal(false);
 	};
+
+	useEffect(() => {
+		if (amountToWithdraw) {
+			getWithdrawQuote();
+		}
+	}, [amountToWithdraw]);
 
 	// Render bank account list
 	const renderBankList = () => (
@@ -52,6 +72,7 @@ export default function Withdraw({
 						onClick={(e) => {
 							if ((e.target as HTMLElement).closest('.trash-icon')) return;
 							setSelectedAccount(account);
+							setSelectedSpeed(null);
 						}}
 						tabIndex={0}
 						role="button"
@@ -140,11 +161,20 @@ export default function Withdraw({
 		</div>
 	);
 
+	// helpers for radio options
+	const speedOptions: Array<{ key: 'asap' | 'same_day' | 'standard'; label: string; sublabel?: string; icon: any }> = [
+		{ key: 'asap', label: 'Instant', sublabel: 'Popular!', icon: Zap },
+		{ key: 'same_day', label: '24 hours', icon: Clock },
+		{ key: 'standard', label: '2-3 biz days', icon: CalendarClock },
+	];
+
 	// Render quote/withdraw page
 	const renderWithdrawPage = () => {
-		const amount = Number(amountToWithdraw) || 0;
-		const tax = Math.round(amount * TAX_RATE * 100) / 100;
-		const netAmount = Math.round((amount - tax) * 100) / 100;
+		const grossAmount = (withdrawQuote?.quote?.cents || 0) / 100;
+		const selectedObj = selectedSpeed ? (withdrawQuote as any)[selectedSpeed] : null;
+		const feeAmount = selectedObj ? (selectedObj.fee.cents || 0) / 100 : 0;
+		const netAmount = selectedObj ? (selectedObj.finalSettlement.cents || 0) / 100 : 0;
+		const estimated = selectedObj?.expectedDeliveryDate;
 		return (
 			<div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6 max-w-2xl mx-auto w-full">
 				<Button 
@@ -199,24 +229,40 @@ export default function Withdraw({
 					</div>
 				</div>
 
-				{/* Amount Input */}
-				<div className="mb-8 w-full">
-					<label className="block text-lg font-semibold mb-3 text-white">Redeem Value</label>
-					<div className="relative">
-						<span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-2xl text-gray-400">$</span>
-						<input
-							type="number"
-							value={amount}
-							disabled
-							className="w-full rounded-2xl border-0 px-12 py-4 text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#BDFF00] focus:ring-offset-2 focus:ring-offset-black transition-all duration-300"
-							placeholder="0.00"
-							style={{ 
-								background: 'linear-gradient(135deg, #0D0D0D 0%, #1a1a2e 50%, #16213e 100%)',
-								color: 'white',
-								border: '1px solid rgba(189, 255, 0, 0.1)',
-								boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-							}}
-						/>
+				{/* Speed selection radios */}
+				<div className="w-full mb-8">
+					<label className="block text-lg font-semibold mb-3 text-white">Transfer speed</label>
+					<div className="grid gap-3">
+						{speedOptions
+							.filter(o => o.key !== 'asap' || selectedAccount?.rtpEligible)
+							.map(({ key, label, sublabel, icon: Icon }) => {
+								const isSelected = selectedSpeed === key;
+								const fee = (withdrawQuote as any)?.[key]?.fee?.cents / 100 || 0;
+								return (
+									<label key={key} className={`flex items-center justify-between rounded-2xl p-4 border transition-all cursor-pointer ${isSelected ? 'border-[#BDFF00] bg-[#101314]' : 'border-gray-700 bg-[#0D0D0D] hover:border-gray-600'}`}
+										onClick={() => setSelectedSpeed(key)}
+									>
+										<div className="flex items-center gap-4">
+											<div className={`w-11 h-11 rounded-xl flex items-center justify-center ${isSelected ? 'bg-[#BDFF00] text-black' : 'bg-[#141414] text-[#BDFF00] border border-[#203000]'}`}>
+												<Icon size={22} />
+											</div>
+											<div>
+												<div className="text-white font-semibold">{label}</div>
+												{sublabel && key === 'asap' && (
+													<div className="text-xs font-bold text-[#BDFF00]">{sublabel}</div>
+												)}
+											</div>
+										</div>
+										<div className="flex items-center gap-3">
+											<span className="text-sm"><span className="text-[#BDFF00] font-medium">${fee.toFixed(2)}</span></span>
+											<input type="radio" name="speed" className="hidden" checked={isSelected} readOnly />
+											<div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'border-[#BDFF00]' : 'border-gray-500'}`}>
+												<div className={`w-3 h-3 rounded-full ${isSelected ? 'bg-[#BDFF00]' : 'bg-transparent'}`}></div>
+											</div>
+										</div>
+									</label>
+								);
+							})}
 					</div>
 				</div>
 
@@ -232,11 +278,11 @@ export default function Withdraw({
 					<div className="space-y-3">
 						<div className="flex justify-between items-center py-2 border-b border-gray-700/50">
 							<span className="text-gray-400">Gross Amount</span>
-							<span className="text-white font-semibold">${amount.toFixed(2)}</span>
+							<span className="text-white font-semibold">${grossAmount.toFixed(2)}</span>
 						</div>
 						<div className="flex justify-between items-center py-2 border-b border-gray-700/50">
-							<span className="text-gray-400">Tax (10%)</span>
-							<span className="text-red-400 font-semibold">-${tax.toFixed(2)}</span>
+							<span className="text-gray-400">Fee</span>
+							<span className="text-red-400 font-semibold">-${feeAmount.toFixed(2)}</span>
 						</div>
 						<div className="flex justify-between items-center py-3">
 							<span className="text-lg font-bold text-white">Net Amount</span>
@@ -248,21 +294,30 @@ export default function Withdraw({
 				{/* Withdraw Button */}
 				<Button 
 					className="w-full text-xl py-4 rounded-2xl font-bold shadow-2xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed" 
+					disabled={!selectedSpeed}
 					style={{
 						background: 'linear-gradient(135deg, #BDFF00 0%, #9DFF33 100%)',
 						boxShadow: '0 20px 40px rgba(189, 255, 0, 0.4)',
 						color: 'black',
 					}}
 				>
-					{`Withdraw $${netAmount.toFixed(2)}`}
+					{ !isWithdrawQuoteFetching ?
+					(selectedSpeed ? `Withdraw $${netAmount.toFixed(2)}` : 'Select a delivery speed') : 'Loading quote...'}
 				</Button>
+
+				{/* Estimated delivery */}
+				{selectedSpeed && (
+					<div className="mt-3 text-center text-gray-400 w-full">
+						Estimated delivery: <span className="text-white">{estimated}</span>
+					</div>
+				)}
 			</div>
 		);
 	};
 
 	return (
-			<div className={`${!!selectedAccount && 'mb-6'} z-10`}>
-				{!selectedAccount ? renderBankList() : renderWithdrawPage()}
-			</div>
+		<div className={`${!!selectedAccount && 'mb-6'} z-10`}>
+			{!selectedAccount ? renderBankList() : renderWithdrawPage()}
+		</div>
 	);
 }

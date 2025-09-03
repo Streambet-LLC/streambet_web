@@ -94,7 +94,7 @@ export default function Redeem() {
         try {
             const sessionKeyResult = await api.payment.getSessionKey();
             setSessionKey(sessionKeyResult?.key);
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: 'Error generating session key',
                 description: getMessage(error),
@@ -107,6 +107,8 @@ export default function Redeem() {
 
     useEffect(() => {
         if (!isWithdrawerDataLoading && withdrawerData?.withdrawer) {
+            if (!sweepCoins || !usdValue) return;
+            // If KYC not approved or no bank accounts, open iframe to link account
             if (withdrawerData.withdrawer.verification.status !== KycType.APPROVED
                 || !withdrawerData.withdrawer.bankAccounts.length) {
                 generateTokens();
@@ -128,7 +130,7 @@ export default function Redeem() {
             }
             if (message.method !== 'heightChange') return;
             setHeight(message.data);
-        } catch (e) { }
+        } catch (e: any) { }
     }, []);
 
     useEffect(() => {
