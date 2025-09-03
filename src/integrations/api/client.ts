@@ -63,7 +63,7 @@ apiClient.interceptors.response.use(
       Bugsnag.notify(error instanceof Error ? error : new Error(String(error)));
     }
 
-    if (error.response?.data?.message?.toLowerCase()?.includes('vpn/proxy')) {
+    if (error.response?.data?.isForcedLogout) {
       toast({
         id: 'vpn-proxy',
         variant: 'destructive',
