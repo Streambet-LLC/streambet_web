@@ -73,7 +73,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
  
   const mutationTokens = useMutation({
     mutationFn: async ({ userId, amount }: { userId: string; amount: number }) => {
-      return await api.admin.updateUsersTokens({ userId, amount });
+      return await api.admin.updateUserCoins({ userId, amount });
     },
     onSuccess: () => {
       refetchProfiles();
@@ -142,11 +142,11 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     />
                   </div>
 
-                  {/* Token Balance */}
+                  {/* Gold Coin Balance */}
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Token Balance:</span>
+                    <span className="text-sm text-muted-foreground">Gold Balance:</span>
                     <span className="font-medium">
-                      {user?.wallet?.freeTokens ? user?.wallet?.freeTokens?.toLocaleString('en-US') : '-'}
+                      {user?.wallet?.goldCoins ? user?.wallet?.goldCoins?.toLocaleString('en-US') : '-'}
                     </span>
                   </div>
 
@@ -197,7 +197,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                   {/* Actions Row */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <AddTokens
-                      currentBalance={user?.wallet?.freeTokens}
+                      currentBalance={user?.wallet?.goldCoins}
                       username={user.username}
                       onSave={(newBalance) => {
                         mutationTokens.mutate({ userId: user.id, amount: newBalance});
@@ -222,14 +222,14 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead>Token Balance</TableHead>
-                <TableHead>Stream Coins</TableHead>
+                <TableHead>Gold Balance</TableHead>
+                <TableHead>Sweep Coins</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Verification</TableHead>
                 <TableHead>Actions</TableHead>
-                <TableHead>Tokens</TableHead>
+                <TableHead>Gold Coins</TableHead>
                 <TableHead>Delete</TableHead>
               </TableRow>
             </TableHeader>
@@ -252,8 +252,8 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       </span>
                     )}
                     </TableCell>
-                    <TableCell>{user?.wallet?.freeTokens ? Number(user?.wallet?.freeTokens)?.toLocaleString('en-US') : '-'}</TableCell>
-                    <TableCell>{user?.wallet?.streamCoins ? Number(user?.wallet?.streamCoins)?.toLocaleString('en-US'):'-'}</TableCell>
+                    <TableCell>{user?.wallet?.goldCoins ? Number(user?.wallet?.goldCoins)?.toLocaleString('en-US') : '-'}</TableCell>
+                    <TableCell>{user?.wallet?.sweepCoins ? Number(user?.wallet?.sweepCoins)?.toLocaleString('en-US'):'-'}</TableCell>
                     <TableCell>
                       <span
                         className="px-2 py-1 rounded-md font-bold text-sm"
@@ -290,9 +290,9 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                         }}
                       />
                     </TableCell>
-                    <TableCell className="cursor-pointer" title="Token Allocation">
+                    <TableCell className="cursor-pointer" title="Gold Coin Allocation">
                       <AddTokens
-                        currentBalance={user?.wallet?.freeTokens}
+                        currentBalance={user?.wallet?.goldCoins}
                         username={user.username}
                         onSave={(newBalance) => {
                           mutationTokens.mutate({ userId: user.id, amount: newBalance});

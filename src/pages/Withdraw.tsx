@@ -1,62 +1,82 @@
-import { Navigation } from '@/components/Navigation';
-import { WithdrawForm } from '@/components/withdraw/WithdrawForm';
+import { Card } from '@/components/ui/card';
+import { useState, useEffect, useMemo } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { AmountInput } from '@/components/deposit/AmountInput';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { CoinFlowWithdrawComponent } from '@/components/deposit/CoinFlowWithdraw';
+import { MainLayout } from '@/components/layout';
+import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
+
+// Mock API function to simulate profile data
+const mockGetProfile = async (userId: string) => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Return mock profile data
+  return {
+    id: userId,
+    email: 'user@example.com',
+    tos_accepted: true,
+    wallet_balance: 1000,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+};
 
 const Withdraw = () => {
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [isWithdrawProcessing, setIsWithdrawProcessing] = useState(false);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const endpoint = "https://api.devnet.solana.com"; // Sandbox/devnet endpoint
+  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
 
-  const { data: session } = useQuery({
-    queryKey: ['session'],
-    queryFn: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return session;
-    },
-  });
+  const { session } = useAuthContext();
 
   const { data: profile } = useQuery({
     queryKey: ['profile', session?.user?.id],
     enabled: !!session?.user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session!.user.id)
-        .single();
-
-      if (error) throw error;
-      return data;
+      return await mockGetProfile(session!.user.id);
     },
   });
 
   // Redirect if not logged in
-  useEffect(() => {
-    if (session === null) {
-      navigate('/login');
-    }
-  }, [session, navigate]);
-
-  const handleSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['profile'] });
-  };
-
-  if (!session || !profile) return null;
+  if (!session) {
+    navigate('/login');
+    return null;
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="container pt-24 pb-8">
-        <div className="max-w-md mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Withdraw Funds</h1>
-          <WithdrawForm currentBalance={profile.wallet_balance || 0} onSuccess={handleSuccess} />
+    <MainLayout>
+      <h1 className="text-3xl font-bold mb-8">Withdraw Funds</h1>
+
+      <Card className="max-w-2xl mx-auto p-6 space-y-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Withdraw Funds</h2>
+          <p className="text-muted-foreground">
+            Withdraw your funds using CoinFlow's secure withdrawal system.
+          </p>
+          
+          <AmountInput amount={withdrawAmount} onChange={setWithdrawAmount} disabled={isWithdrawProcessing} />
+          
+          <ConnectionProvider endpoint={endpoint}>
+            <WalletProvider wallets={wallets} autoConnect>
+              <WalletModalProvider>
+                <CoinFlowWithdrawComponent
+                  amount={withdrawAmount}
+                  isProcessing={isWithdrawProcessing}
+                  onProcessingChange={setIsWithdrawProcessing}
+                />
+              </WalletModalProvider>
+            </WalletProvider>
+          </ConnectionProvider>
         </div>
-      </main>
-    </div>
+      </Card>
+    </MainLayout>
   );
 };
 

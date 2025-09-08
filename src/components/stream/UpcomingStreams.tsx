@@ -2,13 +2,11 @@ import { Table, TableBody, TableCell, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
 import { formatDate, formatTime, getImageLink } from '@/utils/helper';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import api from '@/integrations/api/client';
-import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '../ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { CurrencyType } from '@/enums';
 
 interface UpcomingStreamsProps {
   upcomingStreams?: any;
@@ -17,12 +15,24 @@ interface UpcomingStreamsProps {
   isLoading?: boolean; // Add loading prop
 }
 
-const LIMIT = 5;
-
 // Desktop Stream Item Component
 const DesktopStreamItem = ({ stream }: { stream: any }) => {
   const navigate = useNavigate();
   const [imageLoading, setImageLoading] = useState(true);
+  const { currency } = useCurrencyContext();
+  const isSweepCoins = CurrencyType.SWEEP_COINS === currency;
+
+  // Get total pot value based on currency type
+  const totalPotAmount = Number(isSweepCoins 
+    ? stream.totalBetsSweepCoinAmount || 0 
+    : stream.totalBetsGoldCoinAmount || 0);
+  const currencyLabel = isSweepCoins ? 'sweep coins' : 'gold coins';
+  
+  // Format number with comma separators for en-US locale
+  const formattedAmount = totalPotAmount.toLocaleString('en-US');
+  
+  // Get text color based on currency type (matching toggle label colors)
+  const textColor = isSweepCoins ? 'text-green-500' : 'text-[#B4FF39]';
 
   return (
     <TableRow className="h-[96px]">
@@ -70,13 +80,20 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
           <span className="font-normal text-[14px] text-[#FFFFFFBF]" style={{ fontWeight: 400 }}>{formatDate(stream.scheduledStartTime)}</span>
         </div>
       </TableCell>
-      {/* Third column: Remind Me Button */}
+      {/* Third column: Total Pot */}
+      <TableCell className="w-[140px] min-w-[140px] py-0">
+        <div className="flex flex-col justify-center h-full gap-1">
+          <span className={`font-bold text-[14px] ${textColor}`} style={{ fontWeight: 700 }}>
+            {formattedAmount} {currencyLabel}
+          </span>
+        </div>
+      </TableCell>
+      {/* Fourth column: Place Bet Button */}
       <TableCell className="w-[160px] min-w-[160px] py-0">
         <div className="flex items-center justify-center h-full">
           <Button
             type="button"
-            className="bg-[#272727] text-white font-medium rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors gap-2"
-            style={{ width: 142, height: 44, fontSize: '16px', fontWeight: 500 }}
+            className="w-[142px] h-[44px] text-base font-medium"
             onClick={() => navigate(`/stream/${stream?.id}`)}
           >
             Place bet
@@ -91,6 +108,20 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
 const MobileStreamItem = ({ stream }: { stream: any }) => {
   const navigate = useNavigate();
   const [imageLoading, setImageLoading] = useState(true);
+  const { currency } = useCurrencyContext();
+  const isSweepCoins = CurrencyType.SWEEP_COINS === currency;
+
+  // Get total pot value based on currency type
+  const totalPotAmount = Number(isSweepCoins 
+    ? stream.totalBetsSweepCoinAmount || 0 
+    : stream.totalBetsGoldCoinAmount || 0);
+  const currencyLabel = isSweepCoins ? 'sweep(s)' : 'gold(s)';
+  
+  // Format number with comma separators for en-US locale
+  const formattedAmount = totalPotAmount.toLocaleString('en-US');
+  
+  // Get text color based on currency type (matching toggle label colors)
+  const textColor = isSweepCoins ? 'text-green-500' : 'text-[#B4FF39]';
 
   // Helper to truncate stream name for mobile
   const truncate = (str: string, n: number) => (str?.length > n ? str.slice(0, n - 1) + '…' : str);
@@ -126,10 +157,15 @@ const MobileStreamItem = ({ stream }: { stream: any }) => {
           <span className="text-xs text-white">{formatTime(stream.scheduledStartTime)}</span>
         </div>
       </div>
+      {/* Total Pot for Mobile */}
+      <div className="flex justify-between items-center px-1">
+        <span className={`text-sm font-bold ${textColor}`}>
+          {formattedAmount} {currencyLabel}
+        </span>
+      </div>
       <Button
         type="button"
-        className="bg-[#272727] text-white font-medium rounded-lg border-none text-base flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors gap-2 mt-2"
-        style={{ width: '100%', height: 40, fontSize: '15px', fontWeight: 500 }}
+        className="w-full h-[40px] text-base font-medium mt-2"
         onClick={() => navigate(`/stream/${stream?.id}`)}
       >
         Place bet
@@ -177,6 +213,9 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
                       <Skeleton className="h-4 w-20" />
                     </div>
                   </TableCell>
+                  <TableCell className="w-[140px] min-w-[140px]">
+                      <Skeleton className="h-4 w-20" />
+                  </TableCell>
                   <TableCell className="w-[160px] min-w-[160px]">
                     <div className="flex items-center justify-center h-full">
                       <Skeleton className="h-10 w-32 rounded-lg" />
@@ -191,7 +230,7 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
             ) 
             : (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-0 text-muted-foreground">
+                <TableCell colSpan={4} className="text-center py-0 text-muted-foreground">
                   No stream(s) available to display
                 </TableCell>
               </TableRow>
@@ -214,6 +253,10 @@ export const UpcomingStreams = ({ upcomingStreams, fetchMore, hasMore, isLoading
                     <Skeleton className="h-3 w-24" />
                     <Skeleton className="h-3 w-20" />
                   </div>
+                </div>
+                <div className="flex justify-between items-center px-1">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-4 w-20" />
                 </div>
                 <Skeleton className="h-10 w-full rounded-lg" />
               </div>

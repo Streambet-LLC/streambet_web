@@ -31,6 +31,8 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
+import { AuthLayout } from '@/components/layout';
+import Bugsnag from '@bugsnag/js';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -152,13 +154,23 @@ export default function SignUp() {
       if (!locationResult.allowed) {
         throw new Error(locationResult.error);
       }
+      await fetch(`${import.meta.env.VITE_API_URL}/auth/location-check`, {
+              headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            }}).then(async (res) => {
+              const response = await res.json();
+              if (response?.isForcedLogout) {
+                return Promise.reject(getMessage(response));
+              }
+          });
       return api.auth.googleAuth();
     },
     onError: (error: any) => {
       toast({
         variant: 'destructive',
         title: 'Google login failed',
-        description: error.message || 'Failed to authenticate with Google. Please try again.',
+        description: getMessage(error) || 'Failed to authenticate with Google. Please try again.',
       });
     },
   });
@@ -182,6 +194,7 @@ export default function SignUp() {
             [fieldName]: error.errors[0].message,
           }));
         }
+         Bugsnag.notify(error); 
       }
     };
 
@@ -202,6 +215,7 @@ export default function SignUp() {
       setErrors({});
       return true;
     } catch (error) {
+       Bugsnag.notify(error); 
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
         error.errors.forEach(err => {
@@ -271,6 +285,7 @@ export default function SignUp() {
         profileImageUrl = response?.data?.Key;
         setIsUploading(false);
       } catch (error) {
+         Bugsnag.notify(error); 
         toast({
           variant: 'destructive',
           title: 'Error uploading profile picture',
@@ -412,7 +427,7 @@ export default function SignUp() {
       setTimeout(() => {
         setDob(date);
         form.setValue('dob', date, { shouldValidate: true });
-        setIsDatePickerOpen(false);
+        // setIsDatePickerOpen(false);
       }, 50);
     }
   }, [form]);
@@ -441,24 +456,12 @@ export default function SignUp() {
   }, []);
 
   return (
-    <>
-      <div className="auth-bg-gradient" />
-      <div className="container flex justify-center min-h-screen pt-16 pb-8">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="w-full max-w-md"
-        >
-          <div className="mb-6">
-            <Link to="/">
-              <img src="/icons/logo.svg" alt="StreamBet Logo" className="mb-4 w-[155px]" />
-            </Link>
-            <h1 className="text-3xl font-bold text-white text-left">Create an account</h1>
-            <p className="text-[#FFFFFFBF] mt-2 text-left">
-              Enter your details below to create an account
-            </p>
-          </div>
+    <AuthLayout title="Create an account" subtitle="Enter your details below to create an account">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
           <Card className="bg-transparent border-0 p-0">
             <CardContent className="p-0">
               {renderLocationWarning()}
@@ -701,7 +704,7 @@ export default function SignUp() {
                       </Button>
                     </motion.div>
                   </div>
-                  {/* <motion.div variants={itemVariants}>
+                  <motion.div variants={itemVariants}>
                     <Button
                       type="button"
                       className="w-full flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
@@ -729,7 +732,7 @@ export default function SignUp() {
                       </span>
                       Sign in with Google
                     </Button>
-                  </motion.div> */}
+                  </motion.div>
                 </form>
               </FormProvider>
             </CardContent>
@@ -746,19 +749,6 @@ export default function SignUp() {
             </CardFooter>
           </Card>
         </motion.div>
-      </div>
-      <div
-        style={{
-          position: 'fixed',
-          left: 20,
-          bottom: 20,
-          color: '#FFFFFF',
-          fontSize: '0.95rem',
-          zIndex: 10,
-        }}
-      >
-        © Streambet 2025
-      </div>
-    </>
-  );
+      </AuthLayout>
+    );
 }

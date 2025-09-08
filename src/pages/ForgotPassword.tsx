@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import api from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
+import Bugsnag from '@bugsnag/js';
 
 const ForgotPassword = () => {
   const [searchParams] = useSearchParams();
@@ -35,6 +36,7 @@ const ForgotPassword = () => {
 
       setSuccess(true);
     } catch (error: any) {
+      Bugsnag.notify(error); 
       console.error('Password reset error:', error);
       setError(error || 'Failed to send password reset email. Please try again.');
     } finally {

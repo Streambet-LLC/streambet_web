@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { verifyUserLocation, GeolocationResult } from '@/integrations/api/geolocation';
 import { useToast } from '@/components/ui/use-toast';
+import Bugsnag from '@bugsnag/js';
 
 interface LocationRestrictionContextType {
   locationResult: GeolocationResult | null;
@@ -34,6 +35,7 @@ export const LocationRestrictionProvider: React.FC<LocationRestrictionProviderPr
         });
       }
     } catch (error) {
+      Bugsnag.notify(error); 
       console.error('Location check failed:', error);
       const fallbackResult: GeolocationResult = {
         allowed: true,

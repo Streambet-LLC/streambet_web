@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { StreamPlayer } from '@/components/StreamPlayer';
-import { CommentSection } from '@/components/CommentSection';
 import { AdminBettingRoundsCard } from './AdminBettingRoundsCard';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog';
 import api from '@/integrations/api/client';
 import { StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
-import { BettingRounds } from './BettingRounds';
 import { Separator } from '@/components/ui/separator';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +15,7 @@ import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import Bugsnag from '@bugsnag/js';
 
 interface AdminStreamContentProps {
   streamId: string;
@@ -33,6 +32,14 @@ interface AdminStreamContentProps {
   refetchBetData: VoidFunction;
   handleBack: VoidFunction;
 }
+
+type BettingTotals = {
+  totalTokenBet?: number;
+  totalTokenAmount?: number;
+  totalCoinBet?: number;
+  totalCoinAmount?: number;
+};
+
 
 // Helper to parse YYYY-MM-DD as local date
 function parseLocalDate(dateStr) {
@@ -120,30 +127,54 @@ export const AdminStreamContent = ({
   const [streamInfo, setStreamInfo] = useState<any>(undefined);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [endStreamDialogOpen, setEndStreamDialogOpen] = useState(false);
-  const [bettingSettingsOpen, setBettingSettingsOpen] = useState(false);
   const [editableRounds, setEditableRounds] = useState([]);
-  const [bettingErrorRounds, setBettingErrorRounds] = useState([]);
-  const [showBettingValidation, setShowBettingValidation] = useState(false);
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
-    // Socket reference
-  const [socket, setSocket] = useState<any>(null);
+  const [bettingUpdate, setBettingUpdate] = useState<BettingTotals | null>(null);
   const [messageList, setMessageList] = useState<any>();
-  const { socketConnect,handleSocketReconnection } = useBettingStatusContext();
+  const { socketConnect, handleSocketReconnection } = useBettingStatusContext();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
 
      // Function to setup socket event listeners
       const setupSocketEventListeners = (socketInstance: any) => {
         if (!socketInstance) return;
+        socketInstance.off('scheduledStreamUpdatedToLive');
+        socketInstance.off('bettingUpdate');
+        socketInstance.off('newMessage');
+        socketInstance.off('streamEnded');
+        socketInstance.off('disconnect');
+        socketInstance.off('connect_error');
+        socketInstance.off('error');
+
+        socketInstance.on('scheduledStreamUpdatedToLive', () => {
+          console.log('scheduledStreamUpdatedToLive admin');
+            fetchStreamData();
+        });
+
+        socketInstance.on('bettingUpdate', (update: any) => {
+        console.log('bettingUpdate admin', update);
+          setBettingUpdate(update);
+        });
     
         socketInstance.on('newMessage', (update) => {
-          console.log('newMessage', update);
+          console.log('admin newMessage', update);
           setMessageList(update)
         });
     
         socketInstance.on('streamEnded', (update) => {
           console.log('streamEnded', update);
           navigate('/');
+        });
+
+        socketInstance.on('error', (error) => {
+          toast({
+            description: error?.message || 'An error occured. Refresh page and try again.',
+            variant: 'destructive',
+            duration: 7000,
+          });
+          if (error?.isForcedLogout) {
+            // Dispatch custom event for logout handling
+            window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+          }
         });
     
         // Handle disconnection events
@@ -164,8 +195,6 @@ export const AdminStreamContent = ({
       };
 
 useEffect(() => {
-    // const newSocket = api.socket.connect();
-    // setSocket(socketConnect);
     console.log('socketConnect value',  socketConnect);
     if(socketConnect){
     api.socket.joinStream(streamId, socketConnect);
@@ -188,9 +217,15 @@ useEffect(() => {
       if (socketConnect) {
             socketConnect?.off('newMessage');
             socketConnect?.off('streamEnded');
+            socketConnect?.off('scheduledStreamUpdatedToLive');
+            socketConnect?.off('error');
       }
-    },
-  [])
+    }, []);
+
+    const handleOpenRoundData = (streamId: string) => {
+      handleOpenRound(streamId);
+      setBettingUpdate(null);
+    };
 
   // Stream info form state for editing
   const [editForm, setEditForm] = useState({
@@ -213,14 +248,12 @@ useEffect(() => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Add loading state for betting save
-  const [bettingSaveLoading, setBettingSaveLoading] = useState(false);
-
   async function fetchStreamData() {
     try {
       const streamData = await api.admin.getStream(streamId);
       setStreamInfo(streamData?.data || undefined);
     } catch (e) {
+      Bugsnag.notify(e); 
       setStreamInfo(undefined);
     }
   };
@@ -328,6 +361,7 @@ useEffect(() => {
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
       } catch (error) {
+        Bugsnag.notify(error); 
         toast({
           variant: 'destructive',
           title: 'Error uploading stream thumbnail',
@@ -427,11 +461,13 @@ useEffect(() => {
             isUpdatingAction={isUpdatingAction}
             isBetRoundCancelling={isBetRoundCancelling}
             betData={betData}
-            handleOpenRound={handleOpenRound}
+            handleOpenRound={(streamId: string) => handleOpenRoundData(streamId)}
             handleLockBets={handleLockBets}
             handleEndRound={handleEndRound}
             handleCancelRound={handleCancelRound}
             refetchBetData={refetchBetData}
+            streamInfo={streamInfo}
+            bettingUpdate={bettingUpdate}
           />
         </div>
         {/* Right: Chat and controls */}
@@ -534,12 +570,12 @@ useEffect(() => {
             </DialogContent>
           </Dialog>
           <div className="flex-1 min-h-0 flex flex-col h-full">
-            <div className="h-full w-full max-w-[320px]">
+            <div className="h-full w-full md:max-w-[320px]">
                <Chat
-                        sendMessageSocket={sendMessageSocket}
-                        newSocketMessage={messageList}
-                        session={session}
-                        streamId={streamId}/>
+                  sendMessageSocket={sendMessageSocket}
+                  newSocketMessage={messageList}
+                  session={session}
+                  streamId={streamId} />
             </div>
           </div>
         </div>

@@ -28,8 +28,7 @@ export const Footer = () => {
               </li>
               <li>
                 <Link
-                  // to="/terms"
-                  to=""
+                  to="/terms"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Terms of Service

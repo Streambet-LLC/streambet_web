@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 import { decodeIdToken } from '@/utils/helper';
+import { toast } from '@/hooks/use-toast';
+import Bugsnag from '@bugsnag/js';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-console.log(API_URL,'API_URL')
 
 // Create axios instance
 const apiClient = axios.create({
@@ -56,6 +56,24 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   response => response,
   async error => {
+    // Report error to Bugsnag
+    Bugsnag.notify(error);
+   // Report unexpected errors to Bugsnag (exclude expected 401s which trigger refresh)-code rabbit suggestion
+   if (!(error?.response?.status === 401)) {
+      Bugsnag.notify(error instanceof Error ? error : new Error(String(error)));
+    }
+
+    if (error.response?.data?.isForcedLogout) {
+      toast({
+        id: 'vpn-proxy',
+        variant: 'destructive',
+        description: error.response?.data?.message,
+        duration: 7000,
+      });
+      // Dispatch custom event for logout handling
+      window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+    }
+
     const originalRequest = error.config;
 
     // Prevent infinite loop: do not refresh for /auth/refresh itself
@@ -66,10 +84,15 @@ apiClient.interceptors.response.use(
       originalRequest.url.endsWith('/auth/refresh')
     )
     {
-      console.log('interceptor .use session timeout');
-      alert('Session has been expired! Please relogin');
+      toast({
+        id: 'session-expired',
+        title: 'Session Expired',
+        description: 'Session has been expired! Please relogin',
+        variant: 'destructive'
+      });
       await authAPI.signOut();
-      window.location.href = '/login';
+      // Dispatch custom event for navigation without page refresh
+      window.dispatchEvent(new CustomEvent('navigateToLogin'));
       return Promise.reject(error);
     }
 
@@ -112,20 +135,30 @@ apiClient.interceptors.response.use(
           }
         } catch (refreshError)
         {
-          // If refresh fails, show alert and logout
-          console.log('catch (refreshError) line 113');
-          alert('Session has been expired! Please relogin');
+          // If refresh fails, show toast and logout
+          toast({
+            id: 'session-expired',
+            title: 'Session Expired',
+            description: 'Session has been expired! Please relogin',
+            variant: 'destructive'
+          });
           await authAPI.signOut();
-          window.location.href = '/login';
+          // Dispatch custom event for navigation without page refresh
+          window.dispatchEvent(new CustomEvent('navigateToLogin'));
           return Promise.reject(refreshError);
         }
       } else
       {
-        // If already retried once, or no refreshToken, show alert and logout
-        console.log('else line 125');
-        alert('Session has been expired! Please relogin');
+        // If already retried once, or no refreshToken, show toast and logout
+        toast({
+          id: 'session-expired',
+          title: 'Session Expired',
+          description: 'Session has been expired! Please relogin',
+          variant: 'destructive'
+        });
         await authAPI.signOut();
-        window.location.href = '/login';
+        // Dispatch custom event for navigation without page refresh
+        window.dispatchEvent(new CustomEvent('navigateToLogin'));
         return Promise.reject(error);
       }
     }
@@ -251,9 +284,6 @@ export const authAPI = {
 
   // Handle OAuth
   googleAuth: async () => {
-    // const response = await apiClient.get('/auth/google');
-    // console.log('response', response?.data);
-    // return response.data;
     window.location.href = `${API_URL}/auth/google`;
   },
 
@@ -388,6 +418,12 @@ export const walletAPI = {
     const response = await apiClient.post('/wallets/save-payment-method', params);
     return response.data;
   },
+
+  // Get coin packages
+  getCoinPackages: async () => {
+    const response = await apiClient.get('/coin-package');
+    return response.data;
+  },
 };
 
 // Betting API
@@ -489,6 +525,14 @@ export const bettingAPI = {
 export const userStreamAPI = {
   // Get all streams
   getStreams: async (params?: any) => {
+    const response = await apiClient.get(`/stream`, {
+      params
+    });
+    return response.data;
+  },
+
+  // Get all ended streams
+  getEndedStreams: async (params?: any) => {
     const response = await apiClient.get(`/stream/home`, {
       params
     });
@@ -573,14 +617,6 @@ export const socketAPI = {
     }
   },
 
-  // Subscribe to betting updates
-  onBettingUpdate: (callback: (data: any) => void) => {
-    if (socket)
-    {
-      socket.on('bettingUpdate', callback);
-    }
-  },
-
   // Subscribe to chat messages
   onChatMessage: (callback: (data: any) => void) => {
     if (socket)
@@ -632,8 +668,8 @@ export const adminAPI = {
     return response.data;
   },
 
-  updateUsersTokens: async (userId?: any, amount?: any) => {
-    const response = await apiClient.patch(`/admin/tokens/free`, userId, amount);
+  updateUserCoins: async (payload: { userId: string; amount: number }) => {
+    const response = await apiClient.patch(`/admin/gold-coins`, payload);
     return response.data;
   },
 
@@ -700,7 +736,7 @@ export const adminAPI = {
 
   // Delete stream
   deleteStream: async (streamId: string) => {
-    const response = await apiClient.delete(`/admin/streams/${streamId}`);
+    const response = await apiClient.delete(`/admin/stream/scheduled/delete/${streamId}`);
     return response.data;
   },
 
@@ -780,6 +816,15 @@ export const adminAPI = {
   },
 };
 
+// Payment API
+export const paymentAPI = {
+  // Get session key for purchase and withdraw
+  getSessionKey: async () => {
+    const response = await apiClient.get('/payments/coinflow/session-key');
+    return response.data;
+  },
+};
+
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,
@@ -789,6 +834,7 @@ export const api = {
   socket: socketAPI,
   admin: adminAPI,
   userStream: userStreamAPI,
+  payment: paymentAPI,
 };
 
 export default api;

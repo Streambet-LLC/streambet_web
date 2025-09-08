@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import api from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
+import Bugsnag from '@bugsnag/js';
 
 const passwordRequirements =
   'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.';
@@ -53,6 +54,7 @@ const ResetPassword = () => {
       });
       window.location.href = redirectParam ? `/login?redirect=${redirectParam}` : '/login'; // Redirect to login after success
     } catch (err: any) {
+      Bugsnag.notify(err); 
       setError(err?.response?.data?.message || err?.message || 'Failed to reset password.');
     } finally {
       setIsSubmitting(false);

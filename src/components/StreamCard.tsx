@@ -1,12 +1,13 @@
 import { Card } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { StreamActions } from './StreamActions';
-import { Eye, Trash, Users } from 'lucide-react';
+import { Trash, Calendar, LockKeyhole, LockKeyholeOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAnimations } from '@/hooks/useAnimations';
-import { getImageLink } from '@/utils/helper';
-import React, { useState } from 'react';
+import { getImageLink, formatDate, formatTime } from '@/utils/helper';
+import { useState } from 'react';
+import { BettingRoundStatus, StreamStatus } from '@/enums';
 
 interface StreamCardProps {
   stream: any;
@@ -20,35 +21,39 @@ interface StreamCardProps {
 export const StreamCard = ({
   stream,
   isAdmin,
-  isLive,
   onDelete,
   onUpdate,
   showAdminControls = false,
 }: StreamCardProps) => {
   const shouldShowAdminControls = isAdmin && showAdminControls;
   const { cardVariants } = useAnimations();
+  const isLive = stream?.streamStatus === StreamStatus.LIVE;
+  const isBettingOpen =
+    stream?.bettingRoundStatus === BettingRoundStatus.OPEN;
+  const isBettingLocked =
+    stream?.bettingRoundStatus === BettingRoundStatus.LOCKED;
 
   // Handle both full URLs and storage paths
   const [imageLoading, setImageLoading] = useState(true);
   const getThumbnailUrl = () => {
-    if (!stream.thumbnailURL) {
+    if (!stream.thumbnailUrl) {
       return '/placeholder.svg';
     }
 
     // If it's already a full URL (starts with http or https), use it directly
-    if (stream.thumbnailURL.startsWith('http')) {
-      return stream.thumbnailURL;
+    if (stream.thumbnailUrl.startsWith('http')) {
+      return stream.thumbnailUrl;
     }
 
     // If it's a storage path from bucket but doesn't have the storage URL prefix
     if (
-      stream.thumbnailURL.includes('stream-thumbnails/') &&
-      !stream.thumbnailURL.includes(import.meta.env.VITE_SUPABASE_URL)
+      stream.thumbnailUrl.includes('stream-thumbnails/') &&
+      !stream.thumbnailUrl.includes(import.meta.env.VITE_SUPABASE_URL)
     ) {
-      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${stream.thumbnailURL}`;
+      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${stream.thumbnailUrl}`;
     }
 
-    return getImageLink(stream.thumbnailURL) || '/placeholder.svg' ;
+    return getImageLink(stream.thumbnailUrl) || '/placeholder.svg' ;
   };
 
   // Random viewer count for visual enhancement
@@ -127,33 +132,33 @@ export const StreamCard = ({
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
                     </span>
-                    <span className="font-bold text-xs uppercase tracking-wider">Live</span>
+                    <span className="font-bold text-xs tracking-wider">Stream Live</span>
                   </div>
                 </motion.div>
               </div>
             )}
 
-            {/* Viewer count badge */}
-            {/* {isLive && (
-              <div className="absolute top-2 right-2 z-20">
-                <div className="flex items-center gap-1 bg-background/80 backdrop-blur-sm text-foreground px-2 py-1 rounded text-xs">
-                  <Users size={12} className="text-primary" />
-                  <span>{viewerCount}</span>
-                </div>
+            {/* SCHEDULED badge */}
+            {!isLive && stream.scheduledStartTime && (
+              <div className="absolute top-2 left-2 z-30">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 500,
+                    damping: 30,
+                  }}
+                >
+                  <div className="flex items-center gap-2 bg-[#ab7e02] border-2 border-[#ab3a02] text-white px-2 py-1 rounded-md shadow-lg">
+                    <Calendar className="h-3 w-3" />
+                    <span className="font-medium text-xs">
+                      Stream Upcoming: <br/> {formatDate(stream.scheduledStartTime)} at {formatTime(stream.scheduledStartTime)}
+                    </span>
+                  </div>
+                </motion.div>
               </div>
-            )} */}
-
-            {/* Stream title overlay */}
-            {/* <div className="absolute bottom-0 left-0 right-0 p-4">
-              <h3 className="font-semibold text-lg text-white mb-1 line-clamp-1 group-hover:underline decoration-primary decoration-2 underline-offset-2">
-                {stream.streamName}
-              </h3>
-              {stream.description && (
-                <p className="text-sm text-gray-300 line-clamp-2 opacity-90">
-                  {stream.description}
-                </p>
-              )}
-            </div> */}
+            )}
           </div>
         </Link>
 
@@ -197,20 +202,28 @@ export const StreamCard = ({
                 </div>
               )}
 
-              {stream.is_betting_locked !== undefined && (
+              {(isBettingLocked || isBettingOpen) && (
                 <div
                   className={cn(
-                    'text-xs px-2 py-0.5 rounded-full',
-                    stream.is_betting_locked
+                    'text-xs px-2 py-0.5 rounded-md flex items-center gap-1',
+                    isBettingLocked
                       ? 'bg-orange-500/20 text-orange-500'
-                      : 'bg-primary/20 text-primary'
+                      : isBettingOpen ? 'bg-primary/20 text-primary'
+                        : ''
                   )}
                 >
-                  {stream.is_betting_locked ? 'Betting Locked' : 'Betting Open'}
+                  {isBettingLocked ? (
+                    <LockKeyhole className="h-3 w-3" />
+                  ) : isBettingOpen ? (
+                    <LockKeyholeOpen className="h-3 w-3" />
+                  ) : null}
+                  <span>
+                    {isBettingLocked ? 'Betting Locked' : isBettingOpen ? 'Betting Open' : ''}
+                  </span>
                 </div>
               )}
             </div>
-            <p className="font-semibold text-[#D7DFEF] text-[15px] mb-5">
+            <p className="font-semibold text-[#D7DFEF] text-[15px] mb-5 items-center h-10 ">
                 {stream.streamName}
             </p>
             <div className='!mb-3 !mt-5'>

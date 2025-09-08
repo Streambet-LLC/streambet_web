@@ -13,7 +13,6 @@ import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { formatDateTimeForISO, getImageLink, getMessage } from '@/utils/helper';
-import OverView from './OverView';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
@@ -21,6 +20,8 @@ import { AdminStreamContent } from './AdminStreamContent';
 import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import Bugsnag from '@bugsnag/js';
+import { cleanTemporaryIds } from '@/utils/bettingRoundsUtils';
 
 interface BettingOption {
   optionId?: string;
@@ -38,7 +39,9 @@ export const AdminManagement = ({
   streams,
   refetchStreams,
   searchStreamQuery,
-  setSearchStreamQuery }) => {
+  setSearchStreamQuery,
+  onStreamContentChange
+}) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('livestreams');
   const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
@@ -66,7 +69,7 @@ export const AdminManagement = ({
 
   const [bettingValidationErrors, setBettingValidationErrors] = useState<ValidationError[]>([]);
   const { currency } = useCurrencyContext();
-  const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+  const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   const tabs = [
     { key: 'livestreams', label: 'Livestreams' },
@@ -78,13 +81,12 @@ export const AdminManagement = ({
       : api.admin.createStream(payload),
     onSuccess: (response) => {
       if (bettingRounds.length > 0) {
+        // Clean temporary option IDs before sending to API
+        const cleanedRounds = cleanTemporaryIds(bettingRounds);
+        
         const bettingPayload = {
           streamId: editStreamId || response?.data?.id,
-          rounds: bettingRounds.map((round) => ({
-            roundId: round.roundId,
-            roundName: round.roundName,
-            options: round.options,
-          })),
+          rounds: cleanedRounds,
         };
         createBetMutation.mutate(bettingPayload);
       }
@@ -125,6 +127,14 @@ export const AdminManagement = ({
 
   const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | undefined>(undefined);
+
+  // Notify parent when stream content is being rendered
+  useEffect(() => {
+    if (onStreamContentChange) {
+      onStreamContentChange(!!viewStreamId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewStreamId]);
 
   // Refs for error scrolling
   const titleRef = useRef<HTMLInputElement>(null);
@@ -587,6 +597,7 @@ export const AdminManagement = ({
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
       } catch (error) {
+        Bugsnag.notify(error); 
         toast({
           variant: 'destructive',
           title: 'Error uploading stream thumbnail',
@@ -716,7 +727,7 @@ export const AdminManagement = ({
                 {isStreamAnalyticsLoading ? <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg> : ((isStreamCoins ? streamAnalytics?.totalBetValue?.coins : streamAnalytics?.totalBetValue?.freeTokens) || 0)?.toLocaleString('en-US')}
+                </svg> : ((isSweepCoins ? streamAnalytics?.totalBetValue?.sweepCoins : streamAnalytics?.totalBetValue?.goldCoins) || 0)?.toLocaleString('en-US')}
               </span>
             </div>
             {/* Card 2 */}
@@ -1024,9 +1035,6 @@ export const AdminManagement = ({
             </div>
             <Separator className="!mt-1" />
             {/* Tab Content */}
-            {activeTab === 'overview' && (
-              <OverView />
-            )}
 
             {activeTab === 'livestreams' && (
               <div className="space-y-4">

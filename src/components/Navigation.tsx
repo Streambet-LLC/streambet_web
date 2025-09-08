@@ -13,6 +13,7 @@ import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { CurrencyType } from '@/enums';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useLogout } from '@/hooks/useLogout';
 
 interface NavigationProps {
   onDashboardClick?: () => void;
@@ -29,9 +30,10 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const { navVariants, buttonVariants } = useAnimations();
   const { locationResult, isCheckingLocation } = useLocationRestriction();
   const { currency } = useCurrencyContext();
-  const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+  const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   const { session, refetchSession } = useAuthContext();
+  const { handleLogout } = useLogout();
 
   // Handle scroll behavior for hiding/showing navbar
   useEffect(() => {
@@ -53,16 +55,14 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [prevScrollY]);
 
-  const handleLogout = async () => {
-    await api.auth.signOut();
-    queryClient.clear();
-    navigate('/login');
+  const handleLogoutWithRefetch = async () => {
+    await handleLogout();
     refetchSession();
   };
 
   useEffect(() => {
     if (!isCheckingLocation && session && !locationResult?.allowed) {
-      handleLogout();
+      handleLogoutWithRefetch();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCheckingLocation, locationResult, session]);
@@ -133,6 +133,12 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
             onClose={() => setIsDrawerOpen(false)}
           >
             <div className="flex-1 overflow-y-auto p-4 pt-12">
+              {/* Logo for mobile */}
+              <div className="md:hidden mb-4 pl-4">
+                <Link to="/" className="flex items-center" onClick={() => setIsDrawerOpen(false)}>
+                  <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[165px] object-contain" />
+                </Link>
+              </div>
               <div className="flex flex-col space-y-2">
                 {menuItems.map((item, index) => {
                   const isActive = location.pathname === item.path;
@@ -175,7 +181,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
                       className="justify-start text-left h-12 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                       onClick={() => {
                         setTimeout(() => {
-                          handleLogout();
+                          handleLogoutWithRefetch();
                         }, 100);
                         setIsDrawerOpen(false);
                       }}
@@ -189,7 +195,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
           </CustomDrawer>
         </div>
 
-        <motion.div variants={logoVariants} initial="hidden" animate="visible">
+        <motion.div variants={logoVariants} initial="hidden" animate="visible" className="hidden md:block">
           <Link to="/" className="flex items-center">
             <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[165px] object-contain" />
           </Link>
@@ -235,9 +241,9 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
           >
             {session ? (
               <>
-                <WalletDropdown walletBalance={isStreamCoins ? session?.walletBalanceCoin || 0 : session?.walletBalanceToken || 0} />
+                <WalletDropdown walletBalance={isSweepCoins ? session?.walletBalanceSweepCoin || 0 : session?.walletBalanceGoldCoin || 0} />
 
-                <UserDropdown profile={session} onLogout={handleLogout} />
+                <UserDropdown profile={session} onLogout={handleLogoutWithRefetch} />
               </>
             ) : (
               <>

@@ -3,7 +3,7 @@ stages:
   - deploy
 
 default:
-  image: node:18-alpine
+  image: node:22-alpine
   cache:
     paths:
       - node_modules/
@@ -56,11 +56,20 @@ build:
 
     - export VITE_API_URL=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
     - export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_BUGSNAG_SERVER=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_BUGSNAG_SERVER" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_BUGSNAG_KEY=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_BUGSNAG_KEY" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_COINFLOW_ENV=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_COINFLOW_ENV" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_COINFLOW_MERCHANT_ID=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_COINFLOW_MERCHANT_ID" --with-decryption --query "Parameter.Value" --output text)
+    - export VITE_COINFLOW_BLOCKCHAIN=$(aws ssm get-parameter --name "/streambet/$CI_COMMIT_REF_NAME/VITE_COINFLOW_BLOCKCHAIN" --with-decryption --query "Parameter.Value" --output text)
 
-    - echo "VITE_API_URL=$VITE_API_URL"
-    - echo "VITE_S3_BASE_URL=$VITE_S3_BASE_URL"
+    # - echo "VITE_BUGSNAG_SERVER=$VITE_BUGSNAG_SERVER"
+    # - echo "VITE_BUGSNAG_KEY=$VITE_BUGSNAG_KEY"
+    # - echo "VITE_COINFLOW_ENV=$VITE_COINFLOW_ENV"
+    # - echo "VITE_COINFLOW_MERCHANT_ID=$VITE_COINFLOW_MERCHANT_ID"
+    # - echo "VITE_COINFLOW_BLOCKCHAIN=$VITE_COINFLOW_BLOCKCHAIN"
 
-    - VITE_API_URL=$VITE_API_URL VITE_S3_BASE_URL=$VITE_S3_BASE_URL npm ci && npm run build
+
+    - VITE_API_URL=$VITE_API_URL VITE_S3_BASE_URL=$VITE_S3_BASE_URL VITE_BUGSNAG_KEY=$VITE_BUGSNAG_KEY VITE_BUGSNAG_SERVER=$VITE_BUGSNAG_SERVER VITE_COINFLOW_ENV=$VITE_COINFLOW_ENV VITE_COINFLOW_MERCHANT_ID=$VITE_COINFLOW_MERCHANT_ID VITE_COINFLOW_BLOCKCHAIN=$VITE_COINFLOW_BLOCKCHAIN npm ci && npm run build
   artifacts:
     paths:
       - dist/

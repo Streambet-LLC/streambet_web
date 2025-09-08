@@ -1,11 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useToast } from '@/components/ui/use-toast';
-import { useMutation } from "@tanstack/react-query";
-import api from "@/integrations/api/client";
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
-import { FabioBoldStyle } from "@/utils/font";
-import { useAuthContext } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BettingVariable {
@@ -15,29 +11,31 @@ interface BettingVariable {
 
 interface BettingRound {
   roundName?: string;
-  roundTotalBetsTokenAmount?: number;
+  roundTotalBetsGoldCoinAmount: number;
+  roundTotalBetsSweepCoinAmount: number;
   bettingVariables?: BettingVariable[];
   status?: BettingRoundStatus;
 }
 
 interface SliderMax {
-  freeTokens?: number;
-  streamCoins?: number;
+  goldCoins?: number;
+  sweepCoins?: number;
 }
 
 interface BettingData {
   bettingRounds?: BettingRound[];
-  walletFreeToken?: number;
-  walletCoin?: number;
-  roundTotalBetsTokenAmount:number
+  walletGoldCoin?: number;
+  walletSweepCoin?: number;
+  roundTotalBetsGoldCoinAmount: number;
+  roundTotalBetsSweepCoinAmount: number;
   status?: BettingRoundStatus;
-  userBetFreeTokens?: number;
-  userBetStreamCoins?: number;
+  userBetGoldCoins?: number;
+  userBetSweepCoin?: number;
 }
 
 interface getRoundData {
   betAmount?: number;
-  potentialFreeTokenAmt?: number;
+  potentialGoldCoinAmt?: number;
   optionName?: string;
 }
 
@@ -55,9 +53,10 @@ interface BetTokensProps {
   loading?: boolean; // Optional prop to indicate loading state
   selectedAmount?: number; // Optional prop for selected amount
   selectedWinner?: string; // Optional prop for selected winner
-  isEditing?: boolean; // Optional prop to indicate if it's an editing state
-  updatedCurrency?: string; // Optional prop for updated currency type
-  lockedBet?: boolean; // Optional prop to indicate if the bet is locked
+  isEditing?: boolean; // to indicate if it's an editing state
+  updatedCurrency?: string; // for updated currency type
+  lockedBet?: boolean; // to indicate if the bet is locked
+  handleEditBack: VoidFunction;
 }
 
 export default function BetTokens({ 
@@ -76,18 +75,20 @@ export default function BetTokens({
   getRoundData,
   editBetMutation, 
   resetKey,
-  lockedBet
+  lockedBet,
+  handleEditBack,
 }: BetTokensProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
   const isMobile = useIsMobile();
+
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
   const [sliderMax, setSliderMax] = useState<number | undefined>();
   const [isTabletRange, setIsTabletRange] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
-  const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+  const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   // Check for tablet range (773px to 1024px)
   useEffect(() => {
@@ -123,21 +124,14 @@ export default function BetTokens({
   const isColorButtonsEnabled = betAmount > 0;
   const isBetButtonEnabled = selectedColor !== "";
 
-
    useEffect(() => {
-    // if (getRoundData) {
-      const isStreamCoins = currency === CurrencyType.STREAM_COINS;
-      // setSliderMax(isStreamCoins ? updatedSliderMax?.streamCoins ?? bettingData?.walletCoin 
-      //   : updatedSliderMax?.freeTokens ?? bettingData?.walletFreeToken);
-         setSliderMax(isStreamCoins ?  Number(bettingData?.walletCoin) + Number(bettingData?.userBetStreamCoins)
-        :  Number(bettingData?.walletFreeToken) + Number(bettingData?.userBetFreeTokens));
+      const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
+      setSliderMax(isSweepCoins ? Number(bettingData?.walletSweepCoin ?? 0) + Number(bettingData?.userBetSweepCoin ?? 0)
+        : Number(bettingData?.walletGoldCoin ?? 0) + Number(bettingData?.userBetGoldCoins ?? 0));
       setSelectedColor(selectedWinner);
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
-    // }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData]);
-
-
+  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData, bettingData]);
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
@@ -147,7 +141,6 @@ export default function BetTokens({
     }
   }, [resetKey]);
   
-
   const handleBet = () => {
     if (lockedOptions) {
       toast({
@@ -182,18 +175,24 @@ export default function BetTokens({
     >
       <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
         <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
-          Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isStreamCoins ? ' Stream Coins' : ' Free Tokens'}
+          {isEditing && <div className="w-[18px] h-[18px] mt-2 mb-4 gap-2 flex items-center cursor-pointer" onClick={() => handleEditBack()}>
+                <img
+                    src="/icons/back.svg"
+                    className="w-[100%] h-[100%] object-contain cursor-pointer"
+                /> <span className="font-medium">Back</span>
+          </div>}
+          Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}
           <span className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
-          {isStreamCoins
-            ? `Avaliable Stream Coins: ${Number(session?.walletBalanceCoin).toLocaleString('en-US')}`
-            : `Avaliable Tokens: ${Number(session?.walletBalanceToken).toLocaleString('en-US')}`
+          {isSweepCoins
+            ? `Available Sweep Coins: ${Number(session?.walletBalanceSweepCoin || 0).toLocaleString('en-US')}`
+            : `Available Gold Coins: ${Number(session?.walletBalanceGoldCoin || 0).toLocaleString('en-US')}`
           }
             </span>
         </div>
         
         <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-            Total Pot: {`${totalPot} ${isStreamCoins ? ' Stream Coins' : ' Free Tokens'}`}
+            Total Pot: {`${totalPot} ${isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}`}
             </span>
         </div>
        
@@ -219,7 +218,7 @@ export default function BetTokens({
             if (Number(sliderMax) === 0) {
               toast({
                 variant: 'destructive',
-                description: 'No Tokens available to bet',
+                description: 'No coins available to bet',
               });
             }
             if (lockedOptions) {
@@ -238,7 +237,6 @@ export default function BetTokens({
           }}
         />
          <input
-          // type="number"
           min={0}
           max={sliderMax}
           value={betAmount}
@@ -252,7 +250,6 @@ export default function BetTokens({
           }}
           className="w-[90px] bg-[#272727] mt-2 px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444]"
   />
-        {/* Custom Thumb Style with SVG image */}
         <style>
           {`
             input[type="range"].bet-slider-gradient {

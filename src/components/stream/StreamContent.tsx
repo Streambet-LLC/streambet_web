@@ -1,10 +1,7 @@
 import { StreamPlayer } from '@/components/StreamPlayer';
-import { BettingInterface } from '@/components/BettingInterface';
-import { CommentSection } from '@/components/CommentSection';
-import { StreamDetails } from '@/components/stream/StreamDetails';
 import BetTokens from './BetTokens';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import LockTokens from './LockTokens';
 import { useEffect, useState, useRef } from 'react';
@@ -17,15 +14,23 @@ import { FabioBoldStyle } from '@/utils/font';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 import { formatDateTime, getConnectionErrorMessage, getImageLink } from '@/utils/helper';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface StreamContentProps {
   streamId: string;
   session: any;
   stream: any;
   refreshKey?: number;
+  refetchStream: VoidFunction;
 }
 
-export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamContentProps) => {
+export const StreamContent = ({ 
+  streamId, 
+  session, 
+  stream, 
+  refreshKey,
+  refetchStream
+}: StreamContentProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
@@ -35,14 +40,14 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   const [placedBet, setPlaceBet] = useState(true); // show BetTokens when true, LockTokens when false
   const [resetKey, setResetKey] = useState(0); // Add resetKey state
   const [totalPot, setTotalPot] = useState(0); 
-  const [totalPotTokens, setTotalPotTokens] = useState(undefined);
-  const [totalPotCoins, setTotalPotCoins] = useState(undefined);
+  const [totalPotGoldCoins, setTotalPotGoldCoins] = useState(undefined);
+  const [totalPotSweepCoins, setTotalPotSweepCoins] = useState(undefined);
   const [potentialWinnings, setPotentialWinnings] = useState(0); 
   const [selectedAmount, setSelectedAmount] = useState(0); 
   const [selectedWinner, setSelectedWinner] = useState<string | undefined>("");
   const [updatedSliderMax, setUpdatedSliderMax] = useState({
-    freeTokens: undefined,
-    streamCoins: undefined,
+    goldCoins: undefined,
+    sweepCoins: undefined,
   }); 
   const [isEditing, setIsEditing] = useState(false);  //indicate if it's an editing state
   const [lockedOptions, setLockedOptions] = useState<boolean>(false);  // Track if bet is locked in BetTokens,tsx
@@ -54,27 +59,79 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   // Track if last update came from socket then no need to execute getRoundData useEffect
   const [hasSocketUpdate, setHasSocketUpdate] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
+  const [isUserLoser, setIsUserLoser] = useState(false);
+  const [viewerCount, setViewerCount] = useState(null);
   const [updatedCurrency, setUpdatedCurrency] = useState<CurrencyType | undefined>();   //currency type from socket update
   const [messageList, setMessageList] = useState<any>();
+  const [roundDetails, setRoundDetails] = useState<any>();
   const queryClient = useQueryClient();
-
+  const { isFetching: isFetchingProfile } = useAuthContext();
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const currencyRef = useRef({ updatedCurrency, currency });
+  const isEditRef = useRef(false);
+  const horizontalScrollRef = useRef<HTMLDivElement>(null);
+  const isStreamLive = stream?.status === StreamStatus.LIVE;
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
+  const isStreamEnded = stream?.status === StreamStatus.ENDED;
 
+  // Function to scroll to the last card with smooth animation
+  const scrollToLastCard = () => {
+    if (horizontalScrollRef.current && roundDetails && roundDetails.length > 0) {
+      setTimeout(() => {
+        if (horizontalScrollRef.current) {
+          horizontalScrollRef.current.scrollTo({
+            left: horizontalScrollRef.current.scrollWidth,
+            behavior: 'smooth'
+          });
+        }
+      }, 100); // 100ms delay to ensure the last card is rendered
+    }
+  };
+
+  const getRoundsData = (roundsData?: any) => {
+    const roundDetailsData = roundsData && roundsData?.length ? roundsData 
+      : (stream?.roundDetails || []);
+    const createdIndex = roundDetailsData?.findIndex((round) => 
+      round?.roundStatus === BettingRoundStatus.CREATED);
+    const updatedRounds = roundDetailsData?.filter((round, index) => 
+      round?.roundStatus !== BettingRoundStatus.OPEN && (createdIndex !== -1 ? 
+        index <= createdIndex : true));
+    return updatedRounds;
+  };
+
+  useEffect(() => {
+    setRoundDetails(getRoundsData());
+  }, [stream]);
+
+  useEffect(() => {
+    if(!isFetchingProfile) {
+      refetchBettingData();
+    }
+  }, [isFetchingProfile]);
+
+  // Effect to scroll to last card when roundDetails changes
+  useEffect(() => {
+    scrollToLastCard();
+  }, [roundDetails]);
+
+  useEffect(() => {
+    // Keep ref updated with current values
+    currencyRef.current = { updatedCurrency, currency };
+  }, [updatedCurrency, currency]);
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
     if (!socketInstance) return;
     
     const resetBetData = () => {
-      setTotalPotTokens(undefined);
-      setTotalPotCoins(undefined);
+      setTotalPotGoldCoins(undefined);
+      setTotalPotSweepCoins(undefined);
       setPlaceBet(true);
       setBetId(undefined);
       setUpdatedSliderMax({
-        freeTokens: undefined,
-        streamCoins: undefined,
+        goldCoins: undefined,
+        sweepCoins: undefined,
       });
       setLockedOptions(false);
       setLockedBet(false);
@@ -82,16 +139,25 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       refetchBettingData();
       refetchRoundData();
       setIsEditing(false);
+      setLoading(false);
     };
 
+    socketInstance.on('scheduledStreamUpdatedToLive', () => {
+      console.log('scheduledStreamUpdatedToLive');
+      refetchStream();
+    });
+
     const processPlacedBet = (update) => {
+      console.log('update process bet placed', update);
       queryClient.prefetchQuery({ queryKey: ['session'] }); // To recall me api that will update currency amount near to toggle
-      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
-      setPotentialWinnings(isStreamCoins ? update?.potentialCoinWinningAmount : update?.potentialTokenWinningAmount);
+      // Use ref to get current values
+      const { updatedCurrency: currentUpdatedCurrency, currency: currentCurrency } = currencyRef.current;
+      const isSweepCoins = (currentUpdatedCurrency || currentCurrency) === CurrencyType.SWEEP_COINS;
+      setPotentialWinnings(isSweepCoins ? update?.potentialSweepCoinWinningAmount : update?.potentialGoldCoinWinningAmount);
       setBetId(update?.bet?.id);
       setUpdatedSliderMax({
-        freeTokens: update?.updatedWalletBalance?.freeTokens || undefined,
-        streamCoins: update?.updatedWalletBalance?.streamCoins || undefined,
+        goldCoins: update?.updatedWalletBalance?.goldCoins || undefined,
+        sweepCoins: update?.updatedWalletBalance?.sweepCoins || undefined,
       });
       setSelectedAmount(update?.amount);
       setSelectedWinner(update?.selectedWinner);
@@ -106,19 +172,27 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     };
   
     const handler = (update: any) => {
-      setTotalPotCoins(update?.totalBetsCoinAmount);
-      setTotalPotTokens(update?.totalBetsTokenAmount);
+      console.log('bettingUpdate', update);
+      setTotalPotSweepCoins(update?.totalBetsSweepCoinAmount);
+      setTotalPotGoldCoins(update?.totalBetsGoldCoinAmount);
       setLoading(false);
       setHasSocketUpdate(true);
     };
 
     // For all users
     socketInstance.on('bettingUpdate', handler);
+
+    socketInstance.on('viewerCountUpdated', (count) => { 
+      console.log('viewerCountUpdated', count);
+      setViewerCount(count);
+    });
     
     socketInstance.on('potentialAmountUpdate', (data) => {
       console.log('potentialAmountUpdate', data);
-      const isStreamCoins = (updatedCurrency || currency) === CurrencyType.STREAM_COINS;
-      setPotentialWinnings(isStreamCoins ? data?.potentialCoinWinningAmount : data?.potentialTokenWinningAmount);
+      // Use ref to get current values
+      const { updatedCurrency: currentUpdatedCurrency, currency: currentCurrency } = currencyRef.current;
+      const isSweepCoins = (currentUpdatedCurrency || currentCurrency) === CurrencyType.SWEEP_COINS;
+      setPotentialWinnings(isSweepCoins ? data?.potentialSweepCoinWinningAmount : data?.potentialGoldCoinWinningAmount);
     });
 
     socketInstance.on('bettingLocked', (data) => {
@@ -127,33 +201,49 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       setLockedBet(data?.lockedStatus);
     });
 
-    socketInstance.on('winnerDeclared', (data) => { 
+    socketInstance.on('winnerDeclared', (data) => {
+      console.log('winner declared', data);
       toast({
         title: 'Round Closed',
         description: `${data?.winnerName} has selected as winning bet option!`,
         duration: 7000,
       });
-      resetBetData();
       setWinnerOption(data?.winnerName);
-      setShowWinnerAnimation(true);
-      // Check if current session user is a winner
-      if (Array.isArray(data?.winners) && session?.id) {
-        const found = data.winners.some((w: any) => w.userId === session.id);
-        setIsUserWinner(found);
-      } else {
-        setIsUserWinner(false);
+      const { updatedCurrency: currentUpdatedCurrency, currency: currentCurrency } = currencyRef.current;
+      const isSweepCoins = (currentUpdatedCurrency || currentCurrency) === CurrencyType.SWEEP_COINS;
+      const isVoided = isSweepCoins ? data?.voided?.sweepCoin : data?.voided?.goldCoin;
+      if (!isVoided) {
+        setShowWinnerAnimation(true);
+        // Check if current session user is a winner
+        if (Array.isArray(data?.winners) && session?.id) {
+          const found = data.winners.some((w: any) => w.userId === session.id);
+          setIsUserWinner(found);
+        } else {
+          setIsUserWinner(false);
+        }
+        // Check if current session user is a loser
+        if (Array.isArray(data?.losers) && session?.id) {
+          const found = data.losers.some((l: any) => l.userId === session.id);
+          setIsUserLoser(found);
+        } else {
+          setIsUserLoser(false);
+        }
+        // Hide the animation after 5 seconds
+        setTimeout(() => {
+          setShowWinnerAnimation(false);
+        }, 5000);
       }
-      // Hide the animation after 5 seconds
-      setTimeout(() => {
-        setShowWinnerAnimation(false);
-      }, 5000);
+      resetBetData();
       setResetKey(prev => prev + 1);
-      queryClient.prefetchQuery({ queryKey: ['session'] }); 
+      queryClient.prefetchQuery({ queryKey: ['session'] });
+      refetchStream();
     });
 
     socketInstance.on('betPlaced', (update) => {
       console.log('betPlaced', update);
-      processPlacedBet(update);
+      if(update?.bet?.userId === session?.id) {
+        processPlacedBet(update);
+      }
     });
 
     socketInstance.on('betOpened', (update) => {
@@ -166,7 +256,6 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
     });
 
     socketInstance.on('betCancelledByAdmin', (update) => {
-      console.log('betCancelledByAdmin', update);
       queryClient.prefetchQuery({ queryKey: ['session'] });
       toast({
         description:"Current betting round cancelled by admin.",
@@ -174,37 +263,47 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
         duration: 4000,
       });
       resetBetData();
+      refetchStream();
     });
 
     socketInstance.on('betCancelled', (update) => {
-      console.log('betCancelled', update);
-      queryClient.prefetchQuery({ queryKey: ['session'] });
-      setUpdatedSliderMax({
-        freeTokens: update?.updatedWalletBalance?.freeTokens || 0,
-        streamCoins: update?.updatedWalletBalance?.streamCoins || 0,
-      });
-      if (update?.message){
-      toast({
-        description:update?.message,
-        variant: 'default',
-      });
+      console.log(update,'betCancelled')
+       if(update?.bet?.userId === session?.id) {
+          queryClient.prefetchQuery({ queryKey: ['session'] });
+          setUpdatedSliderMax({
+            goldCoins: update?.updatedWalletBalance?.goldCoins || 0,
+            sweepCoins: update?.updatedWalletBalance?.sweepCoins || 0,
+          });
+          if (update?.message){
+          toast({
+            description:update?.message,
+            variant: 'default',
+          });
+        }
+          resetBetData();
     }
-      resetBetData();
     });
 
     socketInstance.on('betEdited', (update) => {
-      console.log('betEdited', update);
-      processPlacedBet(update);
+      console.log('betEdited',update)
+      if(update?.bet?.userId === session?.id) {
+        processPlacedBet(update);
+      }
     });
-
-    console.log('list to new mess')
+    
     socketInstance.on('newMessage', (update) => {
       console.log('newMessage', update);
-      setMessageList(update)
+      setMessageList(update);
+    });
+
+    socketInstance.on('roundUpdated', (roundsData) => {
+      console.log('roundUpdated', roundsData?.roundDetails);
+      setRoundDetails(getRoundsData(roundsData?.roundDetails));
+      // Scroll to last card after updating round details
+      setTimeout(() => scrollToLastCard(), 100);
     });
 
     socketInstance.on('streamEnded', (update) => {
-      console.log('streamEnded', update);
       toast({
         description:"Stream has ended.",
         variant: 'destructive',
@@ -213,12 +312,24 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       navigate('/');
     });
 
+    socketInstance.on('error', (error) => {
+      toast({
+        description: error?.message || 'An error occured. Refresh page and try again.',
+        variant: 'destructive',
+        duration: 7000,
+      });
+      setLoading(false);
+      if (error?.isForcedLogout) {
+        // Dispatch custom event for logout handling
+        window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+      }
+    });
+
     // Handle disconnection events
     socketInstance.on('disconnect', (reason: string) => {
       console.log('Socket disconnected:', reason);
       if (reason !== 'io client disconnect') {
         // Only attempt reconnection if it wasn't an intentional disconnect
-          // handleSocketReconnection();
         api.socket.joinStream(streamId, socketConnect);
       
       }
@@ -226,49 +337,51 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
     socketInstance.on('connect_error', (error: any) => {
       console.log('Socket connection error:', error);
-      //  handleSocketReconnection();
       api.socket.joinStream(streamId, socketConnect);
       setLoading(false);
-     
     });
   };
 
   useEffect(() => {
-    if(socketConnect){
-    api.socket.joinStream(streamId, socketConnect);
-    
-    // Setup event listeners
-    setupSocketEventListeners(socketConnect);
+    if(socketConnect) {
+      api.socket.joinStream(streamId, socketConnect);
+      
+      // Setup event listeners
+      setupSocketEventListeners(socketConnect);
     }
-  
-   
-  }, [streamId,socketConnect]);
 
-  useEffect (()=> () => {
-      // Cleanup ping-pong intervals
+    // Return cleanup function to remove event listeners and leave stream
+    return () => {
+      // Cleanup reconnect timeout
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
       
+      // Leave the stream
       api.socket.leaveStream(streamId, socketConnect);
 
-      // api.socket.disconnect();
+      // Remove all event listeners
       if (socketConnect) {
-            socketConnect?.off('bettingUpdate');
-            socketConnect?.off('potentialAmountUpdate');
-            socketConnect?.off('bettingLocked');
-            socketConnect?.off('winnerDeclared');
-            socketConnect?.off('newMessage');
-            socketConnect?.off('streamEnded');
-            socketConnect?.off('betPlaced');
-            socketConnect?.off('betEdited');
-            socketConnect?.off('betOpened');
-            socketConnect?.off('betCancelled');
-            socketConnect?.off('betCancelledByAdmin');
+        socketConnect.off('scheduledStreamUpdatedToLive');
+        socketConnect.off('bettingUpdate');
+        socketConnect.off('viewerCountUpdated');
+        socketConnect.off('potentialAmountUpdate');
+        socketConnect.off('bettingLocked');
+        socketConnect.off('winnerDeclared');
+        socketConnect.off('betPlaced');
+        socketConnect.off('betOpened');
+        socketConnect.off('betCancelledByAdmin');
+        socketConnect.off('betCancelled');
+        socketConnect.off('betEdited');
+        socketConnect.off('newMessage');
+        socketConnect.off('roundUpdated');
+        socketConnect.off('streamEnded');
+        socketConnect.off('disconnect');
+        socketConnect.off('connect_error');
+        socketConnect.off('error');
       }
-      // setSocket(null);
-    },
-  [])
+    };
+  }, [streamId, socketConnect]);
 
   // Query to get the betting data for the stream
   const { data: bettingData, refetch: refetchBettingData, isFetching: fetchingBettingData} = useQuery({
@@ -282,9 +395,9 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   });
 
   useEffect(() => {
-    setTotalPot(currency === CurrencyType.STREAM_COINS ? totalPotCoins ?? (bettingData?.roundTotalBetsCoinAmount || 0) : totalPotTokens ?? (bettingData?.roundTotalBetsTokenAmount || 0));
+    setTotalPot(currency === CurrencyType.SWEEP_COINS ? totalPotSweepCoins ?? (bettingData?.roundTotalBetsSweepCoinAmount || 0) : totalPotGoldCoins ?? (bettingData?.roundTotalBetsGoldCoinAmount || 0));
     setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED);
-  },[bettingData, currency, totalPotCoins, totalPotTokens]);
+  },[bettingData, currency, totalPotSweepCoins, totalPotGoldCoins]);
 
   // Query to get selected betting round data
   const { data: getRoundData, refetch: refetchRoundData} = useQuery({
@@ -299,8 +412,10 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
   useEffect(() => {
     if (hasSocketUpdate) return;
     if (getRoundData) {
-      setPlaceBet(false);
-      setPotentialWinnings(getRoundData?.currencyType === CurrencyType.FREE_TOKENS ? getRoundData?.potentialFreeTokenAmt : getRoundData?.potentialCoinAmt);
+      if (!isEditRef.current) {
+        setPlaceBet(false);
+      }
+      setPotentialWinnings(getRoundData?.currencyType === CurrencyType.GOLD_COINS ? getRoundData?.potentialGoldCoinAmt : getRoundData?.potentialSweepCoinAmt);
       setSelectedAmount(getRoundData?.betAmount);
       setSelectedWinner(getRoundData?.optionName);
       setLockedBet(getRoundData?.status === BettingRoundStatus.LOCKED);
@@ -334,6 +449,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
    // Mutation to edit a bet
   const editBetSocket = (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
     setLoading(true);
+    isEditRef.current = false;
     if (socketConnect && socketConnect.connected) {
       setUpdatedCurrency(data.newCurrencyType as CurrencyType);
       socketConnect.emit('editBet', {
@@ -353,13 +469,22 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
 
 // Function to handle bet edit
   const handleBetEdit = () => {
+    isEditRef.current = true;
+    setLoading(false);
     setIsEditing(true);
     setPlaceBet(true); // Show BetTokens (edit mode)
-    refetchRoundData(); // when canceling and placcing bet,then editing we need to refetch round data
+    refetchRoundData(); // when canceling and placing bet,then editing we need to refetch round data
+  }
+
+  // Function to undo bet edit
+  const handleEditBack = () => {
+    setIsEditing(false);
+    setPlaceBet(false);
   }
 
   // Cancel bet mutation
     const cancelBetSocket = (data: { betId: string; currencyType: string }) => {
+      isEditRef.current = false;
       if (socketConnect && socketConnect.connected) {
         socketConnect.emit('cancelBet', {
           betId:data?.betId,
@@ -402,8 +527,7 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
       
       <div className="lg:col-span-2 space-y-6 max-h-[100vh] h-full">
       <div className="relative">
-            {isStreamScheduled ? <div className="relative aspect-video rounded-lg overflow-hidden">
-              {/* Background thumbnail with low opacity */}
+            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video rounded-lg overflow-hidden">
               {isStreamScheduled && stream?.thumbnailUrl && (
                 <div 
                   className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -534,10 +658,49 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
                 </motion.div>
               </motion.div>
               )} 
+
+              {showWinnerAnimation && isUserLoser && (
+                <motion.div
+                  className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center overflow-hidden p-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {/* Subtle raining lines to suggest a loss (mobile-friendly) */}
+                  <motion.div className="absolute inset-0 pointer-events-none">
+                    {[...Array(12)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute w-[2px] h-6 sm:h-8 bg-blue-400/70 rounded-full"
+                        style={{ left: `${Math.random() * 100}%`, top: -20 }}
+                        initial={{ y: -50, opacity: 0 }}
+                        animate={{ y: '120%', opacity: [0, 1, 0.3, 0] }}
+                        transition={{ duration: 2 + (i % 4) * 0.2, repeat: Infinity, delay: i * 0.12, ease: 'easeIn' }}
+                      />
+                    ))}
+                  </motion.div>
+
+                  {/* Center message */}
+                  <motion.div
+                    className="relative z-10 bg-zinc-900/80 backdrop-blur text-white text-xl sm:text-2xl md:text-3xl font-bold px-6 py-4 sm:px-8 sm:py-5 rounded-xl shadow-xl border border-zinc-700"
+                    initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                  >
+                    <motion.div className='leading-[80px]'
+                      animate={{ x: [0, -4, 4, 0] }}
+                      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      This bet didn’t go your way 😕 <br />But the next one might be yours!
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+              )}
           </AnimatePresence>
 
         {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
-        {bettingData?.bettingRounds && bettingData.bettingRounds.length  ? (
+        {!isStreamEnded && bettingData?.bettingRounds && bettingData.bettingRounds.length  ? (
           placedBet ? (
             <BetTokens
               session={session}
@@ -555,9 +718,11 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
               isEditing={isEditing}
               updatedCurrency={updatedCurrency}
               lockedBet={lockedBet}
+              handleEditBack={handleEditBack}
             />
           ) : (
               <LockTokens
+              updatedCurrency={updatedCurrency}
               isStreamScheduled={isStreamScheduled}
               updatedBetId={betId}
               bettingData={bettingData}
@@ -573,8 +738,8 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
             />
           )
         ) : (
-          session != null && (
-            <div className="relative mx-auto rounded-[16px] shadow-lg p-5 h-[240px]" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
+          session != null && (<>
+            {roundDetails?.length === 0 ? <div className="relative mx-auto rounded-[16px] shadow-lg p-5 h-[240px]" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }}>
               <div className='all-center flex justify-center items-center h-[100px] mt-8'>
                 <img
                   src="/icons/nobettingData.svg"
@@ -583,21 +748,74 @@ export const StreamContent = ({ streamId, session, stream, refreshKey }: StreamC
                 />
               </div>
               <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
-            </div>
+            </div> : <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }} ref={horizontalScrollRef}>
+
+            {roundDetails?.map(
+              round => {
+              const isRoundClosed = round?.roundStatus === BettingRoundStatus.CLOSED;
+              const isRoundCreated = round?.roundStatus === BettingRoundStatus.CREATED;
+              const isRoundCancelled = round?.roundStatus === BettingRoundStatus.CANCELLED;
+              const isRoundLocked = round?.roundStatus === BettingRoundStatus.LOCKED;
+              
+              if (isRoundClosed) {
+                return (
+                  <div key={round?.id} className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0 px-2">
+                    <p className="text-white font-semibold text-lg line-clamp-3">{round?.roundName}</p>
+                    <div className="flex flex-col items-center gap-2 mt-2">
+                      <p className="text-white font-bold">{round?.winningOption?.[0]?.variableName} as winner</p>
+                      <span className="text-white text-sm font-medium">won {round?.winningOption?.[0]?.totalGoldCoinAmt} gold coins</span>
+                      <span className="text-white text-sm font-medium">and {round?.winningOption?.[0]?.totalSweepCoinAmt} sweep coins</span>
+                    </div>
+                  </div>
+                )} else if (isRoundCancelled) {
+                return (
+                  <div key={round?.id} className="flex flex-col justify-center items-center bg-black rounded-2xl w-80 h-48 shrink-0 px-2">
+                    <p className="text-white font-semibold text-lg line-clamp-3">{round?.roundName} cancelled</p>
+                  </div>
+                )} else if (isRoundLocked) {
+                return (
+                <div key={round?.id} className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 shadow-[0_0_20px_#a3e635] shrink-0 px-2">
+                  <p className="text-white font-medium line-clamp-3">{round?.roundName} is locked</p>
+                </div>
+                )} else if (isRoundCreated) {
+                  return (
+                  <div key={round?.id} className="flex justify-center items-center bg-black rounded-2xl w-80 h-48 border border-[#BDFF00] shadow-[0_0_20px_#a3e635] shrink-0 px-2">
+                    <p className="text-white font-medium line-clamp-3">{round?.roundName} is coming up!</p>
+                  </div>
+                  )}
+              })
+            }
+            </div>}
+          </>
           )
         )}
 
 
       </div>
 
-      <div className="lg:col-span-1 flex flex-col mb-5 h-full">
+      <div className="lg:col-span-1 flex flex-col mb-5 h-full max-lg:mt-10">
         <div className="flex-1 h-full sticky top-24 md:max-w-[320px]">
+          <div className="border p-4 mb-3 border-zinc-700 rounded-[16px]">
+            <h2 className="text-lg font-semibold leading-tight pt-2 pb-2">
+              {stream?.name}
+            </h2>
+
+            <p className="text-sm mt-1 leading-6 font-semibold max-h-[150px] overflow-y-auto" style={{ color: 'rgba(96, 96, 96, 1)' }}>
+              {stream?.description || '-NA-'}
+            </p>
+
+            <div className="flex items-center gap-1 mt-3 text-sm">
+              <img src="/icons/person.svg" alt="coin" className="w-4 h-4" />
+              <span>{isStreamLive ? (viewerCount ?? (stream?.viewerCount || 0)) : 0} watching</span>
+            </div>
+          </div>
         <div className={session == null ? "pointer-events-none blur-[1px] select-none" : ""}>
           <Chat
-          sendMessageSocket={sendMessageSocket}
-          newSocketMessage={messageList}
-          session={session}
-          streamId={streamId}
+            isDisabled={isStreamEnded}
+            sendMessageSocket={sendMessageSocket}
+            newSocketMessage={messageList}
+            session={session}
+            streamId={streamId}
          />
         </div>
         </div>

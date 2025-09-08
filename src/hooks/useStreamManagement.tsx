@@ -9,7 +9,7 @@ export const useStreamManagement = () => {
   const { toast } = useToast();
   const [searchStreamQuery, setSearchStreamQuery] = useState();
   const rangeRef = useRef('[0,7]');
-  const { session } = useAuthContext();
+  const { isLoading, isFetching, session } = useAuthContext();
 
 
   const { data: streams, refetch: refetchStreams } = useQuery({
@@ -46,6 +46,8 @@ export const useStreamManagement = () => {
 
   return {
     profile: session,
+    isProfileLoading: isLoading,
+    isProfileFetching: isFetching,
     streams,
     searchStreamQuery,
     setSearchStreamQuery,

@@ -38,6 +38,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
+import Bugsnag from '@bugsnag/js';
+import { cleanTemporaryIds } from '@/utils/bettingRoundsUtils';
 
 // Helper for status priority
 const statusPriority = [
@@ -58,6 +60,8 @@ function getActiveRoundIndex(betData) {
      return;
 }
 
+
+
 export const AdminBettingRoundsCard = ({
      isStreamScheduled,
      isStreamEnded,
@@ -70,6 +74,8 @@ export const AdminBettingRoundsCard = ({
      handleCancelRound,
      editStreamId,
      refetchBetData,
+     streamInfo,
+     bettingUpdate
 }) => {
      const [carouselApi, setCarouselApi] = useState(null);
      const [settingsOpen, setSettingsOpen] = useState(false);
@@ -77,7 +83,7 @@ export const AdminBettingRoundsCard = ({
      const [selectedOption, setSelectedOption] = useState({}); // { [roundId]: optionId }
      const [statusMap, setStatusMap] = useState({});
      const { currency } = useCurrencyContext();
-     const isStreamCoins = currency === CurrencyType.STREAM_COINS;
+     const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
      const [editableRounds, setEditableRounds] = useState([]);
      const [bettingErrorRounds, setBettingErrorRounds] = useState([]);
      const [showBettingValidation, setShowBettingValidation] = useState(false);
@@ -94,6 +100,7 @@ export const AdminBettingRoundsCard = ({
                options: r.options
           })) || []);
      }, [betData]);
+
 
      // Find active round index
      const activeIdx = useMemo(() => getActiveRoundIndex(rounds), [rounds]);
@@ -132,6 +139,7 @@ export const AdminBettingRoundsCard = ({
           };
      };
 
+     console.log(streamInfo?.data?.totalCoinAmount,'streamInfo')
      // Responsive width for card
      const cardWidth = 'w-full';
 
@@ -150,7 +158,7 @@ export const AdminBettingRoundsCard = ({
           <div className="flex flex-col items-center w-full mt-4">
                <Card
                     className={`rounded-xl border-[0.62px] border-[#2C2C2C] ${cardWidth} bg-[#181818] shadow-none`}
-                    style={{ width: '100%' }}
+                    style={{ width: windowWidth < 640 ? 'calc(100vw - 50px)' : '100%' }}
                >
                     {/* Card Header */}
                     <CardHeader
@@ -241,10 +249,14 @@ export const AdminBettingRoundsCard = ({
                                                             }
                                                             setBettingSaveLoading(true);
                                                             try {
-                                                                 await api.admin.updateBettingData({ streamId: editStreamId, rounds: editableRounds });
+                                                                 // Clean temporary option IDs before sending to API
+                                                                 const cleanedRounds = cleanTemporaryIds(editableRounds);
+                                                                 
+                                                                 await api.admin.updateBettingData({ streamId: editStreamId, rounds: cleanedRounds });
                                                                  refetchBetData();
                                                                  setSettingsOpen(false);
                                                             } catch (e) {
+                                                                 Bugsnag.notify(e); 
                                                                  toast({ title: 'Error', description: getMessage(e) || 'Failed to update bet', variant: 'destructive' });
                                                             }
                                                             setBettingSaveLoading(false);
@@ -278,13 +290,13 @@ export const AdminBettingRoundsCard = ({
                     </CardHeader>
                     {/* Card Content: Carousel */}
                     <CardContent className="bg-transparent px-0 !p-0">
-                         <div className="relative group" style={{ maxWidth: windowWidth < 768 ? '80vw' : '50vw' }}>
+                         <div className="relative group w-full max-w-full md:max-w-[50vw]">
                               <Carousel
                                    setApi={setCarouselApi}
                                    opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}
-                                   className="w-full px-1"
+                                   className="w-full"
                               >
-                                   <CarouselContent className="flex items-center !ml-0">
+                                   <CarouselContent className="flex items-center !ml-0 md:-ml-4">
                                         {rounds && rounds?.length > 0 ? rounds.map((round, idx) => {
                                              const status = (statusMap[round.roundId] || round.status || '').toLowerCase();
                                              const isWinner = status === BettingRoundStatus.CLOSED;
@@ -296,12 +308,12 @@ export const AdminBettingRoundsCard = ({
                                              return (
                                                   <CarouselItem
                                                        key={round?.roundId || idx}
-                                                       className="flex flex-col items-center justify-between mx-2 rounded-[16px] !px-2 !py-1"
+                                                       className={`flex flex-col items-center justify-between rounded-[16px] !px-2 !py-1 ${windowWidth >= 640 ? 'mx-2' : ''}`}
                                                        style={{
                                                             width: slideWidth,
                                                             minWidth: slideWidth,
                                                             maxWidth: 280,
-                                                            height: 185,
+                                                            height: 270,
                                                             ...getBoxStyles(isActive, status),
                                                             flex: '0 0 auto',
                                                             overflow: 'hidden',
@@ -315,7 +327,7 @@ export const AdminBettingRoundsCard = ({
                                                        {/* Round Name */}
                                                        <div className="w-full flex flex-col items-center justify-center h-full">
                                                             <div
-                                                                 className={`text-center ${isActive || !isCreated ? 'text-white' : 'text-white/75'} text-[15px] truncate max-w-full px-2`}
+                                                                 className={`text-center ${isActive || !isCreated ? 'text-white' : 'text-white/75'} text-[15px] line-clamp-2 max-w-full px-2`}
                                                                  style={FabioBoldStyle}
                                                                  title={round?.roundName}
                                                             >
@@ -371,6 +383,28 @@ export const AdminBettingRoundsCard = ({
                                                                            style={{ fontFamily: 'FabioXM, Inter, sans-serif', fontWeight: 700 }}
                                                                       >
                                                                            Users are betting
+                                                                      </div>
+                                                                     <div className="flex items-center gap-3 mb-2">
+                                                                           <div className=" items-center gap-1">
+                                                                                <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
+                                                                                     <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
+                                                                                     <span>{bettingUpdate ? bettingUpdate?.totalGoldCoinBet : streamInfo?.totalGoldCoinBet} gold(s)</span>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
+                                                                                     <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
+                                                                                     <span>{bettingUpdate ? bettingUpdate?.totalBetsGoldCoinAmount : streamInfo?.totalGoldCoinAmount}</span>
+                                                                                </div>
+                                                                           </div>
+                                                                           <div className=" items-center gap-2">
+                                                                           <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
+                                                                                <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
+                                                                                <span>{bettingUpdate ? bettingUpdate?.totalSweepCoinBet : streamInfo?.totalSweepCoinBet} sweep(s)</span>
+                                                                           </div>
+                                                                           <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
+                                                                                <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
+                                                                                <span>{bettingUpdate ? bettingUpdate?.totalBetsSweepCoinAmount :streamInfo?.totalSweepCoinAmount}</span>
+                                                                           </div>
+                                                                           </div>
                                                                       </div>
                                                                       <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar px-2">
                                                                            {round.options.map((opt) => (
@@ -513,13 +547,13 @@ export const AdminBettingRoundsCard = ({
                                                             {isWinner && (
                                                                  <div className="flex flex-col items-center w-full mt-2">
                                                                       {/* Winner label: Avatar + username in a horizontal scrollable row */}
-                                                                      {round.winners && (isStreamCoins ? round.winners.streamCoins?.length > 0 : round.winners.freeTokens?.length > 0) ? (
+                                                                      {round.winners && (isSweepCoins ? round.winners.sweepCoins?.length > 0 : round.winners.goldCoins?.length > 0) ? (
                                                                            <div className="flex flex-col items-center w-full">
                                                                                 <div
                                                                                      className="flex flex-row gap-4 overflow-x-auto pb-2 w-full max-w-full winner-scrollbar px-2"
                                                                                      style={{ maxWidth: '100%', scrollbarWidth: 'thin' }}
                                                                                 >
-                                                                                     {(isStreamCoins ? round.winners.streamCoins : round.winners.freeTokens)?.map((winner: any, idx: number) => (
+                                                                                     {(isSweepCoins ? round.winners.sweepCoins : round.winners.goldCoins)?.map((winner: any, idx: number) => (
                                                                                           <div key={idx} className="flex flex-col items-center min-w-[70px]">
                                                                                                <Avatar className="h-10 w-10 mb-1">
                                                                                                     <AvatarImage src={getImageLink(winner?.avatar)} alt={winner?.userName} />
@@ -538,10 +572,10 @@ export const AdminBettingRoundsCard = ({
                                                                                 </div>
                                                                                 <div className="flex items-center mt-1 text-[12px] px-2" style={FabioBoldStyle}>
                                                                                      <span className="text-white ml-1">won</span>
-                                                                                     <span className="text-white ml-1 truncate max-w-[120px]" title={isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
-                                                                                     : `${Number(round?.winnerAmount?.freeTokens || 0)?.toLocaleString('en-US')} tokens`}>
-                                                                                          {isStreamCoins ? `${Number(round?.winnerAmount?.streamCoins || 0)?.toLocaleString('en-US')} coins` 
-                                                                                          : `${Number(round?.winnerAmount?.freeTokens || 0)?.toLocaleString('en-US')} tokens`}
+                                                                                     <span className="text-white ml-1 truncate max-w-[120px]" title={isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} sweep coins` 
+                                                                                     : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`}>
+                                                                                          {isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} sweep coins` 
+                                                                                          : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`}
                                                                                      </span>
                                                                                 </div>
                                                                            </div>

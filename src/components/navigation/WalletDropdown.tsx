@@ -1,25 +1,8 @@
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { InfoIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { CurrencyType } from '@/enums';
 
@@ -32,17 +15,17 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
   const { currency, setCurrency } = useCurrencyContext();
 
   const handleSwitchChange = (checked: boolean) => {
-    setCurrency(checked ? CurrencyType.STREAM_COINS : CurrencyType.FREE_TOKENS);
+    setCurrency(checked ? CurrencyType.SWEEP_COINS : CurrencyType.GOLD_COINS);
   };
 
   return (
     <div className="relative">
       <div className="flex items-center gap-2">
-        {currency === CurrencyType.FREE_TOKENS ? (
+        {currency === CurrencyType.GOLD_COINS ? (
           <div className="flex items-center">
             <Button variant="ghost" className="gap-2 group" onClick={() => navigate('/transactions')}>
               <Wallet className="h-4 w-4 group-hover:text-black transition-colors" />
-              <span className="text-[#B4FF39] group-hover:text-black transition-colors">{Number(walletBalance)?.toLocaleString('en-US')} Free Tokens</span>
+              <span className="text-sm text-[#B4FF39] group-hover:text-black transition-colors">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</span>
             </Button>
           </div>
         ) : (
@@ -53,16 +36,11 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span
-                        className="ml-1 inline-flex items-center cursor-help"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <span className="text-green-500">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</span>
-                      </span>
+                      <span className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap">{Number(walletBalance)?.toLocaleString('en-US')} Sweep Coins</span>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-[250px]">
                       <p>
-                        Stream Coins will be used for cash betting and is not a part of the private
+                        Sweep Coins will be used for cash betting and is not a part of the private
                         beta yet.
                       </p>
                     </TooltipContent>
@@ -74,7 +52,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
         )}
 
         <Switch
-          checked={currency === CurrencyType.STREAM_COINS}
+          checked={currency === CurrencyType.SWEEP_COINS}
           onCheckedChange={handleSwitchChange}
           className="data-[state=checked]:bg-[#c3f53b] data-[state=unchecked]:bg-muted hover:data-[state=unchecked]:bg-muted/80 border-2 border-[#c3f53b]/30"
           onClick={e => e.stopPropagation()}

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { getImageLink, getMessage } from '@/utils/helper';
-import { US_STATES, useDebounce } from '@/lib/utils';
+import { useDebounce } from '@/lib/utils';
 import api from '@/integrations/api/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -27,6 +27,8 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useAuthContext } from '@/contexts/AuthContext';
 import Select from 'react-select';
+import Bugsnag from '@bugsnag/js';
+import { US_STATES } from '@/utils/constants';
 
 const formSchema = z.object({
   name: z.string().optional(),
@@ -176,6 +178,7 @@ export const ProfileSection = ({
           const response = await api.auth.uploadImage(selectedAvatarFile);
           profileImageUrl = response?.data?.Key;
         } catch (error) {
+          Bugsnag.notify(error); 
           toast({
             variant: 'destructive',
             title: 'Error uploading profile picture',
@@ -201,18 +204,14 @@ export const ProfileSection = ({
       }
 
       // Update profile with only the fields we want to keep
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          username: data.username,
-          state: data.state?.trim(),
-          profileImageUrl: profileImageUrlToSave,
-          // Set hidden fields to undefined
-          name: undefined,
-          city: undefined,
-        })
-        .eq('id', session?.id)
-        .execute();
+      const { error: updateError } = await api.user.updateProfile({
+        username: data.username,
+        state: data.state?.trim(),
+        profileImageUrl: profileImageUrlToSave,
+        // Set hidden fields to undefined
+        name: undefined,
+        city: undefined,
+      });
 
       if (updateError) throw updateError;
 
@@ -231,6 +230,7 @@ export const ProfileSection = ({
         setAvatarPreviewUrl(undefined);
       }
     } catch (error: any) {
+      Bugsnag.notify(error); 
       toast({
         title: 'Error',
         description: getMessage(error),
@@ -247,14 +247,10 @@ export const ProfileSection = ({
       if (!session) throw new Error('User not found');
 
       // Update profile password
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          currentPassword: data?.oldPassword,
-          newPassword: data?.newPassword,
-        })
-        .eq('id', session?.id)
-        .execute();
+      const { error: updateError } = await api.user.updateProfile({
+        currentPassword: data?.oldPassword,
+        newPassword: data?.newPassword,
+      });
 
       if (updateError) throw updateError;
 
@@ -264,6 +260,7 @@ export const ProfileSection = ({
       });
       setOpen(false);
     } catch (error: any) {
+      Bugsnag.notify(error); 
       toast({
         title: 'Error',
         description: getMessage(error),
@@ -500,6 +497,7 @@ export const ProfileSection = ({
                 ...base,
                 backgroundColor: '#272727',
                 color: 'white',
+                zIndex: 30, // Ensure dropdown is above the close (X) button
               }),
               option: (base, state) => ({
                 ...base,

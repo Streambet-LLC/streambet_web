@@ -132,46 +132,6 @@ export const supabase = {
     }),
   }),
 
-  // Realtime subscriptions
-  channel: (channelName: string) => {
-    return {
-      on: (eventType: string, table: string, filter: string, callback: any) => {
-        return {
-          subscribe: (statusCallback?: any) => {
-            // Connect to socket.io instead for real-time updates
-            const socket = api.socket.connect();
-            if (socket) {
-              // Extract streamId from filter if present
-              const streamIdMatch = filter?.match(/stream_id=eq\.([^)&\s]+)/);
-              const streamId = streamIdMatch ? streamIdMatch[1] : null;
-
-              if (streamId) {
-                api.socket.joinStream(streamId);
-                api.socket.onBettingUpdate(data => {
-                  // Transform the data to match what the callback expects
-                  callback({
-                    new: data,
-                    old: null,
-                    eventType: data.eventType || 'UPDATE',
-                  });
-                });
-              }
-
-              if (statusCallback) {
-                statusCallback('SUBSCRIBED');
-              }
-            }
-            return this;
-          },
-        };
-      },
-    };
-  },
-
-  removeChannel: () => {
-    // No-op for now
-  },
-
   // Storage operations
   storage: {
     from: (bucket: string) => ({
