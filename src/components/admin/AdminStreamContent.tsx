@@ -167,7 +167,7 @@ export const AdminStreamContent = ({
 
         socketInstance.on('error', (error) => {
           toast({
-            description: error?.message || 'An error occured. Refresh page and try again.',
+            description: error?.message || 'An error occurred. Refresh page and try again.',
             variant: 'destructive',
             duration: 7000,
           });
