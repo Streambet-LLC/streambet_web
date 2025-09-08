@@ -154,13 +154,23 @@ export default function SignUp() {
       if (!locationResult.allowed) {
         throw new Error(locationResult.error);
       }
+      await fetch(`${import.meta.env.VITE_API_URL}/auth/location-check`, {
+              headers: {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            }}).then(async (res) => {
+              const response = await res.json();
+              if (response?.isForcedLogout) {
+                return Promise.reject(getMessage(response));
+              }
+          });
       return api.auth.googleAuth();
     },
     onError: (error: any) => {
       toast({
         variant: 'destructive',
         title: 'Google login failed',
-        description: error.message || 'Failed to authenticate with Google. Please try again.',
+        description: getMessage(error) || 'Failed to authenticate with Google. Please try again.',
       });
     },
   });
