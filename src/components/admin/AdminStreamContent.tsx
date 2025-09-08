@@ -143,6 +143,7 @@ export const AdminStreamContent = ({
         socketInstance.off('streamEnded');
         socketInstance.off('disconnect');
         socketInstance.off('connect_error');
+        socketInstance.off('error');
 
         socketInstance.on('scheduledStreamUpdatedToLive', () => {
           console.log('scheduledStreamUpdatedToLive admin');
@@ -162,6 +163,18 @@ export const AdminStreamContent = ({
         socketInstance.on('streamEnded', (update) => {
           console.log('streamEnded', update);
           navigate('/');
+        });
+
+        socketInstance.on('error', (error) => {
+          toast({
+            description: error?.message || 'An error occured. Refresh page and try again.',
+            variant: 'destructive',
+            duration: 7000,
+          });
+          if (error?.isForcedLogout) {
+            // Dispatch custom event for logout handling
+            window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+          }
         });
     
         // Handle disconnection events
@@ -205,6 +218,7 @@ useEffect(() => {
             socketConnect?.off('newMessage');
             socketConnect?.off('streamEnded');
             socketConnect?.off('scheduledStreamUpdatedToLive');
+            socketConnect?.off('error');
       }
     }, []);
 
