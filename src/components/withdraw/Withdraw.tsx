@@ -14,15 +14,20 @@ import {
 import { Trash2, Zap, Clock, CalendarClock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
+import { useToast } from '@/hooks/use-toast';
+import { getMessage } from '@/utils/helper';
 
 export default function Withdraw({
 	amountToWithdraw,
 	bankAccounts,
+	setWithdrawer,
 }) {
 	const [selectedAccount, setSelectedAccount] = useState(null);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [accountToDelete, setAccountToDelete] = useState(null);
+	const [isAccountDeleting, setAccountDeleting] = useState(false);
 	const [selectedSpeed, setSelectedSpeed] = useState<null | 'asap' | 'same_day' | 'standard'>(null);
+	const { toast } = useToast();
 
 	const {
         data: withdrawQuote,
@@ -37,10 +42,32 @@ export default function Withdraw({
         enabled: false,
     });
 
-	// Simulate delete function
-	const handleDelete = () => {
-		// TODO: Replace with actual delete logic
+	// Reset and close delete bank account popup
+	const handleCloseDelete = () => {
+		setAccountToDelete(null);
 		setShowDeleteModal(false);
+	};
+
+	// Simulate delete function
+	const handleConfirmDelete = async () => {
+		try {
+			setAccountDeleting(true);
+			const withdrawerData = await api.wallet.deleteBankAccount(accountToDelete?.token);
+			toast({
+				title: 'Bank account deleted',
+				description: `${accountToDelete?.alias} has been deleted successfully.`,
+			});
+			console.log('Updated withdrawer data:', withdrawerData);
+			setWithdrawer(withdrawerData);
+			handleCloseDelete();
+		} catch (error) {
+			toast({
+				title: 'Failed to delete bank account',
+				description: getMessage(error || 'An error occurred while deleting the bank account.'),
+			});
+		} finally {
+			setAccountDeleting(false);
+		}
 	};
 
 	useEffect(() => {
@@ -60,7 +87,7 @@ export default function Withdraw({
 			</div>
 			
 			<div className="flex flex-col gap-6 w-full">
-				{bankAccounts.map((account, idx) => (
+				{bankAccounts.map((account) => (
 					<div
 						key={account.token}
 						className="group relative overflow-hidden rounded-3xl p-6 cursor-pointer transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl"
@@ -70,6 +97,7 @@ export default function Withdraw({
 							boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(189, 255, 0, 0.05)',
 						}}
 						onClick={(e) => {
+							if (showDeleteModal) return;
 							if ((e.target as HTMLElement).closest('.trash-icon')) return;
 							setSelectedAccount(account);
 							setSelectedSpeed(null);
@@ -148,8 +176,8 @@ export default function Withdraw({
 											</AlertDialogDescription>
 										</AlertDialogHeader>
 										<AlertDialogFooter>
-											<AlertDialogCancel className="bg-gray-700 text-white hover:bg-gray-600">Cancel</AlertDialogCancel>
-											<AlertDialogAction className="bg-red-600 hover:bg-red-700">Confirm</AlertDialogAction>
+											<AlertDialogCancel className="bg-gray-700 text-white hover:bg-gray-600" onClick={handleCloseDelete}>Cancel</AlertDialogCancel>
+											<AlertDialogAction className="bg-red-600 hover:bg-red-700" disabled={isAccountDeleting} onClick={handleConfirmDelete}>{isAccountDeleting ? 'Deleting...' : 'Confirm'}</AlertDialogAction>
 										</AlertDialogFooter>
 									</AlertDialogContent>
 								)}

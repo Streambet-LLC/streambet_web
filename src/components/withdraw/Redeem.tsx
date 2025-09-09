@@ -13,13 +13,13 @@ import { Loader2 } from 'lucide-react';
 import { Withdrawer } from '@/types/withdraw';
 import { KycType } from '@/enums';
 import { useToast } from '@/hooks/use-toast';
-import { set } from 'date-fns';
 import Withdraw from './Withdraw';
 import { MainLayout } from '../layout';
 
 export default function Redeem() {
     const [sweepCoins, setSweepCoins] = useState('');
     const [usdValue, setUsdValue] = useState<number | null>(null);
+    const [withdrawerInfo, setWithdrawer] = useState<Withdrawer | null>(null);
     const [loading, setLoading] = useState(false);
     const [isIframe, setIframe] = useState(false);
     const [height, setHeight] = useState<string>('500');
@@ -80,6 +80,12 @@ export default function Redeem() {
         setIframe(!!sessionKey);
     }, [sessionKey]);
 
+    useEffect(() => {
+        if (withdrawerData?.withdrawer) {
+            setWithdrawer(withdrawerData);
+        }
+    }, [withdrawerData]);
+
     const generateTokens = async () => {
         if (!session?.email || !session?.id) {
             toast({
@@ -106,18 +112,19 @@ export default function Redeem() {
     };
 
     useEffect(() => {
-        if (!isWithdrawerDataLoading && withdrawerData?.withdrawer) {
+        if (!isWithdrawerDataLoading && withdrawerInfo?.withdrawer) {
             if (!sweepCoins || !usdValue) return;
             // If KYC not approved or no bank accounts, open iframe to link account
-            if (withdrawerData.withdrawer.verification.status !== KycType.APPROVED
-                || !withdrawerData.withdrawer.bankAccounts.length) {
+            if (withdrawerInfo.withdrawer.verification.status !== KycType.APPROVED
+                || !withdrawerInfo.withdrawer.bankAccounts.length) {
+                setProceedPayout(false);
                 generateTokens();
             } else {
                 setSessionKey('');
                 setProceedPayout(true);
             }
         }
-    }, [isWithdrawerDataLoading, withdrawerData]);
+    }, [isWithdrawerDataLoading, withdrawerInfo]);
 
     const handleIframeMessages = useCallback(({ data, origin }: { data: string; origin: string }) => {
         if (!origin.includes('coinflow.cash')) return;
@@ -144,7 +151,9 @@ export default function Redeem() {
     if (proceedPayout) {
         return <MainLayout isWithdraw>
             <Withdraw amountToWithdraw={usdValue || 0}
-                bankAccounts={withdrawerData?.withdrawer?.bankAccounts || []} />
+                bankAccounts={withdrawerInfo?.withdrawer?.bankAccounts || []}
+                setWithdrawer={setWithdrawer}
+                />
         </MainLayout>
     }
 
@@ -204,7 +213,7 @@ export default function Redeem() {
                             className="w-full"
                             onClick={() => getWithdrawerData()}
                         >
-                            {isWithdrawerDataLoading ? <Loader2 className="animate-spin h-12 w-12 text-primary" /> + ' Validating...' : 'Redeem'}
+                            {isWithdrawerDataLoading ? <><Loader2 className="animate-spin h-12 w-12 text-black" />  Validating...</> : 'Redeem'}
                         </Button>
                     </CardFooter>
                 </Card>

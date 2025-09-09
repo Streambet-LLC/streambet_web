@@ -391,9 +391,9 @@ export const walletAPI = {
     return response.data;
   },
 
-  // Delete a payment method
-  deletePaymentMethod: async (paymentMethodId: string) => {
-    const response = await apiClient.delete(`/wallets/payment-methods/${paymentMethodId}`);
+  // Delete bank account
+  deleteBankAccount: async (bankToken: string) => {
+    const response = await apiClient.delete(`/payments/coinflow/delete-withdrawer-account?token=${bankToken}`);
     return response.data;
   },
 
