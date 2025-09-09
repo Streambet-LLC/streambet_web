@@ -63,7 +63,7 @@ apiClient.interceptors.response.use(
       Bugsnag.notify(error instanceof Error ? error : new Error(String(error)));
     }
 
-    if (error.response?.data?.message?.toLowerCase()?.includes('vpn/proxy')) {
+    if (error.response?.data?.isForcedLogout) {
       toast({
         id: 'vpn-proxy',
         variant: 'destructive',
@@ -352,6 +352,13 @@ export const walletAPI = {
     return response.data;
   },
 
+  // Get redeemable amount from sweep coins
+  getRedeemableAmount: async (coins: number ) => {
+    const response = await apiClient.get(`/wallets/convert-sweep`, {
+      params: { coins },
+    });
+    return response.data;
+  },
 
   // Check if the user has a payment method saved
   hasPaymentMethod: async () => {
@@ -448,18 +455,19 @@ export const bettingAPI = {
     return response.data;
   },
 
-// Get betting options for a stream
-  getBettingData: async (streamId: string,userId?:string) => {
+  // Get betting options for a stream
+  getBettingData: async (streamId: string, userId?:string) => {
     const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}`);
     return response.data;
   },
-// Get data for seltected betting round
+
+  // Get data for selected betting round
   getBettingRoundData: async (roundId: string) => {
     const response = await apiClient.get(`/betting/potentialAmount/${roundId}`);
     return response.data;
   },
 
-// Edit a bet
+  // Edit a bet
     EditBet: async (betData: {
       betId: string;
       newBettingVariableId: string;
@@ -494,11 +502,9 @@ export const bettingAPI = {
     return response.data;
   },
 
-
-
   // Get user's betting history
-  getUserBets: async (active = false) => {
-    const response = await apiClient.get(`/betting/user-bets?active=${active}`);
+  getUserBets: async (params: any) => {
+    const response = await apiClient.get('/betting/history', { params });
     return response.data;
   },
 
@@ -822,6 +828,12 @@ export const paymentAPI = {
   getSessionKey: async () => {
     const response = await apiClient.get('/payments/coinflow/session-key');
     return response.data;
+  },
+
+  // Get withdrawer data
+  getWithdrawerData: async () => {
+    const response = await apiClient.get('/payments/coinflow/withdrawer');
+    return response;
   },
 };
 

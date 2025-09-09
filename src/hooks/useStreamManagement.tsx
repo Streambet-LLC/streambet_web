@@ -1,7 +1,6 @@
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery } from '@tanstack/react-query';
-import { adminAPI, bettingAPI } from '@/integrations/api/client';
+import { adminAPI } from '@/integrations/api/client';
 import { useEffect, useRef, useState } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 

@@ -16,7 +16,7 @@ import {
 } from '../ui/pagination';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Eye, Pen, Play, Lock, ChartNoAxesColumnIncreasing, Trash2 } from 'lucide-react';
+import { Eye, Pen, ChartNoAxesColumnIncreasing, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { StreamStatus } from '@/enums';
@@ -417,34 +417,6 @@ export const StreamTable: React.FC<Props> = ({
             </PaginationContent>
           </Pagination>
         </div>}
-
-             {/* <div className="flex w-full justify-between bg-black rounded-md mt-4">
-         <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-           Page {currentPage} of {totalPages}
-         </div>
-         <Pagination>
-           <PaginationContent>
-             <PaginationItem>
-               <PaginationPrevious
-                 onClick={() => handlePageChange(currentPage - 1)}
-                 className={cn(
-                   'text-white border-white hover:bg-white/10',
-                   currentPage === 1 && 'pointer-events-none opacity-50'
-                 )}
-               />
-             </PaginationItem>
-             <PaginationItem>
-               <PaginationNext
-                 onClick={() => handlePageChange(currentPage + 1)}
-                 className={cn(
-                   'text-white border-white hover:bg-white/10',
-                   currentPage === streams?.total && 'pointer-events-none opacity-50'
-                 )}
-               />
-             </PaginationItem>
-           </PaginationContent>
-         </Pagination>
-       </div> */}
 
        {/* Delete Stream Dialog */}
        {streamToDelete && (
