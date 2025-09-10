@@ -95,7 +95,7 @@ export default function Redeem() {
         try {
             const sessionKeyResult = await api.payment.getSessionKey();
             setSessionKey(sessionKeyResult?.key);
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: 'Error generating session key',
                 description: getMessage(error),
