@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { decodeIdToken } from '@/utils/helper';
 import { toast } from '@/hooks/use-toast';
 import Bugsnag from '@bugsnag/js';
+import { WithdrawPayload } from '@/types/withdraw';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -99,7 +100,9 @@ apiClient.interceptors.response.use(
     // Prevent infinite loop: only allow one refresh attempt per original request
     if (
       error.response &&
-      error.response.status === 401
+      error.response.status === 401 &&
+      originalRequest.url &&
+      !originalRequest.url.endsWith('/payments/coinflow/withdrawer')
     )
     {
       const accessToken = localStorage.getItem('accessToken');
@@ -841,6 +844,12 @@ export const paymentAPI = {
     const response = await apiClient.get('/payments/coinflow/withdrawer/quote', {
       params: { amount },
     });
+    return response.data;
+  },
+
+  // Perform funds withdraw
+  redeemSweepCoins: async (payload: WithdrawPayload) => {
+    const response = await apiClient.post(`/payments/coinflow/withdraw`, payload);
     return response.data;
   },
 };

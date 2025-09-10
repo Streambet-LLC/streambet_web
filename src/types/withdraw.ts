@@ -1,3 +1,32 @@
+export interface WithdrawPayload {
+  coins: number,
+  account: string,
+  speed: "asap" | "same_day" | "standard",
+};
+
+export interface WithdrawerError {
+    response: {
+        data: {
+            statusCode: number,
+            timestamp: string,
+            path: string,
+            method: string,
+            message: string,
+        }
+    }
+};
+
+export interface BankAccount {
+    alias: string;
+    token: string;
+    routingNumber: string;
+    last4: string;
+    accountHash: string;
+    rtpEligible: boolean;
+    reference: string;
+    isDeleted: boolean;
+};
+
 export interface Withdrawer {
     withdrawer: {
         _id: string;
@@ -28,28 +57,7 @@ export interface Withdrawer {
             }
         ],
         watchlistExempt: string;
-        bankAccounts: [
-            {
-                alias: string;
-                token: string;
-                routingNumber: string;
-                last4: string;
-                accountHash: string;
-                rtpEligible: boolean;
-                reference: string;
-                isDeleted: boolean;
-            },
-            {
-                alias: string;
-                token: string;
-                routingNumber: string;
-                last4: string;
-                accountHash: string;
-                rtpEligible: true,
-                reference: string;
-                isDeleted: boolean;
-            }
-        ],
+        bankAccounts: BankAccount[],
         cards: [
             {
                 last4: string;
@@ -65,4 +73,11 @@ export interface Withdrawer {
         rtpDisabled: boolean;
         cardDisabled: boolean;
     }
-}
+};
+
+export interface WithdrawComponentProps {
+    sweepCoins: number,
+	amountToWithdraw: number,
+	bankAccounts: BankAccount[],
+	setWithdrawer: (val: Withdrawer | undefined) => void,
+};

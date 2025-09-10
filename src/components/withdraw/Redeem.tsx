@@ -10,7 +10,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { getMessage } from '@/utils/helper';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
-import { Withdrawer } from '@/types/withdraw';
+import { Withdrawer, WithdrawerError } from '@/types/withdraw';
 import { KycType } from '@/enums';
 import { useToast } from '@/hooks/use-toast';
 import Withdraw from './Withdraw';
@@ -67,7 +67,8 @@ export default function Redeem() {
         data: withdrawerData,
         isFetching: isWithdrawerDataLoading,
         refetch: getWithdrawerData,
-    } = useQuery<Withdrawer>({
+        error: withdrawerDataError,
+    } = useQuery<Withdrawer, WithdrawerError>({
         queryKey: ['withdrawerData'],
         queryFn: async () => {
             const response = await api.payment.getWithdrawerData();
@@ -81,10 +82,15 @@ export default function Redeem() {
     }, [sessionKey]);
 
     useEffect(() => {
+        if (withdrawerDataError && withdrawerDataError?.response?.data?.statusCode) {
+            setProceedPayout(false);
+            generateTokens();
+            return;
+        }
         if (withdrawerData?.withdrawer) {
             setWithdrawer(withdrawerData);
         }
-    }, [withdrawerData]);
+    }, [withdrawerData, withdrawerDataError]);
 
     const generateTokens = async () => {
         if (!session?.email || !session?.id) {
@@ -150,7 +156,8 @@ export default function Redeem() {
 
     if (proceedPayout) {
         return <MainLayout isWithdraw>
-            <Withdraw amountToWithdraw={usdValue || 0}
+            <Withdraw sweepCoins={Number(sweepCoins)} 
+                amountToWithdraw={usdValue || 0}
                 bankAccounts={withdrawerInfo?.withdrawer?.bankAccounts || []}
                 setWithdrawer={setWithdrawer}
                 />
@@ -158,7 +165,7 @@ export default function Redeem() {
     }
 
     return <MainLayout isWithdraw>
-        {isIframe ? <div style={{ height: `${height}px` }}>
+        {isIframe ? <div className="md:px-[500px]" style={{ height: `${height}px` }}>
             <iframe src={`${apiUrl}/solana/withdraw/${merchantId}?sessionKey=${sessionKey}&useHeightChange=true`}
                 scrolling="no" style={{ height: '100%', width: '100%' }} />
         </div> : (
@@ -167,8 +174,15 @@ export default function Redeem() {
                     <CardHeader>
                         <CardTitle>Redeem Sweep Coins</CardTitle>
                         <CardDescription>
-                            Enter the amount of sweep coins to redeem.<br />
-                            Your sweep coin balance: {sweepBalance?.toLocaleString('en-US')}
+                            Enter the amount of sweep coins to redeem.
+                            <div className='mt-4'>
+                                Your sweep coin balance: {sweepBalance?.toLocaleString('en-US')}<br />
+                                {session?.sweepCoinsPerDollar} sweep coins = $1
+                                <div className="flex justify-between">
+                                    <span>Min: {Number(session?.minWithdrawableSweepCoins || 0)?.toLocaleString('en-US')} coins</span>
+                                    <span>Max: {Number((session?.maxWithdrawableSweepCoins ?? session?.walletBalanceSweepCoin) || 0)?.toLocaleString('en-US')}  coins</span>
+                                </div>
+                            </div>
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

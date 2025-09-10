@@ -11,22 +11,26 @@ import {
 		AlertDialogAction,
 		AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { Trash2, Zap, Clock, CalendarClock } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Trash2, Zap, Clock, CalendarClock, Loader2 } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
 import { getMessage } from '@/utils/helper';
+import { BankAccount, WithdrawComponentProps, WithdrawPayload } from '@/types/withdraw';
+import { useNavigate } from 'react-router-dom';
 
 export default function Withdraw({
+	sweepCoins,
 	amountToWithdraw,
 	bankAccounts,
 	setWithdrawer,
-}) {
-	const [selectedAccount, setSelectedAccount] = useState(null);
+}: WithdrawComponentProps) {
+	const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
-	const [accountToDelete, setAccountToDelete] = useState(null);
+	const [accountToDelete, setAccountToDelete] = useState<BankAccount | null>(null);
 	const [isAccountDeleting, setAccountDeleting] = useState(false);
 	const [selectedSpeed, setSelectedSpeed] = useState<null | 'asap' | 'same_day' | 'standard'>(null);
+	const navigate = useNavigate();
 	const { toast } = useToast();
 
 	const {
@@ -42,6 +46,21 @@ export default function Withdraw({
         enabled: false,
     });
 
+	const { mutate: performWithdraw, isPending: isWithdrawing } = useMutation({
+		mutationFn: (payload: WithdrawPayload) => api.payment.redeemSweepCoins(payload),
+		onSuccess: () => {
+		  toast({ 
+			title: 'Withdraw initiate', 
+			description: `Your request to redeem ${(sweepCoins || 0)?.toLocaleString('en-US')} sweep coins has initiated`,
+			duration: 8000,
+		});
+		  navigate('/');
+		},
+		onError: (error: any) => {
+		  toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
+		},
+	  });
+
 	// Reset and close delete bank account popup
 	const handleCloseDelete = () => {
 		setAccountToDelete(null);
@@ -49,8 +68,9 @@ export default function Withdraw({
 	};
 
 	// Simulate delete function
-	const handleConfirmDelete = async () => {
+	const handleConfirmDelete = async (e) => {
 		try {
+			e.preventDefault();
 			setAccountDeleting(true);
 			const withdrawerData = await api.wallet.deleteBankAccount(accountToDelete?.token);
 			toast({
@@ -192,8 +212,8 @@ export default function Withdraw({
 	// helpers for radio options
 	const speedOptions: Array<{ key: 'asap' | 'same_day' | 'standard'; label: string; sublabel?: string; icon: any }> = [
 		{ key: 'asap', label: 'Instant', sublabel: 'Popular!', icon: Zap },
-		{ key: 'same_day', label: '24 hours', icon: Clock },
-		{ key: 'standard', label: '2-3 biz days', icon: CalendarClock },
+		{ key: 'same_day', label: 'Same day', icon: Clock },
+		{ key: 'standard', label: 'Standard', icon: CalendarClock },
 	];
 
 	// Render quote/withdraw page
@@ -320,9 +340,16 @@ export default function Withdraw({
 				</div>
 
 				{/* Withdraw Button */}
-				<Button 
+				<Button onClick={() => {
+					if (!selectedSpeed || !selectedAccount) return;
+					performWithdraw({
+						coins: sweepCoins,
+						account: selectedAccount?.token,
+						speed: selectedSpeed,
+					});
+				}}
 					className="w-full text-xl py-4 rounded-2xl font-bold shadow-2xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed" 
-					disabled={!selectedSpeed}
+					disabled={!selectedSpeed || isWithdrawing || isWithdrawQuoteFetching}
 					style={{
 						background: 'linear-gradient(135deg, #BDFF00 0%, #9DFF33 100%)',
 						boxShadow: '0 20px 40px rgba(189, 255, 0, 0.4)',
@@ -330,7 +357,8 @@ export default function Withdraw({
 					}}
 				>
 					{ !isWithdrawQuoteFetching ?
-					(selectedSpeed ? `Withdraw $${netAmount.toFixed(2)}` : 'Select a delivery speed') : 'Loading quote...'}
+					(isWithdrawing ? <><Loader2 className="animate-spin h-12 w-12 text-black" /> Withdrawing...</>
+					: (selectedSpeed ? `Withdraw $${netAmount.toFixed(2)}` : 'Select a delivery speed')) : 'Loading quote...'}
 				</Button>
 
 				{/* Estimated delivery */}
