@@ -81,3 +81,15 @@ export interface WithdrawComponentProps {
 	bankAccounts: BankAccount[],
 	setWithdrawer: (val: Withdrawer | undefined) => void,
 };
+
+interface SpeedOption {
+  fee: { cents: number };
+  finalSettlement: { cents: number };
+  expectedDeliveryDate: string;
+};
+export interface WithdrawQuote {
+  quote?: { cents: number };
+  asap?: SpeedOption;
+  same_day?: SpeedOption;
+  standard?: SpeedOption;
+};

@@ -394,12 +394,6 @@ export const walletAPI = {
     return response.data;
   },
 
-  // Delete bank account
-  deleteBankAccount: async (bankToken: string) => {
-    const response = await apiClient.delete(`/payments/coinflow/delete-withdrawer-account?token=${bankToken}`);
-    return response.data;
-  },
-
   // Create a checkout session for purchasing coins
   createCheckoutSession: async (params: {
     priceId: string;
@@ -850,6 +844,12 @@ export const paymentAPI = {
   // Perform funds withdraw
   redeemSweepCoins: async (payload: WithdrawPayload) => {
     const response = await apiClient.post(`/payments/coinflow/withdraw`, payload);
+    return response.data;
+  },
+
+   // Delete bank account
+  deleteBankAccount: async (bankToken: string) => {
+    const response = await apiClient.delete(`/payments/coinflow/delete-withdrawer-account?token=${bankToken}`);
     return response.data;
   },
 };

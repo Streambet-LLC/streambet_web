@@ -50,7 +50,7 @@ export default function Redeem() {
         try {
             const res = await api.wallet.getRedeemableAmount(num);
             setUsdValue(res?.data?.dollars);
-        } catch (error: any) {
+        } catch (error: unknown) {
             setError(getMessage(error || 'Failed to fetch USD value'));
             setUsdValue(null);
         }
@@ -81,18 +81,7 @@ export default function Redeem() {
         setIframe(!!sessionKey);
     }, [sessionKey]);
 
-    useEffect(() => {
-        if (withdrawerDataError && withdrawerDataError?.response?.data?.statusCode) {
-            setProceedPayout(false);
-            generateTokens();
-            return;
-        }
-        if (withdrawerData?.withdrawer) {
-            setWithdrawer(withdrawerData);
-        }
-    }, [withdrawerData, withdrawerDataError]);
-
-    const generateTokens = async () => {
+    const generateTokens = useCallback(async () => {
         if (!session?.email || !session?.id) {
             toast({
                 title: 'Error',
@@ -115,7 +104,18 @@ export default function Redeem() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [session?.email, session?.id, toast]);
+
+    useEffect(() => {
+        if (withdrawerDataError && withdrawerDataError?.response?.data?.statusCode) {
+            setProceedPayout(false);
+            generateTokens();
+            return;
+        }
+        if (withdrawerData?.withdrawer) {
+            setWithdrawer(withdrawerData);
+        }
+    }, [withdrawerData, withdrawerDataError, generateTokens]);
 
     useEffect(() => {
         if (!isWithdrawerDataLoading && withdrawerInfo?.withdrawer) {
@@ -130,7 +130,7 @@ export default function Redeem() {
                 setProceedPayout(true);
             }
         }
-    }, [isWithdrawerDataLoading, withdrawerInfo]);
+    }, [isWithdrawerDataLoading, withdrawerInfo, sweepCoins, usdValue, generateTokens]);
 
     const handleIframeMessages = useCallback(({ data, origin }: { data: string; origin: string }) => {
         if (!origin.includes('coinflow.cash')) return;
@@ -143,7 +143,9 @@ export default function Redeem() {
             }
             if (message.method !== 'heightChange') return;
             setHeight(message.data);
-        } catch (e: any) { }
+        } catch (e: unknown) {
+            // Ignore non-JSON messages from iframe
+         }
     }, []);
 
     useEffect(() => {

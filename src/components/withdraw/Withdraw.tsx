@@ -16,7 +16,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
 import { getMessage } from '@/utils/helper';
-import { BankAccount, WithdrawComponentProps, WithdrawPayload } from '@/types/withdraw';
+import { BankAccount, WithdrawComponentProps, WithdrawPayload, WithdrawQuote } from '@/types/withdraw';
 import { useNavigate } from 'react-router-dom';
 
 export default function Withdraw({
@@ -56,7 +56,7 @@ export default function Withdraw({
 		});
 		  navigate('/');
 		},
-		onError: (error: any) => {
+		onError: (error: unknown) => {
 		  toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
 		},
 	  });
@@ -68,16 +68,15 @@ export default function Withdraw({
 	};
 
 	// Simulate delete function
-	const handleConfirmDelete = async (e) => {
+	const handleConfirmDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		try {
 			e.preventDefault();
 			setAccountDeleting(true);
-			const withdrawerData = await api.wallet.deleteBankAccount(accountToDelete?.token);
+			const withdrawerData = await api.payment.deleteBankAccount(accountToDelete?.token);
 			toast({
 				title: 'Bank account deleted',
 				description: `${accountToDelete?.alias} has been deleted successfully.`,
 			});
-			console.log('Updated withdrawer data:', withdrawerData);
 			setWithdrawer(withdrawerData);
 			handleCloseDelete();
 		} catch (error) {
@@ -94,7 +93,7 @@ export default function Withdraw({
 		if (amountToWithdraw) {
 			getWithdrawQuote();
 		}
-	}, [amountToWithdraw]);
+	}, [amountToWithdraw, getWithdrawQuote]);
 
 	// Render bank account list
 	const renderBankList = () => (
@@ -219,7 +218,7 @@ export default function Withdraw({
 	// Render quote/withdraw page
 	const renderWithdrawPage = () => {
 		const grossAmount = (withdrawQuote?.quote?.cents || 0) / 100;
-		const selectedObj = selectedSpeed ? (withdrawQuote as any)[selectedSpeed] : null;
+		const selectedObj = selectedSpeed ? (withdrawQuote as WithdrawQuote)[selectedSpeed] : null;
 		const feeAmount = selectedObj ? (selectedObj.fee.cents || 0) / 100 : 0;
 		const netAmount = selectedObj ? (selectedObj.finalSettlement.cents || 0) / 100 : 0;
 		const estimated = selectedObj?.expectedDeliveryDate;
@@ -285,7 +284,7 @@ export default function Withdraw({
 							.filter(o => o.key !== 'asap' || selectedAccount?.rtpEligible)
 							.map(({ key, label, sublabel, icon: Icon }) => {
 								const isSelected = selectedSpeed === key;
-								const fee = (withdrawQuote as any)?.[key]?.fee?.cents / 100 || 0;
+								const fee = (withdrawQuote as WithdrawQuote)?.[key]?.fee?.cents / 100 || 0;
 								return (
 									<label key={key} className={`flex items-center justify-between rounded-2xl p-4 border transition-all cursor-pointer ${isSelected ? 'border-[#BDFF00] bg-[#101314]' : 'border-gray-700 bg-[#0D0D0D] hover:border-gray-600'}`}
 										onClick={() => setSelectedSpeed(key)}
