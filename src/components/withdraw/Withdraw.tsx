@@ -50,14 +50,14 @@ export default function Withdraw({
 		mutationFn: (payload: WithdrawPayload) => api.payment.redeemSweepCoins(payload),
 		onSuccess: () => {
 		  toast({ 
-			title: 'Withdraw initiate', 
+			title: 'Withdraw initiated', 
 			description: `Your request to redeem ${(sweepCoins || 0)?.toLocaleString('en-US')} sweep coins has initiated`,
 			duration: 8000,
 		});
 		  navigate('/');
 		},
 		onError: (error: unknown) => {
-		  toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
+		  toast({ title: 'Error', description: getMessage(error) || 'Failed to process withdrawal', variant: 'destructive' });
 		},
 	  });
 
@@ -340,10 +340,18 @@ export default function Withdraw({
 
 				{/* Withdraw Button */}
 				<Button onClick={() => {
-					if (!selectedSpeed || !selectedAccount) return;
+					if (!selectedSpeed || !selectedAccount?.token) {
+						toast({ 
+							title: 'Error',
+							description: 'Please select both a bank account and delivery speed', 
+							variant: 'destructive' 
+						});
+						return;
+					}
+
 					performWithdraw({
 						coins: sweepCoins,
-						account: selectedAccount?.token,
+						account: selectedAccount.token,
 						speed: selectedSpeed,
 					});
 				}}
