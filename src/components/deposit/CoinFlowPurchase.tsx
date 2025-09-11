@@ -111,6 +111,17 @@ export const CoinFlowPurchaseComponent = ({
           onSuccess={handleSuccess}
           settlementType={SettlementType.USDC}
           allowedPaymentMethods={getSupportedPaymentMethods()}
+          chargebackProtectionData={[{
+            productType: 'inGameCurrency',
+            productName: `Coins Package ${packageId}`,
+            quantity: 1,
+            rawProductData: {
+              packageId,
+              userId: session?.id,
+              subtotalCents: Math.floor(amount * 100),
+              currency: 'USD',
+            }
+          }]}
           subtotal={{
             cents: Math.floor(amount * 100),
             currency: Currency.USD
