@@ -15,6 +15,7 @@ import { KycType } from '@/enums';
 import { useToast } from '@/hooks/use-toast';
 import Withdraw from './Withdraw';
 import { MainLayout } from '../layout';
+import PersonaKYC from './PersonaKYC';
 
 export default function Redeem() {
     const [sweepCoins, setSweepCoins] = useState('');
@@ -26,11 +27,12 @@ export default function Redeem() {
     const [proceedPayout, setProceedPayout] = useState(false);
     const [sessionKey, setSessionKey] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
+    const [doKYC, setDoKYC] = useState(false);
     const { session } = useAuthContext();
     const { toast } = useToast();
 
     const sweepBalance = session?.walletBalanceSweepCoin || 0;
-    const apiUrl = import.meta.env.VITE_COINFLOW_API_URL || 'https://api-sandbox.coinflow.com';
+    const apiUrl = import.meta.env.VITE_COINFLOW_API_URL || 'https://sandbox.coinflow.cash';
     const merchantId = import.meta.env.VITE_COINFLOW_MERCHANT_ID || 'streambet';
 
     // Debounced API call
@@ -108,6 +110,11 @@ export default function Redeem() {
 
     useEffect(() => {
         if (withdrawerDataError && withdrawerDataError?.response?.data?.statusCode) {
+            if (withdrawerDataError.response.data.statusCode === 401) {
+                setDoKYC(true);
+                return;
+            }
+
             setProceedPayout(false);
             generateTokens();
             return;
@@ -155,6 +162,17 @@ export default function Redeem() {
             window.removeEventListener('message', handleIframeMessages);
         };
     }, [handleIframeMessages]);
+
+    if (doKYC) {
+        return <MainLayout isWithdraw>
+            <PersonaKYC 
+                onKycComplete={(withdrawer) => {
+                    setWithdrawer(withdrawer);
+                    setDoKYC(false);
+                }} 
+            />
+        </MainLayout>
+    }
 
     if (proceedPayout) {
         return <MainLayout isWithdraw>

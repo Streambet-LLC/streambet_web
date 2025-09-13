@@ -854,6 +854,15 @@ export const paymentAPI = {
   },
 };
 
+// Kyc API
+export const kycAPI = {
+  // Sends Persona KYC verified inquiry ID to register user to Coinflow
+  registerKyc: async (payload: { inquiryId: string }) => {
+    const response = await apiClient.post('/kyc/registerKyc', payload);
+    return response.data;
+  },
+};
+
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,

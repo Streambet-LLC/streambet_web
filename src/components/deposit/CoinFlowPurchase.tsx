@@ -106,8 +106,8 @@ export const CoinFlowPurchaseComponent = ({
       <div className="w-full" style={{ height: '950px' }}>
         <CoinflowPurchase
           sessionKey={sessionKey}
-          merchantId={getMerchantId()}
-          env={getCoinFlowEnv() as CoinflowEnvs}
+          merchantId={getMerchantId() || 'streambet'}
+          env={getCoinFlowEnv() as CoinflowEnvs || 'sandbox'}
           onSuccess={handleSuccess}
           settlementType={SettlementType.USDC}
           allowedPaymentMethods={getSupportedPaymentMethods()}
