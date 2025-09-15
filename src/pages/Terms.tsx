@@ -13,7 +13,7 @@ const Terms = () => {
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold tracking-tight">Streambet Terms of Service</h1>
             <p className="text-muted-foreground">
-              Last Updated: August 14, 2025
+              Last Updated: September 10, 2025
             </p>
           </div>
 
@@ -314,16 +314,27 @@ const Terms = () => {
                         <strong>Interference:</strong> Uploading or transmitting any harmful code, virus, malware, or doing anything that could interfere with or disrupt the Platform's integrity or security.
                       </li>
                       <li className="text-muted-foreground">
-                        <strong>Data Mining:</strong> Using any robot, scraper, or automated means to access or collect data from the Platform, or attempting to reverse engineer the Platform's software.
+                        <strong>Data Mining:</strong> Using any robot, scraper, or automated means to access or collect data from the Platform, or attempting to reverse engineer the Platform’s software.
                       </li>
                     </ul>
 
-                    <p className="text-muted-foreground mb-2 font-semibold">6.4 Collusion and Syndicates:</p>
+                    <p className="text-muted-foreground mb-2 font-semibold">6.4 Gameplay Rules and User Conduct:</p>
+                    <p className="text-muted-foreground mb-4">
+                      Prohibited Activities include fraud, manipulation, and unauthorized use.
+                    </p>
+
+                    <ul className="list-disc pl-6 space-y-4 mb-4">
+                      <li className="text-muted-foreground">
+                        <strong>Excessive Play Limitations:</strong> To maintain fair play and protect against fraud or automated activity, Streambet imposes a daily limit of twenty (20) picks per user. If you reach this limit in a calendar day, your account may be temporarily suspended from additional play for that day. Streambet reserves the right to review such activity, request verification, and determine whether the activity constitutes suspicious, abusive, or fraudulent conduct. Accounts found in violation may be subject to prize forfeiture or permanent termination.
+                      </li>
+                    </ul>
+
+                    <p className="text-muted-foreground mb-2 font-semibold">6.5 Collusion and Syndicates:</p>
                     <p className="text-muted-foreground mb-4">
                       Players should play individually. Any form of collusion between players (e.g., coordinating bets to influence outcomes or sharing winnings) is prohibited. If games involve multiplayer competition, players must not team up in unfair ways. Syndicated play or any organized effort to exploit the system will result in disqualification.
                     </p>
 
-                    <p className="text-muted-foreground mb-2 font-semibold">6.5 Responsible Play:</p>
+                    <p className="text-muted-foreground mb-2 font-semibold">6.6 Responsible Play:</p>
                     <p className="text-muted-foreground mb-4">
                       Streambet is intended for casual entertainment. Although no real money is at risk in the games, we encourage users to play responsibly and within reasonable time limits. If you believe you have a compulsive behavior toward gaming, please use our self-exclusion or cooling-off tools available (see Section 9 on Responsible Social Gaming) or seek help from organizations such as Gaming Addicts Anonymous. You may self-exclude by contacting customer support, in which case we will disable your account for a chosen period or permanently as requested.
                     </p>
@@ -344,7 +355,7 @@ const Terms = () => {
                         If your account is suspended, you will be temporarily unable to access the Platform (or certain features such as sweepstakes play). We will investigate the matter. You will be notified of the suspension and may be asked for additional information.
                       </li>
                       <li className="text-muted-foreground">
-                        If your account is terminated, this is a permanent closure. You may also be <strong>banned for life</strong> from creating a new account. Termination may be imposed for severe or repeated violations, fraud, or behavior that harms other users or the Platform's integrity.
+                        If your account is terminated, this is a permanent closure. You may also be <strong>banned for life</strong> from creating a new account. Termination may result in <strong>forfeiture of your account balances and any pending prizes</strong> if the termination is due to your misconduct or violation of these Terms. In less severe cases, we may refund any cash balance you have or allow redemption of legitimately won prizes, at our discretion, minus any damages or costs incurred.
                       </li>
                     </ul>
 
@@ -416,6 +427,7 @@ const Terms = () => {
                 title: "11. Dispute Resolution and Arbitration Agreement",
                 content: (
                   <>
+                    <p className="text-muted-foreground mb-4">Please read this section carefully. It affects your legal rights by requiring arbitration of most disputes and waiving your ability to bring or participate in a class action.</p>
                     <p className="text-muted-foreground mb-2 font-semibold">11.1 Initial Dispute Resolution:</p>
                     <p className="text-muted-foreground mb-4">We encourage you to contact Streambet support to resolve any concerns or disputes you have with our service. Most user concerns can be resolved informally by contacting our customer service team at <a href="mailto:support@streambet.tv" className="underline">support@streambet.tv</a> and providing details of your issue. We will attempt in good faith to resolve the dispute amicably within a reasonable time.</p>
                     <p className="text-muted-foreground mb-2 font-semibold">11.2 Binding Arbitration:</p>
@@ -465,7 +477,7 @@ const Terms = () => {
                     <ul className="list-disc pl-6 space-y-2 mb-4">
                       <li><b>Streambet, Inc.</b> (Attn: Legal/Support)</li>
                       <li>[Address]</li>
-                      <li>Email: <a href="mailto:support@streambet.tv" className="underline">support@streambet.tv</a></li>
+                      <li>Email: <a href="mailto:info@streambet.tv" className="underline">info@streambet.tv</a></li>
                     </ul>
                     <p className="text-muted-foreground mb-4">We will also use your registered email address to send you any notices or communications required under these Terms, so please keep it up to date.</p>
                   </>

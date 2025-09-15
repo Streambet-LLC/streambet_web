@@ -28,7 +28,8 @@ export default function PersonaKYC({
   };
   
   const client = new Persona.Client({
-    templateId: "itmpl_haBD6sQRCDKzfxrJX32TTuuM5nej",
+    // Should be placed on an env
+    templateId: "itmpl_b2z2qoxi3oXwQWvrgk7DMms5jNKK",
     referenceId: session.id,
     environmentId: "env_Be7uwSSWrZCx4swnsDQqQCfMvXDj",
     onReady: () => client.open(),

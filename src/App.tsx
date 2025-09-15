@@ -13,6 +13,7 @@ import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import Compliance from './pages/Compliance';
 import FAQ from './pages/FAQ';
 import ForgotPassword from './pages/ForgotPassword';
 import GoogleCallback from './pages/GoogleCallback';
@@ -70,6 +71,7 @@ const App = () => {
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/terms" element={<Terms />} />
+                      <Route path="/compliance" element={<Compliance />} />
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
                       <Route path="/reset-password" element={<ResetPassword />} />

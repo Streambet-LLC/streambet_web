@@ -4,7 +4,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { getMerchantId, getCoinFlowEnv, getSupportedPaymentMethods } from '@/config/coinflow';
 import { useNavigate } from 'react-router-dom';
-import { CoinflowEnvs, CoinflowPurchase, Currency, SettlementType } from "@coinflowlabs/react";
+import { CoinflowEnvs, CoinflowPurchase, Currency, SettlementType, ThreeDsChallengePreference } from "@coinflowlabs/react";
 import api from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
 
@@ -122,6 +122,7 @@ export const CoinFlowPurchaseComponent = ({
               currency: 'USD',
             }
           }]}
+          threeDsChallengePreference={ThreeDsChallengePreference.Challenge}
           subtotal={{
             cents: Math.floor(amount * 100),
             currency: Currency.USD
