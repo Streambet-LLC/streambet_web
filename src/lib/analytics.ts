@@ -13,7 +13,7 @@ export function initGoogleAnalytics(): void {
     return;
   }
 
-  const gaId = 'G-1MB4XM9R2E';
+  const gaId = 'G-R75M7T2JSN';
 
   // Load the gtag library
   const loaderScript = document.createElement('script');
