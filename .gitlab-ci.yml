@@ -14,7 +14,7 @@ default:
 .setup_env: &setup_env
   before_script:
     - echo "Branch - $CI_COMMIT_REF_NAME"
-    - apk add --no-cache curl jq python3 py3-pip
+    - apk add --no-cache curl jq python3 py3-pip build-base
     - pip3 install awscli --break-system-packages
 
     # Determine AWS Account
