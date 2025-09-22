@@ -12,7 +12,13 @@ export const COINFLOW_CONFIG = {
   BLOCKCHAIN: import.meta.env.VITE_COINFLOW_BLOCKCHAIN,
   
   // Supported payment methods
-  SUPPORTED_PAYMENT_METHODS: [PaymentMethods.card],
+  SUPPORTED_PAYMENT_METHODS: [
+    PaymentMethods.card, 
+    PaymentMethods.ach, 
+    PaymentMethods.applePay, 
+    PaymentMethods.crypto, 
+    PaymentMethods.googlePay
+  ],
 };
 
 // Helper function to get CoinFlow environment
