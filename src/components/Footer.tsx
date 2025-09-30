@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Instagram, Twitter, Gamepad2, Video, Youtube, MessageCircle } from 'lucide-react';
+import { FaDiscord } from 'react-icons/fa';
 
 export const Footer = () => {
   return (
@@ -90,6 +91,15 @@ export const Footer = () => {
                 title="Instagram"
               >
                 <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="https://discord.gg/Vuf39RCs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                title="Discord"
+              >
+                <FaDiscord className="h-5 w-5" />
               </a>
               <a
                 href="https://kick.com/streambet"
