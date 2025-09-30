@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Instagram, Twitter, Gamepad2, Video, Youtube, MessageCircle } from 'lucide-react';
-import { FaDiscord } from 'react-icons/fa';
+import { Instagram, Gamepad2, Youtube } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -33,6 +32,14 @@ export const Footer = () => {
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/compliance"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Trust & Safety
                 </Link>
               </li>
               <li>
@@ -91,15 +98,6 @@ export const Footer = () => {
                 title="Instagram"
               >
                 <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href="https://discord.gg/Vuf39RCs"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                title="Discord"
-              >
-                <FaDiscord className="h-5 w-5" />
               </a>
               <a
                 href="https://kick.com/streambet"

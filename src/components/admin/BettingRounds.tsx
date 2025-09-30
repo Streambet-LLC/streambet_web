@@ -131,18 +131,21 @@ export function BettingRounds({
     setLastAddedOption({ roundIndex, optionId: newOptionId });
   };
 
+  // Function to edit option name
   const updateOptionName = (roundIndex: number, optionIndex: number, newName: string) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].options[optionIndex].option = newName;
     onRoundsChange(updatedRounds);
   };
 
+  // Function to delete option
   const deleteOption = (roundIndex: number, optionIndex: number) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].options = updatedRounds[roundIndex].options.filter((_, index) => index !== optionIndex);
     onRoundsChange(updatedRounds);
   };
 
+  // Function to toggle round expand and collapse
   const toggleRoundExpansion = (roundIndex: number) => {
     const roundValue = `round-${roundIndex}`;
     if (expandedRounds.includes(roundValue)) {

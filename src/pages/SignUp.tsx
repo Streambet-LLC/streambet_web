@@ -1,32 +1,27 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/integrations/api/client';
 import { motion } from 'framer-motion';
-import { FaGoogle } from 'react-icons/fa';
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { verifyUserLocation, GeolocationResult } from '@/integrations/api/geolocation';
+import { verifyUserLocation } from '@/integrations/api/geolocation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { AvatarUploadField } from '@/components/AvatarUploadField';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useDebounce } from '@/lib/utils';
-import { decodeIdToken, getMessage } from '@/utils/helper';
+import { getMessage } from '@/utils/helper';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -37,7 +32,6 @@ import Bugsnag from '@bugsnag/js';
 export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const redirectParam = searchParams.get('redirect');
   const [username, setUsername] = useState('');
@@ -50,7 +44,6 @@ export default function SignUp() {
   const [isUploading, setIsUploading] = useState(false);
   const [isGoogleLogin, setIsGoogleLogin] = useState(false);
   const [userNameCheck, setUserNameCheck] = useState('');
-  const googleLoginRef = useRef<HTMLDivElement>(null);
   const [dob, setDob] = useState<Date | undefined>(undefined);
   const [currentMonth, setCurrentMonth] = useState<Date | undefined>(undefined);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -322,11 +315,6 @@ export default function SignUp() {
       return;
     }
 
-    // Trigger the Google login button click
-    // const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
-    // if (googleButton instanceof HTMLElement) {
-    //   googleButton.click();
-    // }
     googleLoginMutation.mutateAsync();
   };
 

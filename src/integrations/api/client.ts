@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { decodeIdToken } from '@/utils/helper';
 import { toast } from '@/hooks/use-toast';
 import Bugsnag from '@bugsnag/js';
+import { WithdrawPayload } from '@/types/withdraw';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -99,7 +100,9 @@ apiClient.interceptors.response.use(
     // Prevent infinite loop: only allow one refresh attempt per original request
     if (
       error.response &&
-      error.response.status === 401
+      error.response.status === 401 &&
+      originalRequest.url &&
+      !originalRequest.url.endsWith('/payments/coinflow/withdrawer')
     )
     {
       const accessToken = localStorage.getItem('accessToken');
@@ -352,6 +355,13 @@ export const walletAPI = {
     return response.data;
   },
 
+  // Get redeemable amount from sweep coins
+  getRedeemableAmount: async (coins: number ) => {
+    const response = await apiClient.get(`/wallets/convert-sweep`, {
+      params: { coins },
+    });
+    return response.data;
+  },
 
   // Check if the user has a payment method saved
   hasPaymentMethod: async () => {
@@ -381,12 +391,6 @@ export const walletAPI = {
   // Get saved payment methods
   getPaymentMethods: async () => {
     const response = await apiClient.get('/wallets/payment-methods');
-    return response.data;
-  },
-
-  // Delete a payment method
-  deletePaymentMethod: async (paymentMethodId: string) => {
-    const response = await apiClient.delete(`/wallets/payment-methods/${paymentMethodId}`);
     return response.data;
   },
 
@@ -448,18 +452,19 @@ export const bettingAPI = {
     return response.data;
   },
 
-// Get betting options for a stream
-  getBettingData: async (streamId: string,userId?:string) => {
+  // Get betting options for a stream
+  getBettingData: async (streamId: string, userId?:string) => {
     const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}`);
     return response.data;
   },
-// Get data for seltected betting round
+
+  // Get data for selected betting round
   getBettingRoundData: async (roundId: string) => {
     const response = await apiClient.get(`/betting/potentialAmount/${roundId}`);
     return response.data;
   },
 
-// Edit a bet
+  // Edit a bet
     EditBet: async (betData: {
       betId: string;
       newBettingVariableId: string;
@@ -494,11 +499,9 @@ export const bettingAPI = {
     return response.data;
   },
 
-
-
   // Get user's betting history
-  getUserBets: async (active = false) => {
-    const response = await apiClient.get(`/betting/user-bets?active=${active}`);
+  getUserBets: async (params: any) => {
+    const response = await apiClient.get('/betting/history', { params });
     return response.data;
   },
 
@@ -821,6 +824,41 @@ export const paymentAPI = {
   // Get session key for purchase and withdraw
   getSessionKey: async () => {
     const response = await apiClient.get('/payments/coinflow/session-key');
+    return response.data;
+  },
+
+  // Get withdrawer data
+  getWithdrawerData: async () => {
+    const response = await apiClient.get('/payments/coinflow/withdrawer');
+    return response;
+  },
+
+  // Get withdraw quote
+  getWithdrawQuote: async (amount: number) => {
+    const response = await apiClient.get('/payments/coinflow/withdrawer/quote', {
+      params: { amount },
+    });
+    return response.data;
+  },
+
+  // Perform funds withdraw
+  redeemSweepCoins: async (payload: WithdrawPayload) => {
+    const response = await apiClient.post(`/payments/coinflow/withdraw`, payload);
+    return response.data;
+  },
+
+   // Delete bank account
+  deleteBankAccount: async (bankToken: string) => {
+    const response = await apiClient.delete(`/payments/coinflow/delete-withdrawer-account?token=${bankToken}`);
+    return response.data;
+  },
+};
+
+// Kyc API
+export const kycAPI = {
+  // Sends Persona KYC verified inquiry ID to register user to Coinflow
+  registerKyc: async (payload: { inquiryId: string }) => {
+    const response = await apiClient.post('/kyc/registerKyc', payload);
     return response.data;
   },
 };

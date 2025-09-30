@@ -191,13 +191,11 @@ const Index = () => {
     
     // Reset infinite scroll data when switching tabs
     if (tabKey === 'upcoming') {
-      console.log('Switching to upcoming tab, data length:', upcomingStreamData.length);
       if (upcomingStreamData.length === 0) {
         fetchUpcomingMore();
       }
     }
     if (tabKey === 'ended') {
-      console.log('Switching to ended tab, data length:', endedStreamData.length);
       if (endedStreamData.length === 0) {
         fetchEndedMore();
       }

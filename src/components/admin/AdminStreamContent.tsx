@@ -167,7 +167,7 @@ export const AdminStreamContent = ({
 
         socketInstance.on('error', (error) => {
           toast({
-            description: error?.message || 'An error occured. Refresh page and try again.',
+            description: error?.message || 'An error occurred. Refresh page and try again.',
             variant: 'destructive',
             duration: 7000,
           });
@@ -306,6 +306,7 @@ useEffect(() => {
     });
   };
 
+  // Function to update thumbnail in form
   const handleEditFileChange = (file) => {
     setSelectedThumbnailFile(file);
     if (file) {
@@ -314,14 +315,17 @@ useEffect(() => {
     }
   };
 
+  // Function to delete thumbnail
   const handleEditDeleteThumbnail = () => {
     setEditForm((prev) => ({ ...prev, thumbnailPreviewUrl: '' }));
   };
 
+  // Function to set stream start date
   const handleEditStartDateChange = (date) => {
     setEditForm((prev) => ({ ...prev, startDateObj: date }));
   };
 
+  // Function to set time of stream start date
   const handleEditStartTimeChange = (e) => {
     setEditForm((prev) => ({ ...prev, startTime: e.target.value }));
   };
@@ -371,6 +375,7 @@ useEffect(() => {
         return;
       }
     };
+
     // Implement API call to update stream info here
     const payload = {
       name: editForm.title,
@@ -405,8 +410,6 @@ useEffect(() => {
       });
     }
   }
-
-
 
   return (
     <div className="flex flex-col gap-0 h-full px-6 md:px-12">

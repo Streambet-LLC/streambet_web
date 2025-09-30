@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
-import { CurrencyType } from '@/enums';
 import api from '@/integrations/api/client';
 import { useAuthContext } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -21,39 +20,9 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Commented as reconnection is handled in the socket connection logic in client.ts
- const handleSocketReconnection = () => {
-  // console.log("Reconnecting socket")
-  //   if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-  //     console.log('Max reconnection attempts reached');
-  //     return;
-  //   }
-
-  //   reconnectAttemptsRef.current++;
-
-  //   // Clear existing socket
-  //   if (socketConnect) {
-  //     socketConnect.off('pong');
-  //   }
-
-  //   // Create new socket connection
-  //   const newSocket = api.socket.connect();
-  //   if (newSocket) {
-  //     setSocketConect(newSocket);
-  //     api.socket.joinCommonStream(newSocket);
-  //     // Reset reconnection attempts on successful connection
-  //     newSocket.on('connect', () => {
-  //       console.log('Common Socket reconnected successfully');
-  //       reconnectAttemptsRef.current = 0;
-  //     });
-
-  //   } else {
-  //     // Retry reconnection after delay
-  //     reconnectTimeoutRef.current = setTimeout(() => {
-  //       handleSocketReconnection();
-  //     }, 3000);
-  //   }
-  };
+    // This function is not used as reconnection is handled in the socket connection logic in client.ts
+    const handleSocketReconnection = () => {
+    };
 
     const setupSocketEventListeners = (socketInstance: any) => {
       if (!socketInstance) return;
@@ -73,7 +42,6 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
 
       // Handle purchase event
       socketInstance.on('purchaseSettled', (update: any) => {
-        console.log('purchaseSettled', update);
         queryClient.invalidateQueries({ queryKey: ['session'] });
           toast({
             id: 'purchase-completed',

@@ -4,7 +4,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { getMerchantId, getCoinFlowEnv, getSupportedPaymentMethods } from '@/config/coinflow';
 import { useNavigate } from 'react-router-dom';
-import { CoinflowEnvs, CoinflowPurchase, Currency, SettlementType } from "@coinflowlabs/react";
+import { CoinflowEnvs, CoinflowPurchase, Currency, SettlementType, ThreeDsChallengePreference } from "@coinflowlabs/react";
 import api from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
 
@@ -106,11 +106,23 @@ export const CoinFlowPurchaseComponent = ({
       <div className="w-full" style={{ height: '950px' }}>
         <CoinflowPurchase
           sessionKey={sessionKey}
-          merchantId={getMerchantId()}
-          env={getCoinFlowEnv() as CoinflowEnvs}
+          merchantId={getMerchantId() || 'streambet'}
+          env={getCoinFlowEnv() as CoinflowEnvs || 'sandbox'}
           onSuccess={handleSuccess}
           settlementType={SettlementType.USDC}
           allowedPaymentMethods={getSupportedPaymentMethods()}
+          chargebackProtectionData={[{
+            productType: 'inGameCurrency',
+            productName: `Coins Package ${packageId}`,
+            quantity: 1,
+            rawProductData: {
+              packageId,
+              userId: session?.id,
+              subtotalCents: Math.floor(amount * 100),
+              currency: 'USD',
+            }
+          }]}
+          threeDsChallengePreference={ThreeDsChallengePreference.Challenge}
           subtotal={{
             cents: Math.floor(amount * 100),
             currency: Currency.USD

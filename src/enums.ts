@@ -52,3 +52,9 @@ export enum HistoryType {
   Transaction = 'transaction',
   Bet = 'bet',
 };
+
+export enum KycType {
+  APPROVED = 'approved',
+  PENDING = 'pending',
+  REJECTED = 'rejected',
+};
