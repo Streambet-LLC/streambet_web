@@ -1,5 +1,5 @@
 import { CurrencyType, BettingRoundStatus } from "@/enums";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface BettingVariable {
   id: string;
@@ -42,8 +42,8 @@ interface LockTokens {
   updatedCurrency: CurrencyType;
 }
 
-export default function LockTokens({ 
-  bettingData ,
+export default function LockTokens({
+  bettingData,
   socket,
   lockedBet,
   potentialWinnings,
@@ -52,7 +52,7 @@ export default function LockTokens({
   cancelBet,
   getRoundData,
   updatedBetId,
-  handleBetEdit, 
+  handleBetEdit,
   resetKey,
   isStreamScheduled,
   updatedCurrency,
@@ -60,6 +60,32 @@ export default function LockTokens({
   const [localBetAmount, setLocalBetAmount] = useState(selectedAmount || 0);
   const [localOption, setLocalOption] = useState(selectedWinner || "");
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+
+  // measure header height
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const [headerH, setHeaderH] = useState(0);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+
+    const update = () => setHeaderH(el.getBoundingClientRect().height);
+
+    update();
+
+    // watch for size changes
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => update());
+      ro.observe(el);
+    } else {
+      window.addEventListener("resize", update);
+    }
+    return () => {
+      if (ro) ro.disconnect();
+      else window.removeEventListener("resize", update);
+    };
+  }, [localBetAmount, localOption, potentialWinnings, lockedBet]);
 
   useEffect(() => {
     setLocalBetAmount(0);
@@ -89,54 +115,96 @@ export default function LockTokens({
   };
 
   return (
-    <div className="h-[260px] relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]" style={{ border: '0.62px solid #181818' }}>
-      <div className="relative z-10 h-full flex flex-col justify-between">
-        <div>
-          <div className="bg-[#242424] flex justify-between items-center rounded-t-2xl p-3 sm:p-5 pl-[20px] sm:pl-[55px] pr-[20px] sm:pr-[55px] gap-2 sm:gap-4">
-            <div className="flex-shrink-0">
-              <p className="text-xs text-[#606060] font-semibold text-center pb-1">Your bet</p>
-              <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF]">{Number(localBetAmount)?.toLocaleString('en-US')} {updatedCurrency === CurrencyType.GOLD_COINS ? 'Gold Coins' : 'Sweep Coins'}</p>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-[#606060] font-semibold text-center pb-1">Selected winner</p>
-              <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF] text-center truncate" title={localOption}>{localOption}</p>
-            </div>
-            <div className="flex-shrink-0">
-              <p className="text-xs text-[#606060] font-semibold text-center pb-1">Potential winnings:</p>
-              <p className="font-medium text-sm sm:text-[16px] text-[#BDFF00] text-center">{Number(Math.round(Number(potentialWinnings ?? 0))).toLocaleString('en-US')}</p>
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-14 pb-4">
-            {lockedBet ? 'Bets are locked. Good luck!' : isStreamScheduled ? 'Bets may be locked soon' : 'Bets will be locked soon'}
-          </p>
-        </div>
-        {!lockedBet && (
-          <div className="flex justify-center gap-4 mb-8">
-            <button 
-              onClick={handleCancelClick}
-              className="bg-[#242424] w-[95px] text-white px-6 py-2 rounded-[28px] text-xs font-semibold">
-              Cancel
-            </button>
-            <button
-              onClick={handleBetEdit}
-              className="bg-[#242424] w-[95px] text-white text-xs font-semibold px-6 py-2 rounded-[28px]">
-              Edit
-            </button>
-          </div>
-        )}
+    <div
+      className="min-h-[260px] relative w-full max-w-6xl mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]"
+      style={{ border: "0.62px solid #181818" }}
+    >
+      <div className="relative z-10 flex flex-col">
         <div
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[250px] pointer-events-none z-0"
-          style={{
-            background: 'radial-gradient(60% 100% at 50% 100%, rgba(189, 255, 0, 0.25) -140%, transparent 100%)',
-          }}
-        ></div>
+          ref={headerRef}
+          className="bg-[#242424] rounded-t-2xl p-3 sm:p-5"
+        >
+          <div
+            className="
+              block
+              sm:grid sm:grid-cols-3 sm:[grid-template-rows:repeat(2,minmax(36px,auto))]
+              sm:items-center sm:gap-x-0 sm:gap-y-0
+            "
+          >
+            <p className="text-xs text-[#606060] font-semibold text-center pb-1 sm:pb-0 sm:row-start-1 sm:col-start-1 sm:self-start whitespace-nowrap">
+              Your bet:
+            </p>
+            <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF] text-center whitespace-normal break-words sm:row-start-2 sm:col-start-1 sm:pr-2">
+              {Number(localBetAmount)?.toLocaleString("en-US")}{" "}
+              {updatedCurrency === CurrencyType.GOLD_COINS ? "Gold Coins" : "Sweep Coins"}
+            </p>
+            <p className="sm:hidden text-xs text-[#606060] font-semibold text-center pb-1 border-t border-[#2C2C2C] mt-3 pt-3">
+              Selected winner:
+            </p>
+            <p className="hidden sm:block text-xs text-[#606060] font-semibold text-center sm:row-start-1 sm:col-start-2 sm:self-start whitespace-nowrap sm:border-l sm:border-[#2C2C2C] sm:px-4">
+              Selected winner:
+            </p>
+            <p
+              className="font-medium text-sm sm:text-[16px] text-[#D7DFEF] text-center whitespace-normal break-words sm:row-start-2 sm:col-start-2 sm:border-l sm:border-r sm:border-[#2C2C2C] sm:px-4"
+              title={localOption || ""}
+            >
+              {localOption}
+            </p>
+            <p className="sm:hidden text-xs text-[#606060] font-semibold text-center pb-1 border-t border-[#2C2C2C] mt-3 pt-3">
+              Potential winnings:
+            </p>
+            <p className="hidden sm:block text-xs text-[#606060] font-semibold text-center sm:row-start-1 sm:col-start-3 sm:self-start whitespace-nowrap sm:border-l sm:border-[#2C2C2C] sm:pl-4">
+              Potential winnings:
+            </p>
+            <p className="font-medium text-sm sm:text-[16px] text-[#BDFF00] text-center whitespace-normal break-words sm:row-start-2 sm:col-start-3 sm:pl-2">
+              {Number(Math.round(Number(potentialWinnings ?? 0))).toLocaleString("en-US")}
+            </p>
+          </div>
+        </div>
+        <div
+          className="relative w-full flex flex-col justify-center items-center"
+          style={{ minHeight: headerH > 0 ? headerH * 2 : undefined }}
+        >
+          <p className="text-2xl font-bold text-[#FFFFFF] text-center pb-4">
+            {lockedBet
+              ? "Bets are locked. Good luck!"
+              : isStreamScheduled
+              ? "Bets may be locked soon"
+              : "Bets will be locked soon"}
+          </p>
+
+          {!lockedBet && (
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleCancelClick}
+                className="bg-[#242424] w-[95px] text-white px-6 py-2 rounded-[28px] text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBetEdit}
+                className="bg-[#242424] w-[95px] text-white text-xs font-semibold px-6 py-2 rounded-[28px]"
+              >
+                Edit
+              </button>
+            </div>
+          )}
+          <div
+            className="pointer-events-none absolute inset-0 -z-10"
+            style={{
+              background:
+                "radial-gradient(60% 100% at 50% 100%, rgba(189, 255, 0, 0.25) -140%, transparent 100%)",
+            }}
+          ></div>
+        </div>
       </div>
+
       {lockedBet && (
         <>
-          <img
+          <img 
             src="/icons/lock1.svg"
             alt="lock left"
-            className="absolute top-20  left-0 w-[220px] h-[180px]"
+            className="absolute top-20 left-0 w-[220px] h-[180px]"
           />
           <img
             src="/icons/lock2.svg"
