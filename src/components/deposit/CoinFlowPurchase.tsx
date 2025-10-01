@@ -112,7 +112,7 @@ export const CoinFlowPurchaseComponent = ({
           settlementType={SettlementType.USDC}
           allowedPaymentMethods={getSupportedPaymentMethods()}
           chargebackProtectionData={[{
-            productType: 'inGameCurrency',
+            productType: 'gameOfSkill',
             productName: `Coins Package ${packageId}`,
             quantity: 1,
             rawProductData: {

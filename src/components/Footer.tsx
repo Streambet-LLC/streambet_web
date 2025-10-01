@@ -10,7 +10,7 @@ export const Footer = () => {
           <div className="space-y-4">
             <img src="/logo.svg" alt="StreamBet Logo" className="mb-8 w-[155px]" />
             <p className="text-sm text-muted-foreground">
-              Live betting for games created on the internet.
+              Live picks for games created on the Internet.
             </p>
           </div>
 

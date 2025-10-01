@@ -96,7 +96,7 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
             className="w-[142px] h-[44px] text-base font-medium"
             onClick={() => navigate(`/stream/${stream?.id}`)}
           >
-            Place bet
+            Place pick
           </Button>
         </div>
       </TableCell>
@@ -168,7 +168,7 @@ const MobileStreamItem = ({ stream }: { stream: any }) => {
         className="w-full h-[40px] text-base font-medium mt-2"
         onClick={() => navigate(`/stream/${stream?.id}`)}
       >
-        Place bet
+        Place pick
       </Button>
     </div>
   );

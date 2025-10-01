@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { Wallet } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Banknote, BanknoteArrowUp, Coins, Wallet } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { CurrencyType } from '@/enums';
+import { useEffect } from 'react';
 
 interface WalletDropdownProps {
   walletBalance: number;
@@ -18,35 +19,39 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
     setCurrency(checked ? CurrencyType.SWEEP_COINS : CurrencyType.GOLD_COINS);
   };
 
+  useEffect(() => {
+    setCurrency(CurrencyType.SWEEP_COINS);
+  }, []);
+
   return (
     <div className="relative">
       <div className="flex items-center gap-2">
         {currency === CurrencyType.GOLD_COINS ? (
           <div className="flex items-center">
-            <Button variant="ghost" className="gap-2 group" onClick={() => navigate('/transactions')}>
-              <Wallet className="h-4 w-4 group-hover:text-black transition-colors" />
-              <span className="text-sm text-[#B4FF39] group-hover:text-black transition-colors">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</span>
+            <Button variant="ghost" className="gap-2 group">
+              <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" />
+              <Link to="/deposit" className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</Link>
             </Button>
           </div>
         ) : (
           <div className="flex items-center">
-            <div className="flex items-center gap-2 px-4 py-2">
-              <Wallet className="h-4 w-4" />
-              <div className="flex items-center">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap">{Number(walletBalance)?.toLocaleString('en-US')} Sweep Coins</span>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[250px]">
-                      <p>
-                        Sweep Coins will be used for cash betting and is not a part of the private
-                        beta yet.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+            <div className="flex items-center">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" className="gap-2 group">
+                      <BanknoteArrowUp className="h-4 w-4 text-[#BDFF00] group-hover:text-black transition-colors" />
+                      <Link to="/deposit" className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Sweep Coins</Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[250px]">
+                    <p>
+                      Sweep Coins will be used for cash picking and is not a part of the private
+                      beta yet.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         )}

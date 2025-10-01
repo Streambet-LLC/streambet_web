@@ -105,7 +105,7 @@ export const AdminManagement = ({
       api.admin.updateBettingData(payload)
       : api.admin.createBettingData(payload),
     onSuccess: () => {
-      toast({ title: 'Success', description: 'Stream and Betting saved successfully!' });
+      toast({ title: 'Success', description: 'Stream and Picking saved successfully!' });
       handleResetAll();
     },
     onError: (error: any) => {
@@ -351,7 +351,7 @@ export const AdminManagement = ({
       refetchBetStreamData();
     },
     onError: (error: any) => {
-      const errorMessage: string = getMessage(error) || 'Failed to update bet';
+      const errorMessage: string = getMessage(error) || 'Failed to update pick';
       toast({
         title: errorMessage?.toLowerCase()?.includes('cannot lock') ? 'Not able to lock round' : `Error in updating the round status`,
         description: errorMessage,
@@ -376,7 +376,7 @@ export const AdminManagement = ({
       refetchBetStreamData();
     },
     onError: (error: any) => {
-      toast({ title: 'Failed to cancel round', description: getMessage(error) || 'Failed to update bet', variant: 'destructive' });
+      toast({ title: 'Failed to cancel round', description: getMessage(error) || 'Failed to update pick', variant: 'destructive' });
     },
   });
 
@@ -794,7 +794,7 @@ export const AdminManagement = ({
                 </div>
                 {/* Label and Create button in same row */}
                 <div className="flex flex-row items-center justify-between mb-6">
-                  <span className="text-lg text-white font-light">{createStep === 'betting' ? (editStreamId ? 'Edit your betting options' : 'Create your betting options') : (editStreamId ? 'Manage Livestream' : 'Create new livestream')}</span>
+                  <span className="text-lg text-white font-light">{createStep === 'betting' ? (editStreamId ? 'Edit your picking options' : 'Create your picking options') : (editStreamId ? 'Manage Livestream' : 'Create new livestream')}</span>
                   {/* Step 1: Next button, Step 2: Submit button */}
                   {createStep === 'info' ? (
                     <Button

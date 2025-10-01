@@ -145,7 +145,7 @@ export default function BetTokens({
     if (lockedOptions) {
       toast({
         variant: 'destructive',
-        description: 'Admin has locked the betting round',
+        description: 'Admin has locked the picking round',
       });
       return;
     }
@@ -181,7 +181,7 @@ export default function BetTokens({
                     className="w-[100%] h-[100%] object-contain cursor-pointer"
                 /> <span className="font-medium">Back</span>
           </div>}
-          Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}
+          Pick <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}
           <span className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
           {isSweepCoins
             ? `Available Sweep Coins: ${Number(session?.walletBalanceSweepCoin || 0).toLocaleString('en-US')}`
@@ -218,13 +218,13 @@ export default function BetTokens({
             if (Number(sliderMax) === 0) {
               toast({
                 variant: 'destructive',
-                description: 'No coins available to bet',
+                description: 'No coins available to pick',
               });
             }
             if (lockedOptions) {
               toast({
                 variant: 'destructive',
-                description: 'Admin has locked the betting round',
+                description: 'Admin has locked the picking round',
               });
             }
           }}
@@ -353,9 +353,9 @@ export default function BetTokens({
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
           </svg>
         ) : null}
-        {loading ? 'Placing bet...' : (
+        {loading ? 'Placing pick...' : (
           <div className="truncate max-w-[50%] inline-block align-middle px-4" title={selectedColor}>
-            {`Bet ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
+            {`Pick ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
           </div>
         )}
       </button>
@@ -366,7 +366,7 @@ export default function BetTokens({
         <div>
         
           <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-20 pb-4">
-             Betting is locked for this round
+             Picking is locked for this round
           </p>
         </div>
 

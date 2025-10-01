@@ -94,7 +94,7 @@ export default function LockTokens({
         <div>
           <div className="bg-[#242424] flex justify-between items-center rounded-t-2xl p-3 sm:p-5 pl-[20px] sm:pl-[55px] pr-[20px] sm:pr-[55px] gap-2 sm:gap-4">
             <div className="flex-shrink-0">
-              <p className="text-xs text-[#606060] font-semibold text-center pb-1">Your bet</p>
+              <p className="text-xs text-[#606060] font-semibold text-center pb-1">Your pick</p>
               <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF]">{Number(localBetAmount)?.toLocaleString('en-US')} {updatedCurrency === CurrencyType.GOLD_COINS ? 'Gold Coins' : 'Sweep Coins'}</p>
             </div>
             <div className="flex-1 min-w-0">
@@ -151,9 +151,9 @@ export default function LockTokens({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-[#242424] rounded-[16px] p-6 max-w-md mx-4 border border-[#2C2C2C]">
             <div className="text-center mb-6">
-              <h3 className="text-lg font-semibold text-white mb-2">Cancel Bet?</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Cancel Pick?</h3>
               <p className="text-[#D7DFEF] text-sm">
-                Are you sure you want to cancel your bet? <br />
+                Are you sure you want to cancel your pick? <br />
                 You've got to be in it to win it...
               </p>
             </div>

@@ -205,7 +205,7 @@ export const StreamContent = ({
       console.log('winner declared', data);
       toast({
         title: 'Round Closed',
-        description: `${data?.winnerName} has selected as winning bet option!`,
+        description: `${data?.winnerName} has selected as winning pick option!`,
         duration: 7000,
       });
       setWinnerOption(data?.winnerName);
@@ -249,7 +249,7 @@ export const StreamContent = ({
     socketInstance.on('betOpened', (update) => {
       console.log('betOpened', update);
       toast({
-        description:"New betting options available!",
+        description:"New picking options available!",
         variant: 'default',
       });
       resetBetData();
@@ -258,7 +258,7 @@ export const StreamContent = ({
     socketInstance.on('betCancelledByAdmin', (update) => {
       queryClient.prefetchQuery({ queryKey: ['session'] });
       toast({
-        description:"Current betting round cancelled by admin.",
+        description:"Current picking round cancelled by admin.",
         variant: 'destructive',
         duration: 4000,
       });
@@ -692,7 +692,7 @@ export const StreamContent = ({
                       animate={{ x: [0, -4, 4, 0] }}
                       transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
                     >
-                      This bet didn’t go your way 😕 <br />But the next one might be yours!
+                      This pick didn’t go your way 😕 <br />But the next one might be yours!
                     </motion.div>
                   </motion.div>
                 </motion.div>
@@ -747,7 +747,7 @@ export const StreamContent = ({
                   className="w-[100%] h-[100%] object-contain"
                 />
               </div>
-              <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No betting options available</p>
+              <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No picking options available</p>
             </div> : <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }} ref={horizontalScrollRef}>
 
             {roundDetails?.map(

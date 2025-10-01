@@ -287,13 +287,13 @@ useEffect(() => {
       <div className="space-y-8">
         <div className="max-w-3xl mx-auto text-center space-y-4">
           <h1 className="text-4xl md:text-5xl font-bold">
-            Bet on the internet's <br />
-            <span className="text-[#BDFF00]">randomest</span> moments
+            Predict the Internet's <br />
+            <span className="text-[#BDFF00]">best</span> moments
           </h1>
           <p className='text-[#FFFFFFBF]'>
-            Live betting for games created on the internet.
+            Live picks for games created on the Internet.
             <br />
-              <span className='text-[#FFFFFFBF] font-bold'>Bet on the unexpected.</span>
+              <span className='text-[#FFFFFFBF] font-bold'>Speculate on the unexpected.</span>
           </p>
         </div>
 

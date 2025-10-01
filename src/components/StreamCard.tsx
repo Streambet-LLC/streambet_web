@@ -218,7 +218,7 @@ export const StreamCard = ({
                     <LockKeyholeOpen className="h-3 w-3" />
                   ) : null}
                   <span>
-                    {isBettingLocked ? 'Betting Locked' : isBettingOpen ? 'Betting Open' : ''}
+                    {isBettingLocked ? 'Picking Locked' : isBettingOpen ? 'Picking Open' : ''}
                   </span>
                 </div>
               )}

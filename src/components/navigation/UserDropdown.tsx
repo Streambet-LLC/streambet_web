@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { getImageLink } from '@/utils/helper';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2 } from 'lucide-react';
+import { Coins, Loader2 } from 'lucide-react';
 import React from 'react';
 
 type Profile = any;
@@ -76,33 +76,33 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/settings">Settings</Link>
+          <div className="flex gap-2 group">
+            <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" />
+            <Link to="/deposit" className="font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Buy Gold Coins</Link>
+          </div>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Creator Program</a>
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Join Creator Program</a>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <Link to="/deposit">Buy Gold Coins</Link>
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link to="/betting-history">Pick history</Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/withdraw">Redeem Sweep Coins</Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <Link to="/betting-history">Bet history</Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/transactions">Transaction history</Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <Link to="/faq">FAQ</Link>
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onLogout()}>Log out</DropdownMenuItem>
+
+        <DropdownMenuItem onClick={() => onLogout()} className="cursor-pointer">Log out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

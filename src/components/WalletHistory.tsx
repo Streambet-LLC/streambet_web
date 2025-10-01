@@ -75,7 +75,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
   return (
     <div>
     <div className={`${isMobile ? 'block' : 'flex bg-[#0D0D0D] p-6 border-l border-r border-t border-[#191D24] rounded-tl-md rounded-tr-md'} items-center justify-between`}>
-          <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>{historyType === HistoryType.Transaction ? 'Transaction history' : 'Bet history'}</h1>
+          <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>{historyType === HistoryType.Transaction ? 'Transaction history' : 'Pick history'}</h1>
           <div className={`relative rounded-md bg-[#0D0D0D] ${isMobile ? 'w-full' : 'ml-4'}`} style={{ border: '1px solid #2D343E', minWidth: isMobile ? undefined : 300 }}>
             <Input
               id="search-streams"
@@ -120,7 +120,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                     </Card>
                   ))
               : paginatedUsers?.length === 0
-                ? (<div className="text-center py-6 text-muted-foreground text-base">No betting history found</div>)
+                ? (<div className="text-center py-6 text-muted-foreground text-base">No picking history found</div>)
                 : paginatedUsers?.map(user => (
                     <Card key={user.id} className="bg-[#181A20] border border-[#23272F] rounded-lg shadow-sm">
                       <CardContent className="p-3 space-y-2">
@@ -224,7 +224,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                   {paginatedUsers?.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
-                        No betting history found matching
+                        No picking history found matching
                       </TableCell>
                     </TableRow>
                   ) : (

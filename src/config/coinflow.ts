@@ -7,6 +7,9 @@ export const COINFLOW_CONFIG = {
   
   // Credentials (provided by backend team)
   MERCHANT_ID: import.meta.env.VITE_COINFLOW_MERCHANT_ID,
+
+  // Chargeback protection partnerId/merchantId
+  CHARGEBACK_PROTECTION_MERCHANT_ID: import.meta.env.VITE_COINFLOW_CHARGEBACK_PROTECTION_MERCHANT_ID,
   
   // Blockchain settings
   BLOCKCHAIN: import.meta.env.VITE_COINFLOW_BLOCKCHAIN,
@@ -29,6 +32,11 @@ export const getCoinFlowEnv = () => {
 // Helper function to get merchant ID
 export const getMerchantId = () => {
   return COINFLOW_CONFIG.MERCHANT_ID;
+};
+
+// Helper function to get merchant ID
+export const getChargebackProtectionMerchantId = () => {
+  return COINFLOW_CONFIG.CHARGEBACK_PROTECTION_MERCHANT_ID;
 };
 
 // Helper function to get blockchain

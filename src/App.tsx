@@ -30,7 +30,7 @@ import BugSnagErrorBoundary from './bugsnag';
 import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 import Redeem from './components/withdraw/Redeem';
 import { CoinflowPurchaseProtection } from "@coinflowlabs/react";
-import { getCoinFlowEnv, getMerchantId } from '@/config/coinflow';
+import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coinflow';
 
 
 // Create a client
@@ -55,8 +55,10 @@ const App = () => {
                   <TooltipProvider>
                     <Toaster />
                     <Sonner />
-                    <CoinflowPurchaseProtection coinflowEnv={getCoinFlowEnv()} 
-                      merchantId={getMerchantId()} />
+                    <CoinflowPurchaseProtection 
+                      coinflowEnv={getCoinFlowEnv()} 
+                      merchantId={getChargebackProtectionMerchantId()} 
+                    />
                     <LogoutEventHandlers />
                     <Routes>
                       <Route path="/" element={<Index />} />

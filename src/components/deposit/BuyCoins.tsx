@@ -42,7 +42,7 @@ const BuyCoins = ({
         <div className="mx-auto">
           <h2 className="text-lg font-medium mb-2">Buy Gold Coins</h2>
           <p className="text-sm text-gray-400">
-            With Streambet you have two types of coins to enjoy betting.{' '}
+            With Streambet you have two types of coins to enjoy picking.{' '}
             <span className="text-white cursor-pointer">Learn more.</span>
           </p>
           <Separator className="my-4 bg-[#232323]" />

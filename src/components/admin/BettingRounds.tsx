@@ -283,7 +283,7 @@ export function BettingRounds({
                           <div className="flex items-center justify-center h-full" style={{ minHeight: 57 }}>
                             <DeleteBettingDialog
                               title="Delete Round"
-                              message={`Deleting this round will delete all betting options related with this round. Are you sure?`}
+                              message={`Deleting this round will delete all picking options related with this round. Are you sure?`}
                               onConfirm={() => deleteRound(roundIndex)}
                               isNotCreatedStatus={isNotCreatedStatus}
                             />
@@ -423,7 +423,7 @@ export function BettingRounds({
         </div>
       ) : (
         <div className="text-center py-8 text-gray-500">
-          No betting rounds created yet. Click "+ New round" to get started.
+          No picking rounds created yet. Click "+ New round" to get started.
         </div>
       )}
        {createStream ? (

@@ -106,7 +106,7 @@ const FAQ = () => {
                 <p>
                   Streambet is built with safety and fairness at its core. We use secure account verification, advanced fraud detection systems, and responsible gaming tools to protect our community. 
                   Our platform enforces clear conduct guidelines to keep interactions respectful and friendly, and we monitor for suspicious activity to maintain a fair, trustworthy experience for all users. 
-                  In addition, <span className='font-bold'>every stream bet is manually reviewed after completion by our team, to ensure fairness and guard against fraud or manipulation.</span>
+                  In addition, <span className='font-bold'>every stream pick is manually reviewed after completion by our team, to ensure fairness and guard against fraud or manipulation.</span>
                 </p>
                 <p className='mt-2'>
                   See our TOS’ and Policies for more complete walkthroughs here.

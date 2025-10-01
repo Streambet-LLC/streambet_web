@@ -3,6 +3,7 @@ import api from '@/integrations/api/client';
 import { useAuthContext } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { BanknoteArrowUp, Coins } from 'lucide-react';
 
 interface BettingStatusContextType {
   socketConnect:any;
@@ -46,7 +47,29 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
           toast({
             id: 'purchase-completed',
             title: 'Purchase completed',
-            description: update?.message,
+            description: 
+              <div className='break-keep'>
+                You received
+                {" "} 
+                <span className='font-bold'>
+                  {update?.coinPackage.goldCoins}
+                </span>
+                {" "} 
+                <span className='text-[#B4FF39]'>
+                  Gold Coin(s)
+                </span> 
+                {" "} 
+                and
+                {" "} 
+                <span className='font-bold'>
+                  {update?.coinPackage.sweepCoins}
+                </span>
+                {" "} 
+                <span className='text-green-500'>
+                  Sweep Coin(s)
+                </span> 
+                !
+              </div>,
             variant: 'default',
             duration: 7000,
           });
