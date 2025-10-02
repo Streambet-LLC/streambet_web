@@ -63,14 +63,14 @@ export const CoinFlowPurchaseComponent = ({
     try {
       toast({
         id: 'purchase',
-        title: 'Payment Successful!',
-        description: `Please wait till we get confirmation from payment provider`,
+        title: 'Payment Received!',
+        description: `Please wait for final confirmation from payment provider.`,
         duration: 7000,
       });
       queryClient.invalidateQueries({ queryKey: ['session'] });
       navigate('/');
     } catch (error) {
-      console.error('Error processing payment success:', error);
+      console.error('Error processing payment received:', error);
       toast({
         title: 'Error',
         description: 'Failed to process payment. Please contact support.',
