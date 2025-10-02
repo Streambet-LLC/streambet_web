@@ -3,6 +3,8 @@ import { Separator } from "../ui/separator";
 import api from "@/integrations/api/client";
 import { getImageLink } from "@/utils/helper";
 import { useState } from "react";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { Button } from "../ui/button";
 
 const BuyCoins = ({ 
   setDepositAmount,
@@ -42,8 +44,41 @@ const BuyCoins = ({
         <div className="mx-auto">
           <h2 className="text-lg font-medium mb-2">Buy Gold Coins</h2>
           <p className="text-sm text-gray-400">
-            With Streambet you have two types of coins to enjoy picking.{' '}
-            <span className="text-white cursor-pointer">Learn more.</span>
+            Streambet employs a 2-token Sweepstakes model, where you can purchase gold coins packs that include Stream Coins, alongside.{' '}
+            <Dialog>
+              <DialogTrigger asChild>
+                <span className="text-white cursor-pointer">How it Works</span>
+              </DialogTrigger>
+              <DialogContent className="bg-[#0D0D0D] text-white sm:rounded-xl px-6 pt-4 pb-6 border-2 border-[#7AFF14]">
+                <DialogHeader>
+                  <DialogTitle>How this works</DialogTitle>
+                </DialogHeader>
+                <DialogDescription>
+                  <p>
+                    Streambet employs a 2-token Sweepstakes model, where you can purchase gold coins packs that include Stream Coins, alongside.
+                  </p>
+                  <p className="mt-2">
+                    Gold coins (aka free coins) can be used to make free picks on participation streams / contents, where creators may offer prizes for engagement.
+                  </p>
+                  <p className="mt-2">
+                    Stream coins can be used for real-$ picks, where creators host real-$ contests. This is where things get realllly interesting.
+                  </p>
+                  <p className="mt-2">
+                    Contact us with any questions via Discord, email, or Instagram.
+                  </p>
+                  <p className="mt-2">
+                    Good luck, have fun, and may the sweeps be with you!
+                  </p>
+                </DialogDescription>
+                <DialogFooter>
+                <DialogClose asChild>
+                  <Button className="mx-auto">
+                    Got it!
+                  </Button>
+                </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </p>
           <Separator className="my-4 bg-[#232323]" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6 mt-10">
