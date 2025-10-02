@@ -46,7 +46,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
         queryClient.invalidateQueries({ queryKey: ['session'] });
           toast({
             id: 'purchase-completed',
-            title: 'Purchase completed',
+            title: 'Purchase Complete!',
             description: 
               <div className='break-keep'>
                 You received
@@ -56,7 +56,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
                 </span>
                 {" "} 
                 <span className='text-[#B4FF39]'>
-                  Gold Coin(s)
+                  Gold Coins
                 </span> 
                 {" "} 
                 and
@@ -66,7 +66,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
                 </span>
                 {" "} 
                 <span className='text-green-500'>
-                  Sweep Coin(s)
+                  Sweep Coins
                 </span> 
                 !
               </div>,
