@@ -354,7 +354,7 @@ export default function BetTokens({
           </svg>
         ) : null}
         {loading ? 'Placing bet...' : (
-          <div className="break-words whitespace-normal max-w-[50%] inline-block align-middle px-4" title={selectedColor}>
+          <div className="break-words whitespace-normal w-full text-center px-4" title={selectedColor}>
             {`Bet ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
           </div>
         )}
