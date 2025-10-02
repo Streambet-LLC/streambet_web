@@ -42,8 +42,8 @@ interface LockTokens {
   updatedCurrency: CurrencyType;
 }
 
-export default function LockTokens({ 
-  bettingData ,
+export default function LockTokens({
+  bettingData,
   socket,
   lockedBet,
   potentialWinnings,
@@ -52,7 +52,7 @@ export default function LockTokens({
   cancelBet,
   getRoundData,
   updatedBetId,
-  handleBetEdit, 
+  handleBetEdit,
   resetKey,
   isStreamScheduled,
   updatedCurrency,
