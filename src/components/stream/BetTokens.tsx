@@ -190,7 +190,7 @@ export default function BetTokens({
             </span>
         </div>
         
-        <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
             Total Pot: {`${totalPot} ${isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}`}
             </span>
