@@ -316,8 +316,8 @@ export default function BetTokens({
               onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
               className={`${
                 isMobile || isTabletRange
-                  ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 truncate' 
-                  : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 truncate'
+                  ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 break-words whitespace-normal' 
+                  : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 break-words whitespace-normal'
               } ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={{ border: selectedColor === option.name ? '1px solid rgba(189, 255, 0, 1)' : '#242424',
                  color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
@@ -354,7 +354,7 @@ export default function BetTokens({
           </svg>
         ) : null}
         {loading ? 'Placing bet...' : (
-          <div className="truncate max-w-[50%] inline-block align-middle px-4" title={selectedColor}>
+          <div className="break-words whitespace-normal max-w-[50%] inline-block align-middle px-4" title={selectedColor}>
             {`Bet ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
           </div>
         )}
