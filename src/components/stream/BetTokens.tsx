@@ -173,14 +173,19 @@ export default function BetTokens({
         pointerEvents: session == null ? 'none' : 'auto',
       }}
     >
+      {/* Back button row */}
+      {isEditing && (
+        <div className="w-[18px] h-[18px] gap-2 flex items-center cursor-pointer mb-2" onClick={() => handleEditBack()}>
+          <img
+            src="/icons/back.svg"
+            className="w-[100%] h-[100%] object-contain cursor-pointer"
+          />
+          <span className="font-medium">Back</span>
+        </div>
+      )}
+      
       <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
         <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
-          {isEditing && <div className="w-[18px] h-[18px] mt-2 mb-4 gap-2 flex items-center cursor-pointer" onClick={() => handleEditBack()}>
-                <img
-                    src="/icons/back.svg"
-                    className="w-[100%] h-[100%] object-contain cursor-pointer"
-                /> <span className="font-medium">Back</span>
-          </div>}
           Bet <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}
           <span className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
           {isSweepCoins
@@ -190,7 +195,7 @@ export default function BetTokens({
             </span>
         </div>
         
-        <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
             Total Pot: {`${totalPot} ${isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}`}
             </span>
@@ -236,20 +241,69 @@ export default function BetTokens({
             border: '0.56px solid rgba(186, 186, 186, 1)'
           }}
         />
-         <input
-          min={0}
-          max={sliderMax}
-          value={betAmount}
-          disabled={session == null || lockedOptions}
-          onChange={e => {
-            let value = Number(e.target.value);
-            if (isNaN(value)) value = 0;
-            if (value < 0) value = 0;
-            if (sliderMax !== undefined && value > sliderMax) value = sliderMax;
-            setBetAmount(value);
-          }}
-          className="w-[90px] bg-[#272727] mt-2 px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444]"
-  />
+        {/* Number input and preset buttons row */}
+        <div className="flex flex-col sm:flex-row gap-2 mt-2">
+          <input
+            min={0}
+            max={sliderMax}
+            value={betAmount}
+            disabled={session == null || lockedOptions}
+            onChange={e => {
+              let value = Number(e.target.value);
+              if (isNaN(value)) value = 0;
+              if (value < 0) value = 0;
+              if (sliderMax !== undefined && value > sliderMax) value = sliderMax;
+              setBetAmount(value);
+            }}
+            className="w-[90px] bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444]"
+          />
+          
+          {/* Preset Amount Buttons - spanning most of the row */}
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {(() => {
+              // Use the same logic as sliderMax calculation to include current bet when editing
+              const baseWalletBalance = isSweepCoins 
+                ? Number(session?.walletBalanceSweepCoin || 0)
+                : Number(session?.walletBalanceGoldCoin || 0);
+              
+              const currentBetAmount = isSweepCoins
+                ? Number(bettingData?.userBetSweepCoin ?? 0)
+                : Number(bettingData?.userBetGoldCoins ?? 0);
+              
+              // Total available balance includes current bet (since editing would cancel it)
+              const totalAvailableBalance = baseWalletBalance + currentBetAmount;
+              
+              const presetAmounts = [
+                { label: '100% of tokens', percentage: 1.0 },
+                { label: '50% of tokens', percentage: 0.5 },
+                { label: `${Math.floor(totalAvailableBalance * 0.3)} tokens`, amount: Math.floor(totalAvailableBalance * 0.3) },
+                { label: `${Math.floor(totalAvailableBalance * 0.1)} tokens`, amount: Math.floor(totalAvailableBalance * 0.1) },
+              ];
+
+              const handlePresetAmount = (preset: { label: string; percentage?: number; amount?: number }) => {
+                if (!lockedOptions && session) {
+                  if (preset.percentage) {
+                    setBetAmount(Math.floor(totalAvailableBalance * preset.percentage));
+                  } else if (preset.amount) {
+                    setBetAmount(Math.min(preset.amount, totalAvailableBalance));
+                  }
+                }
+              };
+
+              return presetAmounts.map((preset, index) => (
+                <button
+                  key={index}
+                  onClick={() => handlePresetAmount(preset)}
+                  disabled={session == null || lockedOptions}
+                  className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {preset.label}
+                </button>
+              ));
+            })()}
+          </div>
+        </div>
+        
         <style>
           {`
             input[type="range"].bet-slider-gradient {
@@ -316,8 +370,8 @@ export default function BetTokens({
               onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
               className={`${
                 isMobile || isTabletRange
-                  ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 truncate' 
-                  : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 truncate'
+                  ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 break-words whitespace-normal' 
+                  : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 break-words whitespace-normal'
               } ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={{ border: selectedColor === option.name ? '1px solid rgba(189, 255, 0, 1)' : '#242424',
                  color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
@@ -354,7 +408,7 @@ export default function BetTokens({
           </svg>
         ) : null}
         {loading ? 'Placing bet...' : (
-          <div className="truncate max-w-[50%] inline-block align-middle px-4" title={selectedColor}>
+          <div className="break-words whitespace-normal w-full text-center px-4" title={selectedColor}>
             {`Bet ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
           </div>
         )}
