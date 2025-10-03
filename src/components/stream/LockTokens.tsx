@@ -112,6 +112,9 @@ export default function LockTokens({
           	</p>
 		  </div>
         </div>
+        {lockedBet && (
+          <div className="mb-20"></div>
+        )}
         {!lockedBet && (
           <div className="flex justify-center gap-4 mb-8">
             <button 
