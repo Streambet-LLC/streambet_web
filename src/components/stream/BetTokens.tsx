@@ -190,7 +190,7 @@ export default function BetTokens({
             </span>
         </div>
         
-        <div className="flex flex-col xs:flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
             Total Pot: {`${totalPot} ${isSweepCoins ? ' Sweep Coins' : ' Gold Coins'}`}
             </span>
@@ -316,8 +316,8 @@ export default function BetTokens({
               onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
               className={`${
                 isMobile || isTabletRange
-                  ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 truncate' 
-                  : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 truncate'
+                  ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 break-words whitespace-normal' 
+                  : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 break-words whitespace-normal'
               } ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={{ border: selectedColor === option.name ? '1px solid rgba(189, 255, 0, 1)' : '#242424',
                  color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
@@ -354,7 +354,7 @@ export default function BetTokens({
           </svg>
         ) : null}
         {loading ? 'Placing pick...' : (
-          <div className="truncate max-w-[50%] inline-block align-middle px-4" title={selectedColor}>
+          <div className="break-words whitespace-normal w-full text-center px-4" title={selectedColor}>
             {`Pick ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
           </div>
         )}

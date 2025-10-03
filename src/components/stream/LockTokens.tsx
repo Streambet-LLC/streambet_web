@@ -42,8 +42,8 @@ interface LockTokens {
   updatedCurrency: CurrencyType;
 }
 
-export default function LockTokens({ 
-  bettingData ,
+export default function LockTokens({
+  bettingData,
   socket,
   lockedBet,
   potentialWinnings,
@@ -52,7 +52,7 @@ export default function LockTokens({
   cancelBet,
   getRoundData,
   updatedBetId,
-  handleBetEdit, 
+  handleBetEdit,
   resetKey,
   isStreamScheduled,
   updatedCurrency,
@@ -89,26 +89,28 @@ export default function LockTokens({
   };
 
   return (
-    <div className="h-[260px] relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]" style={{ border: '0.62px solid #181818' }}>
+    <div className="relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]" style={{ border: '0.62px solid #181818' }}>
       <div className="relative z-10 h-full flex flex-col justify-between">
         <div>
-          <div className="bg-[#242424] flex justify-between items-center rounded-t-2xl p-3 sm:p-5 pl-[20px] sm:pl-[55px] pr-[20px] sm:pr-[55px] gap-2 sm:gap-4">
-            <div className="flex-shrink-0">
+          <div className="bg-[#242424] flex flex-col sm:flex-row sm:justify-between items-center rounded-t-2xl p-3 sm:p-5 px-[20px] sm:px-[55px] pr-[20px] sm:pr-[55px] gap-3 sm:gap-4 text-center">
+            <div className="flex-shrink-0 w-full sm:w-auto">
               <p className="text-xs text-[#606060] font-semibold text-center pb-1">Your pick</p>
               <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF]">{Number(localBetAmount)?.toLocaleString('en-US')} {updatedCurrency === CurrencyType.GOLD_COINS ? 'Gold Coins' : 'Sweep Coins'}</p>
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 sm:min-w-0 w-full border-t sm:border-t-0 sm:border-1 border-[#2C2C2C] pt-3 sm:pt-0 sm:pl-4">
               <p className="text-xs text-[#606060] font-semibold text-center pb-1">Selected winner</p>
-              <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF] text-center truncate" title={localOption}>{localOption}</p>
+              <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF] text-center break-words" title={localOption}>{localOption}</p>
             </div>
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 w-full sm:w-auto border-t sm:border-t-0 sm:border-1 border-[#2C2C2C] pt-3 sm:pt-0 sm:pl-4">
               <p className="text-xs text-[#606060] font-semibold text-center pb-1">Potential winnings:</p>
               <p className="font-medium text-sm sm:text-[16px] text-[#BDFF00] text-center">{Number(Math.round(Number(potentialWinnings ?? 0))).toLocaleString('en-US')}</p>
             </div>
           </div>
-          <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-14 pb-4">
-            {lockedBet ? 'Bets are locked. Good luck!' : isStreamScheduled ? 'Bets may be locked soon' : 'Bets will be locked soon'}
-          </p>
+		  <div className="flex-grow flex flex-col justify-center">
+          	<p className="text-2xl font-bold text-[#FFFFFF] text-center pt-14 pb-4">
+              {lockedBet ? 'Bets are locked. Good luck!' : isStreamScheduled ? 'Bets may be locked soon' : 'Bets will be locked soon'}
+          	</p>
+		  </div>
         </div>
         {!lockedBet && (
           <div className="flex justify-center gap-4 mb-8">
