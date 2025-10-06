@@ -38,17 +38,17 @@ export default function Withdraw({
 	const { toast } = useToast();
 
 	const {
-        data: withdrawQuote,
-        isFetching: isWithdrawQuoteFetching,
-        refetch: getWithdrawQuote,
-    } = useQuery({
-        queryKey: ['withdrawQuote'],
-        queryFn: async () => {
-            const response = await api.payment.getWithdrawQuote(amountToWithdraw);
-            return response;
-        },
-        enabled: false,
-    });
+		data: withdrawQuote,
+		isFetching: isWithdrawQuoteFetching,
+		refetch: getWithdrawQuote,
+	} = useQuery({
+		queryKey: ['withdrawQuote'],
+		queryFn: async () => {
+			const response = await api.payment.getWithdrawQuote(amountToWithdraw);
+			return response;
+		},
+		enabled: false,
+	});
 
 	const { mutate: performWithdraw, isPending: isWithdrawing } = useMutation({
 		mutationFn: (payload: WithdrawPayload) => api.payment.redeemSweepCoins(payload),
