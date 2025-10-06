@@ -5,6 +5,7 @@ export interface WithdrawPayload {
 };
 
 export interface WithdrawerError {
+    status: number,
     response: {
         data: {
             statusCode: number,
@@ -12,6 +13,7 @@ export interface WithdrawerError {
             path: string,
             method: string,
             message: string,
+            verificationLink: string,
         }
     }
 };
@@ -80,6 +82,10 @@ export interface WithdrawComponentProps {
 	amountToWithdraw: number,
 	bankAccounts: BankAccount[],
 	setWithdrawer: (val: Withdrawer | undefined) => void,
+    onAddBank: () => void;
+    onRefresh: () => void;
+    onBack: () => void;
+    refetching: boolean;
 };
 
 interface SpeedOption {
@@ -92,4 +98,21 @@ export interface WithdrawQuote {
   asap?: SpeedOption;
   same_day?: SpeedOption;
   standard?: SpeedOption;
+};
+export interface WithdrawKycPayload {
+  email: string;
+  country: string;
+};
+
+export interface WithdrawKycUsPayload {
+  email: string;
+  country: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  dob: string;
+  ssn: string;
 };
