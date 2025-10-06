@@ -6,7 +6,6 @@ import { COUNTRIES } from "@/utils/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../ui/button";
-import { useAuthContext } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 const countriesOptions = COUNTRIES.map(c => ({
@@ -98,7 +97,7 @@ export default function KycEmailCountry({
             );
           }}
         />
-        <Button disabled={isSubmitting || !form.formState.isValid} type="submit" className="w-full">
+        <Button disabled={isSubmitting} type="submit" className="w-full">
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
           Next
         </Button>

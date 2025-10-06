@@ -278,6 +278,7 @@ export default function KycUS({
               <FormControl>
                 <Input
                   placeholder="1234"
+                  maxLength={4}
                   {...field}
                   className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
                 />
@@ -291,7 +292,7 @@ export default function KycUS({
         />
         <div className="flex gap-2 pt-6">
           <Button disabled={isSubmitting} type="button" variant="secondary" className="flex-1" onClick={onBack}>Back</Button>
-          <Button disabled={isSubmitting || !form.formState.isValid} type="submit" className="flex-1">
+          <Button disabled={isSubmitting} type="submit" className="flex-1">
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             Next
           </Button>
