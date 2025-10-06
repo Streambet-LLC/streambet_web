@@ -1938,4 +1938,17 @@ export const COUNTRIES = [
       "dial_code": "+681",
       "image": "https://cdn.jsdelivr.net/npm/country-flag-emoji-json@2.0.0/dist/images/WF.svg"
   }
-]
+];
+
+export const SUPPORTED_COUNTRIES = [
+  "US", "AD", "AG", "AM", "AR", "AU", "AT", "AX", "BS", "BH", "BB", "BE", "BZ", "BO", "BW",
+  "BR", "BN", "BG", "CA", "KY", "CL", "CG", "CR", "HR", "CY", "CZ", "DK", "DM", "DJ", "DO",
+  "EC", "SV", "EE", "SZ", "FJ", "FI", "FR", "GA", "GM", "GE", "DE", "GH", "GR", "GD", "GP",
+  "GT", "HT", "HN", "HK", "HU", "IS", "IN", "IE", "IL", "IT", "JM", "JP", "JO", "KZ", "KI",
+  "KW", "KG", "LV", "LS", "LR", "LI", "LT", "LU", "MW", "MY", "MT", "MH", "MU", "YT", "MX",
+  "FM", "MC", "MN", "ME", "MA", "NA", "NR", "NL", "NC", "NZ", "NG", "NO", "PW", "PA", "PG",
+  "PY", "PE", "PH", "PL", "PT", "PR", "RO", "KN", "LC", "MF", "VC", "WS", "SM", "SA", "SC",
+  "SL", "SG", "SX", "SK", "SI", "ZA", "KR", "ES", "LK", "SR", "SE", "CH", "TW", "TZ", "TH",
+  "TO", "TT", "TR", "TV", "GB", "UM", "UY", "UA", "UZ", "VU", "VG", "VI", "PM", "GG", "JE",
+  "IM", "GF", "GI", "MQ", "BL", "PF", "WF"
+];

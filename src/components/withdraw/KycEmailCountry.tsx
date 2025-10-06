@@ -2,13 +2,13 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Input } from "../ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
-import { COUNTRIES } from "@/utils/constants";
+import { COUNTRIES, SUPPORTED_COUNTRIES } from "@/utils/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
 
-const countriesOptions = COUNTRIES.map(c => ({
+const countriesOptions = COUNTRIES.filter((c) => SUPPORTED_COUNTRIES.includes(c.code)).map(c => ({
   value: c.code,
   label: c.name,
   icon: c.emoji
