@@ -31,7 +31,7 @@ import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 import Redeem from './components/withdraw/Redeem';
 import { CoinflowPurchaseProtection } from "@coinflowlabs/react";
 import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coinflow';
-import Kyc from './components/withdraw/KYC';
+import Kyc from './components/withdraw/Kyc';
 
 
 // Create a client
