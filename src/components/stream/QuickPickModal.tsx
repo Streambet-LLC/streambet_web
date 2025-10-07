@@ -29,10 +29,15 @@ export const QuickPickModal = ({
   const { socketConnect } = useBettingStatusContext();
   const { setActiveStreamId } = useBettingContext();
   
-  // Set active stream when modal opens
+  // Set active stream when modal opens, clear when it closes
   useEffect(() => {
     if (open && streamId) {
       setActiveStreamId(streamId);
+      
+      // Cleanup: clear active stream when modal closes
+      return () => {
+        setActiveStreamId(null);
+      };
     }
   }, [open, streamId, setActiveStreamId]);
   
