@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useMemo, useCallback, ReactNode } 
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useBettingSocket } from '@/hooks/useBettingSocket';
 import { useBettingStatusContext } from './BettingStatusContext';
+import { useAuthContext } from './AuthContext';
 
 // Type definitions
 export interface BettingVariable {
@@ -34,35 +35,24 @@ export interface UserBet {
 }
 
 export interface BettingContextType {
+  // Active Stream
+  activeStreamId: string | null;
+  setActiveStreamId: (streamId: string | null) => void;
+  
   // Round State
   activeRound: ActiveRound;
-  setActiveRound: React.Dispatch<React.SetStateAction<ActiveRound>>;
   
   // User's Current Bet
   userBet: UserBet;
-  setUserBet: React.Dispatch<React.SetStateAction<UserBet>>;
   
   // UI State
   isLoading: boolean;
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  
-  // Available Balance (after real-time updates)
-  updatedBalance: {
-    goldCoins: number | undefined;
-    sweepCoins: number | undefined;
-  };
-  setUpdatedBalance: React.Dispatch<React.SetStateAction<{
-    goldCoins: number | undefined;
-    sweepCoins: number | undefined;
-  }>>;
-  
-  // Editing State
+  setIsLoading: (loading: boolean) => void;
   isEditing: boolean;
-  setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsEditing: (editing: boolean) => void;
   
   // Reset Key for UI updates
   resetKey: number;
-  setResetKey: React.Dispatch<React.SetStateAction<number>>;
   
   // Data Refresh Functions
   refetchBettingData: () => void;
@@ -78,12 +68,14 @@ const BettingContext = createContext<BettingContextType | undefined>(undefined);
 
 interface BettingProviderProps {
   children: ReactNode;
-  streamId: string;
-  session: any;
 }
 
-export const BettingProvider = ({ children, streamId, session }: BettingProviderProps) => {
+export const BettingProvider = ({ children }: BettingProviderProps) => {
   const { socketConnect } = useBettingStatusContext();
+  const { session } = useAuthContext();
+  
+  // Active Stream ID
+  const [activeStreamId, setActiveStreamId] = useState<string | null>(null);
   
   // Active Round State
   const [activeRound, setActiveRound] = useState<ActiveRound>({
@@ -114,31 +106,21 @@ export const BettingProvider = ({ children, streamId, session }: BettingProvider
   const [isEditing, setIsEditing] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   
-  // Updated Balance (from socket events)
-  const [updatedBalance, setUpdatedBalance] = useState<{
-    goldCoins: number | undefined;
-    sweepCoins: number | undefined;
-  }>({
-    goldCoins: undefined,
-    sweepCoins: undefined,
-  });
-  
   // Use socket hook to handle queries and socket events and pass setters to update state
   const { refetchBettingData, refetchRoundData } = useBettingSocket({
-    streamId,
+    streamId: activeStreamId,
     session,
     socket: socketConnect,
     setActiveRound,
     setUserBet,
     setIsLoading,
     setIsEditing,
-    setUpdatedBalance,
     setResetKey,
   });
   
   // Betting Actions
   const placeBet = useCallback((bettingVariableId: string, amount: number, currencyType: string) => {
-    if (socketConnect && socketConnect.connected) {
+    if (socketConnect?.connected) {
       setIsLoading(true);
       socketConnect.emit('placeBet', {
         bettingVariableId,
@@ -146,10 +128,10 @@ export const BettingProvider = ({ children, streamId, session }: BettingProvider
         currencyType,
       });
     }
-  }, [socketConnect, setIsLoading]);
+  }, [socketConnect]);
   
   const editBet = useCallback((betId: string, newBettingVariableId: string, newAmount: number, newCurrencyType: string) => {
-    if (socketConnect && socketConnect.connected) {
+    if (socketConnect?.connected) {
       setIsLoading(true);
       socketConnect.emit('editBet', {
         betId,
@@ -160,34 +142,32 @@ export const BettingProvider = ({ children, streamId, session }: BettingProvider
       // Don't set isEditing to false here - let the socket event handler do it after receiving the response
       // This ensures we have the updated potential winnings before switching back to LockTokens view
     }
-  }, [socketConnect, setIsLoading]);
+  }, [socketConnect]);
   
   const cancelBet = useCallback((betId: string, currencyType: string) => {
-    if (socketConnect && socketConnect.connected) {
+    if (socketConnect?.connected) {
       socketConnect.emit('cancelBet', {
         betId,
         currencyType,
       });
-      setIsEditing(false);
+      // Don't set isEditing to false here - let the socket event handler do it after receiving the response
+      // This ensures consistent UI state management with editBet
       refetchBettingData();
     }
-  }, [socketConnect, refetchBettingData, setIsEditing]);
+  }, [socketConnect, refetchBettingData]);
   
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
     () => ({
+      activeStreamId,
+      setActiveStreamId,
       activeRound,
-      setActiveRound,
       userBet,
-      setUserBet,
       isLoading,
       setIsLoading,
-      updatedBalance,
-      setUpdatedBalance,
       isEditing,
       setIsEditing,
       resetKey,
-      setResetKey,
       refetchBettingData,
       refetchRoundData,
       placeBet,
@@ -195,10 +175,10 @@ export const BettingProvider = ({ children, streamId, session }: BettingProvider
       cancelBet,
     }),
     [
+      activeStreamId,
       activeRound,
       userBet,
       isLoading,
-      updatedBalance,
       isEditing,
       resetKey,
       refetchBettingData,

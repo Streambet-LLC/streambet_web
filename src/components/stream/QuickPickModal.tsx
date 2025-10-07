@@ -1,10 +1,12 @@
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import BetTokens from './BetTokens';
 import LockTokens from './LockTokens';
 import { CurrencyType } from '@/enums';
-import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
+import { useBettingContext } from '@/contexts/BettingContext';
 import { useQuickPickModal } from '@/hooks/useQuickPickModal';
 import { transformForBetTokens, transformForLockTokens } from '@/utils/bettingTransformers';
 import { SignInPrompt, NoBettingData } from './QuickPickModalComponents';
@@ -14,38 +16,43 @@ interface QuickPickModalProps {
   onOpenChange: (open: boolean) => void;
   streamId: string;
   streamName?: string;
-  session: any;
 }
 
 export const QuickPickModal = ({
   open,
   onOpenChange,
+  streamId,
   streamName,
-  session,
 }: QuickPickModalProps) => {
   const navigate = useNavigate();
-  const { currency } = useCurrencyContext();
+  const { session } = useAuthContext();
   const { socketConnect } = useBettingStatusContext();
+  const { setActiveStreamId } = useBettingContext();
   
-  // Custom hook handles all betting logic
+  // Set active stream when modal opens
+  useEffect(() => {
+    if (open && streamId) {
+      setActiveStreamId(streamId);
+    }
+  }, [open, streamId, setActiveStreamId]);
+  
+  // Custom hook handles all betting logic and computed values
   const {
     activeRound,
     userBet,
     isLoading,
-    updatedBalance,
     isEditing,
     resetKey,
     showBetTokens,
+    totalPot,
+    updatedSliderMax,
+    hasActiveBetting,
     handlePlaceBet,
     handleEditBet,
     handleCancelBet,
     handleStartEdit,
     handleCancelEdit,
   } = useQuickPickModal();
-
-  // Calculate total pot based on currency
-  const isSweep = currency === CurrencyType.SWEEP_COINS;
-  const totalPot = isSweep ? activeRound.totalSweepCoins : activeRound.totalGoldCoins;
 
   // Wrapper functions to match BetTokens/LockTokens expected interface
   const placedBetSocket = (data: { bettingVariableId: string; amount: number; currencyType: string }) => {
@@ -59,8 +66,6 @@ export const QuickPickModal = ({
   const cancelBetSocket = (data: { betId: string; currencyType: string }) => {
     handleCancelBet(data.betId, data.currencyType);
   };
-
-  const hasActiveBetting = activeRound.bettingVariables && activeRound.bettingVariables.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -94,7 +99,7 @@ export const QuickPickModal = ({
           <BetTokens
             session={session}
             bettingData={transformForBetTokens(activeRound)}
-            updatedSliderMax={updatedBalance}
+            updatedSliderMax={updatedSliderMax}
             placeBet={placedBetSocket}
             editBetMutation={editBetSocket}
             getRoundData={transformForLockTokens(userBet)}
@@ -105,7 +110,7 @@ export const QuickPickModal = ({
             selectedAmount={userBet.amount}
             selectedWinner={userBet.selectedOption}
             isEditing={isEditing}
-            updatedCurrency={userBet.currencyType as any}
+            updatedCurrency={userBet.currencyType}
             lockedBet={userBet.isLocked}
             handleEditBack={handleCancelEdit}
           />

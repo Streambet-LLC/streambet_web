@@ -1,27 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useBettingContext } from '@/contexts/BettingContext';
-import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { getConnectionErrorMessage } from '@/utils/helper';
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { CurrencyType } from '@/enums';
 
 /**
  * Custom hook to manage QuickPickModal state and actions
- * Handles view switching, error handling, and betting actions
+ * Handles view switching and betting actions with network error handling
  */
 export const useQuickPickModal = () => {
   const { toast } = useToast();
-  const { socketConnect } = useBettingStatusContext();
-  const { isConnected: isNetworkConnected } = useNetworkStatus();
+  const { currency } = useCurrencyContext();
   
   const {
     activeRound,
     userBet,
     isLoading,
-    updatedBalance,
+    setIsLoading,
     isEditing,
     setIsEditing,
-    setIsLoading,
     resetKey,
     refetchRoundData,
     placeBet,
@@ -29,81 +26,50 @@ export const useQuickPickModal = () => {
     cancelBet,
   } = useBettingContext();
 
-  // Local UI state for view switching
-  const [showBetTokens, setShowBetTokens] = useState(true);
+  // Derive computed values
+  const showBetTokens = !userBet.betId || isEditing;
+  const isSweep = currency === CurrencyType.SWEEP_COINS;
+  const totalPot = isSweep ? activeRound.totalSweepCoins : activeRound.totalGoldCoins;
+  const updatedSliderMax = {
+    goldCoins: activeRound.walletGoldCoin,
+    sweepCoins: activeRound.walletSweepCoin,
+  };
+  const hasActiveBetting = activeRound.bettingVariables && activeRound.bettingVariables.length > 0;
 
-  // Sync view state with userBet
-  useEffect(() => {
-    if (userBet.betId && !isEditing) {
-      setShowBetTokens(false); // Show LockTokens
-    } else {
-      setShowBetTokens(true); // Show BetTokens
-    }
-  }, [userBet.betId, isEditing, resetKey]);
-
-  // Place bet with connection checking
+  // Place bet - errors handled by socket event handlers
   const handlePlaceBet = useCallback(
     (bettingVariableId: string, amount: number, currencyType: string) => {
-      if (socketConnect && socketConnect.connected) {
-        placeBet(bettingVariableId, amount, currencyType);
-        setShowBetTokens(false);
-      } else {
-        toast({
-          description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-      }
+      placeBet(bettingVariableId, amount, currencyType);
     },
-    [socketConnect, placeBet, toast, isNetworkConnected, setIsLoading]
+    [placeBet]
   );
 
-  // Edit bet with connection checking
+  // Edit bet - errors handled by socket event handlers
   const handleEditBet = useCallback(
     (betId: string, newBettingVariableId: string, newAmount: number, newCurrencyType: string) => {
-      if (socketConnect && socketConnect.connected) {
-        editBet(betId, newBettingVariableId, newAmount, newCurrencyType);
-        // Don't set view here - let the socket event handler set isEditing=false after response
-        // The useEffect watching isEditing will then switch the view with updated data
-      } else {
-        toast({
-          description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-      }
+      editBet(betId, newBettingVariableId, newAmount, newCurrencyType);
     },
-    [socketConnect, editBet, toast, isNetworkConnected, setIsLoading]
+    [editBet]
   );
 
-  // Cancel bet with connection checking
+  // Cancel bet - errors handled by socket event handlers
   const handleCancelBet = useCallback(
     (betId: string, currencyType: string) => {
-      if (socketConnect && socketConnect.connected) {
-        cancelBet(betId, currencyType);
-        setShowBetTokens(true);
-      } else {
-        toast({
-          description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
-          variant: 'destructive',
-        });
-      }
+      cancelBet(betId, currencyType);
     },
-    [socketConnect, cancelBet, toast, isNetworkConnected]
+    [cancelBet]
   );
 
   // Start editing a bet
   const handleStartEdit = useCallback(() => {
     setIsLoading(false);
     setIsEditing(true);
-    setShowBetTokens(true);
     refetchRoundData();
   }, [refetchRoundData, setIsLoading, setIsEditing]);
 
   // Cancel editing and go back
   const handleCancelEdit = useCallback(() => {
     setIsEditing(false);
-    setShowBetTokens(false);
   }, [setIsEditing]);
 
   return {
@@ -111,10 +77,13 @@ export const useQuickPickModal = () => {
     activeRound,
     userBet,
     isLoading,
-    updatedBalance,
     isEditing,
     resetKey,
     showBetTokens,
+    // Computed values
+    totalPot,
+    updatedSliderMax,
+    hasActiveBetting,
     // Actions
     handlePlaceBet,
     handleEditBet,

@@ -7,17 +7,13 @@ import type { ActiveRound, UserBet } from '@/contexts/BettingContext';
 
 interface UseBettingSocketProps {
   socket: any;
-  streamId: string;
+  streamId: string | null;
   session: any;
   // Context setters passed from provider to avoid circular dependency
   setActiveRound: React.Dispatch<React.SetStateAction<ActiveRound>>;
   setUserBet: React.Dispatch<React.SetStateAction<UserBet>>;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
-  setUpdatedBalance: React.Dispatch<React.SetStateAction<{
-    goldCoins: number | undefined;
-    sweepCoins: number | undefined;
-  }>>;
   setResetKey: React.Dispatch<React.SetStateAction<number>>;
 }
 
@@ -34,7 +30,6 @@ export function useBettingSocket({
   setUserBet,
   setIsLoading,
   setIsEditing,
-  setUpdatedBalance,
   setResetKey,
 }: UseBettingSocketProps) {
   const queryClient = useQueryClient();
@@ -44,7 +39,7 @@ export function useBettingSocket({
   const { data: bettingData, refetch: refetchBettingData } = useQuery({
     queryKey: ['bettingData', streamId, session?.id],
     queryFn: async () => {
-      if (!session?.id) return null;
+      if (!session?.id || !streamId) return null;
       const resp = await api.betting.getBettingData(streamId, session.id);
       return resp?.data ?? null;
     },
@@ -74,11 +69,11 @@ export function useBettingSocket({
     queryKey: ['selectedRoundData', bettingData?.bettingRounds?.[0]?.id],
     queryFn: async () => {
       const roundId = bettingData?.bettingRounds?.[0]?.id;
-      if (!roundId) return null;
+      if (!roundId || !streamId) return null;
       const resp = await api.betting.getBettingRoundData(roundId);
       return resp?.data ?? null;
     },
-    enabled: !!bettingData?.id,
+    enabled: !!bettingData?.id && !!streamId,
   });
 
   // Update userBet when getRoundData changes
@@ -182,11 +177,6 @@ export function useBettingSocket({
           isLocked: false,
         });
         
-        setUpdatedBalance({
-          goldCoins: update?.updatedWalletBalance?.goldCoins,
-          sweepCoins: update?.updatedWalletBalance?.sweepCoins,
-        });
-        
         setIsLoading(false);
         
         if (update?.message) {
@@ -217,11 +207,6 @@ export function useBettingSocket({
       if (update?.bet?.userId === session?.id) {
         queryClient.invalidateQueries({ queryKey: ['session'] });
         
-        setUpdatedBalance({
-          goldCoins: update?.updatedWalletBalance?.goldCoins,
-          sweepCoins: update?.updatedWalletBalance?.sweepCoins,
-        });
-        
         // Reset user bet
         setUserBet({
           betId: null,
@@ -231,6 +216,9 @@ export function useBettingSocket({
           currencyType: undefined,
           isLocked: false,
         });
+        
+        // Exit editing mode after successful cancel
+        setIsEditing(false);
         
         if (update?.message) {
           toast({ description: update?.message });
@@ -243,7 +231,6 @@ export function useBettingSocket({
     // Handle bet edited
     const handleBetEdited = (update: any) => {
       if (update?.bet?.userId === session?.id) {
-        // currencyType is at the root level of update, not inside bet
         const isSweep = update?.currencyType === CurrencyType.SWEEP_COINS;
         
         setUserBet({
@@ -255,11 +242,6 @@ export function useBettingSocket({
             : update?.potentialGoldCoinWinningAmount,
           currencyType: update?.currencyType,
           isLocked: false,
-        });
-        
-        setUpdatedBalance({
-          goldCoins: update?.updatedWalletBalance?.goldCoins,
-          sweepCoins: update?.updatedWalletBalance?.sweepCoins,
         });
         
         // Exit editing mode after successful edit with updated data
@@ -311,7 +293,7 @@ export function useBettingSocket({
       socket.off('betEdited', handleBetEdited);
       socket.off('error', handleError);
     };
-  }, [socket, streamId, session?.id, refetchBettingData, refetchRoundData, toast, queryClient, setActiveRound, setUserBet, setIsLoading, setUpdatedBalance, setResetKey]);
+  }, [socket, streamId, session?.id, refetchBettingData, refetchRoundData, toast, queryClient, setActiveRound, setUserBet, setIsLoading, setResetKey]);
 
   // Return refetch functions so they can be exposed via context
   return { refetchBettingData, refetchRoundData };

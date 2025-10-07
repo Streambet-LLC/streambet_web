@@ -11,7 +11,6 @@ import { useState } from 'react';
 import { BettingRoundStatus, StreamStatus } from '@/enums';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { QuickPickModal } from './stream/QuickPickModal';
-import { BettingProvider } from '@/contexts/BettingContext';
 
 interface StreamCardProps {
   stream: any;
@@ -254,15 +253,12 @@ export const StreamCard = ({
           </div>
         </div>
       </Card>
-      <BettingProvider streamId={stream.id} session={session}>
-        <QuickPickModal
-          open={quickPickOpen}
-          onOpenChange={setQuickPickOpen}
-          streamId={stream.id}
-          streamName={stream.streamName}
-          session={session}
-        />
-      </BettingProvider>
+      <QuickPickModal
+        open={quickPickOpen}
+        onOpenChange={setQuickPickOpen}
+        streamId={stream.id}
+        streamName={stream.streamName}
+      />
     </motion.div>
   );
 };
