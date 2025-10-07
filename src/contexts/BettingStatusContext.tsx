@@ -29,6 +29,8 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       if (!socketInstance) return;
       socketInstance?.off('botMessage');
       socketInstance?.off('purchaseSettled');
+      socketInstance?.off('withdrawSuccess');
+      socketInstance?.off('withdrawFailed');
       socketInstance?.off('connect_error');
 
     // Handle disconnection events
@@ -44,35 +46,85 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       // Handle purchase event
       socketInstance.on('purchaseSettled', (update: any) => {
         queryClient.invalidateQueries({ queryKey: ['session'] });
-          toast({
-            id: 'purchase-completed',
-            title: 'Purchase Complete!',
-            description: 
-              <div className='break-keep'>
-                You received
-                {" "} 
-                <span className='font-bold'>
-                  {update?.coinPackage.goldCoins}
-                </span>
-                {" "} 
-                <span className='text-[#B4FF39]'>
-                  Gold Coins
-                </span> 
-                {" "} 
-                and
-                {" "} 
-                <span className='font-bold'>
-                  {update?.coinPackage.sweepCoins}
-                </span>
-                {" "} 
-                <span className='text-green-500'>
-                  Sweep Coins
-                </span> 
-                !
-              </div>,
-            variant: 'default',
-            duration: 7000,
-          });
+        toast({
+          id: 'purchase-completed',
+          title: 'Purchase Complete!',
+          description: 
+            <div className='break-keep'>
+              You received
+              {" "} 
+              <span className='font-bold'>
+                {update?.coinPackage.goldCoins}
+              </span>
+              {" "} 
+              <span className='text-[#B4FF39]'>
+                Gold Coins
+              </span> 
+              {" "} 
+              and
+              {" "} 
+              <span className='font-bold'>
+                {update?.coinPackage.sweepCoins}
+              </span>
+              {" "} 
+              <span className='text-green-500'>
+                Sweep Coins
+              </span> 
+              !
+            </div>,
+          variant: 'default',
+          duration: 7000,
+        });
+      });
+
+      // Handle withdraw failed event
+      socketInstance.on('withdrawSuccess', (update: any) => {
+        queryClient.invalidateQueries({ queryKey: ['session'] });
+        toast({
+          id: 'withdraw-success',
+          title: 'Withdraw Success',
+          description: 
+            <div className='break-keep'>
+              Withdrawal of 
+              {" "} 
+              <span className='font-bold'>
+                {update?.sweepCoins}
+              </span>
+              {" "} 
+              <span className='text-green-500'>
+                Sweep Coins
+              </span> 
+              {" "}
+              was successful!
+            </div>,
+          variant: 'default',
+          duration: 7000,
+        });
+      });
+
+      // Handle withdraw failed event
+      socketInstance.on('withdrawFailed', (update: any) => {
+        queryClient.invalidateQueries({ queryKey: ['session'] });
+        toast({
+          id: 'withdraw-failed',
+          title: 'Withdraw Failed',
+          description: 
+            <div className='break-keep'>
+              Withdrawal of 
+              {" "} 
+              <span className='font-bold'>
+                {update?.sweepCoins}
+              </span>
+              {" "} 
+              <span className='text-green-500'>
+                Sweep Coins 
+              </span> 
+              {" "}
+              failed. Your sweep coins has been refunded.
+            </div>,
+          variant: 'default',
+          duration: 7000,
+        });
       });
 
       // Handle refetch event for profile state update

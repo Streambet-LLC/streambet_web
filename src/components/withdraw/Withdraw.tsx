@@ -12,7 +12,7 @@ import {
 		AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { Trash2, Zap, Clock, CalendarClock, Loader2, RefreshCcw } from 'lucide-react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
 import { getMessage } from '@/utils/helper';
@@ -36,6 +36,7 @@ export default function Withdraw({
 	const [selectedSpeed, setSelectedSpeed] = useState<null | 'asap' | 'same_day' | 'standard'>(null);
 	const navigate = useNavigate();
 	const { toast } = useToast();
+	const queryClient = useQueryClient();
 
 	const {
 		data: withdrawQuote,
@@ -53,6 +54,8 @@ export default function Withdraw({
 	const { mutate: performWithdraw, isPending: isWithdrawing } = useMutation({
 		mutationFn: (payload: WithdrawPayload) => api.payment.redeemSweepCoins(payload),
 		onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['session'] });
+
 		  toast({ 
 			title: 'Withdraw initiated', 
 			description: `Your request to redeem ${(sweepCoins || 0)?.toLocaleString('en-US')} sweep coins has initiated`,
