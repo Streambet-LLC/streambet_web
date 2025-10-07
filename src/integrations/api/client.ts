@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { decodeIdToken } from '@/utils/helper';
 import { toast } from '@/hooks/use-toast';
 import Bugsnag from '@bugsnag/js';
-import { WithdrawPayload } from '@/types/withdraw';
+import { WithdrawKycPayload, WithdrawKycUsPayload, WithdrawPayload } from '@/types/withdraw';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -829,7 +829,11 @@ export const paymentAPI = {
 
   // Get withdrawer data
   getWithdrawerData: async () => {
-    const response = await apiClient.get('/payments/coinflow/withdrawer');
+    const response = await apiClient.get('/payments/coinflow/withdrawer', { 
+      params: { 
+        redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`
+      } 
+    });
     return response;
   },
 
@@ -852,14 +856,23 @@ export const paymentAPI = {
     const response = await apiClient.delete(`/payments/coinflow/delete-withdrawer-account?token=${bankToken}`);
     return response.data;
   },
-};
 
-// Kyc API
-export const kycAPI = {
-  // Sends Persona KYC verified inquiry ID to register user to Coinflow
-  registerKyc: async (payload: { inquiryId: string }) => {
-    const response = await apiClient.post('/kyc/registerKyc', payload);
-    return response.data;
+   // Register non-US user as withdrawer
+  registerKyc: async (payload: WithdrawKycPayload) => {
+    const response = await apiClient.post(`/payments/coinflow/withdraw/kyc`, {
+      redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`,
+      ...payload
+    });
+    return response;
+  },
+
+  // Register US-based user as withdrawer
+  registerKycUs: async (payload: WithdrawKycUsPayload) => {
+    const response = await apiClient.post(`/payments/coinflow/withdraw/kyc-us`, {
+      redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`,
+      ...payload
+    });
+    return response;
   },
 };
 
