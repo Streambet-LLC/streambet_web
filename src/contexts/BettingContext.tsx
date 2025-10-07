@@ -18,10 +18,10 @@ export interface ActiveRound {
   totalSweepCoins: number;
   isLocked: boolean;
   bettingVariables?: BettingVariable[];
-  walletGoldCoin?: number; // User's wallet balance
-  walletSweepCoin?: number; // User's wallet balance
-  userBetGoldCoins?: number; // User's existing bet amount
-  userBetSweepCoin?: number; // User's existing bet amount
+  walletGoldCoin?: number;
+  walletSweepCoin?: number;
+  userBetGoldCoins?: number;
+  userBetSweepCoin?: number;
 }
 
 export interface UserBet {
@@ -68,7 +68,7 @@ export interface BettingContextType {
   refetchBettingData: () => void;
   refetchRoundData: () => void;
   
-  // Betting Actions (as Aaron specified)
+  // Betting Actions
   placeBet: (bettingVariableId: string, amount: number, currencyType: string) => void;
   editBet: (betId: string, newBettingVariableId: string, newAmount: number, newCurrencyType: string) => void;
   cancelBet: (betId: string, currencyType: string) => void;
@@ -123,8 +123,7 @@ export const BettingProvider = ({ children, streamId, session }: BettingProvider
     sweepCoins: undefined,
   });
   
-  // Use the socket hook - it handles queries and socket events
-  // Pass setters to hook (necessary to avoid circular dependency during initialization)
+  // Use socket hook to handle queries and socket events and pass setters to update state
   const { refetchBettingData, refetchRoundData } = useBettingSocket({
     streamId,
     session,
@@ -137,8 +136,7 @@ export const BettingProvider = ({ children, streamId, session }: BettingProvider
     setResetKey,
   });
   
-  // Betting Actions (as Aaron specified at 26:24 in transcript)
-  // These should be in context, not in components
+  // Betting Actions
   const placeBet = useCallback((bettingVariableId: string, amount: number, currencyType: string) => {
     if (socketConnect && socketConnect.connected) {
       setIsLoading(true);
