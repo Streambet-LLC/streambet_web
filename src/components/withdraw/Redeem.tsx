@@ -208,7 +208,7 @@ export default function Redeem() {
       }
       {withdrawingState === "addingBank" && 
         <div className='overflow-hidden mx-auto'>
-          <iframe className='w-full h-[80dvh]' src={`${apiUrl}/solana/withdraw/${merchantId}?sessionKey=${sessionKey}`} scrolling='no' />
+          <iframe className='w-full h-[80dvh]' src={`${apiUrl}/solana/withdraw/${merchantId}?sessionKey=${sessionKey}&bankAccountRedirect=${import.meta.env.VITE_APP_HOST_URL}/withdraw`} scrolling='no' />
         </div>
       }
       {withdrawingState === "payout" && 
