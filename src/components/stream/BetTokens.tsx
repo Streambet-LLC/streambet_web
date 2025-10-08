@@ -3,6 +3,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { BETTING_LIMITS } from '@/utils/constants';
+
 
 interface BettingVariable {
   id: string;
@@ -126,12 +128,22 @@ export default function BetTokens({
 
    useEffect(() => {
       const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
-      setSliderMax(isSweepCoins ? Number(bettingData?.walletSweepCoin ?? 0) + Number(bettingData?.userBetSweepCoin ?? 0)
-        : Number(bettingData?.walletGoldCoin ?? 0) + Number(bettingData?.userBetGoldCoins ?? 0));
+      const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
+      
+      const currentBetAmount = isEditing ? Number(isSweepCoins 
+        ? bettingData?.userBetSweepCoin 
+        : bettingData?.userBetGoldCoins) || 0 : 0;
+      
+      const walletBalance = Number(isSweepCoins 
+        ? bettingData?.walletSweepCoin 
+        : bettingData?.walletGoldCoin) || 0;
+      
+      // Round down: only whole number bets allowed
+      setSliderMax(Math.floor(Math.min(walletBalance + currentBetAmount, maxBetLimit)));
       setSelectedColor(selectedWinner);
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData, bettingData]);
+  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData, bettingData, session, isEditing]);
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
@@ -213,13 +225,11 @@ export default function BetTokens({
           type="range"
           min={0}
           max={sliderMax}
+          step={1}
           value={betAmount}
           disabled={session == null}
-          onChange={(e) => {
-            if (!lockedOptions) setBetAmount(parseInt(e.target.value));
-          }}
+          onChange={(e) => !lockedOptions && setBetAmount(Math.floor(Number(e.target.value)))}
           onMouseDown={() => {
-            // Use Number(sliderMax) to ensure correct comparison
             if (Number(sliderMax) === 0) {
               toast({
                 variant: 'destructive',
@@ -244,15 +254,14 @@ export default function BetTokens({
         {/* Number input and preset buttons row */}
         <div className="flex flex-col sm:flex-row gap-2 mt-2">
           <input
+            type="number"
             min={0}
             max={sliderMax}
+            step={1}
             value={betAmount}
             disabled={session == null || lockedOptions}
             onChange={e => {
-              let value = Number(e.target.value);
-              if (isNaN(value)) value = 0;
-              if (value < 0) value = 0;
-              if (sliderMax !== undefined && value > sliderMax) value = sliderMax;
+              const value = Math.max(0, Math.min(Math.floor(Number(e.target.value) || 0), Math.floor(sliderMax || 0)));
               setBetAmount(value);
             }}
             className="w-[90px] bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444]"
@@ -261,43 +270,19 @@ export default function BetTokens({
           {/* Preset Amount Buttons - spanning most of the row */}
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(() => {
-              // Use the same logic as sliderMax calculation to include current bet when editing
-              const baseWalletBalance = isSweepCoins 
-                ? Number(session?.walletBalanceSweepCoin || 0)
-                : Number(session?.walletBalanceGoldCoin || 0);
-              
-              const currentBetAmount = isSweepCoins
-                ? Number(bettingData?.userBetSweepCoin ?? 0)
-                : Number(bettingData?.userBetGoldCoins ?? 0);
-              
-              // Total available balance includes current bet (since editing would cancel it)
-              const totalAvailableBalance = baseWalletBalance + currentBetAmount;
-              
-              const presetAmounts = [
-                { label: '100% of tokens', percentage: 1.0 },
-                { label: '50% of tokens', percentage: 0.5 },
-                { label: `${Math.floor(totalAvailableBalance * 0.3)} tokens`, amount: Math.floor(totalAvailableBalance * 0.3) },
-                { label: `${Math.floor(totalAvailableBalance * 0.1)} tokens`, amount: Math.floor(totalAvailableBalance * 0.1) },
-              ];
+              const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
+              const baseWalletBalance = Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0;
+              const currentBetAmount = isEditing ? Number(isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins) || 0 : 0;
+              const totalAvailableBalance = Math.min(baseWalletBalance + currentBetAmount, maxBetLimit);
 
-              const handlePresetAmount = (preset: { label: string; percentage?: number; amount?: number }) => {
-                if (!lockedOptions && session) {
-                  if (preset.percentage) {
-                    setBetAmount(Math.floor(totalAvailableBalance * preset.percentage));
-                  } else if (preset.amount) {
-                    setBetAmount(Math.min(preset.amount, totalAvailableBalance));
-                  }
-                }
-              };
-
-              return presetAmounts.map((preset, index) => (
+              return BETTING_LIMITS.PRESET_PERCENTAGES.map((percentage, index) => (
                 <button
                   key={index}
-                  onClick={() => handlePresetAmount(preset)}
+                  onClick={() => session && !lockedOptions && setBetAmount(Math.min(Math.floor(totalAvailableBalance * percentage), sliderMax || 0))}
                   disabled={session == null || lockedOptions}
                   className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
-                  {preset.label}
+                  {Math.floor(totalAvailableBalance * percentage)} tokens
                 </button>
               ));
             })()}
