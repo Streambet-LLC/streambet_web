@@ -82,7 +82,7 @@ const BuyCoins = ({
           </p>
           <Separator className="my-4 bg-[#232323]" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6 mt-10">
-            {coinPackages?.map((option, idx) => {
+            {coinPackages?.sort((a, b) => a.totalAmount - b.totalAmount).map((option, idx) => {
               // Initialize loading state for this image
               if (imageLoadingStates[idx] === undefined) {
                 setImageLoadingStates(prev => ({ ...prev, [idx]: true }));
