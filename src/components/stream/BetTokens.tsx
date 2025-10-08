@@ -126,12 +126,21 @@ export default function BetTokens({
 
    useEffect(() => {
       const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
-      setSliderMax(isSweepCoins ? Number(bettingData?.walletSweepCoin ?? 0) + Number(bettingData?.userBetSweepCoin ?? 0)
-        : Number(bettingData?.walletGoldCoin ?? 0) + Number(bettingData?.userBetGoldCoins ?? 0));
+      
+      // Only add current bet amount if editing (since editing cancels the current bet)
+      const currentBetAmount = isEditing ? (isSweepCoins 
+        ? Number(bettingData?.userBetSweepCoin ?? 0)
+        : Number(bettingData?.userBetGoldCoins ?? 0)) : 0;
+      
+      const calculatedSliderMax = isSweepCoins 
+        ? Number(bettingData?.walletSweepCoin ?? 0) + currentBetAmount
+        : Number(bettingData?.walletGoldCoin ?? 0) + currentBetAmount;
+      
+      setSliderMax(calculatedSliderMax);
       setSelectedColor(selectedWinner);
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData, bettingData]);
+  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData, bettingData, session, isEditing]);
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
@@ -261,16 +270,17 @@ export default function BetTokens({
           {/* Preset Amount Buttons - spanning most of the row */}
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(() => {
-              // Use the same logic as sliderMax calculation to include current bet when editing
+              // Use the same logic as sliderMax calculation to include current bet ONLY when editing
               const baseWalletBalance = isSweepCoins 
                 ? Number(session?.walletBalanceSweepCoin || 0)
                 : Number(session?.walletBalanceGoldCoin || 0);
               
-              const currentBetAmount = isSweepCoins
+              // Only add current bet amount if editing (since editing would cancel the current bet)
+              const currentBetAmount = isEditing ? (isSweepCoins
                 ? Number(bettingData?.userBetSweepCoin ?? 0)
-                : Number(bettingData?.userBetGoldCoins ?? 0);
+                : Number(bettingData?.userBetGoldCoins ?? 0)) : 0;
               
-              // Total available balance includes current bet (since editing would cancel it)
+              // Total available balance includes current bet ONLY if editing
               const totalAvailableBalance = baseWalletBalance + currentBetAmount;
               
               const presetAmounts = [
