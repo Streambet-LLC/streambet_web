@@ -112,7 +112,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground">Amount</span>
                             <span className="text-xs font-semibold" style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
-                              {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.SWEEP_COINS ? ' Sweep Coin(s)' : ' Gold Coin(s)'}
+                              {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.SWEEP_COINS ? ' Stream Coin(s)' : ' Gold Coin(s)'}
                             </span>
                           </div>
                         </div>
@@ -145,7 +145,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground">Coin Type</span>
-                            <span className="text-xs font-medium">{user?.coinType === CurrencyType.GOLD_COINS ? 'Gold coins' : 'Sweep coins'}</span>
+                            <span className="text-xs font-medium">{user?.coinType === CurrencyType.GOLD_COINS ? 'Gold coins' : 'Stream Coins'}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground">Amount</span>
@@ -197,7 +197,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                         <TableCell className="text-left">{user?.type}</TableCell>
                         <TableCell className="text-right">
                           <span style={{ color: user?.amount > 0 ? '#7AFF14' : user?.amount < 0 ? '#FF5656' : undefined }}>
-                            {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.SWEEP_COINS ? ' Sweep Coin(s)' : ' Gold Coin(s)'}
+                            {user?.amount < 0 ? '-' : ''}{Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')}{user?.currencytype === CurrencyType.SWEEP_COINS ? ' Stream Coin(s)' : ' Gold Coin(s)'}
                           </span>
                         </TableCell>
                       </TableRow>
@@ -234,7 +234,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                         <TableCell className="text-[14px] text-left">{user?.streamName}</TableCell>
                         <TableCell className="text-[14px] text-left">{user?.roundName}</TableCell>
                         <TableCell className="text-[14px] text-left">{user?.optionName}</TableCell>
-                        <TableCell className="text-[14px] text-left">{user?.coinType === CurrencyType.GOLD_COINS ? 'Gold coins' : 'Sweep coins'}</TableCell>
+                        <TableCell className="text-[14px] text-left">{user?.coinType === CurrencyType.GOLD_COINS ? 'Gold coins' : 'Stream Coins'}</TableCell>
                         <TableCell className="text-[14px] text-left">{Math.abs(user?.amountPlaced ?? 0)?.toLocaleString('en-US')}</TableCell>
                         <TableCell className="text-[16px] text-left">
                           <span className="px-2 py-1 bg-[#2C2C2C] rounded-md">

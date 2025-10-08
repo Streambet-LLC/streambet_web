@@ -764,7 +764,7 @@ export const StreamContent = ({
                     <div className="flex flex-col items-center gap-2 mt-2">
                       <p className="text-white font-bold">{round?.winningOption?.[0]?.variableName} as winner</p>
                       <span className="text-white text-sm font-medium">won {round?.winningOption?.[0]?.totalGoldCoinAmt} gold coins</span>
-                      <span className="text-white text-sm font-medium">and {round?.winningOption?.[0]?.totalSweepCoinAmt} sweep coins</span>
+                      <span className="text-white text-sm font-medium">and {round?.winningOption?.[0]?.totalSweepCoinAmt} Stream Coins</span>
                     </div>
                   </div>
                 )} else if (isRoundCancelled) {

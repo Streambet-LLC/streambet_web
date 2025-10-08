@@ -47,16 +47,16 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
                     <Button variant="ghost" className="gap-2 group items-center">
                       <img
                         src="/icons/sweep-coins.png"
-                        alt="sweep-coins"
+                        alt="Stream Coins"
                         className="h-4 w-6"
                       />
                       {/* <BanknoteArrowUp className="h-4 w-4 text-[#BDFF00] group-hover:text-black transition-colors" /> */}
-                      <Link to="/deposit" className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Sweep Coins</Link>
+                      <Link to="/deposit" className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</Link>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent hidden side="bottom" className="max-w-[250px]">
                     <p>
-                      Sweep Coins will be used for cash picking and is not a part of the private
+                      Stream Coins will be used for cash picking and is not a part of the private
                       beta yet.
                     </p>
                   </TooltipContent>

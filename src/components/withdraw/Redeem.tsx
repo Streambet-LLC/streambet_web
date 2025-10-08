@@ -48,7 +48,7 @@ export default function Redeem() {
       return;
     } else if (num > sweepBalance) {
       setUsdValue(null);
-      setError(`You only have ${sweepBalance} sweep coins`);
+      setError(`You only have ${sweepBalance} Stream Coins`);
       return;
     }
     setLoading(true);
@@ -249,12 +249,12 @@ export default function Redeem() {
             </CardHeader> :
             <>
               <CardHeader>
-                <CardTitle>Redeem Sweep Coins</CardTitle>
+                <CardTitle>Redeem Stream Coins</CardTitle>
                 <CardDescription>
-                  Enter the amount of sweep coins to redeem.
+                  Enter the amount of Stream Coins to redeem.
                   <div className='mt-4'>
-                    Your sweep coin balance: {sweepBalance?.toLocaleString('en-US')}<br />
-                    {session?.sweepCoinsPerDollar} sweep coins = $1
+                    Your Stream Coin balance: {sweepBalance?.toLocaleString('en-US')}<br />
+                    {session?.sweepCoinsPerDollar} Stream Coins = $1
                     <div className="flex justify-between">
                       <span>Min: {Number(session?.minWithdrawableSweepCoins || 0)?.toLocaleString('en-US')} coins</span>
                       <span>Max: {Number((session?.maxWithdrawableSweepCoins ?? session?.walletBalanceSweepCoin) || 0)?.toLocaleString('en-US')}  coins</span>
@@ -265,7 +265,7 @@ export default function Redeem() {
               <CardContent>
                 <form className="space-y-4">
                   <div>
-                    <Label htmlFor="sweepCoins">Sweep Coins</Label>
+                    <Label htmlFor="sweepCoins">Stream Coins</Label>
                     <Input
                       id="sweepCoins"
                       type="number"

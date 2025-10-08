@@ -397,7 +397,7 @@ export const AdminBettingRoundsCard = ({
                                                                            <div className=" items-center gap-2">
                                                                            <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
                                                                                 <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
-                                                                                <span>{bettingUpdate ? bettingUpdate?.totalSweepCoinBet : streamInfo?.totalSweepCoinBet} sweep(s)</span>
+                                                                                <span>{bettingUpdate ? bettingUpdate?.totalSweepCoinBet : streamInfo?.totalSweepCoinBet} Stream Coin(s)</span>
                                                                            </div>
                                                                            <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
                                                                                 <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
@@ -571,9 +571,9 @@ export const AdminBettingRoundsCard = ({
                                                                                 </div>
                                                                                 <div className="flex items-center mt-1 text-[12px] px-2" style={FabioBoldStyle}>
                                                                                      <span className="text-white ml-1">won</span>
-                                                                                     <span className="text-white ml-1 truncate max-w-[120px]" title={isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} sweep coins` 
+                                                                                     <span className="text-white ml-1 truncate max-w-[120px]" title={isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins` 
                                                                                      : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`}>
-                                                                                          {isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} sweep coins` 
+                                                                                          {isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins` 
                                                                                           : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`}
                                                                                      </span>
                                                                                 </div>
