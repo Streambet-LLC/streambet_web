@@ -56,7 +56,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
                   </TooltipTrigger>
                   <TooltipContent hidden side="bottom" className="max-w-[250px]">
                     <p>
-                      Stream Coins will be used for cash picking and is not a part of the private
+                      Stream Coins will be used for cash picks and is not a part of the private
                       beta yet.
                     </p>
                   </TooltipContent>

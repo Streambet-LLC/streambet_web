@@ -157,7 +157,7 @@ export default function BetTokens({
     if (lockedOptions) {
       toast({
         variant: 'destructive',
-        description: 'Admin has locked the picking round',
+        description: 'Admin has locked the picks round',
       });
       return;
     }
@@ -239,7 +239,7 @@ export default function BetTokens({
             if (lockedOptions) {
               toast({
                 variant: 'destructive',
-                description: 'Admin has locked the picking round',
+                description: 'Admin has locked the picks round',
               });
             }
           }}
@@ -405,7 +405,7 @@ export default function BetTokens({
         <div>
         
           <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-20 pb-4">
-             Picking is locked for this round
+             Picks are locked for this round
           </p>
         </div>
 

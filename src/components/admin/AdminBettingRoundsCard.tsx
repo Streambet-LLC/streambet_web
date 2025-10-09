@@ -163,7 +163,7 @@ export const AdminBettingRoundsCard = ({
                     <CardHeader
                          className="flex flex-row items-center justify-between h-[50px] rounded-t-xl px-6 py-0 bg-[#000000B2]"
                     >
-                         <span className="font-medium [color:rgba(215,223,239,1)] text-lg">Picking Rounds</span>
+                         <span className="font-medium [color:rgba(215,223,239,1)] text-lg">Rounds</span>
                          {!isStreamEnded && <Dialog open={settingsOpen} onOpenChange={(open) => {
                               setSettingsOpen(open);
                               if (!open) {
@@ -186,7 +186,7 @@ export const AdminBettingRoundsCard = ({
                                         onMouseOver={e => (e.currentTarget.style.color = '#000')}
                                         onMouseOut={e => (e.currentTarget.style.color = '')}
                                    >
-                                        Picking Settings
+                                        Picks Settings
                                    </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl winner-scrollbar p-0 border border-primary no-dialog-close">
@@ -204,7 +204,7 @@ export const AdminBettingRoundsCard = ({
                                         {/* Header row: label, Save button */}
                                         <div className="flex items-center mb-4">
                                              <div className="flex-1 flex items-center justify-between">
-                                                  <span className="text-white font-medium" style={{ fontWeight: 500, fontSize: 18 }}>Picking Settings</span>
+                                                  <span className="text-white font-medium" style={{ fontWeight: 500, fontSize: 18 }}>Picks Settings</span>
                                                   <Button
                                                        type="button"
                                                        className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[120px] h-[40px]"
@@ -381,7 +381,7 @@ export const AdminBettingRoundsCard = ({
                                                                            className="text-center mb-2 text-white text-base font-bold"
                                                                            style={{ fontFamily: 'FabioXM, Inter, sans-serif', fontWeight: 700 }}
                                                                       >
-                                                                           Users are picking
+                                                                           Users are making their picks
                                                                       </div>
                                                                      <div className="flex items-center gap-3 mb-2">
                                                                            <div className=" items-center gap-1">
@@ -613,7 +613,7 @@ export const AdminBettingRoundsCard = ({
                                              );
                                         }) : (
                                              <div className="w-full flex items-center justify-center h-32 text-white/60 text-lg">
-                                                  No picking rounds available.
+                                                  No picks rounds available.
                                              </div>
                                         )}
                                    </CarouselContent>

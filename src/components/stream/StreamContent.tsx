@@ -249,7 +249,7 @@ export const StreamContent = ({
     socketInstance.on('betOpened', (update) => {
       console.log('betOpened', update);
       toast({
-        description:"New picking options available!",
+        description:"New picks options available!",
         variant: 'default',
       });
       resetBetData();
@@ -258,7 +258,7 @@ export const StreamContent = ({
     socketInstance.on('betCancelledByAdmin', (update) => {
       queryClient.prefetchQuery({ queryKey: ['session'] });
       toast({
-        description:"Current picking round cancelled by admin.",
+        description:"Current picks round cancelled by admin.",
         variant: 'destructive',
         duration: 4000,
       });
@@ -747,7 +747,7 @@ export const StreamContent = ({
                   className="w-[100%] h-[100%] object-contain"
                 />
               </div>
-              <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No picking options available</p>
+              <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4" style={FabioBoldStyle}>No picks options available</p>
             </div> : <div className="flex gap-4 p-6 rounded-[16px] shadow-lg overflow-x-auto overflow-y-hidden flex-nowrap" style={{ backgroundColor:'rgba(24, 24, 24, 1)' }} ref={horizontalScrollRef}>
 
             {roundDetails?.map(

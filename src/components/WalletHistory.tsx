@@ -120,7 +120,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                     </Card>
                   ))
               : paginatedUsers?.length === 0
-                ? (<div className="text-center py-6 text-muted-foreground text-base">No picking history found</div>)
+                ? (<div className="text-center py-6 text-muted-foreground text-base">No picks history found</div>)
                 : paginatedUsers?.map(user => (
                     <Card key={user.id} className="bg-[#181A20] border border-[#23272F] rounded-lg shadow-sm">
                       <CardContent className="p-3 space-y-2">
@@ -224,7 +224,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                   {paginatedUsers?.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
-                        No picking history found matching
+                        No picks history found matching
                       </TableCell>
                     </TableRow>
                   ) : (
