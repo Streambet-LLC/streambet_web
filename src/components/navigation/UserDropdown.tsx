@@ -91,7 +91,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">
-          <Link to="/withdraw">Redeem Sweep Coins</Link>
+          <Link to="/withdraw">Redeem Stream Coins</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">

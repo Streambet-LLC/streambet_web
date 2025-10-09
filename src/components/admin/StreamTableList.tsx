@@ -19,7 +19,7 @@ import {
            <TableRow>
              <TableHead>Stream Title</TableHead>
              <TableHead>Stream Status</TableHead>
-             <TableHead>Picking Status</TableHead>
+             <TableHead>Picks Status</TableHead>
              <TableHead>Users</TableHead>
              <TableHead>Actions</TableHead>
            </TableRow>
