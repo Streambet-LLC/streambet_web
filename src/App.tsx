@@ -25,6 +25,7 @@ import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { BettingStatusProvider } from './contexts/BettingStatusContext';
+import { BettingProvider } from './contexts/BettingContext';
 import { HistoryType } from './enums';
 import BugSnagErrorBoundary from './bugsnag';
 import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
@@ -52,11 +53,12 @@ const App = () => {
           <CurrencyProvider>
             <AuthProvider>
               <BettingStatusProvider>
-                <BrowserRouter>
-                  <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
-                    <CoinflowPurchaseProtection 
+                <BettingProvider>
+                  <BrowserRouter>
+                    <TooltipProvider>
+                      <Toaster />
+                      <Sonner />
+                      <CoinflowPurchaseProtection 
                       coinflowEnv={getCoinFlowEnv()} 
                       merchantId={getChargebackProtectionMerchantId()} 
                     />
@@ -86,6 +88,7 @@ const App = () => {
                     </Routes>
                   </TooltipProvider>
                 </BrowserRouter>
+              </BettingProvider>
               </BettingStatusProvider>
             </AuthProvider>
           </CurrencyProvider>
