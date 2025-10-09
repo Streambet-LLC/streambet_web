@@ -90,7 +90,7 @@ export default function LockTokens({
 
   return (
     <div className="relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]" style={{ border: '0.62px solid #181818' }}>
-      <div className="relative z-10 h-full flex flex-col justify-between">
+      <div className={`relative z-10 h-full flex flex-col justify-between ${lockedBet ? 'pb-20' : ''}`}>
         <div>
           <div className="bg-[#242424] flex flex-col sm:flex-row sm:justify-between items-center rounded-t-2xl p-3 sm:p-5 px-[20px] sm:px-[55px] pr-[20px] sm:pr-[55px] gap-3 sm:gap-4 text-center">
             <div className="flex-shrink-0 w-full sm:w-auto">
