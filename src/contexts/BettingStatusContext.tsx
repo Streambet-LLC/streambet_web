@@ -156,7 +156,22 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
       if(session){
         if(!socketConnect){
           const newSocket = api.socket.connect();
-          api.socket.joinCommonStream(newSocket);
+          
+          // Join common stream only after socket is connected
+          newSocket.on('connect', () => {
+            api.socket.joinCommonStream(newSocket);
+          });
+          
+          // Re-join on reconnection (socket automatically leaves all rooms on disconnect)
+          newSocket.on('reconnect', () => {
+            api.socket.joinCommonStream(newSocket);
+          });
+          
+          // If already connected, join immediately
+          if (newSocket.connected) {
+            api.socket.joinCommonStream(newSocket);
+          }
+          
           setSocketConect(newSocket);
           // Setup event listeners
           setupSocketEventListeners(newSocket);
