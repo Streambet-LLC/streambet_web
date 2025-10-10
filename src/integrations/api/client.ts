@@ -180,6 +180,7 @@ export const authAPI = {
     profileImageUrl: string;
     lastKnownIp: string;
     redirect?: string;
+    promoCode?: string;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
     return response.data;
