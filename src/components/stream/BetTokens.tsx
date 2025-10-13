@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
@@ -83,6 +84,7 @@ export default function BetTokens({
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
@@ -172,10 +174,28 @@ export default function BetTokens({
     }
   };
 
+  // Check if wallet balance is 0
+  const walletBalance = Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0;
+  const hasZeroBalance = session != null && walletBalance === 0 && !isEditing;
+
 
   return (
     <div>
-      {(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet)  ? (
+      {/* Zero Balance Message */}
+      {hasZeroBalance ? (
+        <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
+          <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
+          <p className="text-gray-400 text-sm text-center">
+            You need {isSweepCoins ? 'Sweep Coins' : 'Gold Coins'} to place a pick
+          </p>
+          <button
+            className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
+            onClick={() => navigate('/deposit')}
+          >
+            Buy More Coins
+          </button>
+        </div>
+      ) : (bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet) ? (
     <div
       className="rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-base sm:text-base text-xs"
       style={{
