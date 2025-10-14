@@ -10,7 +10,13 @@ import { StreamInfoForm } from './StreamInfoForm';
 import { Separator } from '@/components/ui/separator';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateTime, formatDateTimeForISO, getMessage, getConnectionErrorMessage, getImageLink } from '@/utils/helper';
+import {
+  formatDateTime,
+  formatDateTimeForISO,
+  getMessage,
+  getConnectionErrorMessage,
+  getImageLink,
+} from '@/utils/helper';
 import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
@@ -39,7 +45,6 @@ type BettingTotals = {
   totalCoinBet?: number;
   totalCoinAmount?: number;
 };
-
 
 // Helper to parse YYYY-MM-DD as local date
 function parseLocalDate(dateStr) {
@@ -71,7 +76,11 @@ function isTimeValid(time, date) {
 }
 
 // Validation function for stream settings form
-function validateForm({ title, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime }, selectedThumbnailFile, isLiveStream) {
+function validateForm(
+  { title, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime },
+  selectedThumbnailFile,
+  isLiveStream
+) {
   const newErrors = {
     title: '',
     embeddedUrl: '',
@@ -86,7 +95,10 @@ function validateForm({ title, embeddedUrl, thumbnailPreviewUrl, startDateObj, s
     newErrors.title = 'Title must be 3-70 characters';
     isValid = false;
   }
-  if (!embeddedUrl?.trim() || (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))) {
+  if (
+    !embeddedUrl?.trim() ||
+    (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))
+  ) {
     newErrors.embeddedUrl = 'Embed URL is required and should be valid';
     isValid = false;
   }
@@ -134,98 +146,99 @@ export const AdminStreamContent = ({
   const { socketConnect, handleSocketReconnection } = useBettingStatusContext();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-     // Function to setup socket event listeners
-      const setupSocketEventListeners = (socketInstance: any) => {
-        if (!socketInstance) return;
-        socketInstance.off('scheduledStreamUpdatedToLive');
-        socketInstance.off('bettingUpdate');
-        socketInstance.off('newMessage');
-        socketInstance.off('streamEnded');
-        socketInstance.off('disconnect');
-        socketInstance.off('connect_error');
-        socketInstance.off('error');
+  // Function to setup socket event listeners
+  const setupSocketEventListeners = (socketInstance: any) => {
+    if (!socketInstance) return;
+    socketInstance.off('scheduledStreamUpdatedToLive');
+    socketInstance.off('bettingUpdate');
+    socketInstance.off('newMessage');
+    socketInstance.off('streamEnded');
+    socketInstance.off('disconnect');
+    socketInstance.off('connect_error');
+    socketInstance.off('error');
 
-        socketInstance.on('scheduledStreamUpdatedToLive', () => {
-          console.log('scheduledStreamUpdatedToLive admin');
-            fetchStreamData();
-        });
+    socketInstance.on('scheduledStreamUpdatedToLive', () => {
+      console.log('scheduledStreamUpdatedToLive admin');
+      fetchStreamData();
+    });
 
-        socketInstance.on('bettingUpdate', (update: any) => {
-        console.log('bettingUpdate admin', update);
-          setBettingUpdate(update);
-        });
-    
-        socketInstance.on('newMessage', (update) => {
-          console.log('admin newMessage', update);
-          setMessageList(update)
-        });
-    
-        socketInstance.on('streamEnded', (update) => {
-          console.log('streamEnded', update);
-          navigate('/');
-        });
+    socketInstance.on('bettingUpdate', (update: any) => {
+      console.log('bettingUpdate admin', update);
+      setBettingUpdate(update);
+    });
 
-        socketInstance.on('error', (error) => {
-          toast({
-            description: error?.message || 'An error occurred. Refresh page and try again.',
-            variant: 'destructive',
-            duration: 7000,
-          });
-          if (error?.isForcedLogout) {
-            // Dispatch custom event for logout handling
-            window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
-          }
-        });
-    
-        // Handle disconnection events
-        socketInstance.on('disconnect', (reason: string) => {
-          console.log('Socket disconnected:', reason);
-          if (reason !== 'io client disconnect') {
-             api.socket.joinStream(streamId, socketConnect);
-            // Only attempt reconnection if it wasn't an intentional disconnect
-            handleSocketReconnection();
-          }
-        });
-    
-        socketInstance.on('connect_error', (error: any) => {
-          console.log('Socket connection error:', error);
-           api.socket.joinStream(streamId, socketConnect);
-          handleSocketReconnection();
-        });
-      };
+    socketInstance.on('newMessage', update => {
+      console.log('admin newMessage', update);
+      setMessageList(update);
+    });
 
-useEffect(() => {
-    console.log('socketConnect value',  socketConnect);
-    if(socketConnect){
-    api.socket.joinStream(streamId, socketConnect);
-    
-    // Setup event listeners
-    setupSocketEventListeners(socketConnect);
+    socketInstance.on('streamEnded', update => {
+      console.log('streamEnded', update);
+      navigate('/');
+    });
+
+    socketInstance.on('error', error => {
+      toast({
+        description: error?.message || 'An error occurred. Refresh page and try again.',
+        variant: 'destructive',
+        duration: 7000,
+      });
+      if (error?.isForcedLogout) {
+        // Dispatch custom event for logout handling
+        window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+      }
+    });
+
+    // Handle disconnection events
+    socketInstance.on('disconnect', (reason: string) => {
+      console.log('Socket disconnected:', reason);
+      if (reason !== 'io client disconnect') {
+        api.socket.joinStream(streamId, socketConnect);
+        // Only attempt reconnection if it wasn't an intentional disconnect
+        handleSocketReconnection();
+      }
+    });
+
+    socketInstance.on('connect_error', (error: any) => {
+      console.log('Socket connection error:', error);
+      api.socket.joinStream(streamId, socketConnect);
+      handleSocketReconnection();
+    });
+  };
+
+  useEffect(() => {
+    console.log('socketConnect value', socketConnect);
+    if (socketConnect) {
+      api.socket.joinStream(streamId, socketConnect);
+
+      // Setup event listeners
+      setupSocketEventListeners(socketConnect);
     }
-  
-   
-  }, [streamId,socketConnect]);
+  }, [streamId, socketConnect]);
 
-  useEffect (()=> () => {
+  useEffect(
+    () => () => {
       // Cleanup ping-pong intervals
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
-      
+
       api.socket.leaveStream(streamId, socketConnect);
 
       if (socketConnect) {
-            socketConnect?.off('newMessage');
-            socketConnect?.off('streamEnded');
-            socketConnect?.off('scheduledStreamUpdatedToLive');
-            socketConnect?.off('error');
+        socketConnect?.off('newMessage');
+        socketConnect?.off('streamEnded');
+        socketConnect?.off('scheduledStreamUpdatedToLive');
+        socketConnect?.off('error');
       }
-    }, []);
+    },
+    []
+  );
 
-    const handleOpenRoundData = (streamId: string) => {
-      handleOpenRound(streamId);
-      setBettingUpdate(null);
-    };
+  const handleOpenRoundData = (streamId: string) => {
+    handleOpenRound(streamId);
+    setBettingUpdate(null);
+  };
 
   // Stream info form state for editing
   const [editForm, setEditForm] = useState({
@@ -236,6 +249,7 @@ useEffect(() => {
     startDateObj: null,
     startTime: '',
     streamId: '',
+    creatorId: null,
   });
   const [editErrors, setEditErrors] = useState({
     title: '',
@@ -253,27 +267,29 @@ useEffect(() => {
       const streamData = await api.admin.getStream(streamId);
       setStreamInfo(streamData?.data || undefined);
     } catch (e) {
-      Bugsnag.notify(e); 
+      Bugsnag.notify(e);
       setStreamInfo(undefined);
     }
-  };
+  }
 
   useEffect(() => {
     fetchStreamData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamId]);
 
-  useEffect(()=>{
+  useEffect(() => {
     if (!isUpdatingAction) {
-      fetchStreamData()
+      fetchStreamData();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isUpdatingAction])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isUpdatingAction]);
 
   // Populate form when streamInfo changes
   useEffect(() => {
     if (streamInfo) {
-      const dateObj = streamInfo.scheduledStartTime ? new Date(streamInfo.scheduledStartTime) : null;
+      const dateObj = streamInfo.scheduledStartTime
+        ? new Date(streamInfo.scheduledStartTime)
+        : null;
       setEditForm({
         title: streamInfo.streamName || '',
         description: streamInfo.description || '',
@@ -284,6 +300,7 @@ useEffect(() => {
           ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
           : '',
         streamId: streamInfo.id || '',
+        creatorId: streamInfo.creatorId,
       });
     }
   }, [streamInfo]);
@@ -296,38 +313,40 @@ useEffect(() => {
   }, [betData]);
 
   // Handlers for StreamInfoForm
-  const handleEditFormChange = (fields) => {
-    setEditForm((prev) => ({ ...prev, ...fields }));
+  const handleEditFormChange = fields => {
+    setEditForm(prev => ({ ...prev, ...fields }));
     // Optionally clear errors for changed fields
-    setEditErrors((prev) => {
+    setEditErrors(prev => {
       const updated = { ...prev };
-      Object.keys(fields).forEach((key) => { if (updated[key]) updated[key] = ''; });
+      Object.keys(fields).forEach(key => {
+        if (updated[key]) updated[key] = '';
+      });
       return updated;
     });
   };
 
   // Function to update thumbnail in form
-  const handleEditFileChange = (file) => {
+  const handleEditFileChange = file => {
     setSelectedThumbnailFile(file);
     if (file) {
       const url = URL.createObjectURL(file);
-      setEditForm((prev) => ({ ...prev, thumbnailPreviewUrl: url }));
+      setEditForm(prev => ({ ...prev, thumbnailPreviewUrl: url }));
     }
   };
 
   // Function to delete thumbnail
   const handleEditDeleteThumbnail = () => {
-    setEditForm((prev) => ({ ...prev, thumbnailPreviewUrl: '' }));
+    setEditForm(prev => ({ ...prev, thumbnailPreviewUrl: '' }));
   };
 
   // Function to set stream start date
-  const handleEditStartDateChange = (date) => {
-    setEditForm((prev) => ({ ...prev, startDateObj: date }));
+  const handleEditStartDateChange = date => {
+    setEditForm(prev => ({ ...prev, startDateObj: date }));
   };
 
   // Function to set time of stream start date
-  const handleEditStartTimeChange = (e) => {
-    setEditForm((prev) => ({ ...prev, startTime: e.target.value }));
+  const handleEditStartTimeChange = e => {
+    setEditForm(prev => ({ ...prev, startTime: e.target.value }));
   };
 
   const createStreamMutation = useMutation({
@@ -338,17 +357,30 @@ useEffect(() => {
       setSettingsOpen(false);
     },
     onError: (error: any) => {
-      toast({ title: 'Error', description: getMessage(error) || 'Failed to create stream', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: getMessage(error) || 'Failed to create stream',
+        variant: 'destructive',
+      });
     },
   });
 
   // Add useEffect for validation
   useEffect(() => {
-    if (settingsOpen) { // Only validate when settings dialog is open
+    if (settingsOpen) {
+      // Only validate when settings dialog is open
       const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile, isLiveStream);
       setEditErrors(newErrors);
     }
-  }, [editForm.title, editForm.embeddedUrl, editForm.thumbnailPreviewUrl, editForm.startDateObj, editForm.startTime, selectedThumbnailFile, settingsOpen]);
+  }, [
+    editForm.title,
+    editForm.embeddedUrl,
+    editForm.thumbnailPreviewUrl,
+    editForm.startDateObj,
+    editForm.startTime,
+    selectedThumbnailFile,
+    settingsOpen,
+  ]);
 
   const handleEditSubmit = async () => {
     // Run validation first
@@ -365,7 +397,7 @@ useEffect(() => {
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
       } catch (error) {
-        Bugsnag.notify(error); 
+        Bugsnag.notify(error);
         toast({
           variant: 'destructive',
           title: 'Error uploading stream thumbnail',
@@ -374,7 +406,7 @@ useEffect(() => {
         setIsUploading(false);
         return;
       }
-    };
+    }
 
     // Implement API call to update stream info here
     const payload = {
@@ -383,6 +415,7 @@ useEffect(() => {
       embeddedUrl: editForm.embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(editForm.startDateObj, editForm.startTime),
+      creatorId: edi,
     };
 
     createStreamMutation.mutate(payload);
@@ -392,43 +425,50 @@ useEffect(() => {
   const isLiveStream = streamInfo?.status === StreamStatus.LIVE;
   const isStreamEnded = streamInfo?.status === StreamStatus.ENDED;
 
-   // Mutation to send a message
-  const sendMessageSocket = (data: { message: string;imageURL:string;}) => {
+  // Mutation to send a message
+  const sendMessageSocket = (data: { message: string; imageURL: string }) => {
     console.log(socketConnect, 'socket in sendMessageSocket');
     if (socketConnect && socketConnect.connected) {
       socketConnect.emit('sendChatMessage', {
         streamId: streamId,
         message: data?.message,
-        imageURL:data?.imageURL,
+        imageURL: data?.imageURL,
         timestamp: new Date(),
       });
-      
     } else {
       toast({
         description: getConnectionErrorMessage({ isOnline: isNetworkConnected }),
         variant: 'destructive',
       });
     }
-  }
+  };
 
   return (
     <div className="flex flex-col gap-0 h-full px-6 md:px-12">
       {/* Back button at the very top */}
       <div className="flex items-center mb-1">
-        <button type="button" className="p-1" style={{ lineHeight: 0 }}
+        <button
+          type="button"
+          className="p-1"
+          style={{ lineHeight: 0 }}
           onClick={() => handleBack()}
         >
           <ArrowLeft size={20} color="#fff" />
         </button>
       </div>
       {/* Responsive layout: stack on mobile, row on desktop */}
-      <div className="flex flex-col md:flex-row gap-4 w-full flex-1 items-stretch min-h-0" style={{ minHeight: 0, height: 'calc(100vh - 80px)' }}>
+      <div
+        className="flex flex-col md:flex-row gap-4 w-full flex-1 items-stretch min-h-0"
+        style={{ minHeight: 0, height: 'calc(100vh - 80px)' }}
+      >
         {/* Left: Video and betting */}
         <div className="flex-1 flex flex-col min-w-0 h-full order-1 md:order-none">
           {/* Stream name */}
-          <span style={{ color: '#fff', fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{streamInfo?.streamName}</span>
+          <span style={{ color: '#fff', fontWeight: 600, fontSize: 14, marginBottom: 2 }}>
+            {streamInfo?.streamName}
+          </span>
           {/* View live link label below stream name */}
-          <a href={streamInfo?.embeddedUrl} target='_blank'>
+          <a href={streamInfo?.embeddedUrl} target="_blank">
             <div className="flex items-center mb-5 mt-1">
               <ExternalLink size={16} className="mr-1" style={{ opacity: 0.5, color: '#fff' }} />
               <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 400, fontSize: 12 }}>
@@ -437,25 +477,31 @@ useEffect(() => {
             </div>
           </a>
           <div className="relative">
-            {isStreamScheduled || isStreamEnded ? <div className="relative aspect-video rounded-lg overflow-hidden">
-              {/* Background thumbnail with low opacity */}
-              {isStreamScheduled && streamInfo?.thumbnailUrl && (
-                <div 
-                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                  style={{
-                    backgroundImage: `url(${getImageLink(encodeURIComponent(streamInfo.thumbnailUrl))})`,
-                    opacity: 0.3
-                  }}
-                />
-              )}
-              {/* Fallback black background if no thumbnail */}
-              {!streamInfo?.thumbnailUrl && (
-                <div className="absolute inset-0 bg-black" />
-              )}
-              <div className={`relative z-10 px-2 w-full h-full flex items-center border border-primary justify-center text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}>
-                {isStreamScheduled ? `Stream scheduled on ${formatDateTime(streamInfo?.scheduledStartTime)}.` : 'Stream has ended.'}
+            {isStreamScheduled || isStreamEnded ? (
+              <div className="relative aspect-video rounded-lg overflow-hidden">
+                {/* Background thumbnail with low opacity */}
+                {isStreamScheduled && streamInfo?.thumbnailUrl && (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                    style={{
+                      backgroundImage: `url(${getImageLink(encodeURIComponent(streamInfo.thumbnailUrl))})`,
+                      opacity: 0.3,
+                    }}
+                  />
+                )}
+                {/* Fallback black background if no thumbnail */}
+                {!streamInfo?.thumbnailUrl && <div className="absolute inset-0 bg-black" />}
+                <div
+                  className={`relative z-10 px-2 w-full h-full flex items-center border border-primary justify-center text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}
+                >
+                  {isStreamScheduled
+                    ? `Stream scheduled on ${formatDateTime(streamInfo?.scheduledStartTime)}.`
+                    : 'Stream has ended.'}
+                </div>
               </div>
-            </div> : <StreamPlayer streamId={streamId} />}
+            ) : (
+              <StreamPlayer streamId={streamId} />
+            )}
           </div>
           <AdminBettingRoundsCard
             isStreamScheduled={isStreamScheduled}
@@ -476,7 +522,10 @@ useEffect(() => {
         {/* Right: Chat and controls */}
         <div className="w-full max-w-md flex flex-col flex-1 min-h-0 order-2 md:order-none">
           {/* Controls above comment section, left-aligned */}
-          <div className={`flex items-center gap-3 mb-6 ${isStreamEnded ? 'invisible' : 'visible'}`} style={{ justifyContent: 'flex-start' }}>
+          <div
+            className={`flex items-center gap-3 mb-6 ${isStreamEnded ? 'invisible' : 'visible'}`}
+            style={{ justifyContent: 'flex-start' }}
+          >
             <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
               <DialogTrigger asChild>
                 <Button
@@ -502,7 +551,12 @@ useEffect(() => {
                   {/* Header row: label, Update button */}
                   <div className="flex items-center mb-4">
                     <div className="flex-1 flex items-center justify-between">
-                      <span className="text-white font-medium" style={{ fontWeight: 500, fontSize: 18 }}>Stream Settings</span>
+                      <span
+                        className="text-white font-medium"
+                        style={{ fontWeight: 500, fontSize: 18 }}
+                      >
+                        Stream Settings
+                      </span>
                       <Button
                         type="button"
                         className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[120px] h-[40px]"
@@ -536,14 +590,16 @@ useEffect(() => {
                 </div>
               </DialogContent>
             </Dialog>
-            {!isStreamScheduled&&<Button
-              className="h-10 px-6 rounded-lg bg-destructive text-white font-bold text-[14px]"
-              style={{ fontWeight: 700, borderRadius: '10px', background: '#FF1418', height: 40 }}
-              disabled={isStreamEnding}
-              onClick={() => setEndStreamDialogOpen(true)}
-            >
-              {isStreamEnding ? 'Ending...' : 'End stream'}
-            </Button>}
+            {!isStreamScheduled && (
+              <Button
+                className="h-10 px-6 rounded-lg bg-destructive text-white font-bold text-[14px]"
+                style={{ fontWeight: 700, borderRadius: '10px', background: '#FF1418', height: 40 }}
+                disabled={isStreamEnding}
+                onClick={() => setEndStreamDialogOpen(true)}
+              >
+                {isStreamEnding ? 'Ending...' : 'End stream'}
+              </Button>
+            )}
           </div>
           {/* End Stream Confirmation Dialog */}
           <Dialog open={endStreamDialogOpen} onOpenChange={setEndStreamDialogOpen}>
@@ -574,11 +630,12 @@ useEffect(() => {
           </Dialog>
           <div className="flex-1 min-h-0 flex flex-col h-full">
             <div className="h-full w-full md:max-w-[320px]">
-               <Chat
-                  sendMessageSocket={sendMessageSocket}
-                  newSocketMessage={messageList}
-                  session={session}
-                  streamId={streamId} />
+              <Chat
+                sendMessageSocket={sendMessageSocket}
+                newSocketMessage={messageList}
+                session={session}
+                streamId={streamId}
+              />
             </div>
           </div>
         </div>

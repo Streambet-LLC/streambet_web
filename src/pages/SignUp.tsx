@@ -37,6 +37,7 @@ export default function SignUp() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [promoCode, setPromoCode] = useState('');
   const [tosAccepted, setTosAccepted] = useState(false);
   const [isOlder, setIsOlder] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -85,6 +86,7 @@ export default function SignUp() {
     isOlder: z.boolean().refine(val => val === true, {
       message: 'You must be atleast 18 years old',
     }),
+    promoCode: z.string().optional(),
   });
 
   const form = useForm({
@@ -93,6 +95,7 @@ export default function SignUp() {
       username: '',
       email: '',
       password: '',
+      promoCode: '',
       dob: undefined,
       tosAccepted: false,
       isOlder: false,
@@ -116,6 +119,7 @@ export default function SignUp() {
       profileImageUrl: string;
       lastKnownIp: string;
       redirect?: string;
+      promoCode?: string;
     }) => {
       // Verify location again before proceeding with signup
       const locationResult = await verifyUserLocation();
@@ -195,16 +199,17 @@ export default function SignUp() {
     if (username) validateField('username', username);
     if (email) validateField('email', email);
     if (password) validateField('password', password);
+    if (promoCode) validateField('promoCode', promoCode);
     if (tosAccepted) validateField('tosAccepted', tosAccepted);
     if (isOlder) validateField('isOlder', isOlder);
     if (dob) validateField('dob', dob);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasSubmitted, username, email, password, tosAccepted, isOlder, dob]);
+  }, [hasSubmitted, username, email, password, promoCode, tosAccepted, isOlder, dob]);
 
   const validateForm = () => {
     setHasSubmitted(true);
     try {
-      signupSchema.parse({ username, email, password, dob, tosAccepted, isOlder });
+      signupSchema.parse({ username, email, password, promoCode, dob, tosAccepted, isOlder });
       setErrors({});
       return true;
     } catch (error) {
@@ -301,6 +306,7 @@ export default function SignUp() {
       profileImageUrl: profileImageUrl || undefined,
       lastKnownIp: locationResult?.ip_address,
       redirect: redirectParam || undefined,
+      promoCode: promoCode || undefined,
     });
   };
 
@@ -572,6 +578,19 @@ export default function SignUp() {
                       Password must be at least 8 characters and include uppercase, lowercase,
                       number, and special character.
                     </p>
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="promoCode">Promo Code (Optional)</Label>
+                    <Input
+                      id="promoCode"
+                      type="text"
+                      value={promoCode}
+                      placeholder="Enter promo code (optional)"
+                      onChange={e => setPromoCode(e.target.value)}
+                      className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.promoCode ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
+                      disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
+                    />
+                    {errors.promoCode && <p className="text-destructive text-sm">{errors.promoCode}</p>}
                   </motion.div>
                   <motion.div variants={itemVariants} className="space-y-2">
                     <Label htmlFor="dob">Date of Birth</Label>
