@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
@@ -175,7 +175,10 @@ export default function BetTokens({
   };
 
   // Check if wallet balance is 0
-  const walletBalance = Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0;
+  const walletBalance = useMemo(() => 
+    Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0,
+    [isSweepCoins, session?.walletBalanceSweepCoin, session?.walletBalanceGoldCoin]
+  );
   const hasZeroBalance = session != null && walletBalance === 0 && !isEditing;
 
 
