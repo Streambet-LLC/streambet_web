@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { StreamActions } from './StreamActions';
+import { Button } from '@/components/ui/button';
 import { Trash, Calendar, LockKeyhole, LockKeyholeOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -8,6 +9,8 @@ import { useAnimations } from '@/hooks/useAnimations';
 import { getImageLink, formatDate, formatTime } from '@/utils/helper';
 import { useState } from 'react';
 import { BettingRoundStatus, StreamStatus } from '@/enums';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { QuickPickModal } from './stream/QuickPickModal';
 
 interface StreamCardProps {
   stream: any;
@@ -27,11 +30,13 @@ export const StreamCard = ({
 }: StreamCardProps) => {
   const shouldShowAdminControls = isAdmin && showAdminControls;
   const { cardVariants } = useAnimations();
+  const { session } = useAuthContext();
   const isLive = stream?.streamStatus === StreamStatus.LIVE;
   const isBettingOpen =
     stream?.bettingRoundStatus === BettingRoundStatus.OPEN;
   const isBettingLocked =
     stream?.bettingRoundStatus === BettingRoundStatus.LOCKED;
+  const [quickPickOpen, setQuickPickOpen] = useState(false);
 
   // Handle both full URLs and storage paths
   const [imageLoading, setImageLoading] = useState(true);
@@ -226,12 +231,34 @@ export const StreamCard = ({
             <p className="font-semibold text-[#D7DFEF] text-[15px] mb-5 items-center h-10 ">
                 {stream.streamName}
             </p>
-            <div className='!mb-3 !mt-5'>
+            <div className='!mb-3 !mt-5 space-y-2'>
               <StreamActions streamId={stream.id} onDelete={undefined} />
-              </div>
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setQuickPickOpen(true);
+                }}
+                disabled={!isBettingOpen}
+                className={cn(
+                  'w-full rounded-full border font-medium text-[12px]',
+                  isBettingOpen
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-black border-emerald-500'
+                    : 'bg-emerald-500/50 text-white/80 border-emerald-500/50 cursor-not-allowed'
+                )}
+              >
+                {isBettingOpen ? 'Quick Pick' : 'Picks Open Soon'}
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
+      <QuickPickModal
+        open={quickPickOpen}
+        onOpenChange={setQuickPickOpen}
+        streamId={stream.id}
+        streamName={stream.streamName}
+      />
     </motion.div>
   );
 };
