@@ -152,9 +152,8 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
       });
       // Don't set isEditing to false here - let the socket event handler do it after receiving the response
       // This ensures consistent UI state management with editBet
-      refetchBettingData();
     }
-  }, [socketConnect, refetchBettingData]);
+  }, [socketConnect]);
   
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(

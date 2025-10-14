@@ -10,6 +10,7 @@ import { useBettingContext } from '@/contexts/BettingContext';
 import { useQuickPickModal } from '@/hooks/useQuickPickModal';
 import { transformForBetTokens, transformForLockTokens } from '@/utils/bettingTransformers';
 import { SignInPrompt, NoBettingData } from './QuickPickModalComponents';
+import { useToast } from '@/hooks/use-toast';
 
 interface QuickPickModalProps {
   open: boolean;
@@ -25,6 +26,7 @@ export const QuickPickModal = ({
   streamName,
 }: QuickPickModalProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { session } = useAuthContext();
   const { socketConnect } = useBettingStatusContext();
   const { setActiveStreamId } = useBettingContext();
@@ -65,7 +67,17 @@ export const QuickPickModal = ({
   };
 
   const editBetSocket = (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
-    handleEditBet(userBet.betId!, data.newBettingVariableId, data.newAmount, data.newCurrencyType);
+    // Check that betId exists before attempting to edit
+    if (!userBet.betId) {
+      console.error('Cannot edit pick: betId is missing');
+      toast({
+        description: 'Unable to edit pick. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    handleEditBet(userBet.betId, data.newBettingVariableId, data.newAmount, data.newCurrencyType);
   };
 
   const cancelBetSocket = (data: { betId: string; currencyType: string }) => {

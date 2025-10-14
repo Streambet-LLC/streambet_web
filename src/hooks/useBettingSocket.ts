@@ -225,6 +225,7 @@ export function useBettingSocket({
         }
         
         refetchBettingData();
+        refetchRoundData();
       }
     };
 

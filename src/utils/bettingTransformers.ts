@@ -30,6 +30,6 @@ export const transformForLockTokens = (userBet: UserBet) => ({
   potentialGoldCoinAmt: userBet.currencyType === CurrencyType.GOLD_COINS ? userBet.potentialWinnings : 0,
   potentialSweepCoinAmt: userBet.currencyType === CurrencyType.SWEEP_COINS ? userBet.potentialWinnings : 0,
   optionName: userBet.selectedOption,
-  betId: userBet.betId || undefined,
+  betId: userBet.betId == null ? undefined : userBet.betId,
   status: userBet.isLocked ? BettingRoundStatus.LOCKED : BettingRoundStatus.OPEN,
 });
