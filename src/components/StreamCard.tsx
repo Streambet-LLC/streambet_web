@@ -155,7 +155,7 @@ export const StreamCard = ({
                     damping: 30,
                   }}
                 >
-                  <div className="flex items-center gap-2 bg-[#ab7e02] border-2 border-[#ab3a02] text-white px-2 py-1 rounded-md shadow-lg">
+                  <div className="flex items-center gap-2 bg-[#5B21B6] text-white px-2 py-1 rounded-md shadow-lg">
                     <Calendar className="h-3 w-3" />
                     <span className="font-medium text-xs">
                       Stream Upcoming: <br/> {formatDate(stream.scheduledStartTime)} at {formatTime(stream.scheduledStartTime)}
