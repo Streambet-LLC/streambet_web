@@ -129,7 +129,6 @@ export default function BetTokens({
   const isBetButtonEnabled = selectedColor !== "";
 
    useEffect(() => {
-      const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
       const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
       
       const currentBetAmount = isEditing ? Number(isSweepCoins 
@@ -174,10 +173,10 @@ export default function BetTokens({
     }
   };
 
-  // Check if wallet balance is 0
+  // Check if wallet balance is 0 - using bettingData as source of truth (consistent with slider logic)
   const walletBalance = useMemo(() => 
-    Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0,
-    [isSweepCoins, session?.walletBalanceSweepCoin, session?.walletBalanceGoldCoin]
+    Number(isSweepCoins ? bettingData?.walletSweepCoin : bettingData?.walletGoldCoin) || 0,
+    [isSweepCoins, bettingData?.walletSweepCoin, bettingData?.walletGoldCoin]
   );
   const hasZeroBalance = session != null && walletBalance === 0 && !isEditing;
 
@@ -193,7 +192,7 @@ export default function BetTokens({
           </p>
           <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
-            onClick={() => navigate('/deposit')}
+            onClick={() => navigate(`/deposit?redirect=/stream/${streamId}`)}
           >
             Buy More Coins
           </button>
