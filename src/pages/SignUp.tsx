@@ -672,7 +672,7 @@ export default function SignUp() {
                       <Link to="/privacy" target="_blank" className="text-primary hover:underline">
                         Privacy Policy
                       </Link>
-                      {', and Sweestakes Rules.'}
+                      {', and Sweepstakes Rules.'}
                     </Label>
                     {errors.tosAccepted && (
                       <p className="text-destructive text-sm">{errors.tosAccepted}</p>
