@@ -95,7 +95,7 @@ export default function LockTokens({
           <div className="bg-[#242424] flex flex-col sm:flex-row sm:justify-between items-center rounded-t-2xl p-3 sm:p-5 px-[20px] sm:px-[55px] pr-[20px] sm:pr-[55px] gap-3 sm:gap-4 text-center">
             <div className="flex-shrink-0 w-full sm:w-auto">
               <p className="text-xs text-[#606060] font-semibold text-center pb-1">Your pick</p>
-              <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF]">{Number(localBetAmount)?.toLocaleString('en-US')} {updatedCurrency === CurrencyType.GOLD_COINS ? 'Gold Coins' : 'Sweep Coins'}</p>
+              <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF]">{Number(localBetAmount)?.toLocaleString('en-US')} {updatedCurrency === CurrencyType.GOLD_COINS ? 'Gold Coins' : 'Stream Coins'}</p>
             </div>
             <div className="flex-1 sm:min-w-0 w-full border-t sm:border-t-0 sm:border-1 border-[#2C2C2C] pt-3 sm:pt-0 sm:pl-4">
               <p className="text-xs text-[#606060] font-semibold text-center pb-1">Selected winner</p>
