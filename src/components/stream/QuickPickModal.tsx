@@ -76,10 +76,10 @@ export const QuickPickModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100%-2rem)] max-w-3xl max-h-[95vh] overflow-y-auto bg-[#0f0f0f] border-2 border-[#BDFF00] p-4 sm:p-6 gap-2">
         <DialogTitle className="sr-only">
-          {streamName ? `${streamName} - Quick Pick` : 'Quick Pick Betting'}
+          {streamName ? `${streamName} - Quick Pick` : 'Quick Pick'}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          Place your bet on this stream
+          Place your pick on this stream
         </DialogDescription>
         
         {streamName && (
