@@ -178,7 +178,16 @@ export default function BetTokens({
     Number(isSweepCoins ? bettingData?.walletSweepCoin : bettingData?.walletGoldCoin) || 0,
     [isSweepCoins, bettingData?.walletSweepCoin, bettingData?.walletGoldCoin]
   );
-  const hasZeroBalance = session != null && walletBalance === 0 && !isEditing;
+  
+  // Check if betting is currently available (round is open and not locked)
+  const isBettingAvailable = bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet;
+  
+  // Only show zero balance message when betting would be available if user had funds
+  const hasZeroBalance = session != null && 
+                         bettingData != null && 
+                         isBettingAvailable &&
+                         walletBalance === 0 && 
+                         !isEditing;
 
 
   return (
@@ -192,12 +201,12 @@ export default function BetTokens({
           </p>
           <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
-            onClick={() => navigate(`/deposit?redirect=/stream/${streamId}`)}
+            onClick={() => navigate('/deposit')}
           >
             Buy More Coins
           </button>
         </div>
-      ) : (bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet) ? (
+      ) : isBettingAvailable ? (
     <div
       className="rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-base sm:text-base text-xs"
       style={{
