@@ -221,7 +221,7 @@ export const StreamTable: React.FC<Props> = ({
 
                   {/* Betting Status */}
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Picking Status:</span>
+                    <span className="text-sm text-muted-foreground">Picks Status:</span>
                     <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
                   </div>
 
