@@ -114,7 +114,7 @@ export const AdminManagement = ({
         ? api.admin.updateBettingData(payload)
         : api.admin.createBettingData(payload),
     onSuccess: () => {
-      toast({ title: 'Success', description: 'Stream and Picking saved successfully!' });
+      toast({ title: 'Success', description: 'Stream and Picks saved successfully!' });
       handleResetAll();
     },
     onError: (error: any) => {

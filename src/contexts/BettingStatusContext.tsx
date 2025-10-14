@@ -68,7 +68,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
               </span>
               {" "} 
               <span className='text-green-500'>
-                Sweep Coins
+                Stream Coins
               </span> 
               !
             </div>,
@@ -92,7 +92,7 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
               </span>
               {" "} 
               <span className='text-green-500'>
-                Sweep Coins
+                Stream Coins
               </span> 
               {" "}
               was successful!
@@ -117,10 +117,10 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
               </span>
               {" "} 
               <span className='text-green-500'>
-                Sweep Coins 
+                Stream Coins 
               </span> 
               {" "}
-              failed. Your sweep coins has been refunded.
+              failed. Your Stream Coins has been refunded.
             </div>,
           variant: 'default',
           duration: 7000,

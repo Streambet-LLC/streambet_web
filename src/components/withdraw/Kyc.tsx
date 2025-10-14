@@ -146,7 +146,7 @@ export default function Kyc() {
                 <CardHeader>
                   <CardTitle>Redeem Verification</CardTitle>
                   <CardDescription>
-                      Before you can redeem sweep coins, we need to verify your identification.
+                      Before you can redeem Stream Coins, we need to verify your identification.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
