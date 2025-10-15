@@ -353,14 +353,31 @@ useEffect(() => {
             </Alert>
           ) : isStreams ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {streamsData && streamsData.data?.map(stream => (
-                <StreamCard
-                  key={stream.id}
-                  stream={stream}
-                  isAdmin={session?.role === 'admin'}
-                  showAdminControls={false}
-                />
-              ))}
+              {streamsData && (() => {
+                // Separate MrBeast streams from others
+                const mrBeastStreams: any[] = [];
+                const otherStreams: any[] = [];
+                
+                streamsData.data?.forEach((stream: any) => {
+                  if (stream.streamName?.toLowerCase().includes('mrbeast')) {
+                    mrBeastStreams.push(stream);
+                  } else {
+                    otherStreams.push(stream);
+                  }
+                });
+                
+                // Combine arrays with MrBeast streams at the end
+                const reorderedStreams = [...otherStreams, ...mrBeastStreams];
+                
+                return reorderedStreams.map(stream => (
+                  <StreamCard
+                    key={stream.id}
+                    stream={stream}
+                    isAdmin={session?.role === 'admin'}
+                    showAdminControls={false}
+                  />
+                ));
+              })()}
             </div>
           ) : activeTab === 'upcoming' ? (
             <div>
