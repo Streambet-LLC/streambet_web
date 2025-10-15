@@ -203,7 +203,7 @@ export default function BetTokens({
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
             onClick={() => navigate('/deposit')}
           >
-            Buy More Coins
+            Buy Coins
           </button>
         </div>
       ) : isBettingAvailable ? (
