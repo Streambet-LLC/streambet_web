@@ -41,8 +41,8 @@ export default function Login() {
     mutationFn: async (credentials: { identifier: string; password: string; remember_me?: boolean, redirect?: string }) => {
       return await api.auth.login(credentials);
     },
-    onSuccess: (response) => {
-      refetchSession();
+    onSuccess: async (response) => {
+      await refetchSession();
       if (redirectParam) {
         navigate(redirectParam);
       } 

@@ -32,6 +32,7 @@ import Redeem from './components/withdraw/Redeem';
 import { CoinflowPurchaseProtection } from "@coinflowlabs/react";
 import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coinflow';
 import Kyc from './components/withdraw/Kyc';
+import RouteGroup from './components/RouteGroup';
 
 
 // Create a client
@@ -62,26 +63,30 @@ const App = () => {
                     />
                     <LogoutEventHandlers />
                     <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/stream/:id" element={<Stream />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/signup" element={<SignUp />} />
-                      <Route path="/admin" element={<Admin />} />
-                      <Route path="/deposit" element={<Deposit />} />
-                      <Route path="/withdraw" element={<Redeem />} />
-                      <Route path="/withdraw/verification" element={<Kyc />} />
-                      <Route path="/transactions" element={<Transactions key='transactions' historyType={HistoryType.Transaction} />} />
-                      <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
-                      <Route path="/settings" element={<Settings />} />
+                      <Route element={<RouteGroup auth />}>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/signup" element={<SignUp />} />
+                      </Route>
+                      <Route element={<RouteGroup guard />}>
+                        <Route path="/stream/:id" element={<Stream />} />
+                        <Route path="/admin" element={<Admin />} />
+                        <Route path="/deposit" element={<Deposit />} />
+                        <Route path="/withdraw" element={<Redeem />} />
+                        <Route path="/withdraw/verification" element={<Kyc />} />
+                        <Route path="/transactions" element={<Transactions key='transactions' historyType={HistoryType.Transaction} />} />
+                        <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
+                        <Route path="/settings" element={<Settings />} />
+                      </Route>
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/compliance" element={<Compliance />} />
                       <Route path="/faq" element={<FAQ />} />
+                      <Route path="/auth/verify-email" element={<VerifyEmail />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/auth/google-callback" element={<GoogleCallback />} />
                       <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
-                      <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                      <Route path="/" element={<Index />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </TooltipProvider>
