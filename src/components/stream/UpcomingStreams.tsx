@@ -26,7 +26,7 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
   const totalPotAmount = Number(isSweepCoins 
     ? stream.totalBetsSweepCoinAmount || 0 
     : stream.totalBetsGoldCoinAmount || 0);
-  const currencyLabel = isSweepCoins ? 'sweep coins' : 'gold coins';
+  const currencyLabel = isSweepCoins ? 'Stream Coins' : 'gold coins';
   
   // Format number with comma separators for en-US locale
   const formattedAmount = totalPotAmount.toLocaleString('en-US');
@@ -115,7 +115,7 @@ const MobileStreamItem = ({ stream }: { stream: any }) => {
   const totalPotAmount = Number(isSweepCoins 
     ? stream.totalBetsSweepCoinAmount || 0 
     : stream.totalBetsGoldCoinAmount || 0);
-  const currencyLabel = isSweepCoins ? 'sweep(s)' : 'gold(s)';
+  const currencyLabel = isSweepCoins ? 'Stream Coin(s)' : 'gold(s)';
   
   // Format number with comma separators for en-US locale
   const formattedAmount = totalPotAmount.toLocaleString('en-US');

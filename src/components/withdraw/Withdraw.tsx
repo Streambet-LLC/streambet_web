@@ -58,7 +58,7 @@ export default function Withdraw({
 
 		  toast({ 
 			title: 'Withdraw initiated', 
-			description: `Your request to redeem ${(sweepCoins || 0)?.toLocaleString('en-US')} sweep coins has initiated`,
+			description: `Your request to redeem ${(sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins has initiated`,
 			duration: 8000,
 		});
 		  navigate('/');
@@ -262,7 +262,7 @@ export default function Withdraw({
 				
 				<div className="text-center mb-8">
 					<h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-[#BDFF00] via-[#9DFF33] to-[#7DFF66] bg-clip-text text-transparent">
-						Redeem Sweep Coins
+						Redeem Stream Coins
 					</h1>
 					<p className="text-gray-400 text-lg">Complete your redeem request</p>
 				</div>

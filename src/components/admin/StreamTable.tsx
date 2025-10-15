@@ -157,7 +157,7 @@ export const StreamTable: React.FC<Props> = ({
     },
     onSuccess: () => {
       toast({
-        description: "Stream deleted successfully",
+        description: 'Stream deleted successfully',
         variant: 'default',
       });
       // Refetch streams after successful deletion
@@ -169,8 +169,8 @@ export const StreamTable: React.FC<Props> = ({
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error?.response?.data?.message || "Failed to delete stream",
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to delete stream',
         variant: 'destructive',
       });
       setDeletingStreamId(null);
@@ -221,16 +221,14 @@ export const StreamTable: React.FC<Props> = ({
 
                   {/* Betting Status */}
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Picking Status:</span>
+                    <span className="text-sm text-muted-foreground">Picks Status:</span>
                     <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
                   </div>
 
                   {/* Users */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Users:</span>
-                    <span className="text-sm font-medium">
-                      {stream?.userBetCount || '0'}
-                    </span>
+                    <span className="text-sm font-medium">{stream?.userBetCount || '0'}</span>
                   </div>
 
                   {/* Actions */}
@@ -251,7 +249,7 @@ export const StreamTable: React.FC<Props> = ({
                         <TooltipTrigger asChild>
                           <Pen
                             size={16}
-                            className='cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]'
+                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
                             onClick={() => {
                               if (stream?.streamStatus === StreamStatus.ENDED) {
                                 toast({
@@ -263,7 +261,8 @@ export const StreamTable: React.FC<Props> = ({
                                 return;
                               }
                               setEditStreamId(stream?.id);
-                            }} />
+                            }}
+                          />
                         </TooltipTrigger>
                         <TooltipContent>Manage stream</TooltipContent>
                       </Tooltip>
@@ -277,20 +276,20 @@ export const StreamTable: React.FC<Props> = ({
                         </TooltipTrigger>
                         <TooltipContent>Stream analytics</TooltipContent>
                       </Tooltip>
-                                             {/* <Lock color="#FFFFFFBF" size={16} className="cursor-pointer" />
+                      {/* <Lock color="#FFFFFFBF" size={16} className="cursor-pointer" />
                        <Play color="#FFFFFFBF" size={16} className="cursor-pointer" /> */}
-                       {stream?.streamStatus === StreamStatus.SCHEDULED && (
-                         <Tooltip>
-                           <TooltipTrigger asChild>
-                             <Trash2 
-                               size={16} 
-                               className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
-                               onClick={() => handleOpenDeleteDialog(stream)}
-                             />
-                           </TooltipTrigger>
-                           <TooltipContent>Delete stream</TooltipContent>
-                         </Tooltip>
-                       )}
+                      {stream?.streamStatus === StreamStatus.SCHEDULED && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Trash2
+                              size={16}
+                              className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                              onClick={() => handleOpenDeleteDialog(stream)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>Delete stream</TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -301,95 +300,100 @@ export const StreamTable: React.FC<Props> = ({
       ) : (
         // Desktop Table View
         <div className="rounded-md border">
-          <Table className='bg-[#0D0D0D]'>
+          <Table className="bg-[#0D0D0D]">
             <TableHeader>
               <TableRow>
                 <TableHead>Stream Title</TableHead>
                 <TableHead>Stream Status</TableHead>
+                <TableHead>Stream Creator</TableHead>
                 <TableHead>Picking Status</TableHead>
                 <TableHead>Users</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="[&_td]:font-light">
-              {streams?.data?.length ? streams?.data?.map(stream => (
-                <TableRow key={stream?.id}>
-                  <TableCell className="font-medium">{stream?.streamName}</TableCell>
-                  <TableCell>
-                    <StreamStatusBadge status={stream?.streamStatus} />
-                  </TableCell>
-                  <TableCell>
-                    <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
-                  </TableCell>
-                  <TableCell>{stream?.userBetCount}</TableCell>
-                  <TableCell>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Eye
-                            size={18}
-                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
-                            onClick={() => setViewStreamId(stream?.id)}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>View stream</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Pen
-                            size={18}
-                            className='cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]'
-                            onClick={() => {
-                              if (stream?.streamStatus === StreamStatus.ENDED) {
-                                toast({
-                                  title: 'Stream Ended',
-                                  description: 'You cannot edit stream as it is already ended',
-                                  variant: 'destructive',
-                                  duration: 5000,
-                                });
-                                return;
-                              }
-                              setEditStreamId(stream?.id);
-                            }} />
-                        </TooltipTrigger>
-                        <TooltipContent>Manage stream</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <ChartNoAxesColumnIncreasing
-                            size={18}
-                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
-                            onClick={() => setStreamAnalyticsId(stream?.id)}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>Stream analytics</TooltipContent>
-                      </Tooltip>
-                                             {/* <Lock color="#FFFFFFBF" size={18} />
+              {streams?.data?.length ? (
+                streams?.data?.map(stream => (
+                  <TableRow key={stream?.id}>
+                    <TableCell className="font-medium">{stream?.streamName}</TableCell>
+                    <TableCell>
+                      <StreamStatusBadge status={stream?.streamStatus} />
+                    </TableCell>
+                    <TableCell>{stream?.creator}</TableCell>
+                    <TableCell>
+                      <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
+                    </TableCell>
+                    <TableCell>{stream?.userBetCount}</TableCell>
+                    <TableCell>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Eye
+                              size={18}
+                              className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                              onClick={() => setViewStreamId(stream?.id)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>View stream</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Pen
+                              size={18}
+                              className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                              onClick={() => {
+                                if (stream?.streamStatus === StreamStatus.ENDED) {
+                                  toast({
+                                    title: 'Stream Ended',
+                                    description: 'You cannot edit stream as it is already ended',
+                                    variant: 'destructive',
+                                    duration: 5000,
+                                  });
+                                  return;
+                                }
+                                setEditStreamId(stream?.id);
+                              }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>Manage stream</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <ChartNoAxesColumnIncreasing
+                              size={18}
+                              className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                              onClick={() => setStreamAnalyticsId(stream?.id)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>Stream analytics</TooltipContent>
+                        </Tooltip>
+                        {/* <Lock color="#FFFFFFBF" size={18} />
                        <Play color="#FFFFFFBF" size={18} /> */}
-                       {stream?.streamStatus === StreamStatus.SCHEDULED && (
-                         <Tooltip>
-                           <TooltipTrigger asChild>
-                             <Trash2 
-                               size={18}
-                               className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
-                               onClick={() => handleOpenDeleteDialog(stream)}
-                             />
-                           </TooltipTrigger>
-                           <TooltipContent>Delete stream</TooltipContent>
-                         </Tooltip>
-                       )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )) : <div className='m-3'>
-                No stream(s) available to display
-              </div>}
+                        {stream?.streamStatus === StreamStatus.SCHEDULED && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Trash2
+                                size={18}
+                                className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                                onClick={() => handleOpenDeleteDialog(stream)}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>Delete stream</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <div className="m-3">No stream(s) available to display</div>
+              )}
             </TableBody>
           </Table>
         </div>
       )}
 
-      {streams?.data?.length > 0 &&
+      {streams?.data?.length > 0 && (
         <div className="flex w-full justify-between bg-black rounded-md mt-4">
           <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
             Page {currentPage} of {totalPages}
@@ -416,18 +420,19 @@ export const StreamTable: React.FC<Props> = ({
               </PaginationItem>
             </PaginationContent>
           </Pagination>
-        </div>}
+        </div>
+      )}
 
-       {/* Delete Stream Dialog */}
-       {streamToDelete && (
-         <DeleteStreamDialog
-           streamName={streamToDelete?.streamName}
-           onConfirm={() => handleDeleteStream(streamToDelete?.id)}
-           isDeleting={isDeletingStream && deletingStreamId === streamToDelete?.id}
-           isOpen={deleteDialogOpen}
-           onOpenChange={setDeleteDialogOpen}
-         />
-       )}
-     </div>
-   );
- };
+      {/* Delete Stream Dialog */}
+      {streamToDelete && (
+        <DeleteStreamDialog
+          streamName={streamToDelete?.streamName}
+          onConfirm={() => handleDeleteStream(streamToDelete?.id)}
+          isDeleting={isDeletingStream && deletingStreamId === streamToDelete?.id}
+          isOpen={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+        />
+      )}
+    </div>
+  );
+};

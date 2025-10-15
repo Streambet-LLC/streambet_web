@@ -57,6 +57,7 @@ export const AdminManagement = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [embeddedUrl, setEmbeddedUrl] = useState('');
+  const [creatorId, setCreatorId] = useState('');
   const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
   const [isLiveStream, setIsLiveStream] = useState(false);
@@ -114,7 +115,7 @@ export const AdminManagement = ({
         ? api.admin.updateBettingData(payload)
         : api.admin.createBettingData(payload),
     onSuccess: () => {
-      toast({ title: 'Success', description: 'Stream and Picking saved successfully!' });
+      toast({ title: 'Success', description: 'Stream and Picks saved successfully!' });
       handleResetAll();
     },
     onError: (error: any) => {
@@ -205,6 +206,7 @@ export const AdminManagement = ({
     setTitle('');
     setDescription('');
     setEmbeddedUrl('');
+    setCreatorId(null);
 
     // Reset dates and times
     setStartDateObj(null);
@@ -466,6 +468,7 @@ export const AdminManagement = ({
       setTitle(streamData?.streamName);
       setDescription(streamData?.description);
       setEmbeddedUrl(streamData?.embeddedUrl);
+      setCreatorId(streamData.creatorId);
       setBettingRounds(streamData?.rounds || []);
       setIsLiveStream(streamData?.status === StreamStatus.LIVE);
 
@@ -646,6 +649,7 @@ export const AdminManagement = ({
       embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
+      creatorId,
     };
 
     createStreamMutation.mutate(payload);
@@ -1010,6 +1014,7 @@ export const AdminManagement = ({
                       startTime,
                       streamId: editStreamId || undefined,
                       bettingRoundStatus: streamData?.bettingRoundStatus || undefined,
+                      creatorId,
                     }}
                     errors={errors}
                     isUploading={isUploading}
@@ -1027,6 +1032,9 @@ export const AdminManagement = ({
                           }
                         }
                         if ('startTime' in fields) setStartTime(fields.startTime ?? '');
+                        if ('creatorId' in fields) {
+                          setCreatorId(fields.creatorId);
+                        }
                         return;
                       }
                       const newErrors = { ...errors };
@@ -1040,6 +1048,10 @@ export const AdminManagement = ({
                       }
                       if ('description' in fields) {
                         setDescription(fields.description ?? '');
+                        // No validation for description
+                      }
+                      if ('creatorId' in fields) {
+                        setCreatorId(fields.creatorId ?? '');
                         // No validation for description
                       }
                       if ('embeddedUrl' in fields) {
