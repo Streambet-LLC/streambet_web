@@ -173,16 +173,16 @@ export default function BetTokens({
     }
   };
 
-  // Check if wallet balance is 0 - using bettingData as source of truth (consistent with slider logic)
+  // Check if wallet balance is 0. bettingData is source of truth with slider logic
   const walletBalance = useMemo(() => 
     Number(isSweepCoins ? bettingData?.walletSweepCoin : bettingData?.walletGoldCoin) || 0,
     [isSweepCoins, bettingData?.walletSweepCoin, bettingData?.walletGoldCoin]
   );
   
-  // Check if betting is currently available (round is open and not locked)
+  // Check if betting is available. Round is open, not locked
   const isBettingAvailable = bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet;
   
-  // Only show zero balance message when betting would be available if user had funds
+  // Only render zero balance message when betting is available if user had funds and isn't editing
   const hasZeroBalance = session != null && 
                          bettingData != null && 
                          isBettingAvailable &&
