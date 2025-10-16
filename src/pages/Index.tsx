@@ -60,6 +60,9 @@ const Index = () => {
    const setupSocketEventListeners = (socketInstance: any) => {
         if (!socketInstance) return;
         socketInstance?.off('streamListUpdated');
+        socketInstance?.off('bettingLocked');
+        socketInstance?.off('winnerDeclared');
+        socketInstance?.off('betOpened');
         socketInstance?.off('connect_error');
   
       // Handle disconnection events
@@ -109,6 +112,20 @@ const Index = () => {
           }
         });
     
+        // Fallback listeners for direct betting events
+        // These ensure stream cards update even if streamListUpdated isn't received
+        socketInstance.on('bettingLocked', (data: any) => {
+          refetchStreams();
+        });
+
+        socketInstance.on('winnerDeclared', (data: any) => {
+          refetchStreams();
+        });
+
+        socketInstance.on('betOpened', (data: any) => {
+          refetchStreams();
+        });
+    
         socketInstance.on('connect_error', (error: any) => {
           console.log('debug123=Socket connection error:', error);
         });
@@ -122,6 +139,9 @@ const Index = () => {
         return () => {
           if (socketConnect) {
             socketConnect.off('streamListUpdated');
+            socketConnect.off('bettingLocked');
+            socketConnect.off('winnerDeclared');
+            socketConnect.off('betOpened');
             socketConnect.off('connect_error');
           }
         };
@@ -353,7 +373,7 @@ useEffect(() => {
             </Alert>
           ) : isStreams ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {streamsData && streamsData.data?.map(stream => (
+              {streamsData && streamsData.data?.sort((a, b) => (a.streamName?.toLowerCase().includes('mrbeast') ? 1 : 0) - (b.streamName?.toLowerCase().includes('mrbeast') ? 1 : 0)).map(stream => (
                 <StreamCard
                   key={stream.id}
                   stream={stream}
