@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
@@ -83,6 +84,7 @@ export default function BetTokens({
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState("");
@@ -127,7 +129,6 @@ export default function BetTokens({
   const isBetButtonEnabled = selectedColor !== "";
 
    useEffect(() => {
-      const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
       const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
       
       const currentBetAmount = isEditing ? Number(isSweepCoins 
@@ -172,10 +173,40 @@ export default function BetTokens({
     }
   };
 
+  // Check if wallet balance is 0. bettingData is source of truth with slider logic
+  const walletBalance = useMemo(() => 
+    Number(isSweepCoins ? bettingData?.walletSweepCoin : bettingData?.walletGoldCoin) || 0,
+    [isSweepCoins, bettingData?.walletSweepCoin, bettingData?.walletGoldCoin]
+  );
+  
+  // Check if betting is available. Round is open, not locked
+  const isBettingAvailable = bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet;
+  
+  // Only render zero balance message when betting is available if user had funds and isn't editing
+  const hasZeroBalance = session != null && 
+                         bettingData != null && 
+                         isBettingAvailable &&
+                         walletBalance === 0 && 
+                         !isEditing;
+
 
   return (
     <div>
-      {(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet)  ? (
+      {/* Zero Balance Message */}
+      {hasZeroBalance ? (
+        <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
+          <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
+          <p className="text-gray-400 text-sm text-center">
+            You need {isSweepCoins ? 'Sweep Coins' : 'Gold Coins'} to place a pick
+          </p>
+          <button
+            className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
+            onClick={() => navigate('/deposit')}
+          >
+            Buy Coins
+          </button>
+        </div>
+      ) : isBettingAvailable ? (
     <div
       className="rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-base sm:text-base text-xs"
       style={{
