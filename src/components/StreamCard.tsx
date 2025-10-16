@@ -241,7 +241,7 @@ export const StreamCard = ({
                 }}
                 disabled={!isBettingOpen}
                 className={cn(
-                  'w-full rounded-full border font-medium text-[12px]',
+                  'w-full rounded-full border font-medium text-[12px] flex items-center justify-center gap-1.5',
                   isBettingOpen
                     ? 'bg-emerald-500 hover:bg-emerald-600 text-black border-emerald-500'
                     : 'bg-emerald-500/50 text-white/80 border-emerald-500/50 cursor-not-allowed'
@@ -250,7 +250,12 @@ export const StreamCard = ({
                 {isBettingOpen 
                   ? 'Quick Pick' 
                   : isBettingLocked 
-                    ? 'Picks Locked' 
+                    ? (
+                      <>
+                        <LockKeyhole className="h-3 w-3" />
+                        <span>Picks Locked</span>
+                      </>
+                    )
                     : 'Picks Open Soon'}
               </Button>
             </div>
