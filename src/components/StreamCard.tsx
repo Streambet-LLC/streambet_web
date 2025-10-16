@@ -247,7 +247,11 @@ export const StreamCard = ({
                     : 'bg-emerald-500/50 text-white/80 border-emerald-500/50 cursor-not-allowed'
                 )}
               >
-                {isBettingOpen ? 'Quick Pick' : 'Picks Open Soon'}
+                {isBettingOpen 
+                  ? 'Quick Pick' 
+                  : isBettingLocked 
+                    ? 'Picks Locked' 
+                    : 'Picks Open Soon'}
               </Button>
             </div>
           </div>
