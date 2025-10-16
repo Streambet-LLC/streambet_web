@@ -121,7 +121,7 @@ const BuyCoins = ({
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-xs font-bold text-[#0D0D0D] uppercase bg-[#BDFF00] text-center w-14 rounded-sm">Promo</span>
-                      <span className="text-xs text-[#BDFF00]">Get {Number(option.sweepCoinCount || 0)?.toLocaleString('en-US')} free sweep coins</span>
+                      <span className="text-xs text-[#BDFF00]">Get {Number(option.sweepCoinCount || 0)?.toLocaleString('en-US')} free Stream Coins</span>
                     </div>
                   </div>
 

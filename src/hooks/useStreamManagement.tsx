@@ -10,17 +10,14 @@ export const useStreamManagement = () => {
   const rangeRef = useRef('[0,7]');
   const { isLoading, isFetching, session } = useAuthContext();
 
-
   const { data: streams, refetch: refetchStreams } = useQuery({
     queryKey: ['streams'],
     queryFn: async () => {
-
       const response = await adminAPI.getStreams({
         range: searchStreamQuery ? '[0,24]' : rangeRef.current,
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: searchStreamQuery }),
       });
-
 
       return response;
     },
@@ -29,8 +26,23 @@ export const useStreamManagement = () => {
     refetchInterval: 5000,
   });
 
-  const deleteStream = async (id: string) => {
-  };
+  const { data: endedStreams, refetch: refetchEndedStreams } = useQuery({
+    queryKey: ['ended-streams'],
+    queryFn: async () => {
+      const response = await adminAPI.getStreams({
+        range: searchStreamQuery ? '[0,24]' : rangeRef.current,
+        sort: '["createdAt","DESC"]',
+        filter: JSON.stringify({ streamStatus: 'ended' }),
+      });
+
+      return response;
+    },
+    enabled: false,
+    // Increase refetch frequency to see new streams faster
+    refetchInterval: 5000,
+  });
+
+  const deleteStream = async (id: string) => {};
 
   const handleRefetchStreams = (range?: string) => {
     rangeRef.current = range || '';
@@ -41,7 +53,7 @@ export const useStreamManagement = () => {
     if (rangeRef.current !== '') {
       refetchStreams();
     }
-  }, [searchStreamQuery, refetchStreams])
+  }, [searchStreamQuery, refetchStreams]);
 
   return {
     profile: session,
@@ -52,5 +64,7 @@ export const useStreamManagement = () => {
     setSearchStreamQuery,
     deleteStream,
     handleRefetchStreams,
+    endedStreams,
+    refetchEndedStreams,
   };
 };

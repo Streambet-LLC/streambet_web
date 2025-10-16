@@ -11,8 +11,8 @@ import {
 		AlertDialogAction,
 		AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { Trash2, Zap, Clock, CalendarClock, Loader2 } from 'lucide-react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { Trash2, Zap, Clock, CalendarClock, Loader2, RefreshCcw } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
 import { getMessage } from '@/utils/helper';
@@ -24,6 +24,10 @@ export default function Withdraw({
 	amountToWithdraw,
 	bankAccounts,
 	setWithdrawer,
+	onAddBank,
+	onRefresh,
+	refetching,
+	onBack,
 }: WithdrawComponentProps) {
 	const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -32,26 +36,29 @@ export default function Withdraw({
 	const [selectedSpeed, setSelectedSpeed] = useState<null | 'asap' | 'same_day' | 'standard'>(null);
 	const navigate = useNavigate();
 	const { toast } = useToast();
+	const queryClient = useQueryClient();
 
 	const {
-        data: withdrawQuote,
-        isFetching: isWithdrawQuoteFetching,
-        refetch: getWithdrawQuote,
-    } = useQuery({
-        queryKey: ['withdrawQuote'],
-        queryFn: async () => {
-            const response = await api.payment.getWithdrawQuote(amountToWithdraw);
-            return response;
-        },
-        enabled: false,
-    });
+		data: withdrawQuote,
+		isFetching: isWithdrawQuoteFetching,
+		refetch: getWithdrawQuote,
+	} = useQuery({
+		queryKey: ['withdrawQuote'],
+		queryFn: async () => {
+			const response = await api.payment.getWithdrawQuote(amountToWithdraw);
+			return response;
+		},
+		enabled: false,
+	});
 
 	const { mutate: performWithdraw, isPending: isWithdrawing } = useMutation({
 		mutationFn: (payload: WithdrawPayload) => api.payment.redeemSweepCoins(payload),
 		onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['session'] });
+
 		  toast({ 
 			title: 'Withdraw initiated', 
-			description: `Your request to redeem ${(sweepCoins || 0)?.toLocaleString('en-US')} sweep coins has initiated`,
+			description: `Your request to redeem ${(sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins has initiated`,
 			duration: 8000,
 		});
 		  navigate('/');
@@ -98,6 +105,22 @@ export default function Withdraw({
 	// Render bank account list
 	const renderBankList = () => (
 		<div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-6 max-w-2xl mx-auto w-full">
+			<div className='flex w-full justify-between items-center'>
+				<Button 
+					variant="ghost" 
+					size="sm" 
+					className="mb-6 text-gray-400 hover:text-[#BDFF00] hover:bg-gray-800/50 rounded-xl px-4 py-2 transition-all duration-300 self-start" 
+					onClick={onBack}
+				>
+					<svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+					</svg>
+					Back
+				</Button>
+				<Button disabled={refetching} variant="outline" className='ml-auto' onClick={onRefresh}>
+					<RefreshCcw className={refetching && 'animate-spin'} />
+				</Button>
+			</div>
 			<div className="text-center mb-8">
 				<h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-[#BDFF00] via-[#9DFF33] to-[#7DFF66] bg-clip-text text-transparent">
 					Choose Account
@@ -204,6 +227,7 @@ export default function Withdraw({
 						</div>
 					</div>
 				))}
+				<Button onClick={onAddBank}>Add new bank account</Button>
 			</div>
 		</div>
 	);
@@ -238,7 +262,7 @@ export default function Withdraw({
 				
 				<div className="text-center mb-8">
 					<h1 className="text-4xl font-black mb-3 bg-gradient-to-r from-[#BDFF00] via-[#9DFF33] to-[#7DFF66] bg-clip-text text-transparent">
-						Redeem Sweep Coins
+						Redeem Stream Coins
 					</h1>
 					<p className="text-gray-400 text-lg">Complete your redeem request</p>
 				</div>

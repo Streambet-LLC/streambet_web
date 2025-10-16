@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +9,9 @@ import { CopyableInput } from '../ui/CopyableInput';
 import { getImageLink } from '@/utils/helper';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus } from '@/enums';
+import Select from 'react-select';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/integrations/api/client';
 
 interface StreamInfoFormProps {
   isLive?: boolean;
@@ -22,6 +25,7 @@ interface StreamInfoFormProps {
     startTime: string;
     streamId?: string;
     bettingRoundStatus?: BettingRoundStatus;
+    creatorId?: string;
   };
   errors: {
     title?: string;
@@ -68,29 +72,52 @@ export const StreamInfoForm = ({
   const thumbnailRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  const { data: creators, refetch: refetchCreators } = useQuery({
+    queryKey: ['creatorList'],
+    queryFn: async () => {
+      const data = await api.admin.getCreators();
+      return data;
+    },
+    enabled: false,
+  });
+
   // Drag and drop handlers
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
+
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     onFileChange(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0] || null;
     onFileChange(file);
   };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
+
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
+  useEffect(() => {
+    refetchCreators();
+  }, []);
+
   return (
-    <form className="space-y-8" onSubmit={e => { e.preventDefault(); onSubmit(); }}>
+    <form
+      className="space-y-8"
+      onSubmit={e => {
+        e.preventDefault();
+        onSubmit();
+      }}
+    >
       {/* Title */}
       <div>
         <Label className="text-white font-light mb-3 block">Title</Label>
@@ -130,11 +157,78 @@ export const StreamInfoForm = ({
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
           placeholder="Embed URL"
           value={initialValues.embeddedUrl}
-          disabled={isEdit && !!initialValues.embeddedUrl && initialValues.bettingRoundStatus === BettingRoundStatus.LOCKED}
+          disabled={
+            isEdit &&
+            !!initialValues.embeddedUrl &&
+            initialValues.bettingRoundStatus === BettingRoundStatus.LOCKED
+          }
           onChange={e => onChange({ embeddedUrl: e.target.value })}
           required
         />
-        {errors.embeddedUrl && <div className="text-destructive text-xs mt-1">{errors.embeddedUrl}</div>}
+        {errors.embeddedUrl && (
+          <div className="text-destructive text-xs mt-1">{errors.embeddedUrl}</div>
+        )}
+      </div>
+      <div>
+        <Label className="text-white font-light mb-3 block">Assigned Creator</Label>
+        <Select
+          options={
+            creators
+              ? creators.map(item => {
+                  return {
+                    value: item.id,
+                    label: item.username,
+                  };
+                })
+              : []
+          }
+          isSearchable
+          value={
+            initialValues.creatorId && creators
+              ? creators
+                  .filter(item => item.id === initialValues.creatorId)
+                  .map(item => {
+                    return {
+                      value: item.id,
+                      label: item.username,
+                    };
+                  })
+              : []
+          }
+          // @ts-ignore
+          onChange={selected => onChange({ creatorId: selected.value })}
+          styles={{
+            control: base => ({
+              ...base,
+              backgroundColor: '#272727',
+              color: 'white',
+              borderColor: '#272727',
+            }),
+            menu: base => ({
+              ...base,
+              backgroundColor: '#272727',
+              color: 'white',
+              zIndex: 30, // Ensure dropdown is above the close (X) button
+            }),
+            option: (base, state) => ({
+              ...base,
+              backgroundColor: state.isFocused ? '#333' : '#272727',
+              color: 'white',
+            }),
+            singleValue: base => ({
+              ...base,
+              color: 'white',
+            }),
+            input: base => ({
+              ...base,
+              color: 'white',
+            }),
+            placeholder: base => ({
+              ...base,
+              color: '#aaa',
+            }),
+          }}
+        />
       </div>
       {/* Thumbnail upload */}
       <div ref={thumbnailRef}>
@@ -144,12 +238,20 @@ export const StreamInfoForm = ({
           <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727] relative">
             {initialValues.thumbnailPreviewUrl ? (
               <>
-                <img src={getImageLink(initialValues.thumbnailPreviewUrl)} alt="Thumbnail preview" className="object-cover w-full h-full" />
+                <img
+                  src={getImageLink(initialValues.thumbnailPreviewUrl)}
+                  alt="Thumbnail preview"
+                  className="object-cover w-full h-full"
+                />
                 {!isUploading && (
                   <button
                     type="button"
                     className="absolute top-1 right-1 z-10 bg-[#232323] rounded-full p-1 hover:bg-destructive"
-                    onClick={e => { e.stopPropagation(); onDeleteThumbnail(); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      onDeleteThumbnail();
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
                     style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
                   >
                     <XIcon className="h-4 w-4 text-white" />
@@ -179,20 +281,32 @@ export const StreamInfoForm = ({
             />
             <div className="flex flex-col items-center mt-2">
               <div className="flex items-center justify-center mb-1 relative">
-                <div className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center" style={{ width: 44, height: 44 }}>
+                <div
+                  className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center"
+                  style={{ width: 44, height: 44 }}
+                >
                   {isUploading ? (
                     <Loader2 className="h-6 w-6 animate-spin text-white" />
                   ) : (
-                    <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
+                    <img
+                      src="/icons/cloud_upload.png"
+                      alt="Upload"
+                      style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }}
+                    />
                   )}
                 </div>
               </div>
               <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
-                <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
-                <span className="text-[#667085] text-[12px]">SVG, PNG, JPG or GIF (max. 1920x1080px)</span>
+                <span className="text-primary font-medium">Click to upload</span> or drag and drop
+                <br />
+                <span className="text-[#667085] text-[12px]">
+                  SVG, PNG, JPG or GIF (max. 1920x1080px)
+                </span>
               </span>
             </div>
-            {errors.thumbnail && <div className="text-destructive text-xs mt-1">{errors.thumbnail}</div>}
+            {errors.thumbnail && (
+              <div className="text-destructive text-xs mt-1">{errors.thumbnail}</div>
+            )}
           </div>
         </div>
       </div>
@@ -203,7 +317,7 @@ export const StreamInfoForm = ({
           <PopoverTrigger asChild>
             <button
               type="button"
-               className={`w-full pl-10 mt-2 flex items-center h-10 rounded-md relative
+              className={`w-full pl-10 mt-2 flex items-center h-10 rounded-md relative
       ${errors.startDate ? 'border border-red-500' : 'border-none'}
       ${isLive ? 'bg-[#232323] opacity-60 cursor-not-allowed' : 'bg-[#272727] text-[#D7DFEF]'}
     `}
@@ -224,13 +338,19 @@ export const StreamInfoForm = ({
                 <CalendarIcon className="h-5 w-5 text-white" />
               </span>
               <span className={initialValues.startDateObj ? '' : 'text-[#FFFFFFBF]'}>
-                {initialValues.startDateObj ? initialValues.startDateObj.toLocaleDateString() + (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '') : 'Pick a date & time'}
+                {initialValues.startDateObj
+                  ? initialValues.startDateObj.toLocaleDateString() +
+                    (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '')
+                  : 'Pick a date & time'}
               </span>
               {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
                 <button
                   type="button"
                   className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
-                  onClick={e => { e.stopPropagation(); onChange({ startDateObj: null, startTime: '' }); }}
+                  onClick={e => {
+                    e.stopPropagation();
+                    onChange({ startDateObj: null, startTime: '' });
+                  }}
                 >
                   <XIcon className="h-4 w-4 text-white" />
                 </button>
@@ -244,9 +364,9 @@ export const StreamInfoForm = ({
               onSelect={date => {
                 if (date) {
                   // Set both date and time in a single onChange call to ensure atomic update
-                  onChange({ 
-                    startDateObj: date, 
-                    startTime: initialValues.startTime || '00:00' 
+                  onChange({
+                    startDateObj: date,
+                    startTime: initialValues.startTime || '00:00',
                   });
                 } else {
                   onChange({ startDateObj: null, startTime: '' });
@@ -269,8 +389,10 @@ export const StreamInfoForm = ({
             </div>
           </PopoverContent>
         </Popover>
-        {errors.startDate && <div className="text-destructive text-xs mt-1">{errors.startDate}</div>}
+        {errors.startDate && (
+          <div className="text-destructive text-xs mt-1">{errors.startDate}</div>
+        )}
       </div>
     </form>
   );
-}; 
+};

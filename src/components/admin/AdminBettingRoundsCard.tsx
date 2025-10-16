@@ -163,7 +163,7 @@ export const AdminBettingRoundsCard = ({
                     <CardHeader
                          className="flex flex-row items-center justify-between h-[50px] rounded-t-xl px-6 py-0 bg-[#000000B2]"
                     >
-                         <span className="font-medium [color:rgba(215,223,239,1)] text-lg">Picking Rounds</span>
+                         <span className="font-medium [color:rgba(215,223,239,1)] text-lg">Rounds</span>
                          {!isStreamEnded && <Dialog open={settingsOpen} onOpenChange={(open) => {
                               setSettingsOpen(open);
                               if (!open) {
@@ -186,7 +186,7 @@ export const AdminBettingRoundsCard = ({
                                         onMouseOver={e => (e.currentTarget.style.color = '#000')}
                                         onMouseOut={e => (e.currentTarget.style.color = '')}
                                    >
-                                        Picking Settings
+                                        Picks Settings
                                    </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-2xl winner-scrollbar p-0 border border-primary no-dialog-close">
@@ -204,7 +204,7 @@ export const AdminBettingRoundsCard = ({
                                         {/* Header row: label, Save button */}
                                         <div className="flex items-center mb-4">
                                              <div className="flex-1 flex items-center justify-between">
-                                                  <span className="text-white font-medium" style={{ fontWeight: 500, fontSize: 18 }}>Picking Settings</span>
+                                                  <span className="text-white font-medium" style={{ fontWeight: 500, fontSize: 18 }}>Picks Settings</span>
                                                   <Button
                                                        type="button"
                                                        className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[120px] h-[40px]"
@@ -381,7 +381,7 @@ export const AdminBettingRoundsCard = ({
                                                                            className="text-center mb-2 text-white text-base font-bold"
                                                                            style={{ fontFamily: 'FabioXM, Inter, sans-serif', fontWeight: 700 }}
                                                                       >
-                                                                           Users are picking
+                                                                           Users are making their picks
                                                                       </div>
                                                                      <div className="flex items-center gap-3 mb-2">
                                                                            <div className=" items-center gap-1">
@@ -397,7 +397,7 @@ export const AdminBettingRoundsCard = ({
                                                                            <div className=" items-center gap-2">
                                                                            <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
                                                                                 <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
-                                                                                <span>{bettingUpdate ? bettingUpdate?.totalSweepCoinBet : streamInfo?.totalSweepCoinBet} sweep(s)</span>
+                                                                                <span>{bettingUpdate ? bettingUpdate?.totalSweepCoinBet : streamInfo?.totalSweepCoinBet} Stream Coin(s)</span>
                                                                            </div>
                                                                            <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
                                                                                 <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
@@ -571,9 +571,9 @@ export const AdminBettingRoundsCard = ({
                                                                                 </div>
                                                                                 <div className="flex items-center mt-1 text-[12px] px-2" style={FabioBoldStyle}>
                                                                                      <span className="text-white ml-1">won</span>
-                                                                                     <span className="text-white ml-1 truncate max-w-[120px]" title={isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} sweep coins` 
+                                                                                     <span className="text-white ml-1 truncate max-w-[120px]" title={isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins` 
                                                                                      : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`}>
-                                                                                          {isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} sweep coins` 
+                                                                                          {isSweepCoins ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins` 
                                                                                           : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`}
                                                                                      </span>
                                                                                 </div>
@@ -613,7 +613,7 @@ export const AdminBettingRoundsCard = ({
                                              );
                                         }) : (
                                              <div className="w-full flex items-center justify-center h-32 text-white/60 text-lg">
-                                                  No picking rounds available.
+                                                  No picks rounds available.
                                              </div>
                                         )}
                                    </CarouselContent>

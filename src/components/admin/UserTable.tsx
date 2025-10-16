@@ -223,7 +223,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Gold Balance</TableHead>
-                <TableHead>Sweep Coins</TableHead>
+                <TableHead>Stream Coins</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Email</TableHead>

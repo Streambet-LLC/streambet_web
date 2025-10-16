@@ -14,7 +14,9 @@ const Admin = () => {
     streams,
     searchStreamQuery,
     handleRefetchStreams,
-    setSearchStreamQuery
+    setSearchStreamQuery,
+    endedStreams,
+    refetchEndedStreams,
   } = useStreamManagement();
   const queryClient = useQueryClient();
   const [resetKey, setResetKey] = useState(0);
@@ -22,7 +24,7 @@ const Admin = () => {
 
   const handleDashboardClick = useCallback(() => {
     queryClient.clear();
-    setResetKey((prev) => prev + 1);
+    setResetKey(prev => prev + 1);
   }, [queryClient]);
 
   if (isProfileLoading) {
@@ -31,22 +33,34 @@ const Admin = () => {
         {/* Analytics Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-12">
           {/* Users Card */}
-          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+          <div
+            className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
+            style={{ minHeight: 109, height: 109, padding: 24 }}
+          >
             <Skeleton className="h-4 w-16 mb-2" />
             <Skeleton className="h-8 w-12" />
           </div>
           {/* Active Streams Card */}
-          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+          <div
+            className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
+            style={{ minHeight: 109, height: 109, padding: 24 }}
+          >
             <Skeleton className="h-4 w-24 mb-2" />
             <Skeleton className="h-8 w-12" />
           </div>
           {/* Active Bets Card */}
-          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+          <div
+            className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
+            style={{ minHeight: 109, height: 109, padding: 24 }}
+          >
             <Skeleton className="h-4 w-20 mb-2" />
             <Skeleton className="h-8 w-12" />
           </div>
           {/* Time Live Card */}
-          <div className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center" style={{ minHeight: 109, height: 109, padding: 24 }}>
+          <div
+            className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
+            style={{ minHeight: 109, height: 109, padding: 24 }}
+          >
             <Skeleton className="h-4 w-18 mb-2" />
             <Skeleton className="h-8 w-12" />
           </div>
@@ -91,10 +105,12 @@ const Admin = () => {
         key={resetKey}
         session={profile}
         streams={streams}
-        refetchStreams={(range) => handleRefetchStreams(range)}
+        refetchStreams={range => handleRefetchStreams(range)}
         searchStreamQuery={searchStreamQuery}
         setSearchStreamQuery={setSearchStreamQuery}
         onStreamContentChange={setIsStreamContent}
+        endedStreams={endedStreams}
+        refetchEndedStreams={refetchEndedStreams}
       />
     </AdminLayout>
   );

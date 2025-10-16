@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { decodeIdToken } from '@/utils/helper';
 import { toast } from '@/hooks/use-toast';
 import Bugsnag from '@bugsnag/js';
-import { WithdrawPayload } from '@/types/withdraw';
+import { WithdrawKycPayload, WithdrawKycUsPayload, WithdrawPayload } from '@/types/withdraw';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -28,22 +28,17 @@ const RETRY_401 = Symbol('RETRY_401');
 apiClient.interceptors.request.use(
   config => {
     const token = localStorage.getItem('accessToken');
-    if (token)
-    {
-      try
-      {
+    if (token) {
+      try {
         const decoded = decodeIdToken(token);
         // Check expiry (exp is in seconds)
-        if (decoded.exp && Date.now() / 1000 > decoded.exp)
-        {
+        if (decoded.exp && Date.now() / 1000 > decoded.exp) {
           // Token expired, do not attach token, let the request fail and response interceptor handle refresh
           // No refresh logic here
-        } else
-        {
+        } else {
           config.headers.Authorization = `Bearer ${token}`;
         }
-      } catch (e)
-      {
+      } catch (e) {
         // If decode fails, treat as invalid/expired, do not attach token
         // No refresh logic here
       }
@@ -59,8 +54,8 @@ apiClient.interceptors.response.use(
   async error => {
     // Report error to Bugsnag
     Bugsnag.notify(error);
-   // Report unexpected errors to Bugsnag (exclude expected 401s which trigger refresh)-code rabbit suggestion
-   if (!(error?.response?.status === 401)) {
+    // Report unexpected errors to Bugsnag (exclude expected 401s which trigger refresh)-code rabbit suggestion
+    if (!(error?.response?.status === 401)) {
       Bugsnag.notify(error instanceof Error ? error : new Error(String(error)));
     }
 
@@ -83,8 +78,7 @@ apiClient.interceptors.response.use(
       error.response.status === 401 &&
       originalRequest.url &&
       originalRequest.url.endsWith('/auth/refresh')
-    )
-    {
+    ) {
       toast({
         id: 'session-expired',
         title: 'Session Expired',
@@ -103,41 +97,34 @@ apiClient.interceptors.response.use(
       error.response.status === 401 &&
       originalRequest.url &&
       !originalRequest.url.endsWith('/payments/coinflow/withdrawer')
-    )
-    {
+    ) {
       const accessToken = localStorage.getItem('accessToken');
       const refreshToken = localStorage.getItem('refreshToken');
 
       // If no accessToken is present, do nothing
-      if (!accessToken)
-      {
+      if (!accessToken) {
         return Promise.reject(error);
       }
 
       // If this is the first 401 for this request, try refresh
-      if (refreshToken && !(originalRequest as any)[RETRY_401])
-      {
+      if (refreshToken && !(originalRequest as any)[RETRY_401]) {
         (originalRequest as any)[RETRY_401] = true;
-        try
-        {
+        try {
           const refreshResponse = await apiClient.post('/auth/refresh', { refreshToken }, {
             headers: {
               'Authorization': `Bearer ${refreshToken}`,
             },
           });
           const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshResponse?.data?.data || {};
-          if (newAccessToken)
-          {
+          if (newAccessToken) {
             localStorage.setItem('accessToken', newAccessToken);
-            if (newRefreshToken)
-            {
+            if (newRefreshToken) {
               localStorage.setItem('refreshToken', newRefreshToken);
             }
             originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
             return apiClient(originalRequest);
           }
-        } catch (refreshError)
-        {
+        } catch (refreshError) {
           // If refresh fails, show toast and logout
           toast({
             id: 'session-expired',
@@ -150,8 +137,7 @@ apiClient.interceptors.response.use(
           window.dispatchEvent(new CustomEvent('navigateToLogin'));
           return Promise.reject(refreshError);
         }
-      } else
-      {
+      } else {
         // If already retried once, or no refreshToken, show toast and logout
         toast({
           id: 'session-expired',
@@ -180,6 +166,7 @@ export const authAPI = {
     profileImageUrl: string;
     lastKnownIp: string;
     redirect?: string;
+    promoCode?: string;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
     return response.data;
@@ -189,12 +176,10 @@ export const authAPI = {
   login: async (credentials: { identifier: string; password: string, remember_me?: boolean, redirect?: string }) => {
     const response = await apiClient.post('/auth/login', credentials);
     // Store the tokens
-    if (response?.data?.data?.accessToken)
-    {
+    if (response?.data?.data?.accessToken) {
       localStorage.setItem('accessToken', response.data.data.accessToken);
     }
-    if (response?.data?.data?.refreshToken)
-    {
+    if (response?.data?.data?.refreshToken) {
       localStorage.setItem('refreshToken', response.data.data.refreshToken);
     }
     return response.data;
@@ -210,12 +195,10 @@ export const authAPI = {
 
     // const response = await apiClient.get(`/auth/google/callback?token=${googleToken}`);
     // Store the tokens
-    if (response?.data?.data?.accessToken)
-    {
+    if (response?.data?.data?.accessToken) {
       localStorage.setItem('accessToken', response.data.data.accessToken);
     }
-    if (response?.data?.data?.refreshToken)
-    {
+    if (response?.data?.data?.refreshToken) {
       localStorage.setItem('refreshToken', response.data.data.refreshToken);
     }
     return response.data;
@@ -235,12 +218,10 @@ export const authAPI = {
 
   // Get current session
   getSession: async () => {
-    try
-    {
+    try {
       const response = await apiClient.get('/auth/me');
       return response.data;
-    } catch (error)
-    {
+    } catch (error) {
       return { data: null };
     }
   },
@@ -255,12 +236,10 @@ export const authAPI = {
       },
     });
     const { accessToken, refreshToken: newRefreshToken } = response.data.data || {};
-    if (accessToken)
-    {
+    if (accessToken) {
       localStorage.setItem('accessToken', accessToken);
     }
-    if (newRefreshToken)
-    {
+    if (newRefreshToken) {
       localStorage.setItem('refreshToken', newRefreshToken);
     }
     return response.data;
@@ -268,12 +247,10 @@ export const authAPI = {
 
   // Get username availability
   getUsernameAvailability: async (userName: string) => {
-    try
-    {
+    try {
       const response = await apiClient.get(`/auth/username?username=${userName}`);
       return response;
-    } catch (error)
-    {
+    } catch (error) {
       return { data: { session: null } };
     }
   },
@@ -349,14 +326,14 @@ export const walletAPI = {
 
   // Get transaction history
   getTransactions: async (params) => {
-    const response = await apiClient.get(`/wallets/transactions`,{
+    const response = await apiClient.get(`/wallets/transactions`, {
       params,
     });
     return response.data;
   },
 
   // Get redeemable amount from sweep coins
-  getRedeemableAmount: async (coins: number ) => {
+  getRedeemableAmount: async (coins: number) => {
     const response = await apiClient.get(`/wallets/convert-sweep`, {
       params: { coins },
     });
@@ -365,12 +342,10 @@ export const walletAPI = {
 
   // Check if the user has a payment method saved
   hasPaymentMethod: async () => {
-    try
-    {
+    try {
       const response = await apiClient.get('/wallets/payment-methods');
       return { hasPaymentMethod: response.data.length > 0 };
-    } catch (error)
-    {
+    } catch (error) {
       console.error('Error checking payment methods:', error);
       return { hasPaymentMethod: false };
     }
@@ -453,7 +428,7 @@ export const bettingAPI = {
   },
 
   // Get betting options for a stream
-  getBettingData: async (streamId: string, userId?:string) => {
+  getBettingData: async (streamId: string, userId?: string) => {
     const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}`);
     return response.data;
   },
@@ -465,15 +440,15 @@ export const bettingAPI = {
   },
 
   // Edit a bet
-    EditBet: async (betData: {
-      betId: string;
-      newBettingVariableId: string;
-      newAmount: number;
-      newCurrencyType: string;
-    }) => {
-      const response = await apiClient.patch('/betting/edit-bet', betData);
-      return response.data;
-    },
+  EditBet: async (betData: {
+    betId: string;
+    newBettingVariableId: string;
+    newAmount: number;
+    newCurrencyType: string;
+  }) => {
+    const response = await apiClient.patch('/betting/edit-bet', betData);
+    return response.data;
+  },
 
   // Place a bet
   placeBet: async (betData: {
@@ -578,8 +553,7 @@ export const socketAPI = {
   // getSocket: () => socket,
   // Disconnect WebSocket
   disconnect: () => {
-    if (socket)
-    {
+    if (socket) {
       console.log("socket disconnection called")
       socket.disconnect();
       socket = null;
@@ -587,59 +561,55 @@ export const socketAPI = {
   },
 
   // Join a stream room
-  joinStream: (streamId: string,socket:any) => {
- 
+  joinStream: (streamId: string, socket: any) => {
+
     if (socket) {
-       console.log(socket,'client socket in joinStream')
+      console.log(socket, 'client socket in joinStream')
       socket.emit('joinStream', streamId);
     }
   },
 
   // Leave a stream room
-  leaveStream: (streamId: string,socket:any) => {
-   console.log(streamId,"leave stream with id",socket)
+  leaveStream: (streamId: string, socket: any) => {
+    console.log(streamId, "leave stream with id", socket)
     if (socket) {
- console.log("leave stream initiated")
+      console.log("leave stream initiated")
       socket.emit('leaveStream', streamId);
     }
   },
 
   // Send a chat message
   sendChatMessage: (streamId: string, message: string) => {
-    if (socket)
-    {
+    if (socket) {
       socket.emit('sendChatMessage', { streamId, message });
     }
   },
 
   // To get all betting updates
-  joinCommonStream: (socket:any) => {
-  console.log(socket,'joinCommonStream joined')
+  joinCommonStream: (socket: any) => {
+    console.log(socket, 'joinCommonStream joined')
     if (socket) {
-      socket.emit('joinStreamBet','streambet');
+      socket.emit('joinStreamBet', 'streambet');
     }
   },
 
   // Subscribe to chat messages
   onChatMessage: (callback: (data: any) => void) => {
-    if (socket)
-    {
+    if (socket) {
       socket.on('chatMessage', callback);
     }
   },
 
   // Subscribe to betting locked events
   onBettingLocked: (callback: (data: any) => void) => {
-    if (socket)
-    {
+    if (socket) {
       socket.on('bettingLocked', callback);
     }
   },
 
   // Subscribe to winner declared events
   onWinnerDeclared: (callback: (data: any) => void) => {
-    if (socket)
-    {
+    if (socket) {
       socket.on('winnerDeclared', callback);
     }
   },
@@ -648,12 +618,12 @@ export const socketAPI = {
   getSocket: () => socket,
 
 
-// Get all messages for a stream
-  getChatMessages: async (streamId?: any,page?:any) => {
+  // Get all messages for a stream
+  getChatMessages: async (streamId?: any, page?: any) => {
     const response = await apiClient.get(`/chat/messages?streamId=${streamId}&range=${page}&sort=["createdAt","DESC"]`);
     return response.data;
   },
-  
+
 };
 
 // Admin API
@@ -664,6 +634,11 @@ export const adminAPI = {
       params,
     });
     return response.data;
+  },
+
+  getCreators: async () => {
+    const response = await apiClient.get(`/admin/creators`);
+    return response.data.data;
   },
 
   updateUsersStatus: async (userId?: any, userStatus?: any) => {
@@ -727,8 +702,8 @@ export const adminAPI = {
 
   // Update bet status
   cancelBetRound: async (roundId: string) => {
-  const response = await apiClient.patch(`/admin/rounds/${roundId}/cancel`);
-  return response.data;
+    const response = await apiClient.patch(`/admin/rounds/${roundId}/cancel`);
+    return response.data;
   },
 
   // End the stream
@@ -829,7 +804,11 @@ export const paymentAPI = {
 
   // Get withdrawer data
   getWithdrawerData: async () => {
-    const response = await apiClient.get('/payments/coinflow/withdrawer');
+    const response = await apiClient.get('/payments/coinflow/withdrawer', { 
+      params: { 
+        redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`
+      } 
+    });
     return response;
   },
 
@@ -847,19 +826,28 @@ export const paymentAPI = {
     return response.data;
   },
 
-   // Delete bank account
+  // Delete bank account
   deleteBankAccount: async (bankToken: string) => {
     const response = await apiClient.delete(`/payments/coinflow/delete-withdrawer-account?token=${bankToken}`);
     return response.data;
   },
-};
 
-// Kyc API
-export const kycAPI = {
-  // Sends Persona KYC verified inquiry ID to register user to Coinflow
-  registerKyc: async (payload: { inquiryId: string }) => {
-    const response = await apiClient.post('/kyc/registerKyc', payload);
-    return response.data;
+   // Register non-US user as withdrawer
+  registerKyc: async (payload: WithdrawKycPayload) => {
+    const response = await apiClient.post(`/payments/coinflow/withdraw/kyc`, {
+      redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`,
+      ...payload
+    });
+    return response;
+  },
+
+  // Register US-based user as withdrawer
+  registerKycUs: async (payload: WithdrawKycUsPayload) => {
+    const response = await apiClient.post(`/payments/coinflow/withdraw/kyc-us`, {
+      redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`,
+      ...payload
+    });
+    return response;
   },
 };
 

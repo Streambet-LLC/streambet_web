@@ -31,6 +31,7 @@ import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 import Redeem from './components/withdraw/Redeem';
 import { CoinflowPurchaseProtection } from "@coinflowlabs/react";
 import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coinflow';
+import Kyc from './components/withdraw/Kyc';
 
 
 // Create a client
@@ -68,6 +69,7 @@ const App = () => {
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/deposit" element={<Deposit />} />
                       <Route path="/withdraw" element={<Redeem />} />
+                      <Route path="/withdraw/verification" element={<Kyc />} />
                       <Route path="/transactions" element={<Transactions key='transactions' historyType={HistoryType.Transaction} />} />
                       <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
                       <Route path="/settings" element={<Settings />} />
