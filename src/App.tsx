@@ -70,7 +70,6 @@ const App = () => {
                         <Route path="/signup" element={<SignUp />} />
                       </Route>
                       <Route element={<RouteGroup guard />}>
-                        <Route path="/stream/:id" element={<Stream />} />
                         <Route path="/admin" element={<Admin />} />
                         <Route path="/deposit" element={<Deposit />} />
                         <Route path="/withdraw" element={<Redeem />} />
@@ -79,6 +78,7 @@ const App = () => {
                         <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
                         <Route path="/settings" element={<Settings />} />
                       </Route>
+                      <Route path="/stream/:id" element={<Stream />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/compliance" element={<Compliance />} />
