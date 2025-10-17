@@ -34,14 +34,13 @@ apiClient.interceptors.request.use(
         // Check expiry (exp is in seconds)
         if (decoded.exp && Date.now() / 1000 > decoded.exp) {
           // Token expired, do not attach token, let the request fail and response interceptor handle refresh
-          authAPI.refreshToken();
+          // No refresh logic here
         } else {
           config.headers.Authorization = `Bearer ${token}`;
         }
       } catch (e) {
         // If decode fails, treat as invalid/expired, do not attach token
         // No refresh logic here
-        authAPI.refreshToken();
       }
     }
     return config;
