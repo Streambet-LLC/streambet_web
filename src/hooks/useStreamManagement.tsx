@@ -61,6 +61,12 @@ export const useStreamManagement = () => {
     }
   }, [searchStreamQuery, refetchStreams]);
 
+  useEffect(() => {
+    if (endedStreamsRangeRef.current !== '') {
+      refetchEndedStreams();
+    }
+  }, [refetchEndedStreams]);
+
   return {
     profile: session,
     isProfileLoading: isLoading,
