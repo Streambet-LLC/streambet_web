@@ -227,7 +227,7 @@ export const StreamContent = ({
       console.log('winner declared', data);
       toast({
         title: 'Round Closed',
-        description: `${data?.winnerName} has selected as winning pick option!`,
+        description: `${data?.winnerName} was selected as the winning Pick option!`,
         duration: 7000,
       });
       setWinnerOption(data?.winnerName);
@@ -272,7 +272,7 @@ export const StreamContent = ({
     socketInstance.on('betOpened', update => {
       console.log('betOpened', update);
       toast({
-        description: 'New picks options available!',
+        description: 'New Pick options available!',
         variant: 'default',
       });
       resetBetData();
@@ -281,7 +281,7 @@ export const StreamContent = ({
     socketInstance.on('betCancelledByAdmin', update => {
       queryClient.prefetchQuery({ queryKey: ['session'] });
       toast({
-        description: 'Current picks round cancelled by admin.',
+        description: 'Current round cancelled by admin.',
         variant: 'destructive',
         duration: 4000,
       });
@@ -768,7 +768,7 @@ export const StreamContent = ({
                   animate={{ x: [0, -4, 4, 0] }}
                   transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
                 >
-                  This pick didn’t go your way 😕 <br />
+                  This round didn’t go your way 😕 <br />
                   But the next one might be yours!
                 </motion.div>
               </motion.div>
@@ -833,7 +833,7 @@ export const StreamContent = ({
                     className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4"
                     style={FabioBoldStyle}
                   >
-                    No picks options available
+                    No Pick options available
                   </p>
                 </div>
               ) : (
@@ -938,13 +938,13 @@ export const StreamContent = ({
                 className="text-sm font-semibold leading-tight pt-2 pb-2"
                 style={{ color: '#BDFF00' }}
               >
-                Total Bets: {currentBettingRound.totalBets} GOLD Coins (
-                {currentBettingRound.totalBettor} Bettors)
+                Total Pot: {currentBettingRound.totalBets} GOLD Coins (
+                {currentBettingRound.totalBettor} Picks)
               </p>
               <ul className="mt-2 ml-5">
                 {currentBettingRound.options.map((option, i) => (
                   <li key={i} className="text-sm" style={{ color: 'rgba(96, 96, 96, 1)' }}>
-                    {option.name}: {option.totalBets} Gold ({option.totalBettor} Bettors)
+                    {option.name}: {option.totalBets} Gold ({option.totalBettor} Picks)
                   </li>
                 ))}
               </ul>
