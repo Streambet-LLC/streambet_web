@@ -62,9 +62,7 @@ export const useStreamManagement = () => {
   }, [searchStreamQuery, refetchStreams]);
 
   useEffect(() => {
-    if (endedStreamsRangeRef.current !== '') {
-      refetchEndedStreams();
-    }
+    refetchEndedStreams();
   }, [refetchEndedStreams]);
 
   return {
