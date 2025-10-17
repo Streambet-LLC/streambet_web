@@ -75,7 +75,7 @@ export const AdminManagement = ({
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   const tabs = [
-    { key: 'livestreams', label: 'Livestreams' },
+    { key: 'livestreams', label: 'Live Streams' },
     { key: 'ended-streams', label: 'Ended Streams' },
     { key: 'users', label: 'Users' },
   ];
