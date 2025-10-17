@@ -8,6 +8,7 @@ export const useStreamManagement = () => {
   const { toast } = useToast();
   const [searchStreamQuery, setSearchStreamQuery] = useState();
   const rangeRef = useRef('[0,7]');
+  const endedStreamsRangeRef = useRef('[0,7]');
   const { isLoading, isFetching, session } = useAuthContext();
 
   const { data: streams, refetch: refetchStreams } = useQuery({
@@ -30,8 +31,8 @@ export const useStreamManagement = () => {
     queryKey: ['ended-streams'],
     queryFn: async () => {
       const response = await adminAPI.getStreams({
-        range: searchStreamQuery ? '[0,24]' : rangeRef.current,
-        sort: '["createdAt","DESC"]',
+        range: endedStreamsRangeRef.current,
+        sort: '["endTime","DESC"]',
         filter: JSON.stringify({ streamStatus: 'ended' }),
       });
 
@@ -47,6 +48,11 @@ export const useStreamManagement = () => {
   const handleRefetchStreams = (range?: string) => {
     rangeRef.current = range || '';
     refetchStreams();
+  };
+
+  const handleRefetchEndedStreams = (range?: string) => {
+    endedStreamsRangeRef.current = range || '';
+    refetchEndedStreams();
   };
 
   useEffect(() => {
@@ -65,6 +71,6 @@ export const useStreamManagement = () => {
     deleteStream,
     handleRefetchStreams,
     endedStreams,
-    refetchEndedStreams,
+    handleRefetchEndedStreams,
   };
 };
