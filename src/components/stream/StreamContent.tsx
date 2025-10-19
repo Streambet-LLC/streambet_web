@@ -138,11 +138,13 @@ export const StreamContent = ({
   const setupSocketEventListeners = (socketInstance: any) => {
     if (!socketInstance) return;
 
+    /**
+     * Resets all betting-related UI state and syncs with server data.
+     * Called when a new round starts, a round is cancelled, or bet options open.
+     * This ensures the UI reflects a clean slate for the new betting round.
+     */
     const resetBetData = () => {
-      // Invalidate queries to get fresh data
-      queryClient.invalidateQueries({ queryKey: ['bettingData', streamId, session?.id] });
-      queryClient.invalidateQueries({ queryKey: ['selectedRoundData'] });
-      // Reset UI
+      // Clear all local betting state
       setTotalPotGoldCoins(undefined);
       setTotalPotSweepCoins(undefined);
       setPlaceBet(true);
@@ -156,9 +158,11 @@ export const StreamContent = ({
       setUpdatedCurrency(undefined);
       setIsEditing(false);
       setLoading(false);
-      // Get fresh data
-      refetchBettingData();
-      refetchRoundData();
+
+      // Invalidate cached queries to fetch fresh data from server
+      // This ensures we display the latest round and betting information
+      queryClient.invalidateQueries({ queryKey: ['bettingData', streamId, session?.id] });
+      queryClient.invalidateQueries({ queryKey: ['selectedRoundData'] });
     };
 
     socketInstance.on('scheduledStreamUpdatedToLive', () => {
