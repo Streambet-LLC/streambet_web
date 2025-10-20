@@ -75,7 +75,7 @@ export const AdminManagement = ({
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   const tabs = [
-    { key: 'livestreams', label: 'Livestreams' },
+    { key: 'livestreams', label: 'Live Streams' },
     { key: 'ended-streams', label: 'Ended Streams' },
     { key: 'users', label: 'Users' },
   ];
@@ -960,8 +960,8 @@ export const AdminManagement = ({
                 <span className="text-lg text-white font-light">
                   {createStep === 'betting'
                     ? editStreamId
-                      ? 'Edit your betting options'
-                      : 'Create your betting options'
+                      ? 'Edit your Picks options'
+                      : 'Create your Picks options'
                     : editStreamId
                       ? 'Manage Livestream'
                       : 'Create new livestream'}
@@ -1255,7 +1255,7 @@ export const AdminManagement = ({
                   textAlign: 'left',
                 }}
               >
-                Active Bets
+                Active Picks
               </span>
               {isAdminAnalyticsLoading ? (
                 <svg
