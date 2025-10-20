@@ -381,7 +381,7 @@ export const AdminBettingRoundsCard = ({
                                                                            className="text-center mb-2 text-white text-base font-bold"
                                                                            style={{ fontFamily: 'FabioXM, Inter, sans-serif', fontWeight: 700 }}
                                                                       >
-                                                                           Users are making their picks
+                                                                           Users are making their Picks
                                                                       </div>
                                                                      <div className="flex items-center gap-3 mb-2">
                                                                            <div className=" items-center gap-1">
@@ -430,7 +430,7 @@ export const AdminBettingRoundsCard = ({
                                                                               onClick={() => handleLockBets(round.roundId)}
                                                                               disabled={isUpdatingAction}
                                                                           >
-                                                                              {isUpdatingAction ? 'Locking...' : 'Lock Bets'}
+                                                                              {isUpdatingAction ? 'Locking...' : 'Lock Picks'}
                                                                           </Button>
                                                                           <AlertDialog>
                                                                               <AlertDialogTrigger asChild>
@@ -471,7 +471,7 @@ export const AdminBettingRoundsCard = ({
                                                                            className="text-center mb-2 text-white text-base font-bold"
                                                                            style={{ fontFamily: 'FabioXM, Inter, sans-serif', fontWeight: 700 }}
                                                                       >
-                                                                           Bets are locked - pick a winner
+                                                                           Picks are locked - choose a winner
                                                                       </div>
                                                                       <div className="flex flex-wrap gap-2 justify-center w-full max-h-16 overflow-y-auto mb-2 winner-scrollbar px-2">
                                                                            {round.options.map((opt) => {
