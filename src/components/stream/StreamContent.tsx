@@ -139,6 +139,7 @@ export const StreamContent = ({
     if (!socketInstance) return;
 
     const resetBetData = () => {
+      // Clear all local betting state
       setTotalPotGoldCoins(undefined);
       setTotalPotSweepCoins(undefined);
       setPlaceBet(true);
@@ -150,10 +151,12 @@ export const StreamContent = ({
       setLockedOptions(false);
       setLockedBet(false);
       setUpdatedCurrency(undefined);
-      refetchBettingData();
-      refetchRoundData();
       setIsEditing(false);
       setLoading(false);
+
+      // Invalidate cached queries to fetch fresh data from server
+      queryClient.invalidateQueries({ queryKey: ['bettingData', streamId, session?.id] });
+      queryClient.invalidateQueries({ queryKey: ['selectedRoundData'] });
     };
 
     socketInstance.on('scheduledStreamUpdatedToLive', () => {
