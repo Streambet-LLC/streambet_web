@@ -12,8 +12,8 @@ import api, { adminAPI } from '@/integrations/api/client';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { formatDateTimeForISO, getImageLink, getMessage, isWithinTextLimits } from '@/utils/helper';
-import { STREAM_LIMITS } from '@/utils/constants';
+import { formatDateTimeForISO, getImageLink, getMessage } from '@/utils/helper';
+import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
@@ -280,29 +280,18 @@ export const AdminManagement = ({
 
     let isValid = true;
 
-    if (!title) {
-      newErrors.title = 'Title is required';
-      isValid = false;
-    } else if (
-      title?.trim().length < STREAM_LIMITS.TITLE_MIN_LENGTH ||
-      title?.trim().length > STREAM_LIMITS.TITLE_MAX_LENGTH
-    ) {
-      newErrors.title = `Title must be ${STREAM_LIMITS.TITLE_MIN_LENGTH}-${STREAM_LIMITS.TITLE_MAX_LENGTH} characters`;
+    // Validate title
+    const titleError = validateStreamTitle(title);
+    if (titleError) {
+      newErrors.title = titleError;
       isValid = false;
     }
 
-    // Validate description if provided
-    if (description && description.trim()) {
-      if (
-        !isWithinTextLimits(
-          description,
-          STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS,
-          STREAM_LIMITS.DESCRIPTION_MAX_WORDS
-        )
-      ) {
-        newErrors.description = `Description must not exceed ${STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS} characters or ${STREAM_LIMITS.DESCRIPTION_MAX_WORDS} words`;
-        isValid = false;
-      }
+    // Validate description
+    const descriptionError = validateStreamDescription(description);
+    if (descriptionError) {
+      newErrors.description = descriptionError;
+      isValid = false;
     }
 
     if (

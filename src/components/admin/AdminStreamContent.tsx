@@ -16,9 +16,8 @@ import {
   getMessage,
   getConnectionErrorMessage,
   getImageLink,
-  isWithinTextLimits,
 } from '@/utils/helper';
-import { STREAM_LIMITS } from '@/utils/constants';
+import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
@@ -91,30 +90,21 @@ function validateForm(
     startDate: '',
   };
   let isValid = true;
-  if (!title) {
-    newErrors.title = 'Title is required';
-    isValid = false;
-  } else if (
-    title.trim().length < STREAM_LIMITS.TITLE_MIN_LENGTH ||
-    title.trim().length > STREAM_LIMITS.TITLE_MAX_LENGTH
-  ) {
-    newErrors.title = `Title must be ${STREAM_LIMITS.TITLE_MIN_LENGTH}-${STREAM_LIMITS.TITLE_MAX_LENGTH} characters`;
+  
+  // Validate title
+  const titleError = validateStreamTitle(title);
+  if (titleError) {
+    newErrors.title = titleError;
     isValid = false;
   }
   
-  // Validate description if provided
-  if (description && description.trim()) {
-    if (
-      !isWithinTextLimits(
-        description,
-        STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS,
-        STREAM_LIMITS.DESCRIPTION_MAX_WORDS
-      )
-    ) {
-      newErrors.description = `Description must not exceed ${STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS} characters or ${STREAM_LIMITS.DESCRIPTION_MAX_WORDS} words`;
-      isValid = false;
-    }
+  // Validate description
+  const descriptionError = validateStreamDescription(description);
+  if (descriptionError) {
+    newErrors.description = descriptionError;
+    isValid = false;
   }
+  
   if (
     !embeddedUrl?.trim() ||
     (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))
