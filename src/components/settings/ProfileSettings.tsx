@@ -37,6 +37,7 @@ export const ProfileSettings = () => {
     { key: 'notifications', label: 'Notifications' },
   ];
 
+
   return (
     <div className="space-y-6">
       <TabSwitch
