@@ -130,6 +130,7 @@ export const AdminManagement = ({
 
   const [errors, setErrors] = useState({
     title: '',
+    description: '',
     embeddedUrl: '',
     thumbnail: '',
     startDate: '',
@@ -234,6 +235,7 @@ export const AdminManagement = ({
     // Reset all errors
     setErrors({
       title: '',
+      description: '',
       embeddedUrl: '',
       thumbnail: '',
       startDate: '',
@@ -1048,15 +1050,11 @@ export const AdminManagement = ({
                       const newErrors = { ...errors };
                       if ('title' in fields) {
                         setTitle(fields.title ?? '');
-                        const value = fields.title ?? '';
-                        if (!value) newErrors.title = 'Title is required';
-                        else if (value.trim().length < 3 || value.trim().length > 70)
-                          newErrors.title = 'Title must be 3-70 characters';
-                        else newErrors.title = '';
+                        newErrors.title = validateStreamTitle(fields.title ?? '') || '';
                       }
                       if ('description' in fields) {
                         setDescription(fields.description ?? '');
-                        // No validation for description
+                        newErrors.description = validateStreamDescription(fields.description ?? '') || '';
                       }
                       if ('creatorId' in fields) {
                         setCreatorId(fields.creatorId ?? '');
@@ -1407,6 +1405,7 @@ export const AdminManagement = ({
                     setBettingRounds([]);
                     setErrors({
                       title: '',
+                      description: '',
                       embeddedUrl: '',
                       thumbnail: '',
                       startDate: '',
