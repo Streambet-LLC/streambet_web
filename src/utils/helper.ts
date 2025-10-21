@@ -124,8 +124,13 @@ export const getConnectionErrorMessage = (error?: any, networkStatus?: { isOnlin
 
 /**
  * Count the number of words in a text string
+ * Words are defined as sequences of characters separated by whitespace
+ * Note: "Hello,world" is counted as 1 word (no space between)
  * @param {unknown} text - The text to count words in
  * @returns {number} The number of words
+ * @example
+ * countWords("Hello world") // returns 2
+ * countWords("Hello,world") // returns 1
  */
 export const countWords = (text: unknown): number => {
   // Runtime type validation

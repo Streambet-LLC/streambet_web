@@ -35,6 +35,10 @@ export const CharacterCounter = ({ value, maxCharacters, className = '' }: Chara
   return (
     <div
       className={`text-xs mt-1 text-right ${isLimitReached ? 'text-red-500' : 'text-[#667085]'} ${className}`}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label={`${currentLength} of ${maxCharacters} characters used${isLimitReached ? ', limit reached' : ''}`}
     >
       {currentLength}/{maxCharacters} characters
     </div>
@@ -60,9 +64,21 @@ export const CharacterWordCounter = ({
   const isLimitReached =
     limits.characterCount >= maxCharacters || limits.wordCount >= maxWords;
 
+  const limitMessage = isLimitReached
+    ? limits.isCharacterLimitExceeded && limits.isWordLimitExceeded
+      ? ', character and word limits reached'
+      : limits.isCharacterLimitExceeded
+        ? ', character limit reached'
+        : ', word limit reached'
+    : '';
+
   return (
     <div
       className={`text-xs mt-1 text-right ${isLimitReached ? 'text-red-500' : 'text-[#667085]'} ${className}`}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label={`${limits.characterCount} of ${maxCharacters} characters used, ${limits.wordCount} of ${maxWords} words used${limitMessage}`}
     >
       {limits.characterCount}/{maxCharacters} characters • {limits.wordCount}/{maxWords} words
     </div>
