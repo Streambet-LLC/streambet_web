@@ -55,7 +55,7 @@ export const StreamHeader = ({ stream, viewerCount }: StreamHeaderProps) => {
             </div>
           )}
         </div>
-        <CardTitle className="text-3xl md:text-4xl lg:text-5xl leading-[1.2] tracking-tight pb-1">
+        <CardTitle className="text-3xl md:text-4xl lg:text-5xl leading-[1.2] tracking-tight pb-1 break-words hyphens-auto">
           {stream.name}
         </CardTitle>
         <CardDescription className="text-base md:text-lg leading-relaxed font-normal text-zinc-300 max-h-[150px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
