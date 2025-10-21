@@ -16,7 +16,9 @@ import {
   getMessage,
   getConnectionErrorMessage,
   getImageLink,
+  isWithinTextLimits,
 } from '@/utils/helper';
+import { STREAM_LIMITS } from '@/utils/constants';
 import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
@@ -77,12 +79,13 @@ function isTimeValid(time, date) {
 
 // Validation function for stream settings form
 function validateForm(
-  { title, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime },
+  { title, description, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime },
   selectedThumbnailFile,
   isLiveStream
 ) {
   const newErrors = {
     title: '',
+    description: '',
     embeddedUrl: '',
     thumbnail: '',
     startDate: '',
@@ -91,9 +94,26 @@ function validateForm(
   if (!title) {
     newErrors.title = 'Title is required';
     isValid = false;
-  } else if (title.trim().length < 3 || title.trim().length > 70) {
-    newErrors.title = 'Title must be 3-70 characters';
+  } else if (
+    title.trim().length < STREAM_LIMITS.TITLE_MIN_LENGTH ||
+    title.trim().length > STREAM_LIMITS.TITLE_MAX_LENGTH
+  ) {
+    newErrors.title = `Title must be ${STREAM_LIMITS.TITLE_MIN_LENGTH}-${STREAM_LIMITS.TITLE_MAX_LENGTH} characters`;
     isValid = false;
+  }
+  
+  // Validate description if provided
+  if (description && description.trim()) {
+    if (
+      !isWithinTextLimits(
+        description,
+        STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS,
+        STREAM_LIMITS.DESCRIPTION_MAX_WORDS
+      )
+    ) {
+      newErrors.description = `Description must not exceed ${STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS} characters or ${STREAM_LIMITS.DESCRIPTION_MAX_WORDS} words`;
+      isValid = false;
+    }
   }
   if (
     !embeddedUrl?.trim() ||
@@ -253,6 +273,7 @@ export const AdminStreamContent = ({
   });
   const [editErrors, setEditErrors] = useState({
     title: '',
+    description: '',
     embeddedUrl: '',
     thumbnail: '',
     startDate: '',
@@ -415,7 +436,7 @@ export const AdminStreamContent = ({
       embeddedUrl: editForm.embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(editForm.startDateObj, editForm.startTime),
-      creatorId: edi,
+      creatorId: editForm.creatorId,
     };
 
     createStreamMutation.mutate(payload);

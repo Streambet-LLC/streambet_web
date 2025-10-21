@@ -12,7 +12,8 @@ import api, { adminAPI } from '@/integrations/api/client';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { formatDateTimeForISO, getImageLink, getMessage } from '@/utils/helper';
+import { formatDateTimeForISO, getImageLink, getMessage, isWithinTextLimits } from '@/utils/helper';
+import { STREAM_LIMITS } from '@/utils/constants';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
@@ -271,6 +272,7 @@ export const AdminManagement = ({
   function validateForm() {
     const newErrors = {
       title: '',
+      description: '',
       embeddedUrl: '',
       thumbnail: '',
       startDate: '',
@@ -281,9 +283,26 @@ export const AdminManagement = ({
     if (!title) {
       newErrors.title = 'Title is required';
       isValid = false;
-    } else if (title?.trim().length < 3 || title?.trim().length > 70) {
-      newErrors.title = 'Title must be 3-70 characters';
+    } else if (
+      title?.trim().length < STREAM_LIMITS.TITLE_MIN_LENGTH ||
+      title?.trim().length > STREAM_LIMITS.TITLE_MAX_LENGTH
+    ) {
+      newErrors.title = `Title must be ${STREAM_LIMITS.TITLE_MIN_LENGTH}-${STREAM_LIMITS.TITLE_MAX_LENGTH} characters`;
       isValid = false;
+    }
+
+    // Validate description if provided
+    if (description && description.trim()) {
+      if (
+        !isWithinTextLimits(
+          description,
+          STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS,
+          STREAM_LIMITS.DESCRIPTION_MAX_WORDS
+        )
+      ) {
+        newErrors.description = `Description must not exceed ${STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS} characters or ${STREAM_LIMITS.DESCRIPTION_MAX_WORDS} words`;
+        isValid = false;
+      }
     }
 
     if (
