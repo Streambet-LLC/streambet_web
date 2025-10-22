@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
-import { Search, X } from 'lucide-react';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { UserTable } from './UserTable';
 import { StreamTable } from './StreamTable';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -1364,67 +1363,37 @@ export const AdminManagement = ({
             />
 
             {activeTab === 'users' && (
-              <div
-                className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`}
-                style={{ border: '1px solid #2D343E' }}
-              >
-                <Input
-                  id="search-users"
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchUserQuery}
-                  onChange={e => setSearchUserQuery(e.target.value)}
-                  className="pl-9 rounded-md"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              </div>
+              <SearchInput
+                id="search-users"
+                placeholder="Search users..."
+                value={searchUserQuery}
+                onChange={setSearchUserQuery}
+                width="lg"
+              />
             )}
 
             {activeTab === 'ended-streams' && (
-              <div
-                className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`}
-                style={{ border: '1px solid #2D343E' }}
-              >
-                <Input
-                  id="search-ended-streams"
-                  type="text"
-                  placeholder="Search ended streams..."
-                  value={searchEndedStreamQuery}
-                  onChange={e => setSearchEndedStreamQuery(e.target.value)}
-                  className="pl-9 pr-9 rounded-md"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                {searchEndedStreamQuery && (
-                  <button
-                    onClick={() => setSearchEndedStreamQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+              <SearchInput
+                id="search-ended-streams"
+                placeholder="Search ended streams..."
+                value={searchEndedStreamQuery}
+                onChange={setSearchEndedStreamQuery}
+                width="lg"
+              />
             )}
 
             {activeTab === 'livestreams' && (
               <div
                 className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-end'} w-full`}
               >
-                <div
-                  className={`relative rounded-md ${isMobile ? 'w-full' : 'mr-2'}`}
-                  style={{ border: '1px solid #2D343E' }}
-                >
-                  <Input
-                    id="search-streams"
-                    type="text"
-                    placeholder="Search streams..."
-                    value={searchStreamQuery}
-                    onChange={e => setSearchStreamQuery(e.target.value)}
-                    className="pl-9 rounded-md"
-                    style={isMobile ? {} : { minWidth: 180 }}
-                  />
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                </div>
+                <SearchInput
+                  id="search-streams"
+                  placeholder="Search streams..."
+                  value={searchStreamQuery}
+                  onChange={setSearchStreamQuery}
+                  width="md"
+                  className={isMobile ? '' : 'mr-2'}
+                />
                 <button
                   type="button"
                   className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
