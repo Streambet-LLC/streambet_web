@@ -17,6 +17,7 @@ import {
   getConnectionErrorMessage,
   getImageLink,
 } from '@/utils/helper';
+import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
@@ -77,24 +78,33 @@ function isTimeValid(time, date) {
 
 // Validation function for stream settings form
 function validateForm(
-  { title, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime },
+  { title, description, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime },
   selectedThumbnailFile,
   isLiveStream
 ) {
   const newErrors = {
     title: '',
+    description: '',
     embeddedUrl: '',
     thumbnail: '',
     startDate: '',
   };
   let isValid = true;
-  if (!title) {
-    newErrors.title = 'Title is required';
-    isValid = false;
-  } else if (title.trim().length < 3 || title.trim().length > 70) {
-    newErrors.title = 'Title must be 3-70 characters';
+  
+  // Validate title
+  const titleError = validateStreamTitle(title);
+  if (titleError) {
+    newErrors.title = titleError;
     isValid = false;
   }
+  
+  // Validate description
+  const descriptionError = validateStreamDescription(description);
+  if (descriptionError) {
+    newErrors.description = descriptionError;
+    isValid = false;
+  }
+  
   if (
     !embeddedUrl?.trim() ||
     (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))
@@ -253,6 +263,7 @@ export const AdminStreamContent = ({
   });
   const [editErrors, setEditErrors] = useState({
     title: '',
+    description: '',
     embeddedUrl: '',
     thumbnail: '',
     startDate: '',
@@ -415,7 +426,7 @@ export const AdminStreamContent = ({
       embeddedUrl: editForm.embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(editForm.startDateObj, editForm.startTime),
-      creatorId: edi,
+      creatorId: editForm.creatorId,
     };
 
     createStreamMutation.mutate(payload);
