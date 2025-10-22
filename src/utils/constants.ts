@@ -1959,7 +1959,7 @@ export const BETTING_LIMITS = {
 export const STREAM_LIMITS = {
   // Title limits
   TITLE_MIN_LENGTH: 3,
-  TITLE_MAX_LENGTH: 70,
+  TITLE_MAX_LENGTH: 50,
   
   // Description limits
   DESCRIPTION_MAX_CHARACTERS: 300,
