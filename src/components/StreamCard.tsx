@@ -1,8 +1,8 @@
 import { Card } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { StreamActions } from './StreamActions';
+import { StreamActions } from '@/components/StreamActions';
 import { Button } from '@/components/ui/button';
-import { Trash, Calendar, LockKeyhole, LockKeyholeOpen } from 'lucide-react';
+import { Trash, LockKeyhole, LockKeyholeOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAnimations } from '@/hooks/useAnimations';
@@ -10,6 +10,7 @@ import { getImageLink, formatDate, formatTime } from '@/utils/helper';
 import { useState } from 'react';
 import { BettingRoundStatus, StreamStatus } from '@/enums';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { StreamStatusBadge } from '@/components/stream/StreamStatusBadge';
 import { QuickPickModal } from './stream/QuickPickModal';
 import { format } from 'date-fns';
 
@@ -33,6 +34,7 @@ export const StreamCard = ({
   const { cardVariants } = useAnimations();
   const { session } = useAuthContext();
   const isLive = stream?.streamStatus === StreamStatus.LIVE;
+  const isStreamScheduled = stream?.streamStatus === StreamStatus.SCHEDULED;
   const isBettingOpen =
     stream?.bettingRoundStatus === BettingRoundStatus.OPEN;
   const isBettingLocked =
@@ -123,48 +125,23 @@ export const StreamCard = ({
             {/* Overlay gradient */}
             <div className="absolute inset-0 bg-gradient-to-t via-background/30 to-transparent group-hover:opacity-40 transition-opacity duration-300"></div>
 
-            {/* LIVE badge with animation */}
+            {/* Status badges */}
             {isLive && (
               <div className="absolute top-2 left-2 z-30">
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 500,
-                    damping: 30,
-                  }}
-                >
-                  <div className="flex items-center gap-2 bg-red-600 text-white px-2 py-1 rounded-md shadow-lg">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                    </span>
-                    <span className="font-bold text-xs tracking-wider">Stream Live</span>
-                  </div>
-                </motion.div>
+                <StreamStatusBadge 
+                  status={StreamStatus.LIVE}
+                />
               </div>
             )}
 
             {/* SCHEDULED badge */}
             {stream.streamStatus === StreamStatus.SCHEDULED && stream.scheduledStartTime && (
               <div className="absolute top-2 left-2 z-30">
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 500,
-                    damping: 30,
-                  }}
-                >
-                  <div className="flex items-center gap-2 bg-[#5B21B6] text-white px-2 py-1 rounded-md shadow-lg">
-                    <Calendar className="h-3 w-3" />
-                    <span className="font-medium text-xs">
-                      Stream Upcoming: <br/> {formatDate(stream.scheduledStartTime)} at {formatTime(stream.scheduledStartTime)}
-                    </span>
-                  </div>
-                </motion.div>
+                <StreamStatusBadge 
+                  status={StreamStatus.SCHEDULED}
+                  scheduledStartTime={stream.scheduledStartTime}
+                  multiline={true}
+                />
               </div>
             )}
           </div>
@@ -244,6 +221,7 @@ export const StreamCard = ({
             <div className='!mb-3 !mt-5 space-y-2'>
               <StreamActions streamId={stream.id} onDelete={undefined} />
               {stream.streamStatus && stream.streamStatus !== StreamStatus.ENDED && 
+
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
@@ -252,13 +230,22 @@ export const StreamCard = ({
                   }}
                   disabled={!isBettingOpen}
                   className={cn(
-                    'w-full rounded-full border font-medium text-[12px]',
+                    'w-full rounded-full border font-medium text-[12px] flex items-center justify-center gap-1.5',
                     isBettingOpen
                       ? 'bg-emerald-500 hover:bg-emerald-600 text-black border-emerald-500'
                       : 'bg-emerald-500/50 text-white/80 border-emerald-500/50 cursor-not-allowed'
                   )}
                 >
-                  {isBettingOpen ? 'Quick Pick' : 'Picks Open Soon'}
+                  {isBettingOpen 
+                    ? 'Quick Pick' 
+                    : isBettingLocked 
+                      ? (
+                        <>
+                          <LockKeyhole className="h-3 w-3" />
+                          <span>Picks Locked</span>
+                        </>
+                      )
+                      : 'Picks Open Soon'}
                 </Button>
               }
             </div>

@@ -16,7 +16,7 @@ const Admin = () => {
     handleRefetchStreams,
     setSearchStreamQuery,
     endedStreams,
-    refetchEndedStreams,
+    handleRefetchEndedStreams,
   } = useStreamManagement();
   const queryClient = useQueryClient();
   const [resetKey, setResetKey] = useState(0);
@@ -110,7 +110,7 @@ const Admin = () => {
         setSearchStreamQuery={setSearchStreamQuery}
         onStreamContentChange={setIsStreamContent}
         endedStreams={endedStreams}
-        refetchEndedStreams={refetchEndedStreams}
+        refetchEndedStreams={range => handleRefetchEndedStreams(range)}
       />
     </AdminLayout>
   );

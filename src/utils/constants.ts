@@ -1955,4 +1955,14 @@ export const BETTING_LIMITS = {
   // Preset betting percentages (smallest to largest)
   PRESET_PERCENTAGES: [0.1, 0.3, 0.5, 1.0] as const, // 10%, 30%, 50%, 100%
 };
+
+export const STREAM_LIMITS = {
+  // Title limits
+  TITLE_MIN_LENGTH: 3,
+  TITLE_MAX_LENGTH: 70,
+  
+  // Description limits
+  DESCRIPTION_MAX_CHARACTERS: 300,
+  DESCRIPTION_MAX_WORDS: 50,
+} as const;
   

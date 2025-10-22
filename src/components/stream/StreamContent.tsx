@@ -3,18 +3,19 @@ import BetTokens from './BetTokens';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
-import LockTokens from './LockTokens';
+import LockTokens from '@/components/stream/LockTokens';
 import { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
-import Chat from './Chat';
+import Chat from '@/components/stream/Chat';
 import { FabioBoldStyle } from '@/utils/font';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 import { formatDateTime, getConnectionErrorMessage, getImageLink } from '@/utils/helper';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { StreamHeader } from '@/components/stream/StreamHeader';
+import { WinnerAnimation } from '@/components/stream/WinnerAnimation';
 
 interface StreamContentProps {
   streamId: string;
@@ -139,6 +140,7 @@ export const StreamContent = ({
     if (!socketInstance) return;
 
     const resetBetData = () => {
+      // Clear all local betting state
       setTotalPotGoldCoins(undefined);
       setTotalPotSweepCoins(undefined);
       setPlaceBet(true);
@@ -150,10 +152,12 @@ export const StreamContent = ({
       setLockedOptions(false);
       setLockedBet(false);
       setUpdatedCurrency(undefined);
-      refetchBettingData();
-      refetchRoundData();
       setIsEditing(false);
       setLoading(false);
+
+      // Invalidate cached queries to fetch fresh data from server
+      queryClient.invalidateQueries({ queryKey: ['bettingData', streamId, session?.id] });
+      queryClient.invalidateQueries({ queryKey: ['selectedRoundData'] });
     };
 
     socketInstance.on('scheduledStreamUpdatedToLive', () => {
@@ -227,7 +231,7 @@ export const StreamContent = ({
       console.log('winner declared', data);
       toast({
         title: 'Round Closed',
-        description: `${data?.winnerName} has selected as winning pick option!`,
+        description: `${data?.winnerName} was selected as the winning Pick option!`,
         duration: 7000,
       });
       setWinnerOption(data?.winnerName);
@@ -272,7 +276,7 @@ export const StreamContent = ({
     socketInstance.on('betOpened', update => {
       console.log('betOpened', update);
       toast({
-        description: 'New picks options available!',
+        description: 'New Pick options available!',
         variant: 'default',
       });
       resetBetData();
@@ -281,7 +285,7 @@ export const StreamContent = ({
     socketInstance.on('betCancelledByAdmin', update => {
       queryClient.prefetchQuery({ queryKey: ['session'] });
       toast({
-        description: 'Current picks round cancelled by admin.',
+        description: 'Current round cancelled by admin.',
         variant: 'destructive',
         duration: 4000,
       });
@@ -588,35 +592,36 @@ export const StreamContent = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-screen h-full">
-      <div className="lg:col-span-2 space-y-6 max-h-[100vh] h-full">
-        <div className="relative">
-          {isStreamScheduled || isStreamEnded ? (
-            <div className="relative aspect-video rounded-lg overflow-hidden">
-              {isStreamScheduled && stream?.thumbnailUrl && (
-                <div
-                  className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                  style={{
-                    backgroundImage: `url(${getImageLink(encodeURIComponent(stream.thumbnailUrl))})`,
-                    opacity: 0.3,
-                  }}
-                />
-              )}
-              {/* Fallback black background if no thumbnail */}
-              {!stream?.thumbnailUrl && <div className="absolute inset-0 bg-black" />}
-              <div
-                className={`relative z-10 px-2 w-full h-full flex items-center border border-primary justify-center text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}
-              >
-                {isStreamScheduled
-                  ? `Stream '${stream?.name}' scheduled on ${formatDateTime(stream?.scheduledStartTime)}.`
-                  : 'Stream has ended.'}
+    <div className="space-y-8">
+      {/* Stream Name and Description - Full Width Above Grid */}
+      <StreamHeader 
+        stream={stream}
+        viewerCount={viewerCount}
+      />
+
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-screen">
+        <div className="lg:col-span-2 space-y-6 max-h-screen">
+          <div className="relative">
+            {isStreamScheduled ? (
+              <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
+                {stream?.thumbnailUrl && (
+                  <img
+                    src={getImageLink(stream.thumbnailUrl)}
+                    alt={stream?.name}
+                    className="object-cover w-full h-full"
+                  />
+                )}
               </div>
-            </div>
-          ) : (
-            <StreamPlayer showInfo streamId={streamId} />
-          )}
-        </div>
-          
+            ) : isStreamEnded ? (
+              <div className="aspect-video rounded-lg overflow-hidden bg-black border border-primary flex items-center justify-center px-2">
+                <p className="text-white text-2xl font-bold">Stream has ended.</p>
+              </div>
+            ) : (
+              <StreamPlayer showInfo streamId={streamId} />
+            )}
+          </div>
+
         {session == null && (
           <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
             <h2 className="text-white text-lg font-semibold">Sign in to play</h2>
@@ -629,152 +634,12 @@ export const StreamContent = ({
           </div>
         )}
 
-        <AnimatePresence>
-          {showWinnerAnimation && isUserWinner && (
-            <motion.div
-              className="fixed inset-0 z-50 bg-black bg-opacity-70 flex items-center justify-center overflow-hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {/* Paper blast from left side */}
-              <motion.div
-                className="absolute left-0 top-1/2 transform -translate-y-1/2"
-                initial={{ x: -100, rotate: -45 }}
-                animate={{ x: 50, rotate: 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 200,
-                  damping: 15,
-                  delay: 0.2,
-                }}
-              >
-                <div className="w-16 h-20 bg-yellow-400 transform rotate-12 shadow-lg"></div>
-                <div className="w-12 h-16 bg-blue-400 transform -rotate-6 shadow-lg mt-2"></div>
-                <div className="w-14 h-18 bg-red-400 transform rotate-8 shadow-lg mt-1"></div>
-              </motion.div>
-
-              {/* Paper blast from right side */}
-              <motion.div
-                className="absolute right-0 top-1/2 transform -translate-y-1/2"
-                initial={{ x: 100, rotate: 45 }}
-                animate={{ x: -50, rotate: 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 200,
-                  damping: 15,
-                  delay: 0.2,
-                }}
-              >
-                <div className="w-16 h-20 bg-green-400 transform -rotate-12 shadow-lg"></div>
-                <div className="w-12 h-16 bg-purple-400 transform rotate-6 shadow-lg mt-2"></div>
-                <div className="w-14 h-18 bg-orange-400 transform -rotate-8 shadow-lg mt-1"></div>
-              </motion.div>
-
-              {/* Center congratulations text */}
-              <motion.div
-                className="relative z-10 bg-gradient-to-r from-lime-400 to-green-500 text-black text-3xl font-bold px-10 py-6 rounded-xl shadow-xl"
-                initial={{ scale: 0.8, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.8, opacity: 0, y: 20 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 300,
-                  damping: 20,
-                  delay: 0.1,
-                }}
-              >
-                <motion.div
-                  initial={{ scale: 0.9 }}
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{
-                    duration: 0.5,
-                    repeat: Infinity,
-                    repeatType: 'reverse',
-                  }}
-                >
-                  🎉 Congratulations!! You are a winner! 🎉
-                </motion.div>
-              </motion.div>
-
-              {/* Additional floating confetti */}
-              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                {[...Array(8)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 bg-yellow-300 rounded-full"
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      top: `${Math.random() * 100}%`,
-                    }}
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{
-                      y: [0, -30, 0],
-                      opacity: [0, 1, 0],
-                      rotate: [0, 360],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                    }}
-                  />
-                ))}
-              </motion.div>
-            </motion.div>
-          )}
-
-          {showWinnerAnimation && isUserLoser && (
-            <motion.div
-              className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center overflow-hidden p-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {/* Subtle raining lines to suggest a loss (mobile-friendly) */}
-              <motion.div className="absolute inset-0 pointer-events-none">
-                {[...Array(12)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-[2px] h-6 sm:h-8 bg-blue-400/70 rounded-full"
-                    style={{ left: `${Math.random() * 100}%`, top: -20 }}
-                    initial={{ y: -50, opacity: 0 }}
-                    animate={{ y: '120%', opacity: [0, 1, 0.3, 0] }}
-                    transition={{
-                      duration: 2 + (i % 4) * 0.2,
-                      repeat: Infinity,
-                      delay: i * 0.12,
-                      ease: 'easeIn',
-                    }}
-                  />
-                ))}
-              </motion.div>
-
-              {/* Center message */}
-              <motion.div
-                className="relative z-10 bg-zinc-900/80 backdrop-blur text-white text-xl sm:text-2xl md:text-3xl font-bold px-6 py-4 sm:px-8 sm:py-5 rounded-xl shadow-xl border border-zinc-700"
-                initial={{ scale: 0.9, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-              >
-                <motion.div
-                  className="leading-[80px]"
-                  animate={{ x: [0, -4, 4, 0] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  This pick didn’t go your way 😕 <br />
-                  But the next one might be yours!
-                </motion.div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <WinnerAnimation 
+          show={showWinnerAnimation}
+          isWinner={isUserWinner}
+          isLoser={isUserLoser}
+          onClose={() => setShowWinnerAnimation(false)}
+        />
 
         {/* Only show BetTokens/LockTokens if bettingRounds is not null/empty */}
         {!isStreamEnded && bettingData?.bettingRounds && bettingData.bettingRounds.length ? (
@@ -833,7 +698,7 @@ export const StreamContent = ({
                     className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4"
                     style={FabioBoldStyle}
                   >
-                    No picks options available
+                    No Pick options available
                   </p>
                 </div>
               ) : (
@@ -912,53 +777,8 @@ export const StreamContent = ({
         )}
       </div>
 
-      <div className="lg:col-span-1 flex flex-col mb-5 h-full max-lg:mt-10">
-        <div className="flex-1 h-full sticky top-24 md:max-w-[320px]">
-          <div className="border p-4 mb-3 border-zinc-700 rounded-[16px]">
-            <div className='flex flex-col pt-2 pb-2'>
-              <h2 className="text-lg font-semibold leading-tight">{stream?.name}</h2>
-              {stream?.creatorUsername && 
-                <Link
-                  to={`/${stream.creatorUsername}`}
-                  className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  @{stream.creatorUsername}
-                </Link>
-              }
-            </div>
-            <p
-              className="text-sm mt-1 leading-6 font-semibold max-h-[150px] overflow-y-auto"
-              style={{ color: 'rgba(96, 96, 96, 1)' }}
-            >
-              {stream?.description || '-NA-'}
-            </p>
-
-            <div className="flex items-center gap-1 mt-3 text-sm">
-              <img src="/icons/person.svg" alt="coin" className="w-4 h-4" />
-              <span>{isStreamLive ? (viewerCount ?? (stream?.viewerCount || 0)) : 0} watching</span>
-            </div>
-          </div>
-          {currentBettingRound && (
-            <div className="border p-4 mb-3 border-zinc-700 rounded-[16px]">
-              <h2 className="text-lg font-semibold leading-tight pt-2 pb-2">
-                Round: {currentBettingRound.name}
-              </h2>
-              <p
-                className="text-sm font-semibold leading-tight pt-2 pb-2"
-                style={{ color: '#BDFF00' }}
-              >
-                Total Bets: {currentBettingRound.totalBets} GOLD Coins (
-                {currentBettingRound.totalBettor} Bettors)
-              </p>
-              <ul className="mt-2 ml-5">
-                {currentBettingRound.options.map((option, i) => (
-                  <li key={i} className="text-sm" style={{ color: 'rgba(96, 96, 96, 1)' }}>
-                    {option.name}: {option.totalBets} Gold ({option.totalBettor} Bettors)
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+      <div className="lg:col-span-1 flex flex-col h-full">
+        <div className="flex-1 h-full space-y-6">
           <div className={session == null ? 'pointer-events-none blur-[1px] select-none' : ''}>
             <Chat
               isDisabled={isStreamEnded}
@@ -968,7 +788,29 @@ export const StreamContent = ({
               streamId={streamId}
             />
           </div>
+          {currentBettingRound && (
+            <div className="border p-4 border-zinc-700 rounded-[16px]">
+              <h2 className="text-lg font-semibold leading-tight pt-2 pb-2">
+                Round: {currentBettingRound.name}
+              </h2>
+              <p
+                className="text-sm font-semibold leading-tight pt-2 pb-2"
+                style={{ color: '#BDFF00' }}
+              >
+                Total Pot: {currentBettingRound.totalBets} GOLD Coins (
+                {currentBettingRound.totalBettor} Picks)
+              </p>
+              <ul className="mt-2 ml-5">
+                {currentBettingRound.options.map((option, i) => (
+                  <li key={i} className="text-sm" style={{ color: 'rgba(96, 96, 96, 1)' }}>
+                    {option.name}: {option.totalBets} Gold ({option.totalBettor} Picks)
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
+      </div>
       </div>
     </div>
   );
