@@ -719,6 +719,10 @@ export const AdminManagement = ({
     setCurrentPage(1);
   }, [searchStreamQuery]);
 
+  useEffect(() => {
+    setEndStreamCurrentPage(1);
+  }, [searchEndedStreamQuery]);
+
   // Add useEffect for validation
   useEffect(() => {
     if (validationStarted) {
