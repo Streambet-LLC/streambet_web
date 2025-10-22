@@ -6,7 +6,9 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, X as XIcon, Loader2 } from 'lucide-react';
 import { CopyableInput } from '../ui/CopyableInput';
-import { getImageLink } from '@/utils/helper';
+import { CharacterCounter, CharacterWordCounter } from '@/components/ui/TextCounter';
+import { getImageLink, checkTextLimits } from '@/utils/helper';
+import { STREAM_LIMITS } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus } from '@/enums';
 import Select from 'react-select';
@@ -29,6 +31,7 @@ interface StreamInfoFormProps {
   };
   errors: {
     title?: string;
+    description?: string;
     embeddedUrl?: string;
     thumbnail?: string;
     startDate?: string;
@@ -125,23 +128,44 @@ export const StreamInfoForm = ({
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
           placeholder="Title of livestream"
           value={initialValues.title}
-          maxLength={70}
-          minLength={3}
+          maxLength={STREAM_LIMITS.TITLE_MAX_LENGTH}
+          minLength={STREAM_LIMITS.TITLE_MIN_LENGTH}
           onChange={e => onChange({ title: e.target.value })}
           required
         />
+        <CharacterCounter value={initialValues.title} maxCharacters={STREAM_LIMITS.TITLE_MAX_LENGTH} />
         {errors.title && <div className="text-destructive text-xs mt-1">{errors.title}</div>}
       </div>
       {/* Description */}
       <div>
         <Label className="text-white font-light mb-3 block">Description</Label>
         <Textarea
-          className="bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] border-none mt-2"
+          className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.description ? 'border border-red-500' : 'border-none'}`}
           placeholder="Stream description"
           rows={10}
           value={initialValues.description}
-          onChange={e => onChange({ description: e.target.value })}
+          onChange={e => {
+            const newValue = e.target.value;
+            const limits = checkTextLimits(
+              newValue,
+              STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS,
+              STREAM_LIMITS.DESCRIPTION_MAX_WORDS
+            );
+
+            // Only update if within limits
+            if (limits.isWithinLimits) {
+              onChange({ description: newValue });
+            }
+          }}
         />
+        <CharacterWordCounter
+          value={initialValues.description}
+          maxCharacters={STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS}
+          maxWords={STREAM_LIMITS.DESCRIPTION_MAX_WORDS}
+        />
+        {errors.description && (
+          <div className="text-destructive text-xs mt-1">{errors.description}</div>
+        )}
       </div>
       {/* Stream URL (if editing) */}
       {!!initialValues.streamId && (
