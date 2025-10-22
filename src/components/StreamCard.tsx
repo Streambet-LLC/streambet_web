@@ -135,7 +135,7 @@ export const StreamCard = ({
             )}
 
             {/* SCHEDULED badge */}
-            {stream.streamStatus === StreamStatus.SCHEDULED && stream.scheduledStartTime && (
+            {!isLive && isStreamScheduled && (
               <div className="absolute top-2 left-2 z-30">
                 <StreamStatusBadge 
                   status={StreamStatus.SCHEDULED}
