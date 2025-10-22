@@ -76,7 +76,7 @@ export default function Profile() {
           <MainLayout>
             <div className="flex flex-col gap-4 min-h-[calc(100vh-128px)]">
               <div className={cn("flex flex-col gap-4", !profile.isCreator && "max-w-[584px] mx-auto")}>
-                <div className="flex gap-6 items-center">
+                <div className="flex gap-6">
                   <Avatar className="h-28 w-28 rounded-none">
                     <AvatarImage src={getImageLink(profile.profileImageUrl)} alt={username} />
                     <AvatarFallback>
@@ -86,7 +86,7 @@ export default function Profile() {
                   <div className={cn("flex relative flex-col", !expanded && profile.isCreator && "max-h-32 overflow-clip")}>
                     {profile.isCreator && <div onClick={() => setExpanded(!expanded)} className={cn('absolute h-4 bottom-0 right-0 z-10 text-xs  w-full text-right cursor-pointer text-gray-500', expanded && "-bottom-6")}>...show {expanded ? 'less' : 'more'}</div>}
                     <div className="text-lg font-semibold text-white">{username}</div>
-                    <div className="text-xs text-gray-400">Date joined: {format(profile.accountCreationDate.toString(), "MMMM d, YYY")}</div>
+                    <div className="text-xs text-gray-400">Date joined: {format(profile.accountCreationDate.toString(), "MMMM d, yyy")}</div>
                     {profile.isCreator && profile.socials && 
                       <div className='flex flex-col mt-3 gap-1'>
                         {socialsOrder.map((social) => {

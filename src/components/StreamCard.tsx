@@ -208,10 +208,18 @@ export const StreamCard = ({
                 </div>
               )}
             </div>
-            <div className='flex flex-col mb-6 gap h-10'>
-              <p className="font-semibold text-[#D7DFEF] text-[15px] items-center">
+            <div className='flex flex-col mb-6 gap-1 h-16'>
+              <p className="font-semibold text-[#D7DFEF] text-[15px] items-center truncate">
                 {stream.streamName}
               </p>
+              {stream.creatorUsername && 
+                <Link
+                  to={`/${stream.creatorUsername}`}
+                  className="text-sm text-[#7AFF14] hover:text-foreground transition-colors"
+                >
+                  {stream.creatorUsername}
+                </Link>
+              }
               {stream.endTime && 
                 <p className="text-gray-400 text-xs">
                   Ended: {formatDate(stream.endTime)} at {formatTime(stream.endTime)}
