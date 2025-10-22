@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { BettingRoundStatus, StreamStatus } from '@/enums';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { QuickPickModal } from './stream/QuickPickModal';
+import { format } from 'date-fns';
 
 interface StreamCardProps {
   stream: any;
@@ -41,24 +42,26 @@ export const StreamCard = ({
   // Handle both full URLs and storage paths
   const [imageLoading, setImageLoading] = useState(true);
   const getThumbnailUrl = () => {
-    if (!stream.thumbnailUrl) {
+    const thumbnail = stream.thumbnailURL || stream.thumbnailUrl;
+
+    if (!thumbnail) {
       return '/placeholder.svg';
     }
 
     // If it's already a full URL (starts with http or https), use it directly
-    if (stream.thumbnailUrl.startsWith('http')) {
-      return stream.thumbnailUrl;
+    if (thumbnail.startsWith('http')) {
+      return thumbnail;
     }
 
     // If it's a storage path from bucket but doesn't have the storage URL prefix
     if (
-      stream.thumbnailUrl.includes('stream-thumbnails/') &&
-      !stream.thumbnailUrl.includes(import.meta.env.VITE_SUPABASE_URL)
+      thumbnail.includes('stream-thumbnails/') &&
+      !thumbnail.includes(import.meta.env.VITE_SUPABASE_URL)
     ) {
-      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${stream.thumbnailUrl}`;
+      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${thumbnail}`;
     }
 
-    return getImageLink(stream.thumbnailUrl) || '/placeholder.svg' ;
+    return getImageLink(thumbnail) || '/placeholder.svg' ;
   };
 
   // Random viewer count for visual enhancement
@@ -144,7 +147,7 @@ export const StreamCard = ({
             )}
 
             {/* SCHEDULED badge */}
-            {!isLive && stream.scheduledStartTime && (
+            {stream.streamStatus === StreamStatus.SCHEDULED && stream.scheduledStartTime && (
               <div className="absolute top-2 left-2 z-30">
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
@@ -228,27 +231,36 @@ export const StreamCard = ({
                 </div>
               )}
             </div>
-            <p className="font-semibold text-[#D7DFEF] text-[15px] mb-5 items-center h-10 ">
+            <div className='flex flex-col mb-6 gap h-10'>
+              <p className="font-semibold text-[#D7DFEF] text-[15px] items-center">
                 {stream.streamName}
-            </p>
+              </p>
+              {stream.endTime && 
+                <p className="text-gray-400 text-xs">
+                  Ended: {formatDate(stream.endTime)} at {formatTime(stream.endTime)}
+                </p>
+              }
+            </div>
             <div className='!mb-3 !mt-5 space-y-2'>
               <StreamActions streamId={stream.id} onDelete={undefined} />
-              <Button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setQuickPickOpen(true);
-                }}
-                disabled={!isBettingOpen}
-                className={cn(
-                  'w-full rounded-full border font-medium text-[12px]',
-                  isBettingOpen
-                    ? 'bg-emerald-500 hover:bg-emerald-600 text-black border-emerald-500'
-                    : 'bg-emerald-500/50 text-white/80 border-emerald-500/50 cursor-not-allowed'
-                )}
-              >
-                {isBettingOpen ? 'Quick Pick' : 'Picks Open Soon'}
-              </Button>
+              {stream.streamStatus && stream.streamStatus !== StreamStatus.ENDED && 
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setQuickPickOpen(true);
+                  }}
+                  disabled={!isBettingOpen}
+                  className={cn(
+                    'w-full rounded-full border font-medium text-[12px]',
+                    isBettingOpen
+                      ? 'bg-emerald-500 hover:bg-emerald-600 text-black border-emerald-500'
+                      : 'bg-emerald-500/50 text-white/80 border-emerald-500/50 cursor-not-allowed'
+                  )}
+                >
+                  {isBettingOpen ? 'Quick Pick' : 'Picks Open Soon'}
+                </Button>
+              }
             </div>
           </div>
         </div>

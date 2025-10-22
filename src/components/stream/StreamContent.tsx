@@ -1,6 +1,6 @@
 import { StreamPlayer } from '@/components/StreamPlayer';
 import BetTokens from './BetTokens';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import LockTokens from './LockTokens';
@@ -616,7 +616,7 @@ export const StreamContent = ({
             <StreamPlayer showInfo streamId={streamId} />
           )}
         </div>
-
+          
         {session == null && (
           <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
             <h2 className="text-white text-lg font-semibold">Sign in to play</h2>
@@ -915,8 +915,17 @@ export const StreamContent = ({
       <div className="lg:col-span-1 flex flex-col mb-5 h-full max-lg:mt-10">
         <div className="flex-1 h-full sticky top-24 md:max-w-[320px]">
           <div className="border p-4 mb-3 border-zinc-700 rounded-[16px]">
-            <h2 className="text-lg font-semibold leading-tight pt-2 pb-2">{stream?.name}</h2>
-
+            <div className='flex flex-col pt-2 pb-2'>
+              <h2 className="text-lg font-semibold leading-tight">{stream?.name}</h2>
+              {stream?.creatorUsername && 
+                <Link
+                  to={`/${stream.creatorUsername}`}
+                  className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  @{stream.creatorUsername}
+                </Link>
+              }
+            </div>
             <p
               className="text-sm mt-1 leading-6 font-semibold max-h-[150px] overflow-y-auto"
               style={{ color: 'rgba(96, 96, 96, 1)' }}

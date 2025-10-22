@@ -45,10 +45,10 @@ const formSchema = z.object({
     .transform(val => val?.replace(/^\s+/, '')) // Only trim leading spaces
     .refine(val => !val?.startsWith(' '), 'State cannot start with a space'),
   instagram: z.string().optional(),
-  twitch: z.string().optional(),
-  kick: z.string().optional(),
-  youtube: z.string().optional(),
-  tiktok: z.string().optional(),
+  twitch: z.string().trim().optional(),
+  kick: z.string().trim().optional(),
+  youtube: z.string().trim().optional(),
+  tiktok: z.string().trim().optional(),
   avatar: z.any().optional(),
 });
 
@@ -239,6 +239,7 @@ export const ProfileSection = ({
       if (updateError) throw updateError;
 
       queryClient.invalidateQueries({ queryKey: ['session'] });
+      queryClient.invalidateQueries({ queryKey: ['profile', { username: usernameData }] });
       toast({
         title: 'Success',
         description: 'Profile updated successfully',

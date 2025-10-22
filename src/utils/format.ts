@@ -83,3 +83,7 @@ export const formatViewCount = (count: number): string => {
   if (count === 1) return '1 view';
   return `${formatCompactNumber(count)} views`;
 };
+
+export const formatUrl = (url: string): string => {
+  return !url.startsWith("https://") && !url.startsWith("http://") ? "https://".concat(url) : url;
+};
