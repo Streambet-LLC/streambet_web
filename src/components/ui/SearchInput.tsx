@@ -13,6 +13,14 @@ interface SearchInputProps {
   autoFocus?: boolean;
 }
 
+const WIDTH_CLASSES: Readonly<Record<NonNullable<SearchInputProps['width']>, string>> = {
+  full: 'w-full',
+  sm: 'w-full md:w-[180px]',
+  md: 'w-full md:w-[280px]',
+  lg: 'w-full md:w-[320px] lg:w-[400px]',
+  auto: 'w-auto',
+};
+
 /**
  * A reusable search input component with an embedded search icon.
  * 
@@ -37,19 +45,11 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   width = 'md',
   autoFocus = false,
 }) => {
-  const widthClasses = {
-    full: 'w-full',
-    sm: 'w-full md:w-[180px]',
-    md: 'w-full md:w-[280px]',
-    lg: 'w-full md:w-[320px] lg:w-[400px]',
-    auto: 'w-auto',
-  };
-
   return (
     <div
       className={cn(
         'relative rounded-md border border-[#2D343E]',
-        widthClasses[width],
+        WIDTH_CLASSES[width],
         className
       )}
     >
