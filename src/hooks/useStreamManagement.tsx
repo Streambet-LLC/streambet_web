@@ -16,7 +16,7 @@ export const useStreamManagement = () => {
     queryKey: ['streams'],
     queryFn: async () => {
       const response = await adminAPI.getStreams({
-        range: searchStreamQuery ? '[0,24]' : rangeRef.current,
+        range: rangeRef.current,
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: searchStreamQuery }),
       });
@@ -32,7 +32,7 @@ export const useStreamManagement = () => {
     queryKey: ['ended-streams'],
     queryFn: async () => {
       const response = await adminAPI.getStreams({
-        range: searchEndedStreamQuery ? '[0,24]' : endedStreamsRangeRef.current,
+        range: endedStreamsRangeRef.current,
         sort: '["endTime","DESC"]',
         filter: JSON.stringify({ 
           streamStatus: 'ended',
