@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { UserTable } from './UserTable';
 import { StreamTable } from './StreamTable';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -44,6 +44,8 @@ export const AdminManagement = ({
   onStreamContentChange,
   endedStreams,
   refetchEndedStreams,
+  searchEndedStreamQuery,
+  setSearchEndedStreamQuery,
 }) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('livestreams');
@@ -1371,6 +1373,32 @@ export const AdminManagement = ({
                   className="pl-9 rounded-md"
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              </div>
+            )}
+
+            {activeTab === 'ended-streams' && (
+              <div
+                className={`relative rounded-md border ${isMobile ? 'w-full' : 'w-[200px] lg:w-[400px]'}`}
+                style={{ border: '1px solid #2D343E' }}
+              >
+                <Input
+                  id="search-ended-streams"
+                  type="text"
+                  placeholder="Search ended streams..."
+                  value={searchEndedStreamQuery}
+                  onChange={e => setSearchEndedStreamQuery(e.target.value)}
+                  className="pl-9 pr-9 rounded-md"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                {searchEndedStreamQuery && (
+                  <button
+                    onClick={() => setSearchEndedStreamQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             )}
 
