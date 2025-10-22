@@ -1,6 +1,6 @@
 import { StreamPlayer } from '@/components/StreamPlayer';
-import BetTokens from '@/components/stream/BetTokens';
-import { useNavigate } from 'react-router-dom';
+import BetTokens from './BetTokens';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import LockTokens from '@/components/stream/LockTokens';

@@ -282,9 +282,15 @@ export const authAPI = {
 
 // User API
 export const userAPI = {
-  // Get user profile
+  // Get user profile of logged in user
   getProfile: async () => {
     const response = await apiClient.get('/users/me');
+    return response.data;
+  },
+
+  // Get user profile of any user
+  getUserProfile: async (username: string) => {
+    const response = await apiClient.get(`/users/profile/${username}`);
     return response.data;
   },
 

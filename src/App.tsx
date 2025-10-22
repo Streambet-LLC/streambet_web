@@ -34,6 +34,7 @@ import { CoinflowPurchaseProtection } from "@coinflowlabs/react";
 import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coinflow';
 import Kyc from './components/withdraw/Kyc';
 import RouteGroup from './components/RouteGroup';
+import Profile from './pages/Profile';
 
 
 // Create a client
@@ -78,6 +79,7 @@ const App = () => {
                         <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
                         <Route path="/settings" element={<Settings />} />
                       </Route>
+                      <Route path="/:username" element={<Profile />} />
                       <Route path="/stream/:id" element={<Stream />} />
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/terms" element={<Terms />} />
