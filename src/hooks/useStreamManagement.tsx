@@ -6,7 +6,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 
 export const useStreamManagement = () => {
   const { toast } = useToast();
-  const [searchStreamQuery, setSearchStreamQuery] = useState();
+  const [searchStreamQuery, setSearchStreamQuery] = useState('');
   const [searchEndedStreamQuery, setSearchEndedStreamQuery] = useState('');
   const rangeRef = useRef('[0,7]');
   const endedStreamsRangeRef = useRef('[0,7]');
