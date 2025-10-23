@@ -63,7 +63,7 @@ export default function ProfileLiveUpcomingStreams({
         </div> :
         <>
           {(!streams || streams.data?.length === 0) ? 
-            <div className='text-muted'>
+            <div className='text-gray-400 text-sm font-normal mx-auto'>
               No live and upcoming streams yet.
             </div> : 
             <div className='flex flex-col gap-8'>
