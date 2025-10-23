@@ -556,8 +556,8 @@ export const ProfileSection = ({
               setOpen={setOpen}
             />
           </div>
-          <Separator className="bg-gray-900" />
           <div className={cn("space-y-4", !session.isCreator && "hidden")}>
+            <Separator className="bg-gray-900" />
             <div>
               <h2 className="text-md font-light text-white">Socials</h2>
               <p className="text-sm text-[#FFFFFFBF] mt-1">Social links where your viewers can reach you.</p>
