@@ -51,13 +51,21 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <p className="text-sm font-medium leading-none truncate max-w-[180px] cursor-help">
-                    {profile?.username || 'User'}
-                  </p>
+                  {profile?.isCreator ?
+                    <p className='truncate'>
+                      <Link 
+                        to={`/${profile?.username}`} 
+                        className="text-sm text-[#7AFF14] font-medium"
+                      >
+                        {profile?.username || 'User'}
+                      </Link>
+                    </p> :
+                    <p className="text-sm font-medium leading-none truncate max-w-[180px] cursor-help">
+                      {profile?.username || 'User'}
+                    </p>
+                  }
+                  
                 </TooltipTrigger>
-                <TooltipContent>
-                  {profile?.username || 'User'}
-                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <TooltipProvider>
