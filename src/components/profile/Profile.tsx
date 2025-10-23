@@ -23,7 +23,7 @@ const socialsMapping = {
     label: "Twitch",
   },
   kick: {
-    icon: <img src="/icons/kick-icon.png" alt="kick" className="w-3 h-3 mr-[2px]" />,
+    icon: <img src="/icons/kick-icon.png" alt="kick" className="w-4 h-4 mr-[2px]" />,
     label: "Kick",
   },
   youtube: {
@@ -94,7 +94,6 @@ export default function Profile() {
                           return (
                             <div key={social} className='flex gap-1 text-white items-center text-sm'>
                               {socialsMapping[social].icon}
-                              {socialsMapping[social].label}:
                               {" "}
                               <a
                                 href={formatUrl(profileSocial)}
