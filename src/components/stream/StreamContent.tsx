@@ -125,6 +125,11 @@ export const StreamContent = ({
     }
   }, [isFetchingProfile]);
 
+  // Scroll to top on mount to ensure StreamHeader is visible
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Effect to scroll to last card when roundDetails changes
   useEffect(() => {
     scrollToLastCard();
