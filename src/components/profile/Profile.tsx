@@ -7,7 +7,6 @@ import { useParams } from 'react-router-dom';
 import { formatUrl } from '@/utils/format';
 import NotFound from '@/pages/NotFound';
 import { format } from 'date-fns';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import ProfileLiveUpcomingStreams from './ProfileLiveUpcomingStreams';
 import { getImageLink } from '@/utils/helper';
@@ -24,7 +23,7 @@ const socialsMapping = {
     label: "Twitch",
   },
   kick: {
-    icon: <img src="/icons/kick-icon.png" alt="kick" className="w-3 h-3 mr-[2px]" />,
+    icon: <img src="/icons/kick-icon.png" alt="kick" className="w-4 h-4 mr-[2px]" />,
     label: "Kick",
   },
   youtube: {
@@ -39,7 +38,6 @@ const socialsMapping = {
 
 export default function Profile() {
   const { username } = useParams();
-  const [expanded, setExpanded] = useState(false);
   const socialsOrder = Object.keys(socialsMapping);
 
   if (!username) return <NotFound />;
@@ -83,8 +81,7 @@ export default function Profile() {
                       {username[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className={cn("flex relative flex-col", !expanded && profile.isCreator && "max-h-32 overflow-clip")}>
-                    {profile.isCreator && <div onClick={() => setExpanded(!expanded)} className={cn('absolute h-4 bottom-0 right-0 z-10 text-xs  w-full text-right cursor-pointer text-gray-500', expanded && "-bottom-6")}>...show {expanded ? 'less' : 'more'}</div>}
+                  <div className="flex relative flex-col">
                     <div className="text-lg font-semibold text-white">{username}</div>
                     <div className="text-xs text-gray-400">Date joined: {format(profile.accountCreationDate.toString(), "MMMM d, yyy")}</div>
                     {profile.isCreator && profile.socials && 
@@ -97,7 +94,6 @@ export default function Profile() {
                           return (
                             <div key={social} className='flex gap-1 text-white items-center text-sm'>
                               {socialsMapping[social].icon}
-                              {socialsMapping[social].label}:
                               {" "}
                               <a
                                 href={formatUrl(profileSocial)}
