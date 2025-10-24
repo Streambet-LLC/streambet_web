@@ -1,6 +1,6 @@
 import { StreamPlayer } from '@/components/StreamPlayer';
-import BetTokens from '@/components/stream/BetTokens';
-import { useNavigate } from 'react-router-dom';
+import BetTokens from './BetTokens';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import LockTokens from '@/components/stream/LockTokens';
@@ -124,6 +124,11 @@ export const StreamContent = ({
       refetchBettingData();
     }
   }, [isFetchingProfile]);
+
+  // Scroll to top on mount to ensure StreamHeader is visible
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Effect to scroll to last card when roundDetails changes
   useEffect(() => {

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { getImageLink, getMessage } from '@/utils/helper';
-import { useDebounce } from '@/lib/utils';
+import { cn, useDebounce } from '@/lib/utils';
 import api from '@/integrations/api/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -28,6 +28,8 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import Select from 'react-select';
 import Bugsnag from '@bugsnag/js';
 import { US_STATES } from '@/utils/constants';
+import { Label } from '../ui/label';
+import { FaInstagram, FaTiktok, FaTwitch, FaYoutube } from 'react-icons/fa';
 
 const formSchema = z.object({
   name: z.string().optional(),
@@ -42,6 +44,11 @@ const formSchema = z.object({
     .optional()
     .transform(val => val?.replace(/^\s+/, '')) // Only trim leading spaces
     .refine(val => !val?.startsWith(' '), 'State cannot start with a space'),
+  instagram: z.string().optional(),
+  twitch: z.string().trim().optional(),
+  kick: z.string().trim().optional(),
+  youtube: z.string().trim().optional(),
+  tiktok: z.string().trim().optional(),
   avatar: z.any().optional(),
 });
 
@@ -90,6 +97,11 @@ export const ProfileSection = ({
       username: currentUsername,
       email: currentProfile?.email ?? '',
       avatar: currentAvatar,
+      instagram: currentProfile?.instagram,
+      twitch: currentProfile?.twitch,
+      kick: currentProfile?.kick,
+      youtube: currentProfile?.youtube,
+      tiktok: currentProfile?.tiktok,
     },
     mode: 'onChange',
   });
@@ -103,6 +115,11 @@ export const ProfileSection = ({
         username: session?.username,
         email: session?.email ?? '',
         avatar: currentAvatar,
+        instagram: session.socials?.instagram ?? '',
+        twitch: session.socials?.twitch ?? '',
+        kick: session.socials?.kick ?? '',
+        youtube: session.socials?.youtube ?? '',
+        tiktok: session.socials?.tiktok ?? '',
       });
     }
   }, [session, form, currentAvatar]);
@@ -207,6 +224,13 @@ export const ProfileSection = ({
         username: data.username,
         state: data.state?.trim(),
         profileImageUrl: profileImageUrlToSave,
+        socials: {
+          instagram: data.instagram,
+          twitch: data.twitch,
+          kick: data.kick,
+          youtube: data.youtube,
+          tiktok: data.tiktok,  
+        },
         // Set hidden fields to undefined
         name: undefined,
         city: undefined,
@@ -215,6 +239,7 @@ export const ProfileSection = ({
       if (updateError) throw updateError;
 
       queryClient.invalidateQueries({ queryKey: ['session'] });
+      queryClient.invalidateQueries({ queryKey: ['profile', { username: usernameData }] });
       toast({
         title: 'Success',
         description: 'Profile updated successfully',
@@ -447,7 +472,6 @@ export const ProfileSection = ({
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="email"
@@ -466,63 +490,62 @@ export const ProfileSection = ({
               </FormItem>
             )}
           />
-<FormField
-  control={form.control}
-  name="state"
-  render={({ field }) => {
-    const selectedOption = stateOptions.find(
-      (option) => option.value === field.value
-    );
+          <FormField
+            control={form.control}
+            name="state"
+            render={({ field }) => {
+              const selectedOption = stateOptions.find(
+                (option) => option.value === field.value
+              );
 
-    return (
-      <FormItem>
-        <FormLabel className="text-white font-light block mb-1">
-          State
-        </FormLabel>
-        <FormControl>
-          <Select
-            options={stateOptions}
-            value={selectedOption} // 👈 convert string to full object
-            onChange={(selected) => field.onChange(selected?.value || '')}
-            placeholder="State"
-            styles={{
-              control: (base) => ({
-                ...base,
-                backgroundColor: '#272727',
-                color: 'white',
-                borderColor: '#272727',
-              }),
-              menu: (base) => ({
-                ...base,
-                backgroundColor: '#272727',
-                color: 'white',
-                zIndex: 30, // Ensure dropdown is above the close (X) button
-              }),
-              option: (base, state) => ({
-                ...base,
-                backgroundColor: state.isFocused ? '#333' : '#272727',
-                color: 'white',
-              }),
-              singleValue: (base) => ({
-                ...base,
-                color: 'white',
-              }),
-              input: (base) => ({
-                ...base,
-                color: 'white',
-              }),
-              placeholder: (base) => ({
-                ...base,
-                color: '#aaa',
-              }),
+              return (
+                <FormItem>
+                  <FormLabel className="text-white font-light block mb-1">
+                    State
+                  </FormLabel>
+                  <FormControl>
+                    <Select
+                      options={stateOptions}
+                      value={selectedOption} // 👈 convert string to full object
+                      onChange={(selected) => field.onChange(selected?.value || '')}
+                      placeholder="State"
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          backgroundColor: '#272727',
+                          color: 'white',
+                          borderColor: '#272727',
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          backgroundColor: '#272727',
+                          color: 'white',
+                          zIndex: 30, // Ensure dropdown is above the close (X) button
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          backgroundColor: state.isFocused ? '#333' : '#272727',
+                          color: 'white',
+                        }),
+                        singleValue: (base) => ({
+                          ...base,
+                          color: 'white',
+                        }),
+                        input: (base) => ({
+                          ...base,
+                          color: 'white',
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          color: '#aaa',
+                        }),
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              );
             }}
           />
-        </FormControl>
-      </FormItem>
-    );
-  }}
-/>
-
           {/* Password Change Section - moved below state field */}
           <div className="flex items-center justify-between mt-2">
             <span className="text-sm">Need to change your password?</span>
@@ -534,11 +557,112 @@ export const ProfileSection = ({
             />
           </div>
           <Separator className="bg-gray-900" />
+          <div className={cn("space-y-4", !session.isCreator && "hidden")}>
+            <div>
+              <h2 className="text-md font-light text-white">Socials</h2>
+              <p className="text-sm text-[#FFFFFFBF] mt-1">Social links where your viewers can reach you.</p>
+            </div>
+            <FormField
+              control={form.control}
+              name="instagram"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white font-light flex gap-1 mb-1 items-center"><FaInstagram />Instagram</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://instagram.com"
+                      {...field}
+                      className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="twitch"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white font-light flex gap-1 mb-1 items-center"><FaTwitch />Twitch</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://twitch.tv"
+                      {...field}
+                      className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="kick"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white font-light flex gap-1 mb-1 items-center">
+                    <img src="/icons/kick-icon.png" alt="kick" className="w-3 h-3 mr-[2px]" />
+                    Kick
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://kick.com"
+                      {...field}
+                      className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="youtube"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white font-light flex gap-1 mb-1 items-center">
+                    <FaYoutube />
+                    Youtube
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://youtube.com"
+                      {...field}
+                      className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tiktok"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white font-light flex gap-1 mb-1 items-center">
+                    <FaTiktok />
+                    TikTok
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="https://tiktok.com"
+                      {...field}
+                      className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <Separator className="bg-gray-900" />
           {/* Profile Picture Section */}
           <div className="space-y-4">
             <div>
               <h2 className="text-md font-light text-white">Your photo</h2>
-              <p className="text-sm text-[#FFFFFF] mt-1">This will be displayed on your profile.</p>
+              <p className="text-sm text-[#FFFFFFBF] mt-1">This will be displayed on your profile.</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 items-center relative">
               {/* Left: Preview */}
