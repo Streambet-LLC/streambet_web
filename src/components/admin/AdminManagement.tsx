@@ -479,7 +479,21 @@ export const AdminManagement = ({
       setDescription(streamData?.description);
       setEmbeddedUrl(streamData?.embeddedUrl);
       setCreatorId(streamData.creatorId);
-      setBettingRounds(streamData?.rounds || []);
+      
+      // Auto-populate first round with 2 options if no rounds exist
+      const rounds = streamData?.rounds || [];
+      if (rounds.length === 0) {
+        setBettingRounds([{
+          roundName: 'First round',
+          options: [
+            { option: 'Option 1' },
+            { option: 'Option 2' }
+          ]
+        }]);
+      } else {
+        setBettingRounds(rounds);
+      }
+      
       setIsLiveStream(streamData?.status === StreamStatus.LIVE);
 
       // Set thumbnail if available
@@ -686,6 +700,19 @@ export const AdminManagement = ({
       });
       return;
     }
+    
+    // Auto-populate first round with 2 options if empty
+    if (bettingRounds.length === 0) {
+      const firstRound: BettingRound = {
+        roundName: 'First round',
+        options: [
+          { option: 'Option 1' },
+          { option: 'Option 2' }
+        ]
+      };
+      setBettingRounds([firstRound]);
+    }
+    
     setCreateStep('betting');
   };
 
@@ -745,7 +772,10 @@ export const AdminManagement = ({
 
     const newRound: BettingRound = {
       roundName: defaultName,
-      options: [],
+      options: [
+        { option: 'Option 1' },
+        { option: 'Option 2' }
+      ],
     };
 
     handleRoundsChange([...bettingRounds, newRound]);
