@@ -6,7 +6,8 @@ import { useAuthContext } from '@/contexts/AuthContext';
 
 export const useStreamManagement = () => {
   const { toast } = useToast();
-  const [searchStreamQuery, setSearchStreamQuery] = useState();
+  const [searchStreamQuery, setSearchStreamQuery] = useState('');
+  const [searchEndedStreamQuery, setSearchEndedStreamQuery] = useState('');
   const rangeRef = useRef('[0,7]');
   const endedStreamsRangeRef = useRef('[0,7]');
   const { isLoading, isFetching, session } = useAuthContext();
@@ -15,7 +16,7 @@ export const useStreamManagement = () => {
     queryKey: ['streams'],
     queryFn: async () => {
       const response = await adminAPI.getStreams({
-        range: searchStreamQuery ? '[0,24]' : rangeRef.current,
+        range: rangeRef.current,
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: searchStreamQuery }),
       });
@@ -33,7 +34,10 @@ export const useStreamManagement = () => {
       const response = await adminAPI.getStreams({
         range: endedStreamsRangeRef.current,
         sort: '["endTime","DESC"]',
-        filter: JSON.stringify({ streamStatus: 'ended' }),
+        filter: JSON.stringify({ 
+          streamStatus: 'ended',
+          ...(searchEndedStreamQuery && { q: searchEndedStreamQuery })
+        }),
       });
 
       return response;
@@ -63,7 +67,7 @@ export const useStreamManagement = () => {
 
   useEffect(() => {
     refetchEndedStreams();
-  }, [refetchEndedStreams]);
+  }, [searchEndedStreamQuery, refetchEndedStreams]);
 
   return {
     profile: session,
@@ -76,5 +80,7 @@ export const useStreamManagement = () => {
     handleRefetchStreams,
     endedStreams,
     handleRefetchEndedStreams,
+    searchEndedStreamQuery,
+    setSearchEndedStreamQuery,
   };
 };
