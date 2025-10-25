@@ -64,6 +64,21 @@ export function BettingRounds({
   const optionRefs = useRef<Array<Array<HTMLTableRowElement | null>>>([]);
   const [lastAddedOption, setLastAddedOption] = useState<{ roundIndex: number; optionId: string } | null>(null);
 
+  // Auto-expand first round if it's the only round, and auto-expand any newly added rounds
+  useEffect(() => {
+    if (rounds.length === 1 && !expandedRounds.includes('round-0')) {
+      setExpandedRounds(['round-0']);
+    } else if (rounds.length > prevRoundsLength.current) {
+      // A new round was added, expand it
+      const newRoundIndex = rounds.length - 1;
+      const newRoundValue = `round-${newRoundIndex}`;
+      if (!expandedRounds.includes(newRoundValue)) {
+        setExpandedRounds(prev => [...prev, newRoundValue]);
+      }
+    }
+    prevRoundsLength.current = rounds.length;
+  }, [rounds.length, expandedRounds]);
+
   // Auto-scroll to bottom after a new round is added
   useEffect(() => {
     if (rounds.length > prevRoundsLength.current) {
@@ -76,7 +91,6 @@ export function BettingRounds({
         }
       }, 500);
     }
-    prevRoundsLength.current = rounds.length;
   }, [rounds.length]);
 
   const addNewRound = () => {
@@ -86,7 +100,10 @@ export function BettingRounds({
     
     const newRound: BettingRound = {
       roundName: defaultName,
-      options: []
+      options: [
+        { option: 'Option 1' },
+        { option: 'Option 2' }
+      ]
     };
     
     onRoundsChange([...rounds, newRound]);
