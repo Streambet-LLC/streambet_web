@@ -59,16 +59,16 @@ apiClient.interceptors.response.use(
       Bugsnag.notify(error instanceof Error ? error : new Error(String(error)));
     }
 
-    if (error.response?.data?.isForcedLogout) {
-      toast({
-        id: 'vpn-proxy',
-        variant: 'destructive',
-        description: error.response?.data?.message,
-        duration: 7000,
-      });
-      // Dispatch custom event for logout handling
-      window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
-    }
+    // if (error.response?.data?.isForcedLogout) {
+    //   toast({
+    //     id: 'vpn-proxy',
+    //     variant: 'destructive',
+    //     description: error.response?.data?.message,
+    //     duration: 7000,
+    //   });
+    //   // Dispatch custom event for logout handling
+    //   window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+    // }
 
     const originalRequest = error.config;
 
