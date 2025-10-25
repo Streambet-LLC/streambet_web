@@ -263,9 +263,9 @@ export function useBettingSocket({
       });
       setIsLoading(false);
       
-      if (error?.isForcedLogout) {
-        window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
-      }
+    //   if (error?.isForcedLogout) {
+    //     window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+    //   }
     };
 
     // Register event listeners

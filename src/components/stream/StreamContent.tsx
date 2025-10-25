@@ -351,10 +351,10 @@ export const StreamContent = ({
         duration: 7000,
       });
       setLoading(false);
-      if (error?.isForcedLogout) {
-        // Dispatch custom event for logout handling
-        window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
-      }
+    //   if (error?.isForcedLogout) {
+    //     // Dispatch custom event for logout handling
+    //     window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+    //   }
     });
 
     // Handle disconnection events
