@@ -11,28 +11,22 @@ export const useLogoutEventListeners = () => {
   const { handleLogout } = useLogout();
 
   useEffect(() => {
-    const handleVpnProxyDetected = () => {
-        handleLogout();
-    };
+	// const handleVpnProxyDetected = () => {
+    //     handleLogout();
+    // };
     const handleNavigateToLogin = () => {
         navigate('/login');
     };
 
     // Add event listeners for logout events
--    window.addEventListener('vpnProxyDetected', handleVpnProxyDetected);
-+    // VPN/proxy detection disabled: no-op listener
-+    window.addEventListener('vpnProxyDetectedDisabled', handleVpnProxyDetected);
+    // window.addEventListener('vpnProxyDetected', handleVpnProxyDetected);
     // Listen for custom navigation events
     window.addEventListener('navigateToLogin', handleNavigateToLogin);
 
     // Cleanup
--    return () => {
--      window.removeEventListener('vpnProxyDetected', handleVpnProxyDetected);
--      window.removeEventListener('navigateToLogin', handleNavigateToLogin);
--    };
-+    return () => {
-+      window.removeEventListener('vpnProxyDetectedDisabled', handleVpnProxyDetected);
-+      window.removeEventListener('navigateToLogin', handleNavigateToLogin);
-+    };
+    return () => {
+    //   window.removeEventListener('vpnProxyDetected', handleVpnProxyDetected);
+      window.removeEventListener('navigateToLogin', handleNavigateToLogin);
+    };
   }, [handleLogout]);
 };

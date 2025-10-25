@@ -193,14 +193,10 @@ export const AdminStreamContent = ({
         variant: 'destructive',
         duration: 7000,
       });
--      if (error?.isForcedLogout) {
--        // Dispatch custom event for logout handling
--        window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
--      }
-+      if (false && error?.isForcedLogout) {
-+        // Dispatch custom event for logout handling (disabled)
-+        window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
-+      }
+    //   if (error?.isForcedLogout) {
+    //     // Dispatch custom event for logout handling
+    //     window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+    //   }
     });
 
     // Handle disconnection events
