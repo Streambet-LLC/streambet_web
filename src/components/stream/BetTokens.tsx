@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BETTING_LIMITS } from '@/utils/constants';
+import { PRESET_PERCENTAGES } from '@/utils/constants';
 
 
 interface BettingVariable {
@@ -83,6 +84,8 @@ export default function BetTokens({
 }: BetTokensProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
+  const { getBettingLimits } = useAuthContext();
+  const bettingLimits = getBettingLimits();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
@@ -129,7 +132,7 @@ export default function BetTokens({
   const isBetButtonEnabled = selectedColor !== "";
 
    useEffect(() => {
-      const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
+      const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
       
       const currentBetAmount = isEditing ? Number(isSweepCoins 
         ? bettingData?.userBetSweepCoin 
@@ -301,12 +304,12 @@ export default function BetTokens({
           {/* Preset Amount Buttons - spanning most of the row */}
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(() => {
-              const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
+              const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
               const baseWalletBalance = Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0;
               const currentBetAmount = isEditing ? Number(isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins) || 0 : 0;
               const totalAvailableBalance = Math.min(baseWalletBalance + currentBetAmount, maxBetLimit);
 
-              return BETTING_LIMITS.PRESET_PERCENTAGES.map((percentage, index) => (
+              return PRESET_PERCENTAGES.map((percentage, index) => (
                 <button
                   key={index}
                   onClick={() => session && !lockedOptions && setBetAmount(Math.min(Math.floor(totalAvailableBalance * percentage), sliderMax || 0))}
