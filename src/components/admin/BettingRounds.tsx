@@ -371,7 +371,7 @@ export function BettingRounds({
                                       onSave={(newName) => updateOptionName(roundIndex, optionIndex, newName)}
                                       className="text-white text-sm font-normal truncate"
                                       style={{ color: '#FFFFFFBF', maxWidth: '100%' }}
-                                      minLength={2}
+                                      minLength={1}
                                     />
                                   </div>
                                 </div>
