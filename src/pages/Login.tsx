@@ -101,18 +101,18 @@ export default function Login() {
     }
   };
 
-  // Display location restriction warning if needed
+  // COMMENTED OUT: Display location restriction warning if needed
   const renderLocationWarning = () => {
-    if (!locationResult) return null;
+    // if (!locationResult) return null;
 
-    if (!locationResult?.allowed) {
-      return (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Location Restricted</AlertTitle>
-          <AlertDescription>{locationResult?.error}</AlertDescription>
-        </Alert>
-      );
-    }
+    // if (!locationResult?.allowed) {
+    //   return (
+    //     <Alert variant="destructive" className="mb-4">
+    //       <AlertTitle>Location Restricted</AlertTitle>
+    //       <AlertDescription>{locationResult?.error}</AlertDescription>
+    //     </Alert>
+    //   );
+    // }
 
     return null;
   };
@@ -120,15 +120,15 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Don't proceed if location is restricted
-    if (locationResult && !locationResult.allowed) {
-      toast({
-        variant: 'destructive',
-        title: 'Location Restricted',
-        description: locationResult?.error,
-      });
-      return;
-    }
+    // COMMENTED OUT: Don't proceed if location is restricted
+    // if (locationResult && !locationResult.allowed) {
+    //   toast({
+    //     variant: 'destructive',
+    //     title: 'Location Restricted',
+    //     description: locationResult?.error,
+    //   });
+    //   return;
+    // }
 
     if (!validateForm()) return;
 
@@ -152,15 +152,15 @@ export default function Login() {
   
 
   const handleGoogleLogin = async () => {
-    // Don't proceed if location is restricted
-    if (locationResult && !locationResult.allowed) {
-      toast({
-        variant: 'destructive',
-        title: 'Location Restricted',
-        description: locationResult.error,
-      });
-      return;
-    }
+    // COMMENTED OUT: Don't proceed if location is restricted
+    // if (locationResult && !locationResult.allowed) {
+    //   toast({
+    //     variant: 'destructive',
+    //     title: 'Location Restricted',
+    //     description: locationResult.error,
+    //   });
+    //   return;
+    // }
 
     // Trigger the Google login button click
     // const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');

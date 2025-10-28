@@ -110,22 +110,20 @@ export default function SignUp() {
 
   const signupMutation = useMutation({
     mutationFn: async (userData: {
-      username: string;
       email: string;
       password: string;
-      dob: string | undefined;
-      tosAccepted: boolean;
-      isOlder: boolean;
-      profileImageUrl: string;
+      username: string;
+      dateOfBirth: string;
       lastKnownIp: string;
       redirect?: string;
       promoCode?: string;
+      profileImageUrl?: string;
     }) => {
-      // Verify location again before proceeding with signup
-      const locationResult = await verifyUserLocation();
-      if (!locationResult.allowed) {
-        throw new Error(locationResult.error);
-      }
+      // COMMENTED OUT: Verify location again before proceeding with signup
+      // const locationResult = await verifyUserLocation();
+      // if (!locationResult.allowed) {
+      //   throw new Error(locationResult.error);
+      // }
       return await api.auth.register(userData);
     },
     onSuccess: () => {
@@ -146,11 +144,11 @@ export default function SignUp() {
 
   const googleLoginMutation = useMutation({
     mutationFn: async () => {
-      // Verify location before proceeding with Google login
-      const locationResult = await verifyUserLocation();
-      if (!locationResult.allowed) {
-        throw new Error(locationResult.error);
-      }
+      // COMMENTED OUT: Verify location before proceeding with Google login
+      // const locationResult = await verifyUserLocation();
+      // if (!locationResult.allowed) {
+      //   throw new Error(locationResult.error);
+      // }
       await fetch(`${import.meta.env.VITE_API_URL}/auth/location-check`, {
               headers: {
                 'Content-Type': 'application/json',
@@ -311,15 +309,15 @@ export default function SignUp() {
   };
 
   const handleGoogleLogin = async () => {
-    // Don't proceed if location is restricted
-    if (locationResult && !locationResult.allowed) {
-      toast({
-        variant: 'destructive',
-        title: 'Location Restricted',
-        description: locationResult.error,
-      });
-      return;
-    }
+    // COMMENTED OUT: Don't proceed if location is restricted
+    // if (locationResult && !locationResult.allowed) {
+    //   toast({
+    //     variant: 'destructive',
+    //     title: 'Location Restricted',
+    //     description: locationResult.error,
+    //   });
+    //   return;
+    // }
 
     googleLoginMutation.mutateAsync();
   };
@@ -371,18 +369,18 @@ export default function SignUp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
-  // Display location restriction warning if needed
+  // COMMENTED OUT: Display location restriction warning if needed
   const renderLocationWarning = () => {
-    if (!locationResult) return null;
+    // if (!locationResult) return null;
 
-    if (!locationResult?.allowed) {
-      return (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Location Restricted</AlertTitle>
-          <AlertDescription>{locationResult.error}</AlertDescription>
-        </Alert>
-      );
-    }
+    // if (!locationResult?.allowed) {
+    //   return (
+    //     <Alert variant="destructive" className="mb-4">
+    //       <AlertTitle>Location Restricted</AlertTitle>
+    //       <AlertDescription>{locationResult.error}</AlertDescription>
+    //     </Alert>
+    //   );
+    // }
 
     return null;
   };

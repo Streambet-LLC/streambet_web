@@ -22,7 +22,8 @@ import VerifyEmail from './pages/auth/VerifyEmail';
 import NotFound from './pages/NotFound';
 import VerifyEmailNotice from './pages/auth/VerifyEmailNotice';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
-import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionContext';
+// COMMENTED OUT: Location restriction provider import
+// import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { BettingStatusProvider } from './contexts/BettingStatusContext';
 import { BettingProvider } from './contexts/BettingContext';
@@ -51,7 +52,8 @@ const App = () => {
   return (
     <BugSnagErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <LocationRestrictionProvider>
+      {/* COMMENTED OUT: LocationRestrictionProvider wrapper */}
+      {/* <LocationRestrictionProvider> */}
           <CurrencyProvider>
             <AuthProvider>
               <BettingStatusProvider>
@@ -99,7 +101,7 @@ const App = () => {
               </BettingStatusProvider>
             </AuthProvider>
           </CurrencyProvider>
-      </LocationRestrictionProvider>
+      {/* </LocationRestrictionProvider> */}
     </QueryClientProvider>
     </BugSnagErrorBoundary>
   );
