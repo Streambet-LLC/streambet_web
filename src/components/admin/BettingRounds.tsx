@@ -321,11 +321,6 @@ export function BettingRounds({
                           round.options.map((option, optionIndex) => {
                             const optionErrors = getOptionErrors(roundIndex, optionIndex);
                             const hasOptionError = optionErrors.length > 0;
-                            const optionNameLower = option.option.toLowerCase().trim();
-                            const isDuplicateOption = validationErrors?.some(
-                              error => error.type === 'option' && error.roundIndex === roundIndex &&
-                                round.options.filter(opt => opt.option.toLowerCase().trim() === optionNameLower).length > 1
-                            );
                             
                             return (
                             <TableRow
@@ -363,25 +358,25 @@ export function BettingRounds({
                                   }, 500);
                                 }
                               }}
-                              className={`bg-transparent${isDuplicateOption ? ' border-destructive' : ''}`}
+                              className="bg-transparent"
                               style={{ height: 72, borderRadius: 0 }}
                             >
-                              <TableCell className={`border-t border-b border-[#191D24] px-4 py-2 w-full${isDuplicateOption ? ' border-destructive' : ''}`} style={{ borderRadius: 0, maxWidth: 'calc(100% - 56px)', borderTopWidth: 1, borderBottomWidth: 1, borderColor: isDuplicateOption ? '#ef4444' : '#191D24' }}>
+                              <TableCell className="border-t border-b border-[#191D24] px-4 py-2 w-full" style={{ borderRadius: 0, maxWidth: 'calc(100% - 56px)', borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#191D24' }}>
                                 <div className="flex items-center gap-2 group min-w-0 h-full" style={{ height: 72 }}>
-                                  <div className={`flex items-center w-full${isDuplicateOption ? ' border-destructive' : ''}`} style={{ height: 44, background: '#272727', borderRadius: 8, paddingLeft: 16, paddingRight: 16, border: isDuplicateOption ? '1px solid #ef4444' : 'none' }}>
+                                  <div className="flex items-center w-full" style={{ height: 44, background: '#272727', borderRadius: 8, paddingLeft: 16, paddingRight: 16 }}>
                                     <InlineEditable
                                       title="Edit Option Name"
                                       isNotCreatedStatus={isNotCreatedStatus}
                                       value={option.option}
                                       onSave={(newName) => updateOptionName(roundIndex, optionIndex, newName)}
-                                      className={`text-white text-sm font-normal truncate${isDuplicateOption ? ' text-destructive' : ''}`}
-                                      style={{ color: isDuplicateOption ? '#ef4444' : '#FFFFFFBF', maxWidth: '100%' }}
+                                      className="text-white text-sm font-normal truncate"
+                                      style={{ color: '#FFFFFFBF', maxWidth: '100%' }}
                                       minLength={2}
                                     />
                                   </div>
                                 </div>
                               </TableCell>
-                              <TableCell className={`border-t border-b border-[#191D24] p-0 w-14${isDuplicateOption ? ' border-destructive' : ''}`} style={{ borderRadius: 0, width: 56, borderTopWidth: 1, borderBottomWidth: 1, borderColor: isDuplicateOption ? '#ef4444' : '#191D24' }}>
+                              <TableCell className="border-t border-b border-[#191D24] p-0 w-14" style={{ borderRadius: 0, width: 56, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#191D24' }}>
                                 <div className="flex items-center justify-center h-full" style={{ minHeight: 72 }}>
                                   <DeleteBettingDialog
                                     title="Delete Option"
@@ -417,13 +412,6 @@ export function BettingRounds({
                         <TableRow>
                           <TableCell colSpan={2} className="border-none px-4 py-2 !text-destructive text-xs">
                             Each round must have at least two options.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                      {validationErrors?.find(error => error.type === 'option' && error.roundIndex === roundIndex) && (
-                        <TableRow>
-                          <TableCell colSpan={2} className="border-none px-4 py-2 !text-destructive text-xs">
-                            {validationErrors.find(error => error.type === 'option' && error.roundIndex === roundIndex)?.message}
                           </TableCell>
                         </TableRow>
                       )}
@@ -475,40 +463,4 @@ export function BettingRounds({
      
     </div>
   );
-}
-
-export function validateRounds(rounds: BettingRound[]): ValidationError[] {
-  const errors: ValidationError[] = [];
-  // Check for duplicate round names
-  const roundNames = rounds.map(round => round.roundName.toLowerCase().trim());
-  const duplicateRoundNames = new Set<string>();
-  roundNames.forEach((name, index) => {
-    if (roundNames.indexOf(name) !== index) {
-      duplicateRoundNames.add(name);
-    }
-  });
-  rounds.forEach((round, roundIndex) => {
-    // if (duplicateRoundNames.has(round.roundName.toLowerCase().trim())) {
-    //   errors.push({
-    //     type: 'round',
-    //     roundIndex,
-    //     message: 'Round name must be unique'
-    //   });
-    // }
-    // Check for duplicate option names within the same round
-    const optionNames = round.options.map(option => option.option.toLowerCase().trim());
-    const nameCounts = optionNames.reduce((acc, name) => {
-      acc[name] = (acc[name] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const hasDuplicate = Object.values(nameCounts).some(count => count > 1);
-    if (hasDuplicate) {
-      errors.push({
-        type: 'option',
-        roundIndex,
-        message: 'Option names must be unique within the same round'
-      });
-    }
-  });
-  return errors;
 } 

@@ -15,13 +15,13 @@ import { formatDateTimeForISO, getImageLink, getMessage } from '@/utils/helper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
+import { BettingRounds, ValidationError } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
 import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds } from '@/utils/bettingRoundsUtils';
+import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
 
 interface BettingOption {
   optionId?: string;
@@ -89,8 +89,14 @@ export const AdminManagement = ({
         : api.admin.createStream(payload),
     onSuccess: response => {
       if (bettingRounds.length > 0) {
+        // Apply counters to duplicate option names
+        const processedRounds = bettingRounds.map(round => ({
+          ...round,
+          options: appendCountersToDuplicates(round.options)
+        }));
+        
         // Clean temporary option IDs before sending to API
-        const cleanedRounds = cleanTemporaryIds(bettingRounds);
+        const cleanedRounds = cleanTemporaryIds(processedRounds);
 
         const bettingPayload = {
           streamId: editStreamId || response?.data?.id,
@@ -612,13 +618,9 @@ export const AdminManagement = ({
       .map((round, idx) => (round.options.length < 2 ? idx : -1))
       .filter(idx => idx !== -1);
 
-    // Validate for duplicate round/option names
-    const validationErrors = validateRounds(bettingRounds);
-    setBettingValidationErrors(validationErrors);
-    setShowBettingValidation(true);
-
     if (errorIndices.length > 0) {
       setBettingErrorRounds(errorIndices);
+      setShowBettingValidation(true);
       toast({
         title: 'Validation Error',
         description:
@@ -630,21 +632,6 @@ export const AdminManagement = ({
         const el = document.querySelector('[data-round-index="' + errorIndices[0] + '"]');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 500);
-      return;
-    }
-
-    if (validationErrors.length > 0) {
-      // Scroll to first duplicate error
-      setTimeout(() => {
-        const first = validationErrors[0];
-        const el = document.querySelector('[data-round-index="' + first.roundIndex + '"]');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 500);
-      toast({
-        title: 'Validation Error',
-        description: validationErrors[0].message,
-        variant: 'destructive',
-      });
       return;
     }
 
@@ -728,11 +715,8 @@ export const AdminManagement = ({
   // Wrap setBettingRounds to auto-clear errors if all rounds have at least one option
   const handleRoundsChange = (newRounds: BettingRound[]) => {
     setBettingRounds(newRounds);
-    // Revalidate immediately on any name change
-    const validationErrors = validateRounds(newRounds);
-    setBettingValidationErrors(validationErrors);
-    // If all rounds have at least one option, clear errors
-    if (newRounds.every(r => r.options.length > 0)) {
+    // If all rounds have at least 2 options, clear errors
+    if (newRounds.every(r => r.options.length >= 2)) {
       setBettingErrorRounds([]);
       setShowBettingValidation(false);
     }
