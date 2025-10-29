@@ -229,14 +229,15 @@ export default function SignUp() {
     e.preventDefault();
 
     // Don't proceed if location is restricted
-    if (locationResult && !locationResult.allowed) {
-      toast({
-        variant: 'destructive',
-        title: 'Location Restricted',
-        description: locationResult.error,
-      });
-      return;
-    }
+    // Location checking is disabled
+    // if (locationResult && !locationResult.allowed) {
+    //   toast({
+    //     variant: 'destructive',
+    //     title: 'Location Restricted',
+    //     description: locationResult.error,
+    //   });
+    //   return;
+    // }
 
     if (!validateForm()) return;
 
@@ -302,7 +303,7 @@ export default function SignUp() {
       tosAccepted,
       isOlder,
       profileImageUrl: profileImageUrl || undefined,
-      lastKnownIp: locationResult?.ip_address,
+      lastKnownIp: undefined, // locationResult?.ip_address - location checking disabled
       redirect: redirectParam || undefined,
       promoCode: promoCode || undefined,
     });
@@ -479,7 +480,7 @@ export default function SignUp() {
                         value={username}
                         onChange={e => setUsername(e.target.value)}
                         className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.username ? 'border-destructive' : ''} ${username.length >= 3 && !username.includes(' ') ? 'pr-10' : ''} border-0 focus:border-0 focus:ring-0`}
-                        disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
+                        disabled={false || false}
                       />
                       {username.length >= 3 && !username.includes(' ') && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -551,9 +552,9 @@ export default function SignUp() {
                       onChange={e => setEmail(e.target.value)}
                       className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.email ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
                       disabled={
-                        isCheckingLocation ||
+                        false ||
                         isGoogleLogin ||
-                        (locationResult && !locationResult.allowed)
+                        false
                       }
                     />
                     {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
@@ -567,7 +568,7 @@ export default function SignUp() {
                       placeholder="Enter your password"
                       onChange={e => setPassword(e.target.value)}
                       className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
-                      disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
+                      disabled={false}
                     />
                     {errors.password && (
                       <p className="text-destructive text-sm">{errors.password}</p>
@@ -586,7 +587,7 @@ export default function SignUp() {
                       placeholder="Enter promo code (optional)"
                       onChange={e => setPromoCode(e.target.value)}
                       className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.promoCode ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
-                      disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
+                      disabled={false}
                     />
                     {errors.promoCode && <p className="text-destructive text-sm">{errors.promoCode}</p>}
                   </motion.div>
@@ -603,7 +604,7 @@ export default function SignUp() {
                             placeholder="Select your date of birth"
                             readOnly
                             className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) pl-10 ${errors.dob ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
-                            disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
+                            disabled={false}
                             onClick={handleInputClick}
                           />
                         </div>
@@ -659,7 +660,7 @@ export default function SignUp() {
                       id="tosAccepted"
                       checked={tosAccepted}
                       onCheckedChange={checked => setTosAccepted(checked as boolean)}
-                      disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
+                      disabled={false}
                     />
                     <Label htmlFor="tosAccepted" className="text-sm pt-2 pb-2">
                       I accept the{' '}
@@ -681,7 +682,7 @@ export default function SignUp() {
                       id="isOlder"
                       checked={isOlder}
                       onCheckedChange={checked => setIsOlder(checked as boolean)}
-                      disabled={isCheckingLocation || (locationResult && !locationResult.allowed)}
+                      disabled={false}
                     />
                     <Label htmlFor="isOlder" className="text-sm">
                       I confirm that I am 18 years of age or older
@@ -697,11 +698,11 @@ export default function SignUp() {
                         disabled={
                           signupMutation.isPending ||
                           isUploading ||
-                          isCheckingLocation ||
-                          (locationResult && !locationResult.allowed)
+                          false ||
+                          false
                         }
                       >
-                        {isCheckingLocation
+                        {false
                           ? 'Verifying location...'
                           : signupMutation.isPending || isUploading
                             ? 'Creating account...'
@@ -716,8 +717,8 @@ export default function SignUp() {
                       onClick={handleGoogleLogin}
                       disabled={
                         googleLoginMutation.isPending ||
-                        isCheckingLocation ||
-                        (locationResult && !locationResult.allowed)
+                        false ||
+                        false
                       }
                     >
                       <span className="mr-2">
