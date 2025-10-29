@@ -61,7 +61,7 @@ const BuyCoins = ({
                     Gold coins (aka free coins) can be used to make free Picks on participation streams / contents, where creators may offer prizes for engagement.
                   </p>
                   <p className="mt-2">
-                    Stream coins can be used for real-$ picks, where creators host real-$ contests. This is where things get realllly interesting.
+                    Stream coins can be used for real-$ Picks, where creators host real-$ contests. This is where things get realllly interesting.
                   </p>
                   <p className="mt-2">
                     Contact us with any questions via Discord, email, or Instagram.
