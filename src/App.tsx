@@ -35,7 +35,7 @@ import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coin
 import Kyc from './components/withdraw/Kyc';
 import RouteGroup from './components/RouteGroup';
 import Profile from './pages/Profile';
-
+import 'react-image-crop/dist/ReactCrop.css'
 
 // Create a client
 const queryClient = new QueryClient({

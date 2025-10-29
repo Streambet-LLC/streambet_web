@@ -75,7 +75,7 @@ export default function Profile() {
             <div className="flex flex-col gap-4 min-h-[calc(100vh-128px)]">
               <div className={cn("flex flex-col gap-4", !profile.isCreator && "max-w-[584px] mx-auto")}>
                 <div className="flex gap-6">
-                  <Avatar className="h-28 w-28 rounded-none">
+                  <Avatar className="h-28 w-28">
                     <AvatarImage src={getImageLink(profile.profileImageUrl)} alt={username} />
                     <AvatarFallback>
                       {username[0].toUpperCase()}
