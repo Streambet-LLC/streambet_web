@@ -311,7 +311,7 @@ useEffect(() => {
             <span className="text-[#BDFF00]">randomest</span> moments
           </h1>
           <p className='text-[#FFFFFFBF]'>
-            Live picks for games created on the Internet.
+            Real-$ picks on neosports, Sunday leagues, and games created on the Internet.
             <br />
               <span className='text-[#FFFFFFBF] font-bold'>Speculate on the unexpected.</span>
           </p>

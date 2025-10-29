@@ -58,7 +58,7 @@ const BuyCoins = ({
                     Streambet employs a 2-token Sweepstakes model, where you can purchase gold coins packs that include Stream Coins, alongside.
                   </p>
                   <p className="mt-2">
-                    Gold coins (aka free coins) can be used to make free picks on participation streams / contents, where creators may offer prizes for engagement.
+                    Gold coins (aka free coins) can be used to make free Picks on participation streams / contents, where creators may offer prizes for engagement.
                   </p>
                   <p className="mt-2">
                     Stream coins can be used for real-$ picks, where creators host real-$ contests. This is where things get realllly interesting.
@@ -67,7 +67,7 @@ const BuyCoins = ({
                     Contact us with any questions via Discord, email, or Instagram.
                   </p>
                   <p className="mt-2">
-                    Good luck, have fun, and may the sweeps be with you!
+                    Good luck, have fun, and may the Picks be with you!
                   </p>
                 </DialogDescription>
                 <DialogFooter>
@@ -80,6 +80,12 @@ const BuyCoins = ({
               </DialogContent>
             </Dialog>
           </p>
+          <div className="text-sm text-gray-400 mt-2">
+            <ul className="list-disc pl-5">
+              <li>Gold coins = free plays</li>
+              <li>Stream coins = real-$ Picks</li>
+            </ul>
+          </div>
           <Separator className="my-4 bg-[#232323]" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6 mt-10">
             {coinPackages?.sort((a, b) => a.totalAmount - b.totalAmount).map((option, idx) => {
