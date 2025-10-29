@@ -34,7 +34,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [rememberMe, setRememberMe] = useState(false);
-  const { locationResult } = useLocationRestriction();
+  // const { locationResult } = useLocationRestriction();
   const { refetchSession } = useAuthContext();
 
   const loginMutation = useMutation({

@@ -10,7 +10,7 @@ import { useAnimations } from '@/hooks/useAnimations';
 import { CustomDrawer } from './ui/CustomDrawer';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { CurrencyType } from '@/enums';
-import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
+// import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useLogout } from '@/hooks/useLogout';
 
@@ -27,7 +27,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const [visible, setVisible] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { navVariants, buttonVariants } = useAnimations();
-  const { locationResult, isCheckingLocation } = useLocationRestriction();
+  // const { locationResult, isCheckingLocation } = useLocationRestriction();
   const { currency } = useCurrencyContext();
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
@@ -60,11 +60,11 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   };
 
   useEffect(() => {
-    if (!isCheckingLocation && session && !locationResult?.allowed) {
-      handleLogoutWithRefetch();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCheckingLocation, locationResult, session]);
+  //   if (!isCheckingLocation && session && !locationResult?.allowed) {
+  //     handleLogoutWithRefetch();
+  //   }
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [isCheckingLocation, locationResult, session]);
 
 
 

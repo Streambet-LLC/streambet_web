@@ -25,7 +25,7 @@ import { getMessage } from '@/utils/helper';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
+// import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { AuthLayout } from '@/components/layout';
 import Bugsnag from '@bugsnag/js';
 
@@ -50,7 +50,7 @@ export default function SignUp() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const lastClickTimeRef = useRef<number>(0);
   const [avatarInputKey, setAvatarInputKey] = useState(0);
-  const { locationResult, isCheckingLocation } = useLocationRestriction();
+  // const { locationResult, isCheckingLocation } = useLocationRestriction();
 
 
   const signupSchema = z.object({
