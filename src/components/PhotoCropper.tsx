@@ -146,7 +146,7 @@ export default function PhotoCropper({
     <>
       <Dialog open={!!file} onOpenChange={(state) => { !state && onClose() }}>
         <DialogContent hideCloseButton className='border-2 border-[#7AFF14] max-w-[40vw] max-h-[80vh] w-fit h-fit overflow-auto' style={{ background: '#0D0D0D' }}>
-          <DialogHeader className="flex flex-row items-center justify-between bg-background">
+          <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle>Set Avatar</DialogTitle>
             <DialogClose asChild>
               <Button variant="link" size="icon"><X /></Button>
