@@ -59,7 +59,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
     refetchSession();
   };
 
-  useEffect(() => {
+  // useEffect(() => {
   //   if (!isCheckingLocation && session && !locationResult?.allowed) {
   //     handleLogoutWithRefetch();
   //   }
