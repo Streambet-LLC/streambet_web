@@ -104,8 +104,8 @@ export default function PhotoCropper({
 
     Resizer.imageFileResizer(
       croppedFile,
-      isNaN(resizerProps?.maxWidth) ? 112 : resizerProps?.maxWidth,
-      isNaN(resizerProps?.maxHeight) ? 112 : resizerProps?.maxHeight,
+      isNaN(resizerProps?.maxWidth) ? 140 : resizerProps?.maxWidth,
+      isNaN(resizerProps?.maxHeight) ? 140 : resizerProps?.maxHeight,
       resizerProps?.compressFormat || "PNG",
       isNaN(resizerProps?.quality) ? 100 : resizerProps?.quality,
       0,
