@@ -11,7 +11,7 @@ import api, { adminAPI } from '@/integrations/api/client';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { formatDateTimeForISO, getImageLink, getMessage } from '@/utils/helper';
+import { formatDateTimeForISO, getImageLink, getMessage, isImageSFW } from '@/utils/helper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -524,6 +524,14 @@ export const AdminManagement = ({
   }
   async function handleFile(file: File) {
     // Validate file type
+    setErrors({
+      ...errors,
+      thumbnail: '',
+      title: '',
+      embeddedUrl: '',
+      startDate: '',
+    });
+
     if (!file.type.startsWith('image/')) {
       setErrors({
         ...errors,
@@ -548,6 +556,22 @@ export const AdminManagement = ({
     // Validate image dimensions
     const isValid = await validateImage(file);
     if (!isValid) return;
+
+    setIsUploading(true);
+    const isSfw = await isImageSFW(URL.createObjectURL(file));
+    setIsUploading(false);
+
+    if (!isSfw) {
+      setErrors({
+        ...errors,
+        thumbnail: 'Sorry, but the chosen image might be inappropriate. Please choose a different one.',
+        title: '',
+        embeddedUrl: '',
+        startDate: '',
+      });
+      return;
+    }
+    
     setSelectedThumbnailFile(file);
     setThumbnailPreviewUrl(URL.createObjectURL(file));
     setErrors(errors => ({ ...errors, thumbnail: '' }));

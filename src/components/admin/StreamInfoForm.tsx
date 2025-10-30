@@ -259,13 +259,13 @@ export const StreamInfoForm = ({
         <Label className="text-white font-light mb-3 block">Thumbnail</Label>
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           {/* Left: Preview */}
-          <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727] relative">
+          <div className="w-[215px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727] relative">
             {initialValues.thumbnailPreviewUrl ? (
               <>
                 <img
                   src={getImageLink(initialValues.thumbnailPreviewUrl)}
                   alt="Thumbnail preview"
-                  className="object-cover w-full h-full"
+                  className="object-cover w-full h-full aspect-video"
                 />
                 {!isUploading && (
                   <button
@@ -324,7 +324,19 @@ export const StreamInfoForm = ({
                 <span className="text-primary font-medium">Click to upload</span> or drag and drop
                 <br />
                 <span className="text-[#667085] text-[12px]">
-                  SVG, PNG, JPG or GIF (max. 1920x1080px)
+                  SVG, PNG, JPG or GIF
+                </span>
+                <br />
+                <span className="text-[#667085] text-[10px]">
+                  Recommended aspect ratio: 16:9
+                </span>
+                <br />
+                <span className="text-[#667085] text-[10px]">
+                  Max resolution: 1920x1080px
+                </span>
+                <br />
+                <span className="text-[#667085] text-[10px]">
+                  Max size: 5MB
                 </span>
               </span>
             </div>

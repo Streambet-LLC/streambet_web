@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
-import { getImageLink, getMessage } from '@/utils/helper';
+import { getImageLink, getMessage, isImageSFW } from '@/utils/helper';
 import { cn, useDebounce } from '@/lib/utils';
 import api from '@/integrations/api/client';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,8 +28,8 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import Select from 'react-select';
 import Bugsnag from '@bugsnag/js';
 import { US_STATES } from '@/utils/constants';
-import { Label } from '../ui/label';
 import { FaInstagram, FaTiktok, FaTwitch, FaYoutube } from 'react-icons/fa';
+import PhotoCropper from '../PhotoCropper';
 
 const formSchema = z.object({
   name: z.string().optional(),
@@ -85,6 +85,7 @@ export const ProfileSection = ({
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | undefined>(undefined);
   const [avatarDeleted, setAvatarDeleted] = useState(false);
+  const [avatarToCrop, setAvatarToCrop] = useState<File | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const { session } = useAuthContext();
 
@@ -159,16 +160,13 @@ export const ProfileSection = ({
 
   // Update preview when selected file changes
   useEffect(() => {
-    if (selectedAvatarFile) {
-      setAvatarPreviewUrl(URL.createObjectURL(selectedAvatarFile));
-      return () => URL.revokeObjectURL(avatarPreviewUrl!);
-    } else if (currentAvatar) {
+    if (currentAvatar) {
       setAvatarPreviewUrl(currentAvatar);
     } else {
       setAvatarPreviewUrl(undefined);
     }
     // eslint-disable-next-line
-  }, [selectedAvatarFile, currentAvatar]);
+  }, [currentAvatar]);
 
   const handleProfileUpdate = async (data: ProfileFormData) => {
     // Prevent submission if avatarError exists
@@ -300,7 +298,8 @@ export const ProfileSection = ({
   };
 
   const handleUploadClick = () => {
-    if (fileInputRef.current) {
+    if (fileInputRef.current && !avatarToCrop) {
+      fileInputRef.current.value = null;
       fileInputRef.current.click();
     }
   };
@@ -329,13 +328,28 @@ export const ProfileSection = ({
     }
   };
 
-  const handleFileChange = (file: File) => {
+  const handleFileChange = async (file: File) => {
     setAvatarError(null);
     if (file.size > 2 * 1024 * 1024) {
       setAvatarError('Please upload a file smaller than 2MB.');
       return;
     }
-    setSelectedAvatarFile(file);
+
+    const url = URL.createObjectURL(file);
+
+    try {
+      setIsImageLoading(true);
+      const isSfw = await isImageSFW(url);
+      
+      if (isSfw) {
+        setAvatarToCrop(file);
+      } else {
+        setAvatarError("Sorry, but the chosen image might be inappropriate. Please choose a different one.")
+      }
+      setIsImageLoading(false);
+    } catch (error) {
+      setAvatarError(error);
+    }
   };
 
   const handleDeleteAvatar = () => {
@@ -723,6 +737,21 @@ export const ProfileSection = ({
                     <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
                     <span className="text-[#667085]">SVG, PNG, JPG or GIF (max. 2MB)</span>
                   </span>
+                  {!!avatarToCrop && 
+                    <PhotoCropper 
+                      file={avatarToCrop} 
+                      onClose={() => setAvatarToCrop(null)} 
+                      onCrop={(file) => {
+                        setSelectedAvatarFile(file);
+                        setAvatarToCrop(null);
+
+                        setAvatarPreviewUrl(URL.createObjectURL(file));
+                      }} 
+                      cropperProps={{
+                        circularCrop: true,
+                      }}
+                    />
+                  }
                   {avatarError && <div className="text-destructive text-xs mt-1">{avatarError}</div>}
                 </div>
               </div>
