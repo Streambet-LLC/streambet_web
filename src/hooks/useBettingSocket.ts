@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useToast } from '@/hooks/use-toast';
 import api from '@/integrations/api/client';
-import type { ActiveRound, UserBet } from '@/contexts/BettingContext';
+import type { ActiveRound, UserBet, BettingVariableStats } from '@/contexts/BettingContext';
 
 interface UseBettingSocketProps {
   socket: any;
@@ -35,6 +35,9 @@ export function useBettingSocket({
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Debounce timer ref at hook level
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Query 1: Fetch betting data for the stream
   const { data: bettingData, refetch: refetchBettingData } = useQuery({
     queryKey: ['bettingData', streamId, session?.id],
@@ -46,16 +49,51 @@ export function useBettingSocket({
     enabled: !!session?.id && !!streamId,
   });
 
+  // Debounced refetch callback at hook level
+  const debouncedRefetch = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      refetchBettingData();
+    }, 500);
+  }, [refetchBettingData]);
+
   // Update activeRound when bettingData changes
   useEffect(() => {
     if (bettingData?.bettingRounds?.[0]) {
+      const betRound = bettingData.bettingRounds[0];
+      
+      // Map betting variables with enhanced statistics
+      const enhancedVariables: BettingVariableStats[] = (betRound.bettingVariables || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        optionName: item.name,
+        totalBetsGoldCoin: Number(item.totalBetsGoldCoinAmount || 0),
+        totalBetsSweepCoin: Number(item.totalBetsSweepCoinAmount || 0),
+        betCountGoldCoin: Number(item.betCountGoldCoin || 0),
+        betCountSweepCoin: Number(item.betCountSweepCoin || 0),
+      }));
+      
+      // Calculate totals across all betting variables
+      const totalBetCountGoldCoin = enhancedVariables.reduce(
+        (sum, item) => sum + item.betCountGoldCoin, 0
+      );
+      
+      const totalBetCountSweepCoin = enhancedVariables.reduce(
+        (sum, item) => sum + item.betCountSweepCoin, 0
+      );
+      
       setActiveRound({
-        id: bettingData.bettingRounds[0].id,
-        status: bettingData.bettingRounds[0].status,
+        id: betRound.id,
+        roundName: betRound.roundName || '',
+        status: betRound.status,
         totalGoldCoins: bettingData.roundTotalBetsGoldCoinAmount ?? 0,
         totalSweepCoins: bettingData.roundTotalBetsSweepCoinAmount ?? 0,
-        isLocked: bettingData.bettingRounds[0].status === BettingRoundStatus.LOCKED,
-        bettingVariables: bettingData.bettingRounds[0].bettingVariables || [],
+        totalBetCountGoldCoin,
+        totalBetCountSweepCoin,
+        isLocked: betRound.status === BettingRoundStatus.LOCKED,
+        bettingVariables: enhancedVariables,
         walletGoldCoin: bettingData.walletGoldCoin,
         walletSweepCoin: bettingData.walletSweepCoin,
         userBetGoldCoins: bettingData.userBetGoldCoins,
@@ -112,11 +150,16 @@ export function useBettingSocket({
 
     // Update pot amounts in real-time
     const handleBettingUpdate = (update: any) => {
+      // Optimistically update coin amounts immediately
       setActiveRound((prev) => ({
         ...prev,
         totalGoldCoins: update?.totalBetsGoldCoinAmount ?? prev.totalGoldCoins,
         totalSweepCoins: update?.totalBetsSweepCoinAmount ?? prev.totalSweepCoins,
       }));
+      
+      // Refetch betting data to get updated bet counts
+      debouncedRefetch();
+      
       setIsLoading(false);
     };
 
@@ -187,7 +230,7 @@ export function useBettingSocket({
 
     // Handle new round opened
     const handleBetOpened = () => {
-      toast({ description: 'New picking options available!' });
+      toast({ description: 'New pick options available!' });
       refetchBettingData();
       refetchRoundData();
     };
@@ -282,6 +325,11 @@ export function useBettingSocket({
 
     // Cleanup on unmount
     return () => {
+      // Clear debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
       socket.emit('leaveStream', streamId);
       socket.off('bettingUpdate', handleBettingUpdate);
       socket.off('potentialAmountUpdate', handlePotentialAmountUpdate);
@@ -294,7 +342,7 @@ export function useBettingSocket({
       socket.off('betEdited', handleBetEdited);
       socket.off('error', handleError);
     };
-  }, [socket, streamId, session?.id, refetchBettingData, refetchRoundData, toast, queryClient, setActiveRound, setUserBet, setIsLoading, setResetKey]);
+  }, [socket, streamId, session?.id, refetchBettingData, refetchRoundData, toast, queryClient, setActiveRound, setUserBet, setIsLoading, setResetKey, debouncedRefetch]);
 
   // Return refetch functions so they can be exposed via context
   return { refetchBettingData, refetchRoundData };

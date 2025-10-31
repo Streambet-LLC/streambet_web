@@ -8,6 +8,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
+import { useBettingContext } from '@/contexts/BettingContext';
 import Chat from '@/components/stream/Chat';
 import { FabioBoldStyle } from '@/utils/font';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
@@ -16,6 +17,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { StreamHeader } from '@/components/stream/StreamHeader';
 import { WinnerAnimation } from '@/components/stream/WinnerAnimation';
+import { BettingRoundStatsCard } from '@/components/BettingRoundStatsCard';
 
 interface StreamContentProps {
   streamId: string;
@@ -35,6 +37,7 @@ export const StreamContent = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
+  const { setActiveStreamId } = useBettingContext();
   const { socketConnect } = useBettingStatusContext();
   const { isConnected: isNetworkConnected } = useNetworkStatus();
   const [betId, setBetId] = useState<string | undefined>();
@@ -67,21 +70,6 @@ export const StreamContent = ({
   const [roundDetails, setRoundDetails] = useState<any>();
   const queryClient = useQueryClient();
   const { isFetching: isFetchingProfile } = useAuthContext();
-
-  const [currentBettingRound, setCurrentBettingRound] = useState<{
-    name: string;
-    totalBetsGoldCoin: number;
-    totalBetsSweepCoin: number;
-    totalBettorGoldCoin: number;
-    totalBettorSweepCoin: number;
-    options: {
-      name: string;
-      totalBetsGoldCoin: number;
-      totalBetsSweepCoin: number;
-      totalBettorGoldCoin: number;
-      totalBettorSweepCoin: number;
-    }[];
-  } | null>(null);
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currencyRef = useRef({ updatedCurrency, currency });
@@ -133,6 +121,17 @@ export const StreamContent = ({
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Set active stream ID for BettingContext
+  useEffect(() => {
+    if (streamId) {
+      setActiveStreamId(streamId);
+    }
+    // Cleanup when component unmounts or streamId changes
+    return () => {
+      setActiveStreamId(null);
+    };
+  }, [streamId, setActiveStreamId]);
 
   // Effect to scroll to last card when roundDetails changes
   useEffect(() => {
@@ -195,12 +194,6 @@ export const StreamContent = ({
       setSelectedWinner(update?.selectedWinner);
       setIsEditing(false);
       setPlaceBet(false);
-      if (update?.message) {
-        toast({
-          description: update.message,
-          variant: 'default',
-        });
-      }
     };
 
     const handler = (update: any) => {
@@ -238,11 +231,6 @@ export const StreamContent = ({
 
     socketInstance.on('winnerDeclared', data => {
       console.log('winner declared', data);
-      toast({
-        title: 'Round Closed',
-        description: `${data?.winnerName} was selected as the winning Pick option!`,
-        duration: 7000,
-      });
       setWinnerOption(data?.winnerName);
       const { updatedCurrency: currentUpdatedCurrency, currency: currentCurrency } =
         currencyRef.current;
@@ -284,20 +272,11 @@ export const StreamContent = ({
 
     socketInstance.on('betOpened', update => {
       console.log('betOpened', update);
-      toast({
-        description: 'New Pick options available!',
-        variant: 'default',
-      });
       resetBetData();
     });
 
     socketInstance.on('betCancelledByAdmin', update => {
       queryClient.prefetchQuery({ queryKey: ['session'] });
-      toast({
-        description: 'Current round cancelled by admin.',
-        variant: 'destructive',
-        duration: 4000,
-      });
       resetBetData();
       refetchStream();
     });
@@ -310,12 +289,6 @@ export const StreamContent = ({
           goldCoins: update?.updatedWalletBalance?.goldCoins || 0,
           sweepCoins: update?.updatedWalletBalance?.sweepCoins || 0,
         });
-        if (update?.message) {
-          toast({
-            description: update?.message,
-            variant: 'default',
-          });
-        }
         resetBetData();
       }
     });
@@ -440,43 +413,6 @@ export const StreamContent = ({
         : (totalPotGoldCoins ?? (bettingData?.roundTotalBetsGoldCoinAmount || 0))
     );
     setLockedOptions(bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.LOCKED);
-
-    if (
-      bettingData &&
-      bettingData.bettingRounds.length > 0 &&
-      bettingData.bettingRounds.at(0).status === 'open'
-    ) {
-      const betRound = bettingData.bettingRounds.at(0);
-
-      setCurrentBettingRound({
-        name: betRound.roundName,
-        totalBetsGoldCoin: betRound.bettingVariables.reduce(
-          (sum, item) => sum + Number(item.totalBetsGoldCoinAmount),
-          0
-        ),
-        totalBetsSweepCoin: betRound.bettingVariables.reduce(
-          (sum, item) => sum + Number(item.totalBetsSweepCoinAmount),
-          0
-        ),
-        totalBettorGoldCoin: betRound.bettingVariables.reduce(
-          (sum, item) => sum + Number(item.betCountGoldCoin),
-          0
-        ),
-        totalBettorSweepCoin: betRound.bettingVariables.reduce(
-          (sum, item) => sum + Number(item.betCountSweepCoin),
-          0
-        ),
-        options: betRound.bettingVariables.map(item => {
-          return {
-            name: item.name,
-            totalBetsGoldCoin: item.totalBetsGoldCoinAmount,
-            totalBetsSweepCoin: item.totalBetsSweepCoinAmount,
-            totalBettorGoldCoin: item.betCountGoldCoin,
-            totalBettorSweepCoin: item.betCountSweepCoin,
-          };
-        }),
-      });
-    }
   }, [bettingData, currency, totalPotSweepCoins, totalPotGoldCoins]);
 
   // Query to get selected betting round data
@@ -807,49 +743,7 @@ export const StreamContent = ({
               streamId={streamId}
             />
           </div>
-          {currentBettingRound && (
-            <div className="border p-4 border-zinc-700 rounded-[16px]">
-              <h2 className="text-lg font-semibold leading-tight pt-2 pb-2">
-                Round: {currentBettingRound.name}
-              </h2>
-              
-              {/* Stream Coins Section */}
-              <div className="mb-4">
-                <p
-                  className="text-sm font-semibold leading-tight pt-2 pb-2"
-                  style={{ color: '#BDFF00' }}
-                >
-                  Total Pot: {currentBettingRound.totalBetsSweepCoin.toLocaleString('en-US')} Stream Coins (
-                  {currentBettingRound.totalBettorSweepCoin} Picks)
-                </p>
-                <ul className="mt-2 ml-5">
-                  {currentBettingRound.options.map((option, i) => (
-                    <li key={`sweep-${i}`} className="text-sm" style={{ color: 'rgba(96, 96, 96, 1)' }}>
-                      {option.name}: {option.totalBetsSweepCoin.toLocaleString('en-US')} Stream Coins ({option.totalBettorSweepCoin} Picks)
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Gold Coins Section */}
-              <div>
-                <p
-                  className="text-sm font-semibold leading-tight pt-2 pb-2"
-                  style={{ color: '#BDFF00' }}
-                >
-                  Total Pot: {currentBettingRound.totalBetsGoldCoin.toLocaleString('en-US')} Gold Coins (
-                  {currentBettingRound.totalBettorGoldCoin} Picks)
-                </p>
-                <ul className="mt-2 ml-5">
-                  {currentBettingRound.options.map((option, i) => (
-                    <li key={`gold-${i}`} className="text-sm" style={{ color: 'rgba(96, 96, 96, 1)' }}>
-                      {option.name}: {option.totalBetsGoldCoin.toLocaleString('en-US')} Gold Coins ({option.totalBettorGoldCoin} Picks)
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
+          <BettingRoundStatsCard />
         </div>
       </div>
       </div>
