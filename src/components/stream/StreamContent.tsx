@@ -70,12 +70,16 @@ export const StreamContent = ({
 
   const [currentBettingRound, setCurrentBettingRound] = useState<{
     name: string;
-    totalBets: number;
-    totalBettor: number;
+    totalBetsGoldCoin: number;
+    totalBetsSweepCoin: number;
+    totalBettorGoldCoin: number;
+    totalBettorSweepCoin: number;
     options: {
       name: string;
-      totalBets: number;
-      totalBettor: number;
+      totalBetsGoldCoin: number;
+      totalBetsSweepCoin: number;
+      totalBettorGoldCoin: number;
+      totalBettorSweepCoin: number;
     }[];
   } | null>(null);
 
@@ -446,19 +450,29 @@ export const StreamContent = ({
 
       setCurrentBettingRound({
         name: betRound.roundName,
-        totalBets: betRound.bettingVariables.reduce(
+        totalBetsGoldCoin: betRound.bettingVariables.reduce(
           (sum, item) => sum + Number(item.totalBetsGoldCoinAmount),
           0
         ),
-        totalBettor: betRound.bettingVariables.reduce(
+        totalBetsSweepCoin: betRound.bettingVariables.reduce(
+          (sum, item) => sum + Number(item.totalBetsSweepCoinAmount),
+          0
+        ),
+        totalBettorGoldCoin: betRound.bettingVariables.reduce(
           (sum, item) => sum + Number(item.betCountGoldCoin),
+          0
+        ),
+        totalBettorSweepCoin: betRound.bettingVariables.reduce(
+          (sum, item) => sum + Number(item.betCountSweepCoin),
           0
         ),
         options: betRound.bettingVariables.map(item => {
           return {
             name: item.name,
-            totalBets: item.totalBetsGoldCoinAmount,
-            totalBettor: item.betCountGoldCoin,
+            totalBetsGoldCoin: item.totalBetsGoldCoinAmount,
+            totalBetsSweepCoin: item.totalBetsSweepCoinAmount,
+            totalBettorGoldCoin: item.betCountGoldCoin,
+            totalBettorSweepCoin: item.betCountSweepCoin,
           };
         }),
       });
@@ -798,20 +812,42 @@ export const StreamContent = ({
               <h2 className="text-lg font-semibold leading-tight pt-2 pb-2">
                 Round: {currentBettingRound.name}
               </h2>
-              <p
-                className="text-sm font-semibold leading-tight pt-2 pb-2"
-                style={{ color: '#BDFF00' }}
-              >
-                Total Pot: {currentBettingRound.totalBets} GOLD Coins (
-                {currentBettingRound.totalBettor} Picks)
-              </p>
-              <ul className="mt-2 ml-5">
-                {currentBettingRound.options.map((option, i) => (
-                  <li key={i} className="text-sm" style={{ color: 'rgba(96, 96, 96, 1)' }}>
-                    {option.name}: {option.totalBets} Gold ({option.totalBettor} Picks)
-                  </li>
-                ))}
-              </ul>
+              
+              {/* Stream Coins Section */}
+              <div className="mb-4">
+                <p
+                  className="text-sm font-semibold leading-tight pt-2 pb-2"
+                  style={{ color: '#BDFF00' }}
+                >
+                  Total Pot: {currentBettingRound.totalBetsSweepCoin.toLocaleString('en-US')} Stream Coins (
+                  {currentBettingRound.totalBettorSweepCoin} Picks)
+                </p>
+                <ul className="mt-2 ml-5">
+                  {currentBettingRound.options.map((option, i) => (
+                    <li key={`sweep-${i}`} className="text-sm" style={{ color: 'rgba(96, 96, 96, 1)' }}>
+                      {option.name}: {option.totalBetsSweepCoin.toLocaleString('en-US')} Stream Coins ({option.totalBettorSweepCoin} Picks)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Gold Coins Section */}
+              <div>
+                <p
+                  className="text-sm font-semibold leading-tight pt-2 pb-2"
+                  style={{ color: '#BDFF00' }}
+                >
+                  Total Pot: {currentBettingRound.totalBetsGoldCoin.toLocaleString('en-US')} Gold Coins (
+                  {currentBettingRound.totalBettorGoldCoin} Picks)
+                </p>
+                <ul className="mt-2 ml-5">
+                  {currentBettingRound.options.map((option, i) => (
+                    <li key={`gold-${i}`} className="text-sm" style={{ color: 'rgba(96, 96, 96, 1)' }}>
+                      {option.name}: {option.totalBetsGoldCoin.toLocaleString('en-US')} Gold Coins ({option.totalBettorGoldCoin} Picks)
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
         </div>
