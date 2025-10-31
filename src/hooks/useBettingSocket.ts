@@ -230,7 +230,7 @@ export function useBettingSocket({
 
     // Handle new round opened
     const handleBetOpened = () => {
-      toast({ description: 'New pick options available!' });
+      toast({ description: 'New Pick options available!' });
       refetchBettingData();
       refetchRoundData();
     };
@@ -238,7 +238,7 @@ export function useBettingSocket({
     // Handle bet cancelled by admin
     const handleBetCancelledByAdmin = () => {
       toast({ 
-        description: 'Current picking round cancelled by admin.', 
+        description: 'Current Pick round cancelled by admin.', 
         variant: 'destructive' 
       });
       queryClient.invalidateQueries({ queryKey: ['session'] });
