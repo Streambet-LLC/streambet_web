@@ -20,6 +20,60 @@ const STATS_CARD_STYLES = {
   },
 } as const;
 
+// Type definitions for CurrencySection
+interface CurrencyOption {
+  id: string;
+  optionName: string;
+  totalBets: number;
+  betCount: number;
+}
+
+interface CurrencySectionProps {
+  type: 'sweep' | 'gold';
+  currencyName: string;
+  totalCoins: number;
+  totalBets: number;
+  options: CurrencyOption[];
+  isLast?: boolean;
+}
+
+/**
+ * CurrencySection - Reusable component for displaying betting statistics per currency
+ * 
+ * Renders total pot and per-option breakdown for a single currency type
+ */
+const CurrencySection = ({ 
+  type, 
+  currencyName, 
+  totalCoins, 
+  totalBets, 
+  options, 
+  isLast = false 
+}: CurrencySectionProps) => {
+  return (
+    <div className={isLast ? STATS_CARD_STYLES.SECTION.lastContainer : STATS_CARD_STYLES.SECTION.container}>
+      <p
+        className={STATS_CARD_STYLES.TOTAL_POT.text}
+        style={{ color: STATS_CARD_STYLES.TOTAL_POT.color }}
+      >
+        Total Pot: {totalCoins.toLocaleString('en-US')} {currencyName} (
+        {totalBets} Picks)
+      </p>
+      <ul className={STATS_CARD_STYLES.OPTIONS_LIST.container}>
+        {options.map((option) => (
+          <li 
+            key={`${type}-${option.id}`} 
+            className={STATS_CARD_STYLES.OPTIONS_LIST.item}
+            style={{ color: STATS_CARD_STYLES.OPTIONS_LIST.itemColor }}
+          >
+            {option.optionName}: {option.totalBets.toLocaleString('en-US')} {currencyName} ({option.betCount} Picks)
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 /**
  * BettingRoundStatsCard - Displays betting statistics for the active round
  * 
@@ -40,6 +94,28 @@ export const BettingRoundStatsCard = () => {
     return activeRound.bettingVariables.length > 0;
   }, [activeRound]);
 
+  // Map betting variables to Stream Coins options
+  const sweepCoinOptions = useMemo(() => 
+    activeRound.bettingVariables.map(option => ({
+      id: option.id,
+      optionName: option.optionName,
+      totalBets: option.totalBetsSweepCoin,
+      betCount: option.betCountSweepCoin,
+    })),
+    [activeRound.bettingVariables]
+  );
+
+  // Map betting variables to Gold Coins options
+  const goldCoinOptions = useMemo(() => 
+    activeRound.bettingVariables.map(option => ({
+      id: option.id,
+      optionName: option.optionName,
+      totalBets: option.totalBetsGoldCoin,
+      betCount: option.betCountGoldCoin,
+    })),
+    [activeRound.bettingVariables]
+  );
+
   if (!shouldDisplay) {
     return null;
   }
@@ -51,48 +127,23 @@ export const BettingRoundStatsCard = () => {
       </h2>
       
       {/* Stream Coins Section */}
-      <div className={STATS_CARD_STYLES.SECTION.container}>
-        <p
-          className={STATS_CARD_STYLES.TOTAL_POT.text}
-          style={{ color: STATS_CARD_STYLES.TOTAL_POT.color }}
-        >
-          Total Pot: {activeRound.totalSweepCoins.toLocaleString('en-US')} Stream Coins (
-          {activeRound.totalBetCountSweepCoin} Picks)
-        </p>
-        <ul className={STATS_CARD_STYLES.OPTIONS_LIST.container}>
-          {activeRound.bettingVariables.map((option) => (
-            <li 
-              key={`sweep-${option.id}`} 
-              className={STATS_CARD_STYLES.OPTIONS_LIST.item}
-              style={{ color: STATS_CARD_STYLES.OPTIONS_LIST.itemColor }}
-            >
-              {option.optionName}: {option.totalBetsSweepCoin.toLocaleString('en-US')} Stream Coins ({option.betCountSweepCoin} Picks)
-            </li>
-          ))}
-        </ul>
-      </div>
+      <CurrencySection
+        type="sweep"
+        currencyName="Stream Coins"
+        totalCoins={activeRound.totalSweepCoins}
+        totalBets={activeRound.totalBetCountSweepCoin}
+        options={sweepCoinOptions}
+      />
 
       {/* Gold Coins Section */}
-      <div className={STATS_CARD_STYLES.SECTION.lastContainer}>
-        <p
-          className={STATS_CARD_STYLES.TOTAL_POT.text}
-          style={{ color: STATS_CARD_STYLES.TOTAL_POT.color }}
-        >
-          Total Pot: {activeRound.totalGoldCoins.toLocaleString('en-US')} Gold Coins (
-          {activeRound.totalBetCountGoldCoin} Picks)
-        </p>
-        <ul className={STATS_CARD_STYLES.OPTIONS_LIST.container}>
-          {activeRound.bettingVariables.map((option) => (
-            <li 
-              key={`gold-${option.id}`} 
-              className={STATS_CARD_STYLES.OPTIONS_LIST.item}
-              style={{ color: STATS_CARD_STYLES.OPTIONS_LIST.itemColor }}
-            >
-              {option.optionName}: {option.totalBetsGoldCoin.toLocaleString('en-US')} Gold Coins ({option.betCountGoldCoin} Picks)
-            </li>
-          ))}
-        </ul>
-      </div>
+      <CurrencySection
+        type="gold"
+        currencyName="Gold Coins"
+        totalCoins={activeRound.totalGoldCoins}
+        totalBets={activeRound.totalBetCountGoldCoin}
+        options={goldCoinOptions}
+        isLast
+      />
     </div>
   );
 };
