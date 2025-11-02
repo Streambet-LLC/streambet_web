@@ -79,7 +79,7 @@ export const Footer = () => {
                 <Instagram className="h-5 w-5" />
               </a>
               <a
-                href="https://discord.gg/Vuf39RCs"
+                href="https://discord.gg/Pnm5yXbu8h"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
