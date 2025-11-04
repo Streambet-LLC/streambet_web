@@ -34,6 +34,11 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
         socketRef.current.off('connect_error');
         socketRef.current.off('withdrawSuccess');
         socketRef.current.off('withdrawFailed');
+        socketRef.current.off('reconnect_attempt');
+        socketRef.current.off('reconnect_error');
+        socketRef.current.off('reconnect_failed');
+        socketRef.current.off('connect');
+        socketRef.current.off('reconnect');
         socketRef.current.disconnect();
         socketRef.current = null;
         setSocketConect(null);
