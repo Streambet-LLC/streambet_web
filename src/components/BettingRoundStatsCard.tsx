@@ -96,24 +96,24 @@ export const BettingRoundStatsCard = () => {
 
   // Map betting variables to Stream Coins options
   const sweepCoinOptions = useMemo(() => 
-    activeRound.bettingVariables.map(option => ({
+    (activeRound?.bettingVariables ?? []).map(option => ({
       id: option.id,
       optionName: option.optionName,
       totalBets: option.totalBetsSweepCoin,
       betCount: option.betCountSweepCoin,
     })),
-    [activeRound.bettingVariables]
+    [activeRound?.bettingVariables]
   );
 
   // Map betting variables to Gold Coins options
   const goldCoinOptions = useMemo(() => 
-    activeRound.bettingVariables.map(option => ({
+    (activeRound?.bettingVariables ?? []).map(option => ({
       id: option.id,
       optionName: option.optionName,
       totalBets: option.totalBetsGoldCoin,
       betCount: option.betCountGoldCoin,
     })),
-    [activeRound.bettingVariables]
+    [activeRound?.bettingVariables]
   );
 
   if (!shouldDisplay) {
