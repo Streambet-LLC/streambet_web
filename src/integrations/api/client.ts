@@ -530,68 +530,25 @@ export const userStreamAPI = {
 };
 
 // Bets API
-export const betsAPI  = {
+export const betsAPI = {
   // Get all promoted bets
   getPromotedBets: async (params?: any) => {
-    
-    // return response.data;
-    return {
-      data: Array(10).fill("").map((_, i) => ({
-        thumbnail: "",
-        name: "Are you gonna get rickrolled again this month?",
-        options: (i % 3 === 0) ?
-          [
-            { option: "Yes", percentage: 82, selected: true },
-            { option: "No", percentage: 12 },
-            { option: "Maybe", percentage: 5 },
-            { option: "I don't know", percentage: 3 },
-          ] :
-          [
-            { option: "Yes", percentage: 82 },
-            { option: "No", percentage: 18 },
-          ],
-        totalPot: {
-          streamCoins: 5125,
-          goldCoins: 1589,
-        },
-        creator: i % 4 === 0 ? "dendi" : i % 7 === 0 ? "aaron" : null,
-        streamId: i % 4 === 0 || i % 7 === 0 ? "00ccfeed-af91-47d2-92a1-7c9f0fd4e207" : null,
-        streamName: i % 4 === 0 || i % 7 === 0 ? "CoComelon Live !!!" : null,
-      })) as BetCard[]
-    }
+
+    const response = await apiClient.get(`/stream/promoted-bets`, {
+      params
+    });
+
+    return response.data
   },
 
   getBets: async (params?: any) => {
 
     const { page } = params;
-    
-    // return response.data;
-    return {
-      data: Array(24).fill("").map((_, i) => ({
-        thumbnail: "",
-        name: "Are you gonna get rickrolled again this month?",
-        options: (i % 3 === 0) ?
-          [
-            { option: "Yes", percentage: 82, selected: true },
-            { option: "No", percentage: 12 },
-            { option: "Maybe", percentage: 5 },
-            { option: "I don't know", percentage: 3 },
-          ] :
-          [
-            { option: "Yes", percentage: 82 },
-            { option: "No", percentage: 18 },
-          ],
-        totalPot: {
-          streamCoins: 5125,
-          goldCoins: 1589,
-        },
-        creator: i % 4 === 0 ? "dendi" : i % 7 === 0 ? "aaron" : null,
-        streamId: i % 4 === 0 || i % 7 === 0 ? "00ccfeed-af91-47d2-92a1-7c9f0fd4e207" : null,
-        streamName: i % 4 === 0 || i % 7 === 0 ? "CoComelon Live !!!" : null,
-      })) as BetCard[],
-      page: page,
-      hasNextPage: page !== 3,
-    }
+    const { data: response } = await apiClient.get(`/stream/displayed-bets`, {
+      params
+    });
+
+    return response.data
   },
 };
 
@@ -881,10 +838,10 @@ export const paymentAPI = {
 
   // Get withdrawer data
   getWithdrawerData: async () => {
-    const response = await apiClient.get('/payments/coinflow/withdrawer', { 
-      params: { 
+    const response = await apiClient.get('/payments/coinflow/withdrawer', {
+      params: {
         redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`
-      } 
+      }
     });
     return response;
   },
@@ -909,7 +866,7 @@ export const paymentAPI = {
     return response.data;
   },
 
-   // Register non-US user as withdrawer
+  // Register non-US user as withdrawer
   registerKyc: async (payload: WithdrawKycPayload) => {
     const response = await apiClient.post(`/payments/coinflow/withdraw/kyc`, {
       redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`,
