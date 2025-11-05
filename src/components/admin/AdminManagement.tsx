@@ -45,6 +45,16 @@ export const AdminManagement = ({
   refetchEndedStreams,
   searchEndedStreamQuery,
   setSearchEndedStreamQuery,
+
+  nonVideoStreams,
+  refetchNonVideoStreams,
+  searchNonVideoQuery,
+  setSearchNonVideoQuery,
+
+  endedNonVideoStreams,
+  refetchEndedNonVideoStreams,
+  searchEndedNonVideoQuery,
+  setSearchEndedNonVideoQuery,
 }) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('livestreams');
@@ -79,6 +89,8 @@ export const AdminManagement = ({
   const tabs = [
     { key: 'livestreams', label: 'Live Streams' },
     { key: 'ended-streams', label: 'Ended Streams' },
+    { key: 'non-video', label: 'Non Video' },
+    { key: 'ended-non-video', label: 'Ended Non Video' },
     { key: 'users', label: 'Users' },
   ];
 
@@ -105,7 +117,7 @@ export const AdminManagement = ({
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: getMessage(error) || 'Failed to create stream',
+        description: getMessage(error) || 'Failed to create event',
         variant: 'destructive',
       });
     },
@@ -117,13 +129,13 @@ export const AdminManagement = ({
         ? api.admin.updateBettingData(payload)
         : api.admin.createBettingData(payload),
     onSuccess: () => {
-      toast({ title: 'Success', description: 'Stream and Picks saved successfully!' });
+      toast({ title: 'Success', description: 'Event and Picks saved successfully!' });
       handleResetAll();
     },
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: getMessage(error) || 'Failed to create stream',
+        description: getMessage(error) || 'Failed to create event',
         variant: 'destructive',
       });
     },
@@ -136,8 +148,11 @@ export const AdminManagement = ({
     thumbnail: '',
     startDate: '',
   });
-  const [startTime, setStartTime] = useState(''); // format: 'HH:mm'
-
+  const [startTime, setStartTime] = useState('');
+  const [eventType, setEventType] = useState({
+    value: 'stream',
+    label: 'Livestream',
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -297,15 +312,18 @@ export const AdminManagement = ({
       isValid = false;
     }
 
-    if (
-      !embeddedUrl?.trim() ||
-      (!embeddedUrl?.includes('http') &&
-        !embeddedUrl.includes('www') &&
-        !embeddedUrl.includes('kick'))
-    ) {
-      newErrors.embeddedUrl = 'Embed URL is required and should be valid';
-      isValid = false;
+    if (eventType.value === 'stream') {
+      if (
+        !embeddedUrl?.trim() ||
+        (!embeddedUrl?.includes('http') &&
+          !embeddedUrl.includes('www') &&
+          !embeddedUrl.includes('kick'))
+      ) {
+        newErrors.embeddedUrl = 'Embed URL is required and should be valid';
+        isValid = false;
+      }
     }
+
     if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
       newErrors.thumbnail = 'Thumbnail is required';
       isValid = false;
@@ -480,21 +498,20 @@ export const AdminManagement = ({
       setDescription(streamData?.description);
       setEmbeddedUrl(streamData?.embeddedUrl);
       setCreatorId(streamData.creatorId);
-      
+
       // Auto-populate first round with 2 options if no rounds exist
       const rounds = streamData?.rounds || [];
       if (rounds.length === 0) {
-        setBettingRounds([{
-          roundName: 'First round',
-          options: [
-            { option: 'Option 1' },
-            { option: 'Option 2' }
-          ]
-        }]);
+        setBettingRounds([
+          {
+            roundName: 'First round',
+            options: [{ option: 'Option 1' }, { option: 'Option 2' }],
+          },
+        ]);
       } else {
         setBettingRounds(rounds);
       }
-      
+
       setIsLiveStream(streamData?.status === StreamStatus.LIVE);
 
       // Set thumbnail if available
@@ -564,14 +581,15 @@ export const AdminManagement = ({
     if (!isSfw) {
       setErrors({
         ...errors,
-        thumbnail: 'Sorry, but the chosen image might be inappropriate. Please choose a different one.',
+        thumbnail:
+          'Sorry, but the chosen image might be inappropriate. Please choose a different one.',
         title: '',
         embeddedUrl: '',
         startDate: '',
       });
       return;
     }
-    
+
     setSelectedThumbnailFile(file);
     setThumbnailPreviewUrl(URL.createObjectURL(file));
     setErrors(errors => ({ ...errors, thumbnail: '' }));
@@ -699,6 +717,7 @@ export const AdminManagement = ({
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
       creatorId,
+      type: eventType.value,
     };
 
     createStreamMutation.mutate(payload);
@@ -725,19 +744,16 @@ export const AdminManagement = ({
       });
       return;
     }
-    
+
     // Auto-populate first round with 2 options if empty
     if (bettingRounds.length === 0) {
       const firstRound: BettingRound = {
         roundName: 'First round',
-        options: [
-          { option: 'Option 1' },
-          { option: 'Option 2' }
-        ]
+        options: [{ option: 'Option 1' }, { option: 'Option 2' }],
       };
       setBettingRounds([firstRound]);
     }
-    
+
     setCreateStep('betting');
   };
 
@@ -763,7 +779,9 @@ export const AdminManagement = ({
   };
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [nonVideoPage, setNonVideoPage] = useState(1);
   const [endStreamCurrentPage, setEndStreamCurrentPage] = useState(1);
+  const [endedNonVideoCurrentPage, setEndedNonVideoCurrentPage] = useState(1);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -772,6 +790,14 @@ export const AdminManagement = ({
   useEffect(() => {
     setEndStreamCurrentPage(1);
   }, [searchEndedStreamQuery]);
+
+  useEffect(() => {
+    setNonVideoPage(1);
+  }, [searchNonVideoQuery]);
+
+  useEffect(() => {
+    setEndedNonVideoCurrentPage(1);
+  }, [searchEndedNonVideoQuery]);
 
   // Add useEffect for validation
   useEffect(() => {
@@ -801,10 +827,7 @@ export const AdminManagement = ({
 
     const newRound: BettingRound = {
       roundName: defaultName,
-      options: [
-        { option: 'Option 1' },
-        { option: 'Option 2' }
-      ],
+      options: [{ option: 'Option 1' }, { option: 'Option 2' }],
     };
 
     handleRoundsChange([...bettingRounds, newRound]);
@@ -1032,8 +1055,8 @@ export const AdminManagement = ({
                       ? 'Edit your Picks options'
                       : 'Create your Picks options'
                     : editStreamId
-                      ? 'Manage Livestream'
-                      : 'Create new livestream'}
+                      ? 'Manage Event'
+                      : 'Create Event'}
                 </span>
                 {/* Step 1: Next button, Step 2: Submit button */}
                 {createStep === 'info' ? (
@@ -1058,7 +1081,10 @@ export const AdminManagement = ({
                     className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                     style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
                     disabled={
-                      createStreamMutation.isPending || createBetMutation.isPending || isUploading
+                      createStreamMutation.isPending ||
+                      createBetMutation.isPending ||
+                      isUploading ||
+                      (eventType.value !== 'stream' && bettingRounds.length > 0)
                     }
                     onClick={addNewRound}
                   >
@@ -1084,6 +1110,7 @@ export const AdminManagement = ({
                       streamId: editStreamId || undefined,
                       bettingRoundStatus: streamData?.bettingRoundStatus || undefined,
                       creatorId,
+                      eventType,
                     }}
                     errors={errors}
                     isUploading={isUploading}
@@ -1113,7 +1140,8 @@ export const AdminManagement = ({
                       }
                       if ('description' in fields) {
                         setDescription(fields.description ?? '');
-                        newErrors.description = validateStreamDescription(fields.description ?? '') || '';
+                        newErrors.description =
+                          validateStreamDescription(fields.description ?? '') || '';
                       }
                       if ('creatorId' in fields) {
                         setCreatorId(fields.creatorId ?? '');
@@ -1159,11 +1187,13 @@ export const AdminManagement = ({
                     onDeleteThumbnail={handleDeleteThumbnail}
                     onStartDateChange={handleStartDateChange}
                     onStartTimeChange={handleStartTimeChange}
+                    onChangeEventType={val => setEventType(val)}
                   />
                 )}
                 {/* Step 2: Betting */}
                 {createStep === 'betting' && (
                   <BettingRounds
+                    eventType={eventType.value}
                     isSaving={
                       createStreamMutation.isPending || createBetMutation.isPending || isUploading
                     }
@@ -1470,9 +1500,58 @@ export const AdminManagement = ({
                     setShowBettingValidation(false);
                   }}
                 >
-                  {isMobile ? 'Create Livestream' : 'Create new livestream'}
+                  Create Event
                 </button>
               </div>
+            )}
+
+            {activeTab === 'non-video' && (
+              <div
+                className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-end'} w-full`}
+              >
+                <SearchInput
+                  id="search-non-video"
+                  placeholder="Search Non-Video..."
+                  value={searchNonVideoQuery}
+                  onChange={setSearchNonVideoQuery}
+                  width="md"
+                  className={isMobile ? '' : 'mr-2'}
+                />
+                <button
+                  type="button"
+                  className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
+                  onClick={() => {
+                    resetForm();
+                    setIsCreateStream(true);
+                    setEditStreamId('');
+                    setViewStreamId('');
+                    setCreateStep('info');
+                    setBettingRounds([]);
+                    setErrors({
+                      title: '',
+                      description: '',
+                      embeddedUrl: '',
+                      thumbnail: '',
+                      startDate: '',
+                    });
+                    setBettingErrorRounds([]);
+                    setBettingValidationErrors([]);
+                    setShowBettingValidation(false);
+                  }}
+                >
+                  Create Event
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'ended-non-video' && (
+              <SearchInput
+                id="search-ended-non-video"
+                placeholder="Search ended non-videos..."
+                value={searchEndedNonVideoQuery}
+                onChange={setSearchEndedNonVideoQuery}
+                width="lg"
+              />
             )}
           </div>
           <Separator className="!mt-1" />
@@ -1502,6 +1581,34 @@ export const AdminManagement = ({
                 setEditStreamId={setEditStreamId}
                 currentPage={endStreamCurrentPage}
                 setCurrentPage={setEndStreamCurrentPage}
+              />
+            </div>
+          )}
+
+          {activeTab === 'non-video' && (
+            <div className="space-y-4">
+              <StreamTable
+                streams={nonVideoStreams}
+                setStreamAnalyticsId={setStreamAnalyticsId}
+                refetchStreams={refetchNonVideoStreams}
+                setViewStreamId={setViewStreamId}
+                setEditStreamId={setEditStreamId}
+                currentPage={nonVideoPage}
+                setCurrentPage={setNonVideoPage}
+              />
+            </div>
+          )}
+
+          {activeTab === 'ended-non-video' && (
+            <div className="space-y-4">
+              <StreamTable
+                streams={endedNonVideoStreams}
+                setStreamAnalyticsId={setStreamAnalyticsId}
+                refetchStreams={refetchEndedNonVideoStreams}
+                setViewStreamId={setViewStreamId}
+                setEditStreamId={setEditStreamId}
+                currentPage={endedNonVideoCurrentPage}
+                setCurrentPage={setEndedNonVideoCurrentPage}
               />
             </div>
           )}

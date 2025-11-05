@@ -7,7 +7,10 @@ import { useAuthContext } from '@/contexts/AuthContext';
 export const useStreamManagement = () => {
   const { toast } = useToast();
   const [searchStreamQuery, setSearchStreamQuery] = useState('');
+  const [searchNonVideoQuery, setSearchNonVideoQuery] = useState('');
   const [searchEndedStreamQuery, setSearchEndedStreamQuery] = useState('');
+  const [searchEndedNonVideoQuery, setSearchEndedNonVideQuery] = useState('');
+
   const rangeRef = useRef('[0,7]');
   const endedStreamsRangeRef = useRef('[0,7]');
   const { isLoading, isFetching, session } = useAuthContext();
@@ -19,6 +22,7 @@ export const useStreamManagement = () => {
         range: rangeRef.current,
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: searchStreamQuery }),
+        type: 'stream',
       });
 
       return response;
@@ -34,10 +38,48 @@ export const useStreamManagement = () => {
       const response = await adminAPI.getStreams({
         range: endedStreamsRangeRef.current,
         sort: '["endTime","DESC"]',
-        filter: JSON.stringify({ 
+        filter: JSON.stringify({
           streamStatus: 'ended',
-          ...(searchEndedStreamQuery && { q: searchEndedStreamQuery })
+          ...(searchEndedStreamQuery && { q: searchEndedStreamQuery }),
         }),
+        type: 'stream',
+      });
+
+      return response;
+    },
+    enabled: false,
+    // Increase refetch frequency to see new streams faster
+    refetchInterval: 5000,
+  });
+
+  const { data: nonVideoStreams, refetch: refetchNonVideoStreams } = useQuery({
+    queryKey: ['non-video'],
+    queryFn: async () => {
+      const response = await adminAPI.getStreams({
+        range: rangeRef.current,
+        sort: '["createdAt","DESC"]',
+        filter: JSON.stringify({ q: searchNonVideoQuery }),
+        type: 'non-video',
+      });
+
+      return response;
+    },
+    enabled: false,
+    // Increase refetch frequency to see new streams faster
+    refetchInterval: 5000,
+  });
+
+  const { data: endedNonVideoStreams, refetch: refetchEndedNonVideoStreams } = useQuery({
+    queryKey: ['ended-non-video'],
+    queryFn: async () => {
+      const response = await adminAPI.getStreams({
+        range: endedStreamsRangeRef.current,
+        sort: '["endTime","DESC"]',
+        filter: JSON.stringify({
+          streamStatus: 'ended',
+          ...(searchEndedNonVideoQuery && { q: searchEndedNonVideoQuery }),
+        }),
+        type: 'non-video',
       });
 
       return response;
@@ -57,6 +99,16 @@ export const useStreamManagement = () => {
   const handleRefetchEndedStreams = (range?: string) => {
     endedStreamsRangeRef.current = range || '';
     refetchEndedStreams();
+  };
+
+  const handleNonVideoRefetchStreams = (range?: string) => {
+    rangeRef.current = range || '';
+    refetchNonVideoStreams();
+  };
+
+  const handleEndedNonVideoRefetchStreams = (range?: string) => {
+    endedStreamsRangeRef.current = range || '';
+    refetchEndedNonVideoStreams();
   };
 
   useEffect(() => {
@@ -82,5 +134,14 @@ export const useStreamManagement = () => {
     handleRefetchEndedStreams,
     searchEndedStreamQuery,
     setSearchEndedStreamQuery,
+
+    handleNonVideoRefetchStreams,
+    handleEndedNonVideoRefetchStreams,
+    nonVideoStreams,
+    endedNonVideoStreams,
+    searchNonVideoQuery,
+    searchEndedNonVideoQuery,
+    setSearchEndedNonVideQuery,
+    setSearchNonVideoQuery,
   };
 };
