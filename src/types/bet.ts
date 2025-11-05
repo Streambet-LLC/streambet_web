@@ -1,7 +1,7 @@
 export interface BetCard {
   thumbnail: string;
   name: string;
-  options: { 
+  options: {
     option: string;
     percentage: number;
     selected?: boolean;
@@ -13,4 +13,5 @@ export interface BetCard {
   creator: string | null;
   streamId: string | null;
   streamName: string | null;
+  type: string | null;
 }

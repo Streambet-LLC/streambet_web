@@ -49,7 +49,7 @@ export default function BetCard(props: BetCardType) {
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-2 p-4 justify-center">
         <div className="flex flex-col">
-          {props.streamId && (
+          {props.type === 'stream' && (
             <Link
               to={`/stream/${props.streamId}`}
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
