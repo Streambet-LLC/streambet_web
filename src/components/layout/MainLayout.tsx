@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
+import Sidebar from '../sidebar/Sidebar';
+import { cn } from '@/lib/utils';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -23,36 +25,42 @@ export const MainLayout = ({
 
   if (isWithdraw) {
     return (
-		<div className="min-h-screen bg-black relative overflow-hidden">
+    <div className="bg-background flex flex-col">
       <Navigation onDashboardClick={onDashboardClick} />
-			{/* Background gradient overlay */}
-			<div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900"></div>
-			
-			{/* Subtle grid pattern */}
-			<div className="absolute inset-0 opacity-5">
-				<div className="absolute inset-0" style={{
-					backgroundImage: `radial-gradient(circle at 1px 1px, rgba(189, 255, 0, 0.15) 1px, transparent 0)`,
-					backgroundSize: '40px 40px'
-				}}></div>
-			</div>
-			
-			{/* Main Content */}
-			<main className={`relative z-10 pt-20 ${className}`}>
-				{children}
-			</main>
+      <div className='w-full flex gap-2'>
+        {/* Background gradient overlay */}
+        {/* <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900"></div> */}
+        
+        {/* Subtle grid pattern */}
+        {/* <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(189, 255, 0, 0.15) 1px, transparent 0)`,
+            backgroundSize: '40px 40px'
+          }}></div>
+        </div> */}
+        
+        <Sidebar />
+        
+        {/* Main Content */}
+        <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto", className)}>
+          {children}
+        </main>
+        
+      </div>
 		</div>
 	);
   }
   
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="bg-background flex flex-col">
       <Navigation onDashboardClick={onDashboardClick} />
-      
-      <main className={`container flex-1 pt-24 pb-8 ${className}`}>
-        {children}
-      </main>
-
-      {showFooter && isHomePage && <Footer />}
+      <div className='w-full flex gap-2'>
+        <Sidebar />
+        <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-4 pb-8 z-0", className)}>
+          {children}
+          {(showFooter || isHomePage) && <Footer />}
+        </main>
+      </div>
     </div>
   );
 }; 

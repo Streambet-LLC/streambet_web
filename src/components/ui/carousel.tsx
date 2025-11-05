@@ -24,6 +24,8 @@ type CarouselContextProps = {
   scrollNext: () => void;
   canScrollPrev: boolean;
   canScrollNext: boolean;
+  selectedIndex: number;
+  scrollTo: (index: number) => void;
 } & CarouselProps;
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
@@ -51,6 +53,7 @@ const Carousel = React.forwardRef<
   );
   const [canScrollPrev, setCanScrollPrev] = React.useState(false);
   const [canScrollNext, setCanScrollNext] = React.useState(false);
+  const [selectedIndex, setSelectedIndex] = React.useState(opts?.startIndex || 0);
 
   const onSelect = React.useCallback((api: CarouselApi) => {
     if (!api) {
@@ -59,6 +62,7 @@ const Carousel = React.forwardRef<
 
     setCanScrollPrev(api.canScrollPrev());
     setCanScrollNext(api.canScrollNext());
+    setSelectedIndex(api.selectedScrollSnap());
   }, []);
 
   const scrollPrev = React.useCallback(() => {
@@ -68,6 +72,19 @@ const Carousel = React.forwardRef<
   const scrollNext = React.useCallback(() => {
     api?.scrollNext();
   }, [api]);
+
+  const scrollTo = React.useCallback(
+    (index: number) => {
+      if (index === api?.selectedScrollSnap()) return;
+      const autoplay = api?.plugins()?.autoplay;
+      if (autoplay) {
+        const reset = autoplay.reset! as () => void;
+        reset();
+      }
+      api?.scrollTo(index);
+    },
+    [api]
+  );
 
   const handleKeyDown = React.useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -115,6 +132,8 @@ const Carousel = React.forwardRef<
         scrollNext,
         canScrollPrev,
         canScrollNext,
+        selectedIndex,
+        scrollTo,
       }}
     >
       <div
@@ -230,6 +249,42 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
 );
 CarouselNext.displayName = 'CarouselNext';
 
+const CarouselDots = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => {
+    const { selectedIndex, scrollTo, api } = useCarousel();
+
+    return (
+      <div
+        ref={ref}
+        role="tablist"
+        className={cn(
+          "absolute bottom-0 w-full flex items-center justify-center gap-2",
+          className
+        )}
+        {...props}
+      >
+        {api?.scrollSnapList().map((_, index) => (
+          <Button
+            key={index}
+            role="tab"
+            data-slot="carousel-dot"
+            aria-selected={index === selectedIndex}
+            aria-controls="carousel-item"
+            aria-label={`Slide ${index + 1}`}
+            size="icon"
+            className={cn(
+              "w-2 h-2 rounded-full border border-ring cursor-pointer transition-all",
+              index === selectedIndex ? "bg-ring" : "bg-transparent",
+            )}
+            onClick={() => scrollTo(index)}
+          />
+        ))}
+      </div>
+    );
+  }
+);
+CarouselDots.displayName = 'CarouselDots';
+
 export {
   type CarouselApi,
   Carousel,
@@ -237,4 +292,5 @@ export {
   CarouselItem,
   CarouselPrevious,
   CarouselNext,
+  CarouselDots,
 };

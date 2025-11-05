@@ -1,5 +1,7 @@
 import { ReactNode } from 'react';
 import { Navigation } from '@/components/Navigation';
+import Sidebar from '../sidebar/Sidebar';
+import { cn } from '@/lib/utils';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -17,11 +19,13 @@ export const AdminLayout = ({
   return (
     <div className="min-h-screen bg-background">
       <Navigation onDashboardClick={onDashboardClick} />
-      <div className={`container flex w-full pt-24 pb-8 ${isStreamContent ? 'px-0 md:px-4 lg:px-6' : ''}`}>
-        <main className={`flex-1 ${className}`}>
+      <div className='w-full flex gap-2'>
+        <Sidebar />
+        <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-8 pb-8 ", className)}>
           {children}
         </main>
       </div>
+      
     </div>
   );
 };

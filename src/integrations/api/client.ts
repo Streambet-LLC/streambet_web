@@ -4,6 +4,7 @@ import { decodeIdToken } from '@/utils/helper';
 import { toast } from '@/hooks/use-toast';
 import Bugsnag from '@bugsnag/js';
 import { WithdrawKycPayload, WithdrawKycUsPayload, WithdrawPayload } from '@/types/withdraw';
+import { BetCard } from '@/types/bet';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -515,12 +516,82 @@ export const userStreamAPI = {
     return response.data;
   },
 
-  // Get all ended streams
-  getEndedStreams: async (params?: any) => {
+  getHomepageLiveStreams: async (params?: any) => {
     const response = await apiClient.get(`/stream/home`, {
       params
     });
     return response.data;
+  },
+
+  getTopLiveStreams: async () => {
+    const response = await apiClient.get(`/stream/top`);
+    return response.data;
+  },
+};
+
+// Bets API
+export const betsAPI  = {
+  // Get all promoted bets
+  getPromotedBets: async (params?: any) => {
+    
+    // return response.data;
+    return {
+      data: Array(10).fill("").map((_, i) => ({
+        thumbnail: "",
+        name: "Are you gonna get rickrolled again this month?",
+        options: (i % 3 === 0) ?
+          [
+            { option: "Yes", percentage: 82, selected: true },
+            { option: "No", percentage: 12 },
+            { option: "Maybe", percentage: 5 },
+            { option: "I don't know", percentage: 3 },
+          ] :
+          [
+            { option: "Yes", percentage: 82 },
+            { option: "No", percentage: 18 },
+          ],
+        totalPot: {
+          streamCoins: 5125,
+          goldCoins: 1589,
+        },
+        creator: i % 4 === 0 ? "dendi" : i % 7 === 0 ? "aaron" : null,
+        streamId: i % 4 === 0 || i % 7 === 0 ? "00ccfeed-af91-47d2-92a1-7c9f0fd4e207" : null,
+        streamName: i % 4 === 0 || i % 7 === 0 ? "CoComelon Live !!!" : null,
+      })) as BetCard[]
+    }
+  },
+
+  getBets: async (params?: any) => {
+
+    const { page } = params;
+    
+    // return response.data;
+    return {
+      data: Array(24).fill("").map((_, i) => ({
+        thumbnail: "",
+        name: "Are you gonna get rickrolled again this month?",
+        options: (i % 3 === 0) ?
+          [
+            { option: "Yes", percentage: 82, selected: true },
+            { option: "No", percentage: 12 },
+            { option: "Maybe", percentage: 5 },
+            { option: "I don't know", percentage: 3 },
+          ] :
+          [
+            { option: "Yes", percentage: 82 },
+            { option: "No", percentage: 18 },
+          ],
+        totalPot: {
+          streamCoins: 5125,
+          goldCoins: 1589,
+        },
+        creator: i % 4 === 0 ? "dendi" : i % 7 === 0 ? "aaron" : null,
+        streamId: i % 4 === 0 || i % 7 === 0 ? "00ccfeed-af91-47d2-92a1-7c9f0fd4e207" : null,
+        streamName: i % 4 === 0 || i % 7 === 0 ? "CoComelon Live !!!" : null,
+      })) as BetCard[],
+      page: page,
+      hasNextPage: page !== 3,
+    }
   },
 };
 
@@ -867,6 +938,7 @@ export const api = {
   admin: adminAPI,
   userStream: userStreamAPI,
   payment: paymentAPI,
+  bets: betsAPI,
 };
 
 export default api;
