@@ -162,6 +162,9 @@ export const StreamContent = ({
       setUpdatedCurrency(undefined);
       setIsEditing(false);
       setLoading(false);
+      setSelectedWinner('');
+      setSelectedAmount(0);
+      setPotentialWinnings(0);
 
       // Invalidate cached queries to fetch fresh data from server
       queryClient.invalidateQueries({ queryKey: ['bettingData', streamId, session?.id] });

@@ -141,7 +141,13 @@ export default function BetTokens({
       
       // Round down: only whole number bets allowed
       setSliderMax(Math.floor(Math.min(walletBalance + currentBetAmount, maxBetLimit)));
-      setSelectedColor(selectedWinner);
+      
+      // Only set selectedColor if selectedWinner exists in current round's options
+      const optionExists = bettingData?.bettingRounds?.[0]?.bettingVariables?.some(
+        option => option.name === selectedWinner
+      );
+      setSelectedColor(optionExists && selectedWinner ? selectedWinner : "");
+      
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData, bettingData, session, isEditing]);
