@@ -3,7 +3,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Index from './pages/Index';
+import Index from './pages/OldIndex';
 import Stream from './pages/Stream';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -37,6 +37,7 @@ import Kyc from './components/withdraw/Kyc';
 import RouteGroup from './components/RouteGroup';
 import Profile from './pages/Profile';
 import 'react-image-crop/dist/ReactCrop.css'
+import Home from './pages/Home';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -92,7 +93,7 @@ const App = () => {
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/auth/google-callback" element={<GoogleCallback />} />
                       <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
-                      <Route path="/" element={<Index />} />
+                      <Route path="/" element={<Home />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </TooltipProvider>
