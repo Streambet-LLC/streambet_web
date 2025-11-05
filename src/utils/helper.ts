@@ -66,7 +66,11 @@ export function formatDateTimeForISO(date: Date | null, time: string): string | 
 
 export function formatTime(dateString: string) {
   const date = new Date(dateString);
-  return format(date, 'h:mm a');
+  const time = format(date, 'h:mm a');
+  const timezone = date.toLocaleTimeString('en-US', { 
+    timeZoneName: 'short' 
+  }).split(' ').pop();
+  return `${time} ${timezone}`;
 };
 
 export function formatDate(dateString: string) {
