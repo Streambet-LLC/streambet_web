@@ -16,6 +16,7 @@ const BettingStatusContext = createContext<BettingStatusContextType | undefined>
 export const BettingStatusProvider = ({ children }: { children: ReactNode }) => {
 
   const [socketConnect, setSocketConect] = useState<any>(null);
+  const socketRef = useRef<any>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { session, isFetching } = useAuthContext()
   const { toast } = useToast();
@@ -23,6 +24,25 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
 
     // This function is not used as reconnection is handled in the socket connection logic in client.ts
     const handleSocketReconnection = () => {
+    };
+
+    const cleanupSocket = () => {
+      if (socketRef.current) {
+        socketRef.current.off('botMessage');
+        socketRef.current.off('purchaseSettled');
+        socketRef.current.off('refetchEvent');
+        socketRef.current.off('connect_error');
+        socketRef.current.off('withdrawSuccess');
+        socketRef.current.off('withdrawFailed');
+        socketRef.current.off('reconnect_attempt');
+        socketRef.current.off('reconnect_error');
+        socketRef.current.off('reconnect_failed');
+        socketRef.current.off('connect');
+        socketRef.current.off('reconnect');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setSocketConect(null);
+      }
     };
 
     const setupSocketEventListeners = (socketInstance: any) => {
@@ -152,8 +172,8 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
     };
   
     useEffect(() => {
-      if (!isFetching) {
-      if(session){
+      // Set up socket when user is authenticated (has session)
+      if (session){
         if(!socketConnect){
           const newSocket = api.socket.connect();
           
@@ -173,33 +193,30 @@ export const BettingStatusProvider = ({ children }: { children: ReactNode }) => 
           }
           
           setSocketConect(newSocket);
+          socketRef.current = newSocket;
           // Setup event listeners
           setupSocketEventListeners(newSocket);
         }
       }
       else {
-        api.socket.disconnect();
-        setSocketConect(null);
+        cleanupSocket();
       }
-    }
     
       return () => {
         // Cleanup ping-pong intervals
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        if (socketConnect) {
-          socketConnect.off('botMessage');
-          socketConnect.off('purchaseSettled');
-          socketConnect.off('refetchEvent');
-          socketConnect.off('connect_error');
-          socketConnect.disconnect();
-        }
-        setSocketConect(null);
       };
 
-    }, [session, isFetching]);
+    }, [session]);
 
+  // Separate effect to handle component unmount cleanup
+  useEffect(() => {
+    return () => {
+      cleanupSocket();
+    };
+  }, []); // Empty deps - only runs on mount/unmount
 
   return (
     <BettingStatusContext.Provider value={{ socketConnect, setSocketConect,handleSocketReconnection }}>

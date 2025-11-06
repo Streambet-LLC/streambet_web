@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useMemo, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useBettingSocket } from '@/hooks/useBettingSocket';
 import { useBettingStatusContext } from './BettingStatusContext';
@@ -12,13 +12,26 @@ export interface BettingVariable {
   [key: string]: any;
 }
 
+export interface BettingVariableStats {
+  id: string;
+  name: string;
+  optionName: string;
+  totalBetsGoldCoin: number;
+  totalBetsSweepCoin: number;
+  betCountGoldCoin: number;
+  betCountSweepCoin: number;
+}
+
 export interface ActiveRound {
   id: string | null;
+  roundName: string;
   status: BettingRoundStatus;
   totalGoldCoins: number;
   totalSweepCoins: number;
+  totalBetCountGoldCoin: number;
+  totalBetCountSweepCoin: number;
   isLocked: boolean;
-  bettingVariables?: BettingVariable[];
+  bettingVariables?: BettingVariableStats[];
   walletGoldCoin?: number;
   walletSweepCoin?: number;
   userBetGoldCoins?: number;
@@ -80,9 +93,12 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
   // Active Round State
   const [activeRound, setActiveRound] = useState<ActiveRound>({
     id: null,
+    roundName: '',
     status: BettingRoundStatus.CLOSED,
     totalGoldCoins: 0,
     totalSweepCoins: 0,
+    totalBetCountGoldCoin: 0,
+    totalBetCountSweepCoin: 0,
     isLocked: false,
     bettingVariables: [],
     walletGoldCoin: undefined,
@@ -105,6 +121,28 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  
+  // Reset activeRound when activeStreamId changes to prevent stale data from previous stream
+  useEffect(() => {
+    if (activeStreamId !== null) {
+      // Clear previous stream's betting data
+      setActiveRound({
+        id: null,
+        roundName: '',
+        status: BettingRoundStatus.CLOSED,
+        totalGoldCoins: 0,
+        totalSweepCoins: 0,
+        totalBetCountGoldCoin: 0,
+        totalBetCountSweepCoin: 0,
+        isLocked: false,
+        bettingVariables: [],
+        walletGoldCoin: undefined,
+        walletSweepCoin: undefined,
+        userBetGoldCoins: undefined,
+        userBetSweepCoin: undefined,
+      });
+    }
+  }, [activeStreamId]);
   
   // Use socket hook to handle queries and socket events and pass setters to update state
   const { refetchBettingData, refetchRoundData } = useBettingSocket({
