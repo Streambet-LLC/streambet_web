@@ -22,7 +22,7 @@ import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink, getMessage } from '@/utils/helper';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import api from '@/integrations/api/client';
-import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
+import { BettingRounds, ValidationError } from './BettingRounds';
 import { ArrowLeft } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -39,7 +39,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds } from '@/utils/bettingRoundsUtils';
+import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
 
 // Helper for status priority
 const statusPriority = [
@@ -214,10 +214,7 @@ export const AdminBettingRoundsCard = ({
                                                             const errorIndices = editableRounds
                                                               .map((round, idx) => (round.options.length < 2 ? idx : -1))
                                                               .filter(idx => idx !== -1);
-                                                            // Validate for duplicate round/option names
-                                                            const validationErrors = validateRounds(editableRounds);
-                                                            setBettingValidationErrors(validationErrors);
-                                                            setShowBettingValidation(true);
+                                                            
                                                             if (errorIndices.length > 0) {
                                                                  setBettingErrorRounds(errorIndices);
                                                                  toast({ 
@@ -232,24 +229,17 @@ export const AdminBettingRoundsCard = ({
                                                                  }, 500);
                                                                  return;
                                                             }
-                                                            if (validationErrors.length > 0) {
-                                                                 // Scroll to first duplicate error
-                                                                 setTimeout(() => {
-                                                                   const first = validationErrors[0];
-                                                                   const el = document.querySelector('[data-round-index="' + first.roundIndex + '"]');
-                                                                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                                                 }, 500);
-                                                                 toast({
-                                                                   title: 'Validation Error',
-                                                                   description: validationErrors[0].message,
-                                                                   variant: 'destructive',
-                                                                 });
-                                                                 return;
-                                                            }
+                                                            
                                                             setBettingSaveLoading(true);
                                                             try {
+                                                                 // Apply counters to duplicate option names
+                                                                 const processedRounds = editableRounds.map(round => ({
+                                                                   ...round,
+                                                                   options: appendCountersToDuplicates(round.options)
+                                                                 }));
+                                                                 
                                                                  // Clean temporary option IDs before sending to API
-                                                                 const cleanedRounds = cleanTemporaryIds(editableRounds);
+                                                                 const cleanedRounds = cleanTemporaryIds(processedRounds);
                                                                  
                                                                  await api.admin.updateBettingData({ streamId: editStreamId, rounds: cleanedRounds });
                                                                  refetchBetData();
@@ -273,9 +263,6 @@ export const AdminBettingRoundsCard = ({
                                              statusMap={statusMap}
                                              onRoundsChange={(newRounds) => {
                                                   setEditableRounds(newRounds);
-                                                  // Revalidate immediately on any name change
-                                                  const validationErrors = validateRounds(newRounds);
-                                                  setBettingValidationErrors(validationErrors);
                                              }}
                                              editStreamId={editStreamId}
                                              showValidationErrors={showBettingValidation}

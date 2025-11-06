@@ -3,8 +3,8 @@ import { MainLayout } from '@/components/layout';
 
 const Settings = () => {
   return (
-    <MainLayout className="max-w-2xl">
-      <div className="space-y-6">
+    <MainLayout>
+      <div className="space-y-6 max-w-2xl">
         <ProfileSettings />
       </div>
     </MainLayout>
