@@ -267,7 +267,7 @@ const fetchEndedMore = async () => {
   loadingEndedRef.current = true;
   setIsLoadingEnded(true);
   try {
-    const response = await api.userStream.getEndedStreams({
+    const response = await api.userStream.getHomepageLiveStreams({
       range: `[${rangeEndedStart},${6}]`,
       sort: '["createdAt","DESC"]',
       filter: JSON.stringify({ q: '' }),
@@ -304,27 +304,14 @@ useEffect(() => {
 
   return (
     <MainLayout>
-      <div className="space-y-8">
-        <div className="max-w-3xl mx-auto text-center space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold">
-            Predict the Internet's <br />
-            <span className="text-[#BDFF00]">randomest</span> moments
-          </h1>
-          <p className='text-[#FFFFFFBF]'>
-            Live picks for games created on the Internet.
-            <br />
-              <span className='text-[#FFFFFFBF] font-bold'>Speculate on the unexpected.</span>
-          </p>
-        </div>
-
+      <div className="space-y-4">
         <TabSwitch
-          className='!justify-center !mt-12 !mb-14'
+          className="pt-2"
           tabs={tabs}
           activeTab={activeTab}
-          setActiveTab={handleTabSwitch} />
-
+          setActiveTab={handleTabSwitch} 
+        />
         <div className="mt-16">
-
           {(loader) ? (
             isStreams ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -372,7 +359,7 @@ useEffect(() => {
               </AlertDescription>
             </Alert>
           ) : isStreams ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {streamsData && streamsData.data?.sort((a, b) => (a.streamName?.toLowerCase().includes('mrbeast') ? 1 : 0) - (b.streamName?.toLowerCase().includes('mrbeast') ? 1 : 0)).map(stream => (
                 <StreamCard
                   key={stream.id}

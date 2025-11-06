@@ -4,6 +4,7 @@ import { decodeIdToken } from '@/utils/helper';
 import { toast } from '@/hooks/use-toast';
 import Bugsnag from '@bugsnag/js';
 import { WithdrawKycPayload, WithdrawKycUsPayload, WithdrawPayload } from '@/types/withdraw';
+import { BetCard } from '@/types/bet';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -515,12 +516,49 @@ export const userStreamAPI = {
     return response.data;
   },
 
-  // Get all ended streams
-  getEndedStreams: async (params?: any) => {
+  getHomepageLiveStreams: async (params?: any) => {
     const response = await apiClient.get(`/stream/home`, {
       params
     });
     return response.data;
+  },
+
+  getTopLiveStreams: async () => {
+    const response = await apiClient.get(`/stream/top`);
+    return response.data;
+  },
+};
+
+// Bets API
+export const betsAPI = {
+  // Get all promoted bets
+  getPromotedBets: async (params?: any) => {
+
+    const response = await apiClient.get(`/stream/promoted-bets`, {
+      params
+    });
+
+    return response.data
+  },
+
+  getBets: async (params?: any) => {
+
+    const { page } = params;
+    const { data: response } = await apiClient.get(`/stream/displayed-bets`, {
+      params
+    });
+
+    return response.data
+  },
+
+  getUpcomingBets: async (params?: any) => {
+
+    const { page } = params;
+    const { data: response } = await apiClient.get(`/stream/displayed-upcoming-bets`, {
+      params
+    });
+
+    return response.data
   },
 };
 
@@ -810,10 +848,10 @@ export const paymentAPI = {
 
   // Get withdrawer data
   getWithdrawerData: async () => {
-    const response = await apiClient.get('/payments/coinflow/withdrawer', { 
-      params: { 
+    const response = await apiClient.get('/payments/coinflow/withdrawer', {
+      params: {
         redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`
-      } 
+      }
     });
     return response;
   },
@@ -838,7 +876,7 @@ export const paymentAPI = {
     return response.data;
   },
 
-   // Register non-US user as withdrawer
+  // Register non-US user as withdrawer
   registerKyc: async (payload: WithdrawKycPayload) => {
     const response = await apiClient.post(`/payments/coinflow/withdraw/kyc`, {
       redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`,
@@ -867,6 +905,7 @@ export const api = {
   admin: adminAPI,
   userStream: userStreamAPI,
   payment: paymentAPI,
+  bets: betsAPI,
 };
 
 export default api;

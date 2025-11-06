@@ -28,6 +28,7 @@ interface StreamInfoFormProps {
     streamId?: string;
     bettingRoundStatus?: BettingRoundStatus;
     creatorId?: string;
+    eventType: { value: string; label: string };
   };
   errors: {
     title?: string;
@@ -43,6 +44,7 @@ interface StreamInfoFormProps {
   onFileChange: (file: File | null) => void;
   onSubmit: () => void;
   onDeleteThumbnail: () => void;
+  onChangeEventType: ({ value, label }) => void;
   onStartDateChange: (date: Date | null) => void;
   onStartTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -70,6 +72,7 @@ export const StreamInfoForm = ({
   onDeleteThumbnail,
   onStartDateChange,
   onStartTimeChange,
+  onChangeEventType,
 }: StreamInfoFormProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbnailRef = useRef<HTMLDivElement>(null);
@@ -121,19 +124,72 @@ export const StreamInfoForm = ({
         onSubmit();
       }}
     >
+      <div>
+        <Label className="text-white font-light mb-3 block">Event Type</Label>
+        <Select
+          options={[
+            {
+              value: 'stream',
+              label: 'Livestream',
+            },
+            {
+              value: 'non-video',
+              label: 'Non Video',
+            },
+          ]}
+          value={initialValues.eventType}
+          isSearchable={false}
+          // @ts-ignore
+          onChange={selected => onChangeEventType(selected)}
+          styles={{
+            control: base => ({
+              ...base,
+              backgroundColor: '#272727',
+              color: 'white',
+              borderColor: '#272727',
+            }),
+            menu: base => ({
+              ...base,
+              backgroundColor: '#272727',
+              color: 'white',
+              zIndex: 30, // Ensure dropdown is above the close (X) button
+            }),
+            option: (base, state) => ({
+              ...base,
+              backgroundColor: state.isFocused ? '#333' : '#272727',
+              color: 'white',
+            }),
+            singleValue: base => ({
+              ...base,
+              color: 'white',
+            }),
+            input: base => ({
+              ...base,
+              color: 'white',
+            }),
+            placeholder: base => ({
+              ...base,
+              color: '#aaa',
+            }),
+          }}
+        />
+      </div>
       {/* Title */}
       <div>
         <Label className="text-white font-light mb-3 block">Title</Label>
         <Input
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
-          placeholder="Title of livestream"
+          placeholder="Title of event"
           value={initialValues.title}
           maxLength={STREAM_LIMITS.TITLE_MAX_LENGTH}
           minLength={STREAM_LIMITS.TITLE_MIN_LENGTH}
           onChange={e => onChange({ title: e.target.value })}
           required
         />
-        <CharacterCounter value={initialValues.title} maxCharacters={STREAM_LIMITS.TITLE_MAX_LENGTH} />
+        <CharacterCounter
+          value={initialValues.title}
+          maxCharacters={STREAM_LIMITS.TITLE_MAX_LENGTH}
+        />
         {errors.title && <div className="text-destructive text-xs mt-1">{errors.title}</div>}
       </div>
       {/* Description */}
@@ -174,25 +230,26 @@ export const StreamInfoForm = ({
           <CopyableInput value={`${window.location.origin}/stream/${initialValues.streamId}`} />
         </div>
       )}
-      {/* Embed URL */}
-      <div>
-        <Label className="text-white font-light mb-3 block">Embed URL</Label>
-        <Input
-          className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
-          placeholder="Embed URL"
-          value={initialValues.embeddedUrl}
-          disabled={
-            isEdit &&
-            !!initialValues.embeddedUrl &&
-            initialValues.bettingRoundStatus === BettingRoundStatus.LOCKED
-          }
-          onChange={e => onChange({ embeddedUrl: e.target.value })}
-          required
-        />
-        {errors.embeddedUrl && (
-          <div className="text-destructive text-xs mt-1">{errors.embeddedUrl}</div>
-        )}
-      </div>
+      {initialValues.eventType.value === 'stream' && (
+        <div>
+          <Label className="text-white font-light mb-3 block">Embed URL</Label>
+          <Input
+            className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.embeddedUrl ? 'border border-red-500' : 'border-none'}`}
+            placeholder="Embed URL"
+            value={initialValues.embeddedUrl}
+            disabled={
+              isEdit &&
+              !!initialValues.embeddedUrl &&
+              initialValues.bettingRoundStatus === BettingRoundStatus.LOCKED
+            }
+            onChange={e => onChange({ embeddedUrl: e.target.value })}
+            required
+          />
+          {errors.embeddedUrl && (
+            <div className="text-destructive text-xs mt-1">{errors.embeddedUrl}</div>
+          )}
+        </div>
+      )}
       <div>
         <Label className="text-white font-light mb-3 block">Assigned Creator</Label>
         <Select
@@ -259,13 +316,13 @@ export const StreamInfoForm = ({
         <Label className="text-white font-light mb-3 block">Thumbnail</Label>
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           {/* Left: Preview */}
-          <div className="w-[215px] h-[136px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727] relative">
+          <div className="w-[215px] bg-[#808080] flex items-center justify-center rounded-none overflow-hidden border border-[#272727] relative">
             {initialValues.thumbnailPreviewUrl ? (
               <>
                 <img
                   src={getImageLink(initialValues.thumbnailPreviewUrl)}
                   alt="Thumbnail preview"
-                  className="object-cover w-full h-full"
+                  className="object-cover w-full h-full aspect-video"
                 />
                 {!isUploading && (
                   <button
@@ -323,9 +380,13 @@ export const StreamInfoForm = ({
               <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
                 <span className="text-primary font-medium">Click to upload</span> or drag and drop
                 <br />
-                <span className="text-[#667085] text-[12px]">
-                  SVG, PNG, JPG or GIF (max. 1920x1080px)
-                </span>
+                <span className="text-[#667085] text-[12px]">SVG, PNG, JPG or GIF</span>
+                <br />
+                <span className="text-[#667085] text-[10px]">Recommended aspect ratio: 16:9</span>
+                <br />
+                <span className="text-[#667085] text-[10px]">Max resolution: 1920x1080px</span>
+                <br />
+                <span className="text-[#667085] text-[10px]">Max size: 5MB</span>
               </span>
             </div>
             {errors.thumbnail && (

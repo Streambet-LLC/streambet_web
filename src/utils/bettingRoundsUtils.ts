@@ -55,3 +55,41 @@ export const isTemporaryOptionId = (optionId?: string): boolean => {
 export const getCleanedRounds = (rounds: BettingRound[]): BettingRound[] => {
   return cleanTemporaryIds(rounds);
 };
+
+/**
+ * Appends numeric counters to duplicate option names within a round
+ * @param options - Array of betting options
+ * @returns New array with counters added to duplicate names
+ * @example ["Red", "Red", "Red"] → ["Red (1)", "Red (2)", "Red (3)"]
+ * @example ["Red", "Blue", "Red"] → ["Red (1)", "Blue", "Red (2)"]
+ * @example ["red", "Red", "RED"] → ["red (1)", "Red (2)", "RED (3)"]
+ */
+export const appendCountersToDuplicates = (options: BettingOption[]): BettingOption[] => {
+  // Group options by normalized name (case-insensitive, trimmed)
+  const nameGroups = new Map<string, number[]>();
+  
+  options.forEach((option, index) => {
+    const normalizedName = option.option.toLowerCase().trim();
+    if (!nameGroups.has(normalizedName)) {
+      nameGroups.set(normalizedName, []);
+    }
+    nameGroups.get(normalizedName)!.push(index);
+  });
+
+  // Create result array with counters added to duplicates
+  const result = [...options];
+  
+  nameGroups.forEach((indices) => {
+    // Only add counters if there are duplicates (more than 1)
+    if (indices.length > 1) {
+      indices.forEach((index, counter) => {
+        result[index] = {
+          ...result[index],
+          option: `${result[index].option} (${counter + 1})`
+        };
+      });
+    }
+  });
+
+  return result;
+};

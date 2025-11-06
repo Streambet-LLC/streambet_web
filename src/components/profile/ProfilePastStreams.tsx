@@ -34,7 +34,7 @@ export default function ProfilePastStreams({
     ],
   
     queryFn: async () => {
-      const response = await api.userStream.getEndedStreams({
+      const response = await api.userStream.getHomepageLiveStreams({
         range: `[${rangeStart},${rangeEnd}]`,
         sort: '["createdAt","DESC"]',
         filter: JSON.stringify({ q: '' }),

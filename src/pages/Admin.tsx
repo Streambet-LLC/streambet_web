@@ -19,6 +19,15 @@ const Admin = () => {
     handleRefetchEndedStreams,
     searchEndedStreamQuery,
     setSearchEndedStreamQuery,
+
+    handleNonVideoRefetchStreams,
+    handleEndedNonVideoRefetchStreams,
+    nonVideoStreams,
+    endedNonVideoStreams,
+    searchNonVideoQuery,
+    searchEndedNonVideoQuery,
+    setSearchEndedNonVideQuery,
+    setSearchNonVideoQuery,
   } = useStreamManagement();
   const queryClient = useQueryClient();
   const [resetKey, setResetKey] = useState(0);
@@ -115,6 +124,14 @@ const Admin = () => {
         refetchEndedStreams={range => handleRefetchEndedStreams(range)}
         searchEndedStreamQuery={searchEndedStreamQuery}
         setSearchEndedStreamQuery={setSearchEndedStreamQuery}
+        nonVideoStreams={nonVideoStreams}
+        refetchNonVideoStreams={range => handleNonVideoRefetchStreams(range)}
+        searchNonVideoQuery={searchNonVideoQuery}
+        setSearchNonVideoQuery={setSearchNonVideoQuery}
+        endedNonVideoStreams={endedNonVideoStreams}
+        refetchEndedNonVideoStreams={range => handleEndedNonVideoRefetchStreams(range)}
+        searchEndedNonVideoQuery={searchEndedNonVideoQuery}
+        setSearchEndedNonVideoQuery={setSearchEndedNonVideQuery}
       />
     </AdminLayout>
   );
