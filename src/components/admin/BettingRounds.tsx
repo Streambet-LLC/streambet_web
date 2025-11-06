@@ -7,8 +7,21 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Edit, Copy } from 'lucide-react';
 import { BettingRoundStatus } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
-import { TEMP_OPTION_PREFIX, cleanTemporaryIds, isTemporaryOptionId, getCleanedRounds } from '@/utils/bettingRoundsUtils';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import {
+  TEMP_OPTION_PREFIX,
+  cleanTemporaryIds,
+  isTemporaryOptionId,
+  getCleanedRounds,
+} from '@/utils/bettingRoundsUtils';
 
 interface BettingOption {
   optionId?: string;
@@ -38,23 +51,25 @@ interface BettingRoundsProps {
   statusMap?: any;
   onErrorRoundsChange?: (errorRounds: number[]) => void;
   validationErrors?: ValidationError[];
-  createStream?:boolean;
+  createStream?: boolean;
   handleCreateStream?: () => void;
+  eventType: string;
 }
 
-export function BettingRounds({ 
+export function BettingRounds({
+  eventType,
   isSaving,
-  rounds, 
-  onRoundsChange, 
-  editStreamId, 
-  showValidationErrors, 
+  rounds,
+  onRoundsChange,
+  editStreamId,
+  showValidationErrors,
   errorRounds = [],
   statusMap,
   onErrorRoundsChange,
   validationErrors,
   createStream,
-  handleCreateStream
- }: BettingRoundsProps) {
+  handleCreateStream,
+}: BettingRoundsProps) {
   const isMobile = useIsMobile();
   const [expandedRounds, setExpandedRounds] = useState<string[]>([]);
   const [alertDialogIndex, setAlertDialogIndex] = useState<number | null>(null);
@@ -62,7 +77,10 @@ export function BettingRounds({
   const roundsListRef = useRef<HTMLDivElement | null>(null);
   const prevRoundsLength = useRef<number>(rounds.length);
   const optionRefs = useRef<Array<Array<HTMLTableRowElement | null>>>([]);
-  const [lastAddedOption, setLastAddedOption] = useState<{ roundIndex: number; optionId: string } | null>(null);
+  const [lastAddedOption, setLastAddedOption] = useState<{
+    roundIndex: number;
+    optionId: string;
+  } | null>(null);
 
   // Auto-expand first round if it's the only round, and auto-expand any newly added rounds
   useEffect(() => {
@@ -95,17 +113,28 @@ export function BettingRounds({
 
   const addNewRound = () => {
     const roundNumber = rounds.length + 1;
-    const roundNames = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
-    const defaultName = roundNumber <= roundNames.length ? `${roundNames[roundNumber - 1]} round` : `Round ${roundNumber}`;
-    
+    const roundNames = [
+      'First',
+      'Second',
+      'Third',
+      'Fourth',
+      'Fifth',
+      'Sixth',
+      'Seventh',
+      'Eighth',
+      'Ninth',
+      'Tenth',
+    ];
+    const defaultName =
+      roundNumber <= roundNames.length
+        ? `${roundNames[roundNumber - 1]} round`
+        : `Round ${roundNumber}`;
+
     const newRound: BettingRound = {
       roundName: defaultName,
-      options: [
-        { option: 'Option 1' },
-        { option: 'Option 2' }
-      ]
+      options: [{ option: 'Option 1' }, { option: 'Option 2' }],
     };
-    
+
     onRoundsChange([...rounds, newRound]);
   };
 
@@ -123,12 +152,13 @@ export function BettingRounds({
   const addNewOption = (roundIndex: number) => {
     const round = rounds[roundIndex];
     const optionNumber = round.options.length + 1;
-    const newOptionId = TEMP_OPTION_PREFIX + Date.now().toString() + Math.random().toString(36).slice(2);
+    const newOptionId =
+      TEMP_OPTION_PREFIX + Date.now().toString() + Math.random().toString(36).slice(2);
     const newOption: BettingOption = {
       optionId: newOptionId,
-      option: `Option ${optionNumber}`
+      option: `Option ${optionNumber}`,
     };
-    
+
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].options = [...round.options, newOption];
     onRoundsChange(updatedRounds);
@@ -158,7 +188,9 @@ export function BettingRounds({
   // Function to delete option
   const deleteOption = (roundIndex: number, optionIndex: number) => {
     const updatedRounds = [...rounds];
-    updatedRounds[roundIndex].options = updatedRounds[roundIndex].options.filter((_, index) => index !== optionIndex);
+    updatedRounds[roundIndex].options = updatedRounds[roundIndex].options.filter(
+      (_, index) => index !== optionIndex
+    );
     onRoundsChange(updatedRounds);
   };
 
@@ -178,7 +210,7 @@ export function BettingRounds({
     const round = rounds[roundIndex];
     const newRound: BettingRound = {
       roundName: round.roundName,
-      options: round.options.map(opt => ({ option: opt.option }))
+      options: round.options.map(opt => ({ option: opt.option })),
     };
     onRoundsChange([...rounds, newRound]);
   };
@@ -188,10 +220,11 @@ export function BettingRounds({
   };
 
   const getOptionErrors = (roundIndex: number, optionIndex: number): ValidationError[] => {
-    return validationErrors?.filter(error => 
-      error.roundIndex === roundIndex && 
-      error.optionIndex === optionIndex
-    ) || [];
+    return (
+      validationErrors?.filter(
+        error => error.roundIndex === roundIndex && error.optionIndex === optionIndex
+      ) || []
+    );
   };
 
   return (
@@ -204,7 +237,10 @@ export function BettingRounds({
             ref={roundsListRef}
           >
             {rounds.map((round, roundIndex) => {
-              const isNotCreatedStatus = statusMap && round.roundId ? statusMap?.[round.roundId] !== BettingRoundStatus.CREATED : false;
+              const isNotCreatedStatus =
+                statusMap && round.roundId
+                  ? statusMap?.[round.roundId] !== BettingRoundStatus.CREATED
+                  : false;
               const roundErrors = getRoundErrors(roundIndex);
               const hasRoundError = roundErrors.some(error => error.type === 'round');
 
@@ -217,7 +253,11 @@ export function BettingRounds({
                 <div className="overflow-x-auto">
                   <Table
                     className="w-full table-fixed rounded-xl overflow-hidden border border-[#191D24] bg-transparent"
-                    style={{ background: 'transparent', borderCollapse: 'separate', borderSpacing: 0 }}
+                    style={{
+                      background: 'transparent', 
+                      borderCollapse: 'separate', 
+                      borderSpacing: 0 
+                    }}
                   >
                     <TableBody>
                       {/* Round header row */}
@@ -321,11 +361,6 @@ export function BettingRounds({
                           round.options.map((option, optionIndex) => {
                             const optionErrors = getOptionErrors(roundIndex, optionIndex);
                             const hasOptionError = optionErrors.length > 0;
-                            const optionNameLower = option.option.toLowerCase().trim();
-                            const isDuplicateOption = validationErrors?.some(
-                              error => error.type === 'option' && error.roundIndex === roundIndex &&
-                                round.options.filter(opt => opt.option.toLowerCase().trim() === optionNameLower).length > 1
-                            );
                             
                             return (
                             <TableRow
@@ -363,27 +398,27 @@ export function BettingRounds({
                                   }, 500);
                                 }
                               }}
-                              className={`bg-transparent${isDuplicateOption ? ' border-destructive' : ''}`}
+                              className="bg-transparent"
                               style={{ height: 72, borderRadius: 0 }}
                             >
-                              <TableCell className={`border-t border-b border-[#191D24] px-4 py-2 w-full${isDuplicateOption ? ' border-destructive' : ''}`} style={{ borderRadius: 0, maxWidth: 'calc(100% - 56px)', borderTopWidth: 1, borderBottomWidth: 1, borderColor: isDuplicateOption ? '#ef4444' : '#191D24' }}>
+                              <TableCell className="border-t border-b border-[#191D24] px-4 py-2 w-full" style={{ borderRadius: 0, maxWidth: 'calc(100% - 56px)', borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#191D24' }}>
                                 <div className="flex items-center gap-2 group min-w-0 h-full" style={{ height: 72 }}>
-                                  <div className={`flex items-center w-full${isDuplicateOption ? ' border-destructive' : ''}`} style={{ height: 44, background: '#272727', borderRadius: 8, paddingLeft: 16, paddingRight: 16, border: isDuplicateOption ? '1px solid #ef4444' : 'none' }}>
+                                  <div className="flex items-center w-full" style={{ height: 44, background: '#272727', borderRadius: 8, paddingLeft: 16, paddingRight: 16, border: 'none' }}>
                                     <InlineEditable
                                       title="Edit Option Name"
                                       isNotCreatedStatus={isNotCreatedStatus}
                                       value={option.option}
                                       onSave={(newName) => updateOptionName(roundIndex, optionIndex, newName)}
-                                      className={`text-white text-sm font-normal truncate${isDuplicateOption ? ' text-destructive' : ''}`}
-                                      style={{ color: isDuplicateOption ? '#ef4444' : '#FFFFFFBF', maxWidth: '100%' }}
-                                      minLength={2}
+                                      className="text-white text-sm font-normal truncate"
+                                      style={{ color: '#FFFFFFBF', maxWidth: '100%' }}
+                                      minLength={1}
                                     />
                                   </div>
                                 </div>
                               </TableCell>
-                              <TableCell className={`border-t border-b border-[#191D24] p-0 w-14${isDuplicateOption ? ' border-destructive' : ''}`} style={{ borderRadius: 0, width: 56, borderTopWidth: 1, borderBottomWidth: 1, borderColor: isDuplicateOption ? '#ef4444' : '#191D24' }}>
+                              <TableCell className="border-t border-b border-[#191D24] p-0 w-14" style={{ borderRadius: 0, width: 56, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#191D24' }}>
                                 <div className="flex items-center justify-center h-full" style={{ minHeight: 72 }}>
-                                  <DeleteBettingDialog
+                                  <Button
                                     title="Delete Option"
                                     message={`Delete this option from round ${round.roundName}`}
                                     onConfirm={() => deleteOption(roundIndex, optionIndex)}
@@ -443,72 +478,41 @@ export function BettingRounds({
           No picks rounds created yet. Click "+ New round" to get started.
         </div>
       )}
-       {createStream ? (
-         <div className="flex justify-center mt-8">
-         <Button
+      {createStream ? (
+        <div className="flex justify-center mt-8">
+          <Button
             type="submit"
             className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[140px] h-[40px]"
             style={{ borderRadius: '10px' }}
-            onClick={async (e) => {
-                  e.preventDefault();
-                  await handleCreateStream();
-                  }}
+            onClick={async e => {
+              e.preventDefault();
+              await handleCreateStream();
+            }}
             disabled={isSaving}
-            >
-            {editStreamId ? (isSaving ? 'Saving...' : 'Save') : (isSaving) ? 'Creating...' : 'Create stream'}
+          >
+            {editStreamId
+              ? isSaving
+                ? 'Saving...'
+                : 'Save'
+              : isSaving
+                ? 'Creating...'
+                : 'Create stream'}
           </Button>
         </div>
-       ):
-       <div className="flex justify-center mt-8">
-        <Button
-          type="button"
-          className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
-          style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
-          disabled={isSaving}
-          onClick={addNewRound}
-        >
-          + New round
-        </Button>
-      </div>}
+      ) : (
+        <div className="flex justify-center mt-8">
+          <Button
+            type="button"
+            className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
+            style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
+            disabled={isSaving}
+            onClick={addNewRound}
+          >
+            + New round
+          </Button>
+        </div>
+      )}
       {/* New round button at bottom center */}
-      
-     
     </div>
   );
 }
-
-export function validateRounds(rounds: BettingRound[]): ValidationError[] {
-  const errors: ValidationError[] = [];
-  // Check for duplicate round names
-  const roundNames = rounds.map(round => round.roundName.toLowerCase().trim());
-  const duplicateRoundNames = new Set<string>();
-  roundNames.forEach((name, index) => {
-    if (roundNames.indexOf(name) !== index) {
-      duplicateRoundNames.add(name);
-    }
-  });
-  rounds.forEach((round, roundIndex) => {
-    // if (duplicateRoundNames.has(round.roundName.toLowerCase().trim())) {
-    //   errors.push({
-    //     type: 'round',
-    //     roundIndex,
-    //     message: 'Round name must be unique'
-    //   });
-    // }
-    // Check for duplicate option names within the same round
-    const optionNames = round.options.map(option => option.option.toLowerCase().trim());
-    const nameCounts = optionNames.reduce((acc, name) => {
-      acc[name] = (acc[name] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const hasDuplicate = Object.values(nameCounts).some(count => count > 1);
-    if (hasDuplicate) {
-      errors.push({
-        type: 'option',
-        roundIndex,
-        message: 'Option names must be unique within the same round'
-      });
-    }
-  });
-  return errors;
-} 
