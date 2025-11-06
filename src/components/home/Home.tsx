@@ -1,7 +1,8 @@
-import BetCard from "@/components/BetCard";
-import { MainLayout } from "@/components/layout";
-import HomePromotedBets from "./HomePromotedBets";
-import HomeBets from "./HomeBets";
+import BetCard from '@/components/BetCard';
+import { MainLayout } from '@/components/layout';
+import HomePromotedBets from './HomePromotedBets';
+import HomeBets from './HomeBets';
+import UpcomingHomeBets from './UpcomingHomeBets';
 
 export default function Home() {
   return (
@@ -12,10 +13,10 @@ export default function Home() {
             Predict the Internet's <br />
             <span className="text-[#BDFF00]">randomest</span> moments
           </h1>
-          <p className='text-[#FFFFFFBF]'>
+          <p className="text-[#FFFFFFBF]">
             Live picks for games created on the Internet.
             <br />
-              <span className='text-[#FFFFFFBF] font-bold'>Speculate on the unexpected.</span>
+            <span className="text-[#FFFFFFBF] font-bold">Speculate on the unexpected.</span>
           </p>
         </div>
         <HomePromotedBets />
@@ -42,7 +43,8 @@ export default function Home() {
           </Button>
         </div> */}
         <HomeBets />
+        <UpcomingHomeBets />
       </div>
     </MainLayout>
-  )
-};
+  );
+}

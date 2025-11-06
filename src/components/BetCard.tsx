@@ -70,7 +70,7 @@ export default function BetCard(props: BetCardType) {
           <div
             key={i}
             onClick={handleClick}
-            className="flex-1 flex gap-4 items-center justify-between hover:bg-zinc-600 transition-all cursor-pointer px-2 py-1 rounded-md"
+            className="flex-1 flex gap-4 items-center justify-between hover:bg-[#BDFF00] hover:text-black  transition-all cursor-pointer px-2 py-1 rounded-md"
           >
             <div
               className={cn(
@@ -86,7 +86,7 @@ export default function BetCard(props: BetCardType) {
         {props.options.length > 2 && (
           <div
             onClick={handleClick}
-            className="flex-1 flex gap-4 items-center justify-between hover:bg-zinc-600 transition-all cursor-pointer px-2 py-1 rounded-md"
+            className="flex-1 flex gap-4 items-center justify-between hover:bg-[#BDFF00] hover:text-black transition-all cursor-pointer px-2 py-1 rounded-md"
           >
             <div className="text-sm rounded-full font-semibold">
               {props.options.length - 2} more...

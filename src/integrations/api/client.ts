@@ -550,6 +550,16 @@ export const betsAPI = {
 
     return response.data
   },
+
+  getUpcomingBets: async (params?: any) => {
+
+    const { page } = params;
+    const { data: response } = await apiClient.get(`/stream/displayed-upcoming-bets`, {
+      params
+    });
+
+    return response.data
+  },
 };
 
 // WebSocket handling
