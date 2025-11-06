@@ -90,21 +90,21 @@ function validateForm(
     startDate: '',
   };
   let isValid = true;
-  
+
   // Validate title
   const titleError = validateStreamTitle(title);
   if (titleError) {
     newErrors.title = titleError;
     isValid = false;
   }
-  
+
   // Validate description
   const descriptionError = validateStreamDescription(description);
   if (descriptionError) {
     newErrors.description = descriptionError;
     isValid = false;
   }
-  
+
   if (
     !embeddedUrl?.trim() ||
     (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))
@@ -193,10 +193,10 @@ export const AdminStreamContent = ({
         variant: 'destructive',
         duration: 7000,
       });
-    //   if (error?.isForcedLogout) {
-    //     // Dispatch custom event for logout handling
-    //     window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
-    //   }
+      //   if (error?.isForcedLogout) {
+      //     // Dispatch custom event for logout handling
+      //     window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+      //   }
     });
 
     // Handle disconnection events
@@ -276,6 +276,8 @@ export const AdminStreamContent = ({
   async function fetchStreamData() {
     try {
       const streamData = await api.admin.getStream(streamId);
+      console.log(streamData);
+
       setStreamInfo(streamData?.data || undefined);
     } catch (e) {
       Bugsnag.notify(e);
@@ -479,41 +481,45 @@ export const AdminStreamContent = ({
             {streamInfo?.streamName}
           </span>
           {/* View live link label below stream name */}
-          <a href={streamInfo?.embeddedUrl} target="_blank">
-            <div className="flex items-center mb-5 mt-1">
-              <ExternalLink size={16} className="mr-1" style={{ opacity: 0.5, color: '#fff' }} />
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 400, fontSize: 12 }}>
-                View live link
-              </span>
-            </div>
-          </a>
-          <div className="relative">
-            {isStreamScheduled || isStreamEnded ? (
-              <div className="relative aspect-video rounded-lg overflow-hidden">
-                {/* Background thumbnail with low opacity */}
-                {isStreamScheduled && streamInfo?.thumbnailUrl && (
-                  <div
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                    style={{
-                      backgroundImage: `url(${getImageLink(encodeURIComponent(streamInfo.thumbnailUrl))})`,
-                      opacity: 0.3,
-                    }}
-                  />
-                )}
-                {/* Fallback black background if no thumbnail */}
-                {!streamInfo?.thumbnailUrl && <div className="absolute inset-0 bg-black" />}
-                <div
-                  className={`relative z-10 px-2 w-full h-full flex items-center border border-primary justify-center text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}
-                >
-                  {isStreamScheduled
-                    ? `Stream scheduled on ${formatDateTime(streamInfo?.scheduledStartTime)}.`
-                    : 'Stream has ended.'}
-                </div>
+          {streamInfo && streamInfo.streamType === 'stream' && (
+            <a href={streamInfo?.embeddedUrl} target="_blank">
+              <div className="flex items-center mb-5 mt-1">
+                <ExternalLink size={16} className="mr-1" style={{ opacity: 0.5, color: '#fff' }} />
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 400, fontSize: 12 }}>
+                  View live link
+                </span>
               </div>
-            ) : (
-              <StreamPlayer streamId={streamId} />
-            )}
-          </div>
+            </a>
+          )}
+          {streamInfo && streamInfo.streamType == 'stream' && (
+            <div className="relative">
+              {isStreamScheduled || isStreamEnded ? (
+                <div className="relative aspect-video rounded-lg overflow-hidden">
+                  {/* Background thumbnail with low opacity */}
+                  {isStreamScheduled && streamInfo?.thumbnailUrl && (
+                    <div
+                      className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                      style={{
+                        backgroundImage: `url(${getImageLink(encodeURIComponent(streamInfo.thumbnailUrl))})`,
+                        opacity: 0.3,
+                      }}
+                    />
+                  )}
+                  {/* Fallback black background if no thumbnail */}
+                  {!streamInfo?.thumbnailUrl && <div className="absolute inset-0 bg-black" />}
+                  <div
+                    className={`relative z-10 px-2 w-full h-full flex items-center border border-primary justify-center text-white ${isStreamScheduled ? 'text-md' : 'text-2xl'} font-bold rounded-lg`}
+                  >
+                    {isStreamScheduled
+                      ? `Stream scheduled on ${formatDateTime(streamInfo?.scheduledStartTime)}.`
+                      : 'Stream has ended.'}
+                  </div>
+                </div>
+              ) : (
+                <StreamPlayer streamId={streamId} />
+              )}
+            </div>
+          )}
           <AdminBettingRoundsCard
             isStreamScheduled={isStreamScheduled}
             editStreamId={streamId}
