@@ -206,7 +206,7 @@ export default function BetTokens({
         <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
           <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
           <p className="text-gray-400 text-sm text-center">
-            You need {isSweepCoins ? 'Sweep Coins' : 'Gold Coins'} to place a pick
+            You need {isSweepCoins ? 'Stream Coins' : 'Gold Coins'} to place a pick
           </p>
           <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
