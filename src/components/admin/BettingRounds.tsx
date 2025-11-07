@@ -418,7 +418,7 @@ export function BettingRounds({
                               </TableCell>
                               <TableCell className="border-t border-b border-[#191D24] p-0 w-14" style={{ borderRadius: 0, width: 56, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#191D24' }}>
                                 <div className="flex items-center justify-center h-full" style={{ minHeight: 72 }}>
-                                  <Button
+                                  <DeleteBettingDialog
                                     title="Delete Option"
                                     message={`Delete this option from round ${round.roundName}`}
                                     onConfirm={() => deleteOption(roundIndex, optionIndex)}
