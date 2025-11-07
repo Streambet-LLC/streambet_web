@@ -43,7 +43,7 @@ export default function Home() {
           </Button>
         </div> */}
         <HomeBets />
-        <UpcomingHomeBets />
+        {/* <UpcomingHomeBets /> */}
       </div>
     </MainLayout>
   );
