@@ -24,29 +24,32 @@ export default function HomePromotedBets() {
   if (!data) return;
 
   return (
-    <Carousel className="flex-1 w-full">
-      <CarouselContent className="flex-1">
-        {isLoading ? (
-          <Skeleton className="flex-1 w-full h-64 rounded-none" />
-        ) : (
-          data?.map((bet, i) => (
-            <CarouselItem key={i}>
-              <BetCard {...bet} />
-            </CarouselItem>
-          ))
-        )}
-      </CarouselContent>
-      <div className="flex items-center justify-between pt-4">
-        <CarouselPrevious
-          className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
-          size="lg"
-        />
-        <CarouselDots className="relative" />
-        <CarouselNext
-          className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
-          size="lg"
-        />
-      </div>
-    </Carousel>
+    <>
+      <div className="text-2xl font-bold pl-2 text-center">Featured Streams</div>
+      <Carousel className="flex-1 w-full">
+        <CarouselContent className="flex-1">
+          {isLoading ? (
+            <Skeleton className="flex-1 w-full h-64 rounded-none" />
+          ) : (
+            data?.map((bet, i) => (
+              <CarouselItem key={i}>
+                <BetCard {...bet} />
+              </CarouselItem>
+            ))
+          )}
+        </CarouselContent>
+        <div className="flex items-center justify-between pt-4">
+          <CarouselPrevious
+            className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
+            size="lg"
+          />
+          <CarouselDots className="relative" />
+          <CarouselNext
+            className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
+            size="lg"
+          />
+        </div>
+      </Carousel>
+    </>
   );
 }
