@@ -6,6 +6,8 @@ interface Session {
   id: string;
   walletBalanceCoin?: number;
   walletBalanceToken?: number;
+  maxSweepCoinsBet?: number;
+  maxGoldCoinsBet?: number;
   user?: {
     id: string;
     email: string;
@@ -22,6 +24,7 @@ interface AuthContextType {
   isLoading: boolean;
   isError: boolean;
   isFetching: boolean;
+  getBettingLimits: () => { maxSweepCoinsBet: number; maxGoldCoinsBet: number };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,12 +49,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     },
   });
 
+  const getBettingLimits = () => ({
+    maxSweepCoinsBet: session?.maxSweepCoinsBet || 0,
+    maxGoldCoinsBet: session?.maxGoldCoinsBet || 0,
+  });
+
   const value: AuthContextType = {
     session: session || null,
     refetchSession,
     isLoading,
     isFetching,
     isError,
+    getBettingLimits,
   };
 
   return (

@@ -1944,17 +1944,8 @@ export const SUPPORTED_COUNTRIES = [
   "US",
 ];
 
-// Betting Configuration
-// NOTE: These limits must match the backend validation rules
-// Backend currently enforces: 50 sweep coins, 1000 gold coins
-export const BETTING_LIMITS = {
-  // Maximum bet amounts
-  MAX_SWEEP_COINS_BET: 50,  // TODO: Update backend to allow 100
-  MAX_GOLD_COINS_BET: 1000,
-  
-  // Preset betting percentages (smallest to largest)
-  PRESET_PERCENTAGES: [0.1, 0.3, 0.5, 1.0] as const, // 10%, 30%, 50%, 100%
-};
+// Preset betting percentages (smallest to largest)
+export const PRESET_PERCENTAGES = [0.1, 0.3, 0.5, 1.0] as const; // 10%, 30%, 50%, 100%
 
 export const STREAM_LIMITS = {
   // Title limits
