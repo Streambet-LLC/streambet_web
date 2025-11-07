@@ -704,7 +704,7 @@ export const AdminManagement = ({
       thumbnailUrl: thumbnailImageUrl,
       scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
       creatorId,
-      type: eventType.value,
+      ...(!editStreamId && { type: eventType.value }),
     };
 
     createStreamMutation.mutate(payload);

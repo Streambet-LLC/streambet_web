@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BETTING_LIMITS } from '@/utils/constants';
+import { PRESET_PERCENTAGES } from '@/utils/constants';
 
 
 interface BettingVariable {
@@ -83,6 +84,8 @@ export default function BetTokens({
 }: BetTokensProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
+  const { getBettingLimits } = useAuthContext();
+  const bettingLimits = getBettingLimits();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
@@ -129,7 +132,7 @@ export default function BetTokens({
   const isBetButtonEnabled = selectedColor !== "";
 
    useEffect(() => {
-      const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
+      const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
       
       const currentBetAmount = isEditing ? Number(isSweepCoins 
         ? bettingData?.userBetSweepCoin 
@@ -203,7 +206,7 @@ export default function BetTokens({
         <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
           <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
           <p className="text-gray-400 text-sm text-center">
-            You need {isSweepCoins ? 'Sweep Coins' : 'Gold Coins'} to place a pick
+            You need {isSweepCoins ? 'Stream Coins' : 'Gold Coins'} to place a pick
           </p>
           <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
@@ -307,13 +310,13 @@ export default function BetTokens({
           {/* Preset Amount Buttons - spanning most of the row */}
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(() => {
-              const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
+              const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
               const baseWalletBalance = Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0;
               const currentBetAmount = isEditing ? Number(isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins) || 0 : 0;
               const totalAvailableBalance = Math.min(baseWalletBalance + currentBetAmount, maxBetLimit);
 
               // Filter out buttons with zero value to prevent showing "0 tokens"
-              return BETTING_LIMITS.PRESET_PERCENTAGES
+              return PRESET_PERCENTAGES
                 .map((percentage) => {
                   const value = Math.floor(totalAvailableBalance * percentage);
                   return { percentage, value };
