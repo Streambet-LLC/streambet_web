@@ -25,7 +25,7 @@ export default function HomePromotedBets() {
 
   return (
     <>
-      <div className="text-2xl font-bold pl-2 text-center">Featured Streams</div>
+      <div className="text-2xl font-bold pl-2">Featured Streams</div>
       <Carousel className="flex-1 w-full">
         <CarouselContent className="flex-1">
           {isLoading ? (
