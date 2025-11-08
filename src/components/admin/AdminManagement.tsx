@@ -244,6 +244,12 @@ export const AdminManagement = ({
     setIsUploading(false);
     setIsLiveStream(false);
 
+    // Reset event type to default
+    setEventType({
+      value: 'stream',
+      label: 'Livestream',
+    });
+
     // Reset betting rounds
     setBettingRounds([]);
 
@@ -504,6 +510,14 @@ export const AdminManagement = ({
       setDescription(streamData?.description);
       setEmbeddedUrl(streamData?.embeddedUrl);
       setCreatorId(streamData.creatorId);
+
+      // Set event type based on stream data
+      if (streamData.streamType) {
+        setEventType({
+          value: streamData.streamType,
+          label: streamData.streamType === 'stream' ? 'Livestream' : 'Non Video'
+        });
+      }
 
       // Auto-populate first round with 2 options if no rounds exist
       const rounds = streamData?.rounds || [];
