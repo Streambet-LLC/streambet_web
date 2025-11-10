@@ -16,6 +16,7 @@ interface QuickPickModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   streamId: string;
+  roundId: string;
   streamName?: string;
 }
 
@@ -23,26 +24,28 @@ export const QuickPickModal = ({
   open,
   onOpenChange,
   streamId,
+  roundId,
   streamName,
 }: QuickPickModalProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { session } = useAuthContext();
   const { socketConnect } = useBettingStatusContext();
-  const { setActiveStreamId } = useBettingContext();
-  
+  const { setActiveStreamId, setRoundId } = useBettingContext();
+
   // Set active stream when modal opens, clear when it closes
   useEffect(() => {
     if (open && streamId) {
+      setRoundId(roundId);
       setActiveStreamId(streamId);
-      
+
       // Cleanup: clear active stream when modal closes
       return () => {
         setActiveStreamId(null);
       };
     }
-  }, [open, streamId, setActiveStreamId]);
-  
+  }, [open, streamId, roundId, setActiveStreamId]);
+
   // Custom hook handles all betting logic and computed values
   const {
     activeRound,
@@ -62,11 +65,19 @@ export const QuickPickModal = ({
   } = useQuickPickModal();
 
   // Wrapper functions to match BetTokens/LockTokens expected interface
-  const placedBetSocket = (data: { bettingVariableId: string; amount: number; currencyType: string }) => {
+  const placedBetSocket = (data: {
+    bettingVariableId: string;
+    amount: number;
+    currencyType: string;
+  }) => {
     handlePlaceBet(data.bettingVariableId, data.amount, data.currencyType);
   };
 
-  const editBetSocket = (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => {
+  const editBetSocket = (data: {
+    newBettingVariableId: string;
+    newAmount: number;
+    newCurrencyType: string;
+  }) => {
     // Check that betId exists before attempting to edit
     if (!userBet.betId) {
       console.error('Cannot edit pick: betId is missing');
@@ -76,7 +87,7 @@ export const QuickPickModal = ({
       });
       return;
     }
-    
+
     handleEditBet(userBet.betId, data.newBettingVariableId, data.newAmount, data.newCurrencyType);
   };
 
@@ -90,20 +101,18 @@ export const QuickPickModal = ({
         <DialogTitle className="sr-only">
           {streamName ? `${streamName} - Quick Pick` : 'Quick Pick'}
         </DialogTitle>
-        <DialogDescription className="sr-only">
-          Place your pick on this stream
-        </DialogDescription>
-        
-        {streamName && (
+        <DialogDescription className="sr-only">Place your pick on this stream</DialogDescription>
+
+        {activeRound && (
           <div className="mb-2">
             <h2 className="text-white text-lg sm:text-xl font-semibold text-center">
-              {streamName}
+              {activeRound.name}
             </h2>
           </div>
         )}
-        
+
         {!session ? (
-          <SignInPrompt 
+          <SignInPrompt
             onClose={() => onOpenChange(false)}
             onSignIn={() => {
               onOpenChange(false);

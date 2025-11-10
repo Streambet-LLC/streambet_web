@@ -127,6 +127,7 @@ export const StreamInfoForm = ({
       <div>
         <Label className="text-white font-light mb-3 block">Event Type</Label>
         <Select
+          isDisabled={isEdit}
           options={[
             {
               value: 'stream',

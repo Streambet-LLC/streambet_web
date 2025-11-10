@@ -80,7 +80,8 @@ function isTimeValid(time, date) {
 function validateForm(
   { title, description, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime },
   selectedThumbnailFile,
-  isLiveStream
+  isLiveStream,
+  eventType
 ) {
   const newErrors = {
     title: '',
@@ -105,13 +106,18 @@ function validateForm(
     isValid = false;
   }
 
-  if (
-    !embeddedUrl?.trim() ||
-    (!embeddedUrl.includes('http') && !embeddedUrl.includes('www') && !embeddedUrl.includes('kick'))
-  ) {
-    newErrors.embeddedUrl = 'Embed URL is required and should be valid';
-    isValid = false;
+  if (eventType.value === 'stream') {
+    if (
+      !embeddedUrl?.trim() ||
+      (!embeddedUrl?.includes('http') &&
+        !embeddedUrl.includes('www') &&
+        !embeddedUrl.includes('kick'))
+    ) {
+      newErrors.embeddedUrl = 'Embed URL is required and should be valid';
+      isValid = false;
+    }
   }
+
   if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
     newErrors.thumbnail = 'Thumbnail is required';
     isValid = false;
@@ -155,6 +161,10 @@ export const AdminStreamContent = ({
   const [messageList, setMessageList] = useState<any>();
   const { socketConnect, handleSocketReconnection } = useBettingStatusContext();
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [eventType, setEventType] = useState({
+    value: 'stream',
+    label: 'Livestream',
+  });
 
   // Function to setup socket event listeners
   const setupSocketEventListeners = (socketInstance: any) => {
@@ -276,10 +286,19 @@ export const AdminStreamContent = ({
   async function fetchStreamData() {
     try {
       const streamData = await api.admin.getStream(streamId);
-      console.log(streamData);
+      console.log(streamData?.data || undefined);
 
       setStreamInfo(streamData?.data || undefined);
+
+      const newEventType = {
+        value: streamData.data.streamType,
+        label: streamData.data.streamType === 'stream' ? 'Livestream' : 'Non-Video',
+      };
+
+      setEventType(newEventType);
     } catch (e) {
+      console.log(e);
+
       Bugsnag.notify(e);
       setStreamInfo(undefined);
     }
@@ -382,7 +401,12 @@ export const AdminStreamContent = ({
   useEffect(() => {
     if (settingsOpen) {
       // Only validate when settings dialog is open
-      const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile, isLiveStream);
+      const { isValid, newErrors } = validateForm(
+        editForm,
+        selectedThumbnailFile,
+        isLiveStream,
+        eventType
+      );
       setEditErrors(newErrors);
     }
   }, [
@@ -397,7 +421,12 @@ export const AdminStreamContent = ({
 
   const handleEditSubmit = async () => {
     // Run validation first
-    const { isValid, newErrors } = validateForm(editForm, selectedThumbnailFile, isLiveStream);
+    const { isValid, newErrors } = validateForm(
+      editForm,
+      selectedThumbnailFile,
+      isLiveStream,
+      eventType
+    );
     setEditErrors(newErrors);
     if (!isValid) {
       return;
@@ -592,6 +621,7 @@ export const AdminStreamContent = ({
                     initialValues={{
                       ...editForm,
                       bettingRoundStatus: streamInfo?.bettingRoundStatus || undefined,
+                      eventType,
                     }}
                     errors={editErrors}
                     isUploading={isUploading}
@@ -603,6 +633,7 @@ export const AdminStreamContent = ({
                     onDeleteThumbnail={handleEditDeleteThumbnail}
                     onStartDateChange={handleEditStartDateChange}
                     onStartTimeChange={handleEditStartTimeChange}
+                    onChangeEventType={val => setEventType(val)}
                   />
                 </div>
               </DialogContent>
