@@ -16,7 +16,7 @@ interface QuickPickModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   streamId: string;
-  roundId: string;
+  roundId?: string;
   streamName?: string;
 }
 
@@ -36,7 +36,7 @@ export const QuickPickModal = ({
   // Set active stream when modal opens, clear when it closes
   useEffect(() => {
     if (open && streamId) {
-      setRoundId(roundId);
+      if (roundId) setRoundId(roundId);
       setActiveStreamId(streamId);
 
       // Cleanup: clear active stream when modal closes
