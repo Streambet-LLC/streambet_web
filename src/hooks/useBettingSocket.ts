@@ -113,7 +113,7 @@ export function useBettingSocket({
       const resp = await api.betting.getBettingRoundData(roundId);
       return resp?.data ?? null;
     },
-    enabled: !!bettingData?.id && !!streamId,
+    enabled: !!bettingData?.bettingRounds?.[0]?.id && !!streamId,
   });
 
   // Update userBet when getRoundData changes
