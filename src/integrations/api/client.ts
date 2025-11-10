@@ -435,8 +435,8 @@ export const bettingAPI = {
   },
 
   // Get betting options for a stream
-  getBettingData: async (streamId: string, userId?: string) => {
-    const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}`);
+  getBettingData: async (streamId: string, userId?: string, roundId?: string) => {
+    const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}&roundId=${roundId}`);
     return response.data;
   },
 
