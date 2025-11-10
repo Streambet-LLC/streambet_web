@@ -50,7 +50,7 @@ export default function BetCard(props: BetCardType) {
           onClick={handleClick}
           className="text-md cursor-pointer hover:underline line-clamp-2"
         >
-          {props.name} - {!isActive && props && props.status ? props.status.toUpperCase(0) : ''}
+          {props.name}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-2 p-4 justify-center">
