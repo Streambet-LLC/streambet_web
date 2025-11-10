@@ -39,12 +39,13 @@ export const QuickPickModal = ({
       if (roundId) setRoundId(roundId);
       setActiveStreamId(streamId);
 
-      // Cleanup: clear active stream when modal closes
+      // Cleanup: clear active stream and round when modal closes
       return () => {
         setActiveStreamId(null);
+        setRoundId(null);
       };
     }
-  }, [open, streamId, roundId, setActiveStreamId]);
+  }, [open, streamId, roundId, setActiveStreamId, setRoundId]);
 
   // Custom hook handles all betting logic and computed values
   const {
