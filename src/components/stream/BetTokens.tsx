@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BETTING_LIMITS } from '@/utils/constants';
+import { PRESET_PERCENTAGES } from '@/utils/constants';
 
 
 interface BettingVariable {
@@ -83,6 +84,8 @@ export default function BetTokens({
 }: BetTokensProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
+  const { getBettingLimits } = useAuthContext();
+  const bettingLimits = getBettingLimits();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
@@ -129,7 +132,7 @@ export default function BetTokens({
   const isBetButtonEnabled = selectedColor !== "";
 
    useEffect(() => {
-      const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
+      const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
       
       const currentBetAmount = isEditing ? Number(isSweepCoins 
         ? bettingData?.userBetSweepCoin 
@@ -141,7 +144,13 @@ export default function BetTokens({
       
       // Round down: only whole number bets allowed
       setSliderMax(Math.floor(Math.min(walletBalance + currentBetAmount, maxBetLimit)));
-      setSelectedColor(selectedWinner);
+      
+      // Only set selectedColor if selectedWinner exists in current round's options
+      const optionExists = bettingData?.bettingRounds?.[0]?.bettingVariables?.some(
+        option => option.name === selectedWinner
+      );
+      setSelectedColor(optionExists && selectedWinner ? selectedWinner : "");
+      
       setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData, bettingData, session, isEditing]);
@@ -182,12 +191,12 @@ export default function BetTokens({
   // Check if betting is available. Round is open, not locked
   const isBettingAvailable = bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet;
   
-  // Only render zero balance message when betting is available if user had funds and isn't editing
+  // Show zero balance message when user has 0 balance, or switches to different currency with 0 balance
   const hasZeroBalance = session != null && 
                          bettingData != null && 
                          isBettingAvailable &&
                          walletBalance === 0 && 
-                         !isEditing;
+                         (!isEditing || (isEditing && updatedCurrency !== currency));
 
 
   return (
@@ -197,7 +206,7 @@ export default function BetTokens({
         <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
           <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
           <p className="text-gray-400 text-sm text-center">
-            You need {isSweepCoins ? 'Sweep Coins' : 'Gold Coins'} to place a pick
+            You need {isSweepCoins ? 'Stream Coins' : 'Gold Coins'} to place a pick
           </p>
           <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
@@ -301,21 +310,28 @@ export default function BetTokens({
           {/* Preset Amount Buttons - spanning most of the row */}
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(() => {
-              const maxBetLimit = isSweepCoins ? BETTING_LIMITS.MAX_SWEEP_COINS_BET : BETTING_LIMITS.MAX_GOLD_COINS_BET;
+              const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
               const baseWalletBalance = Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0;
               const currentBetAmount = isEditing ? Number(isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins) || 0 : 0;
               const totalAvailableBalance = Math.min(baseWalletBalance + currentBetAmount, maxBetLimit);
 
-              return BETTING_LIMITS.PRESET_PERCENTAGES.map((percentage, index) => (
-                <button
-                  key={index}
-                  onClick={() => session && !lockedOptions && setBetAmount(Math.min(Math.floor(totalAvailableBalance * percentage), sliderMax || 0))}
-                  disabled={session == null || lockedOptions}
-                  className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  {Math.floor(totalAvailableBalance * percentage)} tokens
-                </button>
-              ));
+              // Filter out buttons with zero value to prevent showing "0 tokens"
+              return PRESET_PERCENTAGES
+                .map((percentage) => {
+                  const value = Math.floor(totalAvailableBalance * percentage);
+                  return { percentage, value };
+                })
+                .filter(item => item.value > 0)
+                .map(({ percentage, value }) => (
+                  <button
+                    key={`${percentage}-${value}`}
+                    onClick={() => session && !lockedOptions && setBetAmount(Math.min(value, sliderMax || 0))}
+                    disabled={session == null || lockedOptions}
+                    className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {value} tokens
+                  </button>
+                ));
             })()}
           </div>
         </div>
