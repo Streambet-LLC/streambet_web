@@ -42,7 +42,7 @@ export function useBettingSocket({
 
   // Query 1: Fetch betting data for the stream
   const { data: bettingData, refetch: refetchBettingData } = useQuery({
-    queryKey: ['bettingData', streamId, session?.id],
+    queryKey: ['bettingData', streamId, session?.id, roundId],
     queryFn: async () => {
       if (!session?.id || !streamId) return null;
       const resp = await api.betting.getBettingData(streamId, session.id, roundId);
@@ -63,8 +63,12 @@ export function useBettingSocket({
 
   // Update activeRound when bettingData changes
   useEffect(() => {
-    if (bettingData?.bettingRounds?.[0]) {
-      const betRound = bettingData.bettingRounds[0];
+    if (bettingData?.bettingRounds && bettingData.bettingRounds.length > 0) {
+      const preferredRound =
+        (roundId ? bettingData.bettingRounds.find((r: any) => r.id === roundId) : null) ||
+        bettingData.bettingRounds.find((r: any) => r.status === BettingRoundStatus.OPEN) ||
+        bettingData.bettingRounds[0];
+      const betRound = preferredRound;
       
       // Map betting variables with enhanced statistics
       const enhancedVariables: BettingVariableStats[] = (betRound.bettingVariables || []).map(item => ({
@@ -87,9 +91,9 @@ export function useBettingSocket({
       );
       
       setActiveRound({
-        id: bettingData.bettingRounds[0].id,
-        name: bettingData.bettingRounds[0].roundName,
-        status: bettingData.bettingRounds[0].status,
+        id: betRound.id,
+        name: betRound.roundName,
+        status: betRound.status,
         totalGoldCoins: bettingData.roundTotalBetsGoldCoinAmount ?? 0,
         totalSweepCoins: bettingData.roundTotalBetsSweepCoinAmount ?? 0,
         totalBetCountGoldCoin,
@@ -102,18 +106,18 @@ export function useBettingSocket({
         userBetSweepCoin: bettingData.userBetSweepCoin,
       });
     }
-  }, [bettingData, setActiveRound]);
+  }, [bettingData, roundId, setActiveRound]);
 
   // Query 2: Fetch round data for user's current bet
   const { data: getRoundData, refetch: refetchRoundData } = useQuery({
-    queryKey: ['selectedRoundData', bettingData?.bettingRounds?.[0]?.id],
+    queryKey: ['selectedRoundData', roundId ?? bettingData?.bettingRounds?.[0]?.id],
     queryFn: async () => {
-      const roundId = bettingData?.bettingRounds?.[0]?.id;
-      if (!roundId || !streamId) return null;
-      const resp = await api.betting.getBettingRoundData(roundId);
+      const selectedRoundId = roundId ?? bettingData?.bettingRounds?.[0]?.id;
+      if (!selectedRoundId || !streamId) return null;
+      const resp = await api.betting.getBettingRoundData(selectedRoundId);
       return resp?.data ?? null;
     },
-    enabled: !!bettingData?.bettingRounds?.[0]?.id && !!streamId,
+    enabled: !!(roundId ?? bettingData?.bettingRounds?.[0]?.id) && !!streamId,
   });
 
   // Update userBet when getRoundData changes
