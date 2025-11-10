@@ -10,7 +10,7 @@ import { QuickPickModal } from './stream/QuickPickModal';
 
 export default function BetCard(props: BetCardType) {
   const [quickPickOpen, setQuickPickOpen] = useState(false);
-  const isActive = props.status === 'open' || props.status === 'locked';
+  const canOpen = Boolean(props.streamId);
   const isForStream = props.isForStream;
 
   const getThumbnailUrl = thumbnail => {
@@ -35,14 +35,14 @@ export default function BetCard(props: BetCardType) {
   };
 
   const handleClick = () => {
-    if (isActive) {
+    if (canOpen) {
       setQuickPickOpen(true);
     }
   };
 
   return (
-    <Card
-      className={`h-full flex flex-col ${isActive ? 'bg-zinc-900' : ''} border-border shadow-lg overflow-hidden ${isActive && isForStream ? 'border-[#BDFF00]' : ''}`}
+      <Card
+      className={`h-full flex flex-col border-border shadow-lg overflow-hidden ${isForStream ? 'border-[#BDFF00]' : ''}`}
     >
       <CardHeader className="p-4 pb-0 flex flex-row gap-3 items-center">
         <img src={getThumbnailUrl(props.thumbnail)} className="aspect-square w-9 h-9 rounded-md" />
