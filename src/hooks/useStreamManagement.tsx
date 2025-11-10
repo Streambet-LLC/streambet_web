@@ -118,8 +118,12 @@ export const useStreamManagement = () => {
   }, [searchStreamQuery, refetchStreams]);
 
   useEffect(() => {
-    refetchEndedStreams();
-  }, [searchEndedStreamQuery, refetchEndedStreams]);
+    refetchEndedNonVideoStreams();
+  }, [searchEndedNonVideoQuery, refetchEndedNonVideoStreams]);
+
+  useEffect(() => {
+    refetchNonVideoStreams();
+  }, [searchNonVideoQuery, refetchNonVideoStreams]);
 
   return {
     profile: session,
