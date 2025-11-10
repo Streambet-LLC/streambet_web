@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useMemo, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { useBettingSocket } from '@/hooks/useBettingSocket';
 import { useBettingStatusContext } from './BettingStatusContext';
@@ -12,14 +12,26 @@ export interface BettingVariable {
   [key: string]: any;
 }
 
+export interface BettingVariableStats {
+  id: string;
+  name: string;
+  optionName: string;
+  totalBetsGoldCoin: number;
+  totalBetsSweepCoin: number;
+  betCountGoldCoin: number;
+  betCountSweepCoin: number;
+}
+
 export interface ActiveRound {
   id: string | null;
   name: string;
   status: BettingRoundStatus;
   totalGoldCoins: number;
   totalSweepCoins: number;
+  totalBetCountGoldCoin: number;
+  totalBetCountSweepCoin: number;
   isLocked: boolean;
-  bettingVariables?: BettingVariable[];
+  bettingVariables?: BettingVariableStats[];
   walletGoldCoin?: number;
   walletSweepCoin?: number;
   userBetGoldCoins?: number;
@@ -94,6 +106,8 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
     status: BettingRoundStatus.CLOSED,
     totalGoldCoins: 0,
     totalSweepCoins: 0,
+    totalBetCountGoldCoin: 0,
+    totalBetCountSweepCoin: 0,
     isLocked: false,
     bettingVariables: [],
     walletGoldCoin: undefined,
