@@ -119,6 +119,12 @@ export const QuickPickModal = ({
               navigate(`/login?redirect=/`);
             }}
           />
+        ) : !activeRound ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-sm text-muted-foreground">
+              {isLoading ? 'Loading picking data…' : 'Preparing picking data…'}
+            </div>
+          </div>
         ) : !hasActiveBetting ? (
           <NoBettingData />
         ) : showBetTokens ? (
