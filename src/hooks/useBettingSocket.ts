@@ -8,6 +8,7 @@ import type { ActiveRound, UserBet } from '@/contexts/BettingContext';
 interface UseBettingSocketProps {
   socket: any;
   streamId: string | null;
+  roundId: string | null;
   session: any;
   // Context setters passed from provider to avoid circular dependency
   setActiveRound: React.Dispatch<React.SetStateAction<ActiveRound>>;
@@ -22,9 +23,10 @@ interface UseBettingSocketProps {
  * Queries are in the hook and update context state via useEffect
  * Receives setters from provider to avoid circular dependency during initialization
  */
-export function useBettingSocket({ 
-  socket, 
-  streamId, 
+export function useBettingSocket({
+  socket,
+  streamId,
+  roundId,
   session,
   setActiveRound,
   setUserBet,
@@ -40,7 +42,7 @@ export function useBettingSocket({
     queryKey: ['bettingData', streamId, session?.id],
     queryFn: async () => {
       if (!session?.id || !streamId) return null;
-      const resp = await api.betting.getBettingData(streamId, session.id);
+      const resp = await api.betting.getBettingData(streamId, session.id, roundId);
       return resp?.data ?? null;
     },
     enabled: !!session?.id && !!streamId,
@@ -51,6 +53,7 @@ export function useBettingSocket({
     if (bettingData?.bettingRounds?.[0]) {
       setActiveRound({
         id: bettingData.bettingRounds[0].id,
+        name: bettingData.bettingRounds[0].roundName,
         status: bettingData.bettingRounds[0].status,
         totalGoldCoins: bettingData.roundTotalBetsGoldCoinAmount ?? 0,
         totalSweepCoins: bettingData.roundTotalBetsSweepCoinAmount ?? 0,
@@ -84,8 +87,8 @@ export function useBettingSocket({
         betId: getRoundData.betId,
         amount: getRoundData.betAmount,
         selectedOption: getRoundData.optionName,
-        potentialWinnings: isSweep 
-          ? getRoundData.potentialSweepCoinAmt 
+        potentialWinnings: isSweep
+          ? getRoundData.potentialSweepCoinAmt
           : getRoundData.potentialGoldCoinAmt,
         currencyType: getRoundData.currencyType,
         isLocked: getRoundData.status === BettingRoundStatus.LOCKED,
@@ -126,8 +129,8 @@ export function useBettingSocket({
         const isSweep = prev.currencyType === CurrencyType.SWEEP_COINS;
         return {
           ...prev,
-          potentialWinnings: isSweep 
-            ? data?.potentialSweepCoinWinningAmount 
+          potentialWinnings: isSweep
+            ? data?.potentialSweepCoinWinningAmount
             : data?.potentialGoldCoinWinningAmount,
         };
       });
@@ -163,22 +166,22 @@ export function useBettingSocket({
     const handleBetPlaced = (update: any) => {
       if (update?.bet?.userId === session?.id) {
         queryClient.invalidateQueries({ queryKey: ['session'] });
-        
+
         const isSweep = update?.bet?.currencyType === CurrencyType.SWEEP_COINS;
-        
+
         setUserBet({
           betId: update?.bet?.id,
           amount: update?.amount,
           selectedOption: update?.selectedWinner,
-          potentialWinnings: isSweep 
-            ? update?.potentialSweepCoinWinningAmount 
+          potentialWinnings: isSweep
+            ? update?.potentialSweepCoinWinningAmount
             : update?.potentialGoldCoinWinningAmount,
           currencyType: update?.bet?.currencyType,
           isLocked: false,
         });
-        
+
         setIsLoading(false);
-        
+
         if (update?.message) {
           toast({ description: update.message });
         }
@@ -194,9 +197,9 @@ export function useBettingSocket({
 
     // Handle bet cancelled by admin
     const handleBetCancelledByAdmin = () => {
-      toast({ 
-        description: 'Current picking round cancelled by admin.', 
-        variant: 'destructive' 
+      toast({
+        description: 'Current picking round cancelled by admin.',
+        variant: 'destructive'
       });
       queryClient.invalidateQueries({ queryKey: ['session'] });
       refetchBettingData();
@@ -206,7 +209,7 @@ export function useBettingSocket({
     const handleBetCancelled = (update: any) => {
       if (update?.bet?.userId === session?.id) {
         queryClient.invalidateQueries({ queryKey: ['session'] });
-        
+
         // Reset user bet
         setUserBet({
           betId: null,
@@ -216,14 +219,14 @@ export function useBettingSocket({
           currencyType: undefined,
           isLocked: false,
         });
-        
+
         // Exit editing mode after successful cancel
         setIsEditing(false);
-        
+
         if (update?.message) {
           toast({ description: update?.message });
         }
-        
+
         refetchBettingData();
         refetchRoundData();
       }
@@ -233,22 +236,22 @@ export function useBettingSocket({
     const handleBetEdited = (update: any) => {
       if (update?.bet?.userId === session?.id) {
         const isSweep = update?.currencyType === CurrencyType.SWEEP_COINS;
-        
+
         setUserBet({
           betId: update?.bet?.id,
           amount: update?.amount,
           selectedOption: update?.selectedWinner,
-          potentialWinnings: isSweep 
-            ? update?.potentialSweepCoinWinningAmount 
+          potentialWinnings: isSweep
+            ? update?.potentialSweepCoinWinningAmount
             : update?.potentialGoldCoinWinningAmount,
           currencyType: update?.currencyType,
           isLocked: false,
         });
-        
+
         // Exit editing mode after successful edit with updated data
         setIsEditing(false);
         setIsLoading(false);
-        
+
         if (update?.message) {
           toast({ description: update.message });
         }
@@ -262,10 +265,10 @@ export function useBettingSocket({
         variant: 'destructive',
       });
       setIsLoading(false);
-      
-    //   if (error?.isForcedLogout) {
-    //     window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
-    //   }
+
+      //   if (error?.isForcedLogout) {
+      //     window.dispatchEvent(new CustomEvent('vpnProxyDetected'));
+      //   }
     };
 
     // Register event listeners

@@ -14,6 +14,7 @@ export interface BettingVariable {
 
 export interface ActiveRound {
   id: string | null;
+  name: string;
   status: BettingRoundStatus;
   totalGoldCoins: number;
   totalSweepCoins: number;
@@ -38,29 +39,37 @@ export interface BettingContextType {
   // Active Stream
   activeStreamId: string | null;
   setActiveStreamId: (streamId: string | null) => void;
-  
+
+  roundId: string | null;
+  setRoundId: (roundId: string | null) => void;
+
   // Round State
   activeRound: ActiveRound;
-  
+
   // User's Current Bet
   userBet: UserBet;
-  
+
   // UI State
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   isEditing: boolean;
   setIsEditing: (editing: boolean) => void;
-  
+
   // Reset Key for UI updates
   resetKey: number;
-  
+
   // Data Refresh Functions
   refetchBettingData: () => void;
   refetchRoundData: () => void;
-  
+
   // Betting Actions
   placeBet: (bettingVariableId: string, amount: number, currencyType: string) => void;
-  editBet: (betId: string, newBettingVariableId: string, newAmount: number, newCurrencyType: string) => void;
+  editBet: (
+    betId: string,
+    newBettingVariableId: string,
+    newAmount: number,
+    newCurrencyType: string
+  ) => void;
   cancelBet: (betId: string, currencyType: string) => void;
 }
 
@@ -73,13 +82,15 @@ interface BettingProviderProps {
 export const BettingProvider = ({ children }: BettingProviderProps) => {
   const { socketConnect } = useBettingStatusContext();
   const { session } = useAuthContext();
-  
+
   // Active Stream ID
   const [activeStreamId, setActiveStreamId] = useState<string | null>(null);
-  
+  const [roundId, setRoundId] = useState<string | null>(null);
+
   // Active Round State
   const [activeRound, setActiveRound] = useState<ActiveRound>({
     id: null,
+    name: '',
     status: BettingRoundStatus.CLOSED,
     totalGoldCoins: 0,
     totalSweepCoins: 0,
@@ -90,7 +101,7 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
     userBetGoldCoins: undefined,
     userBetSweepCoin: undefined,
   });
-  
+
   // User Bet State
   const [userBet, setUserBet] = useState<UserBet>({
     betId: null,
@@ -100,16 +111,17 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
     currencyType: undefined,
     isLocked: false,
   });
-  
+
   // UI State
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [resetKey, setResetKey] = useState(0);
-  
+
   // Use socket hook to handle queries and socket events and pass setters to update state
   const { refetchBettingData, refetchRoundData } = useBettingSocket({
     streamId: activeStreamId,
     session,
+    roundId,
     socket: socketConnect,
     setActiveRound,
     setUserBet,
@@ -117,49 +129,60 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
     setIsEditing,
     setResetKey,
   });
-  
+
   // Betting Actions
-  const placeBet = useCallback((bettingVariableId: string, amount: number, currencyType: string) => {
-    if (socketConnect?.connected) {
-      setIsLoading(true);
-      socketConnect.emit('placeBet', {
-        bettingVariableId,
-        amount,
-        currencyType,
-      });
-    }
-  }, [socketConnect]);
-  
-  const editBet = useCallback((betId: string, newBettingVariableId: string, newAmount: number, newCurrencyType: string) => {
-    if (socketConnect?.connected) {
-      setIsLoading(true);
-      socketConnect.emit('editBet', {
-        betId,
-        newBettingVariableId,
-        newAmount,
-        newCurrencyType,
-      });
-      // Don't set isEditing to false here - let the socket event handler do it after receiving the response
-      // This ensures we have the updated potential winnings before switching back to LockTokens view
-    }
-  }, [socketConnect]);
-  
-  const cancelBet = useCallback((betId: string, currencyType: string) => {
-    if (socketConnect?.connected) {
-      socketConnect.emit('cancelBet', {
-        betId,
-        currencyType,
-      });
-      // Don't set isEditing to false here - let the socket event handler do it after receiving the response
-      // This ensures consistent UI state management with editBet
-    }
-  }, [socketConnect]);
-  
+  const placeBet = useCallback(
+    (bettingVariableId: string, amount: number, currencyType: string) => {
+      if (socketConnect?.connected) {
+        setIsLoading(true);
+        socketConnect.emit('placeBet', {
+          bettingVariableId,
+          amount,
+          currencyType,
+        });
+      }
+    },
+    [socketConnect]
+  );
+
+  const editBet = useCallback(
+    (betId: string, newBettingVariableId: string, newAmount: number, newCurrencyType: string) => {
+      if (socketConnect?.connected) {
+        setIsLoading(true);
+        socketConnect.emit('editBet', {
+          betId,
+          newBettingVariableId,
+          newAmount,
+          newCurrencyType,
+        });
+        // Don't set isEditing to false here - let the socket event handler do it after receiving the response
+        // This ensures we have the updated potential winnings before switching back to LockTokens view
+      }
+    },
+    [socketConnect]
+  );
+
+  const cancelBet = useCallback(
+    (betId: string, currencyType: string) => {
+      if (socketConnect?.connected) {
+        socketConnect.emit('cancelBet', {
+          betId,
+          currencyType,
+        });
+        // Don't set isEditing to false here - let the socket event handler do it after receiving the response
+        // This ensures consistent UI state management with editBet
+      }
+    },
+    [socketConnect]
+  );
+
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
     () => ({
       activeStreamId,
       setActiveStreamId,
+      roundId,
+      setRoundId,
       activeRound,
       userBet,
       isLoading,
@@ -187,12 +210,8 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
       cancelBet,
     ]
   );
-  
-  return (
-    <BettingContext.Provider value={contextValue}>
-      {children}
-    </BettingContext.Provider>
-  );
+
+  return <BettingContext.Provider value={contextValue}>{children}</BettingContext.Provider>;
 };
 
 /**
