@@ -26,7 +26,7 @@ export const NoBettingData = () => {
       <div className="all-center flex justify-center items-center h-[100px] mt-8">
         <img
           src="/icons/nobettingData.svg"
-          alt="no picking data"
+          alt="no picks available"
           className="w-[100%] h-[100%] object-contain"
         />
       </div>
