@@ -41,6 +41,8 @@ export const StreamContent = ({
 
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = stream?.status === StreamStatus.ENDED;
+  const isNonVideo = stream ? stream.streamType === 'non-video' : false;
+
   const { isConnected: isNetworkConnected } = useNetworkStatus();
   const [showWinnerAnimation, setShowWinnerAnimation] = useState(false);
   const [isUserWinner, setIsUserWinner] = useState(false);
@@ -144,7 +146,7 @@ export const StreamContent = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6 max-h-screen">
           <div className="relative">
-            {isStreamScheduled ? (
+            {isStreamScheduled && isNonVideo ? (
               <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
                 {stream?.thumbnailUrl && (
                   <img
@@ -159,7 +161,21 @@ export const StreamContent = ({
                 <p className="text-white text-2xl font-bold">Stream has ended.</p>
               </div>
             ) : (
-              <StreamPlayer showInfo streamId={streamId} />
+              <>
+                {isNonVideo ? (
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
+                    {stream?.thumbnailUrl && (
+                      <img
+                        src={getImageLink(stream.thumbnailUrl)}
+                        alt={stream?.name}
+                        className="object-cover w-full h-full"
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <StreamPlayer showInfo streamId={streamId} />
+                )}
+              </>
             )}
           </div>
 
