@@ -15,4 +15,5 @@ export interface BetCard {
   roundId: string | null;
   streamName: string | null;
   type: string | null;
+  status?: string | null;
 }
