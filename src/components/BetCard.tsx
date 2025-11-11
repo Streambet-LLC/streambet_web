@@ -7,13 +7,18 @@ import { Link } from 'react-router-dom';
 import { Video } from 'lucide-react';
 import { useState } from 'react';
 import { QuickPickModal } from './stream/QuickPickModal';
+import { BettingRoundStatus } from '@/enums';
 
 export default function BetCard(props: BetCardType) {
   const [quickPickOpen, setQuickPickOpen] = useState(false);
   const statusLower = (props as any)?.status?.toString()?.toLowerCase?.() || null;
-  const isEnded = statusLower === 'closed' || statusLower === 'ended';
-  const isLocked = statusLower === 'locked';
-  const canOpen = Boolean(props.streamId) && !isEnded;
+  const isEnded = statusLower === BettingRoundStatus.CLOSED || statusLower === 'ended';
+  const isLocked = statusLower === BettingRoundStatus.LOCKED;
+  const isCancelled = statusLower === BettingRoundStatus.CANCELLED;
+  const isCreated = statusLower === BettingRoundStatus.CREATED;
+  const hasOptions = Array.isArray(props.options) && props.options.length > 0;
+  const nonClickable = isEnded || isCancelled || (isCreated && !hasOptions);
+  const canOpen = Boolean(props.streamId) && !nonClickable;
   const isForStream = props.isForStream;
 
   const getThumbnailUrl = thumbnail => {
@@ -59,17 +64,23 @@ export default function BetCard(props: BetCardType) {
           >
             {props.name}
           </CardTitle>
-          {(isLocked || isEnded) && (
+          {(isLocked || isEnded || isCancelled || isCreated) && (
             <span
               className={cn(
                 'px-2 py-0.5 rounded-full text-xs font-semibold border',
                 isEnded
                   ? 'bg-[#2a2a2a] text-white border-red-500/40'
-                  : 'bg-[#2a2a2a] text-white border-yellow-400/40'
+                  : isCancelled
+                    ? 'bg-[#2a2a2a] text-white border-red-500/40'
+                    : isCreated
+                      ? cn('bg-[#2a2a2a] text-white', hasOptions ? 'border-blue-400/40' : 'border-muted')
+                      : 'bg-[#2a2a2a] text-white border-yellow-400/40'
               )}
-              title={isEnded ? 'Ended Round' : 'Locked Round'}
+              title={
+                isEnded ? 'Ended Round' : isCancelled ? 'Cancelled Round' : isCreated ? 'Created Round' : 'Locked Round'
+              }
             >
-              {isEnded ? 'Ended' : 'Locked'}
+              {isEnded ? 'Ended' : isCancelled ? 'Cancelled' : isCreated ? (hasOptions ? 'Created' : 'Draft') : 'Locked'}
             </span>
           )}
         </div>
