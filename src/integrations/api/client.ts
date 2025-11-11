@@ -838,6 +838,28 @@ export const adminAPI = {
   },
 };
 
+// Creator API
+export const creatorAPI = {
+  // Get analytics data for admin dashboard
+  getCreatorAnalyticsData: async () => {
+    const response = await apiClient.get(`/creator/analytics/summary`);
+    return response.data;
+  },
+
+  // Create stream
+  createStream: async (streamData: any) => {
+    const response = await apiClient.post('/creator/streams', streamData);
+    return response.data;
+  },
+
+  // Create betting options for stream
+  createBettingData: async (payload: any) => {
+    const response = await apiClient.post(`/creator/betting-variables`, payload);
+    return response.data;
+  },
+}
+
+
 // Payment API
 export const paymentAPI = {
   // Get session key for purchase and withdraw
@@ -906,6 +928,7 @@ export const api = {
   userStream: userStreamAPI,
   payment: paymentAPI,
   bets: betsAPI,
+  creator: creatorAPI,
 };
 
 export default api;
