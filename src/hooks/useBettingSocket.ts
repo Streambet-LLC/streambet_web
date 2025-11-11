@@ -196,11 +196,6 @@ export function useBettingSocket({
 
     // Handle winner declaration
     const handleWinnerDeclared = (data: any) => {
-      toast({
-        title: 'Round Closed',
-        description: `${data?.winnerName} has been selected as winning pick option!`,
-        duration: 7000,
-      });
       // Refetch queries to get updated data
       refetchBettingData();
       refetchRoundData();
@@ -229,14 +224,22 @@ export function useBettingSocket({
         setIsLoading(false);
 
         if (update?.message) {
-          toast({ description: update.message });
+          toast({
+            id: 'bet-placed',
+            description: update.message
+          });
         }
       }
     };
 
     // Handle new round opened
     const handleBetOpened = () => {
-      toast({ description: 'New Pick options available!' });
+      // Toast removed because rounds now automatically open when created
+      // Uncomment below if notification is needed in the future
+      // toast({
+      //   id: 'bet-opened',
+      //   description: 'New Pick options available!'
+      // });
       refetchBettingData();
       refetchRoundData();
     };
@@ -244,7 +247,8 @@ export function useBettingSocket({
     // Handle bet cancelled by admin
     const handleBetCancelledByAdmin = () => {
       toast({
-        description: 'Current picking round cancelled by admin.',
+        id: 'bet-cancelled-by-admin',
+        description: 'Current round cancelled by admin.',
         variant: 'destructive'
       });
       queryClient.invalidateQueries({ queryKey: ['session'] });
@@ -270,7 +274,10 @@ export function useBettingSocket({
         setIsEditing(false);
 
         if (update?.message) {
-          toast({ description: update?.message });
+          toast({
+            id: 'bet-cancelled',
+            description: update?.message
+          });
         }
 
         refetchBettingData();
@@ -299,7 +306,10 @@ export function useBettingSocket({
         setIsLoading(false);
 
         if (update?.message) {
-          toast({ description: update.message });
+          toast({
+            id: 'bet-edited',
+            description: update.message
+          });
         }
       }
     };
@@ -307,6 +317,7 @@ export function useBettingSocket({
     // Handle errors
     const handleError = (error: any) => {
       toast({
+        id: 'betting-error',
         description: error?.message || 'An error occurred. Please refresh and try again.',
         variant: 'destructive',
       });

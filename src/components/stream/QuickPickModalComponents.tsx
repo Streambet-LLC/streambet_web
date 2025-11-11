@@ -31,7 +31,7 @@ export const NoBettingData = () => {
         />
       </div>
       <p className="text-2xl text-[rgba(255, 255, 255, 1)] text-center pt-4 pb-4 font-bold">
-        No picking options available
+        No Picks available
       </p>
     </div>
   );

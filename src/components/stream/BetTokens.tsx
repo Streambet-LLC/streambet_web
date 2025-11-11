@@ -167,7 +167,7 @@ export default function BetTokens({
     if (lockedOptions) {
       toast({
         variant: 'destructive',
-        description: 'Admin has locked the picks round',
+        description: 'Admin has locked the round',
       });
       return;
     }
@@ -273,13 +273,13 @@ export default function BetTokens({
             if (Number(sliderMax) === 0) {
               toast({
                 variant: 'destructive',
-                description: 'No coins available to pick',
+                description: 'No coins available to Pick',
               });
             }
             if (lockedOptions) {
               toast({
                 variant: 'destructive',
-                description: 'Admin has locked the picks round',
+                description: 'Admin has locked the round',
               });
             }
           }}
