@@ -91,6 +91,11 @@ export default function Profile() {
                           
                           if (!profileSocial) return null;
 
+                          const isJoshCapoInstagram = 
+                            social === 'instagram' && 
+                            username === 'joshcapopashot' && 
+                            profileSocial === 'https://www.instagram.com/joshcapopashot?igsh=eWtsb2p4ZWxqZ3Jk&utm_source=qr';
+
                           return (
                             <div key={social} className='flex gap-1 text-white items-center text-sm'>
                               {socialsMapping[social].icon}
@@ -104,6 +109,7 @@ export default function Profile() {
                               >
                                 {profileSocial}
                               </a>
+                              {isJoshCapoInstagram && <span className="text-muted-foreground"> &lt;-- Live Here</span>}
                             </div>
                           )
                         })}
