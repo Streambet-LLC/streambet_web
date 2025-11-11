@@ -14,7 +14,7 @@ import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink, getMessage } from '@/utils/helper';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import api from '@/integrations/api/client';
-import { BettingRounds, ValidationError } from './BettingRounds';
+import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
 import { ArrowLeft } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {

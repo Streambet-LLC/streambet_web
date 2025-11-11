@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Navigate } from 'react-router-dom';
 import { CreatorLayout } from '@/components/layout/CreatorLayout';
 import { CreatorManagement } from '@/components/creator/CreatorManagement';
+import { useCreatorStreamManagement } from '@/hooks/useCreatorStreamManagement';
 
 const Admin = () => {
   const {
@@ -28,7 +29,7 @@ const Admin = () => {
     searchEndedNonVideoQuery,
     setSearchEndedNonVideQuery,
     setSearchNonVideoQuery,
-  } = useStreamManagement();
+  } = useCreatorStreamManagement();
   const queryClient = useQueryClient();
   const [resetKey, setResetKey] = useState(0);
   const [isStreamContent, setIsStreamContent] = useState(false);

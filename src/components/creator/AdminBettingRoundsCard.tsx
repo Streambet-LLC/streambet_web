@@ -32,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
 import Bugsnag from '@bugsnag/js';
 import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
+import { validateRounds } from '../admin/BettingRounds';
 
 // Helper for status priority
 const statusPriority = [

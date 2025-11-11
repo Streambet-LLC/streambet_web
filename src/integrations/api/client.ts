@@ -857,6 +857,20 @@ export const creatorAPI = {
     const response = await apiClient.post(`/creator/betting-variables`, payload);
     return response.data;
   },
+
+  // Get all streams
+  getStreams: async (params?: any) => {
+    const response = await apiClient.get(`/creator/streams`, {
+      params,
+    });
+    return response.data;
+  },
+
+  // Get stream details based on stream ID
+  getStream: async (id: string) => {
+    const response = await apiClient.get(`/creator/stream/${id}`);
+    return response.data;
+  },
 }
 
 
