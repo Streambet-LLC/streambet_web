@@ -91,6 +91,26 @@ export const AdminBettingRoundsCard = ({
     );
   }, [betData]);
 
+  // Merge WebSocket betting updates into rounds state
+  useEffect(() => {
+    if (bettingUpdate && bettingUpdate.roundId) {
+      setRounds(prevRounds =>
+        prevRounds.map(round => {
+          if (round.roundId === bettingUpdate.roundId) {
+            return {
+              ...round,
+              totalGoldCoinBet: bettingUpdate.totalGoldCoinBet ?? round.totalGoldCoinBet,
+              totalBetsGoldCoinAmount: bettingUpdate.totalBetsGoldCoinAmount ?? round.totalBetsGoldCoinAmount,
+              totalSweepCoinBet: bettingUpdate.totalSweepCoinBet ?? round.totalSweepCoinBet,
+              totalBetsSweepCoinAmount: bettingUpdate.totalBetsSweepCoinAmount ?? round.totalBetsSweepCoinAmount,
+            };
+          }
+          return round;
+        })
+      );
+    }
+  }, [bettingUpdate]);
+
   // Find active round index
   const activeIdx = useMemo(() => getActiveRoundIndex(rounds), [rounds]);
 
@@ -290,6 +310,7 @@ export const AdminBettingRoundsCard = ({
                     errorRounds={bettingErrorRounds}
                     onErrorRoundsChange={setBettingErrorRounds}
                     validationErrors={bettingValidationErrors}
+                    eventType={streamInfo?.eventType}
                   />
                 </div>
               </DialogContent>
@@ -401,18 +422,14 @@ export const AdminBettingRoundsCard = ({
                                   <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
                                     <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
                                     <span>
-                                      {bettingUpdate
-                                        ? bettingUpdate?.totalGoldCoinBet
-                                        : streamInfo?.totalGoldCoinBet}{' '}
+                                      {round.totalGoldCoinBet ?? 0}{' '}
                                       gold(s)
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
                                     <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
                                     <span>
-                                      {bettingUpdate
-                                        ? bettingUpdate?.totalBetsGoldCoinAmount
-                                        : streamInfo?.totalGoldCoinAmount}
+                                      {round.totalBetsGoldCoinAmount ?? 0}
                                     </span>
                                   </div>
                                 </div>
@@ -420,18 +437,14 @@ export const AdminBettingRoundsCard = ({
                                   <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
                                     <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
                                     <span>
-                                      {bettingUpdate
-                                        ? bettingUpdate?.totalSweepCoinBet
-                                        : streamInfo?.totalSweepCoinBet}{' '}
+                                      {round.totalSweepCoinBet ?? 0}{' '}
                                       Stream Coin(s)
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
                                     <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
                                     <span>
-                                      {bettingUpdate
-                                        ? bettingUpdate?.totalBetsSweepCoinAmount
-                                        : streamInfo?.totalSweepCoinAmount}
+                                      {round.totalBetsSweepCoinAmount ?? 0}
                                     </span>
                                   </div>
                                 </div>
