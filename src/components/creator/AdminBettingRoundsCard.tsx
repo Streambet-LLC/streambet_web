@@ -14,7 +14,7 @@ import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink, getMessage } from '@/utils/helper';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import api from '@/integrations/api/client';
-import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
+import { BettingRounds, ValidationError } from './BettingRounds';
 import { ArrowLeft } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -32,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
 import Bugsnag from '@bugsnag/js';
 import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
+import { validateRounds } from '../admin/BettingRounds';
 
 // Helper for status priority
 const statusPriority = [

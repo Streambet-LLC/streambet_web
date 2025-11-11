@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { SearchInput } from '@/components/ui/SearchInput';
-import { UserTable } from './UserTable';
 import { StreamTable } from './StreamTable';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
-import api, { adminAPI } from '@/integrations/api/client';
+import api, { adminAPI, creatorAPI } from '@/integrations/api/client';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
@@ -16,7 +15,7 @@ import { validateStreamTitle, validateStreamDescription } from '@/utils/streamVa
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, ValidationError } from './BettingRounds';
-import { AdminStreamContent } from './AdminStreamContent';
+import { CreatorStreamContent } from './CreatorStreamContent';
 import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
@@ -34,7 +33,7 @@ interface BettingRound {
   options: BettingOption[];
 }
 
-export const AdminManagement = ({
+export const CreatorManagement = ({
   session,
   streams,
   refetchStreams,
@@ -59,7 +58,6 @@ export const AdminManagement = ({
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('livestreams');
   const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
-  const [searchUserQuery, setSearchUserQuery] = useState('');
   const [isCreateStream, setIsCreateStream] = useState(false);
   const [viewStreamId, setViewStreamId] = useState('');
   const [editStreamId, setEditStreamId] = useState('');
@@ -91,14 +89,13 @@ export const AdminManagement = ({
     { key: 'ended-streams', label: 'Ended Streams' },
     { key: 'non-video', label: 'Non Video' },
     { key: 'ended-non-video', label: 'Ended Non Video' },
-    { key: 'users', label: 'Users' },
   ];
 
   const createStreamMutation = useMutation({
     mutationFn: (payload: any) =>
       editStreamId
         ? api.admin.updateStream(editStreamId, payload)
-        : api.admin.createStream(payload),
+        : api.creator.createStream(payload),
     onSuccess: response => {
       if (bettingRounds.length > 0) {
         // Apply counters to duplicate option names
@@ -133,7 +130,7 @@ export const AdminManagement = ({
     mutationFn: (payload: any) =>
       payload?.rounds?.[0]?.roundId
         ? api.admin.updateBettingData(payload)
-        : api.admin.createBettingData(payload),
+        : api.creator.createBettingData(payload),
     onSuccess: () => {
       toast({ title: 'Success', description: 'Event and Picks saved successfully!' });
       handleResetAll();
@@ -356,13 +353,15 @@ export const AdminManagement = ({
     return isValid;
   }
 
-  const { data: adminAnalytics, isFetching: isAdminAnalyticsLoading } = useQuery({
-    queryKey: ['adminAnalytics'],
+  const { data: creatorAnalytics, isFetching: isCreatorAnalyticsLoading } = useQuery({
+    queryKey: ['creatorAnalytics'],
     queryFn: async () => {
-      const response = await adminAPI.getAdminAnalyticsData();
+      const response = await creatorAPI.getCreatorAnalyticsData();
       return response?.data;
     },
   });
+
+  console.log(creatorAnalytics);
 
   const {
     data: betStreamData,
@@ -1108,7 +1107,6 @@ export const AdminManagement = ({
                       startTime,
                       streamId: editStreamId || undefined,
                       bettingRoundStatus: streamData?.bettingRoundStatus || undefined,
-                      creatorId,
                       eventType,
                     }}
                     errors={errors}
@@ -1127,9 +1125,6 @@ export const AdminManagement = ({
                           }
                         }
                         if ('startTime' in fields) setStartTime(fields.startTime ?? '');
-                        if ('creatorId' in fields) {
-                          setCreatorId(fields.creatorId);
-                        }
                         return;
                       }
                       const newErrors = { ...errors };
@@ -1141,10 +1136,6 @@ export const AdminManagement = ({
                         setDescription(fields.description ?? '');
                         newErrors.description =
                           validateStreamDescription(fields.description ?? '') || '';
-                      }
-                      if ('creatorId' in fields) {
-                        setCreatorId(fields.creatorId ?? '');
-                        // No validation for description
                       }
                       if ('embeddedUrl' in fields) {
                         setEmbeddedUrl(fields.embeddedUrl ?? '');
@@ -1219,7 +1210,7 @@ export const AdminManagement = ({
           </Card>
         </div>
       ) : viewStreamId ? (
-        <AdminStreamContent
+        <CreatorStreamContent
           streamId={viewStreamId}
           session={session}
           betData={betStreamData?.data?.rounds}
@@ -1237,7 +1228,7 @@ export const AdminManagement = ({
       ) : (
         <>
           {/* Top bar (tabs, search, create button) only when not creating stream */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[24px] mb-12">
             {/* Users Card */}
             <div
               className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
@@ -1251,9 +1242,9 @@ export const AdminManagement = ({
                   textAlign: 'left',
                 }}
               >
-                Users
+                Total Views
               </span>
-              {isAdminAnalyticsLoading ? (
+              {isCreatorAnalyticsLoading ? (
                 <svg
                   className="animate-spin h-8 w-8 text-primary"
                   xmlns="http://www.w3.org/2000/svg"
@@ -1283,11 +1274,11 @@ export const AdminManagement = ({
                     textAlign: 'left',
                   }}
                 >
-                  {adminAnalytics?.totalUsers}
+                  {creatorAnalytics?.totalViews}
                 </span>
               )}
             </div>
-            {/* Active Streams Card */}
+            {/* Total Streams Card */}
             <div
               className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
               style={{ minHeight: 109, height: 109, padding: 24 }}
@@ -1300,9 +1291,9 @@ export const AdminManagement = ({
                   textAlign: 'left',
                 }}
               >
-                Active Streams
+                Total Streams
               </span>
-              {isAdminAnalyticsLoading ? (
+              {isCreatorAnalyticsLoading ? (
                 <svg
                   className="animate-spin h-8 w-8 text-primary"
                   xmlns="http://www.w3.org/2000/svg"
@@ -1332,56 +1323,7 @@ export const AdminManagement = ({
                     textAlign: 'left',
                   }}
                 >
-                  {adminAnalytics?.totalLiveStreams}
-                </span>
-              )}
-            </div>
-            {/* Active Bets Card */}
-            <div
-              className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
-              style={{ minHeight: 109, height: 109, padding: 24 }}
-            >
-              <span
-                style={{
-                  color: 'rgba(255,255,255,0.75)',
-                  fontWeight: 500,
-                  fontSize: 14,
-                  textAlign: 'left',
-                }}
-              >
-                Active Picks
-              </span>
-              {isAdminAnalyticsLoading ? (
-                <svg
-                  className="animate-spin h-8 w-8 text-primary"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  ></path>
-                </svg>
-              ) : (
-                <span
-                  style={{
-                    color: 'rgba(255,255,255,1)',
-                    fontWeight: 600,
-                    fontSize: 24,
-                    textAlign: 'left',
-                  }}
-                >
-                  {adminAnalytics?.totalActiveBets}
+                  {creatorAnalytics?.totalStreams}
                 </span>
               )}
             </div>
@@ -1400,7 +1342,7 @@ export const AdminManagement = ({
               >
                 Time Live
               </span>
-              {isAdminAnalyticsLoading ? (
+              {isCreatorAnalyticsLoading ? (
                 <svg
                   className="animate-spin h-8 w-8 text-primary"
                   xmlns="http://www.w3.org/2000/svg"
@@ -1430,7 +1372,7 @@ export const AdminManagement = ({
                     textAlign: 'left',
                   }}
                 >
-                  {adminAnalytics?.totalLiveTime}
+                  {creatorAnalytics?.totalLiveTime}
                 </span>
               )}
             </div>
@@ -1444,16 +1386,6 @@ export const AdminManagement = ({
               setActiveTab={setActiveTab}
               className="ml-4"
             />
-
-            {activeTab === 'users' && (
-              <SearchInput
-                id="search-users"
-                placeholder="Search users..."
-                value={searchUserQuery}
-                onChange={setSearchUserQuery}
-                width="lg"
-              />
-            )}
 
             {activeTab === 'ended-streams' && (
               <SearchInput
@@ -1609,12 +1541,6 @@ export const AdminManagement = ({
                 currentPage={endedNonVideoCurrentPage}
                 setCurrentPage={setEndedNonVideoCurrentPage}
               />
-            </div>
-          )}
-
-          {activeTab === 'users' && (
-            <div className="space-y-4">
-              <UserTable searchUserQuery={searchUserQuery} />
             </div>
           )}
         </>

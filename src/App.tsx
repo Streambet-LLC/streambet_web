@@ -38,6 +38,7 @@ import RouteGroup from './components/RouteGroup';
 import Profile from './pages/Profile';
 import 'react-image-crop/dist/ReactCrop.css'
 import Home from './pages/Home';
+import Creator from './pages/Creator';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -75,6 +76,7 @@ const App = () => {
                       </Route>
                       <Route element={<RouteGroup guard />}>
                         <Route path="/admin" element={<Admin />} />
+                        <Route path="/creator" element={<Creator />} />
                         <Route path="/deposit" element={<Deposit />} />
                         <Route path="/withdraw" element={<Redeem />} />
                         <Route path="/withdraw/verification" element={<Kyc />} />
