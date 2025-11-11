@@ -101,9 +101,9 @@ export const CreatorManagement = ({
         // Apply counters to duplicate option names
         const processedRounds = bettingRounds.map(round => ({
           ...round,
-          options: appendCountersToDuplicates(round.options)
+          options: appendCountersToDuplicates(round.options),
         }));
-        
+
         // Clean temporary option IDs before sending to API
         const cleanedRounds = cleanTemporaryIds(processedRounds);
 
@@ -331,20 +331,21 @@ export const CreatorManagement = ({
         newErrors.embeddedUrl = 'Embed URL is required and should be valid';
         isValid = false;
       }
+
+      if (!startDateObj) {
+        newErrors.startDate = 'Start date is required';
+        isValid = false;
+      } else if (!startTime) {
+        newErrors.startDate = 'Start time is required';
+        isValid = false;
+      } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+        newErrors.startDate = 'Cannot select past time for today';
+        isValid = false;
+      }
     }
 
     if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
       newErrors.thumbnail = 'Thumbnail is required';
-      isValid = false;
-    }
-    if (!startDateObj) {
-      newErrors.startDate = 'Start date is required';
-      isValid = false;
-    } else if (!startTime) {
-      newErrors.startDate = 'Start time is required';
-      isValid = false;
-    } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
-      newErrors.startDate = 'Cannot select past time for today';
       isValid = false;
     }
 
@@ -514,7 +515,7 @@ export const CreatorManagement = ({
       if (streamData.streamType) {
         setEventType({
           value: streamData.streamType,
-          label: streamData.streamType === 'stream' ? 'Livestream' : 'Non Video'
+          label: streamData.streamType === 'stream' ? 'Livestream' : 'Non Video',
         });
       }
 
