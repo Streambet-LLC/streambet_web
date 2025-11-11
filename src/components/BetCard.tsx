@@ -10,7 +10,10 @@ import { QuickPickModal } from './stream/QuickPickModal';
 
 export default function BetCard(props: BetCardType) {
   const [quickPickOpen, setQuickPickOpen] = useState(false);
-  const canOpen = Boolean(props.streamId);
+  const statusLower = (props as any)?.status?.toString()?.toLowerCase?.() || null;
+  const isEnded = statusLower === 'closed' || statusLower === 'ended';
+  const isLocked = statusLower === 'locked';
+  const canOpen = Boolean(props.streamId) && !isEnded;
   const isForStream = props.isForStream;
 
   const getThumbnailUrl = thumbnail => {
@@ -46,12 +49,30 @@ export default function BetCard(props: BetCardType) {
     >
       <CardHeader className="p-4 pb-0 flex flex-row gap-3 items-center">
         <img src={getThumbnailUrl(props.thumbnail)} className="aspect-square w-9 h-9 rounded-md" />
-        <CardTitle
-          onClick={handleClick}
-          className="text-md cursor-pointer hover:underline line-clamp-2"
-        >
-          {props.name}
-        </CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle
+            onClick={canOpen ? handleClick : undefined}
+            className={cn(
+              'text-md line-clamp-2',
+              canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
+            )}
+          >
+            {props.name}
+          </CardTitle>
+          {(isLocked || isEnded) && (
+            <span
+              className={cn(
+                'px-2 py-0.5 rounded-full text-xs font-semibold border',
+                isEnded
+                  ? 'bg-[#2a2a2a] text-white border-red-500/40'
+                  : 'bg-[#2a2a2a] text-white border-yellow-400/40'
+              )}
+              title={isEnded ? 'Ended Round' : 'Locked Round'}
+            >
+              {isEnded ? 'Ended' : 'Locked'}
+            </span>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-2 p-4 justify-center">
         <div className="flex flex-col">
@@ -75,8 +96,13 @@ export default function BetCard(props: BetCardType) {
         {props.options.slice(0, 2).map((option, i) => (
           <div
             key={i}
-            onClick={handleClick}
-            className="flex-1 flex gap-4 items-center justify-between hover:bg-[#BDFF00] hover:text-black  transition-all cursor-pointer px-2 py-1 rounded-md"
+            onClick={canOpen ? handleClick : undefined}
+            className={cn(
+              'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
+              canOpen
+                ? 'hover:bg-[#BDFF00] hover:text-black cursor-pointer'
+                : 'cursor-not-allowed opacity-60'
+            )}
           >
             <div
               className={cn(
@@ -91,8 +117,13 @@ export default function BetCard(props: BetCardType) {
         ))}
         {props.options.length > 2 && (
           <div
-            onClick={handleClick}
-            className="flex-1 flex gap-4 items-center justify-between hover:bg-[#BDFF00] hover:text-black transition-all cursor-pointer px-2 py-1 rounded-md"
+            onClick={canOpen ? handleClick : undefined}
+            className={cn(
+              'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
+              canOpen
+                ? 'hover:bg-[#BDFF00] hover:text-black cursor-pointer'
+                : 'cursor-not-allowed opacity-60'
+            )}
           >
             <div className="text-sm rounded-full font-semibold">
               {props.options.length - 2} more...
