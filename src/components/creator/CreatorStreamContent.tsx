@@ -24,7 +24,7 @@ import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import Bugsnag from '@bugsnag/js';
 
-interface AdminStreamContentProps {
+interface CreatorStreamContentProps {
   streamId: string;
   session: any;
   betData: any;
@@ -116,28 +116,26 @@ function validateForm(
       newErrors.embeddedUrl = 'Embed URL is required and should be valid';
       isValid = false;
     }
-
-    if (!startDateObj) {
-      newErrors.startDate = 'Start date is required';
-      isValid = false;
-    } else if (!startTime) {
-      newErrors.startDate = 'Start time is required';
-      isValid = false;
-    } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
-      newErrors.startDate = 'Cannot select past time for today';
-      isValid = false;
-    }
   }
 
   if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
     newErrors.thumbnail = 'Thumbnail is required';
     isValid = false;
   }
-
+  if (!startDateObj) {
+    newErrors.startDate = 'Start date is required';
+    isValid = false;
+  } else if (!startTime) {
+    newErrors.startDate = 'Start time is required';
+    isValid = false;
+  } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+    newErrors.startDate = 'Cannot select past time for today';
+    isValid = false;
+  }
   return { isValid, newErrors };
 }
 
-export const AdminStreamContent = ({
+export const CreatorStreamContent = ({
   streamId,
   session,
   betData,
@@ -151,7 +149,7 @@ export const AdminStreamContent = ({
   handleCancelRound,
   refetchBetData,
   handleBack,
-}: AdminStreamContentProps) => {
+}: CreatorStreamContentProps) => {
   const navigate = useNavigate();
   const { isConnected: isNetworkConnected } = useNetworkStatus();
   const [streamInfo, setStreamInfo] = useState<any>(undefined);
