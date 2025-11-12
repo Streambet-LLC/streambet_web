@@ -99,9 +99,9 @@ export const AdminBettingRoundsCard = ({
           if (round.roundId === bettingUpdate.roundId) {
             return {
               ...round,
-              totalGoldCoinBet: bettingUpdate.totalGoldCoinBet ?? round.totalGoldCoinBet,
+              betCountGoldCoin: bettingUpdate.betCountGoldCoin ?? round.betCountGoldCoin,
               totalBetsGoldCoinAmount: bettingUpdate.totalBetsGoldCoinAmount ?? round.totalBetsGoldCoinAmount,
-              totalSweepCoinBet: bettingUpdate.totalSweepCoinBet ?? round.totalSweepCoinBet,
+              betCountSweepCoin: bettingUpdate.betCountSweepCoin ?? round.betCountSweepCoin,
               totalBetsSweepCoinAmount: bettingUpdate.totalBetsSweepCoinAmount ?? round.totalBetsSweepCoinAmount,
             };
           }
@@ -422,7 +422,7 @@ export const AdminBettingRoundsCard = ({
                                   <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
                                     <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
                                     <span>
-                                      {round.totalGoldCoinBet ?? 0}{' '}
+                                      {round.betCountGoldCoin ?? 0}{' '}
                                       gold(s)
                                     </span>
                                   </div>
@@ -437,7 +437,7 @@ export const AdminBettingRoundsCard = ({
                                   <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
                                     <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
                                     <span>
-                                      {round.totalSweepCoinBet ?? 0}{' '}
+                                      {round.betCountSweepCoin ?? 0}{' '}
                                       Stream Coin(s)
                                     </span>
                                   </div>
