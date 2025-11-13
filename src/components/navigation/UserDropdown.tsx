@@ -86,7 +86,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         <DropdownMenuItem asChild>
           <div className="flex gap-2 group">
             <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" />
-            <Link to="/deposit" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Buy Gold Coins</Link>
+            <Link to="/deposit" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Buy Coins</Link>
           </div>
         </DropdownMenuItem>
 
