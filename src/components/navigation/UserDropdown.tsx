@@ -91,7 +91,11 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">
-          <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Join Creator Program</a>
+          {profile?.isCreator ? (
+            <Link to={`/${profile?.username}`}>My Profile</Link>
+          ) : (
+            <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Join Creator Program</a>
+          )}
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">
