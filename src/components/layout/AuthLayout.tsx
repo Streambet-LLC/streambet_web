@@ -9,7 +9,7 @@ interface AuthLayoutProps {
 
 export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
   return (
-    <>
+    <div className='h-screen overflow-auto'>
       <div className="auth-bg-gradient" />
       <div className="container flex justify-center min-h-screen pt-16 pb-8">
         <div className="w-full max-w-md">
@@ -39,6 +39,6 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
       >
         © Streambet 2025
       </div>
-    </>
+    </div>
   );
 }; 
