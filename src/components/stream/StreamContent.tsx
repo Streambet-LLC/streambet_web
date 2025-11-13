@@ -56,6 +56,12 @@ export const StreamContent = ({
   const { socketConnect } = useBettingStatusContext();
   const [viewerCount, setViewerCount] = useState(0);
 
+  useEffect(() => {
+    if (stream) {
+      setViewerCount(stream.viewerCount || 0);
+    }
+  }, [stream]);
+
   const setupSocketEventListeners = (socketInstance: any) => {
     if (!socketInstance) return;
 
@@ -77,6 +83,20 @@ export const StreamContent = ({
       console.log('Socket connection error:', error);
       api.socket.joinStream(streamId, socketConnect);
       setLoading(false);
+    });
+
+    socketInstance.on('viewerCountUpdated', count => {
+      console.log('viewerCountUpdated', count);
+      setViewerCount(count);
+    });
+
+    socketInstance.on('streamEnded', update => {
+      toast({
+        description: 'Stream has ended.',
+        variant: 'default',
+        duration: 10000,
+      });
+      refetchStream();
     });
   };
 
