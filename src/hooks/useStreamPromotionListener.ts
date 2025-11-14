@@ -26,9 +26,9 @@ export const useStreamPromotionListener = (
       callbackRef.current();
     };
 
-    const handleSocketError = (error: any) => {
+    const handleSocketError = (error: unknown) => {
       console.error('Socket error:', error);
-      Bugsnag.notify(error);
+      Bugsnag.notify(error instanceof Error ? error : new Error(String(error)));
     };
 
     socketConnect.on('streamPromotionUpdated', handleStreamPromotionUpdated);
