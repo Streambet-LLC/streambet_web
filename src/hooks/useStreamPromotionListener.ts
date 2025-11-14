@@ -27,7 +27,7 @@ export const useStreamPromotionListener = (
     };
 
     const handleSocketError = (error: any) => {
-      console.log('Socket error:', error);
+      console.error('Socket error:', error);
       Bugsnag.notify(error);
     };
 
