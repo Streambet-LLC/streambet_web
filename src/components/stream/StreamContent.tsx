@@ -233,7 +233,7 @@ export const StreamContent = ({
         </div>
       </div>
       <CardContent className="bg-red px-0 !p-0  w-full">
-        <div className="text-2xl font-bold pl-2 mb-5">All Betting Rounds</div>
+        <div className="text-2xl font-bold pl-2 mb-5">All Picks</div>
         <Carousel
           setApi={setCarouselApi}
           opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}

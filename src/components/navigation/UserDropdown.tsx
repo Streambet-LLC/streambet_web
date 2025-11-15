@@ -86,12 +86,16 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         <DropdownMenuItem asChild>
           <div className="flex gap-2 group">
             <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" />
-            <Link to="/deposit" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Buy Gold Coins</Link>
+            <Link to="/deposit" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Buy Coins</Link>
           </div>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">
-          <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Join Creator Program</a>
+          {profile?.isCreator ? (
+            <Link to={`/${profile?.username}`}>My Profile</Link>
+          ) : (
+            <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Join Creator Program</a>
+          )}
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">
