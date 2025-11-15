@@ -50,7 +50,7 @@ export default function BetCard(props: BetCardType) {
 
   return (
       <Card
-      className={`h-full flex flex-col border-border shadow-lg overflow-hidden ${isForStream ? 'border-[#BDFF00]' : ''}`}
+      className={`h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${isForStream ? 'border-[#BDFF00]' : ''}`}
     >
       <CardHeader className="p-4 pb-0 flex flex-row gap-3 items-center h-16">
         <img src={getThumbnailUrl(props.thumbnail)} className="aspect-square w-9 h-9 rounded-md" />

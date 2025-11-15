@@ -108,7 +108,7 @@ export default function LockTokens({
           </div>
 		  <div className="flex-grow flex flex-col justify-center">
           	<p className="text-2xl font-bold text-[#FFFFFF] text-center pt-14 pb-4">
-              {lockedBet ? 'Picks are locked. Good luck!' : isStreamScheduled ? 'Open picks will close just before event start' : 'Picks will be locked soon'}
+              {lockedBet ? 'Picks are locked. Good luck!' : 'Open picks will close just before event start'}
           	</p>
 		  </div>
         </div>
