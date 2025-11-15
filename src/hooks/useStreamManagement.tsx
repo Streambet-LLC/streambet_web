@@ -125,6 +125,10 @@ export const useStreamManagement = () => {
     refetchNonVideoStreams();
   }, [searchNonVideoQuery, refetchNonVideoStreams]);
 
+  useEffect(() => {
+    refetchEndedStreams();
+  }, [searchEndedStreamQuery, refetchEndedStreams]);
+
   return {
     profile: session,
     isProfileLoading: isLoading,
