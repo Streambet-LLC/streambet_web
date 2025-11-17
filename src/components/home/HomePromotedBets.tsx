@@ -10,8 +10,17 @@ import BetCard from '../BetCard';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { Skeleton } from '../ui/skeleton';
+import { useState } from 'react';
+import { QuickPickModal } from '../stream/QuickPickModal';
 
 export default function HomePromotedBets() {
+  const [quickPickOpen, setQuickPickOpen] = useState(false);
+  const [quickPickModalSettings, setQuickPickModalSettings] = useState({
+    streamId: null,
+    roundId: null,
+    streamName: null,
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ['homepage-promoted-bets'],
     queryFn: async () => {
@@ -33,7 +42,17 @@ export default function HomePromotedBets() {
           ) : (
             data?.map((bet, i) => (
               <CarouselItem key={i}>
-                <BetCard {...bet} />
+                <BetCard
+                  {...bet}
+                  setQuickPick={(streamId, roundId, streamName) => {
+                    setQuickPickModalSettings({
+                      streamId,
+                      streamName,
+                      roundId,
+                    });
+                    setQuickPickOpen(true);
+                  }}
+                />
               </CarouselItem>
             ))
           )}
@@ -50,6 +69,15 @@ export default function HomePromotedBets() {
           />
         </div>
       </Carousel>
+      {quickPickOpen && (
+        <QuickPickModal
+          open={quickPickOpen}
+          onOpenChange={setQuickPickOpen}
+          streamId={quickPickModalSettings.streamId}
+          roundId={quickPickModalSettings.roundId}
+          streamName={quickPickModalSettings.streamName}
+        />
+      )}
     </>
   );
 }
