@@ -103,9 +103,9 @@ export default function BetCard(props: BetCardType) {
 
   return (
     <Card
-      className={`${wiggle && 'wiggle'} h-full flex flex-col border-border shadow-lg overflow-hidden ${statuses.isForStream ? 'border-[#BDFF00]' : ''}`}
+      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${statuses.isForStream ? 'border-[#BDFF00]' : ''}`}
     >
-      <CardHeader className="p-4 pb-0 flex flex-row gap-3 items-center">
+      <CardHeader className="p-4 pb-0 flex flex-row gap-3 items-center h-16">
         <img
           src={getThumbnailUrl(cardData.thumbnail)}
           className="aspect-square w-9 h-9 rounded-md"
@@ -161,14 +161,17 @@ export default function BetCard(props: BetCardType) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-2 p-4 justify-center">
+      <CardContent className="flex-1 flex flex-col gap-2 p-4">
         <div className="flex flex-col">
           {props.type === 'stream' && (
             <Link
               to={`/stream/${props.streamId}`}
-              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="flex gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors line-clamp-1"
             >
-              <Video className="h-5 w-5" /> {props.streamName}
+              <div className="py-[2px]">
+                <Video className="h-4 w-4" /> 
+              </div>
+              {props.streamName}
             </Link>
           )}
           {props.creator && (

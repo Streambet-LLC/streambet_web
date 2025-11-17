@@ -42,7 +42,7 @@ export default function SidebarStreamCard({
                     <div className="text-xs text-gray-400 line-clamp-1">{streamName}</div>
                   </div>
                   <div className="flex ml-auto items-center gap-1">
-                    <img src="blinking-dot.gif" className="w-4 h-4" />
+                    <img src="/blinking-dot.gif" className="min-w-4 h-4" />
                     {viewerCount > 0 && <div className="text-sm">{viewerCount}</div>}
                   </div>
                 </>

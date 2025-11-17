@@ -61,6 +61,12 @@ export const StreamContent = ({
   const { socketConnect } = useBettingStatusContext();
   const [viewerCount, setViewerCount] = useState(0);
 
+  useEffect(() => {
+    if (stream) {
+      setViewerCount(stream.viewerCount || 0);
+    }
+  }, [stream]);
+
   const setupSocketEventListeners = (socketInstance: any) => {
     if (!socketInstance) return;
 
@@ -82,6 +88,20 @@ export const StreamContent = ({
       console.log('Socket connection error:', error);
       api.socket.joinStream(streamId, socketConnect);
       setLoading(false);
+    });
+
+    socketInstance.on('viewerCountUpdated', count => {
+      console.log('viewerCountUpdated', count);
+      setViewerCount(count);
+    });
+
+    socketInstance.on('streamEnded', update => {
+      toast({
+        description: 'Stream has ended.',
+        variant: 'default',
+        duration: 10000,
+      });
+      refetchStream();
     });
   };
 
@@ -218,7 +238,7 @@ export const StreamContent = ({
         </div>
       </div>
       <CardContent className="bg-red px-0 !p-0  w-full">
-        <div className="text-2xl font-bold pl-2 mb-5">All Betting Rounds</div>
+        <div className="text-2xl font-bold pl-2 mb-5">All Picks</div>
         <Carousel
           setApi={setCarouselApi}
           opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}
