@@ -169,7 +169,7 @@ export default function BetCard(props: BetCardType) {
               className="flex gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors line-clamp-1"
             >
               <div className="py-[2px]">
-                <Video className="h-4 w-4" /> 
+                <Video className="h-4 w-4" />
               </div>
               {props.streamName}
             </Link>
@@ -191,7 +191,8 @@ export default function BetCard(props: BetCardType) {
               'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
               statuses.canOpen
                 ? 'hover:bg-[#BDFF00] hover:text-black cursor-pointer'
-                : 'cursor-not-allowed opacity-60'
+                : 'cursor-not-allowed opacity-60',
+              option.isWinner && 'bg-[#BDFF00] text-black'
             )}
           >
             <div
@@ -200,7 +201,16 @@ export default function BetCard(props: BetCardType) {
                 option.selected && 'text-[#BDFF00]'
               )}
             >
-              {option.option}
+              {option.option}{' '}
+              {option.isWinner && (
+                <span
+                  className={cn(
+                    'ml-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-[#2a2a2a] text-white border-red-500/40'
+                  )}
+                >
+                  Winner!
+                </span>
+              )}
             </div>
             <div className="text-lg font-semibold flex">{option.percentage}%</div>
           </div>
