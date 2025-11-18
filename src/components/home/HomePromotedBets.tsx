@@ -10,9 +10,10 @@ import BetCard from '../BetCard';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { Skeleton } from '../ui/skeleton';
+import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
 
 export default function HomePromotedBets() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['homepage-promoted-bets'],
     queryFn: async () => {
       const response = await api.bets.getPromotedBets();
@@ -20,6 +21,9 @@ export default function HomePromotedBets() {
       return response.data;
     },
   });
+
+  // Listen for stream promotion updates
+  useStreamPromotionListener(refetch);
 
   if (!data) return;
 
