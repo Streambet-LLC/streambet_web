@@ -11,6 +11,10 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { Skeleton } from '../ui/skeleton';
 import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
+import { useMemo } from 'react';
+import { PRIORITY_STREAMS } from '@/utils/constants';
+import { sortByPriorityPairs } from '@/utils/helper';
+import { BetCard as BetCardType } from '@/types/bet';
 
 export default function HomePromotedBets() {
   const { data, isLoading, refetch } = useQuery({
@@ -25,6 +29,11 @@ export default function HomePromotedBets() {
   // Listen for stream promotion updates
   useStreamPromotionListener(refetch);
 
+  const sortedData = useMemo(() => {
+    if (!data) return [];
+    return sortByPriorityPairs(data as BetCardType[], PRIORITY_STREAMS);
+  }, [data]);
+
   if (!data) return;
 
   return (
@@ -35,7 +44,7 @@ export default function HomePromotedBets() {
           {isLoading ? (
             <Skeleton className="flex-1 w-full h-64 rounded-none" />
           ) : (
-            data?.map((bet, i) => (
+            sortedData?.map((bet, i) => (
               <CarouselItem key={i}>
                 <BetCard {...bet} />
               </CarouselItem>
