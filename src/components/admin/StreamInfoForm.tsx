@@ -179,7 +179,7 @@ export const StreamInfoForm = ({
         <Label className="text-white font-light mb-3 block">Title</Label>
         <Input
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
-          placeholder="Title of event"
+          placeholder="Title of Event -- Format Guidance: 'Event Name - Bet'"
           value={initialValues.title}
           maxLength={STREAM_LIMITS.TITLE_MAX_LENGTH}
           minLength={STREAM_LIMITS.TITLE_MIN_LENGTH}
@@ -197,7 +197,7 @@ export const StreamInfoForm = ({
         <Label className="text-white font-light mb-3 block">Description</Label>
         <Textarea
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.description ? 'border border-red-500' : 'border-none'}`}
-          placeholder="Stream description"
+          placeholder="Description -- describe your event in more detail; whatever you think is most pertinent"
           rows={10}
           value={initialValues.description}
           onChange={e => {
