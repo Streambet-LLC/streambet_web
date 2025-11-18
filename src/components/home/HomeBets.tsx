@@ -5,9 +5,13 @@ import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { Loader2 } from 'lucide-react';
 
-export default function HomeBets() {
+export default function HomeBets({
+  filters
+} : {
+  filters: any;
+}) {
   const { data, hasNextPage, fetchNextPage, isLoading } = useInfiniteQuery({
-    queryKey: ['homepage-bets'],
+    queryKey: ['homepage-bets', filters],
     queryFn: async ({ pageParam }) => {
       const response = await api.bets.getBets({ page: pageParam });
 
