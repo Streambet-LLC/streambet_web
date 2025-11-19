@@ -1,7 +1,7 @@
 import api from '@/integrations/api/client';
 import { StreamHeader } from './StreamHeader';
 import { useEffect, useRef, useState } from 'react';
-import { StreamStatus } from '@/enums';
+import { BettingRoundStatus, StreamStatus } from '@/enums';
 import { getConnectionErrorMessage, getImageLink } from '@/utils/helper';
 import { StreamPlayer } from '../StreamPlayer';
 import { useNavigate } from 'react-router-dom';
@@ -58,12 +58,20 @@ export const StreamContent = ({
     streamName: null,
   });
 
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+
   const { socketConnect } = useBettingStatusContext();
   const [viewerCount, setViewerCount] = useState(0);
 
   useEffect(() => {
     if (stream) {
       setViewerCount(stream.viewerCount || 0);
+      const activeRound = stream.roundDetails.findIndex((round) => round.status?.toLowerCase() === BettingRoundStatus.OPEN);
+
+      console.log(stream.roundDetails);
+      if (activeRound > -1) {
+        setActiveIdx(activeRound);
+      }
     }
   }, [stream]);
 
@@ -161,6 +169,12 @@ export const StreamContent = ({
       }
     };
   }, [streamId, socketConnect]);
+
+  useEffect(() => {
+    if (carouselApi && typeof activeIdx === 'number') {
+      setTimeout(() => carouselApi.scrollTo(activeIdx), 500);
+    }
+  }, [carouselApi, activeIdx]);
 
   return (
     <div className="space-y-8">
