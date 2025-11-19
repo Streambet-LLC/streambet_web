@@ -254,3 +254,46 @@ export const isImageSFW = async (url: string) => {
     };
   });
 }
+
+/**
+ * Sort items by priority creator/title pairs.
+ * Matches require BOTH creator username AND betting round title to match.
+ * Items matching pairs appear first in the order specified in the priority list.
+ * Non-matching items appear after, maintaining their original order.
+ * 
+ * @param items - Array of betting rounds/streams with name and creator fields
+ * @param priorityPairs - Array of {creatorUsername, bettingRoundTitle} pairs
+ * @returns Sorted array with prioritized items first
+ */
+export const sortByPriorityPairs = <T extends { 
+  name: string; 
+  creator?: string | null 
+}>(
+  items: T[],
+  priorityPairs: Array<{ creatorUsername: string; bettingRoundTitle: string }>
+): T[] => {
+  if (!priorityPairs || priorityPairs.length === 0) {
+    return items; // No sorting if priority list is empty
+  }
+
+  // Create a map of "creator|title" -> priority index
+  const priorityMap = new Map(
+    priorityPairs.map((pair, index) => {
+      const key = `${pair.creatorUsername.toLowerCase().trim()}|${pair.bettingRoundTitle.toLowerCase().trim()}`;
+      return [key, index];
+    })
+  );
+  
+  return [...items].sort((a, b) => {
+    const aKey = `${(a.creator || '').toLowerCase().trim()}|${(a.name || '').toLowerCase().trim()}`;
+    const bKey = `${(b.creator || '').toLowerCase().trim()}|${(b.name || '').toLowerCase().trim()}`;
+    
+    const aPriority = priorityMap.get(aKey) ?? Infinity;
+    const bPriority = priorityMap.get(bKey) ?? Infinity;
+    
+    // If both have priority, sort by priority index
+    // If only one has priority, it comes first
+    // If neither has priority, maintain original order (stable sort)
+    return aPriority - bPriority;
+  });
+};
