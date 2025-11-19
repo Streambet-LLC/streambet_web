@@ -14,12 +14,11 @@ export default function HomeBets({
   filters: any;
 }) {
   const [quickPickOpen, setQuickPickOpen] = useState(false);
-    const [quickPickModalSettings, setQuickPickModalSettings] = useState({
+  const [quickPickModalSettings, setQuickPickModalSettings] = useState({
     streamId: null,
     roundId: null,
     streamName: null,
   });
-  
   const { data, hasNextPage, fetchNextPage, isLoading, refetch } = useInfiniteQuery({
     queryKey: ['homepage-bets', filters],
     queryFn: async ({ pageParam }) => {

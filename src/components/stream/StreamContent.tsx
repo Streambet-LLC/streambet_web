@@ -57,9 +57,7 @@ export const StreamContent = ({
     roundId: null,
     streamName: null,
   });
-
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
-
   const { socketConnect } = useBettingStatusContext();
   const [viewerCount, setViewerCount] = useState(0);
 
