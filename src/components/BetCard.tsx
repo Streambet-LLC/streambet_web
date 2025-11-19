@@ -19,6 +19,7 @@ export default function BetCard(props: BetCardType) {
     isLocked: false,
     isCancelled: false,
     isCreated: false,
+    isOpen: false,
     hasOptions: false,
     nonClickable: false,
     canOpen: false,
@@ -58,6 +59,7 @@ export default function BetCard(props: BetCardType) {
     const isLocked = statusLower === BettingRoundStatus.LOCKED;
     const isCancelled = statusLower === BettingRoundStatus.CANCELLED;
     const isCreated = statusLower === BettingRoundStatus.CREATED;
+    const isOpen = statusLower === BettingRoundStatus.OPEN;
     const hasOptions = Array.isArray(data.options) && data.options.length > 0;
     const nonClickable = isEnded || isCancelled || (isCreated && !hasOptions);
     const canOpen = Boolean(data.streamId) && !nonClickable;
@@ -69,6 +71,7 @@ export default function BetCard(props: BetCardType) {
       isLocked,
       isCancelled,
       isCreated,
+      isOpen,
       hasOptions,
       nonClickable,
       canOpen,
@@ -103,7 +106,7 @@ export default function BetCard(props: BetCardType) {
 
   return (
     <Card
-      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${statuses.isForStream ? 'border-[#BDFF00]' : ''}`}
+      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${(statuses.isForStream || statuses.isOpen || statuses.isCreated) && 'border-[#BDFF00]'}`}
     >
       <CardHeader className="p-4 pb-0 flex flex-row gap-3 items-center h-16">
         <img
