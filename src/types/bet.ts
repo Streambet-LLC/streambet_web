@@ -5,6 +5,7 @@ export interface BetCard {
     option: string;
     percentage: number;
     selected?: boolean;
+    isWinner: boolean;
   }[];
   totalPot: {
     streamCoins: number;

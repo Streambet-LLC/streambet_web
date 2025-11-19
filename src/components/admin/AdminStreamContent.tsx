@@ -116,17 +116,17 @@ function validateForm(
       newErrors.embeddedUrl = 'Embed URL is required and should be valid';
       isValid = false;
     }
+  }
 
-    if (!startDateObj) {
-      newErrors.startDate = 'Start date is required';
-      isValid = false;
-    } else if (!startTime) {
-      newErrors.startDate = 'Start time is required';
-      isValid = false;
-    } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
-      newErrors.startDate = 'Cannot select past time for today';
-      isValid = false;
-    }
+  if (!startDateObj) {
+    newErrors.startDate = 'Start date is required';
+    isValid = false;
+  } else if (!startTime) {
+    newErrors.startDate = 'Start time is required';
+    isValid = false;
+  } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+    newErrors.startDate = 'Cannot select past time for today';
+    isValid = false;
   }
 
   if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
@@ -430,9 +430,11 @@ export const AdminStreamContent = ({
       eventType
     );
     setEditErrors(newErrors);
+
     if (!isValid) {
       return;
     }
+
     let thumbnailImageUrl = streamInfo?.thumbnailUrl || '';
     if (selectedThumbnailFile?.name) {
       try {
