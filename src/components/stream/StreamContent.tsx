@@ -20,6 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import BetCard from '../BetCard';
+import { QuickPickModal } from './QuickPickModal';
 
 interface StreamContentProps {
   streamId: string;
@@ -37,8 +38,6 @@ export const StreamContent = ({
   refetchStream,
 }: StreamContentProps) => {
   const navigate = useNavigate();
-  console.log(stream);
-
   const isStreamScheduled = stream?.status === StreamStatus.SCHEDULED;
   const isStreamEnded = stream?.status === StreamStatus.ENDED;
   const isNonVideo = stream ? stream.streamType === 'non-video' : false;
@@ -52,6 +51,12 @@ export const StreamContent = ({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
+  const [quickPickOpen, setQuickPickOpen] = useState(false);
+  const [quickPickModalSettings, setQuickPickModalSettings] = useState({
+    streamId: null,
+    roundId: null,
+    streamName: null,
+  });
 
   const { socketConnect } = useBettingStatusContext();
   const [viewerCount, setViewerCount] = useState(0);
@@ -244,7 +249,18 @@ export const StreamContent = ({
               stream.roundDetails.map((round, idx) => {
                 return (
                   <CarouselItem key={idx} className="md:basis-1/2 lg:basis-1/3">
-                    <BetCard {...round} isForStream />
+                    <BetCard
+                      {...round}
+                      isForStream
+                      setQuickPick={(streamId, roundId, streamName) => {
+                        setQuickPickModalSettings({
+                          streamId,
+                          streamName,
+                          roundId,
+                        });
+                        setQuickPickOpen(true);
+                      }}
+                    />
                   </CarouselItem>
                 );
               })}
@@ -262,6 +278,15 @@ export const StreamContent = ({
           </div>
         </Carousel>
       </CardContent>
+      {quickPickOpen && (
+        <QuickPickModal
+          open={quickPickOpen}
+          onOpenChange={setQuickPickOpen}
+          streamId={quickPickModalSettings.streamId}
+          roundId={quickPickModalSettings.roundId}
+          streamName={quickPickModalSettings.streamName}
+        />
+      )}
     </div>
   );
 };

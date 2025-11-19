@@ -122,6 +122,7 @@ function validateForm(
     newErrors.thumbnail = 'Thumbnail is required';
     isValid = false;
   }
+
   if (!startDateObj) {
     newErrors.startDate = 'Start date is required';
     isValid = false;

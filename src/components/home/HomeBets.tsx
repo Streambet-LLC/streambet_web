@@ -5,8 +5,17 @@ import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
+import { useState } from 'react';
+import { QuickPickModal } from '../stream/QuickPickModal';
 
 export default function HomeBets() {
+   const [quickPickOpen, setQuickPickOpen] = useState(false);
+  const [quickPickModalSettings, setQuickPickModalSettings] = useState({
+    streamId: null,
+    roundId: null,
+    streamName: null,
+  });
+    
   const { data, hasNextPage, fetchNextPage, isLoading, refetch } = useInfiniteQuery({
     queryKey: ['homepage-bets'],
     queryFn: async ({ pageParam }) => {
@@ -34,7 +43,20 @@ export default function HomeBets() {
             ? Array(24)
                 .fill('')
                 .map((_, i) => <Skeleton key={i} className="w-full h-64" />)
-            : bets?.map((bet, i) => <BetCard key={i} {...bet} />)}
+            : bets?.map((bet, i) => (
+                <BetCard
+                  key={i}
+                  {...bet}
+                  setQuickPick={(streamId, roundId, streamName) => {
+                    setQuickPickModalSettings({
+                      streamId,
+                      streamName,
+                      roundId,
+                    });
+                    setQuickPickOpen(true);
+                  }}
+                />
+              ))}
         </div>
         {hasNextPage && (
           <Button
@@ -54,6 +76,15 @@ export default function HomeBets() {
           </Button>
         )}
       </div>
+      {quickPickOpen && (
+        <QuickPickModal
+          open={quickPickOpen}
+          onOpenChange={setQuickPickOpen}
+          streamId={quickPickModalSettings.streamId}
+          roundId={quickPickModalSettings.roundId}
+          streamName={quickPickModalSettings.streamName}
+        />
+      )}
     </>
   );
 }
