@@ -8,16 +8,20 @@ import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
 import { useState } from 'react';
 import { QuickPickModal } from '../stream/QuickPickModal';
 
-export default function HomeBets() {
-   const [quickPickOpen, setQuickPickOpen] = useState(false);
-  const [quickPickModalSettings, setQuickPickModalSettings] = useState({
+export default function HomeBets({
+  filters
+} : {
+  filters: any;
+}) {
+  const [quickPickOpen, setQuickPickOpen] = useState(false);
+    const [quickPickModalSettings, setQuickPickModalSettings] = useState({
     streamId: null,
     roundId: null,
     streamName: null,
   });
-    
+  
   const { data, hasNextPage, fetchNextPage, isLoading, refetch } = useInfiniteQuery({
-    queryKey: ['homepage-bets'],
+    queryKey: ['homepage-bets', filters],
     queryFn: async ({ pageParam }) => {
       const response = await api.bets.getBets({ page: pageParam });
 
