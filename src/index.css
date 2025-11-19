@@ -90,7 +90,16 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: "liga" 1, "calt" 1, "ss01" 1, "ss02" 1, "ss03" 1, "cv01" 1, "cv02" 1, "cv03" 1, "cv04" 1;
+    font-feature-settings:
+      'liga' 1,
+      'calt' 1,
+      'ss01' 1,
+      'ss02' 1,
+      'ss03' 1,
+      'cv01' 1,
+      'cv02' 1,
+      'cv03' 1,
+      'cv04' 1;
   }
 }
 
@@ -112,11 +121,11 @@
 .custom-emoji-picker em-emoji-picker *,
 .custom-emoji-picker .EmojiPickerReact,
 .custom-emoji-picker .EmojiPickerReact *,
-.custom-emoji-picker [data-testid="emoji-mart"],
-.custom-emoji-picker [data-testid="emoji-mart"] *,
-.custom-emoji-picker [class*="emoji"],
-.custom-emoji-picker [class*="Emoji"],
-.custom-emoji-picker [class*="picker"] {
+.custom-emoji-picker [data-testid='emoji-mart'],
+.custom-emoji-picker [data-testid='emoji-mart'] *,
+.custom-emoji-picker [class*='emoji'],
+.custom-emoji-picker [class*='Emoji'],
+.custom-emoji-picker [class*='picker'] {
   font-family: 'Inter', system-ui, sans-serif !important;
 }
 
@@ -134,7 +143,6 @@
   font-weight: bold;
   font-size: 1rem;
 }
-
 
 .betting-slider {
   @apply w-full h-2 bg-secondary rounded-full appearance-none cursor-pointer;
@@ -244,13 +252,13 @@
 }
 
 .chat-scroll-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .chat-scroll-hide {
   scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
 .chat-scroll-hide::-webkit-scrollbar {
@@ -263,28 +271,33 @@
 }
 /* Hide scrollbar for IE, Edge and Firefox */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 /* Global custom scrollbar styles (was .winner-scrollbar) */
-body::-webkit-scrollbar, *::-webkit-scrollbar {
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
   height: 7px !important;
   width: 7px !important;
 }
-body::-webkit-scrollbar-thumb, *::-webkit-scrollbar-thumb {
+body::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #808080 60%, #242424 100%) !important;
   border-radius: 6px !important;
   border: 2px solid #181818 !important;
 }
-body::-webkit-scrollbar-track, *::-webkit-scrollbar-track {
+body::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
   background: rgba(24, 24, 24, 0.5) !important;
 }
-body::-webkit-scrollbar-button, *::-webkit-scrollbar-button {
+body::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button {
   background: rgba(24, 24, 24, 0.5) !important;
 }
 /* Firefox support */
-body, * {
+body,
+* {
   scrollbar-color: #808080 rgba(24, 24, 24, 0.5) !important;
   scrollbar-width: thin !important;
 }
@@ -315,6 +328,47 @@ body, * {
   display: none !important;
 }
 
-input[type="time"]::-webkit-calendar-picker-indicator {
+input[type='time']::-webkit-calendar-picker-indicator {
   filter: invert(1) brightness(2);
+}
+
+.wiggle {
+  /* Start the shake animation and make the animation last for 0.5 seconds */
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0% {
+    transform: translate(1px, 1px) rotate(0deg);
+  }
+  10% {
+    transform: translate(-1px, -2px) rotate(-1deg);
+  }
+  20% {
+    transform: translate(-3px, 0px) rotate(1deg);
+  }
+  30% {
+    transform: translate(3px, 2px) rotate(0deg);
+  }
+  40% {
+    transform: translate(1px, -1px) rotate(1deg);
+  }
+  50% {
+    transform: translate(-1px, 2px) rotate(-1deg);
+  }
+  60% {
+    transform: translate(-3px, 1px) rotate(0deg);
+  }
+  70% {
+    transform: translate(3px, 1px) rotate(-1deg);
+  }
+  80% {
+    transform: translate(-1px, -1px) rotate(1deg);
+  }
+  90% {
+    transform: translate(1px, 2px) rotate(0deg);
+  }
+  100% {
+    transform: translate(1px, -2px) rotate(-1deg);
+  }
 }

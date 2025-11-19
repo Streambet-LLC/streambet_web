@@ -5,21 +5,26 @@ import { getImageLink } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { Video } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QuickPickModal } from './stream/QuickPickModal';
 import { BettingRoundStatus } from '@/enums';
+import api from '@/integrations/api/client';
 
 export default function BetCard(props: BetCardType) {
-  const [quickPickOpen, setQuickPickOpen] = useState(false);
-  const statusLower = (props as any)?.status?.toString()?.toLowerCase?.() || null;
-  const isEnded = statusLower === BettingRoundStatus.CLOSED || statusLower === 'ended';
-  const isLocked = statusLower === BettingRoundStatus.LOCKED;
-  const isCancelled = statusLower === BettingRoundStatus.CANCELLED;
-  const isCreated = statusLower === BettingRoundStatus.CREATED;
-  const hasOptions = Array.isArray(props.options) && props.options.length > 0;
-  const nonClickable = isEnded || isCancelled || (isCreated && !hasOptions);
-  const canOpen = Boolean(props.streamId) && !nonClickable;
-  const isForStream = props.isForStream;
+  const [wiggle, setWiggle] = useState(false);
+  const [cardData, setCardData] = useState(props);
+  const [statuses, setStatuses] = useState({
+    statusLower: (props as any)?.status?.toString()?.toLowerCase?.() || null,
+    isEnded: false,
+    isLocked: false,
+    isCancelled: false,
+    isCreated: false,
+    isOpen: false,
+    hasOptions: false,
+    nonClickable: false,
+    canOpen: false,
+    isForStream: false,
+  });
 
   const getThumbnailUrl = thumbnail => {
     if (!thumbnail) {
@@ -43,44 +48,118 @@ export default function BetCard(props: BetCardType) {
   };
 
   const handleClick = () => {
-    if (canOpen) {
-      setQuickPickOpen(true);
+    if (statuses.canOpen) {
+      props.setQuickPick(props.streamId, props.roundId, props.streamName);
     }
   };
 
+  const updateStatuses = data => {
+    const statusLower = (data as any)?.status?.toString()?.toLowerCase?.() || null;
+    const isEnded = statusLower === BettingRoundStatus.CLOSED || statusLower === 'ended';
+    const isLocked = statusLower === BettingRoundStatus.LOCKED;
+    const isCancelled = statusLower === BettingRoundStatus.CANCELLED;
+    const isCreated = statusLower === BettingRoundStatus.CREATED;
+    const isOpen = statusLower === BettingRoundStatus.OPEN;
+    const hasOptions = Array.isArray(data.options) && data.options.length > 0;
+    const nonClickable = isEnded || isCancelled || (isCreated && !hasOptions);
+    const canOpen = Boolean(data.streamId) && !nonClickable;
+    const isForStream = props.isForStream;
+
+    setStatuses({
+      statusLower,
+      isEnded,
+      isLocked,
+      isCancelled,
+      isCreated,
+      isOpen,
+      hasOptions,
+      nonClickable,
+      canOpen,
+      isForStream,
+    });
+  };
+
+  const getData = async () => {
+    const { data: resp } = await api.betting.getBettingCardRoundData(cardData.roundId);
+
+    if (cardData.totalPot.streamCoins !== resp.data.totalPot.streamCoins) {
+      setWiggle(true);
+
+      setTimeout(() => {
+        setWiggle(false);
+      }, 1 * 1000);
+    }
+
+    setCardData(resp.data);
+    updateStatuses(resp.data);
+  };
+
+  useEffect(() => {
+    updateStatuses(props);
+  }, []);
+
+  useEffect(() => {
+    setTimeout(() => {
+      getData();
+    }, 10 * 1000);
+  }, [cardData]);
+
   return (
-      <Card
-      className={`h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${isForStream ? 'border-[#BDFF00]' : ''}`}
+    <Card
+      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${(statuses.isOpen || statuses.isCreated) && 'border-[#BDFF00]'}`}
     >
       <CardHeader className="p-4 pb-0 flex flex-row gap-3 items-center h-16">
-        <img src={getThumbnailUrl(props.thumbnail)} className="aspect-square w-9 h-9 rounded-md" />
+        <img
+          src={getThumbnailUrl(cardData.thumbnail)}
+          className="aspect-square w-9 h-9 rounded-md"
+        />
         <div className="flex items-center gap-2">
           <CardTitle
-            onClick={canOpen ? handleClick : undefined}
+            onClick={statuses.canOpen ? handleClick : undefined}
             className={cn(
               'text-md line-clamp-2',
-              canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
+              statuses.canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
             )}
           >
-            {props.name}
+            {cardData.name}
           </CardTitle>
-          {(isLocked || isEnded || isCancelled || isCreated) && (
+          {(statuses.isLocked ||
+            statuses.isEnded ||
+            statuses.isCancelled ||
+            statuses.isCreated) && (
             <span
               className={cn(
                 'px-2 py-0.5 rounded-full text-xs font-semibold border',
-                isEnded
+                statuses.isEnded
                   ? 'bg-[#2a2a2a] text-white border-red-500/40'
-                  : isCancelled
+                  : statuses.isCancelled
                     ? 'bg-[#2a2a2a] text-white border-red-500/40'
-                    : isCreated
-                      ? cn('bg-[#2a2a2a] text-white', hasOptions ? 'border-blue-400/40' : 'border-muted')
+                    : statuses.isCreated
+                      ? cn(
+                          'bg-[#2a2a2a] text-white',
+                          statuses.hasOptions ? 'border-blue-400/40' : 'border-muted'
+                        )
                       : 'bg-[#2a2a2a] text-white border-yellow-400/40'
               )}
               title={
-                isEnded ? 'Ended Round' : isCancelled ? 'Cancelled Round' : isCreated ? 'Created Round' : 'Locked Round'
+                statuses.isEnded
+                  ? 'Ended Round'
+                  : statuses.isCancelled
+                    ? 'Cancelled Round'
+                    : statuses.isCreated
+                      ? 'Created Round'
+                      : 'Locked Round'
               }
             >
-              {isEnded ? 'Ended' : isCancelled ? 'Cancelled' : isCreated ? (hasOptions ? 'Created' : 'Draft') : 'Locked'}
+              {statuses.isEnded
+                ? 'Ended'
+                : statuses.isCancelled
+                  ? 'Cancelled'
+                  : statuses.isCreated
+                    ? statuses.hasOptions
+                      ? 'Created'
+                      : 'Draft'
+                    : 'Locked'}
             </span>
           )}
         </div>
@@ -107,13 +186,13 @@ export default function BetCard(props: BetCardType) {
             </Link>
           )}
         </div>
-        {props.options.slice(0, 2).map((option, i) => (
+        {cardData.options.slice(0, 2).map((option, i) => (
           <div
             key={i}
-            onClick={canOpen ? handleClick : undefined}
+            onClick={statuses.canOpen ? handleClick : undefined}
             className={cn(
               'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
-              canOpen
+              statuses.canOpen
                 ? 'hover:bg-[#BDFF00] hover:text-black cursor-pointer'
                 : 'cursor-not-allowed opacity-60'
             )}
@@ -129,18 +208,18 @@ export default function BetCard(props: BetCardType) {
             <div className="text-lg font-semibold flex">{option.percentage}%</div>
           </div>
         ))}
-        {props.options.length > 2 && (
+        {cardData.options.length > 2 && (
           <div
-            onClick={canOpen ? handleClick : undefined}
+            onClick={statuses.canOpen ? handleClick : undefined}
             className={cn(
               'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
-              canOpen
+              statuses.canOpen
                 ? 'hover:bg-[#BDFF00] hover:text-black cursor-pointer'
                 : 'cursor-not-allowed opacity-60'
             )}
           >
             <div className="text-sm rounded-full font-semibold">
-              {props.options.length - 2} more...
+              {cardData.options.length - 2} more...
             </div>
           </div>
         )}
@@ -151,26 +230,17 @@ export default function BetCard(props: BetCardType) {
             <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
               <div className="flex gap-2 text-sm items-center">
                 <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
-                {props.totalPot.streamCoins}
+                {cardData.totalPot.streamCoins}
               </div>
               <div className="flex gap-1 text-sm items-center">
                 <img src="/icons/gold-coins.png" alt="gold-coins" className="h-4 w-4" />
-                {props.totalPot.goldCoins}
+                {cardData.totalPot.goldCoins}
               </div>
             </div>
           </TooltipTrigger>
           <TooltipContent side="right">Total Pot</TooltipContent>
         </Tooltip>
       </CardFooter>
-      {quickPickOpen && (
-        <QuickPickModal
-          open={quickPickOpen}
-          onOpenChange={setQuickPickOpen}
-          streamId={props.streamId}
-          roundId={props.roundId}
-          streamName={props.streamName}
-        />
-      )}
     </Card>
   );
 }

@@ -35,10 +35,8 @@ export const StreamCard = ({
   const { session } = useAuthContext();
   const isLive = stream?.streamStatus === StreamStatus.LIVE;
   const isStreamScheduled = stream?.streamStatus === StreamStatus.SCHEDULED;
-  const isBettingOpen =
-    stream?.bettingRoundStatus === BettingRoundStatus.OPEN;
-  const isBettingLocked =
-    stream?.bettingRoundStatus === BettingRoundStatus.LOCKED;
+  const isBettingOpen = stream?.bettingRoundStatus === BettingRoundStatus.OPEN;
+  const isBettingLocked = stream?.bettingRoundStatus === BettingRoundStatus.LOCKED;
   const [quickPickOpen, setQuickPickOpen] = useState(false);
 
   // Handle both full URLs and storage paths
@@ -63,7 +61,7 @@ export const StreamCard = ({
       return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${thumbnail}`;
     }
 
-    return getImageLink(thumbnail) || '/placeholder.svg' ;
+    return getImageLink(thumbnail) || '/placeholder.svg';
   };
 
   // Random viewer count for visual enhancement
@@ -103,9 +101,25 @@ export const StreamCard = ({
               {imageLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-20">
                   {/* Simple spinner */}
-                  <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  <svg
+                    className="animate-spin h-8 w-8 text-primary"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
                   </svg>
                 </div>
               )}
@@ -128,16 +142,14 @@ export const StreamCard = ({
             {/* Status badges */}
             {isLive && (
               <div className="absolute top-2 left-2 z-30">
-                <StreamStatusBadge 
-                  status={StreamStatus.LIVE}
-                />
+                <StreamStatusBadge status={StreamStatus.LIVE} />
               </div>
             )}
 
             {/* SCHEDULED badge */}
             {!isLive && isStreamScheduled && (
               <div className="absolute top-2 left-2 z-30">
-                <StreamStatusBadge 
+                <StreamStatusBadge
                   status={StreamStatus.SCHEDULED}
                   scheduledStartTime={stream.scheduledStartTime}
                   multiline={true}
@@ -193,7 +205,8 @@ export const StreamCard = ({
                     'text-xs px-2 py-0.5 rounded-md flex items-center gap-1',
                     isBettingLocked
                       ? 'bg-orange-500/20 text-orange-500'
-                      : isBettingOpen ? 'bg-primary/20 text-primary'
+                      : isBettingOpen
+                        ? 'bg-primary/20 text-primary'
                         : ''
                   )}
                 >
@@ -208,54 +221,26 @@ export const StreamCard = ({
                 </div>
               )}
             </div>
-            <div className='flex flex-col mb-6 gap-1 h-16'>
+            <div className="flex flex-col mb-6 gap-1 h-16">
               <p className="font-semibold text-[#D7DFEF] text-[15px] items-center truncate">
                 {stream.streamName}
               </p>
-              {stream.creatorUsername && 
+              {stream.creatorUsername && (
                 <Link
                   to={`/${stream.creatorUsername}`}
                   className="text-sm text-[#7AFF14] hover:text-foreground transition-colors"
                 >
                   {stream.creatorUsername}
                 </Link>
-              }
-              {stream.endTime && 
+              )}
+              {stream.endTime && (
                 <p className="text-gray-400 text-xs">
                   Ended: {formatDate(stream.endTime)} at {formatTime(stream.endTime)}
                 </p>
-              }
+              )}
             </div>
-            <div className='!mb-3 !mt-5 space-y-2'>
+            <div className="!mb-3 !mt-5 space-y-2">
               <StreamActions streamId={stream.id} onDelete={undefined} />
-              {stream.streamStatus && stream.streamStatus !== StreamStatus.ENDED && 
-
-                <Button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setQuickPickOpen(true);
-                  }}
-                  disabled={!isBettingOpen}
-                  className={cn(
-                    'w-full rounded-full border font-medium text-[12px] flex items-center justify-center gap-1.5',
-                    isBettingOpen
-                      ? 'bg-emerald-500 hover:bg-emerald-600 text-black border-emerald-500'
-                      : 'bg-emerald-500/50 text-white/80 border-emerald-500/50 cursor-not-allowed'
-                  )}
-                >
-                  {isBettingOpen 
-                    ? 'Quick Pick' 
-                    : isBettingLocked 
-                      ? (
-                        <>
-                          <LockKeyhole className="h-3 w-3" />
-                          <span>Picks Locked</span>
-                        </>
-                      )
-                      : 'Picks Open Soon'}
-                </Button>
-              }
             </div>
           </div>
         </div>

@@ -69,7 +69,7 @@ export function useBettingSocket({
         bettingData.bettingRounds.find((r: any) => r.status === BettingRoundStatus.OPEN) ||
         bettingData.bettingRounds[0];
       const betRound = preferredRound;
-      
+
       // Map betting variables with enhanced statistics
       const enhancedVariables: BettingVariableStats[] = (betRound.bettingVariables || []).map(item => ({
         id: item.id,
@@ -80,16 +80,16 @@ export function useBettingSocket({
         betCountGoldCoin: Number(item.betCountGoldCoin || 0),
         betCountSweepCoin: Number(item.betCountSweepCoin || 0),
       }));
-      
+
       // Calculate totals across all betting variables
       const totalBetCountGoldCoin = enhancedVariables.reduce(
         (sum, item) => sum + item.betCountGoldCoin, 0
       );
-      
+
       const totalBetCountSweepCoin = enhancedVariables.reduce(
         (sum, item) => sum + item.betCountSweepCoin, 0
       );
-      
+
       setActiveRound({
         id: betRound.id,
         name: betRound.roundName,
@@ -162,10 +162,10 @@ export function useBettingSocket({
         totalGoldCoins: update?.totalBetsGoldCoinAmount ?? prev.totalGoldCoins,
         totalSweepCoins: update?.totalBetsSweepCoinAmount ?? prev.totalSweepCoins,
       }));
-      
+
       // Refetch betting data to get updated bet counts
       debouncedRefetch();
-      
+
       setIsLoading(false);
     };
 
@@ -205,10 +205,13 @@ export function useBettingSocket({
 
     // Handle bet placed successfully
     const handleBetPlaced = (update: any) => {
+      console.log(update);
+
       if (update?.bet?.userId === session?.id) {
         queryClient.invalidateQueries({ queryKey: ['session'] });
 
-        const isSweep = update?.bet?.currencyType === CurrencyType.SWEEP_COINS;
+        const isSweep = update?.currencyType === CurrencyType.SWEEP_COINS;
+        console.log(isSweep);
 
         setUserBet({
           betId: update?.bet?.id,
@@ -346,7 +349,7 @@ export function useBettingSocket({
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
-      
+
       socket.emit('leaveStream', streamId);
       socket.off('bettingUpdate', handleBettingUpdate);
       socket.off('potentialAmountUpdate', handlePotentialAmountUpdate);
