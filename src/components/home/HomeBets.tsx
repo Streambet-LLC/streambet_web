@@ -4,18 +4,19 @@ import api from '@/integrations/api/client';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { Loader2 } from 'lucide-react';
+import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
 import { useState } from 'react';
 import { QuickPickModal } from '../stream/QuickPickModal';
 
 export default function HomeBets() {
-  const [quickPickOpen, setQuickPickOpen] = useState(false);
-  const [quickPickModalSettings, setQuickPickModalSettings] = useState({
-    streamId: null,
-    roundId: null,
-    streamName: null,
-  });
-
-  const { data, hasNextPage, fetchNextPage, isLoading } = useInfiniteQuery({
+    const [quickPickOpen, setQuickPickOpen] = useState(false);
+    const [quickPickModalSettings, setQuickPickModalSettings] = useState({
+      streamId: null,
+      roundId: null,
+      streamName: null,
+    });
+    
+    const { data, hasNextPage, fetchNextPage, isLoading, refetch } = useInfiniteQuery({
     queryKey: ['homepage-bets'],
     queryFn: async ({ pageParam }) => {
       const response = await api.bets.getBets({ page: pageParam });
@@ -27,6 +28,9 @@ export default function HomeBets() {
   });
 
   const bets = data?.pages.map(({ data: bets }) => bets || [])?.flat() || [];
+
+  // Listen for stream promotion updates
+  useStreamPromotionListener(refetch);
 
   if (!data) return;
 
