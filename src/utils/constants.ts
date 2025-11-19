@@ -1956,4 +1956,28 @@ export const STREAM_LIMITS = {
   DESCRIPTION_MAX_CHARACTERS: 300,
   DESCRIPTION_MAX_WORDS: 50,
 } as const;
-  
+
+// Priority order for betting rounds on landing page
+// Streams matching these creator/title pairs (case-insensitive) will display first
+// in the order specified here. Add or reorder pairs as needed.
+export const PRIORITY_STREAMS: Array<{
+  creatorUsername: string;
+  bettingRoundTitle: string;
+}> = [
+  {
+    creatorUsername: "TinyTrackCars",
+    bettingRoundTitle: "BMW vs Subaru: Overall Winner?"
+  },
+  {
+    creatorUsername: "joshcapopashot",
+    bettingRoundTitle: "BLINDFOLDED Josh Caputo Popashot: Over/Under 99.5 points"
+  },
+  {
+    creatorUsername: "ZonaEats",
+    bettingRoundTitle: "Will Zona Eat 3 Big Macs in Over / Under 60 Seconds"
+  },
+  {
+    creatorUsername: "Qb54",
+    bettingRoundTitle: "First round"
+  },
+];

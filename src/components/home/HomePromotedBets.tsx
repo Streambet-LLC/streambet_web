@@ -13,8 +13,10 @@ import { Skeleton } from '../ui/skeleton';
 import { useState } from 'react';
 import { QuickPickModal } from '../stream/QuickPickModal';
 import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
-import { useState } from 'react';
-import { QuickPickModal } from '../stream/QuickPickModal';
+import { PRIORITY_STREAMS } from '@/utils/constants';
+import { sortByPriorityPairs } from '@/utils/helper';
+import { BetCard as BetCardType } from '@/types/bet';
+import { useState, useMemo } from 'react';
 
 export default function HomePromotedBets() {
   const [quickPickOpen, setQuickPickOpen] = useState(false);
@@ -36,6 +38,11 @@ export default function HomePromotedBets() {
   // Listen for stream promotion updates
   useStreamPromotionListener(refetch);
 
+  const sortedData = useMemo(() => {
+    if (!data) return [];
+    return sortByPriorityPairs(data as BetCardType[], PRIORITY_STREAMS);
+  }, [data]);
+
   if (!data) return;
 
   return (
@@ -46,7 +53,7 @@ export default function HomePromotedBets() {
           {isLoading ? (
             <Skeleton className="flex-1 w-full h-64 rounded-none" />
           ) : (
-            data?.map((bet, i) => (
+            sortedData?.map((bet, i) => (
               <CarouselItem key={i}>
                 <BetCard
                   {...bet}
