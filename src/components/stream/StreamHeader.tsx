@@ -2,6 +2,7 @@ import { StreamStatusBadge } from '@/components/stream/StreamStatusBadge';
 import { StreamStatus } from '@/enums';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface StreamHeaderProps {
   stream: {
@@ -10,6 +11,7 @@ interface StreamHeaderProps {
     name: string;
     streamName?: string;
     description?: string;
+    creatorUsername?: string;
   } | null;
   viewerCount: number | null;
 }
@@ -71,8 +73,17 @@ export const StreamHeader = ({ stream, viewerCount }: StreamHeaderProps) => {
         </div>
         <CardTitle className={HEADER_STYLES.TITLE}>
           {stream.name}
+          <div className='text-[20px]'>
+            <Link
+              to={`/${stream.creatorUsername}`}
+              className="text-[#7AFF14] hover:text-foreground transition-colors"
+            >
+              {stream.creatorUsername}
+            </Link>
+          </div>
         </CardTitle>
         <CardDescription className={HEADER_STYLES.DESCRIPTION}>
+          
           {stream.description || 'No description available.'}
         </CardDescription>
       </CardHeader>

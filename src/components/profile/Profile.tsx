@@ -45,6 +45,7 @@ export default function Profile() {
   const { data: profile, isFetching } = useQuery<{
     id: string;
     username: string;
+    name: string;
     accountCreationDate: Date;
     profileImageUrl: string;
     isCreator: boolean;
@@ -81,6 +82,7 @@ export default function Profile() {
                   </Avatar>
                   <div className="flex relative flex-col">
                     <div className="text-lg font-semibold text-white">{username}</div>
+                    {profile.name && <div className="text-sm text-white mb-1">{profile.name}</div>}
                     <div className="text-xs text-gray-400">
                       Date joined: {format(profile.accountCreationDate.toString(), 'MMMM d, yyy')}
                     </div>

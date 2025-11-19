@@ -13,6 +13,8 @@ import { Skeleton } from '../ui/skeleton';
 import { useState } from 'react';
 import { QuickPickModal } from '../stream/QuickPickModal';
 import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
+import { useState } from 'react';
+import { QuickPickModal } from '../stream/QuickPickModal';
 
 export default function HomePromotedBets() {
   const [quickPickOpen, setQuickPickOpen] = useState(false);

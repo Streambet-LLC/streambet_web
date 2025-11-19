@@ -3,8 +3,12 @@ import { MainLayout } from '@/components/layout';
 import HomePromotedBets from './HomePromotedBets';
 import HomeBets from './HomeBets';
 import UpcomingHomeBets from './UpcomingHomeBets';
+import HomeBetsFilters from './HomeBetsFilters';
+import { useState } from 'react';
 
 export default function Home() {
+  const [filters, setFilters] = useState({});
+
   return (
     <MainLayout showFooter>
       <div className="w-full flex flex-col gap-6">
@@ -18,29 +22,8 @@ export default function Home() {
           </p>
         </div>
         <HomePromotedBets />
-        {/* <div className="flex justify-end gap-2">
-          <SearchInput className="border-none" id="home" value="" onChange={() => {}} />
-          <Select>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Total Bet" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="totalBet">
-                Total Bet
-              </SelectItem>
-              <SelectItem value="numberOfBettors">
-                Number of Bettors
-              </SelectItem>
-              <SelectItem value="dateCreated">
-                Date Created
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <Button size="icon">
-            <SortAsc />
-          </Button>
-        </div> */}
-        <HomeBets />
+        {/* <HomeBetsFilters onChange={setFilters} /> */}
+        <HomeBets filters={filters} />
         {/* <UpcomingHomeBets /> */}
       </div>
     </MainLayout>

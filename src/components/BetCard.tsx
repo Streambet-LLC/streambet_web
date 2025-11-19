@@ -19,6 +19,7 @@ export default function BetCard(props: BetCardType) {
     isLocked: false,
     isCancelled: false,
     isCreated: false,
+    isOpen: false,
     hasOptions: false,
     nonClickable: false,
     canOpen: false,
@@ -58,6 +59,7 @@ export default function BetCard(props: BetCardType) {
     const isLocked = statusLower === BettingRoundStatus.LOCKED;
     const isCancelled = statusLower === BettingRoundStatus.CANCELLED;
     const isCreated = statusLower === BettingRoundStatus.CREATED;
+    const isOpen = statusLower === BettingRoundStatus.OPEN;
     const hasOptions = Array.isArray(data.options) && data.options.length > 0;
     const nonClickable = isEnded || isCancelled || (isCreated && !hasOptions);
     const canOpen = Boolean(data.streamId) && !nonClickable;
@@ -69,6 +71,7 @@ export default function BetCard(props: BetCardType) {
       isLocked,
       isCancelled,
       isCreated,
+      isOpen,
       hasOptions,
       nonClickable,
       canOpen,
@@ -103,7 +106,7 @@ export default function BetCard(props: BetCardType) {
 
   return (
     <Card
-      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${statuses.isForStream ? 'border-[#BDFF00]' : ''}`}
+      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${(statuses.isForStream || statuses.isOpen || statuses.isCreated) && 'border-[#BDFF00]'}`}
     >
       <CardHeader className="p-4 pb-0 flex flex-row gap-3 items-center h-16">
         <img
@@ -169,7 +172,7 @@ export default function BetCard(props: BetCardType) {
               className="flex gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors line-clamp-1"
             >
               <div className="py-[2px]">
-                <Video className="h-4 w-4" /> 
+                <Video className="h-4 w-4" />
               </div>
               {props.streamName}
             </Link>
@@ -191,7 +194,8 @@ export default function BetCard(props: BetCardType) {
               'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
               statuses.canOpen
                 ? 'hover:bg-[#BDFF00] hover:text-black cursor-pointer'
-                : 'cursor-not-allowed opacity-60'
+                : 'cursor-not-allowed opacity-60',
+              option.isWinner && 'bg-[#BDFF00] text-black'
             )}
           >
             <div
@@ -200,7 +204,16 @@ export default function BetCard(props: BetCardType) {
                 option.selected && 'text-[#BDFF00]'
               )}
             >
-              {option.option}
+              {option.option}{' '}
+              {option.isWinner && (
+                <span
+                  className={cn(
+                    'ml-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-[#2a2a2a] text-white border-red-500/40'
+                  )}
+                >
+                  Winner!
+                </span>
+              )}
             </div>
             <div className="text-lg font-semibold flex">{option.percentage}%</div>
           </div>
