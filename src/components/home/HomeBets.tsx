@@ -68,7 +68,7 @@ export default function HomeBets({
             ? Array(24)
                 .fill('')
                 .map((_, i) => <Skeleton key={i} className="w-full h-64" />)
-            : bets?.map((bet, i) => (
+            : displayedBets.map((bet, i) => (
                 <BetCard
                   key={i}
                   {...bet}
