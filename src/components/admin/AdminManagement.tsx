@@ -334,17 +334,17 @@ export const AdminManagement = ({
         newErrors.embeddedUrl = 'Embed URL is required and should be valid';
         isValid = false;
       }
+    }
 
-      if (!startDateObj) {
-        newErrors.startDate = 'Start date is required';
-        isValid = false;
-      } else if (!startTime) {
-        newErrors.startDate = 'Start time is required';
-        isValid = false;
-      } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
-        newErrors.startDate = 'Cannot select past time for today';
-        isValid = false;
-      }
+    if (!startDateObj) {
+      newErrors.startDate = 'Start date is required';
+      isValid = false;
+    } else if (!startTime) {
+      newErrors.startDate = 'Start time is required';
+      isValid = false;
+    } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+      newErrors.startDate = 'Cannot select past time for today';
+      isValid = false;
     }
 
     if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
@@ -615,6 +615,7 @@ export const AdminManagement = ({
     setThumbnailPreviewUrl(URL.createObjectURL(file));
     setErrors(errors => ({ ...errors, thumbnail: '' }));
   }
+
   async function validateImage(file: File): Promise<boolean> {
     return new Promise(resolve => {
       const img = new window.Image();
@@ -636,6 +637,7 @@ export const AdminManagement = ({
       };
     });
   }
+
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setIsDragging(false);
