@@ -10,6 +10,8 @@ import BetCard from '../BetCard';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { Skeleton } from '../ui/skeleton';
+import { useState } from 'react';
+import { QuickPickModal } from '../stream/QuickPickModal';
 import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
 import { useState } from 'react';
 import { QuickPickModal } from '../stream/QuickPickModal';
@@ -21,7 +23,7 @@ export default function HomePromotedBets() {
     roundId: null,
     streamName: null,
   });
-  
+    
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['homepage-promoted-bets'],
     queryFn: async () => {
