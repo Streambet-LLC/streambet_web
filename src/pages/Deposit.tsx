@@ -20,7 +20,7 @@ const Deposit = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-[584px] space-y-4 mx-auto">
+      <div className="lg:w-[584px] space-y-4 lg:mx-auto">
         {depositAmount === 0 ? <BuyCoins 
           setDepositAmount={setDepositAmount}
           setPackageId={setPackageId}

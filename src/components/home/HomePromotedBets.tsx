@@ -10,13 +10,22 @@ import BetCard from '../BetCard';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { Skeleton } from '../ui/skeleton';
+import { useState } from 'react';
+import { QuickPickModal } from '../stream/QuickPickModal';
 import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
-import { useMemo } from 'react';
 import { PRIORITY_STREAMS } from '@/utils/constants';
 import { sortByPriorityPairs } from '@/utils/helper';
 import { BetCard as BetCardType } from '@/types/bet';
+import { useState, useMemo } from 'react';
 
 export default function HomePromotedBets() {
+  const [quickPickOpen, setQuickPickOpen] = useState(false);
+  const [quickPickModalSettings, setQuickPickModalSettings] = useState({
+    streamId: null,
+    roundId: null,
+    streamName: null,
+  });
+    
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['homepage-promoted-bets'],
     queryFn: async () => {
@@ -46,7 +55,17 @@ export default function HomePromotedBets() {
           ) : (
             sortedData?.map((bet, i) => (
               <CarouselItem key={i}>
-                <BetCard {...bet} />
+                <BetCard
+                  {...bet}
+                  setQuickPick={(streamId, roundId, streamName) => {
+                    setQuickPickModalSettings({
+                      streamId,
+                      streamName,
+                      roundId,
+                    });
+                    setQuickPickOpen(true);
+                  }}
+                />
               </CarouselItem>
             ))
           )}
@@ -63,6 +82,15 @@ export default function HomePromotedBets() {
           />
         </div>
       </Carousel>
+      {quickPickOpen && (
+        <QuickPickModal
+          open={quickPickOpen}
+          onOpenChange={setQuickPickOpen}
+          streamId={quickPickModalSettings.streamId}
+          roundId={quickPickModalSettings.roundId}
+          streamName={quickPickModalSettings.streamName}
+        />
+      )}
     </>
   );
 }

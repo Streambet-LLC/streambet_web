@@ -5,6 +5,7 @@ export interface BetCard {
     option: string;
     percentage: number;
     selected?: boolean;
+    isWinner: boolean;
   }[];
   totalPot: {
     streamCoins: number;
@@ -16,4 +17,5 @@ export interface BetCard {
   streamName: string | null;
   type: string | null;
   status?: string | null;
+  setQuickPick: (streamId: string, roundId: string, streamName: string) => void,
 }

@@ -8,12 +8,22 @@ import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
 import { useEffect, useMemo, useState } from 'react';
 import { PRIORITY_STREAMS } from '@/utils/constants';
 import { sortByPriorityPairs } from '@/utils/helper';
+import { QuickPickModal } from '../stream/QuickPickModal';
 
-export default function HomeBets() {
+export default function HomeBets({
+  filters
+} : {
+  filters: any;
+}) {
   const [displayCount, setDisplayCount] = useState(24);
-  
+  const [quickPickOpen, setQuickPickOpen] = useState(false);
+  const [quickPickModalSettings, setQuickPickModalSettings] = useState({
+    streamId: null,
+    roundId: null,
+    streamName: null,
+  });
   const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage, refetch } = useInfiniteQuery({
-    queryKey: ['homepage-bets'],
+    queryKey: ['homepage-bets', filters],
     queryFn: async ({ pageParam }) => {
       const response = await api.bets.getBets({ page: pageParam });
 
@@ -58,7 +68,20 @@ export default function HomeBets() {
             ? Array(24)
                 .fill('')
                 .map((_, i) => <Skeleton key={i} className="w-full h-64" />)
-            : displayedBets?.map((bet, i) => <BetCard key={i} {...bet} />)}
+            : bets?.map((bet, i) => (
+                <BetCard
+                  key={i}
+                  {...bet}
+                  setQuickPick={(streamId, roundId, streamName) => {
+                    setQuickPickModalSettings({
+                      streamId,
+                      streamName,
+                      roundId,
+                    });
+                    setQuickPickOpen(true);
+                  }}
+                />
+              ))}
         </div>
         {hasMore && (
           <Button
@@ -78,6 +101,15 @@ export default function HomeBets() {
           </Button>
         )}
       </div>
+      {quickPickOpen && (
+        <QuickPickModal
+          open={quickPickOpen}
+          onOpenChange={setQuickPickOpen}
+          streamId={quickPickModalSettings.streamId}
+          roundId={quickPickModalSettings.roundId}
+          streamName={quickPickModalSettings.streamName}
+        />
+      )}
     </>
   );
 }
