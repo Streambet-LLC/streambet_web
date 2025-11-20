@@ -7,7 +7,8 @@ import { Link } from 'react-router-dom';
 import { Video } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { QuickPickModal } from './stream/QuickPickModal';
-import { BettingRoundStatus } from '@/enums';
+import { BettingRoundStatus, StreamStatus } from '@/enums';
+import { StreamStatusBadge } from '@/components/stream/StreamStatusBadge';
 import api from '@/integrations/api/client';
 
 export default function BetCard(props: BetCardType) {
@@ -108,21 +109,32 @@ export default function BetCard(props: BetCardType) {
     <Card
       className={`${wiggle && 'wiggle'} h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${(statuses.isForStream || statuses.isOpen || statuses.isCreated) && 'border-[#BDFF00]'}`}
     >
-      <CardHeader className="p-4 pb-0 flex flex-row gap-3 items-center h-16">
-        <img
-          src={getThumbnailUrl(cardData.thumbnail)}
-          className="aspect-square w-9 h-9 rounded-md"
-        />
-        <div className="flex items-center gap-2">
-          <CardTitle
-            onClick={statuses.canOpen ? handleClick : undefined}
-            className={cn(
-              'text-md line-clamp-2',
-              statuses.canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
-            )}
-          >
-            {cardData.name}
-          </CardTitle>
+      <CardHeader className="p-4 pb-0 flex flex-col gap-3">
+        {cardData.streamStatus === StreamStatus.SCHEDULED && (
+          <div className="flex justify-start">
+            <StreamStatusBadge 
+              status={StreamStatus.SCHEDULED}
+              scheduledStartTime={cardData.scheduledStartTime}
+              multiline={false}
+              isStreamType={cardData.type === 'stream'}
+            />
+          </div>
+        )}
+        <div className="flex flex-row gap-3 items-center">
+          <img
+            src={getThumbnailUrl(cardData.thumbnail)}
+            className="aspect-square w-9 h-9 rounded-md"
+          />
+          <div className="flex items-center gap-2">
+            <CardTitle
+              onClick={statuses.canOpen ? handleClick : undefined}
+              className={cn(
+                'text-md line-clamp-2',
+                statuses.canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
+              )}
+            >
+              {cardData.name}
+            </CardTitle>
           {(statuses.isLocked ||
             statuses.isEnded ||
             statuses.isCancelled ||
@@ -162,6 +174,7 @@ export default function BetCard(props: BetCardType) {
                     : 'Locked'}
             </span>
           )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-2 p-4">
@@ -211,7 +224,7 @@ export default function BetCard(props: BetCardType) {
                     'ml-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-[#2a2a2a] text-white border-red-500/40'
                   )}
                 >
-                  Winner!
+                  ✅ Winning Side
                 </span>
               )}
             </div>
