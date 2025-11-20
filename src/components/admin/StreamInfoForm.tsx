@@ -398,7 +398,11 @@ export const StreamInfoForm = ({
       </div>
       {/* Start date */}
       <div>
-        <Label className="text-white font-light mb-3 block">Start date & time</Label>
+        <Label className="text-white font-light mb-3 block">
+          {initialValues.eventType.value === 'stream' 
+            ? 'Start date & time' 
+            : 'Date & Time that Picks Will Be Locked'}
+        </Label>
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -427,7 +431,9 @@ export const StreamInfoForm = ({
                 {initialValues.startDateObj
                   ? initialValues.startDateObj.toLocaleDateString() +
                     (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '')
-                  : 'Pick a date & time'}
+                  : initialValues.eventType.value === 'stream'
+                    ? 'Select a date & time'
+                    : 'Select a lock date & time'}
               </span>
               {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
                 <button
