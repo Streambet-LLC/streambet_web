@@ -68,6 +68,12 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        badge: {
+          live: 'hsl(var(--badge-live))',
+          'scheduled-stream': 'hsl(var(--badge-scheduled-stream))',
+          'scheduled-non-video': 'hsl(var(--badge-scheduled-non-video))',
+          ended: 'hsl(var(--badge-ended))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
