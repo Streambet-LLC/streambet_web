@@ -46,7 +46,7 @@ export default function HomePromotedBets() {
 
   return (
     <>
-      <div id="featured-streams-heading" className="text-2xl font-bold pl-2">Featured Streams</div>
+      
       {isLoading ? (
         <Skeleton className="flex-1 w-full h-64 rounded-none" />
       ) : (
