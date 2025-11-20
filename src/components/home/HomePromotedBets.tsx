@@ -46,7 +46,6 @@ export default function HomePromotedBets() {
 
   return (
     <>
-      
       {isLoading ? (
         <Skeleton className="flex-1 w-full h-64 rounded-none" />
       ) : (
