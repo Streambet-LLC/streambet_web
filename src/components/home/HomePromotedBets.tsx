@@ -42,11 +42,11 @@ export default function HomePromotedBets() {
     return sortByPriorityPairs(data as BetCardType[], PRIORITY_STREAMS);
   }, [data]);
 
-  if (!data) return;
+  if (!data) return null;
 
   return (
     <>
-      <div className="text-2xl font-bold pl-2">Featured Streams</div>
+      <div id="featured-streams-heading" className="text-2xl font-bold pl-2">Featured Streams</div>
       {isLoading ? (
         <Skeleton className="flex-1 w-full h-64 rounded-none" />
       ) : (
@@ -75,9 +75,11 @@ export default function HomePromotedBets() {
           speed={600}
           modules={[EffectCoverflow, Pagination, Navigation, Autoplay]}
           className="featured-bets-swiper"
+          role="region"
+          aria-labelledby="featured-streams-heading"
         >
-          {sortedData?.map((bet, i) => (
-            <SwiperSlide key={i}>
+          {sortedData.map((bet) => (
+            <SwiperSlide key={`${bet.streamId}-${bet.roundId}`}>
               <BetCard
                 {...bet}
                 setQuickPick={(streamId, roundId, streamName) => {

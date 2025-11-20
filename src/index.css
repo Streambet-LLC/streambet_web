@@ -388,7 +388,6 @@ input[type='time']::-webkit-calendar-picker-indicator {
 }
 
 /* Custom Navigation Arrows - Match existing carousel style */
-.featured-bets-swiper .swiper-button-next,
 .featured-bets-swiper .swiper-button-prev {
   @apply w-10 h-10 rounded-full;
   @apply bg-secondary border border-border;
@@ -396,19 +395,22 @@ input[type='time']::-webkit-calendar-picker-indicator {
   @apply transition-all duration-200;
   @apply hover:bg-primary hover:text-primary-foreground;
   @apply top-auto bottom-0;
+  @apply left-4;
+}
+
+.featured-bets-swiper .swiper-button-next {
+  @apply w-10 h-10 rounded-full;
+  @apply bg-secondary border border-border;
+  @apply text-foreground;
+  @apply transition-all duration-200;
+  @apply hover:bg-primary hover:text-primary-foreground;
+  @apply top-auto bottom-0;
+  @apply right-4;
 }
 
 .featured-bets-swiper .swiper-button-next::after,
 .featured-bets-swiper .swiper-button-prev::after {
   @apply text-sm font-bold;
-}
-
-.featured-bets-swiper .swiper-button-prev {
-  @apply left-4;
-}
-
-.featured-bets-swiper .swiper-button-next {
-  @apply right-4;
 }
 
 /* Custom Pagination Dots - Match current design */
