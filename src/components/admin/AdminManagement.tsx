@@ -722,7 +722,7 @@ export const AdminManagement = ({
 
     const scheduledStartTime = formatDateTimeForISO(startDateObj, startTime, timezone);
     
-    if (!scheduledStartTime && (startDateObj || startTime)) {
+    if (!scheduledStartTime && startDateObj && startTime) {
       toast({
         variant: 'destructive',
         title: 'Invalid Timezone',

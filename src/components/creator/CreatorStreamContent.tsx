@@ -461,7 +461,7 @@ export const CreatorStreamContent = ({
     // Implement API call to update stream info here
     const scheduledStartTime = formatDateTimeForISO(editForm.startDateObj, editForm.startTime, editForm.timezone);
     
-    if (!scheduledStartTime && (editForm.startDateObj || editForm.startTime)) {
+    if (!scheduledStartTime && editForm.startDateObj && editForm.startTime) {
       toast({
         variant: 'destructive',
         title: 'Invalid Timezone',
