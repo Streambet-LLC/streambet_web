@@ -128,7 +128,7 @@ export function isScheduledTimeInPast(date: Date | null, time: string, timezone:
   
   // Use formatDateTimeForISO to get the UTC timestamp
   const scheduledTimeISO = formatDateTimeForISO(date, time, timezone);
-  if (!scheduledTimeISO) return false; // Invalid timezone, will be caught by other validation
+  if (!scheduledTimeISO) return false;
   
   // Compare UTC timestamps - scheduled time must be in the future
   return new Date(scheduledTimeISO) <= new Date();
