@@ -717,12 +717,23 @@ export const CreatorManagement = ({
       }
     }
 
+    const scheduledStartTime = formatDateTimeForISO(startDateObj, startTime, timezone);
+    
+    if (!scheduledStartTime && (startDateObj || startTime)) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Timezone',
+        description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+      });
+      return;
+    }
+
     const payload = {
       name: title,
       description,
       embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
-      scheduledStartTime: formatDateTimeForISO(startDateObj, startTime, timezone),
+      scheduledStartTime,
       creatorId,
       ...(!editStreamId && { type: eventType.value }),
     };

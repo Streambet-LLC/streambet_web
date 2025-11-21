@@ -459,12 +459,23 @@ export const CreatorStreamContent = ({
     }
 
     // Implement API call to update stream info here
+    const scheduledStartTime = formatDateTimeForISO(editForm.startDateObj, editForm.startTime, editForm.timezone);
+    
+    if (!scheduledStartTime && (editForm.startDateObj || editForm.startTime)) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Timezone',
+        description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+      });
+      return;
+    }
+
     const payload = {
       name: editForm.title,
       description: editForm.description,
       embeddedUrl: editForm.embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
-      scheduledStartTime: formatDateTimeForISO(editForm.startDateObj, editForm.startTime, editForm.timezone),
+      scheduledStartTime,
       creatorId: editForm.creatorId,
     };
 

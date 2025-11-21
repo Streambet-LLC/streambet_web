@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { load as nsfwjsLoad } from "nsfwjs";
+import Bugsnag from '@bugsnag/js';
 
 /**
  * @param messageData
@@ -57,19 +58,62 @@ export function getImageLink(url: string | null | undefined, isNotAvatar?: boole
 export function formatDateTimeForISO(date: Date | null, time: string, timezone?: string): string | undefined {
   if (!date || !time) return undefined;
 
-  // Get the timezone to use (provided timezone or user's local timezone)
-  const targetTimezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  try {
+    // Get the timezone to use (provided timezone or user's local timezone)
+    const targetTimezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  // Create a date object with the selected date and time
-  const dateTime = new Date(date);
-  const [hours, minutes] = time.split(':');
-  dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    // Create a date object with the selected date and time
+    const dateTime = new Date(date);
+    const [hours, minutes] = time.split(':');
+    dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-  // Interpret the date/time as if it's in the target timezone, then convert to UTC
-  const zonedDateTime = fromZonedTime(dateTime, targetTimezone);
+    // Interpret the date/time as if it's in the target timezone, then convert to UTC
+    const zonedDateTime = fromZonedTime(dateTime, targetTimezone);
 
-  // Format as ISO 8601 string
-  return zonedDateTime.toISOString();
+    // Critical: Invalid timezone produces Invalid Date
+    if (isNaN(zonedDateTime.getTime())) {
+      const error = new Error(`Invalid timezone conversion: ${targetTimezone}`);
+      
+      // Log to Bugsnag with context for debugging
+      Bugsnag.notify(error, (event) => {
+        event.severity = 'warning';
+        event.context = 'Stream Scheduling';
+        event.addMetadata('timezone', {
+          providedTimezone: timezone,
+          resolvedTimezone: targetTimezone,
+          date: date?.toISOString(),
+          time: time,
+        });
+      });
+      
+      // Log for dev debugging
+      console.error('Invalid timezone conversion:', {
+        timezone: targetTimezone,
+        date,
+        time,
+      });
+      
+      return undefined;
+    }
+
+    // Format as ISO 8601 string
+    return zonedDateTime.toISOString();
+  } catch (error) {
+    // Unexpected errors - critical
+    console.error('Unexpected error formatting date/time for ISO:', error);
+    
+    Bugsnag.notify(error instanceof Error ? error : new Error(String(error)), (event) => {
+      event.severity = 'error';
+      event.context = 'Stream Scheduling';
+      event.addMetadata('input', {
+        date: date?.toISOString(),
+        time,
+        timezone,
+      });
+    });
+    
+    return undefined;
+  }
 };
 
 export function formatTime(dateString: string) {

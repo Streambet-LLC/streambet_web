@@ -1,4 +1,5 @@
 import { formatInTimeZone } from 'date-fns-tz';
+import { TIMEZONES, NORTH_AMERICA_NAMES } from '@/utils/constants';
 
 interface TimezoneOffsetSelectProps {
   value?: string;
@@ -25,68 +26,24 @@ const detectUserTimezone = (): string => {
   }
 };
 
-// Timezone display names for North America
-const NORTH_AMERICA_NAMES = {
-  'America/New_York': 'EST',
-  'America/Chicago': 'CST',
-  'America/Denver': 'MST',
-  'America/Phoenix': 'MST (AZ)',
-  'America/Los_Angeles': 'PST',
-  'America/Anchorage': 'AKST',
-  'Pacific/Honolulu': 'HST',
-};
-
-// Common timezones grouped by region
-const TIMEZONES = [
-  { region: 'North America', zones: [
-    'America/New_York',
-    'America/Chicago',
-    'America/Denver',
-    'America/Phoenix',
-    'America/Los_Angeles',
-    'America/Anchorage',
-    'Pacific/Honolulu',
-  ]},
-  { region: 'Europe', zones: [
-    'Europe/London',
-    'Europe/Paris',
-    'Europe/Berlin',
-    'Europe/Madrid',
-    'Europe/Rome',
-    'Europe/Amsterdam',
-    'Europe/Moscow',
-  ]},
-  { region: 'Asia', zones: [
-    'Asia/Dubai',
-    'Asia/Kolkata',
-    'Asia/Bangkok',
-    'Asia/Singapore',
-    'Asia/Hong_Kong',
-    'Asia/Shanghai',
-    'Asia/Tokyo',
-    'Asia/Seoul',
-  ]},
-  { region: 'Australia & Pacific', zones: [
-    'Australia/Sydney',
-    'Australia/Melbourne',
-    'Australia/Brisbane',
-    'Australia/Perth',
-    'Pacific/Auckland',
-  ]},
-];
-
 export const TimezoneOffsetSelect = ({ value, onChange }: TimezoneOffsetSelectProps) => {
   const userTimezone = detectUserTimezone();
   const selectedTimezone = value || userTimezone;
 
   return (
-    <div className="border-t border-[#3a3a3a] p-2">
-      <span className="text-xs text-white block mb-1">Timezone (optional):</span>
+    <div className="border-t border-border p-2">
+      <label 
+        htmlFor="timezone-select" 
+        className="text-xs text-foreground block mb-1"
+      >
+        Timezone (optional):
+      </label>
       <select
+        id="timezone-select"
+        aria-describedby="timezone-helper-text"
         value={selectedTimezone}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
-        style={{ color: 'white' }}
+        className="w-full bg-muted text-muted-foreground border border-input rounded px-2 py-1 text-sm"
       >
         {TIMEZONES.map((group) => (
           <optgroup key={group.region} label={group.region}>
@@ -105,7 +62,12 @@ export const TimezoneOffsetSelect = ({ value, onChange }: TimezoneOffsetSelectPr
           </optgroup>
         ))}
       </select>
-      <span className="text-[10px] text-[#FFFFFFBF] mt-1 block">
+      <span 
+        id="timezone-helper-text"
+        className="text-[10px] text-muted-foreground/75 mt-1 block"
+        role="status"
+        aria-live="polite"
+      >
         {selectedTimezone === userTimezone
           ? 'Scheduling in your local timezone'
           : `Scheduling in ${selectedTimezone.replace(/_/g, ' ')} timezone`}
