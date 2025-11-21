@@ -185,7 +185,7 @@ export const CreatorManagement = ({
     } else if (!time) {
       return 'Start time is required';
     } else if (!isLiveStream && isScheduledTimeInPast(date, time, timezone)) {
-      return 'Cannot select past time for today';
+      return 'Must be scheduled for a future time';
     }
     return '';
   }
@@ -316,14 +316,9 @@ export const CreatorManagement = ({
       }
     }
 
-    if (!startDateObj) {
-      newErrors.startDate = 'Start date is required';
-      isValid = false;
-    } else if (!startTime) {
-      newErrors.startDate = 'Start time is required';
-      isValid = false;
-    } else if (!isLiveStream && isScheduledTimeInPast(startDateObj, startTime, timezone)) {
-      newErrors.startDate = 'Cannot select past time for today';
+    const dateTimeError = validateStartDateTime(startDateObj, startTime);
+    if (dateTimeError) {
+      newErrors.startDate = dateTimeError;
       isValid = false;
     }
 

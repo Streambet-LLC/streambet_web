@@ -104,7 +104,7 @@ function validateForm(
     newErrors.startDate = 'Start time is required';
     isValid = false;
   } else if (!isLiveStream && isScheduledTimeInPast(startDateObj, startTime, timezone)) {
-    newErrors.startDate = 'Cannot select past time for today';
+    newErrors.startDate = 'Must be scheduled for a future time';
     isValid = false;
   }
 
