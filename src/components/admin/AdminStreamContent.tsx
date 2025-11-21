@@ -270,6 +270,7 @@ export const AdminStreamContent = ({
     thumbnailPreviewUrl: '',
     startDateObj: null,
     startTime: '',
+    timezone: undefined,
     streamId: '',
     creatorId: null,
   });
@@ -333,6 +334,7 @@ export const AdminStreamContent = ({
         startTime: dateObj
           ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
           : '',
+        timezone: undefined,
         streamId: streamInfo.id || '',
         creatorId: streamInfo.creatorId,
       });
@@ -381,6 +383,11 @@ export const AdminStreamContent = ({
   // Function to set time of stream start date
   const handleEditStartTimeChange = e => {
     setEditForm(prev => ({ ...prev, startTime: e.target.value }));
+  };
+
+  // Function to set timezone
+  const handleEditTimezoneOffsetChange = tz => {
+    setEditForm(prev => ({ ...prev, timezone: tz }));
   };
 
   const createStreamMutation = useMutation({
@@ -460,7 +467,7 @@ export const AdminStreamContent = ({
       description: editForm.description,
       embeddedUrl: editForm.embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
-      scheduledStartTime: formatDateTimeForISO(editForm.startDateObj, editForm.startTime),
+      scheduledStartTime: formatDateTimeForISO(editForm.startDateObj, editForm.startTime, editForm.timezone),
       creatorId: editForm.creatorId,
     };
 
@@ -637,6 +644,7 @@ export const AdminStreamContent = ({
                     onDeleteThumbnail={handleEditDeleteThumbnail}
                     onStartDateChange={handleEditStartDateChange}
                     onStartTimeChange={handleEditStartTimeChange}
+                    onTimezoneOffsetChange={handleEditTimezoneOffsetChange}
                     onChangeEventType={val => setEventType(val)}
                   />
                 </div>

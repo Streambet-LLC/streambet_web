@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { load as nsfwjsLoad } from "nsfwjs";
 
 /**
@@ -53,16 +54,22 @@ export function getImageLink(url: string | null | undefined, isNotAvatar?: boole
         : '/avatar_placeholder_large.png';
 };
 
-export function formatDateTimeForISO(date: Date | null, time: string): string | undefined {
+export function formatDateTimeForISO(date: Date | null, time: string, timezone?: string): string | undefined {
   if (!date || !time) return undefined;
 
-  // Create a new date object with the selected date and time
+  // Get the timezone to use (provided timezone or user's local timezone)
+  const targetTimezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Create a date object with the selected date and time
   const dateTime = new Date(date);
   const [hours, minutes] = time.split(':');
   dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
+  // Interpret the date/time as if it's in the target timezone, then convert to UTC
+  const zonedDateTime = fromZonedTime(dateTime, targetTimezone);
+
   // Format as ISO 8601 string
-  return dateTime.toISOString();
+  return zonedDateTime.toISOString();
 };
 
 export function formatTime(dateString: string) {

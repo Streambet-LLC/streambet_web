@@ -7,6 +7,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, X as XIcon, Loader2 } from 'lucide-react';
 import { CopyableInput } from '../ui/CopyableInput';
 import { CharacterCounter, CharacterWordCounter } from '@/components/ui/TextCounter';
+import { TimezoneOffsetSelect } from '@/components/ui/TimezoneOffsetSelect';
 import { getImageLink, checkTextLimits } from '@/utils/helper';
 import { STREAM_LIMITS } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +26,7 @@ interface StreamInfoFormProps {
     thumbnailPreviewUrl?: string;
     startDateObj: Date | null;
     startTime: string;
+    timezone?: string;
     streamId?: string;
     bettingRoundStatus?: BettingRoundStatus;
     eventType: { value: string; label: string };
@@ -46,6 +48,7 @@ interface StreamInfoFormProps {
   onChangeEventType: ({ value, label }) => void;
   onStartDateChange: (date: Date | null) => void;
   onStartTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTimezoneOffsetChange: (timezone: string) => void;
 }
 
 // Helper to format 24-hour time string to 12-hour format with AM/PM
@@ -71,6 +74,7 @@ export const StreamInfoForm = ({
   onDeleteThumbnail,
   onStartDateChange,
   onStartTimeChange,
+  onTimezoneOffsetChange,
   onChangeEventType,
 }: StreamInfoFormProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -398,6 +402,10 @@ export const StreamInfoForm = ({
                 style={{ color: 'white' }}
               />
             </div>
+            <TimezoneOffsetSelect
+              value={initialValues.timezone}
+              onChange={onTimezoneOffsetChange}
+            />
           </PopoverContent>
         </Popover>
         {errors.startDate && (

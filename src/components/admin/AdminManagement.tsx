@@ -155,6 +155,7 @@ export const AdminManagement = ({
     startDate: '',
   });
   const [startTime, setStartTime] = useState('');
+  const [timezone, setTimezone] = useState<string | undefined>(undefined);
   const [eventType, setEventType] = useState({
     value: 'stream',
     label: 'Livestream',
@@ -225,6 +226,10 @@ export const AdminManagement = ({
     setStartTime(newTime);
   };
 
+  const handleTimezoneChange = (tz: string) => {
+    setTimezone(tz);
+  };
+
   function resetForm() {
     // Reset text inputs
     setTitle('');
@@ -235,6 +240,7 @@ export const AdminManagement = ({
     // Reset dates and times
     setStartDateObj(null);
     setStartTime('');
+    setTimezone(undefined);
 
     // Reset thumbnail related states
     setSelectedThumbnailFile(null);
@@ -719,7 +725,7 @@ export const AdminManagement = ({
       description,
       embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
-      scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
+      scheduledStartTime: formatDateTimeForISO(startDateObj, startTime, timezone),
       creatorId,
       ...(!editStreamId && { type: eventType.value }),
     };
@@ -1108,6 +1114,7 @@ export const AdminManagement = ({
                       thumbnailPreviewUrl,
                       startDateObj,
                       startTime,
+                      timezone,
                       streamId: editStreamId || undefined,
                       bettingRoundStatus: streamData?.bettingRoundStatus || undefined,
                       creatorId,
@@ -1188,6 +1195,7 @@ export const AdminManagement = ({
                     onDeleteThumbnail={handleDeleteThumbnail}
                     onStartDateChange={handleStartDateChange}
                     onStartTimeChange={handleStartTimeChange}
+                    onTimezoneOffsetChange={handleTimezoneChange}
                     onChangeEventType={val => setEventType(val)}
                   />
                 )}
