@@ -440,7 +440,6 @@ export const AdminStreamContent = ({
       }
     }
 
-    // Implement API call to update stream info here
     const scheduledStartTime = formatDateTimeForISO(editForm.startDateObj, editForm.startTime, editForm.timezone);
     
     if (!scheduledStartTime && editForm.startDateObj && editForm.startTime) {
@@ -452,6 +451,7 @@ export const AdminStreamContent = ({
       return;
     }
 
+    // Implement API call to update stream info here
     const payload = {
       name: editForm.title,
       description: editForm.description,
