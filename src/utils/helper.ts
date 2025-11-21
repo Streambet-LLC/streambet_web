@@ -116,6 +116,24 @@ export function formatDateTimeForISO(date: Date | null, time: string, timezone?:
   }
 };
 
+/**
+ * Validates if a scheduled date/time is in the past after timezone conversion
+ * @param date - The selected date
+ * @param time - The selected time in HH:MM format
+ * @param timezone - The IANA timezone identifier (e.g., 'America/New_York')
+ * @returns true if the scheduled time is in the past, false otherwise
+ */
+export function isScheduledTimeInPast(date: Date | null, time: string, timezone: string): boolean {
+  if (!date || !time) return false;
+  
+  // Use formatDateTimeForISO to get the UTC timestamp
+  const scheduledTimeISO = formatDateTimeForISO(date, time, timezone);
+  if (!scheduledTimeISO) return false; // Invalid timezone, will be caught by other validation
+  
+  // Compare UTC timestamps - scheduled time must be in the future
+  return new Date(scheduledTimeISO) <= new Date();
+}
+
 export function formatTime(dateString: string) {
   const date = new Date(dateString);
   const time = format(date, 'h:mm a');

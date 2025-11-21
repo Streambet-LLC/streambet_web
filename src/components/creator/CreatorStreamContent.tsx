@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   formatDateTime,
   formatDateTimeForISO,
+  isScheduledTimeInPast,
   getMessage,
   getConnectionErrorMessage,
   getImageLink,
@@ -54,31 +55,9 @@ function parseLocalDate(dateStr) {
   return new Date(year, month - 1, day);
 }
 
-// Helper to check if a date is today
-function isToday(date) {
-  if (!date) return false;
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
-}
-
-// Helper to check if a time is valid for today
-function isTimeValid(time, date) {
-  if (!date || !time) return true;
-  if (!isToday(date)) return true;
-  const [hours, minutes] = time.split(':').map(Number);
-  const now = new Date();
-  const selectedTime = new Date(date);
-  selectedTime.setHours(hours, minutes);
-  return selectedTime > now;
-}
-
 // Validation function for stream settings form
 function validateForm(
-  { title, description, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime },
+  { title, description, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime, timezone },
   selectedThumbnailFile,
   isLiveStream,
   eventType
@@ -129,7 +108,7 @@ function validateForm(
   } else if (!startTime) {
     newErrors.startDate = 'Start time is required';
     isValid = false;
-  } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+  } else if (!isLiveStream && isScheduledTimeInPast(startDateObj, startTime, timezone)) {
     newErrors.startDate = 'Cannot select past time for today';
     isValid = false;
   }

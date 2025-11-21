@@ -11,7 +11,7 @@ import api, { adminAPI } from '@/integrations/api/client';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { formatDateTimeForISO, getImageLink, getMessage, isImageSFW } from '@/utils/helper';
+import { formatDateTimeForISO, getImageLink, getMessage, isImageSFW, isScheduledTimeInPast } from '@/utils/helper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -181,36 +181,13 @@ export const AdminManagement = ({
   const startDateRef = useRef<HTMLButtonElement>(null);
   const thumbnailRef = useRef<HTMLDivElement>(null);
 
-  // Add new helper functions for time validation
-  const isToday = (date: Date | null) => {
-    if (!date) return false;
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  };
-
-  const isTimeValid = (time: string, date: Date | null) => {
-    if (!date || !time) return true;
-    if (!isToday(date)) return true;
-
-    const [hours, minutes] = time.split(':').map(Number);
-    const now = new Date();
-    const selectedTime = new Date(date);
-    selectedTime.setHours(hours, minutes);
-
-    return selectedTime > now;
-  };
-
   // Extracted validation for start date and time
   function validateStartDateTime(date: Date | null, time: string): string {
     if (!date) {
       return 'Start date is required';
     } else if (!time) {
       return 'Start time is required';
-    } else if (!isLiveStream && isToday(date) && !isTimeValid(time, date)) {
+    } else if (!isLiveStream && isScheduledTimeInPast(date, time, timezone)) {
       return 'Cannot select past time for today';
     }
     return '';
@@ -348,7 +325,7 @@ export const AdminManagement = ({
     } else if (!startTime) {
       newErrors.startDate = 'Start time is required';
       isValid = false;
-    } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
+    } else if (!isLiveStream && isScheduledTimeInPast(startDateObj, startTime, timezone)) {
       newErrors.startDate = 'Cannot select past time for today';
       isValid = false;
     }
