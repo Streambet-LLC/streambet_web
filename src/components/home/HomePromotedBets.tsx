@@ -46,8 +46,7 @@ export default function HomePromotedBets() {
 
   return (
     <>
-      <div className="text-2xl font-bold pl-2">Featured Streams</div>
-      <div className="rounded-lg p-6 -mx-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#BDFF00]/20 via-zinc-900 via-40% to-background">
+      <div className="p-6 -mx-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#BDFF00]/20 via-zinc-900 via-40% to-background">
         <Carousel 
           className="flex-1 w-full"
           opts={{
@@ -92,12 +91,12 @@ export default function HomePromotedBets() {
           </CarouselContent>
           <div className="flex items-center justify-between pt-4">
             <CarouselPrevious
-              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
+              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-[#BDFF00]"
               size="lg"
             />
             <CarouselDots className="relative" />
             <CarouselNext
-              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
+              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-[#BDFF00]"
               size="lg"
             />
           </div>
