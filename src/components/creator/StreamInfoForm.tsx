@@ -8,7 +8,7 @@ import { Calendar as CalendarIcon, X as XIcon, Loader2 } from 'lucide-react';
 import { CopyableInput } from '../ui/CopyableInput';
 import { CharacterCounter, CharacterWordCounter } from '@/components/ui/TextCounter';
 import { TimezoneOffsetSelect } from '@/components/ui/TimezoneOffsetSelect';
-import { getImageLink, checkTextLimits } from '@/utils/helper';
+import { getImageLink, checkTextLimits, getTimezoneAbbreviation } from '@/utils/helper';
 import { STREAM_LIMITS } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus } from '@/enums';
@@ -328,6 +328,12 @@ export const StreamInfoForm = ({
       {/* Start date */}
       <div>
         <Label className="text-white font-light mb-3 block">Start date & time</Label>
+        {isEdit && (
+          <p className="text-sm text-muted-foreground mb-2">
+            Note: When editing, the actual scheduled time is converted and displayed in your current timezone.
+            If editing the time, verify correct timezone is set before saving.
+          </p>
+        )}
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -357,6 +363,12 @@ export const StreamInfoForm = ({
                   ? initialValues.startDateObj.toLocaleDateString() +
                     (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '')
                   : 'Pick a date & time'}
+                {initialValues.startDateObj && initialValues.startTime && initialValues.timezone && (
+                  <>
+                    {' '}
+                    ({getTimezoneAbbreviation(initialValues.timezone, initialValues.startDateObj)})
+                  </>
+                )}
               </span>
               {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
                 <button

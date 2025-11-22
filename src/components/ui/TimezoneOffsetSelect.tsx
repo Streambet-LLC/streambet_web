@@ -43,7 +43,7 @@ export const TimezoneOffsetSelect = ({ value, onChange }: TimezoneOffsetSelectPr
         aria-describedby="timezone-helper-text"
         value={selectedTimezone}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-muted text-muted-foreground border border-input rounded px-2 py-1 text-sm"
+        className="w-full bg-[#272727] text-white border border-input rounded px-2 py-1 text-sm"
       >
         {TIMEZONES.map((group) => (
           <optgroup key={group.region} label={group.region}>
@@ -64,7 +64,7 @@ export const TimezoneOffsetSelect = ({ value, onChange }: TimezoneOffsetSelectPr
       </select>
       <span 
         id="timezone-helper-text"
-        className="text-[10px] text-muted-foreground/75 mt-1 block"
+        className="text-xs text-muted-foreground/75 mt-1 block"
         role="status"
         aria-live="polite"
       >

@@ -134,6 +134,30 @@ export function isScheduledTimeInPast(date: Date | null, time: string, timezone:
   return new Date(scheduledTimeISO) <= new Date();
 }
 
+/**
+ * Get timezone abbreviation for a given timezone and date
+ * @param timezone - IANA timezone identifier (e.g., 'America/New_York')
+ * @param date - Date object to check for DST
+ * @returns Timezone abbreviation (e.g., 'EST', 'EDT', 'MST')
+ */
+export function getTimezoneAbbreviation(timezone: string, date: Date | null = null): string {
+  if (!timezone) return '';
+  
+  try {
+    const targetDate = date || new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'short'
+    });
+    
+    const parts = formatter.formatToParts(targetDate);
+    const timeZonePart = parts.find(part => part.type === 'timeZoneName');
+    return timeZonePart?.value || '';
+  } catch {
+    return '';
+  }
+}
+
 export function formatTime(dateString: string) {
   const date = new Date(dateString);
   const time = format(date, 'h:mm a');
