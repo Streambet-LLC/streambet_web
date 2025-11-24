@@ -84,6 +84,7 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
   const menuItems = [
     (session?.role === 'admin' || session?.role === 'creator') && { label: 'Dashboard', icon: undefined, path: session?.role === 'admin' ? '/admin' : '/creator' },
     { label: 'Home', icon: undefined, path: '/' },
+    { label: 'Creators', icon: undefined, path: '/creators' },
     // { label: 'Streams', icon: undefined, path: '/stream' },
     // { label: 'Rewards', icon: undefined, path: '/rewards' },
     // { label: 'Community', icon: undefined, path: '/community' },

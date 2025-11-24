@@ -321,6 +321,11 @@ export const userAPI = {
     const response = await apiClient.patch('/users/notification-settings', preferences);
     return response.data;
   },
+
+  getCreators: async () => {
+    const response = await apiClient.get('/users/creators');
+    return response.data;
+  },
 };
 
 // Wallet API
@@ -550,6 +555,16 @@ export const betsAPI = {
 
     const { page } = params;
     const { data: response } = await apiClient.get(`/stream/displayed-bets`, {
+      params
+    });
+
+    return response.data
+  },
+
+  getCreatorProfileNonVideoBets: async (params?: any) => {
+
+    const { page } = params;
+    const { data: response } = await apiClient.get(`/stream/creator-non-video-bets`, {
       params
     });
 
