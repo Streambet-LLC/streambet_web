@@ -1944,6 +1944,56 @@ export const SUPPORTED_COUNTRIES = [
   "US",
 ];
 
+// Timezone display names for North America
+export const NORTH_AMERICA_NAMES = {
+  'America/New_York': 'EST',
+  'America/Chicago': 'CST',
+  'America/Denver': 'MST',
+  'America/Phoenix': 'MST (AZ)',
+  'America/Los_Angeles': 'PST',
+  'America/Anchorage': 'AKST',
+  'Pacific/Honolulu': 'HST',
+};
+
+// Common timezones grouped by region
+export const TIMEZONES = [
+  { region: 'North America', zones: [
+    'America/New_York',
+    'America/Chicago',
+    'America/Denver',
+    'America/Phoenix',
+    'America/Los_Angeles',
+    'America/Anchorage',
+    'Pacific/Honolulu',
+  ]},
+  { region: 'Europe', zones: [
+    'Europe/London',
+    'Europe/Paris',
+    'Europe/Berlin',
+    'Europe/Madrid',
+    'Europe/Rome',
+    'Europe/Amsterdam',
+    'Europe/Moscow',
+  ]},
+  { region: 'Asia', zones: [
+    'Asia/Dubai',
+    'Asia/Kolkata',
+    'Asia/Bangkok',
+    'Asia/Singapore',
+    'Asia/Hong_Kong',
+    'Asia/Shanghai',
+    'Asia/Tokyo',
+    'Asia/Seoul',
+  ]},
+  { region: 'Australia & Pacific', zones: [
+    'Australia/Sydney',
+    'Australia/Melbourne',
+    'Australia/Brisbane',
+    'Australia/Perth',
+    'Pacific/Auckland',
+  ]},
+];
+
 // Preset betting percentages (smallest to largest)
 export const PRESET_PERCENTAGES = [0.1, 0.3, 0.5, 1.0] as const; // 10%, 30%, 50%, 100%
 
