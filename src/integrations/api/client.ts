@@ -556,6 +556,16 @@ export const betsAPI = {
     return response.data
   },
 
+  getCreatorProfileNonVideoBets: async (params?: any) => {
+
+    const { page } = params;
+    const { data: response } = await apiClient.get(`/stream/creator-non-video-bets`, {
+      params
+    });
+
+    return response.data
+  },
+
   getUpcomingBets: async (params?: any) => {
 
     const { page } = params;
