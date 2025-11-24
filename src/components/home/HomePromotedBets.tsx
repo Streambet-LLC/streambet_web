@@ -46,41 +46,62 @@ export default function HomePromotedBets() {
 
   return (
     <>
-      <div className="text-2xl font-bold pl-2">Featured Streams</div>
-      <Carousel className="flex-1 w-full">
-        <CarouselContent className="flex-1">
-          {isLoading ? (
-            <Skeleton className="flex-1 w-full h-64 rounded-none" />
-          ) : (
-            sortedData?.map((bet, i) => (
-              <CarouselItem key={i}>
-                <BetCard
-                  {...bet}
-                  setQuickPick={(streamId, roundId, streamName) => {
-                    setQuickPickModalSettings({
-                      streamId,
-                      streamName,
-                      roundId,
-                    });
-                    setQuickPickOpen(true);
-                  }}
-                />
-              </CarouselItem>
-            ))
-          )}
-        </CarouselContent>
-        <div className="flex items-center justify-between pt-4">
-          <CarouselPrevious
-            className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
-            size="lg"
-          />
-          <CarouselDots className="relative" />
-          <CarouselNext
-            className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
-            size="lg"
-          />
-        </div>
-      </Carousel>
+      <div className="p-6 -mx-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#BDFF00]/20 via-zinc-900 via-40% to-background">
+        <Carousel 
+          className="flex-1 w-full"
+          opts={{
+            align: 'start',
+            loop: false,
+            slidesToScroll: 1,
+            containScroll: 'trimSnaps'
+          }}
+        >
+          <CarouselContent className="flex-1">
+            {isLoading ? (
+              <>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <CarouselItem 
+                    key={i}
+                    className="basis-full md:basis-1/2 lg:basis-1/3 pl-4"
+                  >
+                    <Skeleton className="w-full h-64 rounded-lg" />
+                  </CarouselItem>
+                ))}
+              </>
+            ) : (
+              sortedData?.map((bet) => (
+                <CarouselItem 
+                  key={bet.roundId}
+                  className="basis-full md:basis-1/2 lg:basis-1/3 pl-4"
+                >
+                  <BetCard
+                    {...bet}
+                    setQuickPick={(streamId, roundId, streamName) => {
+                      setQuickPickModalSettings({
+                        streamId,
+                        streamName,
+                        roundId,
+                      });
+                      setQuickPickOpen(true);
+                    }}
+                  />
+                </CarouselItem>
+              ))
+            )}
+          </CarouselContent>
+          <div className="flex items-center justify-between pt-4">
+            <CarouselPrevious
+              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-[#BDFF00]"
+              size="lg"
+            />
+            <CarouselDots className="relative" />
+            <CarouselNext
+              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-[#BDFF00]"
+              size="lg"
+            />
+          </div>
+        </Carousel>
+      </div>
       {quickPickOpen && (
         <QuickPickModal
           open={quickPickOpen}
