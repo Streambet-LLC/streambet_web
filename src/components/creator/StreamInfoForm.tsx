@@ -4,7 +4,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Calendar as CalendarIcon, X as XIcon, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, X as XIcon, Loader2, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CopyableInput } from '../ui/CopyableInput';
 import { CharacterCounter, CharacterWordCounter } from '@/components/ui/TextCounter';
 import { TimezoneOffsetSelect } from '@/components/ui/TimezoneOffsetSelect';
@@ -115,7 +116,28 @@ export const StreamInfoForm = ({
       }}
     >
       <div>
-        <Label className="text-white font-light mb-3 block">Event Type</Label>
+        <div className="flex items-center gap-2 mb-3">
+          <Label className="text-white font-light">Event Type</Label>
+          <TooltipProvider delayDuration={Infinity}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" className="focus:outline-none">
+                  <Info className="w-4 h-4 text-[#606060] hover:text-[#BDFF00] cursor-pointer transition-colors" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <span className="font-semibold">Livestream:</span> Select if you're casting live video to Streambet from platforms like Twitch, Kick, or YouTube.
+                  </p>
+                  <p>
+                    <span className="font-semibold">Non Video:</span> Select for events that don't require live video streaming or if you're streaming elsewhere.
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <Select
           isDisabled={isEdit}
           options={[
