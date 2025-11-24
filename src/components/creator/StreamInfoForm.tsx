@@ -118,11 +118,11 @@ export const StreamInfoForm = ({
       <div>
         <div className="flex items-center gap-2 mb-3">
           <Label className="text-white font-light">Event Type</Label>
-          <TooltipProvider delayDuration={Infinity}>
+          <TooltipProvider delayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button type="button" className="focus:outline-none">
-                  <Info className="w-4 h-4 text-[#606060] hover:text-[#BDFF00] cursor-pointer transition-colors" />
+                <button type="button" className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded" aria-label="Event type information">
+                  <Info className="w-4 h-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors" aria-hidden="true" />
                 </button>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
