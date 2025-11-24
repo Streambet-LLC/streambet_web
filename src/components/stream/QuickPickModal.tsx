@@ -11,6 +11,7 @@ import { useQuickPickModal } from '@/hooks/useQuickPickModal';
 import { transformForBetTokens, transformForLockTokens } from '@/utils/bettingTransformers';
 import { SignInPrompt, NoBettingData } from './QuickPickModalComponents';
 import { useToast } from '@/hooks/use-toast';
+import { Info } from 'lucide-react';
 
 interface QuickPickModalProps {
   open: boolean;
@@ -158,6 +159,22 @@ export const QuickPickModal = React.memo(
               socket={socketConnect}
               lockedBet={userBet.isLocked}
             />
+          )}
+
+          {/* Payout Disclaimer - Only shown when betting is active */}
+          {activeRound && hasActiveBetting && (
+            <div className="mt-4 pt-4 border-t border-[#2C2C2C]">
+              <div className="flex items-start gap-2 px-4">
+                <Info className="w-4 h-4 text-[#BDFF00] flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-[#606060] leading-relaxed">
+                  <span className="font-semibold text-[#D7DFEF]">How payouts work: </span> 
+                  When you win, you receive a share of the losing pool. 
+                  Your share is proportional to how much you wager compared to other winners. 
+                  Example: You wager 100 of 500 total winning wagers (20%) → you get 20% of the losing pool. 
+                  Max payout: 4x your wager.
+                </p>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
