@@ -113,7 +113,7 @@ export default function Profile() {
                                 className="text-muted-foreground hover:text-foreground transition-colors"
                                 title={social}
                               >
-                                {profileSocial}
+                                {socialsMapping[social].label}
                               </a>
                               {isJoshCapoInstagram && (
                                 <span className="text-muted-foreground"> &lt;-- Live Here</span>
