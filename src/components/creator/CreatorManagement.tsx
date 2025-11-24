@@ -10,7 +10,7 @@ import api, { adminAPI, creatorAPI } from '@/integrations/api/client';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { formatDateTimeForISO, getImageLink, getMessage, isImageSFW } from '@/utils/helper';
+import { formatDateTimeForISO, getImageLink, getMessage, isImageSFW, isScheduledTimeInPast } from '@/utils/helper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -152,6 +152,7 @@ export const CreatorManagement = ({
     startDate: '',
   });
   const [startTime, setStartTime] = useState('');
+  const [timezone, setTimezone] = useState<string | undefined>(undefined);
   const [eventType, setEventType] = useState({
     value: 'stream',
     label: 'Livestream',
@@ -177,37 +178,14 @@ export const CreatorManagement = ({
   const startDateRef = useRef<HTMLButtonElement>(null);
   const thumbnailRef = useRef<HTMLDivElement>(null);
 
-  // Add new helper functions for time validation
-  const isToday = (date: Date | null) => {
-    if (!date) return false;
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  };
-
-  const isTimeValid = (time: string, date: Date | null) => {
-    if (!date || !time) return true;
-    if (!isToday(date)) return true;
-
-    const [hours, minutes] = time.split(':').map(Number);
-    const now = new Date();
-    const selectedTime = new Date(date);
-    selectedTime.setHours(hours, minutes);
-
-    return selectedTime > now;
-  };
-
   // Extracted validation for start date and time
   function validateStartDateTime(date: Date | null, time: string): string {
     if (!date) {
       return 'Start date is required';
     } else if (!time) {
       return 'Start time is required';
-    } else if (!isLiveStream && isToday(date) && !isTimeValid(time, date)) {
-      return 'Cannot select past time for today';
+    } else if (!isLiveStream && isScheduledTimeInPast(date, time, timezone)) {
+      return 'Must be scheduled for a future time';
     }
     return '';
   }
@@ -222,6 +200,10 @@ export const CreatorManagement = ({
     setStartTime(newTime);
   };
 
+  const handleTimezoneChange = (tz: string) => {
+    setTimezone(tz);
+  };
+
   function resetForm() {
     // Reset text inputs
     setTitle('');
@@ -232,6 +214,7 @@ export const CreatorManagement = ({
     // Reset dates and times
     setStartDateObj(null);
     setStartTime('');
+    setTimezone(undefined);
 
     // Reset thumbnail related states
     setSelectedThumbnailFile(null);
@@ -333,14 +316,9 @@ export const CreatorManagement = ({
       }
     }
 
-    if (!startDateObj) {
-      newErrors.startDate = 'Start date is required';
-      isValid = false;
-    } else if (!startTime) {
-      newErrors.startDate = 'Start time is required';
-      isValid = false;
-    } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
-      newErrors.startDate = 'Cannot select past time for today';
+    const dateTimeError = validateStartDateTime(startDateObj, startTime);
+    if (dateTimeError) {
+      newErrors.startDate = dateTimeError;
       isValid = false;
     }
 
@@ -711,12 +689,23 @@ export const CreatorManagement = ({
       }
     }
 
+    const scheduledStartTime = formatDateTimeForISO(startDateObj, startTime, timezone);
+    
+    if (!scheduledStartTime && startDateObj && startTime) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Timezone',
+        description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+      });
+      return;
+    }
+
     const payload = {
       name: title,
       description,
       embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
-      scheduledStartTime: formatDateTimeForISO(startDateObj, startTime),
+      scheduledStartTime,
       creatorId,
       ...(!editStreamId && { type: eventType.value }),
     };
@@ -1105,6 +1094,7 @@ export const CreatorManagement = ({
                       thumbnailPreviewUrl,
                       startDateObj,
                       startTime,
+                      timezone,
                       streamId: editStreamId || undefined,
                       bettingRoundStatus: streamData?.bettingRoundStatus || undefined,
                       eventType,
@@ -1177,6 +1167,7 @@ export const CreatorManagement = ({
                     onDeleteThumbnail={handleDeleteThumbnail}
                     onStartDateChange={handleStartDateChange}
                     onStartTimeChange={handleStartTimeChange}
+                    onTimezoneOffsetChange={handleTimezoneChange}
                     onChangeEventType={val => setEventType(val)}
                   />
                 )}

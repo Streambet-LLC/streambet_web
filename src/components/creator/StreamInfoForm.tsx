@@ -7,7 +7,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, X as XIcon, Loader2 } from 'lucide-react';
 import { CopyableInput } from '../ui/CopyableInput';
 import { CharacterCounter, CharacterWordCounter } from '@/components/ui/TextCounter';
-import { getImageLink, checkTextLimits } from '@/utils/helper';
+import { TimezoneOffsetSelect } from '@/components/ui/TimezoneOffsetSelect';
+import { getImageLink, checkTextLimits, getTimezoneAbbreviation } from '@/utils/helper';
 import { STREAM_LIMITS } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus } from '@/enums';
@@ -25,6 +26,7 @@ interface StreamInfoFormProps {
     thumbnailPreviewUrl?: string;
     startDateObj: Date | null;
     startTime: string;
+    timezone?: string;
     streamId?: string;
     bettingRoundStatus?: BettingRoundStatus;
     eventType: { value: string; label: string };
@@ -46,6 +48,7 @@ interface StreamInfoFormProps {
   onChangeEventType: ({ value, label }) => void;
   onStartDateChange: (date: Date | null) => void;
   onStartTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTimezoneOffsetChange: (timezone: string) => void;
 }
 
 // Helper to format 24-hour time string to 12-hour format with AM/PM
@@ -71,6 +74,7 @@ export const StreamInfoForm = ({
   onDeleteThumbnail,
   onStartDateChange,
   onStartTimeChange,
+  onTimezoneOffsetChange,
   onChangeEventType,
 }: StreamInfoFormProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -324,6 +328,12 @@ export const StreamInfoForm = ({
       {/* Start date */}
       <div>
         <Label className="text-white font-light mb-3 block">Start date & time</Label>
+        {isEdit && (
+          <p className="text-sm text-muted-foreground mb-2">
+            Note: When editing, the actual scheduled time is converted and displayed in your current timezone.
+            If editing the time, verify correct timezone is set before saving.
+          </p>
+        )}
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -353,6 +363,12 @@ export const StreamInfoForm = ({
                   ? initialValues.startDateObj.toLocaleDateString() +
                     (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '')
                   : 'Pick a date & time'}
+                {initialValues.startDateObj && initialValues.startTime && initialValues.timezone && (
+                  <>
+                    {' '}
+                    ({getTimezoneAbbreviation(initialValues.timezone, initialValues.startDateObj)})
+                  </>
+                )}
               </span>
               {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
                 <button
@@ -398,6 +414,10 @@ export const StreamInfoForm = ({
                 style={{ color: 'white' }}
               />
             </div>
+            <TimezoneOffsetSelect
+              value={initialValues.timezone}
+              onChange={onTimezoneOffsetChange}
+            />
           </PopoverContent>
         </Popover>
         {errors.startDate && (

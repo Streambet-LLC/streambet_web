@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   formatDateTime,
   formatDateTimeForISO,
+  isScheduledTimeInPast,
   getMessage,
   getConnectionErrorMessage,
   getImageLink,
@@ -54,31 +55,9 @@ function parseLocalDate(dateStr) {
   return new Date(year, month - 1, day);
 }
 
-// Helper to check if a date is today
-function isToday(date) {
-  if (!date) return false;
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
-}
-
-// Helper to check if a time is valid for today
-function isTimeValid(time, date) {
-  if (!date || !time) return true;
-  if (!isToday(date)) return true;
-  const [hours, minutes] = time.split(':').map(Number);
-  const now = new Date();
-  const selectedTime = new Date(date);
-  selectedTime.setHours(hours, minutes);
-  return selectedTime > now;
-}
-
 // Validation function for stream settings form
 function validateForm(
-  { title, description, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime },
+  { title, description, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime, timezone },
   selectedThumbnailFile,
   isLiveStream,
   eventType
@@ -124,8 +103,8 @@ function validateForm(
   } else if (!startTime) {
     newErrors.startDate = 'Start time is required';
     isValid = false;
-  } else if (!isLiveStream && isToday(startDateObj) && !isTimeValid(startTime, startDateObj)) {
-    newErrors.startDate = 'Cannot select past time for today';
+  } else if (!isLiveStream && isScheduledTimeInPast(startDateObj, startTime, timezone)) {
+    newErrors.startDate = 'Must be scheduled for a future time';
     isValid = false;
   }
 
@@ -270,6 +249,7 @@ export const AdminStreamContent = ({
     thumbnailPreviewUrl: '',
     startDateObj: null,
     startTime: '',
+    timezone: undefined,
     streamId: '',
     creatorId: null,
   });
@@ -333,6 +313,7 @@ export const AdminStreamContent = ({
         startTime: dateObj
           ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
           : '',
+        timezone: undefined,
         streamId: streamInfo.id || '',
         creatorId: streamInfo.creatorId,
       });
@@ -381,6 +362,11 @@ export const AdminStreamContent = ({
   // Function to set time of stream start date
   const handleEditStartTimeChange = e => {
     setEditForm(prev => ({ ...prev, startTime: e.target.value }));
+  };
+
+  // Function to set timezone
+  const handleEditTimezoneOffsetChange = tz => {
+    setEditForm(prev => ({ ...prev, timezone: tz }));
   };
 
   const createStreamMutation = useMutation({
@@ -454,13 +440,24 @@ export const AdminStreamContent = ({
       }
     }
 
+    const scheduledStartTime = formatDateTimeForISO(editForm.startDateObj, editForm.startTime, editForm.timezone);
+    
+    if (!scheduledStartTime && editForm.startDateObj && editForm.startTime) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Timezone',
+        description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+      });
+      return;
+    }
+
     // Implement API call to update stream info here
     const payload = {
       name: editForm.title,
       description: editForm.description,
       embeddedUrl: editForm.embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
-      scheduledStartTime: formatDateTimeForISO(editForm.startDateObj, editForm.startTime),
+      scheduledStartTime,
       creatorId: editForm.creatorId,
     };
 
@@ -637,6 +634,7 @@ export const AdminStreamContent = ({
                     onDeleteThumbnail={handleEditDeleteThumbnail}
                     onStartDateChange={handleEditStartDateChange}
                     onStartTimeChange={handleEditStartTimeChange}
+                    onTimezoneOffsetChange={handleEditTimezoneOffsetChange}
                     onChangeEventType={val => setEventType(val)}
                   />
                 </div>
