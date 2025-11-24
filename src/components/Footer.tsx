@@ -4,8 +4,8 @@ import { FaDiscord } from 'react-icons/fa';
 
 export const Footer = () => {
   return (
-    <footer className="bg-background border-t border-border mt-16">
-      <div className="container py-8 px-4">
+    <footer className="bg-background mt-auto pt-16">
+      <div className="container py-8 px-4 border-t border-border">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">

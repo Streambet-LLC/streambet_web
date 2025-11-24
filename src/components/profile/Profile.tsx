@@ -70,7 +70,7 @@ export default function Profile() {
         {!profile ? (
           <NotFound />
         ) : (
-          <MainLayout>
+          <MainLayout showFooter>
             <div className="flex flex-col gap-4">
               <div
                 className={cn('flex flex-col gap-4', !profile.isCreator && 'max-w-[584px] mx-auto')}
@@ -129,11 +129,6 @@ export default function Profile() {
                 <div className="flex flex-col gap-12 mt-6 font-semibold pb-32">
                   <ProfileLiveUpcomingStreams username={username} />
                   <ProfilePastStreams username={username} />
-                </div>
-              )}
-              {!profile.isCreator && (
-                <div className="mt-auto">
-                  <Footer />
                 </div>
               )}
             </div>
