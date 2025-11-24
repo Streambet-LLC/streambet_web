@@ -12,6 +12,7 @@ import ProfileLiveUpcomingStreams from './ProfileLiveUpcomingStreams';
 import { getImageLink } from '@/utils/helper';
 import ProfilePastStreams from './ProfilePastStreams';
 import { Footer } from '../Footer';
+import ProfileLiveUpcomingNonVideoBets from './ProfileLiveUpcomingNonVideoBets';
 
 const socialsMapping = {
   instagram: {
@@ -70,7 +71,7 @@ export default function Profile() {
         {!profile ? (
           <NotFound />
         ) : (
-          <MainLayout>
+          <MainLayout showFooter>
             <div className="flex flex-col gap-4">
               <div
                 className={cn('flex flex-col gap-4', !profile.isCreator && 'max-w-[584px] mx-auto')}
@@ -112,7 +113,7 @@ export default function Profile() {
                                 className="text-muted-foreground hover:text-foreground transition-colors"
                                 title={social}
                               >
-                                {profileSocial}
+                                {socialsMapping[social].label}
                               </a>
                               {isJoshCapoInstagram && (
                                 <span className="text-muted-foreground"> &lt;-- Live Here</span>
@@ -128,12 +129,8 @@ export default function Profile() {
               {profile.isCreator && (
                 <div className="flex flex-col gap-12 mt-6 font-semibold pb-32">
                   <ProfileLiveUpcomingStreams username={username} />
+                  <ProfileLiveUpcomingNonVideoBets username={username} />
                   <ProfilePastStreams username={username} />
-                </div>
-              )}
-              {!profile.isCreator && (
-                <div className="mt-auto">
-                  <Footer />
                 </div>
               )}
             </div>
