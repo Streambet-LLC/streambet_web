@@ -21,6 +21,7 @@ import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
 import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
+import { useSearchParams } from 'react-router-dom';
 
 interface BettingOption {
   optionId?: string;
@@ -56,9 +57,11 @@ export const CreatorManagement = ({
   setSearchEndedNonVideoQuery,
 }) => {
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const createStream = searchParams.get('createStream');
   const [activeTab, setActiveTab] = useState('livestreams');
   const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
-  const [isCreateStream, setIsCreateStream] = useState(false);
+  const [isCreateStream, setIsCreateStream] = useState(createStream === 'true' || false);
   const [viewStreamId, setViewStreamId] = useState('');
   const [editStreamId, setEditStreamId] = useState('');
   const [streamAnalyticsId, setStreamAnalyticsId] = useState('');
@@ -714,6 +717,11 @@ export const CreatorManagement = ({
   }
 
   const handleResetAll = () => {
+    if (searchParams.has('createStream')) {
+      searchParams.delete('createStream');
+      setSearchParams(searchParams);
+    }
+
     setIsCreateStream(false);
     setViewStreamId('');
     setEditStreamId('');
@@ -819,6 +827,12 @@ export const CreatorManagement = ({
 
     handleRoundsChange([...bettingRounds, newRound]);
   };
+
+  useEffect(() => {
+    if (searchParams.has('createStream')) {
+      setIsCreateStream(true);
+    }
+  }, [searchParams]);
 
   return (
     <div className="space-y-6">
