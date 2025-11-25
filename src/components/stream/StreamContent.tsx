@@ -178,7 +178,47 @@ export const StreamContent = ({
     <div className="space-y-8">
       {/* Stream Name and Description - Full Width Above Grid */}
       <StreamHeader stream={stream} viewerCount={viewerCount} />
-
+      <CardContent className="bg-red px-0 !p-0  w-full">
+        <div className="text-2xl font-bold pl-2 mb-5">All Picks</div>
+        <Carousel
+          setApi={setCarouselApi}
+          opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}
+          className="w-full"
+        >
+          <CarouselContent>
+            {stream &&
+              stream.roundDetails.map((round, idx) => {
+                return (
+                  <CarouselItem key={idx} className="md:basis-1/2 lg:basis-1/3">
+                    <BetCard
+                      {...round}
+                      isForStream
+                      setQuickPick={(streamId, roundId, streamName) => {
+                        setQuickPickModalSettings({
+                          streamId,
+                          streamName,
+                          roundId,
+                        });
+                        setQuickPickOpen(true);
+                      }}
+                    />
+                  </CarouselItem>
+                );
+              })}
+          </CarouselContent>
+          <div className="flex items-center justify-between pt-4">
+            <CarouselPrevious
+              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
+              size="lg"
+            />
+            <CarouselDots className="relative" />
+            <CarouselNext
+              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
+              size="lg"
+            />
+          </div>
+        </Carousel>
+      </CardContent>
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6 max-h-screen">
@@ -249,47 +289,6 @@ export const StreamContent = ({
           </div>
         </div>
       </div>
-      <CardContent className="bg-red px-0 !p-0  w-full">
-        <div className="text-2xl font-bold pl-2 mb-5">All Picks</div>
-        <Carousel
-          setApi={setCarouselApi}
-          opts={{ align: 'center', containScroll: 'trimSnaps', slidesToScroll: 1 }}
-          className="w-full"
-        >
-          <CarouselContent>
-            {stream &&
-              stream.roundDetails.map((round, idx) => {
-                return (
-                  <CarouselItem key={idx} className="md:basis-1/2 lg:basis-1/3">
-                    <BetCard
-                      {...round}
-                      isForStream
-                      setQuickPick={(streamId, roundId, streamName) => {
-                        setQuickPickModalSettings({
-                          streamId,
-                          streamName,
-                          roundId,
-                        });
-                        setQuickPickOpen(true);
-                      }}
-                    />
-                  </CarouselItem>
-                );
-              })}
-          </CarouselContent>
-          <div className="flex items-center justify-between pt-4">
-            <CarouselPrevious
-              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
-              size="lg"
-            />
-            <CarouselDots className="relative" />
-            <CarouselNext
-              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset]"
-              size="lg"
-            />
-          </div>
-        </Carousel>
-      </CardContent>
       {quickPickOpen && (
         <QuickPickModal
           open={quickPickOpen}

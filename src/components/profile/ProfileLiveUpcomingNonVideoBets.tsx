@@ -29,8 +29,6 @@ export default function ProfileLiveUpcomingNonVideoBets({
     },
   });
 
-  console.log(nonVideoBets);
-
   const totalPages = Math.ceil((nonVideoBets?.total || 0) / 4);
 
   const handlePageChange = (page: number) => {
@@ -50,9 +48,9 @@ export default function ProfileLiveUpcomingNonVideoBets({
             ? Array(4)
                 .fill('')
                 .map((_, i) => <Skeleton key={i} className="w-full h-64" />)
-            : nonVideoBets?.data?.map((bet, i) => (
+            : nonVideoBets?.data?.map((bet) => (
                 <BetCard
-                  key={i}
+                  key={`${bet.streamId}-${bet.roundId}`}
                   {...bet}
                   setQuickPick={(streamId, roundId, streamName) => {
                     setQuickPickModalSettings({
