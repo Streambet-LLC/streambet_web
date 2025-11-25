@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { getImageLink } from '@/utils/helper';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Coins, Loader2 } from 'lucide-react';
+import { Coins, Loader2, Plus } from 'lucide-react';
 import React from 'react';
 
 type Profile = any;
@@ -89,7 +89,15 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
             <Link to="/deposit" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Buy Coins</Link>
           </div>
         </DropdownMenuItem>
-
+        <DropdownMenuSeparator />
+        {profile?.isCreator &&
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <div className="flex gap-1 group">
+              <Plus className="h-4 w-4 text-[#B4FF39] group-hover:text-black transition-colors" />
+              <Link to="/creator?createStream=true" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Create Event</Link>
+            </div>
+          </DropdownMenuItem>
+        }
         <DropdownMenuItem asChild className="cursor-pointer">
           {profile?.isCreator ? (
             <Link to={`/${profile?.username}`}>My Profile</Link>
