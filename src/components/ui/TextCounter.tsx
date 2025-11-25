@@ -1,21 +1,8 @@
-import { checkTextLimits } from '@/utils/helper';
-
 interface CharacterCounterProps {
   /** Current text value */
   value: string;
   /** Maximum number of characters allowed */
   maxCharacters: number;
-  /** Additional CSS classes */
-  className?: string;
-}
-
-interface CharacterWordCounterProps {
-  /** Current text value */
-  value: string;
-  /** Maximum number of characters allowed */
-  maxCharacters: number;
-  /** Maximum number of words allowed */
-  maxWords: number;
   /** Additional CSS classes */
   className?: string;
 }
@@ -41,46 +28,6 @@ export const CharacterCounter = ({ value, maxCharacters, className = '' }: Chara
       aria-label={`${currentLength} of ${maxCharacters} characters used${isLimitReached ? ', limit reached' : ''}`}
     >
       {currentLength}/{maxCharacters} characters
-    </div>
-  );
-};
-
-/**
- * Character and word counter component that displays current/max for both
- * Turns red when either limit is reached
- * @param {string} value - The current text value
- * @param {number} maxCharacters - Maximum characters allowed
- * @param {number} maxWords - Maximum words allowed
- * @param {string} className - Additional CSS classes
- * @returns {JSX.Element} Character and word counter display
- */
-export const CharacterWordCounter = ({
-  value,
-  maxCharacters,
-  maxWords,
-  className = '',
-}: CharacterWordCounterProps) => {
-  const limits = checkTextLimits(value, maxCharacters, maxWords);
-  const isLimitReached =
-    limits.characterCount >= maxCharacters || limits.wordCount >= maxWords;
-
-  const limitMessage = isLimitReached
-    ? limits.isCharacterLimitExceeded && limits.isWordLimitExceeded
-      ? ', character and word limits reached'
-      : limits.isCharacterLimitExceeded
-        ? ', character limit reached'
-        : ', word limit reached'
-    : '';
-
-  return (
-    <div
-      className={`text-xs mt-1 text-right ${isLimitReached ? 'text-red-500' : 'text-[#667085]'} ${className}`}
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-      aria-label={`${limits.characterCount} of ${maxCharacters} characters used, ${limits.wordCount} of ${maxWords} words used${limitMessage}`}
-    >
-      {limits.characterCount}/{maxCharacters} characters • {limits.wordCount}/{maxWords} words
     </div>
   );
 };

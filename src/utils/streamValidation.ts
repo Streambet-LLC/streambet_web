@@ -1,5 +1,4 @@
 import { STREAM_LIMITS } from './constants';
-import { isWithinTextLimits } from './helper';
 
 /**
  * Validate stream title
@@ -29,18 +28,13 @@ export const validateStreamTitle = (title: string): string | null => {
  */
 export const validateStreamDescription = (description: string): string | null => {
   // Description is optional, so empty is valid
-  if (!description || !description.trim()) {
+  const trimmed = description.trim();
+  if (!description || !trimmed) {
     return null;
   }
   
-  if (
-    !isWithinTextLimits(
-      description,
-      STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS,
-      STREAM_LIMITS.DESCRIPTION_MAX_WORDS
-    )
-  ) {
-    return `Description must not exceed ${STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS} characters or ${STREAM_LIMITS.DESCRIPTION_MAX_WORDS} words`;
+  if (trimmed.length > STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS) {
+    return `Description must not exceed ${STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS} characters`;
   }
   
   return null;

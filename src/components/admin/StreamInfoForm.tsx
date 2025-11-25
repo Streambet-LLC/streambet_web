@@ -7,9 +7,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, X as XIcon, Loader2, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CopyableInput } from '../ui/CopyableInput';
-import { CharacterCounter, CharacterWordCounter } from '@/components/ui/TextCounter';
+import { CharacterCounter } from '@/components/ui/TextCounter';
 import { TimezoneOffsetSelect } from '@/components/ui/TimezoneOffsetSelect';
-import { getImageLink, checkTextLimits, getTimezoneAbbreviation } from '@/utils/helper';
+import { getImageLink, getTimezoneAbbreviation } from '@/utils/helper';
 import { STREAM_LIMITS } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus } from '@/enums';
@@ -203,7 +203,7 @@ export const StreamInfoForm = ({
       </div>
       {/* Title */}
       <div>
-        <Label className="text-white font-light mb-3 block">Title</Label>
+        <Label className="text-white font-light mb-3 block">Event Title</Label>
         <Input
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
           placeholder="Title of Event -- Format Guidance: 'Event Name - Bet'"
@@ -227,24 +227,12 @@ export const StreamInfoForm = ({
           placeholder="Description -- describe your event in more detail; whatever you think is most pertinent"
           rows={10}
           value={initialValues.description}
-          onChange={e => {
-            const newValue = e.target.value;
-            const limits = checkTextLimits(
-              newValue,
-              STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS,
-              STREAM_LIMITS.DESCRIPTION_MAX_WORDS
-            );
-
-            // Only update if within limits
-            if (limits.isWithinLimits) {
-              onChange({ description: newValue });
-            }
-          }}
+          maxLength={STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS}
+          onChange={e => onChange({ description: e.target.value })}
         />
-        <CharacterWordCounter
+        <CharacterCounter
           value={initialValues.description}
           maxCharacters={STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS}
-          maxWords={STREAM_LIMITS.DESCRIPTION_MAX_WORDS}
         />
         {errors.description && (
           <div className="text-destructive text-xs mt-1">{errors.description}</div>
