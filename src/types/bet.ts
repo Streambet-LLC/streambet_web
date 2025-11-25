@@ -1,6 +1,7 @@
 export interface BetCard {
   thumbnail: string;
   name: string;
+  description: string;
   options: {
     option: string;
     percentage: number;

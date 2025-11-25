@@ -1,5 +1,5 @@
 import { BetCard as BetCardType } from '@/types/bet';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { getImageLink } from '@/utils/helper';
 import { cn } from '@/lib/utils';
@@ -120,61 +120,71 @@ export default function BetCard(props: BetCardType) {
             />
           </div>
         )}
-        <div className="flex flex-row gap-3 items-center">
-          <img
-            src={getThumbnailUrl(cardData.thumbnail)}
-            className="aspect-square w-9 h-9 rounded-md"
-          />
-          <div className="flex items-center gap-2">
-            <CardTitle
-              onClick={statuses.canOpen ? handleClick : undefined}
-              className={cn(
-                'text-md line-clamp-2',
-                statuses.canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
+            <img
+              src={getThumbnailUrl(cardData.thumbnail)}
+              className="aspect-square w-9 h-9 rounded-md"
+            />
+            <div className="flex items-center gap-2">
+              <CardTitle
+                onClick={statuses.canOpen ? handleClick : undefined}
+                className={cn(
+                  'text-md line-clamp-2',
+                  statuses.canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
+                )}
+              >
+                {cardData.name}
+              </CardTitle>
+              {(statuses.isLocked ||
+                statuses.isEnded ||
+                statuses.isCancelled ||
+                statuses.isCreated) && (
+                <span
+                  className={cn(
+                    'px-2 py-0.5 rounded-full text-xs font-semibold border',
+                    statuses.isEnded
+                      ? 'bg-[#2a2a2a] text-white border-red-500/40'
+                      : statuses.isCancelled
+                        ? 'bg-[#2a2a2a] text-white border-red-500/40'
+                        : statuses.isCreated
+                          ? cn(
+                              'bg-[#2a2a2a] text-white',
+                              statuses.hasOptions ? 'border-blue-400/40' : 'border-muted'
+                            )
+                          : 'bg-[#2a2a2a] text-white border-yellow-400/40'
+                  )}
+                  title={
+                    statuses.isEnded
+                      ? 'Ended Round'
+                      : statuses.isCancelled
+                        ? 'Cancelled Round'
+                        : statuses.isCreated
+                          ? 'Created Round'
+                          : 'Locked Round'
+                  }
+                >
+                  {statuses.isEnded
+                    ? 'Ended'
+                    : statuses.isCancelled
+                      ? 'Cancelled'
+                      : statuses.isCreated
+                        ? statuses.hasOptions
+                          ? 'Created'
+                          : 'Draft'
+                        : 'Locked'}
+                </span>
               )}
-            >
-              {cardData.name}
-            </CardTitle>
-          {(statuses.isLocked ||
-            statuses.isEnded ||
-            statuses.isCancelled ||
-            statuses.isCreated) && (
-            <span
-              className={cn(
-                'px-2 py-0.5 rounded-full text-xs font-semibold border',
-                statuses.isEnded
-                  ? 'bg-[#2a2a2a] text-white border-red-500/40'
-                  : statuses.isCancelled
-                    ? 'bg-[#2a2a2a] text-white border-red-500/40'
-                    : statuses.isCreated
-                      ? cn(
-                          'bg-[#2a2a2a] text-white',
-                          statuses.hasOptions ? 'border-blue-400/40' : 'border-muted'
-                        )
-                      : 'bg-[#2a2a2a] text-white border-yellow-400/40'
-              )}
-              title={
-                statuses.isEnded
-                  ? 'Ended Round'
-                  : statuses.isCancelled
-                    ? 'Cancelled Round'
-                    : statuses.isCreated
-                      ? 'Created Round'
-                      : 'Locked Round'
-              }
-            >
-              {statuses.isEnded
-                ? 'Ended'
-                : statuses.isCancelled
-                  ? 'Cancelled'
-                  : statuses.isCreated
-                    ? statuses.hasOptions
-                      ? 'Created'
-                      : 'Draft'
-                    : 'Locked'}
-            </span>
-          )}
+            </div>
           </div>
+          {cardData.description && 
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild className='cursor-default'>
+                <CardDescription className='line-clamp-2 text-xs'>{cardData.description}</CardDescription>
+              </TooltipTrigger>
+              <TooltipContent className='w-60' side="bottom">{cardData.description}</TooltipContent>
+            </Tooltip>
+          }
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-2 p-4">

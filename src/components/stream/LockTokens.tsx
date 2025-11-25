@@ -102,7 +102,7 @@ export default function LockTokens({
               <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF] text-center break-words" title={localOption}>{localOption}</p>
             </div>
             <div className="flex-shrink-0 w-full sm:w-auto border-t sm:border-t-0 sm:border-1 border-[#2C2C2C] pt-3 sm:pt-0 sm:pl-4">
-              <p className="text-xs text-[#606060] font-semibold text-center pb-1">Potential winnings:</p>
+              <p className="text-xs text-[#606060] font-semibold text-center pb-1">Current Payout:</p>
               <p className="font-medium text-sm sm:text-[16px] text-[#BDFF00] text-center">{Number(Math.round(Number(potentialWinnings ?? 0))).toLocaleString('en-US')}</p>
             </div>
           </div>

@@ -252,47 +252,11 @@ export default function BetTokens({
             Total Pot: {`${totalPot} ${isSweepCoins ? ' Stream Coins' : ' Gold Coins'}`}
             </span>
         </div>
-       
       </div>
-       <div>
-           <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[200px]" title={bettingData?.bettingRounds?.[0]?.roundName}>
-            {bettingData?.bettingRounds?.[0]?.roundName}
-            </span>
-        </div>
 
       <div className="relative w-full pt-2 pb-2">
-        <input
-          type="range"
-          min={0}
-          max={sliderMax}
-          step={1}
-          value={betAmount}
-          disabled={session == null}
-          onChange={(e) => !lockedOptions && setBetAmount(Math.floor(Number(e.target.value)))}
-          onMouseDown={() => {
-            if (Number(sliderMax) === 0) {
-              toast({
-                variant: 'destructive',
-                description: 'No coins available to Pick',
-              });
-            }
-            if (lockedOptions) {
-              toast({
-                variant: 'destructive',
-                description: 'Admin has locked the round',
-              });
-            }
-          }}
-          className="w-full h-[25px] appearance-none rounded-full bg-transparent bet-slider-gradient"
-          style={{
-            MozAppearance: 'none',
-            WebkitAppearance: 'none',
-            appearance: 'none',
-            border: '0.56px solid rgba(186, 186, 186, 1)'
-          }}
-        />
-        {/* Number input and preset buttons row */}
-        <div className="flex flex-col sm:flex-row gap-2 mt-2">
+        {/* Number input and slider row */}
+        <div className="flex gap-2 items-center">
           <input
             type="number"
             min={0}
@@ -304,40 +268,77 @@ export default function BetTokens({
               const value = Math.max(0, Math.min(Math.floor(Number(e.target.value) || 0), Math.floor(sliderMax || 0)));
               setBetAmount(value);
             }}
-            className="w-[90px] bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444]"
+            className="w-[90px] bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444] number-input-visible-arrows"
           />
           
-          {/* Preset Amount Buttons - spanning most of the row */}
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {(() => {
-              const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
-              const baseWalletBalance = Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0;
-              const currentBetAmount = isEditing ? Number(isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins) || 0 : 0;
-              const totalAvailableBalance = Math.min(baseWalletBalance + currentBetAmount, maxBetLimit);
+          <input
+            type="range"
+            min={0}
+            max={sliderMax}
+            step={1}
+            value={betAmount}
+            disabled={session == null}
+            onChange={(e) => !lockedOptions && setBetAmount(Math.floor(Number(e.target.value)))}
+            onMouseDown={() => {
+              if (Number(sliderMax) === 0) {
+                toast({
+                  variant: 'destructive',
+                  description: 'No coins available to Pick',
+                });
+              }
+              if (lockedOptions) {
+                toast({
+                  variant: 'destructive',
+                  description: 'Admin has locked the round',
+                });
+              }
+            }}
+            className="flex-1 h-[25px] appearance-none rounded-full bg-transparent bet-slider-gradient"
+            style={{
+              MozAppearance: 'none',
+              WebkitAppearance: 'none',
+              appearance: 'none',
+              border: '0.56px solid rgba(186, 186, 186, 1)'
+            }}
+          />
+        </div>
+        
+        {/* Preset Amount Buttons row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
+          {(() => {
+            const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
+            const baseWalletBalance = Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0;
+            const currentBetAmount = isEditing ? Number(isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins) || 0 : 0;
+            const totalAvailableBalance = Math.min(baseWalletBalance + currentBetAmount, maxBetLimit);
 
-              // Filter out buttons with zero value to prevent showing "0 tokens"
-              return PRESET_PERCENTAGES
-                .map((percentage) => {
-                  const value = Math.floor(totalAvailableBalance * percentage);
-                  return { percentage, value };
-                })
-                .filter(item => item.value > 0)
-                .map(({ percentage, value }) => (
-                  <button
-                    key={`${percentage}-${value}`}
-                    onClick={() => session && !lockedOptions && setBetAmount(Math.min(value, sliderMax || 0))}
-                    disabled={session == null || lockedOptions}
-                    className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                  >
-                    {value} tokens
-                  </button>
-                ));
-            })()}
-          </div>
+            // Filter out buttons with zero value to prevent showing "0 tokens"
+            return PRESET_PERCENTAGES
+              .map((percentage) => {
+                const value = Math.floor(totalAvailableBalance * percentage);
+                return { percentage, value };
+              })
+              .filter(item => item.value > 0)
+              .map(({ percentage, value }) => (
+                <button
+                  key={`${percentage}-${value}`}
+                  onClick={() => session && !lockedOptions && setBetAmount(Math.min(value, sliderMax || 0))}
+                  disabled={session == null || lockedOptions}
+                  className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {value} tokens
+                </button>
+              ));
+          })()}
         </div>
         
         <style>
           {`
+            /* Number input with always visible arrows */
+            input[type="number"].number-input-visible-arrows::-webkit-inner-spin-button,
+            input[type="number"].number-input-visible-arrows::-webkit-outer-spin-button {
+              opacity: 1;
+            }
+            
             input[type="range"].bet-slider-gradient {
               background: linear-gradient(90deg, #7FFF00 0%, #32CD32 100%);
               background-size: ${(betAmount/(sliderMax||1))*100}% 100%;
