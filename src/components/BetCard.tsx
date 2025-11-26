@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { QuickPickModal } from './stream/QuickPickModal';
 import { BettingRoundStatus } from '@/enums';
 import api from '@/integrations/api/client';
+import moment from 'moment';
 
 export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
@@ -231,23 +232,31 @@ export default function BetCard(props: BetCardType) {
           </div>
         )}
       </CardContent>
-      <CardFooter className="mt-auto">
-        <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>
-            <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
-              <div className="flex gap-2 text-sm items-center">
-                <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
-                {cardData.totalPot.streamCoins}
+      <CardFooter className="mt-auto"></CardFooter>
+      <div className="p-6 pt-0">
+        <div className="flex justify-between">
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
+                <div className="flex gap-2 text-sm items-center">
+                  <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
+                  {cardData.totalPot.streamCoins}
+                </div>
+                <div className="flex gap-1 text-sm items-center">
+                  <img src="/icons/gold-coins.png" alt="gold-coins" className="h-4 w-4" />
+                  {cardData.totalPot.goldCoins}
+                </div>
               </div>
-              <div className="flex gap-1 text-sm items-center">
-                <img src="/icons/gold-coins.png" alt="gold-coins" className="h-4 w-4" />
-                {cardData.totalPot.goldCoins}
-              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right">Total Pot</TooltipContent>
+          </Tooltip>
+          {cardData.lockDate && (
+            <div className="">
+              <p>Auto Locking {moment(cardData.lockDate).fromNow()}</p>
             </div>
-          </TooltipTrigger>
-          <TooltipContent side="right">Total Pot</TooltipContent>
-        </Tooltip>
-      </CardFooter>
+          )}
+        </div>
+      </div>
     </Card>
   );
 }
