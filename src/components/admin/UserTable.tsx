@@ -228,6 +228,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 <TableHead>Created</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Verification</TableHead>
+                <TableHead>Promo Code</TableHead>
                 <TableHead>Actions</TableHead>
                 <TableHead>Gold Coins</TableHead>
                 <TableHead>Delete</TableHead>
@@ -280,6 +281,9 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                         Not Verified
                       </span>
                     )}
+                    </TableCell>
+                    <TableCell className="max-w-[180px]">
+                      {user.promoCode}
                     </TableCell>
                     <TableCell>
                       <Switch

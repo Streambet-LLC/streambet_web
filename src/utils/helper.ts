@@ -1,5 +1,7 @@
 import { format } from 'date-fns';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { load as nsfwjsLoad } from "nsfwjs";
+import Bugsnag from '@bugsnag/js';
 
 /**
  * @param messageData
@@ -53,17 +55,108 @@ export function getImageLink(url: string | null | undefined, isNotAvatar?: boole
         : '/avatar_placeholder_large.png';
 };
 
-export function formatDateTimeForISO(date: Date | null, time: string): string | undefined {
+export function formatDateTimeForISO(date: Date | null, time: string, timezone?: string): string | undefined {
   if (!date || !time) return undefined;
 
-  // Create a new date object with the selected date and time
-  const dateTime = new Date(date);
-  const [hours, minutes] = time.split(':');
-  dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+  try {
+    // Get the timezone to use (provided timezone or user's local timezone)
+    const targetTimezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  // Format as ISO 8601 string
-  return dateTime.toISOString();
+    // Create a date object with the selected date and time
+    const dateTime = new Date(date);
+    const [hours, minutes] = time.split(':');
+    dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+    // Interpret the date/time as if it's in the target timezone, then convert to UTC
+    const zonedDateTime = fromZonedTime(dateTime, targetTimezone);
+
+    // Critical: Invalid timezone produces Invalid Date
+    if (isNaN(zonedDateTime.getTime())) {
+      const error = new Error(`Invalid timezone conversion: ${targetTimezone}`);
+      
+      // Log to Bugsnag with context for debugging
+      Bugsnag.notify(error, (event) => {
+        event.severity = 'warning';
+        event.context = 'Stream Scheduling';
+        event.addMetadata('timezone', {
+          providedTimezone: timezone,
+          resolvedTimezone: targetTimezone,
+          date: date?.toISOString(),
+          time: time,
+        });
+      });
+      
+      // Log for dev debugging
+      console.error('Invalid timezone conversion:', {
+        timezone: targetTimezone,
+        date,
+        time,
+      });
+      
+      return undefined;
+    }
+
+    // Format as ISO 8601 string
+    return zonedDateTime.toISOString();
+  } catch (error) {
+    // Unexpected errors - critical
+    console.error('Unexpected error formatting date/time for ISO:', error);
+    
+    Bugsnag.notify(error instanceof Error ? error : new Error(String(error)), (event) => {
+      event.severity = 'error';
+      event.context = 'Stream Scheduling';
+      event.addMetadata('input', {
+        date: date?.toISOString(),
+        time,
+        timezone,
+      });
+    });
+    
+    return undefined;
+  }
 };
+
+/**
+ * Validates if a scheduled date/time is in the past after timezone conversion
+ * @param date - The selected date
+ * @param time - The selected time in HH:MM format
+ * @param timezone - The IANA timezone identifier (e.g., 'America/New_York')
+ * @returns true if the scheduled time is in the past, false otherwise
+ */
+export function isScheduledTimeInPast(date: Date | null, time: string, timezone: string): boolean {
+  if (!date || !time) return false;
+  
+  // Use formatDateTimeForISO to get the UTC timestamp
+  const scheduledTimeISO = formatDateTimeForISO(date, time, timezone);
+  if (!scheduledTimeISO) return false;
+  
+  // Compare UTC timestamps - scheduled time must be in the future
+  return new Date(scheduledTimeISO) <= new Date();
+}
+
+/**
+ * Get timezone abbreviation for a given timezone and date
+ * @param timezone - IANA timezone identifier (e.g., 'America/New_York')
+ * @param date - Date object to check for DST
+ * @returns Timezone abbreviation (e.g., 'EST', 'EDT', 'MST')
+ */
+export function getTimezoneAbbreviation(timezone: string, date: Date | null = null): string {
+  if (!timezone) return '';
+  
+  try {
+    const targetDate = date || new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'short'
+    });
+    
+    const parts = formatter.formatToParts(targetDate);
+    const timeZonePart = parts.find(part => part.type === 'timeZoneName');
+    return timeZonePart?.value || '';
+  } catch {
+    return '';
+  }
+}
 
 export function formatTime(dateString: string) {
   const date = new Date(dateString);
@@ -254,3 +347,46 @@ export const isImageSFW = async (url: string) => {
     };
   });
 }
+
+/**
+ * Sort items by priority creator/title pairs.
+ * Matches require BOTH creator username AND betting round title to match.
+ * Items matching pairs appear first in the order specified in the priority list.
+ * Non-matching items appear after, maintaining their original order.
+ * 
+ * @param items - Array of betting rounds/streams with name and creator fields
+ * @param priorityPairs - Array of {creatorUsername, bettingRoundTitle} pairs
+ * @returns Sorted array with prioritized items first
+ */
+export const sortByPriorityPairs = <T extends { 
+  name: string; 
+  creator?: string | null 
+}>(
+  items: T[],
+  priorityPairs: Array<{ creatorUsername: string; bettingRoundTitle: string }>
+): T[] => {
+  if (!priorityPairs || priorityPairs.length === 0) {
+    return items; // No sorting if priority list is empty
+  }
+
+  // Create a map of "creator|title" -> priority index
+  const priorityMap = new Map(
+    priorityPairs.map((pair, index) => {
+      const key = `${pair.creatorUsername.toLowerCase().trim()}|${pair.bettingRoundTitle.toLowerCase().trim()}`;
+      return [key, index];
+    })
+  );
+  
+  return [...items].sort((a, b) => {
+    const aKey = `${(a.creator || '').toLowerCase().trim()}|${(a.name || '').toLowerCase().trim()}`;
+    const bKey = `${(b.creator || '').toLowerCase().trim()}|${(b.name || '').toLowerCase().trim()}`;
+    
+    const aPriority = priorityMap.get(aKey) ?? Infinity;
+    const bPriority = priorityMap.get(bKey) ?? Infinity;
+    
+    // If both have priority, sort by priority index
+    // If only one has priority, it comes first
+    // If neither has priority, maintain original order (stable sort)
+    return aPriority - bPriority;
+  });
+};

@@ -219,6 +219,7 @@ export const ProfileSection = ({
 
       // Update profile with only the fields we want to keep
       const { error: updateError } = await api.user.updateProfile({
+        name: data.name,
         username: data.username,
         state: data.state?.trim(),
         profileImageUrl: profileImageUrlToSave,
@@ -230,7 +231,6 @@ export const ProfileSection = ({
           tiktok: data.tiktok,  
         },
         // Set hidden fields to undefined
-        name: undefined,
         city: undefined,
       });
 
@@ -498,6 +498,23 @@ export const ProfileSection = ({
                     {...field}
                     disabled
                     className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400 opacity-50"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-white font-light">Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Name"
+                    {...field}
+                    className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
                   />
                 </FormControl>
                 <FormMessage />

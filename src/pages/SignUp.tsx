@@ -38,6 +38,7 @@ export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [promoCode, setPromoCode] = useState('');
+  const [name, setName] = useState('');
   const [tosAccepted, setTosAccepted] = useState(false);
   const [isOlder, setIsOlder] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,6 +55,7 @@ export default function SignUp() {
 
 
   const signupSchema = z.object({
+    name: z.string().optional(),
     username: z
       .string()
       .min(3, 'Username must be at least 3 characters')
@@ -92,6 +94,7 @@ export default function SignUp() {
   const form = useForm({
     resolver: zodResolver(signupSchema),
     defaultValues: {
+      name: '',
       username: '',
       email: '',
       password: '',
@@ -110,6 +113,7 @@ export default function SignUp() {
 
   const signupMutation = useMutation({
     mutationFn: async (userData: {
+      name?: string;
       email: string;
       password: string;
       username: string;
@@ -296,6 +300,7 @@ export default function SignUp() {
     const dobFormatted = dob ? formatDateForAPI(dob) : undefined;
 
     signupMutation.mutate({
+      name,
       username,
       email,
       password,
@@ -577,6 +582,19 @@ export default function SignUp() {
                       Password must be at least 8 characters and include uppercase, lowercase,
                       number, and special character.
                     </p>
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="name">Name (Optional)</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={name}
+                      placeholder="Name"
+                      onChange={e => setName(e.target.value)}
+                      className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.name ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
+                      disabled={false}
+                    />
+                    {errors.name && <p className="text-destructive text-sm">{errors.name}</p>}
                   </motion.div>
                   <motion.div variants={itemVariants} className="space-y-2">
                     <Label htmlFor="promoCode">Promo Code (Optional)</Label>

@@ -4,19 +4,26 @@ import api from '@/integrations/api/client';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
+import { useEffect, useMemo, useState } from 'react';
+import { PRIORITY_STREAMS } from '@/utils/constants';
+import { sortByPriorityPairs } from '@/utils/helper';
 import { QuickPickModal } from '../stream/QuickPickModal';
 
-export default function HomeBets() {
+export default function HomeBets({
+  filters
+} : {
+  filters: any;
+}) {
+  const [displayCount, setDisplayCount] = useState(24);
   const [quickPickOpen, setQuickPickOpen] = useState(false);
   const [quickPickModalSettings, setQuickPickModalSettings] = useState({
     streamId: null,
     roundId: null,
     streamName: null,
   });
-
-  const { data, hasNextPage, fetchNextPage, isLoading } = useInfiniteQuery({
-    queryKey: ['homepage-bets'],
+  const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage, refetch } = useInfiniteQuery({
+    queryKey: ['homepage-bets', filters],
     queryFn: async ({ pageParam }) => {
       const response = await api.bets.getBets({ page: pageParam });
 
@@ -26,7 +33,29 @@ export default function HomeBets() {
     getNextPageParam: lastPage => (lastPage.hasNextPage ? lastPage.page + 1 : undefined),
   });
 
-  const bets = data?.pages.map(({ data: bets }) => bets || [])?.flat() || [];
+  // Auto-fetch all pages in background for proper sorting
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Get all bets and sort by priority pairs
+  const sortedBets = useMemo(() => {
+    const allBets = data?.pages.map(({ data: bets }) => bets || [])?.flat() || [];
+    return sortByPriorityPairs(allBets, PRIORITY_STREAMS);
+  }, [data]);
+
+  // Display only first N items (client-side pagination)
+  const displayedBets = sortedBets.slice(0, displayCount);
+  const hasMore = displayCount < sortedBets.length;
+
+  const handleLoadMore = () => {
+    setDisplayCount(prev => prev + 24);
+  };
+
+  // Listen for stream promotion updates
+  useStreamPromotionListener(refetch);
 
   if (!data) return;
 
@@ -39,7 +68,7 @@ export default function HomeBets() {
             ? Array(24)
                 .fill('')
                 .map((_, i) => <Skeleton key={i} className="w-full h-64" />)
-            : bets?.map((bet, i) => (
+            : displayedBets.map((bet, i) => (
                 <BetCard
                   key={i}
                   {...bet}
@@ -54,12 +83,12 @@ export default function HomeBets() {
                 />
               ))}
         </div>
-        {hasNextPage && (
+        {hasMore && (
           <Button
             disabled={isLoading}
             variant="outline"
             className="mx-auto"
-            onClick={() => fetchNextPage()}
+            onClick={handleLoadMore}
           >
             {isLoading ? (
               <>

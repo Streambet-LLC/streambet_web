@@ -39,6 +39,7 @@ import Profile from './pages/Profile';
 import 'react-image-crop/dist/ReactCrop.css'
 import Home from './pages/Home';
 import Creator from './pages/Creator';
+import Creators from './components/creators/Creators';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -89,6 +90,7 @@ const App = () => {
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/compliance" element={<Compliance />} />
+                      <Route path="/creators" element={<Creators />} />
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/auth/verify-email" element={<VerifyEmail />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />

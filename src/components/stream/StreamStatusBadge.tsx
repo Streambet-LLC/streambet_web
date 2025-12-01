@@ -7,6 +7,7 @@ interface StreamStatusBadgeProps {
   status: StreamStatus;
   scheduledStartTime?: string;
   multiline?: boolean;
+  isStreamType?: boolean;
 }
 
 // Animation configuration - consistent across all badges
@@ -23,15 +24,19 @@ const ANIMATION_CONFIG = {
 // Badge styling constants
 const BADGE_STYLES = {
   LIVE: {
-    container: 'flex items-center gap-2 bg-red-600 text-white px-2 py-1 rounded-md shadow-lg',
+    container: 'flex items-center gap-2 bg-badge-live text-white px-2 py-1 rounded-md shadow-lg',
     text: 'font-bold text-xs tracking-wider',
   },
-  SCHEDULED: {
-    container: 'flex items-center gap-2 bg-purple-700 text-white px-2 py-1 rounded-md shadow-lg',
+  SCHEDULED_STREAM: {
+    container: 'flex items-center gap-2 bg-badge-scheduled-stream text-white px-2 py-1 rounded-md shadow-lg',
+    text: 'font-medium text-xs',
+  },
+  SCHEDULED_NON_VIDEO: {
+    container: 'flex items-center gap-2 bg-badge-scheduled-non-video text-white px-2 py-1 rounded-md shadow-lg',
     text: 'font-medium text-xs',
   },
   ENDED: {
-    container: 'flex items-center gap-2 px-3 py-1.5 bg-zinc-600/90 backdrop-blur-sm rounded-md text-xs font-bold uppercase tracking-wider shadow-lg',
+    container: 'flex items-center gap-2 px-3 py-1.5 bg-badge-ended/90 backdrop-blur-sm rounded-md text-xs font-bold uppercase tracking-wider shadow-lg',
   },
 } as const;
 
@@ -51,6 +56,7 @@ export const StreamStatusBadge = ({
   status,
   scheduledStartTime,
   multiline = false,
+  isStreamType = true,
 }: StreamStatusBadgeProps) => {
   // LIVE badge with pulsing dot
   if (status === StreamStatus.LIVE) {
@@ -69,22 +75,26 @@ export const StreamStatusBadge = ({
 
   // SCHEDULED badge with calendar icon
   if (status === StreamStatus.SCHEDULED) {
+    const labelPrefix = isStreamType ? 'Stream Upcoming' : 'Picks Close';
     const ariaLabel = scheduledStartTime 
-      ? `Stream upcoming: ${formatDate(scheduledStartTime)} at ${formatTime(scheduledStartTime)}`
-      : 'Stream upcoming: TBA';
+      ? `${labelPrefix}: ${formatDate(scheduledStartTime)} at ${formatTime(scheduledStartTime)}`
+      : `${labelPrefix}: TBA`;
+    
+    // Select appropriate badge style based on bet type
+    const badgeStyle = isStreamType ? BADGE_STYLES.SCHEDULED_STREAM : BADGE_STYLES.SCHEDULED_NON_VIDEO;
     
     return (
       <motion.div {...ANIMATION_CONFIG} role="status" aria-label={ariaLabel}>
-        <div className={BADGE_STYLES.SCHEDULED.container}>
+        <div className={badgeStyle.container}>
           <Calendar className="h-3 w-3" />
-          <span className={BADGE_STYLES.SCHEDULED.text}>
+          <span className={badgeStyle.text}>
             {scheduledStartTime ? (
               <>
-                Stream Upcoming: {multiline && <br />}{formatDate(scheduledStartTime)} at{' '}
+                {isStreamType ? 'Stream Upcoming' : 'Picks Close'}: {multiline && <br />}{formatDate(scheduledStartTime)} at{' '}
                 {formatTime(scheduledStartTime)}
               </>
             ) : (
-              'Stream Upcoming: TBA'
+              isStreamType ? 'Stream Upcoming: TBA' : 'Picks Close: TBA'
             )}
           </span>
         </div>

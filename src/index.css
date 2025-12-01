@@ -75,6 +75,10 @@
     --input: 0 0% 9%;
     --ring: 94 100% 54%;
     --radius: 0.5rem;
+    --badge-live: 0 84% 60%;
+    --badge-scheduled-stream: 274 87% 60%;
+    --badge-scheduled-non-video: 0 72% 51%;
+    --badge-ended: 240 5% 26%;
   }
 }
 

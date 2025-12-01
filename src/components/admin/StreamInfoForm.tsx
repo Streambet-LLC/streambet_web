@@ -2,10 +2,14 @@ import { useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { X as XIcon, Loader2 } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarIcon, X as XIcon, Loader2, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CopyableInput } from '../ui/CopyableInput';
 import { CharacterCounter, CharacterWordCounter } from '@/components/ui/TextCounter';
-import { getImageLink, checkTextLimits } from '@/utils/helper';
+import { TimezoneOffsetSelect } from '@/components/ui/TimezoneOffsetSelect';
+import { getImageLink, checkTextLimits, getTimezoneAbbreviation } from '@/utils/helper';
 import { STREAM_LIMITS } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import { BettingRoundStatus } from '@/enums';
@@ -24,6 +28,7 @@ interface StreamInfoFormProps {
     thumbnailPreviewUrl?: string;
     startDateObj: Date | null;
     startTime: string;
+    timezone?: string;
     streamId?: string;
     bettingRoundStatus?: BettingRoundStatus;
     creatorId?: string;
@@ -46,6 +51,7 @@ interface StreamInfoFormProps {
   onChangeEventType: ({ value, label }) => void;
   onStartDateChange: (date: Date | null) => void;
   onStartTimeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onTimezoneOffsetChange: (timezone: string) => void;
 }
 
 export const StreamInfoForm = ({
@@ -62,6 +68,7 @@ export const StreamInfoForm = ({
   onDeleteThumbnail,
   onStartDateChange,
   onStartTimeChange,
+  onTimezoneOffsetChange,
   onChangeEventType,
 }: StreamInfoFormProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,7 +122,28 @@ export const StreamInfoForm = ({
       }}
     >
       <div>
-        <Label className="text-white font-light mb-3 block">Event Type</Label>
+        <div className="flex items-center gap-2 mb-3">
+          <Label className="text-white font-light">Event Type</Label>
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded" aria-label="Event type information">
+                  <Info className="w-4 h-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors" aria-hidden="true" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <span className="font-semibold">Livestream:</span> Select if you're casting live video to Streambet from platforms like Twitch, Kick, or YouTube.
+                  </p>
+                  <p>
+                    <span className="font-semibold">Non Video:</span> Select for events that don't require live video streaming or if you're streaming elsewhere.
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <Select
           isDisabled={isEdit}
           options={[
@@ -170,7 +198,7 @@ export const StreamInfoForm = ({
         <Label className="text-white font-light mb-3 block">Title</Label>
         <Input
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
-          placeholder="Title of event"
+          placeholder="Title of Event -- Format Guidance: 'Event Name - Bet'"
           value={initialValues.title}
           maxLength={STREAM_LIMITS.TITLE_MAX_LENGTH}
           minLength={STREAM_LIMITS.TITLE_MIN_LENGTH}
@@ -188,7 +216,7 @@ export const StreamInfoForm = ({
         <Label className="text-white font-light mb-3 block">Description</Label>
         <Textarea
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.description ? 'border border-red-500' : 'border-none'}`}
-          placeholder="Stream description"
+          placeholder="Description -- describe your event in more detail; whatever you think is most pertinent"
           rows={10}
           value={initialValues.description}
           onChange={e => {
@@ -387,33 +415,110 @@ export const StreamInfoForm = ({
         </div>
       </div>
       {/* Start date */}
-      <CalendarDatePicker
-        label={'Start date & time'}
-        error={errors.startDate}
-        isLive={isLive}
-        isUploading={isUploading}
-        onClick={e => {
-          if (isLive) {
-            e.preventDefault();
-            toast({
-              title: 'You cannot edit scheduled date of live stream',
-              variant: 'destructive',
-            });
-            return;
-          }
-        }}
-        dateVal={initialValues.startDateObj}
-        timeVal={initialValues.startTime}
-        onChange={newData => {
-          onChange({ startDateObj: newData.date, startTime: newData.time });
-        }}
-        onChangeDate={newDate => {
-          onStartDateChange(newDate);
-        }}
-        onChangeTime={newTime => {
-          onStartTimeChange(newTime);
-        }}
-      />
+      <div>
+        <Label className="text-white font-light mb-3 block">
+          {initialValues.eventType.value === 'stream' 
+            ? 'Start date & time' 
+            : 'Date & Time that Picks Will Be Locked'}
+        </Label>
+        {isEdit && (
+          <p className="text-sm text-muted-foreground mb-2">
+            Note: When editing, the actual scheduled time is converted and displayed in your current timezone.
+            If editing the time, verify correct timezone is set before saving.
+          </p>
+        )}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className={`w-full pl-10 mt-2 flex items-center h-10 rounded-md relative
+      ${errors.startDate ? 'border border-red-500' : 'border-none'}
+      ${isLive ? 'bg-[#232323] opacity-60 cursor-not-allowed' : 'bg-[#272727] text-[#D7DFEF]'}
+    `}
+              style={{ textAlign: 'left' }}
+              onClick={e => {
+                if (isLive) {
+                  e.preventDefault();
+                  toast({
+                    title: 'You cannot edit scheduled date of live stream',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+              }}
+              disabled={isUploading}
+            >
+              <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                <CalendarIcon className="h-5 w-5 text-white" />
+              </span>
+              <span className={initialValues.startDateObj ? '' : 'text-[#FFFFFFBF]'}>
+                {initialValues.startDateObj
+                  ? initialValues.startDateObj.toLocaleDateString() +
+                    (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '')
+                  : initialValues.eventType.value === 'stream'
+                    ? 'Select a date & time'
+                    : 'Select a lock date & time'}
+                {initialValues.startDateObj && initialValues.startTime && initialValues.timezone && (
+                  <>
+                    {' '}
+                    ({getTimezoneAbbreviation(initialValues.timezone, initialValues.startDateObj)})
+                  </>
+                )}
+              </span>
+              {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
+                  onClick={e => {
+                    e.stopPropagation();
+                    onChange({ startDateObj: null, startTime: '' });
+                  }}
+                >
+                  <XIcon className="h-4 w-4 text-white" />
+                </button>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={initialValues.startDateObj || undefined}
+              onSelect={date => {
+                if (date) {
+                  // Set both date and time in a single onChange call to ensure atomic update
+                  onChange({
+                    startDateObj: date,
+                    startTime: initialValues.startTime || '00:00',
+                  });
+                } else {
+                  onChange({ startDateObj: null, startTime: '' });
+                }
+                onStartDateChange(date);
+              }}
+              initialFocus
+              showOutsideDays
+              disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
+            />
+            <div className="flex items-center gap-2 p-2">
+              <span className="text-xs text-white">Time:</span>
+              <input
+                type="time"
+                value={initialValues.startTime}
+                onChange={onStartTimeChange}
+                className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
+                style={{ color: 'white' }}
+              />
+            </div>
+            <TimezoneOffsetSelect
+              value={initialValues.timezone}
+              onChange={onTimezoneOffsetChange}
+            />
+          </PopoverContent>
+        </Popover>
+        {errors.startDate && (
+          <div className="text-destructive text-xs mt-1">{errors.startDate}</div>
+        )}
+      </div>
     </form>
   );
 };

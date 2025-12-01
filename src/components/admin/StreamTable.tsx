@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -15,6 +15,7 @@ import {
   PaginationPrevious,
 } from '../ui/pagination';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Eye, Pen, ChartNoAxesColumnIncreasing, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -25,6 +26,8 @@ import { BettingRoundStatus } from '@/enums';
 import { useMutation } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { DeleteStreamDialog } from './DeleteStreamDialog';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
 
 interface Props {
   streams: any;
@@ -136,12 +139,24 @@ export const StreamTable: React.FC<Props> = ({
   const isMobile = useIsMobile();
   const itemsPerPage = 7;
   const [deletingStreamId, setDeletingStreamId] = useState<string | null>(null);
+  const { session } = useAuthContext();
+  
+  // Check if user is admin
+  const isAdmin = session?.role?.toLowerCase() === 'admin';
 
-  useEffect(() => {
+  // Extract refetch logic to reusable function
+  const refetchCurrentPage = useCallback(() => {
     const rangeStart = (currentPage - 1) * itemsPerPage;
     refetchStreams(`[${rangeStart},${itemsPerPage}]`);
+  }, [currentPage, itemsPerPage, refetchStreams]);
+
+  useEffect(() => {
+    refetchCurrentPage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
+
+  // Listen for stream promotion updates
+  useStreamPromotionListener(refetchCurrentPage);
 
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
@@ -161,8 +176,7 @@ export const StreamTable: React.FC<Props> = ({
         variant: 'default',
       });
       // Refetch streams after successful deletion
-      const rangeStart = (currentPage - 1) * itemsPerPage;
-      refetchStreams(`[${rangeStart},${itemsPerPage}]`);
+      refetchCurrentPage();
       setDeletingStreamId(null);
       setDeleteDialogOpen(false);
       setStreamToDelete(null);
@@ -181,6 +195,33 @@ export const StreamTable: React.FC<Props> = ({
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [streamToDelete, setStreamToDelete] = useState<any>(null);
+
+  const { mutate: updateStreamPromoted } = useMutation({
+    mutationFn: async ({ streamId, isPromoted }: { streamId: string; isPromoted: boolean }) => {
+      await api.admin.updateStream(streamId, { isPromoted });
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        description: `Stream ${variables.isPromoted ? 'promoted' : 'unpromoted'} successfully`,
+        variant: 'default',
+      });
+      // Refetch streams after successful update
+      refetchCurrentPage();
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to update stream promotion status',
+        variant: 'destructive',
+      });
+      // Refetch to revert UI state
+      refetchCurrentPage();
+    },
+  });
+
+  const handlePromotedToggle = (streamId: string, currentPromoted: boolean) => {
+    updateStreamPromoted({ streamId, isPromoted: !currentPromoted });
+  };
 
   const handleDeleteStream = (streamId: string) => {
     setDeletingStreamId(streamId);
@@ -230,6 +271,17 @@ export const StreamTable: React.FC<Props> = ({
                     <span className="text-sm text-muted-foreground">Users:</span>
                     <span className="text-sm font-medium">{stream?.userBetCount || '0'}</span>
                   </div>
+
+                  {/* Promoted - Only show for admins */}
+                  {isAdmin && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Promoted:</span>
+                      <Checkbox
+                        checked={stream?.isPromoted || false}
+                        onCheckedChange={() => handlePromotedToggle(stream?.id, stream?.isPromoted)}
+                      />
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
@@ -309,6 +361,7 @@ export const StreamTable: React.FC<Props> = ({
                 <TableHead>Picking Status</TableHead>
                 <TableHead>Users</TableHead>
                 <TableHead>Actions</TableHead>
+                {isAdmin && <TableHead>Promoted</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody className="[&_td]:font-light">
@@ -383,6 +436,14 @@ export const StreamTable: React.FC<Props> = ({
                         )}
                       </div>
                     </TableCell>
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={stream?.isPromoted || false}
+                          onCheckedChange={() => handlePromotedToggle(stream?.id, stream?.isPromoted)}
+                        />
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               ) : (
