@@ -54,6 +54,15 @@ interface StreamInfoFormProps {
   onTimezoneOffsetChange: (timezone: string) => void;
 }
 
+// Helper to format 24-hour time string to 12-hour format with AM/PM
+function formatTime12hr(time24) {
+  if (!time24) return '';
+  const [hour, minute] = time24.split(':');
+  const date = new Date();
+  date.setHours(Number(hour), Number(minute));
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 export const StreamInfoForm = ({
   isLive = false,
   isEdit = false,
