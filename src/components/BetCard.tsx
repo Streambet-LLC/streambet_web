@@ -48,9 +48,16 @@ export default function BetCard(props: BetCardType) {
     return getImageLink(thumbnail) || '/placeholder.svg';
   };
 
-  const handleClick = () => {
+  const handleClick = selectedOption => {
     if (statuses.canOpen) {
-      props.setQuickPick(props.streamId, props.roundId, props.streamName);
+      console.log(selectedOption);
+
+      props.setQuickPick(
+        props.streamId,
+        props.roundId,
+        props.streamName,
+        selectedOption ? selectedOption.option : null
+      );
     }
   };
 
@@ -112,7 +119,7 @@ export default function BetCard(props: BetCardType) {
       <CardHeader className="p-4 pb-0 flex flex-col gap-3">
         {cardData.streamStatus === StreamStatus.SCHEDULED && (
           <div className="flex justify-start">
-            <StreamStatusBadge 
+            <StreamStatusBadge
               status={StreamStatus.SCHEDULED}
               scheduledStartTime={cardData.scheduledStartTime}
               multiline={false}
@@ -128,10 +135,18 @@ export default function BetCard(props: BetCardType) {
             />
             <div className="flex items-center gap-2">
               <CardTitle
-                onClick={statuses.canOpen ? handleClick : undefined}
+                onClick={
+                  statuses.canOpen
+                    ? () => {
+                        handleClick(null);
+                      }
+                    : undefined
+                }
                 className={cn(
                   'text-md line-clamp-2',
-                  statuses.canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
+                  statuses.canOpen
+                    ? 'cursor-pointer hover:underline'
+                    : 'cursor-not-allowed opacity-70'
                 )}
               >
                 {cardData.name}
@@ -177,14 +192,18 @@ export default function BetCard(props: BetCardType) {
               )}
             </div>
           </div>
-          {cardData.description && 
+          {cardData.description && (
             <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild className='cursor-default'>
-                <CardDescription className='line-clamp-2 text-xs'>{cardData.description}</CardDescription>
+              <TooltipTrigger asChild className="cursor-default">
+                <CardDescription className="line-clamp-2 text-xs">
+                  {cardData.description}
+                </CardDescription>
               </TooltipTrigger>
-              <TooltipContent className='w-60' side="bottom">{cardData.description}</TooltipContent>
+              <TooltipContent className="w-60" side="bottom">
+                {cardData.description}
+              </TooltipContent>
             </Tooltip>
-          }
+          )}
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-2 p-4">
@@ -212,7 +231,13 @@ export default function BetCard(props: BetCardType) {
         {cardData.options.slice(0, 2).map((option, i) => (
           <div
             key={i}
-            onClick={statuses.canOpen ? handleClick : undefined}
+            onClick={
+              statuses.canOpen
+                ? () => {
+                    handleClick(option);
+                  }
+                : undefined
+            }
             className={cn(
               'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
               statuses.canOpen
@@ -243,7 +268,13 @@ export default function BetCard(props: BetCardType) {
         ))}
         {cardData.options.length > 2 && (
           <div
-            onClick={statuses.canOpen ? handleClick : undefined}
+            onClick={
+              statuses.canOpen
+                ? () => {
+                    handleClick(null);
+                  }
+                : undefined
+            }
             className={cn(
               'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
               statuses.canOpen

@@ -20,5 +20,5 @@ export interface BetCard {
   status?: string | null;
   streamStatus?: string | null;
   scheduledStartTime?: string | null;
-  setQuickPick: (streamId: string, roundId: string, streamName: string) => void,
+  setQuickPick: (streamId: string, roundId: string, streamName: string, selectedId: string | null) => void,
 }

@@ -23,8 +23,9 @@ export default function HomePromotedBets() {
     streamId: null,
     roundId: null,
     streamName: null,
+    selectedOption: null,
   });
-    
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['homepage-promoted-bets'],
     queryFn: async () => {
@@ -47,40 +48,38 @@ export default function HomePromotedBets() {
   return (
     <>
       <div className="p-6 -mx-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#BDFF00]/20 via-zinc-900 via-40% to-background">
-        <Carousel 
+        <Carousel
           className="flex-1 w-full"
           opts={{
             align: 'start',
             loop: false,
             slidesToScroll: 1,
-            containScroll: 'trimSnaps'
+            containScroll: 'trimSnaps',
           }}
         >
           <CarouselContent className="flex-1">
             {isLoading ? (
               <>
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <CarouselItem 
-                    key={i}
-                    className="basis-full md:basis-1/2 lg:basis-1/3 pl-4"
-                  >
+                  <CarouselItem key={i} className="basis-full md:basis-1/2 lg:basis-1/3 pl-4">
                     <Skeleton className="w-full h-64 rounded-lg" />
                   </CarouselItem>
                 ))}
               </>
             ) : (
-              sortedData?.map((bet) => (
-                <CarouselItem 
+              sortedData?.map(bet => (
+                <CarouselItem
                   key={bet.roundId}
                   className="basis-full md:basis-1/2 lg:basis-1/3 pl-4"
                 >
                   <BetCard
                     {...bet}
-                    setQuickPick={(streamId, roundId, streamName) => {
+                    setQuickPick={(streamId, roundId, streamName, selectedOption) => {
                       setQuickPickModalSettings({
                         streamId,
                         streamName,
                         roundId,
+                        selectedOption,
                       });
                       setQuickPickOpen(true);
                     }}
@@ -109,6 +108,7 @@ export default function HomePromotedBets() {
           streamId={quickPickModalSettings.streamId}
           roundId={quickPickModalSettings.roundId}
           streamName={quickPickModalSettings.streamName}
+          selectedOption={quickPickModalSettings.selectedOption}
         />
       )}
     </>

@@ -56,6 +56,7 @@ export const StreamContent = ({
     streamId: null,
     roundId: null,
     streamName: null,
+    selectedOption: null,
   });
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const { socketConnect } = useBettingStatusContext();
@@ -64,7 +65,9 @@ export const StreamContent = ({
   useEffect(() => {
     if (stream) {
       setViewerCount(stream.viewerCount || 0);
-      const activeRound = stream.roundDetails.findIndex((round) => round.status?.toLowerCase() === BettingRoundStatus.OPEN);
+      const activeRound = stream.roundDetails.findIndex(
+        round => round.status?.toLowerCase() === BettingRoundStatus.OPEN
+      );
 
       console.log(stream.roundDetails);
       if (activeRound > -1) {
@@ -193,11 +196,12 @@ export const StreamContent = ({
                     <BetCard
                       {...round}
                       isForStream
-                      setQuickPick={(streamId, roundId, streamName) => {
+                      setQuickPick={(streamId, roundId, streamName, selectedOption) => {
                         setQuickPickModalSettings({
                           streamId,
                           streamName,
                           roundId,
+                          selectedOption,
                         });
                         setQuickPickOpen(true);
                       }}
@@ -296,6 +300,7 @@ export const StreamContent = ({
           streamId={quickPickModalSettings.streamId}
           roundId={quickPickModalSettings.roundId}
           streamName={quickPickModalSettings.streamName}
+          selectedOption={quickPickModalSettings.selectedOption}
         />
       )}
     </div>
