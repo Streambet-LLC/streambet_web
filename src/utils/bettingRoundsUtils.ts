@@ -2,6 +2,7 @@
 
 // Constant for temporary option IDs to prevent them from being sent to the database
 export const TEMP_OPTION_PREFIX = 'TEMP_OPTION_';
+import moment from "moment";
 
 export interface BettingOption {
   optionId?: string;
@@ -24,6 +25,8 @@ export const cleanTemporaryIds = (roundsData: BettingRound[]): BettingRound[] =>
     // Only include the required properties for the API
     roundId: round.roundId,
     roundName: round.roundName,
+    // @ts-ignore
+    lockDate: round.lockDate ? moment(round.lockDate).format("YYYY-MM-DD") + "T" + round.lockTime + ":00Z" : null,
     options: round.options.map(option => {
       // Remove only temporary option IDs, keep real ones and other properties
       if (option.optionId && option.optionId.startsWith(TEMP_OPTION_PREFIX)) {
@@ -67,7 +70,7 @@ export const getCleanedRounds = (rounds: BettingRound[]): BettingRound[] => {
 export const appendCountersToDuplicates = (options: BettingOption[]): BettingOption[] => {
   // Group options by normalized name (case-insensitive, trimmed)
   const nameGroups = new Map<string, number[]>();
-  
+
   options.forEach((option, index) => {
     const normalizedName = option.option.toLowerCase().trim();
     if (!nameGroups.has(normalizedName)) {
@@ -78,7 +81,7 @@ export const appendCountersToDuplicates = (options: BettingOption[]): BettingOpt
 
   // Create result array with counters added to duplicates
   const result = [...options];
-  
+
   nameGroups.forEach((indices) => {
     // Only add counters if there are duplicates (more than 1)
     if (indices.length > 1) {

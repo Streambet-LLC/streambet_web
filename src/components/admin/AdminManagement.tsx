@@ -713,6 +713,8 @@ export const AdminManagement = ({
       ...(!editStreamId && { type: eventType.value }),
     };
 
+    console.log(payload);
+
     createStreamMutation.mutate(payload);
   }
 

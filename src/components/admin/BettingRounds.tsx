@@ -22,6 +22,7 @@ import {
   isTemporaryOptionId,
   getCleanedRounds,
 } from '@/utils/bettingRoundsUtils';
+import CalendarDatePicker from '../ui/CalendarDatePicker';
 
 interface BettingOption {
   optionId?: string;
@@ -31,6 +32,8 @@ interface BettingOption {
 interface BettingRound {
   roundId?: string;
   roundName: string;
+  lockDate?: string;
+  lockTime?: string;
   options: BettingOption[];
 }
 
@@ -141,6 +144,18 @@ export function BettingRounds({
   const updateRoundName = (roundIndex: number, newName: string) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].roundName = newName;
+    onRoundsChange(updatedRounds);
+  };
+
+  const updateLockDate = (roundIndex: number, newDate: string) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[roundIndex].lockDate = newDate;
+    onRoundsChange(updatedRounds);
+  };
+
+  const updateLockTime = (roundIndex: number, newTime: string) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[roundIndex].lockTime = newTime;
     onRoundsChange(updatedRounds);
   };
 
@@ -378,6 +393,42 @@ export function BettingRounds({
                             </TableCell>
                           </TableRow>
                         )}
+                        <TableRow>
+                          <TableCell colSpan={2} className="border-none px-4 py-2">
+                            <div>
+                              <CalendarDatePicker
+                                label={'Optional Auto Lock Date'}
+                                error={''}
+                                isLive={false}
+                                isUploading={false}
+                                onClick={e => {
+                                  // if (isLive) {
+                                  //   e.preventDefault();
+                                  //   toast({
+                                  //     title: 'You cannot edit scheduled date of live stream',
+                                  //     variant: 'destructive',
+                                  //   });
+                                  //   return;
+                                  // }
+                                }}
+                                dateVal={round.lockDate}
+                                timeVal={round.lockTime}
+                                onChange={newData => {
+                                  updateLockDate(roundIndex, newData.date);
+                                  updateLockTime(roundIndex, newData.time);
+                                }}
+                                onChangeDate={newDate => {
+                                  updateLockDate(roundIndex, newDate);
+                                }}
+                                onChangeTime={newTime => {
+                                  console.log(newTime);
+
+                                  updateLockTime(roundIndex, newTime.target.value);
+                                }}
+                              />
+                            </div>
+                          </TableCell>
+                        </TableRow>
                         {/* Options rows */}
                         {expandedRounds.includes(getRoundValue(roundIndex)) &&
                           (round.options.length > 0 ? (
