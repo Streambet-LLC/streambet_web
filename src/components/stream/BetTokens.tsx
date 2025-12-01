@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
-import { useCurrencyContext } from "@/contexts/CurrencyContext";
+import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from '@/hooks/use-mobile';
 import { PRESET_PERCENTAGES } from '@/utils/constants';
-
 
 interface BettingVariable {
   id: string;
@@ -49,7 +48,11 @@ interface BetTokensProps {
   bettingData?: BettingData;
   updatedSliderMax: SliderMax;
   placeBet: (data: { bettingVariableId: string; amount: number; currencyType: string }) => void;
-  editBetMutation?: (data: { newBettingVariableId: string; newAmount: number; newCurrencyType: string }) => void;
+  editBetMutation?: (data: {
+    newBettingVariableId: string;
+    newAmount: number;
+    newCurrencyType: string;
+  }) => void;
   getRoundData?: getRoundData;
   resetKey?: number;
   totalPot?: number;
@@ -61,9 +64,10 @@ interface BetTokensProps {
   updatedCurrency?: string; // for updated currency type
   lockedBet?: boolean; // to indicate if the bet is locked
   handleEditBack: VoidFunction;
+  selectedOption: string | null;
 }
 
-export default function BetTokens({ 
+export default function BetTokens({
   streamId,
   updatedCurrency,
   updatedSliderMax,
@@ -71,16 +75,17 @@ export default function BetTokens({
   loading,
   totalPot,
   selectedAmount,
-  selectedWinner, 
+  selectedWinner,
   lockedOptions,
-  session, 
-  bettingData ,
+  session,
+  bettingData,
   placeBet,
   getRoundData,
-  editBetMutation, 
+  editBetMutation,
   resetKey,
   lockedBet,
   handleEditBack,
+  selectedOption,
 }: BetTokensProps) {
   const { toast } = useToast();
   const { currency } = useCurrencyContext();
@@ -89,8 +94,10 @@ export default function BetTokens({
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
+  console.log(selectedOption);
+
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
-  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedColor, setSelectedColor] = useState(selectedOption ? selectedOption : '');
   const [sliderMax, setSliderMax] = useState<number | undefined>();
   const [isTabletRange, setIsTabletRange] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
@@ -102,10 +109,10 @@ export default function BetTokens({
     const checkTabletRange = () => {
       setIsTabletRange(window.innerWidth >= 773 && window.innerWidth <= 1024);
     };
-    
+
     checkTabletRange();
     window.addEventListener('resize', checkTabletRange);
-    
+
     return () => window.removeEventListener('resize', checkTabletRange);
   }, []);
 
@@ -123,46 +130,58 @@ export default function BetTokens({
     return () => clearTimeout(timer);
   }, [bettingData?.bettingRounds?.[0]?.bettingVariables]);
 
-  
   const handleColorClick = (color: string) => {
     setSelectedColor(color);
   };
 
-  const isColorButtonsEnabled = betAmount > 0;
-  const isBetButtonEnabled = selectedColor !== "";
+  const isColorButtonsEnabled = betAmount > 0 || selectedOption !== null;
+  const isBetButtonEnabled = selectedColor !== '';
 
-   useEffect(() => {
-      const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
-      
-      const currentBetAmount = isEditing ? Number(isSweepCoins 
-        ? bettingData?.userBetSweepCoin 
-        : bettingData?.userBetGoldCoins) || 0 : 0;
-      
-      const walletBalance = Number(isSweepCoins 
-        ? bettingData?.walletSweepCoin 
-        : bettingData?.walletGoldCoin) || 0;
-      
-      // Round down: only whole number bets allowed
-      setSliderMax(Math.floor(Math.min(walletBalance + currentBetAmount, maxBetLimit)));
-      
-      // Only set selectedColor if selectedWinner exists in current round's options
-      const optionExists = bettingData?.bettingRounds?.[0]?.bettingVariables?.some(
-        option => option.name === selectedWinner
-      );
-      setSelectedColor(optionExists && selectedWinner ? selectedWinner : "");
-      
-      setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
+  useEffect(() => {
+    const maxBetLimit = isSweepCoins
+      ? bettingLimits.maxSweepCoinsBet
+      : bettingLimits.maxGoldCoinsBet;
+
+    const currentBetAmount = isEditing
+      ? Number(isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins) || 0
+      : 0;
+
+    const walletBalance =
+      Number(isSweepCoins ? bettingData?.walletSweepCoin : bettingData?.walletGoldCoin) || 0;
+
+    // Round down: only whole number bets allowed
+    setSliderMax(Math.floor(Math.min(walletBalance + currentBetAmount, maxBetLimit)));
+
+    // Only set selectedColor if selectedWinner exists in current round's options
+    const optionExists = bettingData?.bettingRounds?.[0]?.bettingVariables?.some(
+      option => option.name === selectedWinner
+    );
+    setSelectedColor(
+      optionExists && selectedWinner ? selectedWinner : selectedOption ? selectedOption : ''
+    );
+
+    setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAmount,selectedWinner, currency, updatedCurrency, updatedSliderMax,getRoundData, bettingData, session, isEditing]);
+  }, [
+    selectedAmount,
+    selectedWinner,
+    currency,
+    updatedCurrency,
+    updatedSliderMax,
+    getRoundData,
+    bettingData,
+    session,
+    isEditing,
+  ]);
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
-    if(resetKey !==0){
+    if (resetKey !== 0) {
       setBetAmount(0);
-      setSelectedColor("");
+      setSelectedColor('');
     }
   }, [resetKey]);
-  
+
   const handleBet = () => {
     if (lockedOptions) {
       toast({
@@ -171,33 +190,39 @@ export default function BetTokens({
       });
       return;
     }
-    const selectedOption = bettingData?.bettingRounds?.[0]?.bettingVariables?.find(option => option.name === selectedColor);
+    const selectedOption = bettingData?.bettingRounds?.[0]?.bettingVariables?.find(
+      option => option.name === selectedColor
+    );
     if (!selectedOption) return;
 
     if (isEditing) {
-      editBetMutation({ newBettingVariableId: selectedOption.id, newAmount: betAmount, newCurrencyType: currency });
-    }
-    else{
-      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: currency })
+      editBetMutation({
+        newBettingVariableId: selectedOption.id,
+        newAmount: betAmount,
+        newCurrencyType: currency,
+      });
+    } else {
+      placeBet({ bettingVariableId: selectedOption.id, amount: betAmount, currencyType: currency });
     }
   };
 
   // Check if wallet balance is 0. bettingData is source of truth with slider logic
-  const walletBalance = useMemo(() => 
-    Number(isSweepCoins ? bettingData?.walletSweepCoin : bettingData?.walletGoldCoin) || 0,
+  const walletBalance = useMemo(
+    () => Number(isSweepCoins ? bettingData?.walletSweepCoin : bettingData?.walletGoldCoin) || 0,
     [isSweepCoins, bettingData?.walletSweepCoin, bettingData?.walletGoldCoin]
   );
-  
-  // Check if betting is available. Round is open, not locked
-  const isBettingAvailable = bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet;
-  
-  // Show zero balance message when user has 0 balance, or switches to different currency with 0 balance
-  const hasZeroBalance = session != null && 
-                         bettingData != null && 
-                         isBettingAvailable &&
-                         walletBalance === 0 && 
-                         (!isEditing || (isEditing && updatedCurrency !== currency));
 
+  // Check if betting is available. Round is open, not locked
+  const isBettingAvailable =
+    bettingData?.bettingRounds?.[0]?.status === BettingRoundStatus.OPEN && !lockedBet;
+
+  // Show zero balance message when user has 0 balance, or switches to different currency with 0 balance
+  const hasZeroBalance =
+    session != null &&
+    bettingData != null &&
+    isBettingAvailable &&
+    walletBalance === 0 &&
+    (!isEditing || (isEditing && updatedCurrency !== currency));
 
   return (
     <div>
@@ -216,123 +241,151 @@ export default function BetTokens({
           </button>
         </div>
       ) : isBettingAvailable ? (
-    <div
-      className="rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-base sm:text-base text-xs"
-      style={{
-        background: 'rgba(24, 24, 24, 1)',
-        border: '0.62px solid rgba(44, 44, 44, 1)',
-        opacity: session == null ? 0.4 : 1,
-        pointerEvents: session == null ? 'none' : 'auto',
-      }}
-    >
-      {/* Back button row */}
-      {isEditing && (
-        <div className="w-[18px] h-[18px] gap-2 flex items-center cursor-pointer mb-2" onClick={() => handleEditBack()}>
-          <img
-            src="/icons/back.svg"
-            className="w-[100%] h-[100%] object-contain cursor-pointer"
-          />
-          <span className="font-medium">Back</span>
-        </div>
-      )}
-      
-      <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
-        <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
-          Pick <span style={{ color: 'rgba(189,255,0,1)' }} className="text-2xl font-bold sm:text-xl text-base">{betAmount?.toLocaleString('en-US')}</span> {isSweepCoins ? ' Stream Coins' : ' Gold Coins'}
-          <span className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate" title={bettingData?.bettingRounds?.[0]?.roundName}>
-          {isSweepCoins
-            ? `Available Stream Coins: ${Number(session?.walletBalanceSweepCoin || 0).toLocaleString('en-US')}`
-            : `Available Gold Coins: ${Number(session?.walletBalanceGoldCoin || 0).toLocaleString('en-US')}`
-          }
-            </span>
-        </div>
-        
-        <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
-          <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-            Total Pot: {`${totalPot} ${isSweepCoins ? ' Stream Coins' : ' Gold Coins'}`}
-            </span>
-        </div>
-      </div>
+        <div
+          className="rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-base sm:text-base text-xs"
+          style={{
+            background: 'rgba(24, 24, 24, 1)',
+            border: '0.62px solid rgba(44, 44, 44, 1)',
+            opacity: session == null ? 0.4 : 1,
+            pointerEvents: session == null ? 'none' : 'auto',
+          }}
+        >
+          {/* Back button row */}
+          {isEditing && (
+            <div
+              className="w-[18px] h-[18px] gap-2 flex items-center cursor-pointer mb-2"
+              onClick={() => handleEditBack()}
+            >
+              <img
+                src="/icons/back.svg"
+                className="w-[100%] h-[100%] object-contain cursor-pointer"
+              />
+              <span className="font-medium">Back</span>
+            </div>
+          )}
 
-      <div className="relative w-full pt-2 pb-2">
-        {/* Number input and slider row */}
-        <div className="flex gap-2 items-center">
-          <input
-            type="number"
-            min={0}
-            max={sliderMax}
-            step={1}
-            value={betAmount}
-            disabled={session == null || lockedOptions}
-            onChange={e => {
-              const value = Math.max(0, Math.min(Math.floor(Number(e.target.value) || 0), Math.floor(sliderMax || 0)));
-              setBetAmount(value);
-            }}
-            className="w-[90px] bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444] number-input-visible-arrows"
-          />
-          
-          <input
-            type="range"
-            min={0}
-            max={sliderMax}
-            step={1}
-            value={betAmount}
-            disabled={session == null}
-            onChange={(e) => !lockedOptions && setBetAmount(Math.floor(Number(e.target.value)))}
-            onMouseDown={() => {
-              if (Number(sliderMax) === 0) {
-                toast({
-                  variant: 'destructive',
-                  description: 'No coins available to Pick',
-                });
-              }
-              if (lockedOptions) {
-                toast({
-                  variant: 'destructive',
-                  description: 'Admin has locked the round',
-                });
-              }
-            }}
-            className="flex-1 h-[25px] appearance-none rounded-full bg-transparent bet-slider-gradient"
-            style={{
-              MozAppearance: 'none',
-              WebkitAppearance: 'none',
-              appearance: 'none',
-              border: '0.56px solid rgba(186, 186, 186, 1)'
-            }}
-          />
-        </div>
-        
-        {/* Preset Amount Buttons row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
-          {(() => {
-            const maxBetLimit = isSweepCoins ? bettingLimits.maxSweepCoinsBet : bettingLimits.maxGoldCoinsBet;
-            const baseWalletBalance = Number(isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin) || 0;
-            const currentBetAmount = isEditing ? Number(isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins) || 0 : 0;
-            const totalAvailableBalance = Math.min(baseWalletBalance + currentBetAmount, maxBetLimit);
+          <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
+            <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
+              Pick{' '}
+              <span
+                style={{ color: 'rgba(189,255,0,1)' }}
+                className="text-2xl font-bold sm:text-xl text-base"
+              >
+                {betAmount?.toLocaleString('en-US')}
+              </span>{' '}
+              {isSweepCoins ? ' Stream Coins' : ' Gold Coins'}
+              <span
+                className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate"
+                title={bettingData?.bettingRounds?.[0]?.roundName}
+              >
+                {isSweepCoins
+                  ? `Available Stream Coins: ${Number(session?.walletBalanceSweepCoin || 0).toLocaleString('en-US')}`
+                  : `Available Gold Coins: ${Number(session?.walletBalanceGoldCoin || 0).toLocaleString('en-US')}`}
+              </span>
+            </div>
 
-            // Filter out buttons with zero value to prevent showing "0 tokens"
-            return PRESET_PERCENTAGES
-              .map((percentage) => {
-                const value = Math.floor(totalAvailableBalance * percentage);
-                return { percentage, value };
-              })
-              .filter(item => item.value > 0)
-              .map(({ percentage, value }) => (
-                <button
-                  key={`${percentage}-${value}`}
-                  onClick={() => session && !lockedOptions && setBetAmount(Math.min(value, sliderMax || 0))}
-                  disabled={session == null || lockedOptions}
-                  className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  {value} tokens
-                </button>
-              ));
-          })()}
-        </div>
-        
-        <style>
-          {`
+            <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
+              <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
+                Total Pot: {`${totalPot} ${isSweepCoins ? ' Stream Coins' : ' Gold Coins'}`}
+              </span>
+            </div>
+          </div>
+
+          <div className="relative w-full pt-2 pb-2">
+            {/* Number input and slider row */}
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                min={0}
+                max={sliderMax}
+                step={1}
+                value={betAmount}
+                disabled={session == null || lockedOptions}
+                onChange={e => {
+                  const value = Math.max(
+                    0,
+                    Math.min(Math.floor(Number(e.target.value) || 0), Math.floor(sliderMax || 0))
+                  );
+                  setBetAmount(value);
+                }}
+                className="w-[90px] bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444] number-input-visible-arrows"
+              />
+
+              <input
+                type="range"
+                min={0}
+                max={sliderMax}
+                step={1}
+                value={betAmount}
+                disabled={session == null}
+                onChange={e => !lockedOptions && setBetAmount(Math.floor(Number(e.target.value)))}
+                onMouseDown={() => {
+                  if (Number(sliderMax) === 0) {
+                    toast({
+                      variant: 'destructive',
+                      description: 'No coins available to Pick',
+                    });
+                  }
+                  if (lockedOptions) {
+                    toast({
+                      variant: 'destructive',
+                      description: 'Admin has locked the round',
+                    });
+                  }
+                }}
+                className="flex-1 h-[25px] appearance-none rounded-full bg-transparent bet-slider-gradient"
+                style={{
+                  MozAppearance: 'none',
+                  WebkitAppearance: 'none',
+                  appearance: 'none',
+                  border: '0.56px solid rgba(186, 186, 186, 1)',
+                }}
+              />
+            </div>
+
+            {/* Preset Amount Buttons row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
+              {(() => {
+                const maxBetLimit = isSweepCoins
+                  ? bettingLimits.maxSweepCoinsBet
+                  : bettingLimits.maxGoldCoinsBet;
+                const baseWalletBalance =
+                  Number(
+                    isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin
+                  ) || 0;
+                const currentBetAmount = isEditing
+                  ? Number(
+                      isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins
+                    ) || 0
+                  : 0;
+                const totalAvailableBalance = Math.min(
+                  baseWalletBalance + currentBetAmount,
+                  maxBetLimit
+                );
+
+                // Filter out buttons with zero value to prevent showing "0 tokens"
+                return PRESET_PERCENTAGES.map(percentage => {
+                  const value = Math.floor(totalAvailableBalance * percentage);
+                  return { percentage, value };
+                })
+                  .filter(item => item.value > 0)
+                  .map(({ percentage, value }) => (
+                    <button
+                      key={`${percentage}-${value}`}
+                      onClick={() =>
+                        session && !lockedOptions && setBetAmount(Math.min(value, sliderMax || 0))
+                      }
+                      disabled={session == null || lockedOptions}
+                      className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    >
+                      {value} tokens
+                    </button>
+                  ));
+              })()}
+            </div>
+
+            <style>
+              {`
             /* Number input with always visible arrows */
             input[type="number"].number-input-visible-arrows::-webkit-inner-spin-button,
             input[type="number"].number-input-visible-arrows::-webkit-outer-spin-button {
@@ -341,7 +394,7 @@ export default function BetTokens({
             
             input[type="range"].bet-slider-gradient {
               background: linear-gradient(90deg, #7FFF00 0%, #32CD32 100%);
-              background-size: ${(betAmount/(sliderMax||1))*100}% 100%;
+              background-size: ${(betAmount / (sliderMax || 1)) * 100}% 100%;
               background-repeat: no-repeat;
             }
             input[type="range"]::-webkit-slider-thumb {
@@ -378,110 +431,142 @@ export default function BetTokens({
               background: #242424;
             }
           `}
-        </style>
-      </div>
+            </style>
+          </div>
 
-
-      <div className="relative">
-        <div
-          ref={optionsContainerRef}
-          className={`${
-            isMobile 
-              ? 'grid grid-cols-2 gap-2 pb-1 overflow-y-auto max-h-[200px]' 
-              : isTabletRange
-              ? 'grid grid-cols-2 gap-2 pb-1 overflow-y-auto max-h-[200px]'
-              : `grid gap-2 pb-1 ${
-                  bettingData?.bettingRounds?.[0]?.bettingVariables?.length === 2
-                    ? 'grid-cols-2' // center the two buttons
-                    : 'grid-cols-2 sm:grid-cols-4'
-                }`
-          }`}
-        >
-          {bettingData?.bettingRounds?.[0]?.bettingVariables?.map((option: any, idx: number) => (
-            <button
-              key={option.id}
-              onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
+          <div className="relative">
+            <div
+              ref={optionsContainerRef}
               className={`${
-                isMobile || isTabletRange
-                  ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 break-words whitespace-normal' 
-                  : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 break-words whitespace-normal'
-              } ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-              style={{ border: selectedColor === option.name ? '1px solid rgba(189, 255, 0, 1)' : '#242424',
-                 color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
-               }}
-              disabled={!isColorButtonsEnabled}
-              title={option.name}
+                isMobile
+                  ? 'grid grid-cols-2 gap-2 pb-1 overflow-y-auto max-h-[200px]'
+                  : isTabletRange
+                    ? 'grid grid-cols-2 gap-2 pb-1 overflow-y-auto max-h-[200px]'
+                    : `grid gap-2 pb-1 ${
+                        bettingData?.bettingRounds?.[0]?.bettingVariables?.length === 2
+                          ? 'grid-cols-2' // center the two buttons
+                          : 'grid-cols-2 sm:grid-cols-4'
+                      }`
+              }`}
             >
-              {option.name}
-            </button>
-          ))}
-        </div>
-        
-        {/* Scroll indicator */}
-        {showScrollIndicator && (isMobile || isTabletRange) && (
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-gradient-to-t from-[#242424] to-transparent h-6 w-full pointer-events-none flex items-center justify-center">
-            <div className="flex space-x-1">
-              <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
-              <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              {bettingData?.bettingRounds?.[0]?.bettingVariables?.map(
+                (option: any, idx: number) => (
+                  <button
+                    key={option.id}
+                    onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
+                    className={`${
+                      isMobile || isTabletRange
+                        ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 break-words whitespace-normal'
+                        : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 break-words whitespace-normal'
+                    } ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    style={{
+                      border:
+                        selectedColor === option.name
+                          ? '1px solid rgba(189, 255, 0, 1)'
+                          : '#242424',
+                      color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
+                    }}
+                    disabled={!isColorButtonsEnabled}
+                    title={option.name}
+                  >
+                    {option.name}
+                  </button>
+                )
+              )}
             </div>
-          </div>
-        )}
-      </div>
 
-      <button
-        className="w-full bg-[#BDFF00] text-black font-bold py-2 rounded-full hover:brightness-105 transition text-lg sm:text-base text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-        disabled={!isBetButtonEnabled || betAmount<=0}
-        onClick={handleBet}
-      >
-        {loading ? (
-          <svg className="animate-spin h-5 w-5 mr-2 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-          </svg>
-        ) : null}
-        {loading ? 'Placing pick...' : (
-          <div className="break-words whitespace-normal w-full text-center px-4" title={selectedColor}>
-            {`Pick ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
+            {/* Scroll indicator */}
+            {showScrollIndicator && (isMobile || isTabletRange) && (
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-gradient-to-t from-[#242424] to-transparent h-6 w-full pointer-events-none flex items-center justify-center">
+                <div className="flex space-x-1">
+                  <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
+                  <div
+                    className="w-1 h-1 bg-white rounded-full animate-bounce"
+                    style={{ animationDelay: '0.1s' }}
+                  ></div>
+                  <div
+                    className="w-1 h-1 bg-white rounded-full animate-bounce"
+                    style={{ animationDelay: '0.2s' }}
+                  ></div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </button>
-    </div>):(
 
-       <div className="h-[220px] relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]" style={{ border: '0.62px solid #181818' }}>
-      <div className="relative z-10 h-full flex flex-col justify-between">
-        <div>
-        
-          <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-20 pb-4">
-             Picks are locked for this round
-          </p>
+          <button
+            className="w-full bg-[#BDFF00] text-black font-bold py-2 rounded-full hover:brightness-105 transition text-lg sm:text-base text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            disabled={!isBetButtonEnabled || betAmount <= 0}
+            onClick={handleBet}
+          >
+            {loading ? (
+              <svg
+                className="animate-spin h-5 w-5 mr-2 text-black"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
+              </svg>
+            ) : null}
+            {loading ? (
+              'Placing pick...'
+            ) : (
+              <div
+                className="break-words whitespace-normal w-full text-center px-4"
+                title={selectedColor}
+              >
+                {`Pick ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
+              </div>
+            )}
+          </button>
         </div>
-
+      ) : (
         <div
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[250px] pointer-events-none z-0"
-          style={{
-            background: 'radial-gradient(60% 100% at 50% 100%, rgba(189, 255, 0, 0.25) -140%, transparent 100%)',
-          }}
-        ></div>
-      </div>
+          className="h-[220px] relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]"
+          style={{ border: '0.62px solid #181818' }}
+        >
+          <div className="relative z-10 h-full flex flex-col justify-between">
+            <div>
+              <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-20 pb-4">
+                Picks are locked for this round
+              </p>
+            </div>
 
-        <>
-          <img
-            src="/icons/lock1.svg"
-            alt="lock left"
-            className="absolute top-10  left-0 w-[120px] sm:w-[220px] h-[180px] "
-          />
-          <img
-            src="/icons/lock2.svg"
-            alt="lock right"
-            className="absolute bottom-9 right-0 w-[80px] sm:w-[100px] h-auto"
-          />
-        </>
+            <div
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[250px] pointer-events-none z-0"
+              style={{
+                background:
+                  'radial-gradient(60% 100% at 50% 100%, rgba(189, 255, 0, 0.25) -140%, transparent 100%)',
+              }}
+            ></div>
+          </div>
 
-    </div>
-    )}
+          <>
+            <img
+              src="/icons/lock1.svg"
+              alt="lock left"
+              className="absolute top-10  left-0 w-[120px] sm:w-[220px] h-[180px] "
+            />
+            <img
+              src="/icons/lock2.svg"
+              alt="lock right"
+              className="absolute bottom-9 right-0 w-[80px] sm:w-[100px] h-auto"
+            />
+          </>
+        </div>
+      )}
     </div>
   );
 }
-
-
