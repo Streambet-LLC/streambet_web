@@ -6,6 +6,7 @@ import { useCurrencyContext } from "@/contexts/CurrencyContext";
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PRESET_PERCENTAGES } from '@/utils/constants';
+import { Button } from "../ui/button";
 
 
 interface BettingVariable {
@@ -83,7 +84,7 @@ export default function BetTokens({
   handleEditBack,
 }: BetTokensProps) {
   const { toast } = useToast();
-  const { currency } = useCurrencyContext();
+  const { currency, setCurrency } = useCurrencyContext();
   const { getBettingLimits } = useAuthContext();
   const bettingLimits = getBettingLimits();
   const isMobile = useIsMobile();
@@ -96,6 +97,14 @@ export default function BetTokens({
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
+
+  const handleCurrencyChange = () => {
+    setCurrency(isSweepCoins ? CurrencyType.GOLD_COINS : CurrencyType.SWEEP_COINS);
+
+    toast({
+      description: `Switched wallet to ${isSweepCoins ? 'Gold Coins' : 'Sweep Coins'}`,
+    });
+  };
 
   // Check for tablet range (773px to 1024px)
   useEffect(() => {
@@ -214,6 +223,22 @@ export default function BetTokens({
           >
             Buy Coins
           </button>
+          <div className="text-sm">or</div>
+          <Button
+            variant="outline"
+            className="w-full text-white text-sm justify-center font-medium py-2 rounded-full transition"
+            onClick={handleCurrencyChange}
+          >
+            Switch to 
+            <div className="flex flex-row items-center gap-1">
+              <img
+                src={isSweepCoins ? "/icons/gold-coins.png" : "/icons/sweep-coins.png"}
+                alt="coins"
+                className={isSweepCoins ? "h-6 w-6" : "h-4 w-6"}
+              />
+              {isSweepCoins ? "Gold Coins" : "Sweep Coins"}
+            </div>
+          </Button>
         </div>
       ) : isBettingAvailable ? (
     <div
