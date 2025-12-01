@@ -124,7 +124,7 @@ export default function BetCard(props: BetCardType) {
           <div className="flex gap-3">
             <img
               src={getThumbnailUrl(cardData.thumbnail)}
-              className="aspect-square w-9 h-9 rounded-md"
+              className="aspect-square w-14 h-14 rounded-md object-cover"
             />
             <div className="flex items-center gap-2">
               <CardTitle
