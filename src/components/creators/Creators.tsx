@@ -45,7 +45,6 @@ export default function Creators() {
                   >
                     {creator.username}
                   </Link>
-                  <div className="text-sm text-white mb-1">{creator.name}</div>
                 </div>
               </CardHeader>
             </Card>

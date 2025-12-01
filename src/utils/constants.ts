@@ -2000,11 +2000,10 @@ export const PRESET_PERCENTAGES = [0.1, 0.3, 0.5, 1.0] as const; // 10%, 30%, 50
 export const STREAM_LIMITS = {
   // Title limits
   TITLE_MIN_LENGTH: 3,
-  TITLE_MAX_LENGTH: 50,
+  TITLE_MAX_LENGTH: 100,
   
   // Description limits
-  DESCRIPTION_MAX_CHARACTERS: 300,
-  DESCRIPTION_MAX_WORDS: 50,
+  DESCRIPTION_MAX_CHARACTERS: 400
 } as const;
 
 // Priority order for betting rounds on landing page

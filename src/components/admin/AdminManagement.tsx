@@ -743,7 +743,7 @@ export const AdminManagement = ({
     // Auto-populate first round with 2 options if empty
     if (bettingRounds.length === 0) {
       const firstRound: BettingRound = {
-        roundName: 'First round',
+        roundName: eventType.value === 'non-video' ? title : 'First round',
         options: [{ option: 'Option 1' }, { option: 'Option 2' }],
       };
       setBettingRounds([firstRound]);
@@ -1068,20 +1068,21 @@ export const AdminManagement = ({
                     Next
                   </Button>
                 ) : (
-                  <Button
-                    type="button"
-                    className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
-                    style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
-                    disabled={
-                      createStreamMutation.isPending ||
-                      createBetMutation.isPending ||
-                      isUploading ||
-                      (eventType.value !== 'stream' && bettingRounds.length > 0)
-                    }
-                    onClick={addNewRound}
-                  >
-                    + New round
-                  </Button>
+                  (eventType.value === 'stream' || bettingRounds.length === 0) && (
+                    <Button
+                      type="button"
+                      className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
+                      style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
+                      disabled={
+                        createStreamMutation.isPending ||
+                        createBetMutation.isPending ||
+                        isUploading
+                      }
+                      onClick={addNewRound}
+                    >
+                      + New round
+                    </Button>
+                  )
                 )}
               </div>
               <Separator className="my-4 bg-[#232323]" />
