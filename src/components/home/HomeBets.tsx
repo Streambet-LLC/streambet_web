@@ -10,28 +10,26 @@ import { PRIORITY_STREAMS } from '@/utils/constants';
 import { sortByPriorityPairs } from '@/utils/helper';
 import { QuickPickModal } from '../stream/QuickPickModal';
 
-export default function HomeBets({
-  filters
-} : {
-  filters: any;
-}) {
+export default function HomeBets({ filters }: { filters: any }) {
   const [displayCount, setDisplayCount] = useState(24);
   const [quickPickOpen, setQuickPickOpen] = useState(false);
   const [quickPickModalSettings, setQuickPickModalSettings] = useState({
     streamId: null,
     roundId: null,
     streamName: null,
+    selectedOption: null,
   });
-  const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage, refetch } = useInfiniteQuery({
-    queryKey: ['homepage-bets', filters],
-    queryFn: async ({ pageParam }) => {
-      const response = await api.bets.getBets({ page: pageParam });
+  const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage, refetch } =
+    useInfiniteQuery({
+      queryKey: ['homepage-bets', filters],
+      queryFn: async ({ pageParam }) => {
+        const response = await api.bets.getBets({ page: pageParam });
 
-      return response;
-    },
-    initialPageParam: 1,
-    getNextPageParam: lastPage => (lastPage.hasNextPage ? lastPage.page + 1 : undefined),
-  });
+        return response;
+      },
+      initialPageParam: 1,
+      getNextPageParam: lastPage => (lastPage.hasNextPage ? lastPage.page + 1 : undefined),
+    });
 
   // Auto-fetch all pages in background for proper sorting
   useEffect(() => {
@@ -72,11 +70,12 @@ export default function HomeBets({
                 <BetCard
                   key={i}
                   {...bet}
-                  setQuickPick={(streamId, roundId, streamName) => {
+                  setQuickPick={(streamId, roundId, streamName, selectedOption) => {
                     setQuickPickModalSettings({
                       streamId,
                       streamName,
                       roundId,
+                      selectedOption,
                     });
                     setQuickPickOpen(true);
                   }}
@@ -108,6 +107,7 @@ export default function HomeBets({
           streamId={quickPickModalSettings.streamId}
           roundId={quickPickModalSettings.roundId}
           streamName={quickPickModalSettings.streamName}
+          selectedOption={quickPickModalSettings.selectedOption}
         />
       )}
     </>
