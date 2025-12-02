@@ -411,12 +411,11 @@ export const StreamInfoForm = ({
           </div>
         </div>
       </div>
-      {/* Start date */}
+      {/* Start date - Only for livestreams */}
+      {initialValues.eventType.value === 'stream' && (
       <div>
         <Label className="text-white font-light mb-3 block">
-          {initialValues.eventType.value === 'stream' 
-            ? 'Start date & time' 
-            : 'Date & Time that Picks Will Be Locked'}
+          Start date & time
         </Label>
         {isEdit && (
           <p className="text-sm text-muted-foreground mb-2">
@@ -516,6 +515,7 @@ export const StreamInfoForm = ({
           <div className="text-destructive text-xs mt-1">{errors.startDate}</div>
         )}
       </div>
+      )}
     </form>
   );
 };

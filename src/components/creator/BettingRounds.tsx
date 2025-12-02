@@ -31,6 +31,9 @@ interface BettingOption {
 interface BettingRound {
   roundId?: string;
   roundName: string;
+  lockDate?: Date | null;
+  lockTime?: string;
+  lockTimezone?: string;
   options: BettingOption[];
 }
 
