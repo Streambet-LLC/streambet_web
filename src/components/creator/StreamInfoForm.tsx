@@ -335,7 +335,8 @@ export const StreamInfoForm = ({
           </div>
         </div>
       </div>
-      {/* Start date */}
+      {/* Start date - Only for livestreams */}
+      {initialValues.eventType.value === 'stream' && (
       <div>
         <Label className="text-white font-light mb-3 block">Start date & time</Label>
         {isEdit && (
@@ -434,6 +435,7 @@ export const StreamInfoForm = ({
           <div className="text-destructive text-xs mt-1">{errors.startDate}</div>
         )}
       </div>
+      )}
     </form>
   );
 };

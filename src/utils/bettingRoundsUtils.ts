@@ -2,7 +2,7 @@
 
 // Constant for temporary option IDs to prevent them from being sent to the database
 export const TEMP_OPTION_PREFIX = 'TEMP_OPTION_';
-import moment from "moment";
+import { formatDateTimeForISO } from './helper';
 
 export interface BettingOption {
   optionId?: string;
@@ -12,6 +12,20 @@ export interface BettingOption {
 export interface BettingRound {
   roundId?: string;
   roundName: string;
+  lockDate?: Date | null;
+  lockTime?: string;
+  lockTimezone?: string;
+  options: BettingOption[];
+}
+
+/**
+ * Represents the betting round data structure for API payloads
+ * lockDate is converted to ISO string format for backend compatibility
+ */
+export interface BettingRoundPayload {
+  roundId?: string;
+  roundName: string;
+  lockDate?: string | null;
   options: BettingOption[];
 }
 
@@ -20,13 +34,15 @@ export interface BettingRound {
  * @param roundsData - The betting rounds data to clean
  * @returns Cleaned betting rounds data with temporary IDs removed and only required properties included
  */
-export const cleanTemporaryIds = (roundsData: BettingRound[]): BettingRound[] => {
+export const cleanTemporaryIds = (roundsData: BettingRound[]): BettingRoundPayload[] => {
   return roundsData.map(round => ({
     // Only include the required properties for the API
     roundId: round.roundId,
     roundName: round.roundName,
-    // @ts-ignore
-    lockDate: round.lockDate ? moment(round.lockDate).format("YYYY-MM-DD") + "T" + round.lockTime + ":00Z" : null,
+    // Convert date/time/timezone to UTC ISO string using the same helper as stream scheduling
+    lockDate: round.lockDate && round.lockTime
+      ? formatDateTimeForISO(round.lockDate, round.lockTime, round.lockTimezone)
+      : null,
     options: round.options.map(option => {
       // Remove only temporary option IDs, keep real ones and other properties
       if (option.optionId && option.optionId.startsWith(TEMP_OPTION_PREFIX)) {
@@ -55,7 +71,7 @@ export const isTemporaryOptionId = (optionId?: string): boolean => {
  * @param rounds - The betting rounds data to clean
  * @returns Cleaned betting rounds data
  */
-export const getCleanedRounds = (rounds: BettingRound[]): BettingRound[] => {
+export const getCleanedRounds = (rounds: BettingRound[]): BettingRoundPayload[] => {
   return cleanTemporaryIds(rounds);
 };
 

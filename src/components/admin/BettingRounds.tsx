@@ -22,6 +22,7 @@ import {
   isTemporaryOptionId,
   getCleanedRounds,
 } from '@/utils/bettingRoundsUtils';
+import { isScheduledTimeInPast } from '@/utils/helper';
 import CalendarDatePicker from '../ui/CalendarDatePicker';
 
 interface BettingOption {
@@ -32,8 +33,9 @@ interface BettingOption {
 interface BettingRound {
   roundId?: string;
   roundName: string;
-  lockDate?: string;
+  lockDate?: Date | null;
   lockTime?: string;
+  lockTimezone?: string;
   options: BettingOption[];
 }
 
@@ -147,7 +149,7 @@ export function BettingRounds({
     onRoundsChange(updatedRounds);
   };
 
-  const updateLockDate = (roundIndex: number, newDate: string) => {
+  const updateLockDate = (roundIndex: number, newDate: Date | null) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].lockDate = newDate;
     onRoundsChange(updatedRounds);
@@ -156,6 +158,12 @@ export function BettingRounds({
   const updateLockTime = (roundIndex: number, newTime: string) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].lockTime = newTime;
+    onRoundsChange(updatedRounds);
+  };
+
+  const updateLockTimezone = (roundIndex: number, newTimezone: string) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[roundIndex].lockTimezone = newTimezone;
     onRoundsChange(updatedRounds);
   };
 
@@ -413,9 +421,17 @@ export function BettingRounds({
                                 }}
                                 dateVal={round.lockDate}
                                 timeVal={round.lockTime}
+                                timezoneVal={round.lockTimezone}
                                 onChange={newData => {
                                   updateLockDate(roundIndex, newData.date);
                                   updateLockTime(roundIndex, newData.time);
+                                  // Auto-set timezone to user's local timezone if not already set
+                                  if (newData.date && !round.lockTimezone) {
+                                    updateLockTimezone(
+                                      roundIndex,
+                                      Intl.DateTimeFormat().resolvedOptions().timeZone
+                                    );
+                                  }
                                 }}
                                 onChangeDate={newDate => {
                                   updateLockDate(roundIndex, newDate);
@@ -424,6 +440,9 @@ export function BettingRounds({
                                   console.log(newTime);
 
                                   updateLockTime(roundIndex, newTime.target.value);
+                                }}
+                                onChangeTimezone={newTimezone => {
+                                  updateLockTimezone(roundIndex, newTimezone);
                                 }}
                               />
                             </div>
@@ -674,6 +693,18 @@ export function validateRounds(rounds: BettingRound[]): ValidationError[] {
     //     message: 'Round name must be unique'
     //   });
     // }
+    
+    // Check if auto-lock date is in the past
+    if (round.lockDate && round.lockTime) {
+      if (isScheduledTimeInPast(round.lockDate, round.lockTime, round.lockTimezone)) {
+        errors.push({
+          type: 'round',
+          roundIndex,
+          message: 'Auto lock time must be in the future'
+        });
+      }
+    }
+    
     // Check for duplicate option names within the same round
     const optionNames = round.options.map(option => option.option.toLowerCase().trim());
     const nameCounts = optionNames.reduce(

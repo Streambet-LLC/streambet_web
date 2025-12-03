@@ -22,6 +22,8 @@ import {
   isTemporaryOptionId,
   getCleanedRounds,
 } from '@/utils/bettingRoundsUtils';
+import { isScheduledTimeInPast } from '@/utils/helper';
+import CalendarDatePicker from '../ui/CalendarDatePicker';
 
 interface BettingOption {
   optionId?: string;
@@ -31,6 +33,9 @@ interface BettingOption {
 interface BettingRound {
   roundId?: string;
   roundName: string;
+  lockDate?: Date | null;
+  lockTime?: string;
+  lockTimezone?: string;
   options: BettingOption[];
 }
 
@@ -141,6 +146,24 @@ export function BettingRounds({
   const updateRoundName = (roundIndex: number, newName: string) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].roundName = newName;
+    onRoundsChange(updatedRounds);
+  };
+
+  const updateLockDate = (roundIndex: number, newDate: Date | null) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[roundIndex].lockDate = newDate;
+    onRoundsChange(updatedRounds);
+  };
+
+  const updateLockTime = (roundIndex: number, newTime: string) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[roundIndex].lockTime = newTime;
+    onRoundsChange(updatedRounds);
+  };
+
+  const updateLockTimezone = (roundIndex: number, newTimezone: string) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[roundIndex].lockTimezone = newTimezone;
     onRoundsChange(updatedRounds);
   };
 
@@ -355,6 +378,42 @@ export function BettingRounds({
                           </TableCell>
                         </TableRow>
                       )}
+                      <TableRow>
+                        <TableCell colSpan={2} className="border-none px-4 py-2">
+                          <div>
+                            <CalendarDatePicker
+                              label={'Optional Auto Lock Date'}
+                              error={''}
+                              isLive={false}
+                              isUploading={false}
+                              onClick={e => {}}
+                              dateVal={round.lockDate}
+                              timeVal={round.lockTime}
+                              timezoneVal={round.lockTimezone}
+                              onChange={newData => {
+                                updateLockDate(roundIndex, newData.date);
+                                updateLockTime(roundIndex, newData.time);
+                                // Auto-set timezone to user's local timezone if not already set
+                                if (newData.date && !round.lockTimezone) {
+                                  updateLockTimezone(
+                                    roundIndex,
+                                    Intl.DateTimeFormat().resolvedOptions().timeZone
+                                  );
+                                }
+                              }}
+                              onChangeDate={newDate => {
+                                updateLockDate(roundIndex, newDate);
+                              }}
+                              onChangeTime={newTime => {
+                                updateLockTime(roundIndex, newTime.target.value);
+                              }}
+                              onChangeTimezone={newTimezone => {
+                                updateLockTimezone(roundIndex, newTimezone);
+                              }}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
                       {/* Options rows */}
                       {expandedRounds.includes(getRoundValue(roundIndex)) && (
                         round.options.length > 0 ? (
@@ -515,4 +574,58 @@ export function BettingRounds({
       {/* New round button at bottom center */}
     </div>
   );
+}
+
+export function validateRounds(rounds: BettingRound[]): ValidationError[] {
+  const errors: ValidationError[] = [];
+  
+  // Check for duplicate round names
+  const roundNames = rounds.map(round => round.roundName.toLowerCase().trim());
+  const duplicateRoundNames = new Set<string>();
+  roundNames.forEach((name, index) => {
+    if (roundNames.indexOf(name) !== index) {
+      duplicateRoundNames.add(name);
+    }
+  });
+  
+  rounds.forEach((round, roundIndex) => {
+    // if (duplicateRoundNames.has(round.roundName.toLowerCase().trim())) {
+    //   errors.push({
+    //     type: 'round',
+    //     roundIndex,
+    //     message: 'Round name must be unique'
+    //   });
+    // }
+    
+    // Check if auto-lock date is in the past
+    if (round.lockDate && round.lockTime) {
+      if (isScheduledTimeInPast(round.lockDate, round.lockTime, round.lockTimezone)) {
+        errors.push({
+          type: 'round',
+          roundIndex,
+          message: 'Auto lock time must be in the future'
+        });
+      }
+    }
+    
+    // Check for duplicate option names within the same round
+    const optionNames = round.options.map(option => option.option.toLowerCase().trim());
+    const nameCounts = optionNames.reduce(
+      (acc, name) => {
+        acc[name] = (acc[name] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+    const hasDuplicate = Object.values(nameCounts).some(count => count > 1);
+    if (hasDuplicate) {
+      errors.push({
+        type: 'option',
+        roundIndex,
+        message: 'Option names must be unique within the same round',
+      });
+    }
+  });
+  
+  return errors;
 }
