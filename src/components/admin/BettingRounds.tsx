@@ -450,7 +450,7 @@ export function BettingRounds({
                               </div>
                               <CalendarDatePicker
                                 label={'Optional Auto Lock Date'}
-                                error={''}
+                                error={roundErrors.find(error => error.type === 'round' && error.message.includes('Auto lock'))?.message || ''}
                                 isLive={false}
                                 isUploading={false}
                                 onClick={e => {
@@ -477,9 +477,16 @@ export function BettingRounds({
                                     );
                                   }
                                 }}
-                                onChangeDate={newDate => {
-                                  updateLockDate(roundIndex, newDate);
-                                }}
+                              onChangeDate={newDate => {
+                                updateLockDate(roundIndex, newDate);
+                                // Auto-set timezone to user's local timezone if not already set
+                                if (newDate && !round.lockTimezone) {
+                                  updateLockTimezone(
+                                    roundIndex,
+                                    Intl.DateTimeFormat().resolvedOptions().timeZone
+                                  );
+                                }
+                              }}
                                 onChangeTime={newTime => {
                                   console.log(newTime);
 
