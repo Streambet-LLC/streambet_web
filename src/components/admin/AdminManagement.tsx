@@ -15,7 +15,7 @@ import { formatDateTimeForISO, getImageLink, getMessage, isImageSFW, isScheduled
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { BettingRounds, ValidationError } from './BettingRounds';
+import { BettingRounds, ValidationError, validateRounds } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
 import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
@@ -672,6 +672,25 @@ export const AdminManagement = ({
         const el = document.querySelector('[data-round-index="' + errorIndices[0] + '"]');
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 500);
+      return;
+    }
+
+    // Validate for duplicate round/option names and auto-lock dates
+    const validationErrors = validateRounds(bettingRounds);
+    setBettingValidationErrors(validationErrors);
+    setShowBettingValidation(true);
+    if (validationErrors.length > 0) {
+      // Scroll to first validation error
+      setTimeout(() => {
+        const first = validationErrors[0];
+        const el = document.querySelector('[data-round-index="' + first.roundIndex + '"]');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 500);
+      toast({
+        title: 'Validation Error',
+        description: validationErrors[0].message,
+        variant: 'destructive',
+      });
       return;
     }
 
