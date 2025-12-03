@@ -22,7 +22,7 @@ export default function Home() {
           </p>
         </div>
         <HomePromotedBets />
-        {/* <HomeBetsFilters onChange={setFilters} /> */}
+        <HomeBetsFilters onChange={setFilters} />
         <HomeBets filters={filters} />
         {/* <UpcomingHomeBets /> */}
       </div>

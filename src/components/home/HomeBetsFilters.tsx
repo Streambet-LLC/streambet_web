@@ -13,24 +13,24 @@ export default function HomeBetsFilters({
   // temporary
   const [search, setSearch] = useState("");
 
-  const debouncedSearch = useDebounce((searchTerm: string) => {
-    onChange({ search, sort, order });
+  const debouncedSearch = useDebounce(() => {
+    onChange({ search });
   });
   const [sort, setSort] = useState("totalBet");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
 
-  useEffect(() => {
-    onChange({ search, sort, order });
-  }, [sort, order]);
+  // useEffect(() => {
+  //   onChange({ search, sort, order });
+  // }, [sort, order]);
 
   useEffect(() => {
-    debouncedSearch(search);
+    debouncedSearch();
   }, [search]);
 
   return (
     <div className="flex justify-end gap-2">
       <SearchInput id='' className="border-none" value={search} onChange={setSearch} />
-      <Select value={sort} onValueChange={setSort}>
+      {/* <Select value={sort} onValueChange={setSort}>
         <SelectTrigger className="w-48">
           <SelectValue placeholder="Total Bet" />
         </SelectTrigger>
@@ -48,7 +48,7 @@ export default function HomeBetsFilters({
       </Select>
       <Button size="icon" onClick={() => setOrder(order === "asc" ? "desc" : "asc")}>
         {order === "asc" ? <SortAsc /> : <SortDesc />}
-      </Button>
+      </Button> */}
     </div>
   );
 }
