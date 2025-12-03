@@ -11,6 +11,7 @@ import { BettingRoundStatus, StreamStatus } from '@/enums';
 import { StreamStatusBadge } from '@/components/stream/StreamStatusBadge';
 import api from '@/integrations/api/client';
 import moment from 'moment';
+import { LinkItUrl } from 'react-linkify-it';
 
 export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
@@ -201,7 +202,9 @@ export default function BetCard(props: BetCardType) {
                 </CardDescription>
               </TooltipTrigger>
               <TooltipContent className="w-60" side="bottom">
-                {cardData.description}
+                <LinkItUrl className='text-[#7AFF14]'>
+                  {cardData.description}
+                </LinkItUrl>
               </TooltipContent>
             </Tooltip>
           )}
