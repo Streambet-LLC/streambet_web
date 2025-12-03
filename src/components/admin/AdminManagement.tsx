@@ -319,10 +319,13 @@ export const AdminManagement = ({
       }
     }
 
-    const dateTimeError = validateStartDateTime(startDateObj, startTime);
-    if (dateTimeError) {
-      newErrors.startDate = dateTimeError;
-      isValid = false;
+    // Validate start date/time only for livestreams
+    if (eventType.value === 'stream') {
+      const dateTimeError = validateStartDateTime(startDateObj, startTime);
+      if (dateTimeError) {
+        newErrors.startDate = dateTimeError;
+        isValid = false;
+      }
     }
 
     if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
@@ -692,15 +695,19 @@ export const AdminManagement = ({
       }
     }
 
-    const scheduledStartTime = formatDateTimeForISO(startDateObj, startTime, timezone);
-    
-    if (!scheduledStartTime && startDateObj && startTime) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Timezone',
-        description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
-      });
-      return;
+    // Only format and validate scheduledStartTime for livestreams
+    let scheduledStartTime;
+    if (eventType.value === 'stream') {
+      scheduledStartTime = formatDateTimeForISO(startDateObj, startTime, timezone);
+      
+      if (!scheduledStartTime && startDateObj && startTime) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid Timezone',
+          description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+        });
+        return;
+      }
     }
 
     const payload = {
@@ -708,7 +715,7 @@ export const AdminManagement = ({
       description,
       embeddedUrl,
       thumbnailUrl: thumbnailImageUrl,
-      scheduledStartTime,
+      ...(eventType.value === 'stream' && { scheduledStartTime }),
       creatorId,
       ...(!editStreamId && { type: eventType.value }),
     };
@@ -1167,7 +1174,10 @@ export const AdminManagement = ({
                           setStartTime(time);
                         }
 
-                        newErrors.startDate = validateStartDateTime(date, time);
+                        // Only validate for livestreams
+                        if (eventType.value === 'stream') {
+                          newErrors.startDate = validateStartDateTime(date, time);
+                        }
                       }
                       setErrors(newErrors);
                     }}

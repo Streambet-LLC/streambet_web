@@ -3,6 +3,7 @@ import { StreamStatus } from '@/enums';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { LinkItUrl } from 'react-linkify-it';
 
 interface StreamHeaderProps {
   stream: {
@@ -83,8 +84,9 @@ export const StreamHeader = ({ stream, viewerCount }: StreamHeaderProps) => {
           </div>
         </CardTitle>
         <CardDescription className={HEADER_STYLES.DESCRIPTION}>
-          
-          {stream.description || 'No description available.'}
+          <LinkItUrl className='text-[#7AFF14]'>
+            {stream.description || 'No description available.'}
+          </LinkItUrl>
         </CardDescription>
       </CardHeader>
     </Card>
