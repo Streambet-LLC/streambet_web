@@ -13,6 +13,7 @@ import { getImageLink } from '@/utils/helper';
 import ProfilePastStreams from './ProfilePastStreams';
 import { Footer } from '../Footer';
 import ProfileLiveUpcomingNonVideoBets from './ProfileLiveUpcomingNonVideoBets';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const socialsMapping = {
   instagram: {
@@ -39,6 +40,8 @@ const socialsMapping = {
 
 export default function Profile() {
   const { username } = useParams();
+  const { session } = useAuthContext();
+
   const socialsOrder = Object.keys(socialsMapping);
 
   if (!username) return <NotFound />;
@@ -125,16 +128,18 @@ export default function Profile() {
                       )}
                     </div>
                   </div>
-                  <Link
-                    to="/creator?createStream=true"
-                  >
-                    <button
-                      type="button"
-                      className='ml-auto self-end bg-primary text-black text-sm font-bold px-4 py-2 rounded-full hover:bg-opacity-90 transition-colors h-fit w-full md:w-fit'
+                  {session?.isCreator && profile.username === session?.username && 
+                    <Link
+                      to="/creator?createStream=true"
                     >
-                      Create Event
-                    </button>
-                  </Link>
+                      <button
+                        type="button"
+                        className='ml-auto self-end bg-primary text-black text-sm font-bold px-4 py-2 rounded-full hover:bg-opacity-90 transition-colors h-fit w-full md:w-fit'
+                      >
+                        Create Event
+                      </button>
+                    </Link>
+                  }
                 </div>
               </div>
               {profile.isCreator && (
