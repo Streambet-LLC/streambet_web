@@ -83,6 +83,43 @@ export default function HomeBets({ filters }: { filters: any }) {
   return (
     <>
       <div className="flex flex-col gap-4">
+        <div className="text-2xl font-bold text-center" id="categories-label">Categories</div>
+        <div 
+          className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
+          role="tablist"
+          aria-labelledby="categories-label"
+        >
+          <Button
+            variant={selectedCategory === null ? "default" : "outline"}
+            onClick={() => setSelectedCategory(null)}
+            className={selectedCategory === null ? "bg-primary text-black" : `border-[#BDFF00] shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+            role="tab"
+            aria-selected={selectedCategory === null}
+            aria-controls="betting-cards-panel"
+          >
+            All
+          </Button>
+          {Object.values(BettingCategory).map((category) => (
+            <Button
+              key={category}
+              variant={selectedCategory === category ? "default" : "outline"}
+              onClick={() => setSelectedCategory(category)}
+              className={selectedCategory === category ? "bg-primary text-black" : `border-[#BDFF00] shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+              role="tab"
+              aria-selected={selectedCategory === category}
+              aria-controls="betting-cards-panel"
+            >
+              {getCategoryLabel(category)}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div 
+        className="flex flex-col gap-4"
+        role="tabpanel"
+        id="betting-cards-panel"
+        aria-label={selectedCategory ? `${getCategoryLabel(selectedCategory)} betting cards` : "All betting cards"}
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {isLoading
             ? Array(24)

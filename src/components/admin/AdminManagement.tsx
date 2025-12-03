@@ -21,19 +21,7 @@ import { BettingRoundStatus, BettingCategory, CurrencyType, StreamStatus } from 
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
-
-interface BettingOption {
-  optionId?: string;
-  option: string;
-}
-
-interface BettingRound {
-  roundId?: string;
-  roundName: string;
-  category?: BettingCategory;
-  options: BettingOption[];
-}
+import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds, BettingRound, BettingOption } from '@/utils/bettingRoundsUtils';
 
 export const AdminManagement = ({
   session,
@@ -512,7 +500,7 @@ export const AdminManagement = ({
           },
         ]);
       } else {
-        setBettingRounds(rounds);
+        setBettingRounds(deserializeRounds(rounds));
       }
 
       setIsLiveStream(streamData?.status === StreamStatus.LIVE);

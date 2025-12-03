@@ -169,6 +169,23 @@ export function BettingRounds({
     onRoundsChange(updatedRounds);
   };
 
+  const updateCategory = (roundIndex: number, newCategory: BettingCategory) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[roundIndex].category = newCategory;
+    onRoundsChange(updatedRounds);
+  };
+
+  const getCategoryLabel = (category: BettingCategory): string => {
+    const labels: Record<BettingCategory, string> = {
+      [BettingCategory.TRADING_CARDS]: 'Trading Cards',
+      [BettingCategory.NEOSPORTS_ALTERNATIVE]: 'Neosports Alternative',
+      [BettingCategory.SPORTS]: 'Sports',
+      [BettingCategory.STREAMING_COMPETITIONS]: 'Streaming Competitions',
+      [BettingCategory.OTHER]: 'Other',
+    };
+    return labels[category];
+  };
+
   const deleteRound = (roundIndex: number) => {
     const updatedRounds = rounds.filter((_, index) => index !== roundIndex);
     onRoundsChange(updatedRounds);
@@ -382,7 +399,32 @@ export function BettingRounds({
                       )}
                       <TableRow>
                         <TableCell colSpan={2} className="border-none px-4 py-2">
-                          <div>
+                          <div className="space-y-2">
+                            <div>
+                              <label className="text-sm font-medium text-white mb-2 block">
+                                Category
+                              </label>
+                              <Select
+                                value={round.category || BettingCategory.OTHER}
+                                onValueChange={(value: BettingCategory) => updateCategory(roundIndex, value)}
+                                disabled={isNotCreatedStatus}
+                              >
+                                <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
+                                  <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                                  {Object.values(BettingCategory).map((cat) => (
+                                    <SelectItem 
+                                      key={cat} 
+                                      value={cat}
+                                      className="text-white hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]"
+                                    >
+                                      {getCategoryLabel(cat)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <CalendarDatePicker
                               label={'Optional Auto Lock Date'}
                               error={roundErrors.find(error => error.type === 'round' && error.message.includes('Auto lock'))?.message || ''}

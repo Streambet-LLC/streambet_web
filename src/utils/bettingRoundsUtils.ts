@@ -3,6 +3,7 @@
 // Constant for temporary option IDs to prevent them from being sent to the database
 export const TEMP_OPTION_PREFIX = 'TEMP_OPTION_';
 import { formatDateTimeForISO } from './helper';
+import { BettingCategory } from '@/enums';
 
 export interface BettingOption {
   optionId?: string;
@@ -15,7 +16,7 @@ export interface BettingRound {
   lockDate?: Date | null;
   lockTime?: string;
   lockTimezone?: string;
-  category?: string;
+  category?: BettingCategory;
   options: BettingOption[];
 }
 
@@ -30,6 +31,18 @@ export interface BettingRoundPayload {
   category?: string;
   options: BettingOption[];
 }
+
+/**
+ * Converts API response betting rounds to UI model format
+ * @param apiRounds - Betting rounds from API with ISO string dates
+ * @returns Betting rounds with Date objects for UI consumption
+ */
+export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
+  return apiRounds.map(round => ({
+    ...round,
+    lockDate: round.lockDate ? new Date(round.lockDate) : null,
+  }));
+};
 
 /**
  * Cleans temporary option IDs from betting rounds data
