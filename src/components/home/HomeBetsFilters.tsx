@@ -14,7 +14,8 @@ export default function HomeBetsFilters({
   const [search, setSearch] = useState("");
 
   const debouncedSearch = useDebounce(() => {
-    onChange({ search });
+    const term = (search || '').trim();
+    onChange(term ? { search: term } : {});
   });
   const [sort, setSort] = useState("totalBet");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
