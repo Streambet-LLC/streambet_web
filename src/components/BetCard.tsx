@@ -90,18 +90,19 @@ export default function BetCard(props: BetCardType) {
   };
 
   const getData = async () => {
-    const { data: resp } = await api.betting.getBettingCardRoundData(cardData.roundId);
-
-    if (cardData.totalPot.streamCoins !== resp.data.totalPot.streamCoins) {
-      setWiggle(true);
-
-      setTimeout(() => {
-        setWiggle(false);
-      }, 1 * 1000);
+    if (!cardData.roundId) return;
+    try {
+      const { data: resp } = await api.betting.getBettingCardRoundData(cardData.roundId);
+      if (cardData.totalPot.streamCoins !== resp.data.totalPot.streamCoins) {
+        setWiggle(true);
+        setTimeout(() => {
+          setWiggle(false);
+        }, 1000);
+      }
+      setCardData(resp.data);
+      updateStatuses(resp.data);
+    } catch (e) {
     }
-
-    setCardData(resp.data);
-    updateStatuses(resp.data);
   };
 
   useEffect(() => {
