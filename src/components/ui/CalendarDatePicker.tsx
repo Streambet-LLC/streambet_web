@@ -3,6 +3,8 @@ import { Label } from './label';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { CalendarIcon, XIcon } from 'lucide-react';
 import { Calendar } from './calendar';
+import { TimezoneOffsetSelect } from './TimezoneOffsetSelect';
+import { getTimezoneAbbreviation } from '@/utils/helper';
 
 function formatTime12hr(time24) {
   console.log(time24);
@@ -22,9 +24,11 @@ const CalendarDatePicker = ({
   onClick,
   dateVal,
   timeVal,
+  timezoneVal,
   onChange,
   onChangeDate,
   onChangeTime,
+  onChangeTimezone,
 }) => {
   return (
     <div>
@@ -46,7 +50,9 @@ const CalendarDatePicker = ({
             </span>
             <span className={dateVal ? '' : 'text-[#FFFFFFBF]'}>
               {dateVal
-                ? dateVal.toLocaleDateString() + (timeVal ? ` ${formatTime12hr(timeVal)}` : '')
+                ? dateVal.toLocaleDateString() + 
+                  (timeVal ? ` ${formatTime12hr(timeVal)}` : '') +
+                  (timezoneVal && dateVal ? ` (${getTimezoneAbbreviation(timezoneVal, dateVal)})` : '')
                 : 'Pick a date & time'}
             </span>
             {!isLive && (dateVal || timeVal) && (
@@ -93,6 +99,12 @@ const CalendarDatePicker = ({
               style={{ color: 'white' }}
             />
           </div>
+          {onChangeTimezone && (
+            <TimezoneOffsetSelect
+              value={timezoneVal}
+              onChange={onChangeTimezone}
+            />
+          )}
         </PopoverContent>
       </Popover>
       {error && <div className="text-destructive text-xs mt-1">{error}</div>}
