@@ -29,6 +29,7 @@ export default function HomeBets({ filters }: { filters: any }) {
       queryFn: async ({ pageParam }) => {
         const response = await api.bets.getBets({ 
           page: pageParam,
+          ...filters,
           ...(selectedCategory && { category: selectedCategory })
         });
 
@@ -120,6 +121,9 @@ export default function HomeBets({ filters }: { filters: any }) {
         id="betting-cards-panel"
         aria-label={selectedCategory ? `${getCategoryLabel(selectedCategory)} betting cards` : "All betting cards"}
       >
+        {!isLoading && displayedBets.length === 0 &&
+          <div className='mx-auto text-weak'>No bets found.</div>
+        }
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {isLoading
             ? Array(24)
