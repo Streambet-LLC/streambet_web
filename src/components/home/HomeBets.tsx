@@ -9,9 +9,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { PRIORITY_STREAMS } from '@/utils/constants';
 import { sortByPriorityPairs } from '@/utils/helper';
 import { QuickPickModal } from '../stream/QuickPickModal';
+import { BettingCategory } from '@/enums';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function HomeBets({ filters }: { filters: any }) {
+  const isMobile = useIsMobile();
   const [displayCount, setDisplayCount] = useState(24);
+  const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null>(null);
   const [quickPickOpen, setQuickPickOpen] = useState(false);
   const [quickPickModalSettings, setQuickPickModalSettings] = useState({
     streamId: null,
@@ -21,15 +25,23 @@ export default function HomeBets({ filters }: { filters: any }) {
   });
   const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage, refetch } =
     useInfiniteQuery({
-      queryKey: ['homepage-bets', filters],
+      queryKey: ['homepage-bets', filters, selectedCategory],
       queryFn: async ({ pageParam }) => {
-        const response = await api.bets.getBets({ page: pageParam });
+        const response = await api.bets.getBets({ 
+          page: pageParam,
+          ...(selectedCategory && { category: selectedCategory })
+        });
 
         return response;
       },
       initialPageParam: 1,
       getNextPageParam: lastPage => (lastPage.hasNextPage ? lastPage.page + 1 : undefined),
     });
+
+  // Reset display count when category changes
+  useEffect(() => {
+    setDisplayCount(24);
+  }, [selectedCategory]);
 
   // Auto-fetch all pages in background for proper sorting
   useEffect(() => {
@@ -55,20 +67,30 @@ export default function HomeBets({ filters }: { filters: any }) {
   // Listen for stream promotion updates
   useStreamPromotionListener(refetch);
 
+  const getCategoryLabel = (category: BettingCategory): string => {
+    const labels: Record<BettingCategory, string> = {
+      [BettingCategory.TRADING_CARDS]: 'Trading Cards',
+      [BettingCategory.NEOSPORTS_ALTERNATIVE]: 'Neosports Alternative',
+      [BettingCategory.SPORTS]: 'Sports',
+      [BettingCategory.STREAMING_COMPETITIONS]: 'Streaming Competitions',
+      [BettingCategory.OTHER]: 'Other',
+    };
+    return labels[category];
+  };
+
   if (!data) return;
 
   return (
     <>
-      <div className="text-2xl font-bold pl-2">All Streams</div>
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {isLoading
             ? Array(24)
                 .fill('')
                 .map((_, i) => <Skeleton key={i} className="w-full h-64" />)
-            : displayedBets.map((bet, i) => (
+            : displayedBets.map((bet) => (
                 <BetCard
-                  key={i}
+                  key={bet.roundId}
                   {...bet}
                   setQuickPick={(streamId, roundId, streamName, selectedOption) => {
                     setQuickPickModalSettings({

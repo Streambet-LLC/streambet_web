@@ -15,6 +15,7 @@ export interface BettingRound {
   lockDate?: Date | null;
   lockTime?: string;
   lockTimezone?: string;
+  category?: string;
   options: BettingOption[];
 }
 
@@ -26,6 +27,7 @@ export interface BettingRoundPayload {
   roundId?: string;
   roundName: string;
   lockDate?: string | null;
+  category?: string;
   options: BettingOption[];
 }
 
@@ -43,6 +45,7 @@ export const cleanTemporaryIds = (roundsData: BettingRound[]): BettingRoundPaylo
     lockDate: round.lockDate && round.lockTime
       ? formatDateTimeForISO(round.lockDate, round.lockTime, round.lockTimezone)
       : null,
+    category: round.category,
     options: round.options.map(option => {
       // Remove only temporary option IDs, keep real ones and other properties
       if (option.optionId && option.optionId.startsWith(TEMP_OPTION_PREFIX)) {

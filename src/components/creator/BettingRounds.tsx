@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DeleteBettingDialog } from './DeleteBettingDialog';
 import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Edit, Copy } from 'lucide-react';
-import { BettingRoundStatus } from '@/enums';
+import { BettingRoundStatus, BettingCategory } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
 import {
   AlertDialog,
@@ -33,6 +34,7 @@ interface BettingOption {
 interface BettingRound {
   roundId?: string;
   roundName: string;
+  category?: BettingCategory;
   lockDate?: Date | null;
   lockTime?: string;
   lockTimezone?: string;

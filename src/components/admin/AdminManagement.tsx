@@ -17,7 +17,7 @@ import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, ValidationError } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
-import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
+import { BettingRoundStatus, BettingCategory, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
@@ -31,6 +31,7 @@ interface BettingOption {
 interface BettingRound {
   roundId?: string;
   roundName: string;
+  category?: BettingCategory;
   options: BettingOption[];
 }
 
