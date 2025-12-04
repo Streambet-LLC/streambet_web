@@ -10,7 +10,8 @@ import {
   Goal,
   LayoutGrid,
   MonitorPlay,
-  GemIcon
+  GemIcon,
+  SwordsIcon
 } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
       [BettingCategory.NEOSPORTS_ALTERNATIVE]: Goal,
       [BettingCategory.SPORTS]: Trophy,
       [BettingCategory.STREAMING_COMPETITIONS]: MonitorPlay,
+      [BettingCategory.EMERGING_SPORTS]: SwordsIcon,
       [BettingCategory.OTHER]: MoreHorizontal,
     };
     return iconMap[category];
