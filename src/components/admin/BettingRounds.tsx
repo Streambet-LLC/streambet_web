@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Edit, Copy } from 'lucide-react';
 import { BettingRoundStatus, BettingCategory } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
+import { getCategoryLabel } from '@/utils/categoryHelpers';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -173,17 +174,6 @@ export function BettingRounds({
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].category = newCategory;
     onRoundsChange(updatedRounds);
-  };
-
-  const getCategoryLabel = (category: BettingCategory): string => {
-    const labels: Record<BettingCategory, string> = {
-      [BettingCategory.TRADING_CARDS]: 'Trading Cards',
-      [BettingCategory.NEOSPORTS_ALTERNATIVE]: 'Neosports Alternative',
-      [BettingCategory.SPORTS]: 'Sports',
-      [BettingCategory.STREAMING_COMPETITIONS]: 'Streaming Competitions',
-      [BettingCategory.OTHER]: 'Other',
-    };
-    return labels[category];
   };
 
   const deleteRound = (roundIndex: number) => {

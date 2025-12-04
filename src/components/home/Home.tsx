@@ -5,12 +5,14 @@ import HomeBets from './HomeBets';
 import UpcomingHomeBets from './UpcomingHomeBets';
 import HomeBetsFilters from './HomeBetsFilters';
 import { useState } from 'react';
+import { BettingCategory } from '@/enums';
 
 export default function Home() {
   const [filters, setFilters] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null>(null);
 
   return (
-    <MainLayout showFooter>
+    <MainLayout showFooter selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}>
       <div className="w-full flex flex-col gap-6">
         <div className="max-w-3xl mx-auto text-center space-y-4 p-4">
           <h1 className="text-4xl md:text-5xl font-bold">
@@ -23,7 +25,7 @@ export default function Home() {
         </div>
         <HomePromotedBets />
         <HomeBetsFilters onChange={setFilters} />
-        <HomeBets filters={filters} />
+        <HomeBets filters={filters} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
         {/* <UpcomingHomeBets /> */}
       </div>
     </MainLayout>

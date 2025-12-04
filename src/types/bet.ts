@@ -1,8 +1,11 @@
+import { BettingCategory } from '@/enums';
+
 export interface BetCard {
   thumbnail: string;
   name: string;
   lockDate?: string;
   description: string;
+  category: BettingCategory;
   options: {
     option: string;
     percentage: number;

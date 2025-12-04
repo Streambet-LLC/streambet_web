@@ -11,11 +11,17 @@ import { sortByPriorityPairs } from '@/utils/helper';
 import { QuickPickModal } from '../stream/QuickPickModal';
 import { BettingCategory } from '@/enums';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { getCategoryLabel } from '@/utils/categoryHelpers';
 
-export default function HomeBets({ filters }: { filters: any }) {
+interface HomeBetsProps {
+  filters: any;
+  selectedCategory: BettingCategory | null;
+  setSelectedCategory: (category: BettingCategory | null) => void;
+}
+
+export default function HomeBets({ filters, selectedCategory, setSelectedCategory }: HomeBetsProps) {
   const isMobile = useIsMobile();
   const [displayCount, setDisplayCount] = useState(24);
-  const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null>(null);
   const [quickPickOpen, setQuickPickOpen] = useState(false);
   const [quickPickModalSettings, setQuickPickModalSettings] = useState({
     streamId: null,
@@ -25,12 +31,11 @@ export default function HomeBets({ filters }: { filters: any }) {
   });
   const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage, refetch } =
     useInfiniteQuery({
-      queryKey: ['homepage-bets', filters, selectedCategory],
+      queryKey: ['homepage-bets', filters],
       queryFn: async ({ pageParam }) => {
         const response = await api.bets.getBets({ 
           page: pageParam,
-          ...filters,
-          ...(selectedCategory && { category: selectedCategory })
+          ...filters
         });
 
         return response;
@@ -39,11 +44,6 @@ export default function HomeBets({ filters }: { filters: any }) {
       getNextPageParam: lastPage => (lastPage.hasNextPage ? lastPage.page + 1 : undefined),
     });
 
-  // Reset display count when category changes
-  useEffect(() => {
-    setDisplayCount(24);
-  }, [selectedCategory]);
-
   // Auto-fetch all pages in background for proper sorting
   useEffect(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -51,11 +51,24 @@ export default function HomeBets({ filters }: { filters: any }) {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Get all bets and sort by priority pairs
+  // Get all bets, sort by priority pairs, and filter by category client-side
   const sortedBets = useMemo(() => {
-    const allBets = data?.pages.map(({ data: bets }) => bets || [])?.flat() || [];
-    return sortByPriorityPairs(allBets, PRIORITY_STREAMS);
-  }, [data]);
+    // Deserialize API response with proper typing
+    const allBets = data?.pages
+      .map(({ data: bets }) => bets?.map((bet: any) => ({
+        ...bet,
+        category: bet.category as BettingCategory
+      })) || [])
+      ?.flat() || [];
+    
+    const sorted = sortByPriorityPairs(allBets, PRIORITY_STREAMS);
+    
+    // Client-side category filtering
+    if (selectedCategory) {
+      return sorted.filter(bet => bet.category === selectedCategory);
+    }
+    return sorted;
+  }, [data, selectedCategory]);
 
   // Display only first N items (client-side pagination)
   const displayedBets = sortedBets.slice(0, displayCount);
@@ -68,54 +81,52 @@ export default function HomeBets({ filters }: { filters: any }) {
   // Listen for stream promotion updates
   useStreamPromotionListener(refetch);
 
-  const getCategoryLabel = (category: BettingCategory): string => {
-    const labels: Record<BettingCategory, string> = {
-      [BettingCategory.TRADING_CARDS]: 'Trading Cards',
-      [BettingCategory.NEOSPORTS_ALTERNATIVE]: 'Neosports Alternative',
-      [BettingCategory.SPORTS]: 'Sports',
-      [BettingCategory.STREAMING_COMPETITIONS]: 'Streaming Competitions',
-      [BettingCategory.OTHER]: 'Other',
-    };
-    return labels[category];
-  };
-
   if (!data) return;
 
   return (
     <>
       <div className="flex flex-col gap-4">
-        <div className="text-2xl font-bold text-center" id="categories-label">Categories</div>
+        {/* Category Tabs */}
         <div 
           className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
           role="tablist"
-          aria-labelledby="categories-label"
+          aria-label="Betting categories"
         >
           <Button
-            variant={selectedCategory === null ? "default" : "outline"}
-            onClick={() => setSelectedCategory(null)}
-            className={selectedCategory === null ? "bg-primary text-black" : `border-[#BDFF00] shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+            variant="outline"
             role="tab"
             aria-selected={selectedCategory === null}
             aria-controls="betting-cards-panel"
+            className={`${
+              selectedCategory === null
+                ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
+                : `border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
+            }`}
+            onClick={() => setSelectedCategory(null)}
           >
             All
           </Button>
           {Object.values(BettingCategory).map((category) => (
             <Button
               key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              onClick={() => setSelectedCategory(category)}
-              className={selectedCategory === category ? "bg-primary text-black" : `border-[#BDFF00] shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+              variant="outline"
               role="tab"
               aria-selected={selectedCategory === category}
               aria-controls="betting-cards-panel"
+              className={`${
+                selectedCategory === category
+                  ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
+                  : `border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
+              }`}
+              onClick={() => setSelectedCategory(category)}
             >
               {getCategoryLabel(category)}
             </Button>
           ))}
         </div>
       </div>
-      <div 
+
+      <div
         className="flex flex-col gap-4"
         role="tabpanel"
         id="betting-cards-panel"

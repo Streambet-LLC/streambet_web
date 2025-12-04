@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "../ui/sidebar";
 import SidebarBody from "./SidebarBody";
+import { BettingCategory } from "@/enums";
 
-export default function Sidebar() {
+interface SidebarProps {
+  selectedCategory?: BettingCategory | null;
+  setSelectedCategory?: (category: BettingCategory | null) => void;
+}
+
+export default function Sidebar({ selectedCategory, setSelectedCategory }: SidebarProps) {
   const [defaultOpen] = useState(() => {
     const state = localStorage.getItem("sidebar_state");
 
@@ -12,7 +18,7 @@ export default function Sidebar() {
   return (
     <div>
       <SidebarProvider className='!transition-none bg-background border-r' defaultOpen={defaultOpen}>
-        <SidebarBody />
+        <SidebarBody selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
       </SidebarProvider>
     </div>
   )

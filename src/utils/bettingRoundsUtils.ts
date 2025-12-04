@@ -41,6 +41,7 @@ export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
   return apiRounds.map(round => ({
     ...round,
     lockDate: round.lockDate ? new Date(round.lockDate) : null,
+    category: round.category as BettingCategory,
   }));
 };
 
