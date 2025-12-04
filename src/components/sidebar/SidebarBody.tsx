@@ -3,29 +3,13 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarTrigger, useSidebar } fro
 import SidebarStreamCard from "./SidebarStreamCard";
 import { Button } from "../ui/button";
 import { 
-  Expand, 
   SidebarIcon, 
   Video,
-  Layers,
-  Target,
   Trophy,
-  Award,
-  Medal,
-  Flag,
-  Gamepad2,
-  Monitor,
   MoreHorizontal,
-  FileStack,
   Goal,
   LayoutGrid,
-  MedalIcon,
   MonitorPlay,
-  BikeIcon,
-  Sword,
-  TargetIcon,
-  BowArrowIcon,
-  CrosshairIcon,
-  SwatchBookIcon,
   GemIcon
 } from "lucide-react";
 import { useEffect } from "react";
