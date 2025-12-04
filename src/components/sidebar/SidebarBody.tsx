@@ -103,7 +103,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
               <div 
                 className="flex flex-col gap-1"
                 role="navigation"
-                aria-label="Betting categories"
+                aria-label="Pick categories"
                 aria-labelledby={controls.open && !controls.isMobile ? "sidebar-categories-label" : undefined}
               >
                 <Button
