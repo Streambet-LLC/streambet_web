@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DeleteBettingDialog } from './DeleteBettingDialog';
 import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Edit, Copy } from 'lucide-react';
-import { BettingRoundStatus } from '@/enums';
+import { BettingRoundStatus, BettingCategory } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
+import { getCategoryLabel } from '@/utils/categoryHelpers';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -35,6 +37,7 @@ interface BettingOption {
 interface BettingRound {
   roundId?: string;
   roundName: string;
+  category?: BettingCategory;
   lockDate?: Date | null;
   lockTime?: string;
   lockTimezone?: string;
@@ -186,6 +189,12 @@ export function BettingRounds({
   const updateLockTimezone = (roundIndex: number, newTimezone: string) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].lockTimezone = newTimezone;
+    onRoundsChange(updatedRounds);
+  };
+
+  const updateCategory = (roundIndex: number, newCategory: BettingCategory) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[roundIndex].category = newCategory;
     onRoundsChange(updatedRounds);
   };
 
@@ -408,10 +417,35 @@ export function BettingRounds({
                       )}
                       <TableRow>
                         <TableCell colSpan={2} className="border-none px-4 py-2">
-                          <div>
+                          <div className="space-y-2">
+                            <div>
+                              <label className="text-sm font-medium text-white mb-2 block">
+                                Category
+                              </label>
+                              <Select
+                                value={round.category || BettingCategory.OTHER}
+                                onValueChange={(value: BettingCategory) => updateCategory(roundIndex, value)}
+                                disabled={isNotCreatedStatus}
+                              >
+                                <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
+                                  <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                                  {Object.values(BettingCategory).map((cat) => (
+                                    <SelectItem 
+                                      key={cat} 
+                                      value={cat}
+                                      className="text-white hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]"
+                                    >
+                                      {getCategoryLabel(cat)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <CalendarDatePicker
                               label={'Optional Auto Lock Date'}
-                              error={''}
+                              error={roundErrors.find(error => error.type === 'round' && error.message.includes('Auto lock'))?.message || ''}
                               isLive={false}
                               isUploading={false}
                               onClick={e => {}}
@@ -431,6 +465,13 @@ export function BettingRounds({
                               }}
                               onChangeDate={newDate => {
                                 updateLockDate(roundIndex, newDate);
+                                // Auto-set timezone to user's local timezone if not already set
+                                if (newDate && !round.lockTimezone) {
+                                  updateLockTimezone(
+                                    roundIndex,
+                                    Intl.DateTimeFormat().resolvedOptions().timeZone
+                                  );
+                                }
                               }}
                               onChangeTime={newTime => {
                                 updateLockTime(roundIndex, newTime.target.value);

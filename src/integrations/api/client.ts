@@ -452,7 +452,7 @@ export const bettingAPI = {
   },
 
   getBettingCardRoundData: async (roundId: string) => {
-    const response = await apiClient.get(`/betting/${roundId}`);
+    const response = await apiClient.get(`/betting/round/${roundId}`);
     return response.data;
   },
 

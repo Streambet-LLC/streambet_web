@@ -117,7 +117,7 @@ export default function BetCard(props: BetCardType) {
 
   return (
     <Card
-      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden ${(statuses.isForStream || statuses.isOpen || statuses.isCreated) && 'border-[#BDFF00]'}`}
+      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-[#BDFF00] shadow-lg overflow-hidden`}
     >
       <CardHeader className="p-4 pb-0 flex flex-col gap-3">
         {cardData.streamStatus === StreamStatus.SCHEDULED && (

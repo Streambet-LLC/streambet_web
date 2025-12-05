@@ -1,8 +1,11 @@
+import { BettingCategory } from '@/enums';
+
 export interface BetCard {
   thumbnail: string;
   name: string;
   lockDate?: string;
   description: string;
+  category: BettingCategory;
   options: {
     option: string;
     percentage: number;
@@ -21,5 +24,6 @@ export interface BetCard {
   status?: string | null;
   streamStatus?: string | null;
   scheduledStartTime?: string | null;
+  isForStream?: boolean;
   setQuickPick?: (streamId: string, roundId: string, streamName: string, selectedId: string | null) => void,
 }

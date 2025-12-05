@@ -4,6 +4,7 @@ import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import Sidebar from '../sidebar/Sidebar';
 import { cn } from '@/lib/utils';
+import { BettingCategory } from '@/enums';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -11,6 +12,8 @@ interface MainLayoutProps {
   showFooter?: boolean;
   isWithdraw?: boolean;
   onDashboardClick?: () => void;
+  selectedCategory?: BettingCategory | null;
+  setSelectedCategory?: (category: BettingCategory | null) => void;
 }
 
 export const MainLayout = ({ 
@@ -18,7 +21,9 @@ export const MainLayout = ({
   className = "", 
   showFooter = true,
   isWithdraw = false,
-  onDashboardClick 
+  onDashboardClick,
+  selectedCategory,
+  setSelectedCategory
 }: MainLayoutProps) => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
@@ -39,7 +44,7 @@ export const MainLayout = ({
           }}></div>
         </div> */}
         
-        <Sidebar />
+        <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
         
         {/* Main Content */}
         <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto", className)}>
@@ -55,7 +60,7 @@ export const MainLayout = ({
     <div className="bg-background flex flex-col">
       <Navigation onDashboardClick={onDashboardClick} />
       <div className='w-full flex gap-2'>
-        <Sidebar />
+        <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
         <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-4 pb-8 z-0", className)}>
           {children}
           {(showFooter || isHomePage) && <Footer />}
