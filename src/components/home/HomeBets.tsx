@@ -9,8 +9,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { PRIORITY_STREAMS } from '@/utils/constants';
 import { sortByPriorityPairs } from '@/utils/helper';
 import { QuickPickModal } from '../stream/QuickPickModal';
+import { BettingCategory } from '@/enums';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { getCategoryLabel } from '@/utils/categoryHelpers';
 
-export default function HomeBets({ filters }: { filters: any }) {
+interface HomeBetsProps {
+  filters: any;
+  selectedCategory: BettingCategory | null;
+  setSelectedCategory: (category: BettingCategory | null) => void;
+}
+
+export default function HomeBets({ filters, selectedCategory, setSelectedCategory }: HomeBetsProps) {
+  const isMobile = useIsMobile();
   const [displayCount, setDisplayCount] = useState(24);
   const [quickPickOpen, setQuickPickOpen] = useState(false);
   const [quickPickModalSettings, setQuickPickModalSettings] = useState({
@@ -41,11 +51,24 @@ export default function HomeBets({ filters }: { filters: any }) {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Get all bets and sort by priority pairs
+  // Get all bets, sort by priority pairs, and filter by category client-side
   const sortedBets = useMemo(() => {
-    const allBets = data?.pages.map(({ data: bets }) => bets || [])?.flat() || [];
-    return sortByPriorityPairs(allBets, PRIORITY_STREAMS);
-  }, [data]);
+    // Deserialize API response with proper typing
+    const allBets = data?.pages
+      .map(({ data: bets }) => bets?.map((bet: any) => ({
+        ...bet,
+        category: bet.category as BettingCategory
+      })) || [])
+      ?.flat() || [];
+    
+    const sorted = sortByPriorityPairs(allBets, PRIORITY_STREAMS);
+    
+    // Client-side category filtering
+    if (selectedCategory) {
+      return sorted.filter(bet => bet.category === selectedCategory);
+    }
+    return sorted;
+  }, [data, selectedCategory]);
 
   // Display only first N items (client-side pagination)
   const displayedBets = sortedBets.slice(0, displayCount);
@@ -62,8 +85,53 @@ export default function HomeBets({ filters }: { filters: any }) {
 
   return (
     <>
-      <div className="text-2xl font-bold pl-2">All Streams</div>
       <div className="flex flex-col gap-4">
+        {/* Category Tabs */}
+        <div 
+          className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
+          role="tablist"
+          aria-label="Betting categories"
+        >
+          <Button
+            variant="outline"
+            role="tab"
+            aria-selected={selectedCategory === null}
+            aria-controls="betting-cards-panel"
+            className={`${
+              selectedCategory === null
+                ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
+                : `border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
+            }`}
+            onClick={() => setSelectedCategory(null)}
+          >
+            All
+          </Button>
+          {Object.values(BettingCategory).map((category) => (
+            <Button
+              key={category}
+              variant="outline"
+              role="tab"
+              aria-selected={selectedCategory === category}
+              aria-controls="betting-cards-panel"
+              className={`${
+                selectedCategory === category
+                  ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
+                  : `border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
+              }`}
+              onClick={() => setSelectedCategory(category)}
+            >
+              {getCategoryLabel(category)}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className="flex flex-col gap-4"
+        role="tabpanel"
+        id="betting-cards-panel"
+        aria-label={selectedCategory ? `${getCategoryLabel(selectedCategory)} betting cards` : "All betting cards"}
+      >
         {!isLoading && displayedBets.length === 0 &&
           <div className='mx-auto text-weak'>No bets found.</div>
         }
@@ -72,9 +140,9 @@ export default function HomeBets({ filters }: { filters: any }) {
             ? Array(24)
                 .fill('')
                 .map((_, i) => <Skeleton key={i} className="w-full h-64" />)
-            : displayedBets.map((bet, i) => (
+            : displayedBets.map((bet) => (
                 <BetCard
-                  key={i}
+                  key={bet.roundId}
                   {...bet}
                   setQuickPick={(streamId, roundId, streamName, selectedOption) => {
                     setQuickPickModalSettings({

@@ -17,11 +17,11 @@ import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, ValidationError } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
-import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
+import { BettingRoundStatus, BettingCategory, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
+import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds, BettingRound, BettingOption } from '@/utils/bettingRoundsUtils';
 import { cn } from '@/lib/utils';
 interface BettingOption {
   optionId?: string;
@@ -33,7 +33,6 @@ interface BettingRound {
   roundName: string;
   options: BettingOption[];
 }
-
 export const AdminManagement = ({
   session,
   streams,
@@ -511,7 +510,7 @@ export const AdminManagement = ({
           },
         ]);
       } else {
-        setBettingRounds(rounds);
+        setBettingRounds(deserializeRounds(rounds));
       }
 
       setIsLiveStream(streamData?.status === StreamStatus.LIVE);

@@ -20,20 +20,9 @@ import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
+import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds, BettingRound, BettingOption } from '@/utils/bettingRoundsUtils';
 import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-
-interface BettingOption {
-  optionId?: string;
-  option: string;
-}
-
-interface BettingRound {
-  roundId?: string;
-  roundName: string;
-  options: BettingOption[];
-}
 
 export const CreatorManagement = ({
   session,
@@ -514,7 +503,7 @@ export const CreatorManagement = ({
           },
         ]);
       } else {
-        setBettingRounds(rounds);
+        setBettingRounds(deserializeRounds(rounds));
       }
 
       setIsLiveStream(streamData?.status === StreamStatus.LIVE);
