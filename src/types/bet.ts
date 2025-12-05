@@ -14,12 +14,12 @@ export interface BetCard {
     goldCoins: number;
   },
   creator: string | null;
-  streamId: string | null;
-  roundId: string | null;
+  streamId?: string | null;
+  roundId?: string | null;
   streamName: string | null;
   type: string | null;
   status?: string | null;
   streamStatus?: string | null;
   scheduledStartTime?: string | null;
-  setQuickPick: (streamId: string, roundId: string, streamName: string, selectedId: string | null) => void,
+  setQuickPick?: (streamId: string, roundId: string, streamName: string, selectedId: string | null) => void,
 }
