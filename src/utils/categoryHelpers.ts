@@ -6,7 +6,8 @@ export const getCategoryLabel = (category: BettingCategory): string => {
     [BettingCategory.NEOSPORTS_ALTERNATIVE]: 'Alternative Sports',
     [BettingCategory.SPORTS]: 'Sports',
     [BettingCategory.STREAMING_COMPETITIONS]: 'Streaming Competitions',
-    [BettingCategory.EMERGING_SPORTS]: 'Emerging Sports',
+    // HOTFIX: Temporarily removed from UI - backend still supports this
+    // [BettingCategory.EMERGING_SPORTS]: 'Emerging Sports',
     [BettingCategory.OTHER]: 'Other',
   };
   return labels[category];
