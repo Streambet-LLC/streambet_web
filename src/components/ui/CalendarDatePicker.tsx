@@ -56,16 +56,24 @@ const CalendarDatePicker = ({
                 : 'Pick a date & time'}
             </span>
             {!isLive && (dateVal || timeVal) && (
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
+              <span
+                role="button"
+                tabIndex={0}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0 cursor-pointer"
                 onClick={e => {
                   e.stopPropagation();
                   onChange({ date: null, time: '' });
                 }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onChange({ date: null, time: '' });
+                  }
+                }}
               >
                 <XIcon className="h-4 w-4 text-white" />
-              </button>
+              </span>
             )}
           </button>
         </PopoverTrigger>
@@ -93,7 +101,7 @@ const CalendarDatePicker = ({
             <span className="text-xs text-white">Time:</span>
             <input
               type="time"
-              value={timeVal}
+              value={timeVal || ''}
               onChange={onChangeTime}
               className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
               style={{ color: 'white' }}
