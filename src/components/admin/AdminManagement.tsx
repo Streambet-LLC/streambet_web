@@ -22,7 +22,7 @@ import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
 import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
-
+import { cn } from '@/lib/utils';
 interface BettingOption {
   optionId?: string;
   option: string;
@@ -1023,7 +1023,10 @@ export const AdminManagement = ({
         </div>
       ) : isCreateStream || editStreamId ? (
         <div className="flex justify-center items-center min-h-[60vh]">
-          <Card className="w-full max-w-xl bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none">
+          <Card className={cn(
+            "w-full bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none",
+            createStep === "info" && "max-w-xl"
+          )}>
             <CardContent className="p-4 !pt-2 sm:p-6">
               {/* Back button only at top */}
               <div className="mb-6">
@@ -1218,6 +1221,13 @@ export const AdminManagement = ({
                     validationErrors={bettingValidationErrors}
                     createStream={true}
                     handleCreateStream={handleCreateStream}
+                    betCardInfo={{
+                      thumbnail: thumbnailPreviewUrl,
+                      description,
+                      creator: session.username,
+                      streamName: title,
+                      type: eventType.value,
+                    }}
                   />
                 )}
               </form>
