@@ -55,7 +55,8 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
       [BettingCategory.NEOSPORTS_ALTERNATIVE]: Goal,
       [BettingCategory.SPORTS]: Trophy,
       [BettingCategory.STREAMING_COMPETITIONS]: MonitorPlay,
-      [BettingCategory.EMERGING_SPORTS]: SwordsIcon,
+      // HOTFIX: Temporarily removed from UI - backend still supports this
+      // [BettingCategory.EMERGING_SPORTS]: SwordsIcon,
       [BettingCategory.OTHER]: MoreHorizontal,
     };
     return iconMap[category];
