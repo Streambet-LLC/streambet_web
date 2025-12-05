@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,6 +27,8 @@ import {
 import { isScheduledTimeInPast } from '@/utils/helper';
 import CalendarDatePicker from '../ui/CalendarDatePicker';
 
+import { BetCard as BetCardType } from '@/types/bet';
+import BetCardPreview from '../BetCardPreview';
 interface BettingOption {
   optionId?: string;
   option: string;
@@ -62,6 +64,7 @@ interface BettingRoundsProps {
   createStream?: boolean;
   handleCreateStream?: () => void;
   eventType: string;
+  betCardInfo: Pick<BetCardType, "type" | "streamName" | "description" | "creator" | "thumbnail">;
 }
 
 export function BettingRounds({
@@ -77,6 +80,7 @@ export function BettingRounds({
   validationErrors,
   createStream,
   handleCreateStream,
+  betCardInfo,
 }: BettingRoundsProps) {
   const isMobile = useIsMobile();
   const [expandedRounds, setExpandedRounds] = useState<string[]>([]);
@@ -89,6 +93,18 @@ export function BettingRounds({
     roundIndex: number;
     optionId: string;
   } | null>(null);
+  
+  const [roundsState, setRoundsState] = useState<BettingRound[]>(rounds || []);
+
+  const roundsOptionsPreview = useMemo(() => {
+    return roundsState.map((round) => 
+      round.options.map((option) => ({
+        option: option.option,
+        percentage: 100,
+        isWinner: false,
+      })
+    ))
+  }, [roundsState]);
 
   // Auto-expand first round if it's the only round, and auto-expand any newly added rounds
   useEffect(() => {
@@ -117,6 +133,8 @@ export function BettingRounds({
         }
       }, 500);
     }
+
+    setRoundsState(rounds);
   }, [rounds.length]);
 
   const addNewRound = () => {
@@ -143,24 +161,30 @@ export function BettingRounds({
       options: [{ option: 'Option 1' }, { option: 'Option 2' }],
     };
 
+    const updatedRounds = [...roundsState, newRound];
+
+    setRoundsState(updatedRounds);
     onRoundsChange([...rounds, newRound]);
   };
 
   const updateRoundName = (roundIndex: number, newName: string) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].roundName = newName;
+    setRoundsState(updatedRounds);
     onRoundsChange(updatedRounds);
   };
 
   const updateLockDate = (roundIndex: number, newDate: Date | null) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].lockDate = newDate;
+    setRoundsState(updatedRounds);
     onRoundsChange(updatedRounds);
   };
 
   const updateLockTime = (roundIndex: number, newTime: string) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].lockTime = newTime;
+    setRoundsState(updatedRounds);
     onRoundsChange(updatedRounds);
   };
 
@@ -178,6 +202,7 @@ export function BettingRounds({
 
   const deleteRound = (roundIndex: number) => {
     const updatedRounds = rounds.filter((_, index) => index !== roundIndex);
+    setRoundsState(updatedRounds);
     onRoundsChange(updatedRounds);
   };
 
@@ -193,6 +218,7 @@ export function BettingRounds({
 
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].options = [...round.options, newOption];
+    setRoundsState(updatedRounds);
     onRoundsChange(updatedRounds);
 
     // Expand the round when adding a new option
@@ -214,6 +240,7 @@ export function BettingRounds({
   const updateOptionName = (roundIndex: number, optionIndex: number, newName: string) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].options[optionIndex].option = newName;
+    setRoundsState(updatedRounds);
     onRoundsChange(updatedRounds);
   };
 
@@ -223,6 +250,7 @@ export function BettingRounds({
     updatedRounds[roundIndex].options = updatedRounds[roundIndex].options.filter(
       (_, index) => index !== optionIndex
     );
+    setRoundsState(updatedRounds);
     onRoundsChange(updatedRounds);
   };
 
@@ -244,6 +272,9 @@ export function BettingRounds({
       roundName: round.roundName,
       options: round.options.map(opt => ({ option: opt.option })),
     };
+     const updatedRounds = [...roundsState, newRound];
+
+    setRoundsState(updatedRounds);
     onRoundsChange([...rounds, newRound]);
   };
 
@@ -282,9 +313,9 @@ export function BettingRounds({
                   ref={el => (roundRefs.current[roundIndex] = el)}
                   data-round-index={roundIndex}
                 >
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto flex flex-col lg:flex-row rounded-xl overflow-hidden border border-[#191D24]">
                     <Table
-                      className="w-full table-fixed rounded-xl overflow-hidden border border-[#191D24] bg-transparent"
+                      className="w-full table-fixed overflow-hidden bg-transparent"
                       style={{
                         background: 'transparent',
                         borderCollapse: 'separate',
@@ -533,6 +564,7 @@ export function BettingRounds({
                                               options[idx] = newOpt;
                                             }
                                           }
+                                          setRoundsState(updated);
                                           onRoundsChange(updated);
                                         }, 600);
                                         setLastAddedOption(null);
@@ -662,6 +694,24 @@ export function BettingRounds({
                         )}
                       </TableBody>
                     </Table>
+                    {expandedRounds.includes(getRoundValue(roundIndex)) &&
+                      <div className='p-4 flex flex-col gap-2 w-full'>
+                        <h3>Preview</h3>
+                        <div className='mx-auto w-full'>
+                        {roundsState[roundIndex] &&
+                          <BetCardPreview
+                            {...betCardInfo}
+                            name={roundsState[roundIndex].roundName}
+                            options={roundsOptionsPreview[roundIndex]}
+                            totalPot={{
+                              streamCoins: 0,
+                              goldCoins: 0,
+                            }}
+                          />
+                        }
+                        </div>
+                      </div>
+                    }
                   </div>
                   {/* Separator between rounds */}
                   {roundIndex < rounds.length - 1 && (
