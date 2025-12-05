@@ -448,12 +448,11 @@ export function BettingRounds({
                                 <label className="text-sm font-medium text-white mb-2 block">
                                   Category
                                 </label>
-                                <Select
-                                  value={round.category || BettingCategory.OTHER}
-                                  onValueChange={(value: BettingCategory) => updateCategory(roundIndex, value)}
-                                  disabled={isNotCreatedStatus}
-                                >
-                                  <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
+                              <Select
+                                value={round.category || BettingCategory.OTHER}
+                                onValueChange={(value: BettingCategory) => updateCategory(roundIndex, value)}
+                              >
+                                <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
                                     <SelectValue placeholder="Select a category" />
                                   </SelectTrigger>
                                   <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
@@ -702,6 +701,7 @@ export function BettingRounds({
                           <BetCardPreview
                             {...betCardInfo}
                             name={roundsState[roundIndex].roundName}
+                            category={roundsState[roundIndex].category || BettingCategory.OTHER}
                             options={roundsOptionsPreview[roundIndex]}
                             totalPot={{
                               streamCoins: 0,
