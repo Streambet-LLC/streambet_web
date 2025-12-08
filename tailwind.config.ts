@@ -74,14 +74,19 @@ export default {
           'scheduled-non-video': 'hsl(var(--badge-scheduled-non-video))',
           ended: 'hsl(var(--badge-ended))',
         },
+        'featured-card-border': 'rgba(255, 255, 255, 0.15)',
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        'featured-card': '24px',
       },
       boxShadow: {
         'neon-glow': `0px 1px 0px 0px inset rgba(189,255,0,0.2), 0px -1px 0px 0px inset rgba(255,255,255,0.24), 0px -20px 50px 0px inset rgba(189,255,0,0.13), 0px -3px 30px 0px inset rgba(189,255,0,0.33), 0px 0px 60px 0px rgba(189,255,0,0.15)`,
+      },
+      backgroundImage: {
+        'featured-gradient': "linear-gradient(rgba(189, 255, 0, 0) 0%, rgba(189, 255, 0, 0.08) 100%), linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.85) 100%)",
       },
       keyframes: {
         'accordion-down': {
