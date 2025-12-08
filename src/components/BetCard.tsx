@@ -117,7 +117,21 @@ export default function BetCard(props: BetCardType) {
 
   return (
     <Card
-      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-[#BDFF00] shadow-lg overflow-hidden`}
+      className={cn(
+        `${wiggle && 'wiggle'} h-full flex flex-col overflow-hidden`,
+        props.isFeatured
+          ? 'border-[1px] border-[rgba(255,255,255,0.15)] rounded-[24px]'
+          : 'border border-[#BDFF00] shadow-lg'
+      )}
+      style={props.isFeatured ? {
+        boxShadow: `
+          0px 1px 0px 0px inset rgba(189,255,0,0.2),
+          0px -1px 0px 0px inset rgba(255,255,255,0.24),
+          0px -20px 50px 0px inset rgba(189,255,0,0.13),
+          0px -3px 30px 0px inset rgba(189,255,0,0.33),
+          0px 0px 60px 0px rgba(189,255,0,0.15)
+        `
+      } : undefined}
     >
       <CardHeader className="p-4 pb-0 flex flex-col gap-3">
         {cardData.streamStatus === StreamStatus.SCHEDULED && (

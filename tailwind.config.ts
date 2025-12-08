@@ -80,6 +80,9 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      boxShadow: {
+        'neon-glow': `0px 1px 0px 0px inset rgba(189,255,0,0.2), 0px -1px 0px 0px inset rgba(255,255,255,0.24), 0px -20px 50px 0px inset rgba(189,255,0,0.13), 0px -3px 30px 0px inset rgba(189,255,0,0.33), 0px 0px 60px 0px rgba(189,255,0,0.15)`,
+      },
       keyframes: {
         'accordion-down': {
           from: {

@@ -47,7 +47,7 @@ export default function HomePromotedBets() {
 
   return (
     <>
-      <div className="p-6 -mx-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#BDFF00]/20 via-zinc-900 via-40% to-background">
+      <div className="p-6 -mx-4">
         <Carousel
           className="flex-1 w-full"
           opts={{
@@ -74,6 +74,7 @@ export default function HomePromotedBets() {
                 >
                   <BetCard
                     {...bet}
+                    isFeatured={true}
                     setQuickPick={(streamId, roundId, streamName, selectedOption) => {
                       setQuickPickModalSettings({
                         streamId,
