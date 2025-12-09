@@ -6,11 +6,12 @@ import UpcomingHomeBets from './UpcomingHomeBets';
 import HomeBetsFilters from './HomeBetsFilters';
 import { useState } from 'react';
 import { BettingCategory } from '@/enums';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 export default function Home() {
   const [filters, setFilters] = useState({});
   const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <MainLayout showFooter selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}>
@@ -20,12 +21,12 @@ export default function Home() {
             Predict the Internet's <br />
             <motion.span 
               className="relative inline-block"
-              whileHover={{ scale: 1.05 }}
+              whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
             >
               <motion.span
                 className="absolute inset-0 bg-gradient-to-r from-[#bdff00] to-[#7aff14] blur-lg opacity-30"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 3, repeat: Infinity }}
+                animate={shouldReduceMotion ? undefined : { scale: [1, 1.2, 1] }}
+                transition={shouldReduceMotion ? undefined : { duration: 3, repeat: Infinity }}
               />
               <span className="relative bg-gradient-to-r from-[#bdff00] to-[#7aff14] bg-clip-text text-transparent">
                 randomest

@@ -20,7 +20,10 @@ export default function FeaturedBetCard({ children, className }: FeaturedBetCard
         className="absolute border border-featured-card-border inset-0 pointer-events-none rounded-featured-card"
       />
       {/* Shadow overlay */}
-      <div className="absolute inset-0 pointer-events-none rounded-featured-card shadow-neon-glow" />
+      <div 
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none rounded-featured-card shadow-neon-glow"
+      />
       {/* Content wrapper */}
       <div className="relative h-full flex flex-col">{children}</div>
     </div>

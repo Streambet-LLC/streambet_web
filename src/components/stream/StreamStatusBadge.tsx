@@ -102,20 +102,23 @@ export const StreamStatusBadge = ({
       : 'Upcoming: TBA';
     
     return (
-      <motion.div {...SCHEDULED_ANIMATION_CONFIG} role="status" aria-label={ariaLabel}>
-        <div className={BADGE_STYLES.SCHEDULED.container}>
-          <Calendar className={BADGE_STYLES.SCHEDULED.icon} strokeWidth={2.5} />
-          <span className={BADGE_STYLES.SCHEDULED.text}>
-            {scheduledStartTime ? (
-              <>
-                Upcoming: {multiline && <br />}{formatDate(scheduledStartTime)} at{' '}
-                {formatTime(scheduledStartTime)}
-              </>
-            ) : (
-              'Upcoming: TBA'
-            )}
-          </span>
-        </div>
+      <motion.div 
+        {...SCHEDULED_ANIMATION_CONFIG} 
+        className={BADGE_STYLES.SCHEDULED.container}
+        role="status" 
+        aria-label={ariaLabel}
+      >
+        <Calendar className={BADGE_STYLES.SCHEDULED.icon} strokeWidth={2.5} />
+        <span className={BADGE_STYLES.SCHEDULED.text}>
+          {scheduledStartTime ? (
+            <>
+              Upcoming: {multiline && <br />}{formatDate(scheduledStartTime)} at{' '}
+              {formatTime(scheduledStartTime)}
+            </>
+          ) : (
+            'Upcoming: TBA'
+          )}
+        </span>
       </motion.div>
     );
   }

@@ -110,6 +110,9 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
         // transition={{ duration: 0.3 }}
         className={`fixed top-0 w-screen z-50 border border-b ${isScrolled ? 'bg-background/90 backdrop-blur-md shadow-md' : 'bg-background/60 backdrop-blur-sm'} transition-all duration-300`}
       >
+        {/* Gradient line at top */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-electric-lime to-transparent opacity-50" />
+        
         <div className="px-4 w-full flex h-16 items-center">
           {/* Mobile Menu Toggle */}
           <div className="md:hidden mr-3">
