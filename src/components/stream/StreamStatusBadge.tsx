@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Calendar, Clock } from 'lucide-react';
 import { StreamStatus } from '@/enums';
 import { formatDate, formatTime } from '@/utils/helper';
@@ -72,23 +72,25 @@ export const StreamStatusBadge = ({
   lockDate,
   multiline = false,
 }: StreamStatusBadgeProps) => {
+  const shouldReduceMotion = useReducedMotion();
+  
   // LIVE badge with pulsing dot and animated border
   if (status === StreamStatus.LIVE) {
     return (
       <motion.div 
         className={BADGE_STYLES.LIVE.container}
-        animate={{ 
+        animate={shouldReduceMotion ? undefined : { 
           borderColor: ['rgb(239, 68, 68)', 'rgb(220, 38, 38)', 'rgb(239, 68, 68)'],
           boxShadow: ['0 0 8px rgba(239, 68, 68, 0.3)', '0 0 16px rgba(239, 68, 68, 0.6)', '0 0 8px rgba(239, 68, 68, 0.3)']
         }}
-        transition={{ repeat: Infinity, duration: 2 }}
+        transition={shouldReduceMotion ? undefined : { repeat: Infinity, duration: 2 }}
         role="status" 
         aria-label="Stream live"
       >
         <motion.div 
           className={BADGE_STYLES.LIVE.dot}
-          animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
+          animate={shouldReduceMotion ? undefined : { scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
+          transition={shouldReduceMotion ? undefined : { repeat: Infinity, duration: 1.5 }}
         />
         <span className={BADGE_STYLES.LIVE.text}>LIVE</span>
       </motion.div>
@@ -103,7 +105,10 @@ export const StreamStatusBadge = ({
     
     return (
       <motion.div 
-        {...SCHEDULED_ANIMATION_CONFIG} 
+        initial={shouldReduceMotion ? undefined : SCHEDULED_ANIMATION_CONFIG.initial}
+        animate={shouldReduceMotion ? undefined : SCHEDULED_ANIMATION_CONFIG.animate}
+        transition={shouldReduceMotion ? undefined : SCHEDULED_ANIMATION_CONFIG.transition}
+        whileHover={shouldReduceMotion ? undefined : SCHEDULED_ANIMATION_CONFIG.whileHover}
         className={BADGE_STYLES.SCHEDULED.container}
         role="status" 
         aria-label={ariaLabel}
@@ -126,17 +131,14 @@ export const StreamStatusBadge = ({
   // LOCK badge with clock icon and datetime
   if (status === 'lock') {
     const ariaLabel = lockDate 
-      ? `Picks lock on ${lockDate}`
-      : 'Picks lock time';
-    
     return (
       <motion.div 
         className={BADGE_STYLES.LOCK.container}
-        animate={{ 
+        animate={shouldReduceMotion ? undefined : { 
           borderColor: ['rgb(245, 158, 11)', 'rgb(217, 119, 6)', 'rgb(245, 158, 11)'],
           boxShadow: ['0 0 6px rgba(245, 158, 11, 0.3)', '0 0 16px rgba(245, 158, 11, 0.6)', '0 0 8px rgba(245, 158, 11, 0.3)']
         }}
-        transition={{ repeat: Infinity, duration: 4.5 }}
+        transition={shouldReduceMotion ? undefined : { repeat: Infinity, duration: 4.5 }}
         role="status" 
         aria-label={ariaLabel}
       >
