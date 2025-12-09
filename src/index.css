@@ -75,10 +75,17 @@
     --input: 0 0% 9%;
     --ring: 94 100% 54%;
     --radius: 0.5rem;
-    --badge-live: 0 84% 60%;
-    --badge-scheduled-stream: 274 87% 60%;
-    --badge-scheduled-non-video: 0 72% 51%;
     --badge-ended: 240 5% 26%;
+    --creator-green: #7aff14;
+    --gold-coin: #ffa500;
+    --electric-lime: #BDFF00;
+    --scheduled-badge-bg: rgba(147, 51, 234, 0.1);
+    --scheduled-badge-border: rgb(168, 85, 247);
+    --scheduled-badge-text: rgb(192, 132, 252);
+    --featured-card-border: rgba(255, 255, 255, 0.15);
+    --featured-card-radius: 24px;
+    --bet-option-bg: #0f0f0f;
+    --bet-option-border: #1a1a1a;
   }
 }
 

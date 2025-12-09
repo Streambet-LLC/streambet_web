@@ -123,19 +123,33 @@ export default function BetCard(props: BetCardType) {
       className={cn(
         'h-full flex flex-col',
         wiggle && 'wiggle',
-        !props.isFeatured && 'border border-[#BDFF00] shadow-lg overflow-hidden'
+        !props.isFeatured && 'border border-electric-lime shadow-lg overflow-hidden'
       )}
     >
       <CardHeader className="p-4 pb-0 flex flex-col gap-3">
-        {cardData.streamStatus === StreamStatus.SCHEDULED && (
-          <div className="flex justify-start">
-            <StreamStatusBadge
-              status={StreamStatus.SCHEDULED}
-              scheduledStartTime={cardData.scheduledStartTime}
-              multiline={false}
-              isStreamType={cardData.type === 'stream'}
-            />
-          </div>
+        {/* Stream status badges - only for streams */}
+        {cardData.type === 'stream' && (
+          <>
+            {cardData.streamStatus === StreamStatus.SCHEDULED && (
+              <div className="flex justify-start">
+                <StreamStatusBadge
+                  status={StreamStatus.SCHEDULED}
+                  scheduledStartTime={cardData.scheduledStartTime}
+                  multiline={false}
+                />
+              </div>
+            )}
+            {cardData.streamStatus === StreamStatus.LIVE && (
+              <div className="flex justify-start">
+                <StreamStatusBadge status={StreamStatus.LIVE} />
+              </div>
+            )}
+            {cardData.streamStatus === StreamStatus.ENDED && (
+              <div className="flex justify-start">
+                <StreamStatusBadge status={StreamStatus.ENDED} />
+              </div>
+            )}
+          </>
         )}
         <div className="flex flex-col gap-3">
           <div className="flex gap-3">
@@ -210,7 +224,7 @@ export default function BetCard(props: BetCardType) {
                 </CardDescription>
               </TooltipTrigger>
               <TooltipContent className="w-60" side="bottom">
-                <LinkItUrl className='text-[#7AFF14]'>
+                <LinkItUrl className='text-creator-green'>
                   {cardData.description}
                 </LinkItUrl>
               </TooltipContent>
@@ -234,7 +248,7 @@ export default function BetCard(props: BetCardType) {
           {props.creator && (
             <Link
               to={`/${props.creator}`}
-              className="text-sm text-[#7AFF14] hover:text-foreground transition-colors"
+              className="text-sm text-creator-green hover:text-foreground transition-colors"
             >
               {props.creator}
             </Link>
@@ -251,17 +265,17 @@ export default function BetCard(props: BetCardType) {
                 : undefined
             }
             className={cn(
-              'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
+              'flex-1 flex gap-4 items-center justify-between transition-all px-3 py-1 rounded-md border',
               statuses.canOpen
-                ? 'hover:bg-[#BDFF00] hover:text-black cursor-pointer'
+                ? 'bg-bet-option-bg border-bet-option-border hover:bg-electric-lime hover:border-electric-lime hover:text-black hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
                 : 'cursor-not-allowed opacity-60',
-              option.isWinner && 'bg-[#BDFF00] text-black'
+              option.isWinner && 'bg-electric-lime text-black'
             )}
           >
             <div
               className={cn(
                 'text-sm rounded-full font-semibold',
-                option.selected && 'text-[#BDFF00]'
+                option.selected && 'text-electric-lime'
               )}
             >
               {option.option}{' '}
@@ -288,9 +302,9 @@ export default function BetCard(props: BetCardType) {
                 : undefined
             }
             className={cn(
-              'flex-1 flex gap-4 items-center justify-between transition-all px-2 py-1 rounded-md',
+              'flex-1 flex gap-4 items-center justify-between transition-all px-3 py-2.5 rounded-md border',
               statuses.canOpen
-                ? 'hover:bg-[#BDFF00] hover:text-black cursor-pointer'
+                ? 'bg-bet-option-bg border-bet-option-border hover:bg-electric-lime hover:border-electric-lime hover:text-black hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
                 : 'cursor-not-allowed opacity-60'
             )}
           >
@@ -302,26 +316,27 @@ export default function BetCard(props: BetCardType) {
       </CardContent>
       <CardFooter className="mt-auto"></CardFooter>
       <div className="p-6 pt-0">
-        <div className="flex justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
                 <div className="flex gap-2 text-sm items-center">
                   <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
-                  {cardData.totalPot.streamCoins}
+                  <span className="text-creator-green font-semibold">{cardData.totalPot.streamCoins}</span>
                 </div>
                 <div className="flex gap-1 text-sm items-center">
                   <img src="/icons/gold-coins.png" alt="gold-coins" className="h-4 w-4" />
-                  {cardData.totalPot.goldCoins}
+                  <span className="text-gold-coin font-semibold">{cardData.totalPot.goldCoins}</span>
                 </div>
               </div>
             </TooltipTrigger>
             <TooltipContent side="right">Total Pot</TooltipContent>
           </Tooltip>
           {cardData.lockDate && (
-            <div className="">
-              <p>Auto Locking {moment(cardData.lockDate).fromNow()}</p>
-            </div>
+            <StreamStatusBadge 
+              status="lock" 
+              lockDate={moment(cardData.lockDate).format('MMM D, YYYY [at] h:mm A')}
+            />
           )}
         </div>
       </div>

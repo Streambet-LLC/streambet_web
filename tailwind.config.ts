@@ -70,17 +70,27 @@ export default {
         },
         badge: {
           live: 'hsl(var(--badge-live))',
-          'scheduled-stream': 'hsl(var(--badge-scheduled-stream))',
-          'scheduled-non-video': 'hsl(var(--badge-scheduled-non-video))',
           ended: 'hsl(var(--badge-ended))',
         },
-        'featured-card-border': 'rgba(255, 255, 255, 0.15)',
+        'scheduled-badge': {
+          bg: 'var(--scheduled-badge-bg)',
+          border: 'var(--scheduled-badge-border)',
+          text: 'var(--scheduled-badge-text)',
+        },
+        'featured-card-border': 'var(--featured-card-border)',
+        'creator-green': 'var(--creator-green)',
+        'gold-coin': 'var(--gold-coin)',
+        'electric-lime': 'var(--electric-lime)',
+        'bet-option': {
+          bg: 'var(--bet-option-bg)',
+          border: 'var(--bet-option-border)',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
-        'featured-card': '24px',
+        'featured-card': 'var(--featured-card-radius)',
       },
       boxShadow: {
         'neon-glow': `0px 1px 0px 0px inset rgba(189,255,0,0.2), 0px -1px 0px 0px inset rgba(255,255,255,0.24), 0px -20px 50px 0px inset rgba(189,255,0,0.13), 0px -3px 30px 0px inset rgba(189,255,0,0.33), 0px 0px 60px 0px rgba(189,255,0,0.15)`,
