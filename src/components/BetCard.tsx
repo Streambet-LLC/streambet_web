@@ -5,6 +5,7 @@ import { getImageLink } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { Video } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { QuickPickModal } from './stream/QuickPickModal';
 import { BettingRoundStatus, StreamStatus } from '@/enums';
@@ -116,9 +117,13 @@ export default function BetCard(props: BetCardType) {
   }, [cardData]);
 
   return (
-    <Card
-      className={`${wiggle && 'wiggle'} h-full flex flex-col border border-[#BDFF00] shadow-lg overflow-hidden`}
+    <motion.div
+      whileHover={{ y: -2 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
+      <Card
+        className={`${wiggle && 'wiggle'} h-full flex flex-col border border-[#BDFF00] shadow-lg overflow-hidden`}
+      >
       <CardHeader className="p-4 pb-0 flex flex-col gap-3">
         {cardData.streamStatus === StreamStatus.SCHEDULED && (
           <div className="flex justify-start">
@@ -319,5 +324,6 @@ export default function BetCard(props: BetCardType) {
         </div>
       </div>
     </Card>
+    </motion.div>
   );
 }

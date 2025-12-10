@@ -67,6 +67,9 @@ export default {
           'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
+          'card-bg': 'hsl(var(--sidebar-card-bg))',
+          'card-border': 'hsl(var(--sidebar-card-border))',
+          'compact-hover': 'hsl(var(--sidebar-compact-hover))',
         },
         badge: {
           live: 'hsl(var(--badge-live))',
@@ -74,6 +77,7 @@ export default {
           'scheduled-non-video': 'hsl(var(--badge-scheduled-non-video))',
           ended: 'hsl(var(--badge-ended))',
         },
+        'live-hot': 'hsl(var(--live-hot))',
       },
       borderRadius: {
         lg: 'var(--radius)',

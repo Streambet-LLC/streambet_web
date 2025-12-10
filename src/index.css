@@ -79,6 +79,10 @@
     --badge-scheduled-stream: 274 87% 60%;
     --badge-scheduled-non-video: 0 72% 51%;
     --badge-ended: 240 5% 26%;
+    --live-hot: 25 95% 53%;
+    --sidebar-card-bg: 0 0% 4%;
+    --sidebar-card-border: 0 0% 10%;
+    --sidebar-compact-hover: 0 0% 27%;
   }
 }
 
