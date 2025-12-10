@@ -88,8 +88,11 @@
     --scheduled-badge-text: rgb(192, 132, 252);
     --featured-card-border: rgba(255, 255, 255, 0.15);
     --featured-card-radius: 24px;
-    --bet-option-bg: #0f0f0f;
-    --bet-option-border: #1a1a1a;
+    --bet-option-bg: rgba(255, 255, 255, 0.02);
+    --bet-option-border: rgba(255, 255, 255, 0.12);
+    --card-grid-bg: #0f0f0f;
+    --card-grid-border: rgba(255, 255, 255, 0.08);
+    --card-grid-border-hover: rgba(189, 255, 0, 0.25);
   }
 }
 

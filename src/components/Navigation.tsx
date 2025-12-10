@@ -112,7 +112,8 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
         // initial="visible"
         // animate="visible"
         // transition={{ duration: 0.3 }}
-        className={`fixed top-0 w-screen z-50 border border-b ${isScrolled ? 'bg-background/90 backdrop-blur-md shadow-md' : 'bg-background/60 backdrop-blur-sm'} transition-all duration-300`}
+        className={`fixed top-0 w-screen z-50 border-b backdrop-blur-xl backdrop-saturate-150 ${isScrolled ? 'bg-black/70 shadow-md border-gray-800/50' : 'bg-black/60 border-gray-800/30'} transition-all duration-300`}
+        style={{ backdropFilter: 'blur(20px) saturate(150%)' }}
       >
         {/* Gradient line at top */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-electric-lime to-transparent opacity-50" />
@@ -240,7 +241,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
           </div>
 
           {/* Center Column: Search Bar - Only on Homepage */}
-          <div className="hidden md:flex justify-center">
+          <div className="hidden md:flex flex-1 justify-center mx-4">
             {isHomePage && searchValue !== undefined && onSearchChange && (
               <div className="max-w-[200px] md:max-w-md w-full">
                 <SearchInput

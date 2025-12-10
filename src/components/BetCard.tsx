@@ -123,12 +123,14 @@ export default function BetCard(props: BetCardType) {
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      className={cn("group", props.isFeatured && "pt-1")}
     >
       <CardWrapper
         className={cn(
-          'h-full flex flex-col',
+          'h-full flex flex-col overflow-hidden transition-all duration-200 rounded-xl',
           wiggle && 'wiggle',
-          !props.isFeatured && 'border border-electric-lime shadow-lg overflow-hidden'
+          !props.isFeatured && 'relative bg-card-grid-bg border border-card-grid-border shadow-[0px_2px_8px_0px_rgba(0,0,0,0.5)] hover:border-card-grid-border-hover hover:shadow-[0px_4px_16px_0px_rgba(189,255,0,0.1)]',
+          props.isFeatured && 'bg-transparent border-0 shadow-none'
         )}
       >
       <CardHeader className="p-4 pb-0 flex flex-col gap-3">
@@ -270,11 +272,11 @@ export default function BetCard(props: BetCardType) {
                 : undefined
             }
             className={cn(
-              'flex-1 flex gap-4 items-center justify-between transition-all px-3 py-1 rounded-md border',
+              'flex-1 flex gap-4 items-center justify-between transition-all px-3 py-1 rounded-md border bg-bet-option-bg border-bet-option-border',
               statuses.canOpen
-                ? 'bg-bet-option-bg border-bet-option-border hover:bg-electric-lime hover:border-electric-lime hover:text-black hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
+                ? 'hover:text-electric-lime hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
                 : 'cursor-not-allowed opacity-60',
-              option.isWinner && 'bg-electric-lime text-black'
+              option.isWinner && '!bg-electric-lime !text-black !border-electric-lime'
             )}
           >
             <div
@@ -307,9 +309,9 @@ export default function BetCard(props: BetCardType) {
                 : undefined
             }
             className={cn(
-              'flex-1 flex gap-4 items-center justify-between transition-all px-3 py-2.5 rounded-md border',
+              'flex-1 flex gap-4 items-center justify-between transition-all px-3 py-2.5 rounded-md border bg-bet-option-bg border-bet-option-border',
               statuses.canOpen
-                ? 'bg-bet-option-bg border-bet-option-border hover:bg-electric-lime hover:border-electric-lime hover:text-black hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
+                ? 'hover:text-electric-lime hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
                 : 'cursor-not-allowed opacity-60'
             )}
           >
