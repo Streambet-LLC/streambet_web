@@ -130,7 +130,7 @@ export default function BetCard(props: BetCardType) {
           'h-full flex flex-col overflow-hidden transition-all duration-200 rounded-xl',
           wiggle && 'wiggle',
           !props.isFeatured && 'relative bg-card-grid-bg border border-card-grid-border shadow-[0px_2px_8px_0px_rgba(0,0,0,0.5)] hover:border-card-grid-border-hover hover:shadow-[0px_4px_16px_0px_rgba(189,255,0,0.1)]',
-          props.isFeatured && 'bg-transparent border-0 shadow-none'
+          props.isFeatured && 'bg-transparent border-0 shadow-none min-h-[420px]'
         )}
       >
       <CardHeader className="p-4 pb-0 flex flex-col gap-3">
@@ -239,7 +239,7 @@ export default function BetCard(props: BetCardType) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-2 p-4">
+      <CardContent className="flex flex-col gap-2 p-4">
         <div className="flex flex-col">
           {props.type === 'stream' && (
             <Link
@@ -272,7 +272,7 @@ export default function BetCard(props: BetCardType) {
                 : undefined
             }
             className={cn(
-              'flex-1 flex gap-4 items-center justify-between transition-all px-3 py-1 rounded-md border bg-bet-option-bg border-bet-option-border',
+              'flex gap-4 items-center justify-between transition-all px-3 py-1 rounded-md border bg-bet-option-bg border-bet-option-border',
               statuses.canOpen
                 ? 'hover:text-electric-lime hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
                 : 'cursor-not-allowed opacity-60',
@@ -309,7 +309,7 @@ export default function BetCard(props: BetCardType) {
                 : undefined
             }
             className={cn(
-              'flex-1 flex gap-4 items-center justify-between transition-all px-3 py-2.5 rounded-md border bg-bet-option-bg border-bet-option-border',
+              'flex gap-4 items-center justify-between transition-all px-3 py-2.5 rounded-md border bg-bet-option-bg border-bet-option-border',
               statuses.canOpen
                 ? 'hover:text-electric-lime hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
                 : 'cursor-not-allowed opacity-60'
@@ -321,9 +321,8 @@ export default function BetCard(props: BetCardType) {
           </div>
         )}
       </CardContent>
-      <CardFooter className="mt-auto"></CardFooter>
-      <div className="p-6 pt-0">
-        <div className="flex flex-wrap items-start justify-between gap-2">
+      <CardFooter className="mt-auto p-6 pt-0">
+        <div className="flex flex-wrap items-start justify-between gap-2 w-full">
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
@@ -346,7 +345,7 @@ export default function BetCard(props: BetCardType) {
             />
           )}
         </div>
-      </div>
+      </CardFooter>
     </CardWrapper>
     </motion.div>
   );
