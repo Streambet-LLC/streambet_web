@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRef } from 'react';
 
 interface SearchInputProps {
   id: string;
@@ -45,6 +46,13 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   width = 'md',
   autoFocus = false,
 }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleClear = () => {
+    onChange('');
+    inputRef.current?.focus();
+  };
+
   return (
     <div
       className={cn(
@@ -54,6 +62,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
       )}
     >
       <Input
+        ref={inputRef}
         id={id}
         type="text"
         placeholder={placeholder}
@@ -61,7 +70,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         autoFocus={autoFocus}
-        className="pl-9 rounded-md"
+        className={cn('pl-9 rounded-md', value.length > 0 && 'pr-9')}
         aria-label={placeholder}
 		    inputMode="search"
       />
@@ -69,6 +78,17 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
         aria-hidden="true"
       />
+      {value.length > 0 && (
+        <button
+          type="button"
+          onClick={handleClear}
+          disabled={disabled}
+          className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-all cursor-pointer animate-in fade-in duration-200"
+          aria-label="Clear search"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 };

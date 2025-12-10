@@ -14,6 +14,8 @@ interface MainLayoutProps {
   onDashboardClick?: () => void;
   selectedCategory?: BettingCategory | null;
   setSelectedCategory?: (category: BettingCategory | null) => void;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 export const MainLayout = ({ 
@@ -23,7 +25,9 @@ export const MainLayout = ({
   isWithdraw = false,
   onDashboardClick,
   selectedCategory,
-  setSelectedCategory
+  setSelectedCategory,
+  searchValue,
+  onSearchChange
 }: MainLayoutProps) => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
@@ -31,7 +35,7 @@ export const MainLayout = ({
   if (isWithdraw) {
     return (
     <div className="bg-background flex flex-col">
-      <Navigation onDashboardClick={onDashboardClick} />
+      <Navigation onDashboardClick={onDashboardClick} searchValue={searchValue} onSearchChange={onSearchChange} />
       <div className='w-full flex gap-2'>
         {/* Background gradient overlay */}
         {/* <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900"></div> */}
@@ -58,7 +62,7 @@ export const MainLayout = ({
   
   return (
     <div className="bg-background flex flex-col">
-      <Navigation onDashboardClick={onDashboardClick} />
+      <Navigation onDashboardClick={onDashboardClick} searchValue={searchValue} onSearchChange={onSearchChange} />
       <div className='w-full flex gap-2'>
         <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
         <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-4 pb-8 z-0", className)}>
