@@ -5,6 +5,7 @@ import { getImageLink } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { Video } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { StreamStatus } from '@/enums';
 import { StreamStatusBadge } from '@/components/stream/StreamStatusBadge';
 
@@ -31,9 +32,13 @@ export default function BetCardPreview(props: BetCardType) {
   };
 
   return (
-    <Card
-      className={`h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden`}
+    <motion.div
+      whileHover={{ y: -2 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
+      <Card
+        className={`h-full flex flex-col border border-gray-600 shadow-lg overflow-hidden`}
+      >
       <CardHeader className="p-4 pb-0 flex flex-col gap-3">
         {props.streamStatus === StreamStatus.SCHEDULED && (
           <div className="flex justify-start">
@@ -147,5 +152,6 @@ export default function BetCardPreview(props: BetCardType) {
         </div>
       </div>
     </Card>
+    </motion.div>
   );
 }

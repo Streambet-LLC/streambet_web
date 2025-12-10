@@ -1,7 +1,9 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarTrigger, useSidebar } from "../ui/sidebar";
 import SidebarStreamCard from "./SidebarStreamCard";
+import { SidebarProfileCard } from "./SidebarProfileCard";
 import { Button } from "../ui/button";
+import { motion } from "framer-motion";
 import { 
   SidebarIcon, 
   Video,
@@ -11,7 +13,7 @@ import {
   LayoutGrid,
   MonitorPlay,
   GemIcon,
-  SwordsIcon
+  Flame
 } from "lucide-react";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -20,6 +22,7 @@ import api from "@/integrations/api/client";
 import { BettingCategory } from "@/enums";
 import { useLocation } from "react-router-dom";
 import { getCategoryLabel } from "@/utils/categoryHelpers";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 type TopStream = {
   id: string;
@@ -38,6 +41,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
   const controls = useSidebar();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const { session } = useAuthContext();
 
   const { data } = useQuery({
     queryKey: ["homepage-live-creators"],
@@ -66,21 +70,26 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
     <Sidebar 
       collapsible="none" 
       className={cn(
-        'top-16 py-2 !transition-none bg-background', 
+        'top-16 py-2 !transition-none bg-background flex flex-col', 
         controls.open ? "w-60" : "w-fit",
         controls.isMobile && "max-w-[50px]"
       )}
     >
-      <SidebarContent>
-        <SidebarGroup className="flex flex-col gap-2 overflow-auto h-[calc(100vh-80px)]">
+      <SidebarContent className="flex flex-col h-full">
+        <SidebarGroup className="flex flex-col gap-2 overflow-auto flex-1 pb-24">
           <div className="flex justify-between items-center md:mb-2">
-            {controls.open && !controls.isMobile && <div className='text-sm font-semibold pl-2'>Live Creators</div>}
+            {controls.open && !controls.isMobile && (
+              <div className='flex items-center gap-1.5 pl-2'>
+                <Flame className="h-4 w-4 text-live-hot" />
+                <span className='text-sm font-semibold'>Live Now</span>
+              </div>
+            )}
             {!controls.isMobile ?
               <Button variant="ghost" onClick={controls.toggleSidebar} className="w-8 h-8" >
                 <SidebarIcon />
               </Button> :
               <div className="flex flex-col items-center mx-auto">
-                <Video className="text-muted-foreground" />
+                <Flame className="h-4 w-4 text-live-hot" />
                 <div className="text-[8px] text-muted-foreground font-bold">LIVE</div>
               </div>
             }
@@ -104,60 +113,74 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                 <div className='text-sm font-semibold pl-2 mb-2' id="sidebar-categories-label">Categories</div>
               )}
               <div 
-                className="flex flex-col gap-1"
+                className="flex flex-col gap-2"
                 role="navigation"
                 aria-label="Pick categories"
                 aria-labelledby={controls.open && !controls.isMobile ? "sidebar-categories-label" : undefined}
               >
                 <Button
+                  asChild
                   onClick={() => setSelectedCategory?.(null)}
                   className={cn(
-                    "h-auto overflow-visible",
-                    controls.open && !controls.isMobile ? "justify-start p-2" : "justify-center items-center px-1 py-1",
-                    selectedCategory === null ? "bg-primary text-black" : "bg-transparent text-white hover:bg-zinc-700"
+                    "h-auto overflow-visible transition-all",
+                    controls.open && !controls.isMobile 
+                      ? "justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-sidebar-card-border hover:border-primary/30 hover:bg-primary/5" 
+                      : "justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover",
+                    selectedCategory === null 
+                      ? "!bg-primary !text-black hover:!bg-primary !border-primary" 
+                      : "text-white bg-transparent"
                   )}
                   aria-pressed={selectedCategory === null}
                   aria-label="Show all categories"
                 >
-                  {controls.open && !controls.isMobile ? (
-                    <div className="flex items-center gap-2 w-full">
-                      <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center flex-shrink-0">
+                  <motion.div whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}>
+                    {controls.open && !controls.isMobile ? (
+                      <div className="flex items-center gap-2.5 w-full">
+                        <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center flex-shrink-0">
+                          <GemIcon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[13px] font-semibold">All</span>
+                      </div>
+                    ) : (
+                      <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center">
                         <GemIcon className="h-4 w-4" />
                       </div>
-                      <span className="truncate">All</span>
-                    </div>
-                  ) : (
-                    <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center">
-                      <GemIcon className="h-4 w-4" />
-                    </div>
-                  )}
+                    )}
+                  </motion.div>
                 </Button>
                 {Object.values(BettingCategory).map((category) => {
                   const IconComponent = getCategoryIcon(category);
                   return (
                     <Button
+                      asChild
                       key={category}
                       onClick={() => setSelectedCategory?.(category)}
                       className={cn(
-                        "h-auto overflow-visible",
-                        controls.open && !controls.isMobile ? "justify-start text-left p-2" : "justify-center items-center px-1 py-1",
-                        selectedCategory === category ? "bg-primary text-black" : "bg-transparent text-white hover:bg-zinc-700"
+                        "h-auto overflow-visible transition-all",
+                        controls.open && !controls.isMobile 
+                          ? "justify-start text-left p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-sidebar-card-border hover:border-primary/30 hover:bg-primary/5" 
+                          : "justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover",
+                        selectedCategory === category 
+                          ? "!bg-primary !text-black hover:!bg-primary !border-primary" 
+                          : "text-white bg-transparent"
                       )}
                       aria-pressed={selectedCategory === category}
                       aria-label={`Filter by ${getCategoryLabel(category)}`}
                     >
-                      {controls.open && !controls.isMobile ? (
-                        <div className="flex items-center gap-2 w-full">
-                          <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center flex-shrink-0">
+                      <motion.div whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}>
+                        {controls.open && !controls.isMobile ? (
+                          <div className="flex items-center gap-2.5 w-full">
+                            <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center flex-shrink-0">
+                              <IconComponent className="h-4 w-4" />
+                            </div>
+                            <span className="text-[13px] font-semibold">{getCategoryLabel(category)}</span>
+                          </div>
+                        ) : (
+                          <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center">
                             <IconComponent className="h-4 w-4" />
                           </div>
-                          <span className="truncate">{getCategoryLabel(category)}</span>
-                        </div>
-                      ) : (
-                        <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center">
-                          <IconComponent className="h-4 w-4" />
-                        </div>
-                      )}
+                        )}
+                      </motion.div>
                     </Button>
                   );
                 })}
@@ -166,6 +189,16 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
           )}
         </SidebarGroup>
       </SidebarContent>
+      
+      {/* Profile Card at Bottom - Fixed to bottom of viewport */}
+      {session && (
+        <div className={cn(
+          "fixed bottom-0 z-20",
+          controls.open && !controls.isMobile ? "w-60" : controls.isMobile ? "w-[50px]" : "w-fit"
+        )}>
+          <SidebarProfileCard compact={!controls.open || controls.isMobile} />
+        </div>
+      )}
     </Sidebar>
   )
 }

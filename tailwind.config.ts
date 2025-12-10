@@ -67,18 +67,48 @@ export default {
           'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
+          'card-bg': 'hsl(var(--sidebar-card-bg))',
+          'card-border': 'hsl(var(--sidebar-card-border))',
+          'compact-hover': 'hsl(var(--sidebar-compact-hover))',
         },
         badge: {
           live: 'hsl(var(--badge-live))',
-          'scheduled-stream': 'hsl(var(--badge-scheduled-stream))',
-          'scheduled-non-video': 'hsl(var(--badge-scheduled-non-video))',
           ended: 'hsl(var(--badge-ended))',
+        },
+        'live-hot': 'hsl(var(--live-hot))',
+        'scheduled-badge': {
+          bg: 'var(--scheduled-badge-bg)',
+          border: 'var(--scheduled-badge-border)',
+          text: 'var(--scheduled-badge-text)',
+        },
+        'featured-card-border': 'var(--featured-card-border)',
+        'creator-green': 'var(--creator-green)',
+        'gold-coin': 'var(--gold-coin)',
+        'electric-lime': 'var(--electric-lime)',
+        'bet-option': {
+          bg: 'var(--bet-option-bg)',
+          border: 'var(--bet-option-border)',
+        },
+        'card-grid': {
+          bg: 'var(--card-grid-bg)',
+          border: 'var(--card-grid-border)',
+          'border-hover': 'var(--card-grid-border-hover)',
         },
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        'featured-card': 'var(--featured-card-radius)',
+      },
+      boxShadow: {
+        'neon-glow': `0px 1px 0px 0px inset rgba(189,255,0,0.2), 0px -1px 0px 0px inset rgba(255,255,255,0.24), 0px -20px 50px 0px inset rgba(189,255,0,0.13), 0px -3px 30px 0px inset rgba(189,255,0,0.33), 0px 0px 60px 0px rgba(189,255,0,0.15)`,
+        'card-subtle': '0px 1px 0px 0px inset rgba(189,255,0,0.1), 0px -1px 0px 0px inset rgba(255,255,255,0.08), 0px 4px 12px 0px rgba(0,0,0,0.6)',
+        'card-subtle-hover': '0px 1px 0px 0px inset rgba(189,255,0,0.15), 0px -1px 0px 0px inset rgba(255,255,255,0.12), 0px 6px 20px 0px rgba(189,255,0,0.12), 0px 2px 8px 0px rgba(0,0,0,0.7)',
+      },
+      backgroundImage: {
+        'featured-gradient': "linear-gradient(rgba(189, 255, 0, 0) 0%, rgba(189, 255, 0, 0.08) 100%), linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.85) 100%)",
+        'card-grid-gradient': 'linear-gradient(180deg, rgba(189, 255, 0, 0) 0%, rgba(189, 255, 0, 0.05) 100%)',
       },
       keyframes: {
         'accordion-down': {
