@@ -131,6 +131,9 @@ export const StreamStatusBadge = ({
   // LOCK badge with clock icon and datetime
   if (status === 'lock') {
     const ariaLabel = lockDate 
+      ? `Picks Lock: ${lockDate}`
+      : 'Picks Lock: TBA';
+    
     return (
       <motion.div 
         className={BADGE_STYLES.LOCK.container}
