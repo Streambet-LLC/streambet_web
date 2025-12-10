@@ -1,6 +1,7 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarTrigger, useSidebar } from "../ui/sidebar";
 import SidebarStreamCard from "./SidebarStreamCard";
+import { SidebarProfileCard } from "./SidebarProfileCard";
 import { Button } from "../ui/button";
 import { 
   SidebarIcon, 
@@ -20,6 +21,7 @@ import api from "@/integrations/api/client";
 import { BettingCategory } from "@/enums";
 import { useLocation } from "react-router-dom";
 import { getCategoryLabel } from "@/utils/categoryHelpers";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 type TopStream = {
   id: string;
@@ -38,6 +40,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
   const controls = useSidebar();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const { session } = useAuthContext();
 
   const { data } = useQuery({
     queryKey: ["homepage-live-creators"],
@@ -66,13 +69,13 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
     <Sidebar 
       collapsible="none" 
       className={cn(
-        'top-16 py-2 !transition-none bg-background', 
+        'top-16 py-2 !transition-none bg-background flex flex-col', 
         controls.open ? "w-60" : "w-fit",
         controls.isMobile && "max-w-[50px]"
       )}
     >
-      <SidebarContent>
-        <SidebarGroup className="flex flex-col gap-2 overflow-auto h-[calc(100vh-80px)]">
+      <SidebarContent className="flex flex-col h-full">
+        <SidebarGroup className="flex flex-col gap-2 overflow-auto flex-1 pb-24">
           <div className="flex justify-between items-center md:mb-2">
             {controls.open && !controls.isMobile && <div className='text-sm font-semibold pl-2'>Live Creators</div>}
             {!controls.isMobile ?
@@ -166,6 +169,16 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
           )}
         </SidebarGroup>
       </SidebarContent>
+      
+      {/* Profile Card at Bottom - Fixed to bottom of viewport */}
+      {session && (
+        <div className={cn(
+          "fixed bottom-0 z-20",
+          controls.open && !controls.isMobile ? "w-60" : controls.isMobile ? "w-[50px]" : "w-fit"
+        )}>
+          <SidebarProfileCard compact={!controls.open || controls.isMobile} />
+        </div>
+      )}
     </Sidebar>
   )
 }
