@@ -86,9 +86,9 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
   };
 
   const menuItems = [
-    (session?.role === 'admin' || session?.role === 'creator') && { label: 'Dashboard', icon: undefined, path: session?.role === 'admin' ? '/admin' : '/creator' },
     { label: 'Home', icon: undefined, path: '/' },
-    { label: 'Creators', icon: undefined, path: '/creators' },
+    { label: 'Browse', icon: undefined, path: '/creators' },
+    (session?.role === 'admin' || session?.role === 'creator') && { label: 'Creator Dashboard', icon: undefined, path: session?.role === 'admin' ? '/admin' : '/creator' },
     // { label: 'Streams', icon: undefined, path: '/stream' },
     // { label: 'Rewards', icon: undefined, path: '/rewards' },
     // { label: 'Community', icon: undefined, path: '/community' },
@@ -242,13 +242,14 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
           {/* Center Column: Search Bar - Only on Homepage */}
           <div className="hidden md:flex flex-1 justify-center mx-4">
             {isHomePage && searchValue !== undefined && onSearchChange && (
-              <div className="max-w-[200px] md:max-w-md w-full">
+              <div className="max-w-[280px] md:max-w-lg w-full">
                 <SearchInput
                   id="nav-search"
                   value={searchValue}
                   onChange={onSearchChange}
                   width="full"
-                  className="border-none"
+                  placeholder="Search Picks, creators, streams..."
+                  className="border-primary/60 shadow-[0_0_8px_rgba(189,255,0,0.3)]"
                 />
               </div>
             )}

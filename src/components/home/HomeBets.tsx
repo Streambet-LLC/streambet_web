@@ -85,6 +85,7 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
 
   return (
     <>
+      <h2 className="text-2xl font-bold mb-4 px-2">All Picks:</h2>
       <div className="flex flex-col gap-4">
         {/* Category Tabs */}
         <div 
