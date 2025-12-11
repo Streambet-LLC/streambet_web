@@ -25,7 +25,7 @@ export default function FeaturedBetCard({ children, className }: FeaturedBetCard
         className="absolute inset-0 pointer-events-none rounded-featured-card shadow-neon-glow"
       />
       {/* Content wrapper */}
-      <div className="relative h-full flex flex-col">{children}</div>
+      <div className="relative flex flex-col flex-1">{children}</div>
     </div>
   );
 }
