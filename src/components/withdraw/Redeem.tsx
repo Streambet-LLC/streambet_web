@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+  CardDescription,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -27,14 +34,16 @@ export default function Redeem() {
   // const [sessionKey, setSessionKey] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const { session } = useAuthContext();
-  const [withdrawingState, setWithdrawingState] = useState<"addingBank" | "payout" | "generatingTokens" | null>(null);
+  const [withdrawingState, setWithdrawingState] = useState<
+    'addingBank' | 'payout' | 'generatingTokens' | null
+  >(null);
   const [withdrawing, setWithdrawing] = useState(false);
   const [resumeVerification, setResumeVerification] = useState(false);
-  const [sessionKey, setSessionKey] = useState<string>('')
+  const [sessionKey, setSessionKey] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const sweepBalance = session?.walletBalanceSweepCoin || 0;
+  const sweepBalance = session?.withdrawableBalanceSweepCoin || 0;
   const apiUrl = import.meta.env.VITE_COINFLOW_API_URL || 'https://sandbox.coinflow.cash';
   const merchantId = import.meta.env.VITE_COINFLOW_MERCHANT_ID || 'streambet';
 
@@ -93,11 +102,14 @@ export default function Redeem() {
     if (withdrawerDataError && withdrawerDataError.status) {
       if (withdrawerDataError.status === 401) {
         // User is not registered yet as withdrawer
-        navigate("/withdraw/verification", { replace: true });
+        navigate('/withdraw/verification', { replace: true });
         return;
       }
 
-      if (withdrawerDataError.status === 451 && withdrawerDataError.response?.data?.verificationLink) {
+      if (
+        withdrawerDataError.status === 451 &&
+        withdrawerDataError.response?.data?.verificationLink
+      ) {
         setResumeVerification(true);
         resumeVerificationDebounce(withdrawerDataError.response.data.verificationLink);
         return;
@@ -110,28 +122,28 @@ export default function Redeem() {
     if (withdrawerData?.withdrawer) {
       setWithdrawer(withdrawerData);
       const currentUrl = new URL(window.location.href);
-      currentUrl.search = ''; 
+      currentUrl.search = '';
       window.history.replaceState({}, document.title, currentUrl.toString());
     }
   }, [withdrawerData, withdrawerDataError]);
 
   const generateTokens = useCallback(async () => {
-    if (withdrawingState === "generatingTokens") return;
+    if (withdrawingState === 'generatingTokens') return;
 
     if (!session?.email || !session?.id) {
       toast({
-          title: 'Error',
-          description: 'User session not found. Please log in again.',
-          variant: 'destructive',
+        title: 'Error',
+        description: 'User session not found. Please log in again.',
+        variant: 'destructive',
       });
       return;
     }
 
-    setWithdrawingState("generatingTokens");
+    setWithdrawingState('generatingTokens');
     try {
       const sessionKeyResult = await api.payment.getSessionKey();
-      
-      setSessionKey(sessionKeyResult?.key)
+
+      setSessionKey(sessionKeyResult?.key);
     } catch (error: unknown) {
       toast({
         title: 'Error generating session key',
@@ -152,7 +164,7 @@ export default function Redeem() {
       console.log(message);
       if (message?.data === 'accountLinked') {
         getWithdrawerData();
-        setWithdrawingState("payout");
+        setWithdrawingState('payout');
       }
       if (message.method !== 'heightChange') return;
       setHeight(message.data);
@@ -161,22 +173,20 @@ export default function Redeem() {
     }
   }, []);
 
-
   useEffect(() => {
     if (!window) throw new Error('Window not defined');
     window.addEventListener('message', handleIframeMessages);
     return () => {
-        window.removeEventListener('message', handleIframeMessages);
+      window.removeEventListener('message', handleIframeMessages);
     };
   }, [handleIframeMessages]);
 
   useEffect(() => {
     if (sessionKey && withdrawing) {
-      setWithdrawingState("addingBank")
+      setWithdrawingState('addingBank');
     }
   }, [sessionKey, withdrawing]);
-  
-  
+
   // useEffect(() => {
   //   if (!isWithdrawerDataLoading && withdrawerInfo?.withdrawer) {
   //     if (!sweepCoins || !usdValue) return;
@@ -192,72 +202,91 @@ export default function Redeem() {
   //   }
   // }, [isWithdrawerDataLoading, withdrawerInfo, sweepCoins, usdValue, generateTokens]);
 
-  console.log(sessionKey)
+  console.log(sessionKey);
 
   if (withdrawing && !!withdrawerInfo) {
-    return <MainLayout isWithdraw>
-      {withdrawingState === "generatingTokens" && 
-        <div className="flex justify-center items-center min-h-[60vh] px-2">
-          <Card className="w-full max-w-sm mx-auto shadow-lg p-4">
-            <CardDescription className='text-center'>
-              Loading Bank Selection
-            </CardDescription>
-            <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto mt-4" />
-          </Card>
-        </div>
-      }
-      {withdrawingState === "addingBank" && 
-        <div className='overflow-hidden mx-auto'>
-          <iframe className='w-full h-[80dvh]' src={`${apiUrl}/solana/withdraw/${merchantId}?sessionKey=${sessionKey}&bankAccountRedirect=${import.meta.env.VITE_APP_HOST_URL}/withdraw`} scrolling='no' />
-        </div>
-      }
-      {withdrawingState === "payout" && 
-        <Withdraw 
-          sweepCoins={Number(sweepCoins)} 
-          amountToWithdraw={usdValue || 0}
-          bankAccounts={withdrawerInfo?.withdrawer?.bankAccounts || []}
-          setWithdrawer={setWithdrawer}
-          onAddBank={generateTokens}
-          onRefresh={getWithdrawerData}
-          refetching={isWithdrawerDataLoading}
-          onBack={() => {
-            setWithdrawing(false);
-            setWithdrawingState(null);
-          }}
-        />
-      }
-    </MainLayout>
+    return (
+      <MainLayout isWithdraw>
+        {withdrawingState === 'generatingTokens' && (
+          <div className="flex justify-center items-center min-h-[60vh] px-2">
+            <Card className="w-full max-w-sm mx-auto shadow-lg p-4">
+              <CardDescription className="text-center">Loading Bank Selection</CardDescription>
+              <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto mt-4" />
+            </Card>
+          </div>
+        )}
+        {withdrawingState === 'addingBank' && (
+          <div className="overflow-hidden mx-auto">
+            <iframe
+              className="w-full h-[80dvh]"
+              src={`${apiUrl}/solana/withdraw/${merchantId}?sessionKey=${sessionKey}&bankAccountRedirect=${import.meta.env.VITE_APP_HOST_URL}/withdraw`}
+              scrolling="no"
+            />
+          </div>
+        )}
+        {withdrawingState === 'payout' && (
+          <Withdraw
+            sweepCoins={Number(sweepCoins)}
+            amountToWithdraw={usdValue || 0}
+            bankAccounts={withdrawerInfo?.withdrawer?.bankAccounts || []}
+            setWithdrawer={setWithdrawer}
+            onAddBank={generateTokens}
+            onRefresh={getWithdrawerData}
+            refetching={isWithdrawerDataLoading}
+            onBack={() => {
+              setWithdrawing(false);
+              setWithdrawingState(null);
+            }}
+          />
+        )}
+      </MainLayout>
+    );
   }
 
-  return <MainLayout isWithdraw>
-    <div className="flex justify-center items-center min-h-[60vh] px-2">
-      <Card className="w-full max-w-sm mx-auto shadow-lg">
-        {isWithdrawerDataLoading ?
-          <CardContent className="flex flex-col pt-4 gap-2">
-            <Skeleton className="h-8" />
-            <Skeleton className="h-4" />
-            <Skeleton className="h-4 mt-5" />
-            <Skeleton className="h-2" />
-          </CardContent> :
-          resumeVerification ? 
+  return (
+    <MainLayout isWithdraw>
+      <div className="flex justify-center items-center min-h-[60vh] px-2">
+        <Card className="w-full max-w-sm mx-auto shadow-lg">
+          {isWithdrawerDataLoading ? (
+            <CardContent className="flex flex-col pt-4 gap-2">
+              <Skeleton className="h-8" />
+              <Skeleton className="h-4" />
+              <Skeleton className="h-4 mt-5" />
+              <Skeleton className="h-2" />
+            </CardContent>
+          ) : resumeVerification ? (
             <CardHeader>
               <CardTitle>Redeem Verification</CardTitle>
-              <CardDescription className='mx-auto pt-4'>
+              <CardDescription className="mx-auto pt-4">
                 Resuming your identity verification...
               </CardDescription>
               <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto mt-4" />
-            </CardHeader> :
+            </CardHeader>
+          ) : (
             <>
               <CardHeader>
                 <CardTitle>Redeem Stream Coins</CardTitle>
                 <CardDescription>
                   Enter the amount of Stream Coins to redeem.
-                  <div className='mt-4'>
-                    Your Stream Coin balance: {sweepBalance?.toLocaleString('en-US')}<br />
+                  <div className="mt-4">
+                    Your Stream Coin balance: {sweepBalance?.toLocaleString('en-US')}
+                    <br />
                     {session?.sweepCoinsPerDollar} Stream Coins = $1
                     <div className="flex justify-between">
-                      <span>Min: {Number(session?.minWithdrawableSweepCoins || 0)?.toLocaleString('en-US')} coins</span>
-                      <span>Max: {Number((session?.maxWithdrawableSweepCoins ?? session?.walletBalanceSweepCoin) || 0)?.toLocaleString('en-US')}  coins</span>
+                      <span>
+                        Min:{' '}
+                        {Number(session?.minWithdrawableSweepCoins || 0)?.toLocaleString('en-US')}{' '}
+                        coins
+                      </span>
+                      <span>
+                        Max:{' '}
+                        {Number(
+                          (session?.maxWithdrawableSweepCoins ??
+                            session?.withdrawableBalanceSweepCoin) ||
+                            0
+                        )?.toLocaleString('en-US')}{' '}
+                        coins
+                      </span>
                     </div>
                   </div>
                 </CardDescription>
@@ -304,15 +333,16 @@ export default function Redeem() {
                   className="w-full"
                   onClick={() => {
                     setWithdrawing(true);
-                    setWithdrawingState("payout");
+                    setWithdrawingState('payout');
                   }}
                 >
                   Redeem
                 </Button>
               </CardFooter>
             </>
-        }
-      </Card>
-    </div>
-  </MainLayout>
+          )}
+        </Card>
+      </div>
+    </MainLayout>
+  );
 }
