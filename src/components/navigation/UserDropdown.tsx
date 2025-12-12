@@ -23,7 +23,7 @@ interface UserDropdownProps {
 
 export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
   const [isImageLoading, setIsImageLoading] = React.useState(false);
-  
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -117,6 +117,16 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/withdraw">Redeem Stream Coins</Link>
         </DropdownMenuItem>
+
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link to="/transactions">Transaction history</Link>
+        </DropdownMenuItem>
+
+        {profile?.isCreator && 
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link to="/creator-payouts-history">Creator Payouts History</Link>
+          </DropdownMenuItem>
+        }
 
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/settings">Settings</Link>
