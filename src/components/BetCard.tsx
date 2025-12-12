@@ -341,7 +341,14 @@ export default function BetCard(props: BetCardType) {
           {cardData.lockDate && (
             <StreamStatusBadge 
               status="lock" 
-              lockDate={moment(cardData.lockDate).format('MMM D, YYYY [at] h:mm A')}
+              lockDate={(() => {
+                const date = new Date(cardData.lockDate);
+                const formattedDate = moment(cardData.lockDate).format('MMM D, YYYY [at] h:mm A');
+                const timezone = date.toLocaleTimeString('en-US', { 
+                  timeZoneName: 'short' 
+                }).split(' ').pop();
+                return `${formattedDate} ${timezone}`;
+              })()}
             />
           )}
         </div>
