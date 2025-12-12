@@ -240,7 +240,7 @@ export const StreamCard = ({
               )}
             </div>
             <div className="!mb-3 !mt-5 space-y-2">
-              <StreamActions streamId={stream.id} onDelete={undefined} />
+              <StreamActions streamId={stream.id} onDelete={undefined} ended={stream?.streamStatus === StreamStatus.ENDED || !!stream.endTime} />
             </div>
           </div>
         </div>
