@@ -40,6 +40,7 @@ import 'react-image-crop/dist/ReactCrop.css'
 import Home from './pages/Home';
 import Creator from './pages/Creator';
 import Creators from './components/creators/Creators';
+import CreatorPayoutsHistoryPage from './pages/CreatorPayoutsHistory';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -83,6 +84,7 @@ const App = () => {
                         <Route path="/withdraw/verification" element={<Kyc />} />
                         <Route path="/transactions" element={<Transactions key='transactions' historyType={HistoryType.Transaction} />} />
                         <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
+                        <Route path="/creator-payouts-history" element={<CreatorPayoutsHistoryPage />} />
                         <Route path="/settings" element={<Settings />} />
                       </Route>
                       <Route path="/:username" element={<Profile />} />

@@ -891,6 +891,12 @@ export const creatorAPI = {
     const response = await apiClient.get(`/creator/stream/${id}`);
     return response.data;
   },
+
+  // Get stream details based on stream ID
+  getCreatorPayoutsHistory: async (params?: { page?: number, limit?: number }) => {
+    const response = await apiClient.get(`/creator/payoutsHistory`, { params });
+    return response.data;
+  },
 }
 
 
