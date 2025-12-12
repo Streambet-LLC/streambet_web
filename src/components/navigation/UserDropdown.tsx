@@ -23,7 +23,7 @@ interface UserDropdownProps {
 
 export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
   const [isImageLoading, setIsImageLoading] = React.useState(false);
-  
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -90,7 +90,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           </div>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {profile?.isCreator &&
+        {profile?.role === 'creator' &&
           <DropdownMenuItem asChild className="cursor-pointer">
             <div className="flex gap-1 group">
               <Plus className="h-4 w-4 text-[#B4FF39] group-hover:text-black transition-colors" />
@@ -99,7 +99,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           </DropdownMenuItem>
         }
         <DropdownMenuItem asChild className="cursor-pointer">
-          {profile?.isCreator ? (
+          {profile?.role === 'creator' ? (
             <Link to={`/${profile?.username}`}>My Profile</Link>
           ) : (
             <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Join Creator Program</a>
@@ -117,6 +117,16 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/withdraw">Redeem Stream Coins</Link>
         </DropdownMenuItem>
+
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link to="/transactions">Transaction history</Link>
+        </DropdownMenuItem>
+
+        {profile?.role === 'creator' && 
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link to="/creator-payouts-history">Creator Payouts History</Link>
+          </DropdownMenuItem>
+        }
 
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/settings">Settings</Link>
