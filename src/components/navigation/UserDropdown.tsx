@@ -107,7 +107,11 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">
-          <Link to="/betting-history">Pick history</Link>
+          <Link to="/betting-history">Pick History</Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild className="cursor-pointer">
+          <Link to="/transactions">Transaction History</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">
@@ -115,14 +119,10 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">
-          <Link to="/transactions">Transaction history</Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => onLogout()} className="cursor-pointer">Log out</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onLogout()} className="cursor-pointer">Log Out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
