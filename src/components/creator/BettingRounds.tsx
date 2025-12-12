@@ -594,7 +594,7 @@ export function BettingRounds({
                     </TableBody>
                   </Table>
                   {expandedRounds.includes(getRoundValue(roundIndex)) &&
-                    <div className='p-4 flex flex-col gap-2 w-full'>
+                    <div className='p-4 flex flex-col gap-2 w-full max-w-96'>
                       <h3>Preview</h3>
                       <div className='mx-auto w-full'>
                       {roundsState[roundIndex] &&
