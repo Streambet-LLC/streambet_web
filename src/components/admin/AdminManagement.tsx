@@ -11,7 +11,13 @@ import api, { adminAPI } from '@/integrations/api/client';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { formatDateTimeForISO, getImageLink, getMessage, isImageSFW, isScheduledTimeInPast } from '@/utils/helper';
+import {
+  formatDateTimeForISO,
+  getImageLink,
+  getMessage,
+  isImageSFW,
+  isScheduledTimeInPast,
+} from '@/utils/helper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -21,8 +27,15 @@ import { BettingRoundStatus, BettingCategory, CurrencyType, StreamStatus } from 
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds, BettingRound, BettingOption } from '@/utils/bettingRoundsUtils';
+import {
+  cleanTemporaryIds,
+  appendCountersToDuplicates,
+  deserializeRounds,
+  BettingRound,
+  BettingOption,
+} from '@/utils/bettingRoundsUtils';
 import { cn } from '@/lib/utils';
+import StreamPayoutReport from './StreamPayoutReport';
 interface BettingOption {
   optionId?: string;
   option: string;
@@ -91,6 +104,7 @@ export const AdminManagement = ({
     { key: 'non-video', label: 'Non Video' },
     { key: 'ended-non-video', label: 'Ended Non Video' },
     { key: 'users', label: 'Users' },
+    { key: 'stream-payout', label: 'Stream Payout' },
   ];
 
   const createStreamMutation = useMutation({
@@ -717,12 +731,13 @@ export const AdminManagement = ({
     let scheduledStartTime;
     if (eventType.value === 'stream') {
       scheduledStartTime = formatDateTimeForISO(startDateObj, startTime, timezone);
-      
+
       if (!scheduledStartTime && startDateObj && startTime) {
         toast({
           variant: 'destructive',
           title: 'Invalid Timezone',
-          description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+          description:
+            'The selected timezone could not be processed. Please try a different timezone or contact support.',
         });
         return;
       }
@@ -1041,10 +1056,12 @@ export const AdminManagement = ({
         </div>
       ) : isCreateStream || editStreamId ? (
         <div className="flex justify-center items-center min-h-[60vh]">
-          <Card className={cn(
-            "w-full bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none",
-            createStep === "info" && "max-w-xl"
-          )}>
+          <Card
+            className={cn(
+              'w-full bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none',
+              createStep === 'info' && 'max-w-xl'
+            )}
+          >
             <CardContent className="p-4 !pt-2 sm:p-6">
               {/* Back button only at top */}
               <div className="mb-6">
@@ -1102,9 +1119,7 @@ export const AdminManagement = ({
                       className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                       style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
                       disabled={
-                        createStreamMutation.isPending ||
-                        createBetMutation.isPending ||
-                        isUploading
+                        createStreamMutation.isPending || createBetMutation.isPending || isUploading
                       }
                       onClick={addNewRound}
                     >
@@ -1632,17 +1647,9 @@ export const AdminManagement = ({
             </div>
           )}
 
-          {activeTab === 'ended-non-video' && (
+          {activeTab === 'stream-payout' && (
             <div className="space-y-4">
-              <StreamTable
-                streams={endedNonVideoStreams}
-                setStreamAnalyticsId={setStreamAnalyticsId}
-                refetchStreams={refetchEndedNonVideoStreams}
-                setViewStreamId={setViewStreamId}
-                setEditStreamId={setEditStreamId}
-                currentPage={endedNonVideoCurrentPage}
-                setCurrentPage={setEndedNonVideoCurrentPage}
-              />
+              <StreamPayoutReport />
             </div>
           )}
 
