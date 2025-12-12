@@ -118,10 +118,6 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           <Link to="/withdraw">Redeem Stream Coins</Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild className="cursor-pointer">
-          <Link to="/transactions">Transaction history</Link>
-        </DropdownMenuItem>
-
         {profile?.isCreator && 
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link to="/creator-payouts-history">Creator Payouts History</Link>
