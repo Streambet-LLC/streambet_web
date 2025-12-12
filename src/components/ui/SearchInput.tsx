@@ -70,7 +70,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         autoFocus={autoFocus}
-        className={cn('pl-9 rounded-md', value.length > 0 && 'pr-9')}
+        className={cn('pl-9 rounded-md text-base placeholder:text-muted-foreground bg-card-grid-bg shadow-input-glow', value.length > 0 && 'pr-9')}
         aria-label={placeholder}
 		    inputMode="search"
       />

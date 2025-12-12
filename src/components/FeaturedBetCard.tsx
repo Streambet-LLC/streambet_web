@@ -10,14 +10,15 @@ export default function FeaturedBetCard({ children, className }: FeaturedBetCard
   return (
     <div
       className={cn(
-        'relative rounded-featured-card overflow-hidden bg-featured-gradient h-full flex flex-col',
+        'relative rounded-featured-card overflow-hidden h-full flex flex-col',
         className
       )}
+      style={{ backgroundColor: 'var(--card-grid-bg)' }}
     >
       {/* Border overlay */}
       <div
         aria-hidden="true"
-        className="absolute border border-featured-card-border inset-0 pointer-events-none rounded-featured-card"
+        className="absolute border border-card-grid-border inset-0 pointer-events-none rounded-featured-card"
       />
       {/* Shadow overlay */}
       <div 

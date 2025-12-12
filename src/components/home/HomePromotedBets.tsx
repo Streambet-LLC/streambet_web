@@ -47,6 +47,7 @@ export default function HomePromotedBets() {
 
   return (
     <>
+      <h2 className="text-2xl font-bold  px-2">Featured Picks:</h2>
       <div className="p-6 -mx-4">
         <Carousel
           className="flex-1 w-full"

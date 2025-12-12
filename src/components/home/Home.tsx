@@ -41,6 +41,8 @@ export default function Home() {
             value={searchValue}
             onChange={setSearchValue}
             width="full"
+            placeholder="Search Picks, creators, streams..."
+            className="border-primary/60 shadow-[0_0_8px_rgba(189,255,0,0.3)]"
           />
         </div>
 
