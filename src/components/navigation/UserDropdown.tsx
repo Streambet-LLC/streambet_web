@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { getImageLink } from '@/utils/helper';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Coins, Loader2, Plus } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
+import { useDepositContext } from '@/contexts/DepositContext';
 
 type Profile = any;
 
@@ -23,6 +24,7 @@ interface UserDropdownProps {
 
 export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
   const [isImageLoading, setIsImageLoading] = React.useState(false);
+  const { setOpen: setDepositOpen } = useDepositContext();
 
   return (
     <DropdownMenu>
@@ -83,10 +85,10 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild onClick={() => setDepositOpen(true)}>
           <div className="flex gap-2 group">
             <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" />
-            <Link to="/deposit" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Buy Coins</Link>
+            <div className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Buy Coins</div>
           </div>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

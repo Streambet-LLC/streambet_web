@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageLink } from '@/utils/helper';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useDepositContext } from '@/contexts/DepositContext';
 
 interface SidebarProfileCardProps {
   compact?: boolean;
@@ -11,6 +12,7 @@ interface SidebarProfileCardProps {
 export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps) {
   const navigate = useNavigate();
   const { session } = useAuthContext();
+  const { setOpen: setDepositOpen } = useDepositContext();
   
   const username = session?.username;
   const email = session?.email;
@@ -24,7 +26,7 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
 
   const handleCoinsClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate('/deposit');
+    setDepositOpen(true);
   };
 
   if (compact) {
