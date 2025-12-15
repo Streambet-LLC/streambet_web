@@ -7,6 +7,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PRESET_PERCENTAGES } from '@/utils/constants';
 import { Button } from "../ui/button";
+import { useDepositContext } from '@/contexts/DepositContext';
 
 interface BettingVariable {
   id: string;
@@ -104,6 +105,7 @@ export default function BetTokens({
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
+  const { setOpen: setDepositOpen } = useDepositContext();
 
   const handleCurrencyChange = () => {
     setCurrency(isSweepCoins ? CurrencyType.GOLD_COINS : CurrencyType.SWEEP_COINS);
@@ -244,7 +246,7 @@ export default function BetTokens({
           </p>
           <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
-            onClick={() => navigate('/deposit')}
+            onClick={() => setDepositOpen(true)}
           >
             Buy Coins
           </button>
