@@ -7,7 +7,6 @@ interface PromoCardProps {
   name: string;
   description?: string;
   thumbnail: string;
-  streamId: string;
   creator?: string | null;
   className?: string;
 }
@@ -16,7 +15,6 @@ export default function PromoCard({
   name, 
   description, 
   thumbnail, 
-  streamId, 
   creator,
   className 
 }: PromoCardProps) {

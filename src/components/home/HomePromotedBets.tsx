@@ -57,7 +57,6 @@ export default function HomePromotedBets() {
             name={promoCard.name}
             description={promoCard.description}
             thumbnail={promoCard.thumbnail}
-            streamId={promoCard.streamId}
             creator={promoCard.creator}
           />
         </div>

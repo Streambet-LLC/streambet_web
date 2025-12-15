@@ -1708,6 +1708,20 @@ export const AdminManagement = ({
             </div>
           )}
 
+          {activeTab === 'ended-non-video' && (
+            <div className="space-y-4">
+              <StreamTable
+                streams={endedNonVideoStreams}
+                setStreamAnalyticsId={setStreamAnalyticsId}
+                refetchStreams={refetchEndedNonVideoStreams}
+                setViewStreamId={setViewStreamId}
+                setEditStreamId={setEditStreamId}
+                currentPage={endedNonVideoCurrentPage}
+                setCurrentPage={setEndedNonVideoCurrentPage}
+              />
+            </div>
+          )}
+
           {activeTab === 'promo-cards' && (
             <div className="space-y-4">
               <StreamTable
