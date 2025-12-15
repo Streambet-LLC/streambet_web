@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PRIORITY_STREAMS } from '@/utils/constants';
 import { sortByPriorityPairs } from '@/utils/helper';
 import { QuickPickModal } from '../stream/QuickPickModal';
@@ -29,6 +29,8 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
     streamName: null,
     selectedOption: null,
   });
+  const tabsRef = useRef<HTMLDivElement>();
+
   const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage, refetch } =
     useInfiniteQuery({
       queryKey: ['homepage-bets', filters],
@@ -70,6 +72,12 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
     return sorted;
   }, [data, selectedCategory]);
 
+  useEffect(() => {
+    if (!tabsRef.current) return;
+
+    tabsRef.current.scrollIntoView({ behavior: "smooth" });
+  }, [selectedCategory]);
+
   // Display only first N items (client-side pagination)
   const displayedBets = sortedBets.slice(0, displayCount);
   const hasMore = displayCount < sortedBets.length;
@@ -85,8 +93,9 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
 
   return (
     <>
-      <h2 className="text-2xl font-bold mb-4 px-2">All Picks:</h2>
-      <div className="flex flex-col gap-4">
+      <h2 ref={tabsRef} className="text-2xl font-bold mb-4 px-2">All Picks:</h2>
+      <div 
+        className="flex flex-col gap-4">
         {/* Category Tabs */}
         <div 
           className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
