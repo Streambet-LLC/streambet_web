@@ -7,6 +7,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import BetCard from '../BetCard';
+import PromoCard from './PromoCard';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { Skeleton } from '../ui/skeleton';
@@ -38,15 +39,30 @@ export default function HomePromotedBets() {
   // Listen for stream promotion updates
   useStreamPromotionListener(refetch);
 
-  const sortedData = useMemo(() => {
-    if (!data) return [];
-    return sortByPriorityPairs(data as BetCardType[], PRIORITY_STREAMS);
-  }, [data]);
+  // Extract promo card and regular bets from response
+  const promoCard = data?.promoCard || null;
+  const regularBets = data?.bets || data || []; // Backwards compatible
 
-  if (!data) return;
+  const sortedData = useMemo(() => {
+    if (!regularBets || regularBets.length === 0) return [];
+    return sortByPriorityPairs(regularBets as BetCardType[], PRIORITY_STREAMS);
+  }, [regularBets]);
 
   return (
     <>
+      {/* Promo Card - Shows above featured carousel */}
+      {promoCard && (
+        <div className="px-2 mb-6">
+          <PromoCard
+            name={promoCard.name}
+            description={promoCard.description}
+            thumbnail={promoCard.thumbnail}
+            streamId={promoCard.streamId}
+            creator={promoCard.creator}
+          />
+        </div>
+      )}
+      
       <h2 className="text-2xl font-bold  px-2">Featured Picks:</h2>
       <div className="p-6 -mx-4">
         <Carousel

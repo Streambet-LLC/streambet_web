@@ -102,7 +102,7 @@ export default {
         'featured-card': 'var(--featured-card-radius)',
       },
       boxShadow: {
-        'neon-glow': `0px 1px 0px 0px inset rgba(189,255,0,0.2), 0px -1px 0px 0px inset rgba(255,255,255,0.24), 0px -20px 50px 0px inset rgba(189,255,0,0.13), 0px -3px 30px 0px inset rgba(189,255,0,0.33), 0px 0px 60px 0px rgba(189,255,0,0.15)`,
+        'neon-glow': `0px 1px 0px 0px inset rgba(189,255,0,0.2), 0px -1px 0px 0px inset rgba(255,255,255,0.24), 0px -20px 50px 0px inset rgba(189,255,0,0.13), 0px -3px 30px 0px inset rgba(189,255,0,0.33), 0px 0px 60px 0px inset rgba(189,255,0,0.15)`,
         'input-glow': '0px 1px 0px 0px inset rgba(189,255,0,0.15), 0px -1px 0px 0px inset rgba(255,255,255,0.1), 0px -10px 30px 0px inset rgba(189,255,0,0.08)',
         'card-subtle': '0px 1px 0px 0px inset rgba(189,255,0,0.1), 0px -1px 0px 0px inset rgba(255,255,255,0.08), 0px 4px 12px 0px rgba(0,0,0,0.6)',
         'card-subtle-hover': '0px 1px 0px 0px inset rgba(189,255,0,0.15), 0px -1px 0px 0px inset rgba(255,255,255,0.12), 0px 6px 20px 0px rgba(189,255,0,0.12), 0px 2px 8px 0px rgba(0,0,0,0.7)',
