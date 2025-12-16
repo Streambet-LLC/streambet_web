@@ -740,6 +740,20 @@ export const adminAPI = {
     return response.data;
   },
 
+  getStreamPayoutReport: async (params?: any) => {
+    const response = await apiClient.get(`/admin/stream-payout-report`, {
+      params,
+    });
+    return response.data;
+  },
+
+  getBetsPerRound: async (params?: any) => {
+    const response = await apiClient.get(`/admin/view-bets`, {
+      params,
+    });
+    return response.data;
+  },
+
   // Get stream details based on stream ID
   getStream: async (id: string) => {
     const response = await apiClient.get(`/admin/stream/${id}`);

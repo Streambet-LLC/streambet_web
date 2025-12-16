@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { CurrencyType } from '@/enums';
 import { useEffect } from 'react';
+import { useDepositContext } from '@/contexts/DepositContext';
 
 interface WalletDropdownProps {
   walletBalance: number;
@@ -14,6 +15,7 @@ interface WalletDropdownProps {
 export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
   const navigate = useNavigate();
   const { currency, setCurrency } = useCurrencyContext();
+  const { setOpen: setDepositOpen } = useDepositContext();
 
   const handleSwitchChange = (checked: boolean) => {
     setCurrency(checked ? CurrencyType.SWEEP_COINS : CurrencyType.GOLD_COINS);
@@ -35,7 +37,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
                 className="h-6 w-6"
               />
               {/* <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" /> */}
-              <Link to="/deposit" className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</Link>
+              <button onClick={() => setDepositOpen(true)} className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</button>
             </Button>
           </div>
         ) : (
@@ -51,7 +53,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
                         className="h-4 w-6"
                       />
                       {/* <BanknoteArrowUp className="h-4 w-4 text-[#BDFF00] group-hover:text-black transition-colors" /> */}
-                      <Link to="/deposit" className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</Link>
+                      <button onClick={() => setDepositOpen(true)} className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</button>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent hidden side="bottom" className="max-w-[250px]">

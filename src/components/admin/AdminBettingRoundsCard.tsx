@@ -8,7 +8,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
-import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink, getMessage } from '@/utils/helper';
@@ -32,6 +32,9 @@ import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
 import Bugsnag from '@bugsnag/js';
 import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
+import { DialogTitle } from '@radix-ui/react-dialog';
+import { Table, TableHead, TableHeader, TableRow } from '../ui/table';
+import ViewBettingDialog from './ViewBettingDialog';
 
 // Helper for status priority
 const statusPriority = [
@@ -675,6 +678,8 @@ export const AdminBettingRoundsCard = ({
                                                                  }}
                                                             />
                                                        )} */}
+
+                        <ViewBettingDialog betRound={round.roundId} />
                       </CarouselItem>
                     );
                   })

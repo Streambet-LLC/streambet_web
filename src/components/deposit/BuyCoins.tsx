@@ -31,7 +31,7 @@ const BuyCoins = ({
   };
 
   return (
-   <div className="min-h-screen text-white ">
+   <div className="text-white ">
       {isCoinPackagesLoading && (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">

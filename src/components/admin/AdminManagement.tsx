@@ -11,7 +11,13 @@ import api, { adminAPI } from '@/integrations/api/client';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { formatDateTimeForISO, getImageLink, getMessage, isImageSFW, isScheduledTimeInPast } from '@/utils/helper';
+import {
+  formatDateTimeForISO,
+  getImageLink,
+  getMessage,
+  isImageSFW,
+  isScheduledTimeInPast,
+} from '@/utils/helper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -21,18 +27,16 @@ import { BettingRoundStatus, BettingCategory, CurrencyType, StreamStatus } from 
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds, BettingRound, BettingOption } from '@/utils/bettingRoundsUtils';
+import {
+  cleanTemporaryIds,
+  appendCountersToDuplicates,
+  deserializeRounds,
+  BettingRound,
+  BettingOption,
+} from '@/utils/bettingRoundsUtils';
 import { cn } from '@/lib/utils';
-interface BettingOption {
-  optionId?: string;
-  option: string;
-}
+import StreamPayoutReport from './StreamPayoutReport';
 
-interface BettingRound {
-  roundId?: string;
-  roundName: string;
-  options: BettingOption[];
-}
 export const AdminManagement = ({
   session,
   streams,
@@ -54,6 +58,11 @@ export const AdminManagement = ({
   refetchEndedNonVideoStreams,
   searchEndedNonVideoQuery,
   setSearchEndedNonVideoQuery,
+
+  promoStreams,
+  refetchPromoStreams,
+  searchPromoQuery,
+  setSearchPromoQuery,
 }) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('livestreams');
@@ -90,7 +99,9 @@ export const AdminManagement = ({
     { key: 'ended-streams', label: 'Ended Streams' },
     { key: 'non-video', label: 'Non Video' },
     { key: 'ended-non-video', label: 'Ended Non Video' },
+    { key: 'promo-cards', label: 'Promo Cards' },
     { key: 'users', label: 'Users' },
+    { key: 'stream-payout', label: 'Stream Payout' },
   ];
 
   const createStreamMutation = useMutation({
@@ -494,9 +505,15 @@ export const AdminManagement = ({
 
       // Set event type based on stream data
       if (streamData.streamType) {
+        let label = 'Non Video';
+        if (streamData.streamType === 'stream') {
+          label = 'Livestream';
+        } else if (streamData.streamType === 'promo') {
+          label = 'Promo Card';
+        }
         setEventType({
           value: streamData.streamType,
-          label: streamData.streamType === 'stream' ? 'Livestream' : 'Non Video',
+          label,
         });
       }
 
@@ -717,12 +734,13 @@ export const AdminManagement = ({
     let scheduledStartTime;
     if (eventType.value === 'stream') {
       scheduledStartTime = formatDateTimeForISO(startDateObj, startTime, timezone);
-      
+
       if (!scheduledStartTime && startDateObj && startTime) {
         toast({
           variant: 'destructive',
           title: 'Invalid Timezone',
-          description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+          description:
+            'The selected timezone could not be processed. Please try a different timezone or contact support.',
         });
         return;
       }
@@ -765,6 +783,12 @@ export const AdminManagement = ({
       return;
     }
 
+    // Promo cards don't need betting rounds - create directly
+    if (eventType.value === 'promo') {
+      await handleCreateStream();
+      return;
+    }
+
     // Auto-populate first round with 2 options if empty
     if (bettingRounds.length === 0) {
       const firstRound: BettingRound = {
@@ -799,6 +823,7 @@ export const AdminManagement = ({
   const [nonVideoPage, setNonVideoPage] = useState(1);
   const [endStreamCurrentPage, setEndStreamCurrentPage] = useState(1);
   const [endedNonVideoCurrentPage, setEndedNonVideoCurrentPage] = useState(1);
+  const [promoPage, setPromoPage] = useState(1);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -815,6 +840,10 @@ export const AdminManagement = ({
   useEffect(() => {
     setEndedNonVideoCurrentPage(1);
   }, [searchEndedNonVideoQuery]);
+
+  useEffect(() => {
+    setPromoPage(1);
+  }, [searchPromoQuery]);
 
   // Add useEffect for validation
   useEffect(() => {
@@ -1041,10 +1070,12 @@ export const AdminManagement = ({
         </div>
       ) : isCreateStream || editStreamId ? (
         <div className="flex justify-center items-center min-h-[60vh]">
-          <Card className={cn(
-            "w-full bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none",
-            createStep === "info" && "max-w-xl"
-          )}>
+          <Card
+            className={cn(
+              'w-full bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none',
+              createStep === 'info' && 'max-w-xl'
+            )}
+          >
             <CardContent className="p-4 !pt-2 sm:p-6">
               {/* Back button only at top */}
               <div className="mb-6">
@@ -1102,9 +1133,7 @@ export const AdminManagement = ({
                       className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                       style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
                       disabled={
-                        createStreamMutation.isPending ||
-                        createBetMutation.isPending ||
-                        isUploading
+                        createStreamMutation.isPending || createBetMutation.isPending || isUploading
                       }
                       onClick={addNewRound}
                     >
@@ -1469,125 +1498,172 @@ export const AdminManagement = ({
               )}
             </div>
           </div>
-          <div
-            className={`${isMobile ? 'flex flex-col space-y-4' : 'flex items-center justify-between'} w-full mb-4`}
-          >
+          
+          {/* Tabs */}
+          <div className="w-full mb-4">
             <TabSwitch
               tabs={tabs}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               className="ml-4"
             />
-
-            {activeTab === 'users' && (
-              <SearchInput
-                id="search-users"
-                placeholder="Search users..."
-                value={searchUserQuery}
-                onChange={setSearchUserQuery}
-                width="lg"
-              />
-            )}
-
-            {activeTab === 'ended-streams' && (
-              <SearchInput
-                id="search-ended-streams"
-                placeholder="Search ended streams..."
-                value={searchEndedStreamQuery}
-                onChange={setSearchEndedStreamQuery}
-                width="lg"
-              />
-            )}
-
-            {activeTab === 'livestreams' && (
-              <div
-                className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-end'} w-full`}
-              >
-                <SearchInput
-                  id="search-streams"
-                  placeholder="Search streams..."
-                  value={searchStreamQuery}
-                  onChange={setSearchStreamQuery}
-                  width="md"
-                  className={isMobile ? '' : 'mr-2'}
-                />
-                <button
-                  type="button"
-                  className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
-                  onClick={() => {
-                    resetForm();
-                    setIsCreateStream(true);
-                    setEditStreamId('');
-                    setViewStreamId('');
-                    setCreateStep('info');
-                    setBettingRounds([]);
-                    setErrors({
-                      title: '',
-                      description: '',
-                      embeddedUrl: '',
-                      thumbnail: '',
-                      startDate: '',
-                    });
-                    setBettingErrorRounds([]);
-                    setBettingValidationErrors([]);
-                    setShowBettingValidation(false);
-                  }}
-                >
-                  Create Event
-                </button>
-              </div>
-            )}
-
-            {activeTab === 'non-video' && (
-              <div
-                className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center justify-end'} w-full`}
-              >
-                <SearchInput
-                  id="search-non-video"
-                  placeholder="Search Non-Video..."
-                  value={searchNonVideoQuery}
-                  onChange={setSearchNonVideoQuery}
-                  width="md"
-                  className={isMobile ? '' : 'mr-2'}
-                />
-                <button
-                  type="button"
-                  className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
-                  onClick={() => {
-                    resetForm();
-                    setIsCreateStream(true);
-                    setEditStreamId('');
-                    setViewStreamId('');
-                    setCreateStep('info');
-                    setBettingRounds([]);
-                    setErrors({
-                      title: '',
-                      description: '',
-                      embeddedUrl: '',
-                      thumbnail: '',
-                      startDate: '',
-                    });
-                    setBettingErrorRounds([]);
-                    setBettingValidationErrors([]);
-                    setShowBettingValidation(false);
-                  }}
-                >
-                  Create Event
-                </button>
-              </div>
-            )}
-
-            {activeTab === 'ended-non-video' && (
-              <SearchInput
-                id="search-ended-non-video"
-                placeholder="Search ended non-videos..."
-                value={searchEndedNonVideoQuery}
-                onChange={setSearchEndedNonVideoQuery}
-                width="lg"
-              />
-            )}
           </div>
+
           <Separator className="!mt-1" />
+
+          {/* Search and Action Buttons - Below Separator */}
+          {activeTab !== 'stream-payout' && (
+            <div className={`w-full mb-4 mt-4 ${isMobile ? 'px-4' : 'px-4'}`}>
+              {activeTab === 'users' && (
+                <SearchInput
+                  id="search-users"
+                  placeholder="Search users..."
+                  value={searchUserQuery}
+                  onChange={setSearchUserQuery}
+                  width="lg"
+                />
+              )}
+
+              {activeTab === 'ended-streams' && (
+                <SearchInput
+                  id="search-ended-streams"
+                  placeholder="Search ended streams..."
+                  value={searchEndedStreamQuery}
+                  onChange={setSearchEndedStreamQuery}
+                  width="lg"
+                />
+              )}
+
+              {activeTab === 'livestreams' && (
+                <div
+                  className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center'} w-full`}
+                >
+                  <SearchInput
+                    id="search-streams"
+                    placeholder="Search streams..."
+                    value={searchStreamQuery}
+                    onChange={setSearchStreamQuery}
+                    width="md"
+                    className={isMobile ? '' : 'mr-2'}
+                  />
+                  <button
+                    type="button"
+                    className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
+                    onClick={() => {
+                      resetForm();
+                      setIsCreateStream(true);
+                      setEditStreamId('');
+                      setViewStreamId('');
+                      setCreateStep('info');
+                      setBettingRounds([]);
+                      setErrors({
+                        title: '',
+                        description: '',
+                        embeddedUrl: '',
+                        thumbnail: '',
+                        startDate: '',
+                      });
+                      setBettingErrorRounds([]);
+                      setBettingValidationErrors([]);
+                      setShowBettingValidation(false);
+                    }}
+                  >
+                    Create Event
+                  </button>
+                </div>
+              )}
+
+              {activeTab === 'non-video' && (
+                <div
+                  className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center'} w-full`}
+                >
+                  <SearchInput
+                    id="search-non-video"
+                    placeholder="Search Non-Video..."
+                    value={searchNonVideoQuery}
+                    onChange={setSearchNonVideoQuery}
+                    width="md"
+                    className={isMobile ? '' : 'mr-2'}
+                  />
+                  <button
+                    type="button"
+                    className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
+                    onClick={() => {
+                      resetForm();
+                      setIsCreateStream(true);
+                      setEditStreamId('');
+                      setViewStreamId('');
+                      setCreateStep('info');
+                      setBettingRounds([]);
+                      setErrors({
+                        title: '',
+                        description: '',
+                        embeddedUrl: '',
+                        thumbnail: '',
+                        startDate: '',
+                      });
+                      setBettingErrorRounds([]);
+                      setBettingValidationErrors([]);
+                      setShowBettingValidation(false);
+                    }}
+                  >
+                    Create Event
+                  </button>
+                </div>
+              )}
+
+              {activeTab === 'ended-non-video' && (
+                <SearchInput
+                  id="search-ended-non-video"
+                  placeholder="Search ended non-videos..."
+                  value={searchEndedNonVideoQuery}
+                  onChange={setSearchEndedNonVideoQuery}
+                  width="lg"
+                />
+              )}
+
+              {activeTab === 'promo-cards' && (
+                <div
+                  className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center'} w-full`}
+                >
+                  <SearchInput
+                    id="search-promo"
+                    placeholder="Search Promo Cards..."
+                    value={searchPromoQuery}
+                    onChange={setSearchPromoQuery}
+                    width="md"
+                    className={isMobile ? '' : 'mr-2'}
+                  />
+                  <button
+                    type="button"
+                    className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
+                    onClick={() => {
+                      resetForm();
+                      setIsCreateStream(true);
+                      setEditStreamId('');
+                      setViewStreamId('');
+                      setCreateStep('info');
+                      setEventType({ value: 'promo', label: 'Promo Card' });
+                      setBettingRounds([]);
+                      setErrors({
+                        title: '',
+                        description: '',
+                        embeddedUrl: '',
+                        thumbnail: '',
+                        startDate: '',
+                      });
+                      setBettingErrorRounds([]);
+                      setBettingValidationErrors([]);
+                      setShowBettingValidation(false);
+                    }}
+                  >
+                    Create Promo Card
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Tab Content */}
 
           {activeTab === 'livestreams' && (
@@ -1643,6 +1719,27 @@ export const AdminManagement = ({
                 currentPage={endedNonVideoCurrentPage}
                 setCurrentPage={setEndedNonVideoCurrentPage}
               />
+            </div>
+          )}
+
+          {activeTab === 'promo-cards' && (
+            <div className="space-y-4">
+              <StreamTable
+                streams={promoStreams}
+                setStreamAnalyticsId={setStreamAnalyticsId}
+                refetchStreams={refetchPromoStreams}
+                setViewStreamId={setViewStreamId}
+                setEditStreamId={setEditStreamId}
+                currentPage={promoPage}
+                setCurrentPage={setPromoPage}
+                isPromoTab={true}
+              />
+            </div>
+          )}
+
+          {activeTab === 'stream-payout' && (
+            <div className="space-y-4">
+              <StreamPayoutReport />
             </div>
           )}
 

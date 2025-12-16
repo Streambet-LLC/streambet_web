@@ -12,12 +12,14 @@ interface CoinFlowPurchaseProps {
   amount: number;
   packageId: string;
   setDepositeAmount: (amount: number) => void;
+  onClose: () => void;
 };
 
 export const CoinFlowPurchaseComponent = ({
   amount,
   packageId,
   setDepositeAmount,
+  onClose,
 }: CoinFlowPurchaseProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -68,7 +70,6 @@ export const CoinFlowPurchaseComponent = ({
         duration: 7000,
       });
       queryClient.invalidateQueries({ queryKey: ['session'] });
-      navigate('/');
     } catch (error) {
       console.error('Error processing payment received:', error);
       toast({
@@ -76,6 +77,8 @@ export const CoinFlowPurchaseComponent = ({
         description: 'Failed to process payment. Please contact support.',
         variant: 'destructive',
       });
+    } finally {
+      onClose();
     }
   };
 
