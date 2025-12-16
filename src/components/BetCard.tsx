@@ -123,7 +123,7 @@ export default function BetCard(props: BetCardType) {
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className={cn("group", props.isFeatured && "pt-1")}
+      className={cn("group", props.isFeatured && "pt-1 overflow-hidden rounded-featured-card")}
     >
       <CardWrapper
         className={cn(

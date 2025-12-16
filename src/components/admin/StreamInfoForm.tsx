@@ -143,10 +143,13 @@ export const StreamInfoForm = ({
               <TooltipContent className="max-w-xs">
                 <div className="space-y-2 text-sm">
                   <p>
-                    <span className="font-semibold">Livestream:</span> Select if you're casting live video to Streambet from platforms like Twitch, Kick, or YouTube.
+                    <span className="font-semibold">Livestream:</span> Select if you're casting live video to Streambet from platforms like Twitch, Kick, or YouTube. Requires Embed URL and Start date/time.
                   </p>
                   <p>
-                    <span className="font-semibold">Non Video:</span> Select for events that don't require live video streaming or if you're streaming elsewhere.
+                    <span className="font-semibold">Non Video:</span> Select for events that don't require live video streaming or if you're streaming elsewhere. No Embed URL or Start date/time needed.
+                  </p>
+                  <p>
+                    <span className="font-semibold">Promo Card:</span> Promotional content card for featured events. Like Non Video, it doesn't require an Embed URL or Start date/time.
                   </p>
                 </div>
               </TooltipContent>
@@ -163,6 +166,10 @@ export const StreamInfoForm = ({
             {
               value: 'non-video',
               label: 'Non Video',
+            },
+            {
+              value: 'promo',
+              label: 'Promo Card',
             },
           ]}
           value={initialValues.eventType}

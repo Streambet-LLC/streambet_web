@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -37,6 +37,7 @@ interface Props {
   currentPage: number;
   setCurrentPage: (page: number) => void;
   setStreamAnalyticsId: (id: string) => void;
+  isPromoTab?: boolean;
 }
 
 const BettingStatusBadge = ({ status }: { status?: string }) => {
@@ -135,6 +136,7 @@ export const StreamTable: React.FC<Props> = ({
   currentPage,
   setCurrentPage,
   setStreamAnalyticsId,
+  isPromoTab = false,
 }) => {
   const isMobile = useIsMobile();
   const itemsPerPage = 7;
@@ -157,6 +159,12 @@ export const StreamTable: React.FC<Props> = ({
 
   // Listen for stream promotion updates
   useStreamPromotionListener(refetchCurrentPage);
+
+  // Find currently promoted promo card (if any) for single-selection enforcement
+  const promotedPromoCardId = useMemo(() => {
+    if (!isPromoTab) return null;
+    return streams?.data?.find(stream => stream.isPromoted)?.id || null;
+  }, [streams?.data, isPromoTab]);
 
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
@@ -223,6 +231,14 @@ export const StreamTable: React.FC<Props> = ({
     updateStreamPromoted({ streamId, isPromoted: !currentPromoted });
   };
 
+  // Helper to determine if checkbox should be disabled (promo tab only)
+  const isCheckboxDisabled = (streamId: string, isPromoted: boolean) => {
+    if (!isPromoTab) return false; // Never disable for non-promo tabs
+    if (!promotedPromoCardId) return false; // No promo promoted, all enabled
+    if (isPromoted) return false; // This is the promoted one, keep it enabled
+    return true; // Different promo is promoted, disable this one
+  };
+
   const handleDeleteStream = (streamId: string) => {
     setDeletingStreamId(streamId);
     deleteStream(streamId);
@@ -255,22 +271,28 @@ export const StreamTable: React.FC<Props> = ({
                   </div>
 
                   {/* Stream Status */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Stream Status:</span>
-                    <StreamStatusBadge status={stream?.streamStatus} />
-                  </div>
+                  {!isPromoTab && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Stream Status:</span>
+                      <StreamStatusBadge status={stream?.streamStatus} />
+                    </div>
+                  )}
 
                   {/* Betting Status */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Picks Status:</span>
-                    <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
-                  </div>
+                  {!isPromoTab && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Picks Status:</span>
+                      <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
+                    </div>
+                  )}
 
                   {/* Users */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Users:</span>
-                    <span className="text-sm font-medium">{stream?.userBetCount || '0'}</span>
-                  </div>
+                  {!isPromoTab && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Users:</span>
+                      <span className="text-sm font-medium">{stream?.userBetCount || '0'}</span>
+                    </div>
+                  )}
 
                   {/* Promoted - Only show for admins */}
                   {isAdmin && (
@@ -278,6 +300,7 @@ export const StreamTable: React.FC<Props> = ({
                       <span className="text-sm text-muted-foreground">Promoted:</span>
                       <Checkbox
                         checked={stream?.isPromoted || false}
+                        disabled={isCheckboxDisabled(stream?.id, stream?.isPromoted)}
                         onCheckedChange={() => handlePromotedToggle(stream?.id, stream?.isPromoted)}
                       />
                     </div>
@@ -355,11 +378,11 @@ export const StreamTable: React.FC<Props> = ({
           <Table className="bg-[#0D0D0D]">
             <TableHeader>
               <TableRow>
-                <TableHead>Stream Title</TableHead>
-                <TableHead>Stream Status</TableHead>
-                <TableHead>Stream Creator</TableHead>
-                <TableHead>Picking Status</TableHead>
-                <TableHead>Users</TableHead>
+                <TableHead>{isPromoTab ? 'Promo Card Title' : 'Stream Title'}</TableHead>
+                {!isPromoTab && <TableHead>Stream Status</TableHead>}
+                <TableHead>{isPromoTab ? 'Tagged Creator' : 'Stream Creator'}</TableHead>
+                {!isPromoTab && <TableHead>Picking Status</TableHead>}
+                {!isPromoTab && <TableHead>Users</TableHead>}
                 <TableHead>Actions</TableHead>
                 {isAdmin && <TableHead>Promoted</TableHead>}
               </TableRow>
@@ -369,14 +392,18 @@ export const StreamTable: React.FC<Props> = ({
                 streams?.data?.map(stream => (
                   <TableRow key={stream?.id}>
                     <TableCell className="font-medium">{stream?.streamName}</TableCell>
-                    <TableCell>
-                      <StreamStatusBadge status={stream?.streamStatus} />
-                    </TableCell>
+                    {!isPromoTab && (
+                      <TableCell>
+                        <StreamStatusBadge status={stream?.streamStatus} />
+                      </TableCell>
+                    )}
                     <TableCell>{stream?.creator}</TableCell>
-                    <TableCell>
-                      <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
-                    </TableCell>
-                    <TableCell>{stream?.userBetCount}</TableCell>
+                    {!isPromoTab && (
+                      <TableCell>
+                        <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
+                      </TableCell>
+                    )}
+                    {!isPromoTab && <TableCell>{stream?.userBetCount}</TableCell>}
                     <TableCell>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Tooltip>
@@ -440,6 +467,7 @@ export const StreamTable: React.FC<Props> = ({
                       <TableCell>
                         <Checkbox
                           checked={stream?.isPromoted || false}
+                          disabled={isCheckboxDisabled(stream?.id, stream?.isPromoted)}
                           onCheckedChange={() => handlePromotedToggle(stream?.id, stream?.isPromoted)}
                         />
                       </TableCell>
