@@ -10,9 +10,11 @@ export const useStreamManagement = () => {
   const [searchNonVideoQuery, setSearchNonVideoQuery] = useState('');
   const [searchEndedStreamQuery, setSearchEndedStreamQuery] = useState('');
   const [searchEndedNonVideoQuery, setSearchEndedNonVideQuery] = useState('');
+  const [searchPromoQuery, setSearchPromoQuery] = useState('');
 
   const rangeRef = useRef('[0,7]');
   const endedStreamsRangeRef = useRef('[0,7]');
+  const promoStreamsRangeRef = useRef('[0,7]');
   const { isLoading, isFetching, session } = useAuthContext();
 
   const { data: streams, refetch: refetchStreams } = useQuery({
@@ -129,6 +131,32 @@ export const useStreamManagement = () => {
     refetchEndedStreams();
   }, [searchEndedStreamQuery, refetchEndedStreams]);
 
+  const { data: promoStreams, refetch: refetchPromoStreams } = useQuery({
+    queryKey: ['promo-cards'],
+    queryFn: async () => {
+      const response = await adminAPI.getStreams({
+        range: promoStreamsRangeRef.current,
+        sort: '["createdAt","DESC"]',
+        filter: JSON.stringify({ q: searchPromoQuery }),
+        type: 'promo',
+      });
+
+      return response;
+    },
+    enabled: false,
+    // Increase refetch frequency to see new streams faster
+    refetchInterval: 5000,
+  });
+
+  const handlePromoRefetchStreams = (range?: string) => {
+    promoStreamsRangeRef.current = range || '';
+    refetchPromoStreams();
+  };
+
+  useEffect(() => {
+    refetchPromoStreams();
+  }, [searchPromoQuery, refetchPromoStreams]);
+
   return {
     profile: session,
     isProfileLoading: isLoading,
@@ -151,5 +179,10 @@ export const useStreamManagement = () => {
     searchEndedNonVideoQuery,
     setSearchEndedNonVideQuery,
     setSearchNonVideoQuery,
+    promoStreams,
+    refetchPromoStreams,
+    handlePromoRefetchStreams,
+    searchPromoQuery,
+    setSearchPromoQuery,
   };
 };
