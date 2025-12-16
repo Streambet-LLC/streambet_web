@@ -1,7 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { DeleteBettingDialog } from './DeleteBettingDialog';
 import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -42,6 +48,7 @@ interface BettingRound {
   lockTime?: string;
   lockTimezone?: string;
   options: BettingOption[];
+  createdAt?: string;
 }
 
 export interface ValidationError {
@@ -64,7 +71,7 @@ interface BettingRoundsProps {
   createStream?: boolean;
   handleCreateStream?: () => void;
   eventType: string;
-  betCardInfo: Pick<BetCardType, "type" | "streamName" | "description" | "creator" | "thumbnail">;
+  betCardInfo: Pick<BetCardType, 'type' | 'streamName' | 'description' | 'creator' | 'thumbnail'>;
 }
 
 export function BettingRounds({
@@ -93,17 +100,17 @@ export function BettingRounds({
     roundIndex: number;
     optionId: string;
   } | null>(null);
-  
+
   const [roundsState, setRoundsState] = useState<BettingRound[]>(rounds || []);
 
   const roundsOptionsPreview = useMemo(() => {
-    return roundsState.map((round) => 
-      round.options.map((option) => ({
+    return roundsState.map(round =>
+      round.options.map(option => ({
         option: option.option,
         percentage: 100,
         isWinner: false,
-      })
-    ))
+      }))
+    );
   }, [roundsState]);
 
   // Auto-expand first round if it's the only round, and auto-expand any newly added rounds
@@ -272,7 +279,7 @@ export function BettingRounds({
       roundName: round.roundName,
       options: round.options.map(opt => ({ option: opt.option })),
     };
-     const updatedRounds = [...roundsState, newRound];
+    const updatedRounds = [...roundsState, newRound];
 
     setRoundsState(updatedRounds);
     onRoundsChange([...rounds, newRound]);
@@ -359,6 +366,7 @@ export function BettingRounds({
                                     maxWidth: '100%',
                                   }}
                                   minLength={2}
+                                  createdAt={round.createdAt}
                                 />
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
@@ -448,17 +456,19 @@ export function BettingRounds({
                                 <label className="text-sm font-medium text-white mb-2 block">
                                   Category
                                 </label>
-                              <Select
-                                value={round.category || BettingCategory.OTHER}
-                                onValueChange={(value: BettingCategory) => updateCategory(roundIndex, value)}
-                              >
-                                <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
+                                <Select
+                                  value={round.category || BettingCategory.OTHER}
+                                  onValueChange={(value: BettingCategory) =>
+                                    updateCategory(roundIndex, value)
+                                  }
+                                >
+                                  <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
                                     <SelectValue placeholder="Select a category" />
                                   </SelectTrigger>
                                   <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
-                                    {Object.values(BettingCategory).map((cat) => (
-                                      <SelectItem 
-                                        key={cat} 
+                                    {Object.values(BettingCategory).map(cat => (
+                                      <SelectItem
+                                        key={cat}
                                         value={cat}
                                         className="text-white hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]"
                                       >
@@ -470,7 +480,12 @@ export function BettingRounds({
                               </div>
                               <CalendarDatePicker
                                 label={'Optional Auto Lock Date'}
-                                error={roundErrors.find(error => error.type === 'round' && error.message.includes('Auto lock'))?.message || ''}
+                                error={
+                                  roundErrors.find(
+                                    error =>
+                                      error.type === 'round' && error.message.includes('Auto lock')
+                                  )?.message || ''
+                                }
                                 isLive={false}
                                 isUploading={false}
                                 onClick={e => {
@@ -497,16 +512,16 @@ export function BettingRounds({
                                     );
                                   }
                                 }}
-                              onChangeDate={newDate => {
-                                updateLockDate(roundIndex, newDate);
-                                // Auto-set timezone to user's local timezone if not already set
-                                if (newDate && !round.lockTimezone) {
-                                  updateLockTimezone(
-                                    roundIndex,
-                                    Intl.DateTimeFormat().resolvedOptions().timeZone
-                                  );
-                                }
-                              }}
+                                onChangeDate={newDate => {
+                                  updateLockDate(roundIndex, newDate);
+                                  // Auto-set timezone to user's local timezone if not already set
+                                  if (newDate && !round.lockTimezone) {
+                                    updateLockTimezone(
+                                      roundIndex,
+                                      Intl.DateTimeFormat().resolvedOptions().timeZone
+                                    );
+                                  }
+                                }}
                                 onChangeTime={newTime => {
                                   console.log(newTime);
 
@@ -693,25 +708,25 @@ export function BettingRounds({
                         )}
                       </TableBody>
                     </Table>
-                    {expandedRounds.includes(getRoundValue(roundIndex)) &&
-                      <div className='p-4 flex flex-col gap-2 w-full max-w-96'>
+                    {expandedRounds.includes(getRoundValue(roundIndex)) && (
+                      <div className="p-4 flex flex-col gap-2 w-full max-w-96">
                         <h3>Preview</h3>
-                        <div className='mx-auto w-full'>
-                        {roundsState[roundIndex] &&
-                          <BetCardPreview
-                            {...betCardInfo}
-                            name={roundsState[roundIndex].roundName}
-                            category={roundsState[roundIndex].category || BettingCategory.OTHER}
-                            options={roundsOptionsPreview[roundIndex]}
-                            totalPot={{
-                              streamCoins: 0,
-                              goldCoins: 0,
-                            }}
-                          />
-                        }
+                        <div className="mx-auto w-full">
+                          {roundsState[roundIndex] && (
+                            <BetCardPreview
+                              {...betCardInfo}
+                              name={roundsState[roundIndex].roundName}
+                              category={roundsState[roundIndex].category || BettingCategory.OTHER}
+                              options={roundsOptionsPreview[roundIndex]}
+                              totalPot={{
+                                streamCoins: 0,
+                                goldCoins: 0,
+                              }}
+                            />
+                          )}
                         </div>
                       </div>
-                    }
+                    )}
                   </div>
                   {/* Separator between rounds */}
                   {roundIndex < rounds.length - 1 && (
@@ -784,18 +799,18 @@ export function validateRounds(rounds: BettingRound[]): ValidationError[] {
     //     message: 'Round name must be unique'
     //   });
     // }
-    
+
     // Check if auto-lock date is in the past
     if (round.lockDate && round.lockTime) {
       if (isScheduledTimeInPast(round.lockDate, round.lockTime, round.lockTimezone)) {
         errors.push({
           type: 'round',
           roundIndex,
-          message: 'Auto lock time must be in the future'
+          message: 'Auto lock time must be in the future',
         });
       }
     }
-    
+
     // Check for duplicate option names within the same round
     const optionNames = round.options.map(option => option.option.toLowerCase().trim());
     const nameCounts = optionNames.reduce(
