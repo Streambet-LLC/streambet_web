@@ -158,6 +158,9 @@ export function BettingRounds({
 
     const newRound: BettingRound = {
       roundName: defaultName,
+      lockDate: null,
+      lockTime: undefined,
+      lockTimezone: undefined,
       options: [{ option: 'Option 1' }, { option: 'Option 2' }],
     };
 
@@ -269,6 +272,9 @@ export function BettingRounds({
     const round = rounds[roundIndex];
     const newRound: BettingRound = {
       roundName: round.roundName,
+      lockDate: round.lockDate || null,
+      lockTime: round.lockTime,
+      lockTimezone: round.lockTimezone,
       options: round.options.map(opt => ({ option: opt.option })),
     };
     setRoundsState([...rounds, newRound]);
@@ -442,6 +448,12 @@ export function BettingRounds({
                                 </SelectContent>
                               </Select>
                             </div>
+                            {editStreamId && (
+                              <p className="text-sm text-muted-foreground mb-2">
+                                Note: When editing, the actual scheduled time is converted and displayed in your current timezone.
+                                If editing the time, verify correct timezone is set before saving.
+                              </p>
+                            )}
                             <CalendarDatePicker
                               label={'Optional Auto Lock Date'}
                               error={roundErrors.find(error => error.type === 'round' && error.message.includes('Auto lock'))?.message || ''}

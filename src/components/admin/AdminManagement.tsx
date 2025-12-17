@@ -523,6 +523,9 @@ export const AdminManagement = ({
         setBettingRounds([
           {
             roundName: 'First round',
+            lockDate: null,
+            lockTime: undefined,
+            lockTimezone: undefined,
             options: [{ option: 'Option 1' }, { option: 'Option 2' }],
           },
         ]);
