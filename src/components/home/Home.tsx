@@ -5,7 +5,7 @@ import HomeBets from './HomeBets';
 import UpcomingHomeBets from './UpcomingHomeBets';
 import { SearchInput } from '@/components/ui/SearchInput';
 // import HomeBetsFilters from './HomeBetsFilters'; // Search moved to navigation bar, but keeping for potential future use
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { BettingCategory } from '@/enums';
 import { useDebounce } from '@/lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -15,6 +15,14 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const shouldReduceMotion = useReducedMotion();
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      mainContent.scrollTo(0, 0);
+    }
+  }, []);
 
   const debouncedSearch = useDebounce(() => {
     const term = searchValue.trim();
