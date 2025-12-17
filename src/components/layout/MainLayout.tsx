@@ -18,58 +18,72 @@ interface MainLayoutProps {
   onSearchChange?: (value: string) => void;
 }
 
-export const MainLayout = ({ 
-  children, 
-  className = "", 
+export const MainLayout = ({
+  children,
+  className = '',
   showFooter = true,
   isWithdraw = false,
   onDashboardClick,
   selectedCategory,
   setSelectedCategory,
   searchValue,
-  onSearchChange
+  onSearchChange,
 }: MainLayoutProps) => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
   if (isWithdraw) {
     return (
-    <div className="bg-background flex flex-col">
-      <Navigation onDashboardClick={onDashboardClick} searchValue={searchValue} onSearchChange={onSearchChange} />
-      <div className='w-full flex gap-2'>
-        {/* Background gradient overlay */}
-        {/* <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900"></div> */}
-        
-        {/* Subtle grid pattern */}
-        {/* <div className="absolute inset-0 opacity-5">
+      <div className="bg-background flex flex-col">
+        <Navigation
+          onDashboardClick={onDashboardClick}
+          searchValue={searchValue}
+          onSearchChange={onSearchChange}
+        />
+        <div className="w-full flex gap-2">
+          {/* Background gradient overlay */}
+          {/* <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900"></div> */}
+
+          {/* Subtle grid pattern */}
+          {/* <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, rgba(189, 255, 0, 0.15) 1px, transparent 0)`,
             backgroundSize: '40px 40px'
           }}></div>
         </div> */}
-        
-        <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
-        
-        {/* Main Content */}
-        <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto", className)}>
-          {children}
-        </main>
-        
+
+          <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+
+          {/* Main Content */}
+          <main
+            className={cn('flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto', className)}
+          >
+            {children}
+          </main>
+        </div>
       </div>
-		</div>
-	);
+    );
   }
-  
+
   return (
     <div className="bg-background flex flex-col">
-      <Navigation onDashboardClick={onDashboardClick} searchValue={searchValue} onSearchChange={onSearchChange} />
-      <div className='w-full flex gap-2'>
+      <Navigation
+        onDashboardClick={onDashboardClick}
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+      />
+      <div className="w-full flex gap-2">
         <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
-        <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-4 pb-8 z-0", className)}>
+        <main
+          className={cn(
+            'flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-4 pb-8 z-0',
+            className
+          )}
+        >
           {children}
           {(showFooter || isHomePage) && <Footer />}
         </main>
       </div>
     </div>
   );
-}; 
+};
