@@ -65,7 +65,7 @@ export const MainLayout = ({
       <Navigation onDashboardClick={onDashboardClick} searchValue={searchValue} onSearchChange={onSearchChange} />
       <div className='w-full flex gap-2'>
         <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
-        <main id="main-content" className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-4 pb-8 z-0", className)}>
+        <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-4 pb-8 z-0", className)}>
           {children}
           {(showFooter || isHomePage) && <Footer />}
         </main>
