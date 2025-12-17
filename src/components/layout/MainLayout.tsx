@@ -73,7 +73,10 @@ export const MainLayout = ({
         onSearchChange={onSearchChange}
       />
       <div className="w-full flex gap-2">
-        <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+        <div className="h-[calc(100dvh-64px)] overflow-x-auto">
+          <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+        </div>
+
         <main
           className={cn(
             'flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-4 pb-8 z-0',
