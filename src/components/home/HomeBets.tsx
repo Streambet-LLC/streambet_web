@@ -19,7 +19,11 @@ interface HomeBetsProps {
   setSelectedCategory: (category: BettingCategory | null) => void;
 }
 
-export default function HomeBets({ filters, selectedCategory, setSelectedCategory }: HomeBetsProps) {
+export default function HomeBets({
+  filters,
+  selectedCategory,
+  setSelectedCategory,
+}: HomeBetsProps) {
   const isMobile = useIsMobile();
   const [displayCount, setDisplayCount] = useState(24);
   const [quickPickOpen, setQuickPickOpen] = useState(false);
@@ -35,9 +39,9 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
     useInfiniteQuery({
       queryKey: ['homepage-bets', filters],
       queryFn: async ({ pageParam }) => {
-        const response = await api.bets.getBets({ 
+        const response = await api.bets.getBets({
           page: pageParam,
-          ...filters
+          ...filters,
         });
 
         return response;
@@ -56,15 +60,19 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
   // Get all bets, sort by priority pairs, and filter by category client-side
   const sortedBets = useMemo(() => {
     // Deserialize API response with proper typing
-    const allBets = data?.pages
-      .map(({ data: bets }) => bets?.map((bet: any) => ({
-        ...bet,
-        category: bet.category as BettingCategory
-      })) || [])
-      ?.flat() || [];
-    
+    const allBets =
+      data?.pages
+        .map(
+          ({ data: bets }) =>
+            bets?.map((bet: any) => ({
+              ...bet,
+              category: bet.category as BettingCategory,
+            })) || []
+        )
+        ?.flat() || [];
+
     const sorted = sortByPriorityPairs(allBets, PRIORITY_STREAMS);
-    
+
     // Client-side category filtering
     if (selectedCategory) {
       return sorted.filter(bet => bet.category === selectedCategory);
@@ -75,7 +83,9 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
   useEffect(() => {
     if (!tabsRef.current) return;
 
-    tabsRef.current.scrollIntoView({ behavior: "smooth" });
+    if (selectedCategory !== undefined) {
+      tabsRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [selectedCategory]);
 
   // Display only first N items (client-side pagination)
@@ -93,11 +103,12 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
 
   return (
     <>
-      <h2 ref={tabsRef} className="text-2xl font-bold mb-4 px-2">All Picks:</h2>
-      <div 
-        className="flex flex-col gap-4">
+      <h2 ref={tabsRef} className="text-2xl font-bold mb-4 px-2">
+        All Picks:
+      </h2>
+      <div className="flex flex-col gap-4">
         {/* Category Tabs */}
-        <div 
+        <div
           className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
           role="tablist"
           aria-label="Betting categories"
@@ -116,7 +127,7 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
           >
             All
           </Button>
-          {Object.values(BettingCategory).map((category) => (
+          {Object.values(BettingCategory).map(category => (
             <Button
               key={category}
               variant="outline"
@@ -140,17 +151,21 @@ export default function HomeBets({ filters, selectedCategory, setSelectedCategor
         className="flex flex-col gap-4"
         role="tabpanel"
         id="betting-cards-panel"
-        aria-label={selectedCategory ? `${getCategoryLabel(selectedCategory)} betting cards` : "All betting cards"}
-      >
-        {!isLoading && displayedBets.length === 0 &&
-          <div className='mx-auto text-weak'>No bets found.</div>
+        aria-label={
+          selectedCategory
+            ? `${getCategoryLabel(selectedCategory)} betting cards`
+            : 'All betting cards'
         }
+      >
+        {!isLoading && displayedBets.length === 0 && (
+          <div className="mx-auto text-weak">No bets found.</div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {isLoading
             ? Array(24)
                 .fill('')
                 .map((_, i) => <Skeleton key={i} className="w-full h-64" />)
-            : displayedBets.map((bet) => (
+            : displayedBets.map(bet => (
                 <BetCard
                   key={bet.roundId}
                   {...bet}

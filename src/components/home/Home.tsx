@@ -5,16 +5,20 @@ import HomeBets from './HomeBets';
 import UpcomingHomeBets from './UpcomingHomeBets';
 import { SearchInput } from '@/components/ui/SearchInput';
 // import HomeBetsFilters from './HomeBetsFilters'; // Search moved to navigation bar, but keeping for potential future use
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BettingCategory } from '@/enums';
 import { useDebounce } from '@/lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';
 
 export default function Home() {
   const [filters, setFilters] = useState({});
-  const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null>(null);
-  const [searchValue, setSearchValue] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null | undefined>(
+    undefined
+  );
+  const [searchValue, setSearchValue] = useState('');
   const shouldReduceMotion = useReducedMotion();
+
+  const homeRef = useRef<HTMLDivElement>();
 
   const debouncedSearch = useDebounce(() => {
     const term = searchValue.trim();
@@ -26,14 +30,14 @@ export default function Home() {
   }, [searchValue]);
 
   return (
-    <MainLayout 
-      showFooter 
-      selectedCategory={selectedCategory} 
+    <MainLayout
+      showFooter
+      selectedCategory={selectedCategory}
       setSelectedCategory={setSelectedCategory}
       searchValue={searchValue}
       onSearchChange={setSearchValue}
     >
-      <div className="w-full flex flex-col gap-6">
+      <div className="w-full flex flex-col gap-6" ref={homeRef}>
         {/* Mobile Search Bar - Only visible on mobile */}
         <div className="sm:hidden px-4 pt-2">
           <SearchInput
@@ -49,7 +53,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto text-center space-y-4 p-4">
           <h1 className="text-4xl md:text-5xl font-bold">
             Predict the Internet's <br />
-            <motion.span 
+            <motion.span
               className="relative inline-block"
               whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
             >
@@ -61,7 +65,8 @@ export default function Home() {
               <span className="relative bg-gradient-to-r from-[#bdff00] to-[#7aff14] bg-clip-text text-transparent">
                 randomest
               </span>
-            </motion.span> moments
+            </motion.span>{' '}
+            moments
           </h1>
           <p className="text-[#FFFFFFBF]">
             Real $$$ picks on neosports, Sunday leagues, and games created on the Internet.
@@ -70,7 +75,11 @@ export default function Home() {
         <HomePromotedBets />
         {/* Search filter moved to navigation bar for better UX. HomeBetsFilters preserved for potential future sorting/filtering features. */}
         {/* <HomeBetsFilters onChange={setFilters} /> */}
-        <HomeBets filters={filters} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+        <HomeBets
+          filters={filters}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+        />
         {/* <UpcomingHomeBets /> */}
       </div>
     </MainLayout>
