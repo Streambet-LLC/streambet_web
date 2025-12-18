@@ -25,7 +25,7 @@ import { getMessage } from '@/utils/helper';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-// import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
+import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { AuthLayout } from '@/components/layout';
 import Bugsnag from '@bugsnag/js';
 
@@ -51,7 +51,7 @@ export default function SignUp() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const lastClickTimeRef = useRef<number>(0);
   const [avatarInputKey, setAvatarInputKey] = useState(0);
-  // const { locationResult, isCheckingLocation } = useLocationRestriction();
+  const { locationResult, isCheckingLocation } = useLocationRestriction();
 
 
   const signupSchema = z.object({
@@ -123,11 +123,11 @@ export default function SignUp() {
       promoCode?: string;
       profileImageUrl?: string;
     }) => {
-      // COMMENTED OUT: Verify location again before proceeding with signup
-      // const locationResult = await verifyUserLocation();
-      // if (!locationResult.allowed) {
-      //   throw new Error(locationResult.error);
-      // }
+      const locationResult = await verifyUserLocation();
+      if (!locationResult.allowed) {
+        throw new Error(locationResult.error);
+      }
+
       return await api.auth.register(userData);
     },
     onSuccess: () => {
@@ -148,11 +148,10 @@ export default function SignUp() {
 
   const googleLoginMutation = useMutation({
     mutationFn: async () => {
-      // COMMENTED OUT: Verify location before proceeding with Google login
-      // const locationResult = await verifyUserLocation();
-      // if (!locationResult.allowed) {
-      //   throw new Error(locationResult.error);
-      // }
+      const locationResult = await verifyUserLocation();
+      if (!locationResult.allowed) {
+        throw new Error(locationResult.error);
+      }
       await fetch(`${import.meta.env.VITE_API_URL}/auth/location-check`, {
               headers: {
                 'Content-Type': 'application/json',
@@ -234,14 +233,14 @@ export default function SignUp() {
 
     // Don't proceed if location is restricted
     // Location checking is disabled
-    // if (locationResult && !locationResult.allowed) {
-    //   toast({
-    //     variant: 'destructive',
-    //     title: 'Location Restricted',
-    //     description: locationResult.error,
-    //   });
-    //   return;
-    // }
+    if (locationResult && !locationResult.allowed) {
+      toast({
+        variant: 'destructive',
+        title: 'Location Restricted',
+        description: locationResult.error,
+      });
+      return;
+    }
 
     if (!validateForm()) return;
 
@@ -308,22 +307,21 @@ export default function SignUp() {
       tosAccepted,
       isOlder,
       profileImageUrl: profileImageUrl || undefined,
-      lastKnownIp: undefined, // locationResult?.ip_address - location checking disabled
+      lastKnownIp: locationResult?.ip_address,
       redirect: redirectParam || undefined,
       promoCode: promoCode || undefined,
     });
   };
 
   const handleGoogleLogin = async () => {
-    // COMMENTED OUT: Don't proceed if location is restricted
-    // if (locationResult && !locationResult.allowed) {
-    //   toast({
-    //     variant: 'destructive',
-    //     title: 'Location Restricted',
-    //     description: locationResult.error,
-    //   });
-    //   return;
-    // }
+    if (locationResult && !locationResult.allowed) {
+      toast({
+        variant: 'destructive',
+        title: 'Location Restricted',
+        description: locationResult.error,
+      });
+      return;
+    }
 
     googleLoginMutation.mutateAsync();
   };
@@ -375,18 +373,17 @@ export default function SignUp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
-  // COMMENTED OUT: Display location restriction warning if needed
   const renderLocationWarning = () => {
-    // if (!locationResult) return null;
+    if (!locationResult) return null;
 
-    // if (!locationResult?.allowed) {
-    //   return (
-    //     <Alert variant="destructive" className="mb-4">
-    //       <AlertTitle>Location Restricted</AlertTitle>
-    //       <AlertDescription>{locationResult.error}</AlertDescription>
-    //     </Alert>
-    //   );
-    // }
+    if (!locationResult?.allowed) {
+      return (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Location Restricted</AlertTitle>
+          <AlertDescription>{locationResult.error}</AlertDescription>
+        </Alert>
+      );
+    }
 
     return null;
   };
