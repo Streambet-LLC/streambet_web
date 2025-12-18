@@ -57,7 +57,7 @@ export default function Redeem() {
       return;
     } else if (num > sweepBalance) {
       setUsdValue(null);
-      setError(`You only have ${sweepBalance} Stream Coins`);
+      setError(`You only have ${sweepBalance} withdrawable Stream Coins`);
       return;
     }
     setLoading(true);
@@ -269,7 +269,7 @@ export default function Redeem() {
                 <CardDescription>
                   Enter the amount of Stream Coins to redeem.
                   <div className="mt-4">
-                    Your Stream Coin balance: {sweepBalance?.toLocaleString('en-US')}
+                    Your withdrawable Stream Coin balance: {sweepBalance?.toLocaleString('en-US')}
                     <br />
                     {session?.sweepCoinsPerDollar} Stream Coins = $1
                     <div className="flex justify-between">
