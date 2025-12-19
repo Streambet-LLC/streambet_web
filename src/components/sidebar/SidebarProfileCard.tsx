@@ -110,8 +110,7 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
               className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={handleCoinsClick}
             >
-              {/* [STREAMCOINS_HIDDEN] Stream Coins display */}
-              {/*
+              {/* Stream Coins */}
               <div className="flex items-center gap-1.5">
                 <img
                   src="/icons/sweep-coins.png"
@@ -122,7 +121,6 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
                   {Number(streamCoins).toLocaleString('en-US')}
                 </span>
               </div>
-              */}
               
               {/* Gold Coins */}
               <div className="flex items-center gap-1.5">

@@ -104,13 +104,9 @@ export default function BetTokens({
   const [isTabletRange, setIsTabletRange] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
-  {/* [STREAMCOINS_HIDDEN] isSweepCoins variable */}
-  {/* const isSweepCoins = currency === CurrencyType.SWEEP_COINS; */}
-  const isSweepCoins = false;
+  const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
   const { setOpen: setDepositOpen } = useDepositContext();
 
-  // [STREAMCOINS_HIDDEN] Currency toggle handler
-  /*
   const handleCurrencyChange = () => {
     setCurrency(isSweepCoins ? CurrencyType.GOLD_COINS : CurrencyType.SWEEP_COINS);
 
@@ -118,7 +114,6 @@ export default function BetTokens({
       description: `Switched wallet to ${isSweepCoins ? 'Gold Coins' : 'Sweep Coins'}`,
     });
   };
-  */
 
   // Check for tablet range (773px to 1024px)
   useEffect(() => {
@@ -247,9 +242,7 @@ export default function BetTokens({
         <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
           <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
           <p className="text-gray-400 text-sm text-center">
-            {/* [STREAMCOINS_HIDDEN] Zero balance message */}
-            {/* You need {isSweepCoins ? 'Stream Coins' : 'Gold Coins'} to place a pick */}
-            You need Gold Coins to place a pick
+            You need {isSweepCoins ? 'Stream Coins' : 'Gold Coins'} to place a pick
           </p>
           <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
@@ -257,8 +250,6 @@ export default function BetTokens({
           >
             Buy Coins
           </button>
-          {/* [STREAMCOINS_HIDDEN] Currency toggle button */}
-          {/*
           <div className="text-sm">or</div>
           <Button
             variant="outline"
@@ -275,7 +266,6 @@ export default function BetTokens({
               {isSweepCoins ? "Gold Coins" : "Sweep Coins"}
             </div>
           </Button>
-          */}
         </div>
       ) : isBettingAvailable ? (
         <div
@@ -310,26 +300,20 @@ export default function BetTokens({
               >
                 {betAmount?.toLocaleString('en-US')}
               </span>{' '}
-              {/* [STREAMCOINS_HIDDEN] Coin type display */}
-              {/* {isSweepCoins ? ' Stream Coins' : ' Gold Coins'} */}
-              {' Gold Coins'}
+              {isSweepCoins ? ' Stream Coins' : ' Gold Coins'}
               <span
                 className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate"
                 title={bettingData?.bettingRounds?.[0]?.roundName}
               >
-                {/* [STREAMCOINS_HIDDEN] Available coins display */}
-                {/* {isSweepCoins
+                {isSweepCoins
                   ? `Available Stream Coins: ${Number(session?.walletBalanceSweepCoin || 0).toLocaleString('en-US')}`
-                  : `Available Gold Coins: ${Number(session?.walletBalanceGoldCoin || 0).toLocaleString('en-US')}`} */}
-                {`Available Gold Coins: ${Number(session?.walletBalanceGoldCoin || 0).toLocaleString('en-US')}`}
+                  : `Available Gold Coins: ${Number(session?.walletBalanceGoldCoin || 0).toLocaleString('en-US')}`}
               </span>
             </div>
 
             <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
               <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-                {/* [STREAMCOINS_HIDDEN] Total pot display */}
-                {/* Total Pot: {`${totalPot} ${isSweepCoins ? ' Stream Coins' : ' Gold Coins'}`} */}
-                Total Pot: {`${totalPot} Gold Coins`}
+                Total Pot: {`${totalPot} ${isSweepCoins ? ' Stream Coins' : ' Gold Coins'}`}
               </span>
             </div>
           </div>

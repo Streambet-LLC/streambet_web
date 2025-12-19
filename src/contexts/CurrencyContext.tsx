@@ -12,9 +12,7 @@ export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   const [currency, setCurrency] = useState<CurrencyType>(CurrencyType.GOLD_COINS);
 
   return (
-    // [STREAMCOINS_HIDDEN] Uncomment setCurrency below to restore Stream Coins switching
-    <CurrencyContext.Provider value={{ currency, setCurrency: () => {} }}>
-    {/* <CurrencyContext.Provider value={{ currency, setCurrency }}> */}
+    <CurrencyContext.Provider value={{ currency, setCurrency }}>
       {children}
     </CurrencyContext.Provider>
   );

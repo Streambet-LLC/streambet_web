@@ -17,8 +17,6 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
   const { currency, setCurrency } = useCurrencyContext();
   const { setOpen: setDepositOpen } = useDepositContext();
 
-  // [STREAMCOINS_HIDDEN] Currency switch handler
-  /*
   const handleSwitchChange = (checked: boolean) => {
     setCurrency(checked ? CurrencyType.SWEEP_COINS : CurrencyType.GOLD_COINS);
   };
@@ -26,25 +24,10 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
   useEffect(() => {
     setCurrency(CurrencyType.SWEEP_COINS);
   }, []);
-  */
 
   return (
     <div className="relative">
       <div className="flex items-center gap-2">
-        {/* [STREAMCOINS_HIDDEN] Show only Gold Coins, no currency toggle */}
-        <div className="flex items-center">
-          <Button variant="ghost" className="gap-2 group">
-            <img
-              src="/icons/gold-coins.png"
-              alt="gold-coins"
-              className="h-6 w-6"
-            />
-            <button onClick={() => setDepositOpen(true)} className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</button>
-          </Button>
-        </div>
-
-        {/* [STREAMCOINS_HIDDEN] Stream Coins display and toggle switch */}
-        {/*
         {currency === CurrencyType.GOLD_COINS ? (
           <div className="flex items-center">
             <Button variant="ghost" className="gap-2 group">
@@ -53,6 +36,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
                 alt="gold-coins"
                 className="h-6 w-6"
               />
+              {/* <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" /> */}
               <button onClick={() => setDepositOpen(true)} className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</button>
             </Button>
           </div>
@@ -68,6 +52,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
                         alt="Stream Coins"
                         className="h-4 w-6"
                       />
+                      {/* <BanknoteArrowUp className="h-4 w-4 text-[#BDFF00] group-hover:text-black transition-colors" /> */}
                       <button onClick={() => setDepositOpen(true)} className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</button>
                     </Button>
                   </TooltipTrigger>
@@ -89,7 +74,6 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
           className="data-[state=checked]:bg-[#c3f53b] data-[state=unchecked]:bg-muted hover:data-[state=unchecked]:bg-muted/80 border-2 border-[#c3f53b]/30"
           onClick={e => e.stopPropagation()}
         />
-        */}
       </div>
     </div>
   );
