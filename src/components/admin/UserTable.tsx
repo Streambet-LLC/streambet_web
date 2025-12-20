@@ -25,6 +25,7 @@ import AddTokens from './AddTokens';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { EditUserDialog } from './EditUserDialog';
 
 
 interface Props {
@@ -33,7 +34,6 @@ interface Props {
 
 
 export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
-
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +69,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
       refetchProfiles();
     },
   });
-
  
   const mutationTokens = useMutation({
     mutationFn: async ({ userId, amount }: { userId: string; amount: number }) => {
@@ -106,6 +105,9 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     },
   });
 
+  const handleEditUser = () => {
+    refetchProfiles();
+  };
 
 
   return (
@@ -231,6 +233,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 <TableHead>Promo Code</TableHead>
                 <TableHead>Actions</TableHead>
                 <TableHead>Gold Coins</TableHead>
+                <TableHead>Edit</TableHead>
                 <TableHead>Delete</TableHead>
               </TableRow>
             </TableHeader>
@@ -301,6 +304,12 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                         onSave={(newBalance) => {
                           mutationTokens.mutate({ userId: user.id, amount: newBalance});
                         }}
+                      />
+                    </TableCell>
+                    <TableCell className="cursor-pointer" title="Edit">
+                      <EditUserDialog
+                        profile={user}
+                        onUpdate={handleEditUser}
                       />
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Delete">
