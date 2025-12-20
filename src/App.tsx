@@ -94,6 +94,7 @@ const App = () => {
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/compliance" element={<Compliance />} />
                       <Route path="/creators" element={<Creators />} />
+                      <Route path="/leaderboard" element={<Leaderboard />} />
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/auth/verify-email" element={<VerifyEmail />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
