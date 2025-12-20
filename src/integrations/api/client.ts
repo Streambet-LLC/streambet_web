@@ -326,6 +326,11 @@ export const userAPI = {
     const response = await apiClient.get('/users/creators');
     return response.data;
   },
+
+  getLeaderboard: async () => {
+    const response = await apiClient.get('/users/leaderboard');
+    return response.data;
+  },
 };
 
 // Wallet API

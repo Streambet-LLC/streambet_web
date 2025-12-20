@@ -88,6 +88,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
   const menuItems = [
     { label: 'Home', icon: undefined, path: '/' },
     { label: 'Browse', icon: undefined, path: '/creators' },
+    { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
     (session?.role === 'admin' || session?.role === 'creator') && { label: 'Creator Dashboard', icon: undefined, path: session?.role === 'admin' ? '/admin' : '/creator' },
     // { label: 'Streams', icon: undefined, path: '/stream' },
     // { label: 'Rewards', icon: undefined, path: '/rewards' },

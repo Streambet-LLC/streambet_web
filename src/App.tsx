@@ -42,6 +42,7 @@ import Creators from './components/creators/Creators';
 import CreatorPayoutsHistoryPage from './pages/CreatorPayoutsHistory';
 import { DepositProvider } from './contexts/DepositContext';
 import Deposit from './components/deposit/Deposit';
+import Leaderboard from './pages/Leaderboard';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -95,6 +96,7 @@ const App = () => {
                         <Route path="/terms" element={<Terms />} />
                         <Route path="/compliance" element={<Compliance />} />
                         <Route path="/creators" element={<Creators />} />
+                        <Route path="/leaderboard" element={<Leaderboard />} />
                         <Route path="/faq" element={<FAQ />} />
                         <Route path="/auth/verify-email" element={<VerifyEmail />} />
                         <Route path="/forgot-password" element={<ForgotPassword />} />
