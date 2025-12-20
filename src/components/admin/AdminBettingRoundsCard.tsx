@@ -31,7 +31,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates } from '@/utils/bettingRoundsUtils';
+import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds } from '@/utils/bettingRoundsUtils';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { Table, TableHead, TableHeader, TableRow } from '../ui/table';
 import ViewBettingDialog from './ViewBettingDialog';
@@ -85,12 +85,18 @@ export const AdminBettingRoundsCard = ({
   useEffect(() => {
     setRounds(betData?.map(r => ({ ...r })) || []);
     setStatusMap(betData ? Object.fromEntries(betData.map(r => [r?.roundId, r?.status])) : {});
+    // Use deserializeRounds to properly parse lockDate into date, time, and timezone
+    const deserializedRounds = deserializeRounds(betData || []);
     setEditableRounds(
-      betData?.map(r => ({
+      deserializedRounds.map(r => ({
         roundId: r.roundId,
         roundName: r.roundName,
         options: r.options,
-      })) || []
+        lockDate: r.lockDate,
+        lockTime: r.lockTime,
+        lockTimezone: r.lockTimezone,
+        category: r.category,
+      }))
     );
   }, [betData]);
 
@@ -293,6 +299,8 @@ export const AdminBettingRoundsCard = ({
                     errorRounds={bettingErrorRounds}
                     onErrorRoundsChange={setBettingErrorRounds}
                     validationErrors={bettingValidationErrors}
+                    eventType={streamInfo?.eventType}
+                    betCardInfo={streamInfo?.betCardInfo}
                   />
                 </div>
               </DialogContent>
