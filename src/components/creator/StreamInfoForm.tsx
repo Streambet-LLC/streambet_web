@@ -128,10 +128,10 @@ export const StreamInfoForm = ({
               <TooltipContent className="max-w-xs">
                 <div className="space-y-2 text-sm">
                   <p>
-                    <span className="font-semibold">Livestream:</span> Select if you're casting live video to Streambet from platforms like Twitch, Kick, or YouTube.
+                    <span className="font-semibold">Livestream:</span> Select if you're casting live video to Streambet from platforms like Twitch, Kick, or YouTube. Requires Embed URL and Start date/time.
                   </p>
                   <p>
-                    <span className="font-semibold">Non Video:</span> Select for events that don't require live video streaming or if you're streaming elsewhere.
+                    <span className="font-semibold">Non Video:</span> Select for events that don't require live video streaming or if you're streaming elsewhere. No Embed URL or Start date/time needed.
                   </p>
                 </div>
               </TooltipContent>
@@ -192,7 +192,7 @@ export const StreamInfoForm = ({
         <Label className="text-white font-light mb-3 block">Event Title</Label>
         <Input
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.title ? 'border border-red-500' : 'border-none'}`}
-          placeholder="Title of event"
+          placeholder="Title of Event -- Format Guidance: 'Event Name - Bet'"
           value={initialValues.title}
           maxLength={STREAM_LIMITS.TITLE_MAX_LENGTH}
           minLength={STREAM_LIMITS.TITLE_MIN_LENGTH}
@@ -210,7 +210,7 @@ export const StreamInfoForm = ({
         <Label className="text-white font-light mb-3 block">Description</Label>
         <Textarea
           className={`bg-[#272727] text-[#D7DFEF] placeholder:text-[#D7DFEF60] mt-2 ${errors.description ? 'border border-red-500' : 'border-none'}`}
-          placeholder="Stream description"
+          placeholder="Description -- describe your event in more detail; whatever you think is most pertinent"
           rows={10}
           value={initialValues.description}
           maxLength={STREAM_LIMITS.DESCRIPTION_MAX_CHARACTERS}

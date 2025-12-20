@@ -22,48 +22,47 @@ export const LocationRestrictionProvider: React.FC<LocationRestrictionProviderPr
   const { toast } = useToast();
 
   const checkLocation = async () => {
-    // COMMENTED OUT: Location checking functionality
-    // setIsCheckingLocation(true);
-    // try {
-    //   const result = await verifyUserLocation();
-    //   setLocationResult(result);
+    setIsCheckingLocation(true);
+    try {
+      const result = await verifyUserLocation();
 
-    //   if (!result.allowed) {
-    //     toast({
-    //       variant: 'destructive',
-    //       title: 'Location Restricted',
-    //       description: result.error,
-    //     });
-    //   }
-    // } catch (error) {
-    //   Bugsnag.notify(error); 
-    //   console.error('Location check failed:', error);
-    //   const fallbackResult: GeolocationResult = {
-    //     allowed: true,
-    //     error: 'Could not verify location. Proceeding anyway.',
-    //   };
-    //   setLocationResult(fallbackResult);
-    // } finally {
-    //   setIsCheckingLocation(false);
-    // }
+      setLocationResult(result);
+
+      if (!result.allowed) {
+        toast({
+          variant: 'destructive',
+          title: 'Location Restricted',
+          description: result.error,
+        });
+      }
+    } catch (error) {
+      Bugsnag.notify(error); 
+      console.error('Location check failed:', error);
+      const fallbackResult: GeolocationResult = {
+        allowed: true,
+        error: 'Could not verify location. Proceeding anyway.',
+      };
+      setLocationResult(fallbackResult);
+    } finally {
+      setIsCheckingLocation(false);
+    }
 
     // Always set location as allowed when geolocation is disabled
-    setIsCheckingLocation(false);
-    const allowedResult: GeolocationResult = {
-      allowed: true,
-      error: 'Location checking is disabled.',
-    };
-    setLocationResult(allowedResult);
+    // setIsCheckingLocation(false);
+    // const allowedResult: GeolocationResult = {
+    //   allowed: true,
+    //   error: 'Location checking is disabled.',
+    // };
+    // setLocationResult(allowedResult);
   };
 
   const updateLocationResult = (result: GeolocationResult) => {
     setLocationResult(result);
   };
 
-  // COMMENTED OUT: Check location on provider mount
-  // useEffect(() => {
-  //   checkLocation();
-  // }, []);
+  useEffect(() => {
+    checkLocation();
+  }, []);
 
   // Set allowed result immediately when component mounts
   useEffect(() => {

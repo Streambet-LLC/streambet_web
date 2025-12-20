@@ -165,6 +165,9 @@ export function BettingRounds({
 
     const newRound: BettingRound = {
       roundName: defaultName,
+      lockDate: null,
+      lockTime: undefined,
+      lockTimezone: undefined,
       options: [{ option: 'Option 1' }, { option: 'Option 2' }],
     };
 
@@ -277,6 +280,9 @@ export function BettingRounds({
     const round = rounds[roundIndex];
     const newRound: BettingRound = {
       roundName: round.roundName,
+      lockDate: round.lockDate || null,
+      lockTime: round.lockTime,
+      lockTimezone: round.lockTimezone,
       options: round.options.map(opt => ({ option: opt.option })),
     };
     const updatedRounds = [...roundsState, newRound];
@@ -340,15 +346,14 @@ export function BettingRounds({
                             style={{ borderTopLeftRadius: 12, maxWidth: 'calc(100% - 56px)' }}
                           >
                             <div
-                              className="flex items-center justify-between px-4 w-full"
-                              style={{ height: 57 }}
+                              className="flex flex-col gap-2 px-4 py-2 w-full"
                             >
                               <div className="flex items-center gap-2 group min-w-0">
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="text-white hover:bg-[#272727] px-2 py-1"
+                                  className="text-white hover:bg-[#272727] px-2 py-1 flex-shrink-0"
                                   style={{ minWidth: 32 }}
                                   onClick={() => toggleRoundExpansion(roundIndex)}
                                 >
@@ -359,17 +364,18 @@ export function BettingRounds({
                                   value={round.roundName}
                                   isNotCreatedStatus={isNotCreatedStatus}
                                   onSave={newName => updateRoundName(roundIndex, newName)}
-                                  className={`text-white font-medium truncate ${hasRoundError ? 'text-destructive' : ''}`}
+                                  className={`text-white font-medium ${hasRoundError ? 'text-destructive' : ''}`}
                                   style={{
                                     fontSize: '16px',
                                     color: hasRoundError ? '#ef4444' : '#FFFFFFBF',
-                                    maxWidth: '100%',
+                                    flex: 1,
+                                    minWidth: 0,
                                   }}
                                   minLength={2}
                                   createdAt={round.createdAt}
                                 />
                               </div>
-                              <div className="flex items-center gap-2 flex-shrink-0">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <Button
                                   type="button"
                                   className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
@@ -478,6 +484,12 @@ export function BettingRounds({
                                   </SelectContent>
                                 </Select>
                               </div>
+                              {editStreamId && (
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  Note: When editing, the actual scheduled time is converted and displayed in your current timezone.
+                                  If editing the time, verify correct timezone is set before saving.
+                                </p>
+                              )}
                               <CalendarDatePicker
                                 label={'Optional Auto Lock Date'}
                                 error={

@@ -49,7 +49,7 @@ const CalendarDatePicker = ({
               <CalendarIcon className="h-5 w-5 text-white" />
             </span>
             <span className={dateVal ? '' : 'text-[#FFFFFFBF]'}>
-              {dateVal
+              {dateVal && dateVal instanceof Date && !isNaN(dateVal.getTime())
                 ? dateVal.toLocaleDateString() + 
                   (timeVal ? ` ${formatTime12hr(timeVal)}` : '') +
                   (timezoneVal && dateVal ? ` (${getTimezoneAbbreviation(timezoneVal, dateVal)})` : '')

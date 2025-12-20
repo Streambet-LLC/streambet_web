@@ -326,6 +326,11 @@ export const userAPI = {
     const response = await apiClient.get('/users/creators');
     return response.data;
   },
+
+  getLeaderboard: async () => {
+    const response = await apiClient.get('/users/leaderboard');
+    return response.data;
+  },
 };
 
 // Wallet API
@@ -868,6 +873,12 @@ export const adminAPI = {
     const response = await apiClient.get(
       `/admin/reports/users?startDate=${startDate}&endDate=${endDate}`
     );
+    return response.data;
+  },
+  
+  // Get user profile of any user
+  updateUserProfile: async ({ userId, userData } : { userId: string; userData: any }) => {
+    const response = await apiClient.patch(`/admin/user/${userId}/profile`, userData);
     return response.data;
   },
 };
