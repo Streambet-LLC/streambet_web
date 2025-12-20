@@ -156,7 +156,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                       key={category}
                       onClick={() => setSelectedCategory?.(category)}
                       className={cn(
-                        "h-auto overflow-visible transition-all",
+                        "h-auto overflow-visible transition-all cursor-pointer",
                         controls.open && !controls.isMobile 
                           ? "justify-start text-left p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-sidebar-card-border hover:border-primary/30 hover:bg-primary/5" 
                           : "justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover",
