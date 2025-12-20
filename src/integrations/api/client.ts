@@ -875,6 +875,12 @@ export const adminAPI = {
     );
     return response.data;
   },
+  
+  // Get user profile of any user
+  updateUserProfile: async ({ userId, userData } : { userId: string; userData: any }) => {
+    const response = await apiClient.patch(`/admin/user/${userId}/profile`, userData);
+    return response.data;
+  },
 };
 
 // Creator API
