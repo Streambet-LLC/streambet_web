@@ -41,6 +41,7 @@ import Creators from './components/creators/Creators';
 import CreatorPayoutsHistoryPage from './pages/CreatorPayoutsHistory';
 import { DepositProvider } from './contexts/DepositContext';
 import Deposit from './components/deposit/Deposit';
+import Leaderboard from './pages/Leaderboard';
 
 // Create a client
 const queryClient = new QueryClient({
