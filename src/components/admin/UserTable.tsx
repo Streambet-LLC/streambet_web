@@ -27,11 +27,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { EditUserDialog } from './EditUserDialog';
 
-
 interface Props {
   searchUserQuery: string;
 }
-
 
 export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
   const { toast } = useToast();
@@ -58,7 +56,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
   });
 
   useEffect(() => {
-    refetchProfiles()
+    refetchProfiles();
   }, [currentPage, searchUserQuery, refetchProfiles]);
 
   const mutation = useMutation({
@@ -69,7 +67,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
       refetchProfiles();
     },
   });
- 
+
   const mutationTokens = useMutation({
     mutationFn: async ({ userId, amount }: { userId: string; amount: number }) => {
       return await api.admin.updateUserCoins({ userId, amount });
@@ -88,7 +86,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     }
   };
 
-
   const paginatedUsers = profiles?.data;
 
   const deleteMutation = useMutation({
@@ -98,8 +95,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     onSuccess: () => {
       refetchProfiles();
       toast({
-        description:
-          "User deleted successfuly",
+        description: 'User deleted successfuly',
         variant: 'default',
       });
     },
@@ -109,16 +105,13 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     refetchProfiles();
   };
 
-
   return (
     <div>
       {isMobile ? (
         // Mobile Card View
         <div className="space-y-4">
           {paginatedUsers?.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
-              No users found
-            </div>
+            <div className="text-center py-6 text-muted-foreground">No users found</div>
           ) : (
             paginatedUsers?.map(user => (
               <Card key={user.id} className="bg-[#0D0D0D] border-gray-800">
@@ -132,6 +125,12 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       {user.role === 'admin' && (
                         <Badge variant="secondary" className="text-xs">
                           Admin
+                        </Badge>
+                      )}
+
+                      {user.role === 'creator' && (
+                        <Badge variant="secondary" className="text-xs">
+                          Creator
                         </Badge>
                       )}
                     </div>
@@ -148,7 +147,9 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Gold Balance:</span>
                     <span className="font-medium">
-                      {user?.wallet?.goldCoins ? user?.wallet?.goldCoins?.toLocaleString('en-US') : '-'}
+                      {user?.wallet?.goldCoins
+                        ? user?.wallet?.goldCoins?.toLocaleString('en-US')
+                        : '-'}
                     </span>
                   </div>
 
@@ -169,9 +170,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                   {/* Email */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Email:</span>
-                    <span className="text-sm truncate max-w-[150px]">
-                      {user.email}
-                    </span>
+                    <span className="text-sm truncate max-w-[150px]">{user.email}</span>
                   </div>
 
                   {/* Verification */}
@@ -201,8 +200,8 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     <AddTokens
                       currentBalance={user?.wallet?.goldCoins}
                       username={user.username}
-                      onSave={(newBalance) => {
-                        mutationTokens.mutate({ userId: user.id, amount: newBalance});
+                      onSave={newBalance => {
+                        mutationTokens.mutate({ userId: user.id, amount: newBalance });
                       }}
                     />
                     <DeleteUserDialog
@@ -251,13 +250,27 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       {user.username}
 
                       {user.role === 'admin' && (
-                      <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
-                        Admin
-                      </span>
-                    )}
+                        <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
+                          Admin
+                        </span>
+                      )}
+
+                      {user.role === 'creator' && (
+                        <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
+                          Creator
+                        </span>
+                      )}
                     </TableCell>
-                    <TableCell>{user?.wallet?.goldCoins ? Number(user?.wallet?.goldCoins)?.toLocaleString('en-US') : '-'}</TableCell>
-                    <TableCell>{user?.wallet?.sweepCoins ? Number(user?.wallet?.sweepCoins)?.toLocaleString('en-US'):'-'}</TableCell>
+                    <TableCell>
+                      {user?.wallet?.goldCoins
+                        ? Number(user?.wallet?.goldCoins)?.toLocaleString('en-US')
+                        : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {user?.wallet?.sweepCoins
+                        ? Number(user?.wallet?.sweepCoins)?.toLocaleString('en-US')
+                        : '-'}
+                    </TableCell>
                     <TableCell>
                       <span
                         className="px-2 py-1 rounded-md font-bold text-sm"
@@ -274,20 +287,17 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       {user.email}
                     </TableCell>
                     <TableCell className="truncate whitespace-nowrap overflow-hidden max-w-[180px]">
-                      
                       {user.isVerify ? (
-                      <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
-                        Verified
-                      </span>
-                    ):(
-                      <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
-                        Not Verified
-                      </span>
-                    )}
+                        <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
+                          Not Verified
+                        </span>
+                      )}
                     </TableCell>
-                    <TableCell className="max-w-[180px]">
-                      {user.promoCode}
-                    </TableCell>
+                    <TableCell className="max-w-[180px]">{user.promoCode}</TableCell>
                     <TableCell>
                       <Switch
                         checked={user.isActive}
@@ -301,16 +311,13 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       <AddTokens
                         currentBalance={user?.wallet?.goldCoins}
                         username={user.username}
-                        onSave={(newBalance) => {
-                          mutationTokens.mutate({ userId: user.id, amount: newBalance});
+                        onSave={newBalance => {
+                          mutationTokens.mutate({ userId: user.id, amount: newBalance });
                         }}
                       />
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Edit">
-                      <EditUserDialog
-                        profile={user}
-                        onUpdate={handleEditUser}
-                      />
+                      <EditUserDialog profile={user} onUpdate={handleEditUser} />
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Delete">
                       <DeleteUserDialog
