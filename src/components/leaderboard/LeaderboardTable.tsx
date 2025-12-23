@@ -83,8 +83,8 @@ export const LeaderboardTable = () => {
     if (data && data.length > 0) {
       const total = data.reduce((sum, entry) => sum + Number(entry.goldCoins), 0);
       const lead = data.length > 1 ? Number(data[0].goldCoins) - Number(data[1].goldCoins) : 0;
-      setTotalGold(total);
-      setTopLead(lead);
+      setTotalGold(Math.floor(total));
+      setTopLead(Math.floor(lead));
     }
   }, [data]);
 
@@ -147,7 +147,7 @@ export const LeaderboardTable = () => {
               Total <span style={{ color: 'var(--gold-coin)' }}>Cade Coins</span>
             </div>
             <div className="text-base md:text-xl font-mono font-bold crt-glow-medium" style={{ color: 'var(--electric-lime)' }}>
-              {animatedTotal.toLocaleString()}
+              {Math.floor(animatedTotal).toLocaleString()}
             </div>
           </div>
 
@@ -166,7 +166,7 @@ export const LeaderboardTable = () => {
               Top Lead
             </div>
             <div className="text-base md:text-xl font-mono font-bold crt-glow-medium" style={{ color: 'var(--electric-lime)' }}>
-              {animatedLead.toLocaleString()}
+              {Math.floor(animatedLead).toLocaleString()}
             </div>
           </div>
         </div>
@@ -227,7 +227,7 @@ export const LeaderboardTable = () => {
                 className={`text-sm md:text-xl font-mono font-bold crt-glow-medium ${index < 3 ? '' : 'text-white/75'}`}
                 style={{ color: index < 3 ? 'var(--electric-lime)' : undefined }}
               >
-                {Number(entry.goldCoins).toLocaleString()}
+                {Math.floor(Number(entry.goldCoins)).toLocaleString()}
               </div>
               <div className="text-[10px] md:text-xs uppercase tracking-wide crt-glow-medium" style={{ color: 'var(--gold-coin)' }}>
                 Cade Coins
