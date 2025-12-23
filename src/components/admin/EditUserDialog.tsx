@@ -57,6 +57,7 @@ const formSchema = z.object({
   youtube: z.string().trim().optional(),
   tiktok: z.string().trim().optional(),
   avatar: z.any().optional(),
+  revShare: z.coerce.number().min(0, 'Minimum of Zero').max(100, 'Max of 100%'),
 });
 
 type ProfileFormData = z.infer<typeof formSchema>;
@@ -110,6 +111,7 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
         kick: profile?.socials?.kick ?? '',
         youtube: profile?.socials?.youtube ?? '',
         tiktok: profile?.socials?.tiktok ?? '',
+        revShare: profile?.revShare ?? 0,
       });
     }
   }, [profile]);
@@ -167,7 +169,7 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
           const response = await api.auth.uploadImage(selectedAvatarFile);
           profileImageUrl = response?.data?.Key;
         } catch (error) {
-          Bugsnag.notify(error); 
+          Bugsnag.notify(error);
           toast({
             variant: 'destructive',
             title: 'Error uploading profile picture',
@@ -205,11 +207,12 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
             twitch: data.twitch,
             kick: data.kick,
             youtube: data.youtube,
-            tiktok: data.tiktok,  
+            tiktok: data.tiktok,
           },
+          revShare: data.revShare ?? 0,
           // Set hidden fields to undefined
           city: undefined,
-        }
+        },
       });
 
       if (updateError) throw updateError;
@@ -232,7 +235,7 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
 
       onUpdate();
     } catch (error: any) {
-      Bugsnag.notify(error); 
+      Bugsnag.notify(error);
       toast({
         title: 'Error',
         description: getMessage(error),
@@ -285,11 +288,13 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
     try {
       setIsImageLoading(true);
       const isSfw = await isImageSFW(url);
-      
+
       if (isSfw) {
         setAvatarToCrop(file);
       } else {
-        setAvatarError("Sorry, but the chosen image might be inappropriate. Please choose a different one.")
+        setAvatarError(
+          'Sorry, but the chosen image might be inappropriate. Please choose a different one.'
+        );
       }
       setIsImageLoading(false);
     } catch (error) {
@@ -308,22 +313,22 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
   };
 
   const stateOptions = US_STATES.map(s => ({
-  value: s.abbreviation,
-  label: s.name
-}));
+    value: s.abbreviation,
+    label: s.name,
+  }));
 
-// const selectedOption = stateOptions.find(
-//   (option) => option.value === field.value
-// );
+  // const selectedOption = stateOptions.find(
+  //   (option) => option.value === field.value
+  // );
 
   return (
     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant='ghost' className='p-1 hover:bg-transparent hover:text-default'>
-          <Pencil className='w-4 h-4' />
+        <Button variant="ghost" className="p-1 hover:bg-transparent hover:text-default">
+          <Pencil className="w-4 h-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className='border-2 border-[#7AFF14]' style={{ background: '#0D0D0D',}}>
+      <DialogContent className="border-2 border-[#7AFF14]" style={{ background: '#0D0D0D' }}>
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
         </DialogHeader>
@@ -448,29 +453,25 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
                 control={form.control}
                 name="state"
                 render={({ field }) => {
-                  const selectedOption = stateOptions.find(
-                    (option) => option.value === field.value
-                  );
+                  const selectedOption = stateOptions.find(option => option.value === field.value);
 
                   return (
                     <FormItem>
-                      <FormLabel className="text-white font-light block mb-1">
-                        State
-                      </FormLabel>
+                      <FormLabel className="text-white font-light block mb-1">State</FormLabel>
                       <FormControl>
                         <Select
                           options={stateOptions}
                           value={selectedOption} // 👈 convert string to full object
-                          onChange={(selected) => field.onChange(selected?.value || '')}
+                          onChange={selected => field.onChange(selected?.value || '')}
                           placeholder="State"
                           styles={{
-                            control: (base) => ({
+                            control: base => ({
                               ...base,
                               backgroundColor: '#272727',
                               color: 'white',
                               borderColor: '#272727',
                             }),
-                            menu: (base) => ({
+                            menu: base => ({
                               ...base,
                               backgroundColor: '#272727',
                               color: 'white',
@@ -481,15 +482,15 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
                               backgroundColor: state.isFocused ? '#333' : '#272727',
                               color: 'white',
                             }),
-                            singleValue: (base) => ({
+                            singleValue: base => ({
                               ...base,
                               color: 'white',
                             }),
-                            input: (base) => ({
+                            input: base => ({
                               ...base,
                               color: 'white',
                             }),
-                            placeholder: (base) => ({
+                            placeholder: base => ({
                               ...base,
                               color: '#aaa',
                             }),
@@ -500,18 +501,47 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
                   );
                 }}
               />
-              <div className={cn("space-y-4", profile?.role !== 'creator' && "hidden")}>
+              <div className={cn('space-y-4', profile?.role !== 'creator' && 'hidden')}>
+                <Separator className="bg-gray-900" />
+                <div>
+                  <h2 className="text-md font-light text-white">Creator Revenue</h2>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="revShare"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white font-light flex gap-1 mb-1 items-center">
+                        Revenue Share in %
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          {...field}
+                          className="bg-[#272727] border-[#272727] text-white placeholder:text-gray-400"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <Separator className="bg-gray-900" />
                 <div>
                   <h2 className="text-md font-light text-white">Socials</h2>
-                  <p className="text-sm text-[#FFFFFFBF] mt-1">Social links where your viewers can reach you.</p>
+                  <p className="text-sm text-[#FFFFFFBF] mt-1">
+                    Social links where your viewers can reach you.
+                  </p>
                 </div>
                 <FormField
                   control={form.control}
                   name="instagram"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white font-light flex gap-1 mb-1 items-center"><FaInstagram />Instagram</FormLabel>
+                      <FormLabel className="text-white font-light flex gap-1 mb-1 items-center">
+                        <FaInstagram />
+                        Instagram
+                      </FormLabel>
                       <FormControl>
                         <Input
                           placeholder="https://instagram.com"
@@ -528,7 +558,10 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
                   name="twitch"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white font-light flex gap-1 mb-1 items-center"><FaTwitch />Twitch</FormLabel>
+                      <FormLabel className="text-white font-light flex gap-1 mb-1 items-center">
+                        <FaTwitch />
+                        Twitch
+                      </FormLabel>
                       <FormControl>
                         <Input
                           placeholder="https://twitch.tv"
@@ -606,15 +639,23 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
               <div className="space-y-4">
                 <div>
                   <h2 className="text-md font-light text-white">Your photo</h2>
-                  <p className="text-sm text-[#FFFFFFBF] mt-1">This will be displayed on your profile.</p>
+                  <p className="text-sm text-[#FFFFFFBF] mt-1">
+                    This will be displayed on your profile.
+                  </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4 items-center relative">
                   {/* Left: Preview */}
                   <div className="relative inline-block" style={{ width: 80, height: 80 }}>
                     <Avatar className="h-20 w-20">
                       <AvatarImage
-                        src={avatarPreviewUrl ? (avatarPreviewUrl.includes('blob') ? avatarPreviewUrl : getImageLink(avatarPreviewUrl)) : undefined}
-                        onLoadingStatusChange={(status) => setIsImageLoading(status === 'loading')}
+                        src={
+                          avatarPreviewUrl
+                            ? avatarPreviewUrl.includes('blob')
+                              ? avatarPreviewUrl
+                              : getImageLink(avatarPreviewUrl)
+                            : undefined
+                        }
+                        onLoadingStatusChange={status => setIsImageLoading(status === 'loading')}
                       />
                       <AvatarFallback>
                         {(profile?.username?.[0] || profile?.email?.[0] || 'U').toUpperCase()}
@@ -629,7 +670,10 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
                       <button
                         type="button"
                         className="absolute top-2 right-4 -translate-y-1/2 translate-x-1/2 bg-red-900 border border-gray-600 rounded-full h-5 w-5 flex items-center justify-center hover:bg-red-500 z-20"
-                        onClick={e => { e.stopPropagation(); handleDeleteAvatar(); }}
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleDeleteAvatar();
+                        }}
                       >
                         <X className="h-4 w-4 text-white" />
                       </button>
@@ -654,35 +698,54 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
                     />
                     <div className="flex flex-col items-center mt-2">
                       <div className="flex items-center justify-center mb-1 relative">
-                        <div className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center" style={{ width: 44, height: 44 }}>
+                        <div
+                          className="rounded-full bg-[#171717] border-4 border-[#121212] flex items-center justify-center"
+                          style={{ width: 44, height: 44 }}
+                        >
                           {isUploading ? (
                             <Loader2 className="h-6 w-6 animate-spin text-white" />
                           ) : (
-                            <img src="/icons/cloud_upload.png" alt="Upload" style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }} />
+                            <img
+                              src="/icons/cloud_upload.png"
+                              alt="Upload"
+                              style={{
+                                width: 28,
+                                height: 19,
+                                objectFit: 'contain',
+                                display: 'block',
+                              }}
+                            />
                           )}
                         </div>
                         {/* Close button moved to Avatar preview */}
                       </div>
-                      <span className="text-sm text-center text-[#667085]" style={{ lineHeight: '1.7' }}>
-                        <span className="text-primary font-medium">Click to upload</span> or drag and drop<br />
+                      <span
+                        className="text-sm text-center text-[#667085]"
+                        style={{ lineHeight: '1.7' }}
+                      >
+                        <span className="text-primary font-medium">Click to upload</span> or drag
+                        and drop
+                        <br />
                         <span className="text-[#667085]">SVG, PNG, JPG or GIF (max. 2MB)</span>
                       </span>
-                      {!!avatarToCrop && 
-                        <PhotoCropper 
-                          file={avatarToCrop} 
-                          onClose={() => setAvatarToCrop(null)} 
-                          onCrop={(file) => {
+                      {!!avatarToCrop && (
+                        <PhotoCropper
+                          file={avatarToCrop}
+                          onClose={() => setAvatarToCrop(null)}
+                          onCrop={file => {
                             setSelectedAvatarFile(file);
                             setAvatarToCrop(null);
 
                             setAvatarPreviewUrl(URL.createObjectURL(file));
-                          }} 
+                          }}
                           cropperProps={{
                             circularCrop: true,
                           }}
                         />
-                      }
-                      {avatarError && <div className="text-destructive text-xs mt-1">{avatarError}</div>}
+                      )}
+                      {avatarError && (
+                        <div className="text-destructive text-xs mt-1">{avatarError}</div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -711,4 +774,4 @@ export function EditUserDialog({ profile, onUpdate }: { profile: any; onUpdate: 
       </DialogContent>
     </Dialog>
   );
-};
+}
