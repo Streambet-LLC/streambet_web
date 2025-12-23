@@ -158,12 +158,8 @@ export default function BetCard(props: BetCardType) {
             )}
           </>
         )}
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-3">
-            <img
-              src={getThumbnailUrl(cardData.thumbnail)}
-              className="aspect-square w-14 h-14 rounded-md object-cover"
-            />
+        <div className="flex flex-col gap-2">
+          <div className='flex flex-col'>
             <div className="flex items-center gap-2">
               <CardTitle
                 onClick={
@@ -222,45 +218,57 @@ export default function BetCard(props: BetCardType) {
                 </span>
               )}
             </div>
+            {props.creator && (
+              <Link
+                to={`/${props.creator}`}
+                className="text-sm text-creator-green hover:text-foreground transition-colors"
+              >
+                {props.creator}
+              </Link>
+            )}
           </div>
-          {cardData.description && (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild className="cursor-default">
-                <CardDescription className="line-clamp-2 text-xs">
-                  {cardData.description}
-                </CardDescription>
-              </TooltipTrigger>
-              <TooltipContent className="w-60" side="bottom">
-                <LinkItUrl className='text-creator-green'>
-                  {cardData.description}
-                </LinkItUrl>
-              </TooltipContent>
-            </Tooltip>
-          )}
+          {!props.isForStream && 
+            <>
+              <div className='flex flex-col gap-1'>
+                {props.type === 'stream' && (
+                  <Link
+                    to={`/stream/${props.streamId}`}
+                    className="flex gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors line-clamp-1"
+                  >
+                    <div>
+                      <Video className="h-4 w-4" />
+                    </div>
+                    {props.streamName}
+                  </Link>
+                )}
+                {cardData.description && (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild className="cursor-default">
+                      <CardDescription className="line-clamp-2 text-xs">
+                        {cardData.description}
+                      </CardDescription>
+                    </TooltipTrigger>
+                    <TooltipContent className="w-60" side="bottom">
+                      <LinkItUrl className='text-creator-green'>
+                        {cardData.description}
+                      </LinkItUrl>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+              <div className='relative rounded-md overflow-clip'>
+                <img
+                  src={getThumbnailUrl(cardData.thumbnail)}
+                  className="aspect-video w-full object-cover"
+                />
+                <div className='top-0 absolute w-full h-full bg-gradient-to-t from-[#bdff001a]' />
+                <div className='top-0 absolute w-full h-full bg-gradient-to-t from-[#00000080] z-10' />
+              </div>
+            </>
+          }
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 p-4">
-        <div className="flex flex-col">
-          {props.type === 'stream' && (
-            <Link
-              to={`/stream/${props.streamId}`}
-              className="flex gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors line-clamp-1"
-            >
-              <div className="py-[2px]">
-                <Video className="h-4 w-4" />
-              </div>
-              {props.streamName}
-            </Link>
-          )}
-          {props.creator && (
-            <Link
-              to={`/${props.creator}`}
-              className="text-sm text-creator-green hover:text-foreground transition-colors"
-            >
-              {props.creator}
-            </Link>
-          )}
-        </div>
         {cardData.options.slice(0, 2).map((option, i) => (
           <div
             key={i}
