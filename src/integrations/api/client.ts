@@ -922,6 +922,16 @@ export const creatorAPI = {
     const response = await apiClient.get(`/creator/payoutsHistory`, { params });
     return response.data;
   },
+
+  createCreatorApplication: async (payload: any) => {
+    const response = await apiClient.post(`/creator/application`, payload);
+    return response.data;
+  },
+
+  updateCreatorApplication: async (payload: any) => {
+    const response = await apiClient.patch(`/creator/application`, payload);
+    return response.data;
+  },
 }
 
 
