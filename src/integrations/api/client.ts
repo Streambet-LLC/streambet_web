@@ -932,6 +932,16 @@ export const creatorAPI = {
     const response = await apiClient.patch(`/creator/application`, payload);
     return response.data;
   },
+
+  getCreatorApplication: async () => {
+    const response = await apiClient.get(`/creator/application`);
+    return response.data;
+  },
+
+  cancelCreatorApplication: async () => {
+    const response = await apiClient.delete(`/creator/application`);
+    return response.data;
+  },
 }
 
 

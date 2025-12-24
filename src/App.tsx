@@ -42,7 +42,7 @@ import CreatorPayoutsHistoryPage from './pages/CreatorPayoutsHistory';
 import { DepositProvider } from './contexts/DepositContext';
 import Deposit from './components/deposit/Deposit';
 import Leaderboard from './pages/Leaderboard';
-import CreatorJoin from './pages/CreatorJoin';
+import CreatorApplication from './pages/CreatorApplication';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -88,7 +88,7 @@ const App = () => {
                         <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
                         <Route path="/creator-payouts-history" element={<CreatorPayoutsHistoryPage />} />
                         <Route path="/settings" element={<Settings />} />
-                        <Route path="/creator-join" element={<CreatorJoin />} />
+                        <Route path="/creator-application" element={<CreatorApplication />} />
                       </Route>
                       <Route path="/:username" element={<Profile />} />
                       <Route path="/stream/:id" element={<Stream />} />
