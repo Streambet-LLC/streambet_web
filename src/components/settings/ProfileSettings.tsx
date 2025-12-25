@@ -7,6 +7,7 @@ import { getImageLink } from '@/utils/helper';
 import { TabSwitch } from '@/components/navigation/TabSwitch';
 import { NotificationSettings } from './NotificationSettings';
 import { useAuthContext } from '@/contexts/AuthContext';
+import ReferralSettings from './ReferralSettings';
 
 const formSchema = z.object({
   avatar: z.any().optional(),
@@ -34,29 +35,24 @@ export const ProfileSettings = () => {
 
   const tabs = [
     { key: 'profile', label: 'Profile' },
+    { key: 'referrals', label: 'Referrals' },
     { key: 'notifications', label: 'Notifications' },
   ];
 
-
   return (
     <div className="space-y-6">
-      <TabSwitch
-        tabs={tabs}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-      />
+      <TabSwitch tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {activeTab === 'profile' && (
-        <ProfileSection 
-          currentUsername={session?.username} 
-          currentAvatar={avatarLink} 
-          handleDeleteProfilePic={() => form.setValue('avatar', null)} 
+        <ProfileSection
+          currentUsername={session?.username}
+          currentAvatar={avatarLink}
+          handleDeleteProfilePic={() => form.setValue('avatar', null)}
         />
       )}
 
-      {activeTab === 'notifications' && (
-        <NotificationSettings />
-      )}
+      {activeTab === 'notifications' && <NotificationSettings />}
+      {activeTab === 'referrals' && <ReferralSettings />}
     </div>
   );
 };

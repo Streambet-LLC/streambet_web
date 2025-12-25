@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from './ui/button';
 import { useQueryClient } from '@tanstack/react-query';
 import { WalletDropdown } from './navigation/WalletDropdown';
@@ -14,6 +14,8 @@ import { CurrencyType } from '@/enums';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useLogout } from '@/hooks/useLogout';
+import { useCookies } from 'react-cookie';
+import moment from 'moment';
 
 interface NavigationProps {
   onDashboardClick?: () => void;
@@ -22,6 +24,10 @@ interface NavigationProps {
 }
 
 export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: NavigationProps) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const refLink = searchParams.get('ref');
+  const [, setCookie] = useCookies(['referral-link']);
+
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -65,13 +71,20 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
 
   useEffect(() => {
     if (!isCheckingLocation && session && !locationResult?.allowed) {
-
       handleLogoutWithRefetch();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCheckingLocation, locationResult, session]);
 
-
+  useEffect(() => {
+    if (refLink) {
+      if (refLink) {
+        setCookie('referral-link', refLink, {
+          expires: moment().add(1, 'day').toDate(),
+        });
+      }
+    }
+  }, [refLink]);
 
   const logoVariants = {
     hidden: { opacity: 0, x: -20 },
@@ -90,7 +103,11 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
     { label: 'Home', icon: undefined, path: '/' },
     { label: 'Browse', icon: undefined, path: '/creators' },
     { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
-    (session?.role === 'admin' || session?.role === 'creator') && { label: 'Creator Dashboard', icon: undefined, path: session?.role === 'admin' ? '/admin' : '/creator' },
+    (session?.role === 'admin' || session?.role === 'creator') && {
+      label: 'Creator Dashboard',
+      icon: undefined,
+      path: session?.role === 'admin' ? '/admin' : '/creator',
+    },
     // { label: 'Streams', icon: undefined, path: '/stream' },
     // { label: 'Rewards', icon: undefined, path: '/rewards' },
     // { label: 'Community', icon: undefined, path: '/community' },
@@ -118,7 +135,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
       >
         {/* Gradient line at top */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-electric-lime to-transparent opacity-50" />
-        
+
         <div className="px-4 w-full flex h-16 items-center">
           {/* Mobile Menu Toggle */}
           <div className="md:hidden mr-3">
@@ -136,15 +153,16 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <CustomDrawer
-              isOpen={isDrawerOpen}
-              onClose={() => setIsDrawerOpen(false)}
-            >
+            <CustomDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
               <div className="flex-1 overflow-y-auto p-4 pt-12">
                 {/* Logo for mobile */}
                 <div className="md:hidden mb-4 pl-4">
                   <Link to="/" className="flex items-center" onClick={() => setIsDrawerOpen(false)}>
-                    <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[165px] object-contain" />
+                    <img
+                      src="/logo.svg"
+                      alt="Streambet Logo"
+                      className="h-8 w-[165px] object-contain"
+                    />
                   </Link>
                 </div>
                 <div className="flex flex-col space-y-2">
@@ -207,7 +225,11 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
           <div className="hidden md:flex items-center">
             <motion.div>
               <Link to="/" className="flex items-center">
-                <img src="/logo.svg" alt="Streambet Logo" className="h-8 w-[165px] object-contain" />
+                <img
+                  src="/logo.svg"
+                  alt="Streambet Logo"
+                  className="h-8 w-[165px] object-contain"
+                />
               </Link>
             </motion.div>
 
@@ -226,9 +248,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                       variant="ghost"
                       size="sm"
                       className={`flex items-center gap-2 font-light transition-colors px-3 py-2 ${
-                        isActive
-                          ? 'text-white'
-                          : 'text-[#FFFFFF80] hover:text-primary-foreground'
+                        isActive ? 'text-white' : 'text-[#FFFFFF80] hover:text-primary-foreground'
                       }`}
                       onClick={() => handleMenuItemClick(item.path)}
                     >
@@ -267,21 +287,33 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
             >
               {session ? (
                 <>
-                  <WalletDropdown walletBalance={isSweepCoins ? session?.walletBalanceSweepCoin || 0 : session?.walletBalanceGoldCoin || 0} />
+                  <WalletDropdown
+                    walletBalance={
+                      isSweepCoins
+                        ? session?.walletBalanceSweepCoin || 0
+                        : session?.walletBalanceGoldCoin || 0
+                    }
+                  />
 
                   <UserDropdown profile={session} onLogout={handleLogoutWithRefetch} />
                 </>
               ) : (
                 <>
                   <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-                    <Button variant="ghost" size="sm" onClick={() => {
-                      const isStreamPage = location.pathname.startsWith('/stream/');
-                      if (isStreamPage) {
-                        navigate(`/login?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
-                      } else {
-                        navigate('/login');
-                      }
-                    }}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const isStreamPage = location.pathname.startsWith('/stream/');
+                        if (isStreamPage) {
+                          navigate(
+                            `/login?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`
+                          );
+                        } else {
+                          navigate('/login');
+                        }
+                      }}
+                    >
                       Login
                     </Button>
                   </motion.div>
@@ -293,7 +325,9 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                       onClick={() => {
                         const isStreamPage = location.pathname.startsWith('/stream/');
                         if (isStreamPage) {
-                          navigate(`/signup?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+                          navigate(
+                            `/signup?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`
+                          );
                         } else {
                           navigate('/signup');
                         }
@@ -308,7 +342,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
           </AnimatePresence>
         </div>
       </motion.nav>
-      <div className='sticky top-0 w-full h-16' />
+      <div className="sticky top-0 w-full h-16" />
     </>
   );
 };

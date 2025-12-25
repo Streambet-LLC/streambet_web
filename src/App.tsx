@@ -29,12 +29,12 @@ import { HistoryType } from './enums';
 import BugSnagErrorBoundary from './bugsnag';
 import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 import Redeem from './components/withdraw/Redeem';
-import { CoinflowPurchaseProtection } from "@coinflowlabs/react";
+import { CoinflowPurchaseProtection } from '@coinflowlabs/react';
 import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coinflow';
 import Kyc from './components/withdraw/Kyc';
 import RouteGroup from './components/RouteGroup';
 import Profile from './pages/Profile';
-import 'react-image-crop/dist/ReactCrop.css'
+import 'react-image-crop/dist/ReactCrop.css';
 import Home from './pages/Home';
 import Creator from './pages/Creator';
 import Creators from './components/creators/Creators';
@@ -42,6 +42,7 @@ import CreatorPayoutsHistoryPage from './pages/CreatorPayoutsHistory';
 import { DepositProvider } from './contexts/DepositContext';
 import Deposit from './components/deposit/Deposit';
 import Leaderboard from './pages/Leaderboard';
+import { CookiesProvider } from 'react-cookie';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -56,63 +57,81 @@ const queryClient = new QueryClient({
 const App = () => {
   return (
     <BugSnagErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <LocationRestrictionProvider>
-        <CurrencyProvider>
-          <AuthProvider>
-            <BettingStatusProvider>
-              <BettingProvider>
-                <DepositProvider>
-                  <BrowserRouter>
-                    <TooltipProvider>
-                      <Toaster />
-                      <Sonner />
-                      <CoinflowPurchaseProtection 
-                      coinflowEnv={getCoinFlowEnv()} 
-                      merchantId={getChargebackProtectionMerchantId()} 
-                    />
-                    <LogoutEventHandlers />
-                    <Deposit />
-                    <Routes>
-                      <Route element={<RouteGroup auth />}>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/signup" element={<SignUp />} />
-                      </Route>
-                      <Route element={<RouteGroup guard />}>
-                        <Route path="/admin" element={<Admin />} />
-                        <Route path="/creator" element={<Creator />} />
-                        <Route path="/withdraw" element={<Redeem />} />
-                        <Route path="/withdraw/verification" element={<Kyc />} />
-                        <Route path="/transactions" element={<Transactions key='transactions' historyType={HistoryType.Transaction} />} />
-                        <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
-                        <Route path="/creator-payouts-history" element={<CreatorPayoutsHistoryPage />} />
-                        <Route path="/settings" element={<Settings />} />
-                      </Route>
-                      <Route path="/:username" element={<Profile />} />
-                      <Route path="/stream/:id" element={<Stream />} />
-                      <Route path="/privacy" element={<Privacy />} />
-                      <Route path="/terms" element={<Terms />} />
-                      <Route path="/compliance" element={<Compliance />} />
-                      <Route path="/creators" element={<Creators />} />
-                      <Route path="/leaderboard" element={<Leaderboard />} />
-                      <Route path="/faq" element={<FAQ />} />
-                      <Route path="/auth/verify-email" element={<VerifyEmail />} />
-                      <Route path="/forgot-password" element={<ForgotPassword />} />
-                      <Route path="/reset-password" element={<ResetPassword />} />
-                      <Route path="/auth/google-callback" element={<GoogleCallback />} />
-                      <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
-                      <Route path="/" element={<Home />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </TooltipProvider>
-                </BrowserRouter>
-              </DepositProvider>
-            </BettingProvider>
-            </BettingStatusProvider>
-          </AuthProvider>
-        </CurrencyProvider>
-      </LocationRestrictionProvider>
-    </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <LocationRestrictionProvider>
+          <CurrencyProvider>
+            <CookiesProvider>
+              <AuthProvider>
+                <BettingStatusProvider>
+                  <BettingProvider>
+                    <DepositProvider>
+                      <BrowserRouter>
+                        <TooltipProvider>
+                          <Toaster />
+                          <Sonner />
+                          <CoinflowPurchaseProtection
+                            coinflowEnv={getCoinFlowEnv()}
+                            merchantId={getChargebackProtectionMerchantId()}
+                          />
+                          <LogoutEventHandlers />
+                          <Deposit />
+                          <Routes>
+                            <Route element={<RouteGroup auth />}>
+                              <Route path="/login" element={<Login />} />
+                              <Route path="/signup" element={<SignUp />} />
+                            </Route>
+                            <Route element={<RouteGroup guard />}>
+                              <Route path="/admin" element={<Admin />} />
+                              <Route path="/creator" element={<Creator />} />
+                              <Route path="/withdraw" element={<Redeem />} />
+                              <Route path="/withdraw/verification" element={<Kyc />} />
+                              <Route
+                                path="/transactions"
+                                element={
+                                  <Transactions
+                                    key="transactions"
+                                    historyType={HistoryType.Transaction}
+                                  />
+                                }
+                              />
+                              <Route
+                                path="/betting-history"
+                                element={
+                                  <Transactions key="betting" historyType={HistoryType.Bet} />
+                                }
+                              />
+                              <Route
+                                path="/creator-payouts-history"
+                                element={<CreatorPayoutsHistoryPage />}
+                              />
+                              <Route path="/settings" element={<Settings />} />
+                            </Route>
+                            <Route path="/:username" element={<Profile />} />
+                            <Route path="/stream/:id" element={<Stream />} />
+                            <Route path="/privacy" element={<Privacy />} />
+                            <Route path="/terms" element={<Terms />} />
+                            <Route path="/compliance" element={<Compliance />} />
+                            <Route path="/creators" element={<Creators />} />
+                            <Route path="/leaderboard" element={<Leaderboard />} />
+                            <Route path="/faq" element={<FAQ />} />
+                            <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
+                            <Route path="/reset-password" element={<ResetPassword />} />
+                            <Route path="/auth/google-callback" element={<GoogleCallback />} />
+                            <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
+                            <Route path="/" element={<Home />} />
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </TooltipProvider>
+                      </BrowserRouter>
+                    </DepositProvider>
+                  </BettingProvider>
+                </BettingStatusProvider>
+              </AuthProvider>
+            </CookiesProvider>
+          </CurrencyProvider>
+        </LocationRestrictionProvider>
+      </QueryClientProvider>
     </BugSnagErrorBoundary>
   );
 };

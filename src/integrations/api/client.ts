@@ -168,6 +168,7 @@ export const authAPI = {
     lastKnownIp: string;
     redirect?: string;
     promoCode?: string;
+    refLink?: string;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
     return response.data;
@@ -304,6 +305,18 @@ export const userAPI = {
   // Send email notification
   sendEmailNotification: async (options: any) => {
     const response = await apiClient.post('/users/notifications/email', options);
+    return response.data;
+  },
+
+  createNewReferralLink: async (code: string) => {
+    const response = await apiClient.post('/users/referral-link', {
+      code
+    });
+    return response.data;
+  },
+
+  getReferralLinks: async () => {
+    const response = await apiClient.get('/users/referral-link');
     return response.data;
   },
 
@@ -875,9 +888,9 @@ export const adminAPI = {
     );
     return response.data;
   },
-  
+
   // Get user profile of any user
-  updateUserProfile: async ({ userId, userData } : { userId: string; userData: any }) => {
+  updateUserProfile: async ({ userId, userData }: { userId: string; userData: any }) => {
     const response = await apiClient.patch(`/admin/user/${userId}/profile`, userData);
     return response.data;
   },
