@@ -29,12 +29,12 @@ import { HistoryType } from './enums';
 import BugSnagErrorBoundary from './bugsnag';
 import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 import Redeem from './components/withdraw/Redeem';
-import { CoinflowPurchaseProtection } from "@coinflowlabs/react";
+import { CoinflowPurchaseProtection } from '@coinflowlabs/react';
 import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coinflow';
 import Kyc from './components/withdraw/Kyc';
 import RouteGroup from './components/RouteGroup';
 import Profile from './pages/Profile';
-import 'react-image-crop/dist/ReactCrop.css'
+import 'react-image-crop/dist/ReactCrop.css';
 import Home from './pages/Home';
 import Creator from './pages/Creator';
 import Creators from './components/creators/Creators';
@@ -42,6 +42,7 @@ import CreatorPayoutsHistoryPage from './pages/CreatorPayoutsHistory';
 import { DepositProvider } from './contexts/DepositContext';
 import Deposit from './components/deposit/Deposit';
 import Leaderboard from './pages/Leaderboard';
+import { CookiesProvider } from 'react-cookie';
 import CreatorApplication from './pages/CreatorApplication';
 
 // Create a client
@@ -57,39 +58,61 @@ const queryClient = new QueryClient({
 const App = () => {
   return (
     <BugSnagErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <LocationRestrictionProvider>
-        <CurrencyProvider>
-          <AuthProvider>
-            <BettingStatusProvider>
-              <BettingProvider>
-                <DepositProvider>
-                  <BrowserRouter>
-                    <TooltipProvider>
-                      <Toaster />
-                      <Sonner />
-                      <CoinflowPurchaseProtection 
-                      coinflowEnv={getCoinFlowEnv()} 
-                      merchantId={getChargebackProtectionMerchantId()} 
+<QueryClientProvider client={queryClient}>
+  <LocationRestrictionProvider>
+    <CurrencyProvider>
+      <CookiesProvider>
+        <AuthProvider>
+          <BettingStatusProvider>
+            <BettingProvider>
+              <DepositProvider>
+                <BrowserRouter>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <CoinflowPurchaseProtection
+                      coinflowEnv={getCoinFlowEnv()}
+                      merchantId={getChargebackProtectionMerchantId()}
                     />
                     <LogoutEventHandlers />
                     <Deposit />
                     <Routes>
+                      {/* Auth Routes */}
                       <Route element={<RouteGroup auth />}>
                         <Route path="/login" element={<Login />} />
                         <Route path="/signup" element={<SignUp />} />
                       </Route>
+
+                      {/* Guarded Routes */}
                       <Route element={<RouteGroup guard />}>
                         <Route path="/admin" element={<Admin />} />
                         <Route path="/creator" element={<Creator />} />
                         <Route path="/withdraw" element={<Redeem />} />
                         <Route path="/withdraw/verification" element={<Kyc />} />
-                        <Route path="/transactions" element={<Transactions key='transactions' historyType={HistoryType.Transaction} />} />
-                        <Route path="/betting-history" element={<Transactions key='betting' historyType={HistoryType.Bet} />} />
-                        <Route path="/creator-payouts-history" element={<CreatorPayoutsHistoryPage />} />
+                        <Route
+                          path="/transactions"
+                          element={
+                            <Transactions
+                              key="transactions"
+                              historyType={HistoryType.Transaction}
+                            />
+                          }
+                        />
+                        <Route
+                          path="/betting-history"
+                          element={
+                            <Transactions key="betting" historyType={HistoryType.Bet} />
+                          }
+                        />
+                        <Route
+                          path="/creator-payouts-history"
+                          element={<CreatorPayoutsHistoryPage />}
+                        />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/creator-application" element={<CreatorApplication />} />
                       </Route>
+
+                      {/* Public Routes */}
                       <Route path="/:username" element={<Profile />} />
                       <Route path="/stream/:id" element={<Stream />} />
                       <Route path="/privacy" element={<Privacy />} />
@@ -110,11 +133,12 @@ const App = () => {
                 </BrowserRouter>
               </DepositProvider>
             </BettingProvider>
-            </BettingStatusProvider>
-          </AuthProvider>
-        </CurrencyProvider>
-      </LocationRestrictionProvider>
-    </QueryClientProvider>
+          </BettingStatusProvider>
+        </AuthProvider>
+      </CookiesProvider>
+    </CurrencyProvider>
+  </LocationRestrictionProvider>
+</QueryClientProvider>
     </BugSnagErrorBoundary>
   );
 };
