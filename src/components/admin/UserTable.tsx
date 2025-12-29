@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import api from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DeleteUserDialog } from './DeleteUserDialog';
 import AddTokens from './AddTokens';
 import { useToast } from '@/hooks/use-toast';
@@ -75,6 +76,27 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     onSuccess: () => {
       refetchProfiles();
       refetchSession();
+    },
+  });
+
+  const updateCreatorStatusMutation = useMutation({
+    mutationFn: async ({ userId, isCreator }: { userId: string; isCreator: boolean }) => {
+      return await api.admin.updateUserCreatorStatus({ userId, isCreator });
+    },
+    onSuccess: () => {
+      refetchProfiles();
+      toast({
+        description: 'User role updated successfully',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to update user role',
+        variant: 'destructive',
+      });
+      refetchProfiles();
     },
   });
 
@@ -195,6 +217,21 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     </span>
                   </div>
 
+                  {/* Creator */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Creator:</span>
+                    <Checkbox
+                      checked={user?.role === 'creator'}
+                      disabled={user?.role === 'admin'}
+                      onCheckedChange={() => {
+                        updateCreatorStatusMutation.mutate({
+                          userId: user.id,
+                          isCreator: user?.role !== 'creator',
+                        });
+                      }}
+                    />
+                  </div>
+
                   {/* Actions Row */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <AddTokens
@@ -233,6 +270,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 <TableHead>Actions</TableHead>
                 <TableHead>Gold Coins</TableHead>
                 <TableHead>Edit</TableHead>
+                <TableHead>Creator</TableHead>
                 <TableHead>Delete</TableHead>
               </TableRow>
             </TableHeader>
@@ -318,6 +356,18 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Edit">
                       <EditUserDialog profile={user} onUpdate={handleEditUser} />
+                    </TableCell>
+                    <TableCell className="cursor-pointer" title="Toggle Creator Role">
+                      <Checkbox
+                        checked={user?.role === 'creator'}
+                        disabled={user?.role === 'admin'}
+                        onCheckedChange={() => {
+                          updateCreatorStatusMutation.mutate({
+                            userId: user.id,
+                            isCreator: user?.role !== 'creator',
+                          });
+                        }}
+                      />
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Delete">
                       <DeleteUserDialog
