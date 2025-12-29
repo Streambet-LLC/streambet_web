@@ -104,7 +104,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           {profile?.isCreator ? (
             <Link to={`/${profile?.username}`}>My Profile</Link>
           ) : (
-            <a href="https://form.jotform.com/252037370862052" target="_blank" rel="noopener noreferrer">Join Creator Program</a>
+            <Link to={`/creator-application`} rel="noopener noreferrer">Join Creator Program</Link>
           )}
         </DropdownMenuItem>
 
