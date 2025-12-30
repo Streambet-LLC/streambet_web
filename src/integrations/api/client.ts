@@ -728,6 +728,11 @@ export const adminAPI = {
     return response.data;
   },
 
+  updateUserCreatorStatus: async (payload: { userId: string; isCreator: boolean }) => {
+    const response = await apiClient.patch(`/admin/users/creator-role`, payload);
+    return response.data;
+  },
+
   updateUserCoins: async (payload: { userId: string; amount: number }) => {
     const response = await apiClient.patch(`/admin/gold-coins`, payload);
     return response.data;
