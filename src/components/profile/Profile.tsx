@@ -14,6 +14,9 @@ import ProfilePastStreams from './ProfilePastStreams';
 import { Footer } from '../Footer';
 import ProfileLiveUpcomingNonVideoBets from './ProfileLiveUpcomingNonVideoBets';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { Button } from '../ui/button';
+import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const socialsMapping = {
   instagram: {
@@ -41,6 +44,7 @@ const socialsMapping = {
 export default function Profile() {
   const { username } = useParams();
   const { session } = useAuthContext();
+  const { toast } = useToast();
 
   const socialsOrder = Object.keys(socialsMapping);
 
@@ -54,6 +58,8 @@ export default function Profile() {
     profileImageUrl: string;
     isCreator: boolean;
     socials: { [social: string]: string };
+    isFollowed: boolean;
+    followers: number;
   }>({
     queryKey: ['profile', { username }],
     queryFn: async () => {
@@ -67,6 +73,36 @@ export default function Profile() {
       }
     },
   });
+
+  const [isFollowed, setisFollowed] = useState(false);
+
+  const handleFollow = async () => {
+    if (isFollowed) {
+      await userAPI.unfollowUser(username);
+
+      toast({
+        title: 'Success',
+        description: `Successfully unfollowed ${username}`,
+        variant: 'default',
+      });
+    } else {
+      await userAPI.followUser(username);
+
+      toast({
+        title: 'Success',
+        description: `Successfully followed ${username}`,
+        variant: 'default',
+      });
+    }
+
+    setisFollowed(!isFollowed);
+  };
+
+  useEffect(() => {
+    if (profile && profile.isFollowed) {
+      setisFollowed(true);
+    }
+  }, [profile]);
 
   return (
     !isFetching && (
@@ -86,12 +122,22 @@ export default function Profile() {
                       <AvatarFallback>{username[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="flex relative flex-col">
-                      <div className="text-lg font-semibold text-white">{username}</div>
+                      <div className="flex gap-2 items-center">
+                        <div className="text-lg font-semibold text-white">{username}</div>
+                      </div>
                       <div className="text-xs text-gray-400">
                         Date joined: {format(profile.accountCreationDate.toString(), 'MMMM d, yyy')}
                       </div>
                       {profile.isCreator && profile.socials && (
                         <div className="flex flex-col mt-3 gap-1">
+                          <p className="text-xs text-gray-100">
+                            {profile.followers} Follower{profile.followers > 1 && 's'}
+                          </p>
+                          {session && (
+                            <Button variant="outline" size="sm" onClick={handleFollow}>
+                              {isFollowed ? 'Unfollow' : 'Follow'}
+                            </Button>
+                          )}
                           {socialsOrder.map(social => {
                             const profileSocial = profile.socials[social];
 
@@ -128,18 +174,16 @@ export default function Profile() {
                       )}
                     </div>
                   </div>
-                  {session?.isCreator && profile.username === session?.username && 
-                    <Link
-                      to="/creator?createStream=true"
-                    >
+                  {session?.isCreator && profile.username === session?.username && (
+                    <Link to="/creator?createStream=true">
                       <button
                         type="button"
-                        className='ml-auto self-end bg-primary text-black text-sm font-bold px-4 py-2 rounded-full hover:bg-opacity-90 transition-colors h-fit w-full md:w-fit'
+                        className="ml-auto self-end bg-primary text-black text-sm font-bold px-4 py-2 rounded-full hover:bg-opacity-90 transition-colors h-fit w-full md:w-fit"
                       >
                         Create Event
                       </button>
                     </Link>
-                  }
+                  )}
                 </div>
               </div>
               {profile.isCreator && (
