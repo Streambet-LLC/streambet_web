@@ -296,6 +296,16 @@ export const userAPI = {
     return response.data;
   },
 
+  followUser: async (username: string) => {
+    const response = await apiClient.get(`/users/profile/${username}/follow`);
+    return response.data;
+  },
+
+  unfollowUser: async (username: string) => {
+    const response = await apiClient.get(`/users/profile/${username}/unfollow`);
+    return response.data;
+  },
+
   // Update user profile
   updateProfile: async (userData: any) => {
     const response = await apiClient.patch('/users/me', userData);
