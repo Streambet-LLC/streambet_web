@@ -15,6 +15,7 @@ export interface BetCard {
   totalPot: {
     streamCoins: number;
     goldCoins: number;
+    cadeCoins: number;
   },
   creator: string | null;
   streamId?: string | null;

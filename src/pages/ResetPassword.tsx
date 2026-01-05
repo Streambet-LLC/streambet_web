@@ -161,7 +161,7 @@ const ResetPassword = () => {
           zIndex: 10,
         }}
       >
-        © Streambet 2025
+        © Cardcade {new Date().getFullYear()}
       </div>
     </>
   );

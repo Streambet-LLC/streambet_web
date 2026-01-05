@@ -102,7 +102,7 @@ export default function LockTokens({
               <p className="text-xs text-[#606060] font-semibold text-center pb-1">Your pick</p>
               <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF]">
                 {Number(localBetAmount)?.toLocaleString('en-US')}{' '}
-                {updatedCurrency === CurrencyType.GOLD_COINS ? 'Gold Coins' : 'Stream Coins'}
+                {updatedCurrency === CurrencyType.GOLD_COINS ? 'Gold Coins' : updatedCurrency === CurrencyType.CADE_COINS ? 'Cade Coins' : 'Stream Coins'}
               </p>
             </div>
             <div className="flex-1 sm:min-w-0 w-full border-t sm:border-t-0 sm:border-1 border-[#2C2C2C] pt-3 sm:pt-0 sm:pl-4">

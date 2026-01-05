@@ -50,7 +50,7 @@ const ForgotPassword = () => {
         <div className="w-full max-w-md">
           <div className="mb-6">
             <Link to="/">
-              <img src="/logo.svg" alt="StreamBet Logo" className="mb-8 w-[135px]" />
+              <img src="/machine-wordmark.svg" alt="Cardcade Logo" className="mb-8" />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left">Reset your password</h1>
             <p className="text-[#FFFFFFBF] mt-3 text-left font-light">
@@ -131,7 +131,7 @@ const ForgotPassword = () => {
           zIndex: 10,
         }}
       >
-        © Streambet 2025
+        © Cardcade {new Date().getFullYear()}
       </div>
     </>
   );

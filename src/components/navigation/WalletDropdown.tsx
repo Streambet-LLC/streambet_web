@@ -22,13 +22,13 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
   };
 
   useEffect(() => {
-    setCurrency(CurrencyType.SWEEP_COINS);
+    setCurrency(CurrencyType.CADE_COINS);
   }, []);
 
   return (
     <div className="relative">
       <div className="flex items-center gap-2">
-        {currency === CurrencyType.GOLD_COINS ? (
+        {currency === CurrencyType.GOLD_COINS && 
           <div className="flex items-center">
             <Button variant="ghost" className="gap-2 group">
               <img
@@ -40,7 +40,8 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
               <button onClick={() => setDepositOpen(true)} className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</button>
             </Button>
           </div>
-        ) : (
+        } 
+        {currency === CurrencyType.STREAM_COINS &&
           <div className="flex items-center">
             <div className="flex items-center">
               <TooltipProvider>
@@ -66,14 +67,26 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
               </TooltipProvider>
             </div>
           </div>
-        )}
+        }
+        {currency === CurrencyType.CADE_COINS && 
+          <div className="flex items-center">
+            <Button variant="ghost" className="gap-2 group">
+              <img
+                src="/icons/gold-coins.png"
+                alt="gold-coins"
+                className="h-6 w-6"
+              />
+              <button className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Cade Coins</button>
+            </Button>
+          </div>
+        } 
 
-        <Switch
+        {/* <Switch
           checked={currency === CurrencyType.SWEEP_COINS}
           onCheckedChange={handleSwitchChange}
           className="data-[state=checked]:bg-[#c3f53b] data-[state=unchecked]:bg-muted hover:data-[state=unchecked]:bg-muted/80 border-2 border-[#c3f53b]/30"
           onClick={e => e.stopPropagation()}
-        />
+        /> */}
       </div>
     </div>
   );

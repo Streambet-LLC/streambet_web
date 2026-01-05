@@ -18,8 +18,10 @@ export interface BettingVariableStats {
   optionName: string;
   totalBetsGoldCoin: number;
   totalBetsSweepCoin: number;
+  totalBetsCadeCoin: number;
   betCountGoldCoin: number;
   betCountSweepCoin: number;
+  betCountCadeCoin: number;
 }
 
 export interface ActiveRound {
@@ -28,14 +30,18 @@ export interface ActiveRound {
   status: BettingRoundStatus;
   totalGoldCoins: number;
   totalSweepCoins: number;
+  totalCadeCoins: number;
   totalBetCountGoldCoin: number;
   totalBetCountSweepCoin: number;
+  totalBetCountCadeCoin: number;
   isLocked: boolean;
   bettingVariables?: BettingVariableStats[];
   walletGoldCoin?: number;
   walletSweepCoin?: number;
+  walletCadeCoin?: number;
   userBetGoldCoins?: number;
   userBetSweepCoin?: number;
+  userBetCadeCoin?: number;
 }
 
 export interface UserBet {
@@ -106,14 +112,18 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
     status: BettingRoundStatus.CLOSED,
     totalGoldCoins: 0,
     totalSweepCoins: 0,
+    totalCadeCoins: 0,
     totalBetCountGoldCoin: 0,
     totalBetCountSweepCoin: 0,
+    totalBetCountCadeCoin: 0,
     isLocked: false,
     bettingVariables: [],
     walletGoldCoin: undefined,
     walletSweepCoin: undefined,
+    walletCadeCoin: undefined,
     userBetGoldCoins: undefined,
     userBetSweepCoin: undefined,
+    userBetCadeCoin: undefined,
   });
 
   // User Bet State

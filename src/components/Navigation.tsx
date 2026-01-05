@@ -159,7 +159,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                 <div className="md:hidden mb-4 pl-4">
                   <Link to="/" className="flex items-center" onClick={() => setIsDrawerOpen(false)}>
                     <img
-                      src="/logo.svg"
+                      src="/wordmark.svg"
                       alt="Streambet Logo"
                       className="h-8 w-[165px] object-contain"
                     />
@@ -226,7 +226,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
             <motion.div>
               <Link to="/" className="flex items-center">
                 <img
-                  src="/logo.svg"
+                  src="/wordmark.svg"
                   alt="Streambet Logo"
                   className="h-8 w-[165px] object-contain"
                 />
@@ -288,11 +288,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
               {session ? (
                 <>
                   <WalletDropdown
-                    walletBalance={
-                      isSweepCoins
-                        ? session?.walletBalanceSweepCoin || 0
-                        : session?.walletBalanceGoldCoin || 0
-                    }
+                    walletBalance={session?.walletBalanceCadeCoin || 0}
                   />
 
                   <UserDropdown profile={session} onLogout={handleLogoutWithRefetch} />

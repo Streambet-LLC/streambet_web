@@ -29,10 +29,11 @@ export const useQuickPickModal = () => {
   // Derive computed values
   const showBetTokens = !userBet.betId || isEditing;
   const isSweep = currency === CurrencyType.SWEEP_COINS;
-  const totalPot = isSweep ? activeRound.totalSweepCoins : activeRound.totalGoldCoins;
+  const totalPot = activeRound.totalCadeCoins;
   const updatedSliderMax = {
     goldCoins: activeRound.walletGoldCoin,
     sweepCoins: activeRound.walletSweepCoin,
+    cadeCoins: activeRound.walletCadeCoin,
   };
   const hasActiveBetting = activeRound.bettingVariables && activeRound.bettingVariables.length > 0;
 

@@ -77,8 +77,10 @@ export function useBettingSocket({
         optionName: item.name,
         totalBetsGoldCoin: Number(item.totalBetsGoldCoinAmount || 0),
         totalBetsSweepCoin: Number(item.totalBetsSweepCoinAmount || 0),
+        totalBetsCadeCoin: Number(item.totalBetsCadeCoinAmount || 0),
         betCountGoldCoin: Number(item.betCountGoldCoin || 0),
         betCountSweepCoin: Number(item.betCountSweepCoin || 0),
+        betCountCadeCoin: Number(item.betCountCadeCoin || 0),
       }));
 
       // Calculate totals across all betting variables
@@ -90,20 +92,28 @@ export function useBettingSocket({
         (sum, item) => sum + item.betCountSweepCoin, 0
       );
 
+      const totalBetCountCadeCoin = enhancedVariables.reduce(
+        (sum, item) => sum + item.betCountCadeCoin, 0
+      );
+
       setActiveRound({
         id: betRound.id,
         name: betRound.roundName,
         status: betRound.status,
         totalGoldCoins: bettingData.roundTotalBetsGoldCoinAmount ?? 0,
         totalSweepCoins: bettingData.roundTotalBetsSweepCoinAmount ?? 0,
+        totalCadeCoins: bettingData.roundTotalBetsCadeCoinAmount ?? 0,
         totalBetCountGoldCoin,
         totalBetCountSweepCoin,
+        totalBetCountCadeCoin,
         isLocked: betRound.status === BettingRoundStatus.LOCKED,
         bettingVariables: enhancedVariables,
         walletGoldCoin: bettingData.walletGoldCoin,
         walletSweepCoin: bettingData.walletSweepCoin,
+        walletCadeCoin: bettingData.walletCadeCoin,
         userBetGoldCoins: bettingData.userBetGoldCoins,
         userBetSweepCoin: bettingData.userBetSweepCoin,
+        userBetCadeCoin: bettingData.userBetCadeCoin,
       });
     }
   }, [bettingData, roundId, setActiveRound]);
@@ -161,6 +171,7 @@ export function useBettingSocket({
         ...prev,
         totalGoldCoins: update?.totalBetsGoldCoinAmount ?? prev.totalGoldCoins,
         totalSweepCoins: update?.totalBetsSweepCoinAmount ?? prev.totalSweepCoins,
+        totalCadeCoins: update?.totalBetsCadeCoinAmount ?? prev.totalCadeCoins,
       }));
 
       // Refetch betting data to get updated bet counts
@@ -172,12 +183,9 @@ export function useBettingSocket({
     // Update potential winnings in real-time
     const handlePotentialAmountUpdate = (data: any) => {
       setUserBet((prev) => {
-        const isSweep = prev.currencyType === CurrencyType.SWEEP_COINS;
         return {
           ...prev,
-          potentialWinnings: isSweep
-            ? data?.potentialSweepCoinWinningAmount
-            : data?.potentialGoldCoinWinningAmount,
+          potentialWinnings: data?.potentialCadeCoinWinningAmount
         };
       });
     };
@@ -210,16 +218,11 @@ export function useBettingSocket({
       if (update?.bet?.userId === session?.id) {
         queryClient.invalidateQueries({ queryKey: ['session'] });
 
-        const isSweep = update?.currencyType === CurrencyType.SWEEP_COINS;
-        console.log(isSweep);
-
         setUserBet({
           betId: update?.bet?.id,
           amount: update?.amount,
           selectedOption: update?.selectedWinner,
-          potentialWinnings: isSweep
-            ? update?.potentialSweepCoinWinningAmount
-            : update?.potentialGoldCoinWinningAmount,
+          potentialWinnings: update?.potentialCadeCoinWinningAmount,
           currencyType: update?.bet?.currencyType,
           isLocked: false,
         });

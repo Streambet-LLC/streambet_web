@@ -85,13 +85,13 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild onClick={() => setDepositOpen(true)}>
+        {/* <DropdownMenuItem asChild onClick={() => setDepositOpen(true)}>
           <div className="flex gap-2 group">
             <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" />
             <div className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Buy Coins</div>
           </div>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        </DropdownMenuItem> */}
+        {/* <DropdownMenuSeparator /> */}
         {profile?.isCreator &&
           <DropdownMenuItem asChild className="cursor-pointer">
             <div className="flex gap-1 group">
@@ -116,15 +116,15 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           <Link to="/transactions">Transaction History</Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild className="cursor-pointer">
+        {/* <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/withdraw">Redeem Stream Coins</Link>
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
 
-        {profile?.isCreator && 
+        {/* {profile?.isCreator && 
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link to="/creator-payouts-history">Creator Payouts History</Link>
           </DropdownMenuItem>
-        }
+        } */}
 
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/settings">Settings</Link>

@@ -31,11 +31,14 @@ interface BettingData {
   bettingRounds?: BettingRound[];
   walletGoldCoin?: number;
   walletSweepCoin?: number;
+  walletCadeCoin?: number;
   roundTotalBetsGoldCoinAmount: number;
   roundTotalBetsSweepCoinAmount: number;
+  roundTotalBetsCadeCoinAmount: number;
   status?: BettingRoundStatus;
   userBetGoldCoins?: number;
   userBetSweepCoin?: number;
+  userBetCadeCoins?: number;
 }
 
 interface getRoundData {
@@ -149,16 +152,11 @@ export default function BetTokens({
   const isBetButtonEnabled = selectedColor !== '';
 
   useEffect(() => {
-    const maxBetLimit = isSweepCoins
-      ? bettingLimits.maxSweepCoinsBet
-      : bettingLimits.maxGoldCoinsBet;
+    const maxBetLimit = bettingLimits.maxCadeCoinsBet;
 
-    const currentBetAmount = isEditing
-      ? Number(isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins) || 0
-      : 0;
+    const currentBetAmount = isEditing ? Number(bettingData?.userBetCadeCoins) || 0 : 0;
 
-    const walletBalance =
-      Number(isSweepCoins ? bettingData?.walletSweepCoin : bettingData?.walletGoldCoin) || 0;
+    const walletBalance = Number(bettingData?.walletCadeCoin) || 0;
 
     // Round down: only whole number bets allowed
     setSliderMax(Math.floor(Math.min(walletBalance + currentBetAmount, maxBetLimit)));
@@ -219,8 +217,8 @@ export default function BetTokens({
 
   // Check if wallet balance is 0. bettingData is source of truth with slider logic
   const walletBalance = useMemo(
-    () => Number(isSweepCoins ? bettingData?.walletSweepCoin : bettingData?.walletGoldCoin) || 0,
-    [isSweepCoins, bettingData?.walletSweepCoin, bettingData?.walletGoldCoin]
+    () => Number(bettingData?.walletCadeCoin) || 0,
+    [bettingData?.walletCadeCoin]
   );
 
   // Check if betting is available. Round is open, not locked
@@ -235,6 +233,9 @@ export default function BetTokens({
     walletBalance === 0 &&
     (!isEditing || (isEditing && updatedCurrency !== currency));
 
+
+  console.log("WB", bettingData)
+
   return (
     <div>
       {/* Zero Balance Message */}
@@ -242,16 +243,16 @@ export default function BetTokens({
         <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
           <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
           <p className="text-gray-400 text-sm text-center">
-            You need {isSweepCoins ? 'Stream Coins' : 'Gold Coins'} to place a pick
+            You need Cade Coins to place a pick
           </p>
-          <button
+          {/* <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
             onClick={() => setDepositOpen(true)}
           >
             Buy Coins
-          </button>
-          <div className="text-sm">or</div>
-          <Button
+          </button> */}
+          {/* <div className="text-sm">or</div> */}
+          {/* <Button
             variant="outline"
             className="w-full text-white text-sm justify-center font-medium py-2 rounded-full transition"
             onClick={handleCurrencyChange}
@@ -265,7 +266,7 @@ export default function BetTokens({
               />
               {isSweepCoins ? "Gold Coins" : "Sweep Coins"}
             </div>
-          </Button>
+          </Button> */}
         </div>
       ) : isBettingAvailable ? (
         <div
@@ -300,20 +301,18 @@ export default function BetTokens({
               >
                 {betAmount?.toLocaleString('en-US')}
               </span>{' '}
-              {isSweepCoins ? ' Stream Coins' : ' Gold Coins'}
+              Cade Coins
               <span
                 className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate"
                 title={bettingData?.bettingRounds?.[0]?.roundName}
               >
-                {isSweepCoins
-                  ? `Available Stream Coins: ${Number(session?.walletBalanceSweepCoin || 0).toLocaleString('en-US')}`
-                  : `Available Gold Coins: ${Number(session?.walletBalanceGoldCoin || 0).toLocaleString('en-US')}`}
+                Available Cade Coins: {Number(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
               </span>
             </div>
 
             <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
               <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-                Total Pot: {`${totalPot} ${isSweepCoins ? ' Stream Coins' : ' Gold Coins'}`}
+                Total Pot: {`${totalPot} Cade Coins`}
               </span>
             </div>
           </div>
@@ -373,18 +372,10 @@ export default function BetTokens({
             {/* Preset Amount Buttons row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
               {(() => {
-                const maxBetLimit = isSweepCoins
-                  ? bettingLimits.maxSweepCoinsBet
-                  : bettingLimits.maxGoldCoinsBet;
-                const baseWalletBalance =
-                  Number(
-                    isSweepCoins ? session?.walletBalanceSweepCoin : session?.walletBalanceGoldCoin
-                  ) || 0;
-                const currentBetAmount = isEditing
-                  ? Number(
-                      isSweepCoins ? bettingData?.userBetSweepCoin : bettingData?.userBetGoldCoins
-                    ) || 0
-                  : 0;
+                const maxBetLimit = bettingLimits.maxCadeCoinsBet;
+                const baseWalletBalance = Number(session?.walletBalanceCadeCoin) || 0;
+                 
+                const currentBetAmount = isEditing ? Number(bettingData?.userBetCadeCoins) || 0 : 0;
                 const totalAvailableBalance = Math.min(
                   baseWalletBalance + currentBetAmount,
                   maxBetLimit

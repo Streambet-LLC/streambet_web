@@ -19,6 +19,7 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
   const profileImageUrl = (session as any)?.profileImageUrl;
   const streamCoins = session?.walletBalanceSweepCoin || 0;
   const goldCoins = session?.walletBalanceGoldCoin || 0;
+  const cadeCoins = session?.walletBalanceCadeCoin || 0;
 
   const handleClick = () => {
     navigate('/betting-history');
@@ -108,10 +109,10 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
             {/* Coins Display - Single Row */}
             <div 
               className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={handleCoinsClick}
+              // onClick={handleCoinsClick}
             >
               {/* Stream Coins */}
-              <div className="flex items-center gap-1.5">
+              {/* <div className="flex items-center gap-1.5">
                 <img
                   src="/icons/sweep-coins.png"
                   alt="Stream Coins"
@@ -120,10 +121,10 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
                 <span className="text-xs font-medium text-green-500">
                   {Number(streamCoins).toLocaleString('en-US')}
                 </span>
-              </div>
+              </div> */}
               
               {/* Gold Coins */}
-              <div className="flex items-center gap-1.5">
+              {/* <div className="flex items-center gap-1.5">
                 <img
                   src="/icons/gold-coins.png"
                   alt="Gold Coins"
@@ -131,6 +132,17 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
                 />
                 <span className="text-xs font-medium text-[#B4FF39]">
                   {Number(goldCoins).toLocaleString('en-US')}
+                </span>
+              </div> */}
+
+              <div className="flex items-center gap-1.5">
+                <img
+                  src="/icons/gold-coins.png"
+                  alt="Gold Coins"
+                  className="h-4 w-4"
+                />
+                <span className="text-xs font-medium text-[#B4FF39]">
+                  {Number(cadeCoins).toLocaleString('en-US')}
                 </span>
               </div>
             </div>
