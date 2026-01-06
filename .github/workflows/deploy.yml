@@ -75,6 +75,13 @@ jobs:
           name: build-output
           path: dist/
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
       - name: AWS S3 & CloudFront Deploy
         run: |
           S3_BUCKET="${{ secrets[format('S3_BUCKET_{0}', github.ref_name)] }}"
@@ -82,7 +89,3 @@ jobs:
 
           aws s3 sync dist/ "s3://$S3_BUCKET" --delete
           aws cloudfront create-invalidation --distribution-id "$CF_ID" --paths "/*"
-        env:
-          AWS_ACCESS_KEY: secrets.AWS_ACCESS_KEY
-          AWS_SECRET_ACCESS_KEY: secrets.AWS_SECRET_ACCESS_KEY
-          AWS_DEFAULT_REGION: us-east-1
