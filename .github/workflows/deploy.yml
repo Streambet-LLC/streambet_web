@@ -80,8 +80,8 @@ jobs:
           S3_BUCKET_KEY="S3_BUCKET_${{ github.ref_name }}"
           CF_ID_KEY="CLOUDFRONT_ID_${{ github.ref_name }}"
 
-          S3_BUCKET="${{ secrets[S3_BUCKET_KEY] }}"
-          CF_ID="${{ secrets[CF_ID_KEY] }}"
+          S3_BUCKET="${{ secrets[$S3_BUCKET_KEY] }}"
+          CF_ID="${{ secrets[$CF_ID_KEY] }}"
 
           aws s3 sync dist/ "s3://$S3_BUCKET" --delete
           aws cloudfront create-invalidation --distribution-id "$CF_ID" --paths "/*"
