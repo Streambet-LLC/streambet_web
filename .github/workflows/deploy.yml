@@ -38,11 +38,6 @@ jobs:
       - name: Configure AWS & Build
         shell: bash
         run: |
-          # Verify the installed AWS CLI version (optional)
-          aws --version 
-          # Example command: List S3 buckets
-          aws s3 ls
-
           # 2. Fetch SSM Parameters
           REF="${{ github.ref_name }}"
           VITE_API_URL=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
