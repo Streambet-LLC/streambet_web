@@ -77,12 +77,11 @@ jobs:
 
       - name: AWS S3 & CloudFront Deploy
         run: |
-          ENV_UPPER=$(echo "${{ github.ref_name }}" | tr '[:lower:]' '[:upper:]')
-          echo env.ENV_UPPER
-          # Dynamic secret selection using brackets
-          # Note: Secrets must be named exactly S3_BUCKET_DEV, S3_BUCKET_PROD, etc.
-          S3_BUCKET="${{ secrets[format('S3_BUCKET_{0}', env.ENV_UPPER)] }}"
-          CF_ID="${{ secrets[format('CLOUDFRONT_ID_{0}', env.ENV_UPPER)] }}"
+          S3_BUCKET_KEY="S3_BUCKET_${{ github.ref_name }}"
+          CF_ID_KEY="CLOUDFRONT_ID_${{ github.ref_name }}"
+
+          S3_BUCKET="${{ secrets[S3_BUCKET_KEY] }}"
+          CF_ID="${{ secrets[CF_ID_KEY] }}"
 
           aws s3 sync dist/ "s3://$S3_BUCKET" --delete
           aws cloudfront create-invalidation --distribution-id "$CF_ID" --paths "/*"
