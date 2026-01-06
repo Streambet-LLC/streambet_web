@@ -1,6 +1,6 @@
-# Coinflow Integration for StreamBet
+# Coinflow Integration for CardCade
 
-This document outlines the implementation of Coinflow payment integration for one-time purchases in StreamBet.
+This document outlines the implementation of Coinflow payment integration for one-time purchases in CardCade.
 
 ## Overview
 
@@ -9,15 +9,17 @@ The integration follows the [Coinflow One-Time Purchase Integration guide](https
 ## Current Implementation
 
 ### Frontend Component
+
 - **File**: `src/components/deposit/CoinFlowPurchase.tsx`
-- **Purpose**: Handles the Coinflow checkout flow for purchasing StreamBet coins
-- **Features**: 
+- **Purpose**: Handles the Coinflow checkout flow for purchasing CardCade coins
+- **Features**:
   - Card-only payments (no wallet required)
   - USDC settlement
   - Chargeback protection
   - Webhook integration
 
 ### Service Layer
+
 - **File**: `src/services/coinflow.ts`
 - **Purpose**: Provides API integration with Coinflow services
 - **Features**:
@@ -28,19 +30,25 @@ The integration follows the [Coinflow One-Time Purchase Integration guide](https
 ## Required Backend Implementation
 
 ### 1. Environment Variables
+
 ```bash
 REACT_APP_COINFLOW_API_KEY=your_sandbox_or_production_api_key
 ```
 
 ### 2. API Endpoints
+
 The frontend expects these endpoints to be implemented on your backend:
 
 #### Generate Checkout JWT Token
+
 ```typescript
-POST /api/coinflow/checkout-jwt
+POST / api / coinflow / checkout - jwt;
 Body: {
   webhookInfo: Record<string, any>;
-  subtotal: { currency: string; cents: number; };
+  subtotal: {
+    currency: string;
+    cents: number;
+  }
   email: string;
   blockchain: string;
   chargebackProtectionData: Array<{
@@ -54,8 +62,9 @@ Body: {
 ```
 
 #### Generate Session Key
+
 ```typescript
-POST /api/coinflow/session
+POST / api / coinflow / session;
 Body: {
   customerId: string;
   merchantId: string;
@@ -90,27 +99,32 @@ app.post('/api/coinflow/session', async (req, res) => {
 ## Security Considerations
 
 ### 1. API Key Protection
+
 - Never expose your Coinflow API key in frontend code
 - All Coinflow API calls should go through your backend
 - Use environment variables for sensitive data
 
 ### 2. JWT Token Security
+
 - JWT tokens are valid for 30 minutes
 - Tokens should be generated server-side to prevent tampering
 - Implement proper error handling for expired tokens
 
 ### 3. Domain Whitelisting
+
 - Whitelist your domain in Coinflow dashboard
 - This prevents checkout links from being used on unauthorized domains
 
 ## Testing
 
 ### Sandbox Environment
+
 - Use sandbox API keys for development
 - Test with sandbox payment methods
 - Verify webhook delivery in sandbox
 
 ### Production Environment
+
 - Switch to production API keys
 - Update environment configuration
 - Test with real payment methods
@@ -118,12 +132,14 @@ app.post('/api/coinflow/session', async (req, res) => {
 ## Webhook Implementation
 
 ### Required Webhook Events
+
 - Payment success
 - Payment failure
 - Refund events
 - Chargeback events
 
 ### Webhook Security
+
 - Verify webhook signatures
 - Implement idempotency
 - Handle webhook failures gracefully
@@ -131,6 +147,7 @@ app.post('/api/coinflow/session', async (req, res) => {
 ## Error Handling
 
 ### Common Errors
+
 - Invalid API key
 - Expired JWT token
 - Invalid session key
@@ -138,6 +155,7 @@ app.post('/api/coinflow/session', async (req, res) => {
 - Insufficient funds
 
 ### User Experience
+
 - Clear error messages
 - Retry mechanisms
 - Fallback options
@@ -146,12 +164,14 @@ app.post('/api/coinflow/session', async (req, res) => {
 ## Monitoring and Logging
 
 ### What to Monitor
+
 - Payment success rates
 - Error frequencies
 - Webhook delivery status
 - API response times
 
 ### Logging
+
 - Log all Coinflow API calls
 - Track payment flow steps
 - Monitor for suspicious activity
@@ -171,4 +191,4 @@ app.post('/api/coinflow/session', async (req, res) => {
 - [Coinflow Documentation](https://docs.coinflow.cash/)
 - [React SDK Reference](https://docs.coinflow.cash/docs/one-time-purchase-integration-usdc-settlement-to-coinflow-wallet-or-byo-wallet#react-sdk-implementation)
 - [API Reference](https://docs.coinflow.cash/api-reference)
-- [Webhook Guide](https://docs.coinflow.cash/docs/webhook-implementation) 
+- [Webhook Guide](https://docs.coinflow.cash/docs/webhook-implementation)

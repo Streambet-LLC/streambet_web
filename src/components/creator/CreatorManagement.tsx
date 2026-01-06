@@ -10,7 +10,13 @@ import api, { adminAPI, creatorAPI } from '@/integrations/api/client';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
-import { formatDateTimeForISO, getImageLink, getMessage, isImageSFW, isScheduledTimeInPast } from '@/utils/helper';
+import {
+  formatDateTimeForISO,
+  getImageLink,
+  getMessage,
+  isImageSFW,
+  isScheduledTimeInPast,
+} from '@/utils/helper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,7 +26,13 @@ import { BettingRoundStatus, CurrencyType, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds, BettingRound, BettingOption } from '@/utils/bettingRoundsUtils';
+import {
+  cleanTemporaryIds,
+  appendCountersToDuplicates,
+  deserializeRounds,
+  BettingRound,
+  BettingOption,
+} from '@/utils/bettingRoundsUtils';
 import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -346,7 +358,7 @@ export const CreatorManagement = ({
     queryFn: async () => {
       const streamId = viewStreamId || editStreamId;
       if (streamId) {
-        const response = await adminAPI.getStreamBetData(streamId);
+        const response = await adminAPI.getCardCadeData(streamId);
         return response?.data;
       }
       return undefined;
@@ -711,12 +723,13 @@ export const CreatorManagement = ({
     let scheduledStartTime;
     if (eventType.value === 'stream') {
       scheduledStartTime = formatDateTimeForISO(startDateObj, startTime, timezone);
-      
+
       if (!scheduledStartTime && startDateObj && startTime) {
         toast({
           variant: 'destructive',
           title: 'Invalid Timezone',
-          description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+          description:
+            'The selected timezone could not be processed. Please try a different timezone or contact support.',
         });
         return;
       }
@@ -1044,10 +1057,12 @@ export const CreatorManagement = ({
         </div>
       ) : isCreateStream || editStreamId ? (
         <div className="flex justify-center items-center min-h-[60vh]">
-          <Card className={cn(
-            "w-full bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none",
-            createStep === "info" && "max-w-xl"
-          )}>
+          <Card
+            className={cn(
+              'w-full bg-[#0D0D0D] p-2 rounded-2xl shadow-lg border-none',
+              createStep === 'info' && 'max-w-xl'
+            )}
+          >
             <CardContent className="p-4 !pt-2 sm:p-6">
               {/* Back button only at top */}
               <div className="mb-6">
@@ -1105,9 +1120,7 @@ export const CreatorManagement = ({
                       className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                       style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
                       disabled={
-                        createStreamMutation.isPending ||
-                        createBetMutation.isPending ||
-                        isUploading
+                        createStreamMutation.isPending || createBetMutation.isPending || isUploading
                       }
                       onClick={addNewRound}
                     >

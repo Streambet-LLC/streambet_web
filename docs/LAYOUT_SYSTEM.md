@@ -1,6 +1,6 @@
 # Layout System
 
-This document describes the common layout system implemented for the StreamBet web application.
+This document describes the common layout system implemented for the CardCade web application.
 
 ## Overview
 
@@ -9,17 +9,20 @@ The layout system provides consistent structure and styling across all pages whi
 ## Layout Components
 
 ### 1. MainLayout
+
 **Location**: `src/components/layout/MainLayout.tsx`
 
 **Purpose**: Standard layout for main application pages that need navigation and footer.
 
 **Features**:
+
 - Navigation component
 - Footer component (optional)
 - Consistent container and spacing
 - Flexbox layout for proper content distribution
 
 **Usage**:
+
 ```tsx
 import { MainLayout } from '@/components/layout';
 
@@ -33,17 +36,20 @@ const MyPage = () => {
 ```
 
 **Props**:
+
 - `children`: ReactNode - The page content
 - `className?: string` - Additional CSS classes for the main content area
 - `showFooter?: boolean` - Whether to show the footer (default: true)
 - `onDashboardClick?: () => void` - Callback for dashboard click events
 
 ### 2. AuthLayout
+
 **Location**: `src/components/layout/AuthLayout.tsx`
 
 **Purpose**: Layout for authentication pages (login, signup, etc.).
 
 **Features**:
+
 - Auth-specific background gradient
 - Centered content with max-width
 - Logo and title/subtitle
@@ -51,6 +57,7 @@ const MyPage = () => {
 - No navigation
 
 **Usage**:
+
 ```tsx
 import { AuthLayout } from '@/components/layout';
 
@@ -64,22 +71,26 @@ const LoginPage = () => {
 ```
 
 **Props**:
+
 - `children`: ReactNode - The auth form content
 - `title`: string - Page title
 - `subtitle?: string` - Optional subtitle
 
 ### 3. AdminLayout
+
 **Location**: `src/components/layout/AdminLayout.tsx`
 
 **Purpose**: Layout specifically for admin pages.
 
 **Features**:
+
 - Navigation component
 - Admin-specific container structure
 - Left padding for sidebar space
 - No footer
 
 **Usage**:
+
 ```tsx
 import { AdminLayout } from '@/components/layout';
 
@@ -93,21 +104,25 @@ const AdminPage = () => {
 ```
 
 **Props**:
+
 - `children`: ReactNode - The admin page content
 - `className?: string` - Additional CSS classes
 - `onDashboardClick?: () => void` - Callback for dashboard click events
 
 ### 4. MinimalLayout
+
 **Location**: `src/components/layout/MinimalLayout.tsx`
 
 **Purpose**: Minimal layout for pages that need basic structure without navigation or footer.
 
 **Features**:
+
 - Basic background and min-height
 - No navigation or footer
 - Customizable className
 
 **Usage**:
+
 ```tsx
 import { MinimalLayout } from '@/components/layout';
 
@@ -121,12 +136,14 @@ const MinimalPage = () => {
 ```
 
 **Props**:
+
 - `children`: ReactNode - The page content
 - `className?: string` - Additional CSS classes
 
 ## Migration Guide
 
 ### Before (Old Pattern)
+
 ```tsx
 const OldPage = () => {
   return (
@@ -142,6 +159,7 @@ const OldPage = () => {
 ```
 
 ### After (New Pattern)
+
 ```tsx
 import { MainLayout } from '@/components/layout';
 
@@ -183,4 +201,4 @@ The following pages have been refactored to use the new layout system:
 2. **Theme Support**: Layouts can be extended to support different themes
 3. **Loading States**: Consider adding loading state support to layouts
 4. **Error Boundaries**: Add error boundary support to layouts
-5. **SEO**: Ensure layouts support proper SEO meta tags 
+5. **SEO**: Ensure layouts support proper SEO meta tags

@@ -681,7 +681,7 @@ export const socketAPI = {
   joinCommonStream: (socket: any) => {
     console.log(socket, 'joinCommonStream joined')
     if (socket) {
-      socket.emit('joinStreamBet', 'streambet');
+      socket.emit('joinCardCade', 'streambet');
     }
   },
 
@@ -794,7 +794,7 @@ export const adminAPI = {
   },
 
   // Get stream bet details based on stream ID
-  getStreamBetData: async (id: string) => {
+  getCardCadeData: async (id: string) => {
     const response = await apiClient.get(`/admin/streams/${id}/rounds`);
     return response;
   },

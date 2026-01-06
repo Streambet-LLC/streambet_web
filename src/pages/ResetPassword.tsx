@@ -14,7 +14,9 @@ const passwordRequirements =
   'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.';
 
 function validatePassword(password: string) {
-  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/.test(password);
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/.test(
+    password
+  );
 }
 
 const ResetPassword = () => {
@@ -49,12 +51,12 @@ const ResetPassword = () => {
       await api.auth.resetPassword(token, password);
       setSuccess(true);
       toast({
-      title: 'Password changed successfully!',
-      description: `Please log in with your new password.`,
+        title: 'Password changed successfully!',
+        description: `Please log in with your new password.`,
       });
       window.location.href = redirectParam ? `/login?redirect=${redirectParam}` : '/login'; // Redirect to login after success
     } catch (err: any) {
-      Bugsnag.notify(err); 
+      Bugsnag.notify(err);
       setError(err?.response?.data?.message || err?.message || 'Failed to reset password.');
     } finally {
       setIsSubmitting(false);
@@ -68,10 +70,12 @@ const ResetPassword = () => {
         <div className="w-full max-w-md">
           <div className="mb-6">
             <Link to="/">
-              <img src="/logo.svg" alt="StreamBet Logo" className="mb-6 w-[121px]" />
+              <img src="/logo.svg" alt="CardCade Logo" className="mb-6 w-[121px]" />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left">Set a new password</h1>
-            <p className="text-[#FFFFFFBF] mt-3 text-left font-light">Enter your new password below.</p>
+            <p className="text-[#FFFFFFBF] mt-3 text-left font-light">
+              Enter your new password below.
+            </p>
           </div>
 
           <Card className="bg-transparent border-0 p-0">
@@ -89,7 +93,14 @@ const ResetPassword = () => {
               {success ? (
                 <Alert className="mb-4 bg-green-900/30 border-green-800 text-white">
                   <AlertDescription>
-                    Password reset successful! You can now <Link to={redirectParam ? `/login?redirect=${redirectParam}` : '/login'} className="underline text-primary">log in</Link> with your new password.
+                    Password reset successful! You can now{' '}
+                    <Link
+                      to={redirectParam ? `/login?redirect=${redirectParam}` : '/login'}
+                      className="underline text-primary"
+                    >
+                      log in
+                    </Link>{' '}
+                    with your new password.
                   </AlertDescription>
                 </Alert>
               ) : (
@@ -167,4 +178,4 @@ const ResetPassword = () => {
   );
 };
 
-export default ResetPassword; 
+export default ResetPassword;
