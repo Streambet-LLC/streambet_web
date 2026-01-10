@@ -36,6 +36,8 @@ import {
 } from '@/utils/bettingRoundsUtils';
 import { cn } from '@/lib/utils';
 import StreamPayoutReport from './StreamPayoutReport';
+import { PrizeConfiguration } from './PrizeConfiguration';
+import { PrizeRedemptions } from './PrizeRedemptions';
 
 export const AdminManagement = ({
   session,
@@ -102,6 +104,8 @@ export const AdminManagement = ({
     { key: 'promo-cards', label: 'Promo Cards' },
     { key: 'users', label: 'Users' },
     { key: 'stream-payout', label: 'Stream Payout' },
+    { key: 'prize-settings', label: 'Prize Settings' },
+    { key: 'prize-redemptions', label: 'Prize Redemptions' },
   ];
 
   const createStreamMutation = useMutation({
@@ -1749,6 +1753,18 @@ export const AdminManagement = ({
           {activeTab === 'users' && (
             <div className="space-y-4">
               <UserTable searchUserQuery={searchUserQuery} />
+            </div>
+          )}
+
+          {activeTab === 'prize-settings' && (
+            <div className="space-y-4">
+              <PrizeConfiguration />
+            </div>
+          )}
+
+          {activeTab === 'prize-redemptions' && (
+            <div className="space-y-4">
+              <PrizeRedemptions />
             </div>
           )}
         </>
