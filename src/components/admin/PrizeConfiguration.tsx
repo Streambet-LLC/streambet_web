@@ -29,6 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import Bugsnag from '@bugsnag/js';
+import { getMessage, getThumbnailUrl } from '@/utils/helper';
 
 export const PrizeConfiguration = () => {
   const { toast } = useToast();
@@ -39,6 +41,7 @@ export const PrizeConfiguration = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<PrizeTier | null>(null);
   const [deletingTier, setDeletingTier] = useState<PrizeTier | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Validation state
   const [validationError, setValidationError] = useState<string>('');
@@ -263,13 +266,27 @@ export const PrizeConfiguration = () => {
   };
 
   const handleImageUpload = async (file: File) => {
-    // TODO: Implement image upload to storage service
-    const imageUrl = URL.createObjectURL(file);
+    let url = ''
+
+    try {
+      setIsUploading(true);
+      const response = await api.auth.uploadImage(file, 'thumbnail');
+      url = response?.data?.Key;
+      setIsUploading(false);
+    } catch (error) {
+      Bugsnag.notify(error);
+      toast({
+        variant: 'destructive',
+        title: 'Error uploading prize image',
+        description: getMessage(error) || 'Failed to upload prize image. Please try again.',
+      });
+      setIsUploading(false);
+      return;
+    }
+
+    const imageUrl = getThumbnailUrl(url);
+
     setFormData({ ...formData, imageUrl });
-    toast({
-      title: 'Note',
-      description: 'Image upload integration pending - using local preview',
-    });
   };
 
   if (isLoading) {
@@ -470,6 +487,7 @@ export const PrizeConfiguration = () => {
                   <Button
                     variant="outline"
                     size="sm"
+                    disabled={isUploading}
                     onClick={() => {
                       const input = document.createElement('input');
                       input.type = 'file';
@@ -481,8 +499,8 @@ export const PrizeConfiguration = () => {
                       input.click();
                     }}
                   >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Image
+                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+                    {isUploading ? "Uploading Image" : "Upload Image"}
                   </Button>
                 )}
               </div>
