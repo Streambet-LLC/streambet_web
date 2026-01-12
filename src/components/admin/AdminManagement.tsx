@@ -368,7 +368,7 @@ export const AdminManagement = ({
     queryFn: async () => {
       const streamId = viewStreamId || editStreamId;
       if (streamId) {
-        const response = await adminAPI.getStreamBetData(streamId);
+        const response = await adminAPI.getCardCadeData(streamId);
         return response?.data;
       }
       return undefined;
@@ -1505,7 +1505,7 @@ export const AdminManagement = ({
               )}
             </div>
           </div>
-          
+
           {/* Tabs */}
           <div className="w-full mb-4">
             <TabSwitch

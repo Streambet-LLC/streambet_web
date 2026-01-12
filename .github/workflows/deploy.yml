@@ -1,0 +1,91 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [non_pro_stag, non_pro_prod]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: node:22
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install sudo
+        run: apt-get update && apt-get install -y sudo
+
+      - name: Install or Update AWS CLI v2 to the latest
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+          unzip -q /tmp/awscliv2.zip -d /tmp
+          sudo /tmp/aws/install --update
+          rm -rf /tmp/aws/ /tmp/awscliv2.zip
+
+      - name: Cache Node Modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Configure AWS & Build
+        shell: bash
+        run: |
+          # 2. Fetch SSM Parameters
+          REF="${{ github.ref_name }}"
+          export VITE_API_URL=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
+          export VITE_APP_HOST_URL=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_APP_HOST_URL" --with-decryption --query "Parameter.Value" --output text)
+          export VITE_BUGSNAG_KEY=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_BUGSNAG_KEY" --with-decryption --query "Parameter.Value" --output text)
+          export VITE_BUGSNAG_SERVER=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_BUGSNAG_SERVER" --with-decryption --query "Parameter.Value" --output text)
+          export VITE_COINFLOW_API_URL=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_API_URL" --with-decryption --query "Parameter.Value" --output text)
+          export VITE_COINFLOW_BLOCKCHAIN=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_BLOCKCHAIN" --with-decryption --query "Parameter.Value" --output text)
+          export VITE_COINFLOW_CHARGEBACK_PROTECTION_MERCHANT_ID=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_CHARGEBACK_PROTECTION_MERCHANT_ID" --with-decryption --query "Parameter.Value" --output text)
+          export VITE_COINFLOW_ENV=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_ENV" --with-decryption --query "Parameter.Value" --output text)
+          export VITE_COINFLOW_MERCHANT_ID=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_MERCHANT_ID" --with-decryption --query "Parameter.Value" --output text)
+          export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
+
+          # 3. Build
+          npm ci && npm run build
+        env:
+          # Pass secrets into the shell environment
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: AWS S3 & CloudFront Deploy
+        run: |
+          S3_BUCKET="${{ secrets[format('S3_BUCKET_{0}', github.ref_name)] }}"
+          CF_ID="${{ secrets[format('CLOUDFRONT_ID_{0}', github.ref_name)] }}"
+
+          aws s3 sync dist/ "s3://$S3_BUCKET" --delete
+          aws cloudfront create-invalidation --distribution-id "$CF_ID" --paths "/*"
