@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface LeaderboardEntry {
   username: string;
-  goldCoins: number;
+  cadeCoins: number;
   profileImageUrl: string;
 }
 
@@ -71,19 +71,20 @@ export const LeaderboardTable = () => {
     },
   });
 
-  const [totalGold, setTotalGold] = useState(0);
+  const [totalCadeCoins, setTotalCadeCoins] = useState(0);
   const [topLead, setTopLead] = useState(0);
   
   // Use custom hook for animations
-  const animatedTotal = useCountUp(totalGold);
+  const animatedTotal = useCountUp(totalCadeCoins);
   const animatedLead = useCountUp(topLead);
 
   // Calculate stats
   useEffect(() => {
     if (data && data.length > 0) {
-      const total = data.reduce((sum, entry) => sum + Number(entry.goldCoins), 0);
-      const lead = data.length > 1 ? Number(data[0].goldCoins) - Number(data[1].goldCoins) : 0;
-      setTotalGold(Math.floor(total));
+      const total = data.reduce((sum, entry) => sum + Number(entry.cadeCoins), 0);
+      const lead = data.length > 1 ? Number(data[0].cadeCoins) - Number(data[1].cadeCoins) : 0;
+
+      setTotalCadeCoins(Math.floor(total));
       setTopLead(Math.floor(lead));
     }
   }, [data]);
@@ -113,14 +114,7 @@ export const LeaderboardTable = () => {
   }
 
   return (
-    <div 
-      className="relative rounded-featured-card overflow-hidden crt-scanlines crt-screen crt-colors"
-      style={{ 
-        backgroundColor: 'var(--card-grid-bg)',
-        boxShadow: 'var(--neon-glow-shadow)'
-      }}
-    >
-      
+    <div>
       {/* Header Card */}
       <div className="relative px-4 md:px-8 py-6 md:py-10 border-b-2" style={{ borderColor: 'var(--card-grid-border)' }}>
         {/* Center Title */}
@@ -182,7 +176,7 @@ export const LeaderboardTable = () => {
       </div>
       
       {/* Leaderboard Entries */}
-      <div className="relative max-h-[500px] overflow-y-auto">
+      <div className="relative max-h-[500px]">
         {data.map((entry, index) => (
           <div
             key={entry.username}
@@ -227,7 +221,7 @@ export const LeaderboardTable = () => {
                 className={`text-sm md:text-xl font-mono font-bold crt-glow-medium ${index < 3 ? '' : 'text-white/75'}`}
                 style={{ color: index < 3 ? 'var(--electric-lime)' : undefined }}
               >
-                {Math.floor(Number(entry.goldCoins)).toLocaleString()}
+                {Math.floor(Number(entry.cadeCoins)).toLocaleString()}
               </div>
               <div className="text-[10px] md:text-xs uppercase tracking-wide crt-glow-medium" style={{ color: 'var(--gold-coin)' }}>
                 Cade Coins
