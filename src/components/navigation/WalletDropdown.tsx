@@ -32,7 +32,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
           <div className="flex items-center">
             <Button variant="ghost" className="gap-2 group">
               <img
-                src="/icons/gold-coins.png"
+                src="/icons/cade-coins.png"
                 alt="gold-coins"
                 className="h-6 w-6"
               />
@@ -72,7 +72,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
           <div className="flex items-center">
             <Button variant="ghost" className="gap-2 group">
               <img
-                src="/icons/gold-coins.png"
+                src="/icons/cade-coins.png"
                 alt="gold-coins"
                 className="h-6 w-6"
               />

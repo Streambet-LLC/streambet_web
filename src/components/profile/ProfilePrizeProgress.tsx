@@ -85,7 +85,7 @@ export default function ProfilePrizeProgress({
         <div>
           <div className="flex items-center gap-2 text-sm font-medium">
             <img 
-              src="/icons/gold-coins.png" 
+              src="/icons/cade-coins.png" 
               alt="Cade Coins" 
               className="w-5 h-5"
             />

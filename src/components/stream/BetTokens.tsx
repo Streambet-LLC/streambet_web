@@ -260,7 +260,7 @@ export default function BetTokens({
             Switch to 
             <div className="flex flex-row items-center gap-1">
               <img
-                src={isSweepCoins ? "/icons/gold-coins.png" : "/icons/sweep-coins.png"}
+                src={isSweepCoins ? "/icons/cade-coins.png" : "/icons/sweep-coins.png"}
                 alt="coins"
                 className={isSweepCoins ? "h-6 w-6" : "h-4 w-6"}
               />
