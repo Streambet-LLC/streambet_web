@@ -367,6 +367,31 @@ export const ProfileSection = ({
   label: s.name
 }));
 
+const renderCancelSave = () => (
+  <div className="flex gap-3 justify-end">
+    <Button
+      onClick={handleCancel}
+      variant="outline"
+      className="bg-[#272727] text-white border-[#272727] hover:bg-[#3a3a3a]"
+    >
+      Cancel
+    </Button>
+    <Button
+      onClick={form.handleSubmit(handleProfileUpdate)}
+      disabled={isUpdating || !!avatarError || !form.formState.isValid}
+    >
+      {isUpdating ? (
+        <>
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          Saving...
+        </>
+      ) : (
+        'Save'
+      )}
+    </Button>
+  </div>
+)
+
 // const selectedOption = stateOptions.find(
 //   (option) => option.value === field.value
 // );
@@ -378,29 +403,6 @@ export const ProfileSection = ({
         <div>
           <h2 className="text-lg font-light text-white">Profile settings</h2>
           <p className="text-sm text-[#FFFFFFBF] mt-1">Update your photo and personal details here.</p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            onClick={handleCancel}
-            variant="outline"
-            className="bg-[#272727] text-white border-[#272727] hover:bg-[#3a3a3a]"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={form.handleSubmit(handleProfileUpdate)}
-            disabled={isUpdating || !!avatarError || !form.formState.isValid}
-            className="w-full"
-          >
-            {isUpdating ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Save'
-            )}
-          </Button>
         </div>
       </div>
 
@@ -587,6 +589,7 @@ export const ProfileSection = ({
               setOpen={setOpen}
             />
           </div>
+          {renderCancelSave()}
           <div className={cn("space-y-4", !session.isCreator && "hidden")}>
             <Separator className="bg-gray-900" />
             <div>
@@ -774,6 +777,7 @@ export const ProfileSection = ({
               </div>
             </div>
           </div>
+          {renderCancelSave()}
         </form>
       </Form>
     </div>
