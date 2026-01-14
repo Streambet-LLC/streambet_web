@@ -77,8 +77,8 @@ export default function HomePromotedBets() {
           <CarouselContent className="flex-1">
             {isLoading ? (
               <>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <CarouselItem key={i} className="basis-full md:basis-1/2 lg:basis-1/3 pl-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <CarouselItem key={i} className="basis-full md:basis-1/2 lg:basis-1/4 pl-4">
                     <Skeleton className="w-full h-64 rounded-lg" />
                   </CarouselItem>
                 ))}
@@ -87,7 +87,7 @@ export default function HomePromotedBets() {
               sortedData?.map(bet => (
                 <CarouselItem
                   key={bet.roundId}
-                  className="basis-full md:basis-1/2 lg:basis-1/3 pl-4"
+                  className="basis-full md:basis-1/2 lg:basis-1/4 pl-4"
                 >
                   <BetCard
                     {...bet}
