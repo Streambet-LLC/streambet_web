@@ -214,11 +214,22 @@ export default function Profile() {
                 </div>
               </div>
               {profile.isCreator && (
-                <div className="flex flex-col gap-12 mt-6 font-semibold pb-32">
-                  <ProfileLiveUpcomingStreams username={username} />
-                  <ProfileLiveUpcomingNonVideoBets username={username} />
-                  <ProfilePastStreams username={username} />
-                </div>
+                <>
+                  {/* Divider after Prize Progress */}
+                  <div className="border-t border-gray-700 my-6" />
+                  
+                  {/* "Creator Tools" header */}
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold text-white">Creator Tools</h2>
+                  </div>
+                  
+                  {/* Existing creator content */}
+                  <div className="flex flex-col gap-12 font-semibold pb-32">
+                    <ProfileLiveUpcomingStreams username={username} />
+                    <ProfileLiveUpcomingNonVideoBets username={username} />
+                    <ProfilePastStreams username={username} />
+                  </div>
+                </>
               )}
             </div>
           </MainLayout>
