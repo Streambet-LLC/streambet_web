@@ -16,6 +16,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useLogout } from '@/hooks/useLogout';
 import { useCookies } from 'react-cookie';
 import moment from 'moment';
+import { Separator } from './ui/separator';
 
 interface NavigationProps {
   onDashboardClick?: () => void;
@@ -103,9 +104,9 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
     { label: 'Home', icon: undefined, path: '/' },
     { label: 'Browse', icon: undefined, path: '/creators' },
     { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
+    { label: 'Prizes', icon: undefined, path: '/prizes' },
     (session?.role === 'admin' || session?.role === 'creator') && {
-      label: 'Creator Dashboard',
-      icon: undefined,
+      label: session?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard',
       path: session?.role === 'admin' ? '/admin' : '/creator',
     },
     // { label: 'Streams', icon: undefined, path: '/stream' },
@@ -238,24 +239,29 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
               {menuItems.map((item, index) => {
                 const isActive = location.pathname === item.path;
                 return (
-                  <motion.div
-                    key={item.label}
-                    // initial={{ opacity: 0, y: -10 }}
-                    // animate={{ opacity: 1, y: 0 }}
-                    // transition={{ delay: index * 0.05 + 0.2, duration: 0.3 }}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`flex items-center gap-2 font-light transition-colors px-3 py-2 ${
-                        isActive ? 'text-white' : 'text-[#FFFFFF80] hover:text-primary-foreground'
-                      }`}
-                      onClick={() => handleMenuItemClick(item.path)}
+                  <>
+                    {(item.path === "/admin" || item.path === "/creator") && 
+                      <span className='text-[#FFFFFF80]'>|</span>
+                    }
+                    <motion.div
+                      key={item.label}
+                      // initial={{ opacity: 0, y: -10 }}
+                      // animate={{ opacity: 1, y: 0 }}
+                      // transition={{ delay: index * 0.05 + 0.2, duration: 0.3 }}
                     >
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </Button>
-                  </motion.div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`flex items-center gap-2 font-light transition-colors px-3 py-2 ${
+                          isActive ? 'text-white' : 'text-[#FFFFFF80] hover:text-primary-foreground'
+                        }`}
+                        onClick={() => handleMenuItemClick(item.path)}
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </Button>
+                    </motion.div>
+                  </>
                 );
               })}
             </div>

@@ -70,7 +70,7 @@ export default function Home() {
           </h1>
           <div className="space-y-2">
             <p className="text-[#FFFFFFBF]">
-              Make FREE picks on the collecting futures & happenings and accrue CadeCoins for prizes!
+              Make FREE picks on cards / collectibles futures & happenings, and accrue CadeCoins for prizes!
             </p>
             <p className="text-xs text-[#FFFFFF80]">
               Check out <a href="https://pro.cardcade.fun" className="text-[#bdff00] hover:underline transition-all">Cardcade Pro</a> for real $$$ action!
