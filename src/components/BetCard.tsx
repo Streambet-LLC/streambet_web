@@ -60,7 +60,8 @@ export default function BetCard(props: BetCardType) {
         props.streamId,
         props.roundId,
         props.streamName,
-        selectedOption ? selectedOption.option : null
+        selectedOption ? selectedOption.option : null,
+        cardData.description
       );
     }
   };
@@ -241,20 +242,7 @@ export default function BetCard(props: BetCardType) {
                     {props.streamName}
                   </Link>
                 )}
-                {cardData.description && (
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild className="cursor-default">
-                      <CardDescription className="line-clamp-2 text-xs">
-                        {cardData.description}
-                      </CardDescription>
-                    </TooltipTrigger>
-                    <TooltipContent className="w-60" side="bottom">
-                      <LinkItUrl className='text-creator-green'>
-                        {cardData.description}
-                      </LinkItUrl>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+                {/* Description moved to QuickPickModal */}
               </div>
               <div className='relative rounded-md overflow-clip'>
                 <img

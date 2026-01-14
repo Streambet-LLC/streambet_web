@@ -12,6 +12,7 @@ import { transformForBetTokens, transformForLockTokens } from '@/utils/bettingTr
 import { SignInPrompt, NoBettingData } from './QuickPickModalComponents';
 import { useToast } from '@/hooks/use-toast';
 import { Info } from 'lucide-react';
+import { LinkItUrl } from 'react-linkify-it';
 
 interface QuickPickModalProps {
   open: boolean;
@@ -20,10 +21,11 @@ interface QuickPickModalProps {
   roundId?: string;
   streamName?: string;
   selectedOption: string | null;
+  description?: string | null;
 }
 
 export const QuickPickModal = React.memo(
-  ({ open, onOpenChange, streamId, roundId, streamName, selectedOption }: QuickPickModalProps) => {
+  ({ open, onOpenChange, streamId, roundId, streamName, selectedOption, description }: QuickPickModalProps) => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { session } = useAuthContext();
@@ -102,10 +104,17 @@ export const QuickPickModal = React.memo(
           <DialogDescription className="sr-only">Place your pick on this stream</DialogDescription>
 
           {activeRound && (
-            <div className="mb-2">
+            <div className="mb-2 flex flex-col items-center gap-1">
               <h2 className="text-white text-lg sm:text-xl font-semibold text-center">
                 {activeRound.name}
               </h2>
+              {description && (
+                <div className="text-xs text-gray-400 text-center max-w-lg">
+                  <LinkItUrl className='text-creator-green'>
+                    {description}
+                  </LinkItUrl>
+                </div>
+              )}
             </div>
           )}
 

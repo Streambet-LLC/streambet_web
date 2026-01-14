@@ -57,6 +57,7 @@ export const StreamContent = ({
     roundId: null,
     streamName: null,
     selectedOption: null,
+    description: null,
   });
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const { socketConnect } = useBettingStatusContext();
@@ -196,12 +197,13 @@ export const StreamContent = ({
                     <BetCard
                       {...round}
                       isForStream
-                      setQuickPick={(streamId, roundId, streamName, selectedOption) => {
+                      setQuickPick={(streamId, roundId, streamName, selectedOption, description) => {
                         setQuickPickModalSettings({
                           streamId,
                           streamName,
                           roundId,
                           selectedOption,
+                          description,
                         });
                         setQuickPickOpen(true);
                       }}
@@ -301,6 +303,7 @@ export const StreamContent = ({
           roundId={quickPickModalSettings.roundId}
           streamName={quickPickModalSettings.streamName}
           selectedOption={quickPickModalSettings.selectedOption}
+          description={quickPickModalSettings.description}
         />
       )}
     </div>

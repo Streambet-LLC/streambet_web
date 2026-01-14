@@ -20,6 +20,7 @@ export default function ProfileLiveUpcomingNonVideoBets({ username }: { username
     roundId: null,
     streamName: null,
     selectedOption: null,
+    description: null,
   });
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -59,12 +60,13 @@ export default function ProfileLiveUpcomingNonVideoBets({ username }: { username
                 <BetCard
                   key={`${bet.streamId}-${bet.roundId}`}
                   {...bet}
-                  setQuickPick={(streamId, roundId, streamName, selectedOption) => {
+                  setQuickPick={(streamId, roundId, streamName, selectedOption, description) => {
                     setQuickPickModalSettings({
                       streamId,
                       streamName,
                       roundId,
                       selectedOption,
+                      description,
                     });
                     setQuickPickOpen(true);
                   }}
@@ -108,6 +110,7 @@ export default function ProfileLiveUpcomingNonVideoBets({ username }: { username
           roundId={quickPickModalSettings.roundId}
           streamName={quickPickModalSettings.streamName}
           selectedOption={quickPickModalSettings.selectedOption}
+          description={quickPickModalSettings.description}
         />
       )}
     </div>

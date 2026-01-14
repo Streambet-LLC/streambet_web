@@ -32,6 +32,7 @@ export default function HomeBets({
     roundId: null,
     streamName: null,
     selectedOption: null,
+    description: null,
   });
   const tabsRef = useRef<HTMLDivElement>();
 
@@ -169,12 +170,13 @@ export default function HomeBets({
                 <BetCard
                   key={bet.roundId}
                   {...bet}
-                  setQuickPick={(streamId, roundId, streamName, selectedOption) => {
+                  setQuickPick={(streamId, roundId, streamName, selectedOption, description) => {
                     setQuickPickModalSettings({
                       streamId,
                       streamName,
                       roundId,
                       selectedOption,
+                      description,
                     });
                     setQuickPickOpen(true);
                   }}
@@ -207,6 +209,7 @@ export default function HomeBets({
           roundId={quickPickModalSettings.roundId}
           streamName={quickPickModalSettings.streamName}
           selectedOption={quickPickModalSettings.selectedOption}
+          description={quickPickModalSettings.description}
         />
       )}
     </>

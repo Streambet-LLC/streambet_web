@@ -25,6 +25,7 @@ export default function HomePromotedBets() {
     roundId: null,
     streamName: null,
     selectedOption: null,
+    description: null,
   });
 
   const { data, isLoading, refetch } = useQuery({
@@ -91,12 +92,13 @@ export default function HomePromotedBets() {
                   <BetCard
                     {...bet}
                     isFeatured={true}
-                    setQuickPick={(streamId, roundId, streamName, selectedOption) => {
+                    setQuickPick={(streamId, roundId, streamName, selectedOption, description) => {
                       setQuickPickModalSettings({
                         streamId,
                         streamName,
                         roundId,
                         selectedOption,
+                        description,
                       });
                       setQuickPickOpen(true);
                     }}
@@ -126,6 +128,7 @@ export default function HomePromotedBets() {
           roundId={quickPickModalSettings.roundId}
           streamName={quickPickModalSettings.streamName}
           selectedOption={quickPickModalSettings.selectedOption}
+          description={quickPickModalSettings.description}
         />
       )}
     </>

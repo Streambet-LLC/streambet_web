@@ -64,18 +64,7 @@ export default function BetCardPreview(props: BetCardType) {
               </CardTitle>
             </div>
           </div>
-          {props.description && (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild className="cursor-default">
-                <CardDescription className="line-clamp-2 text-xs">
-                  {props.description}
-                </CardDescription>
-              </TooltipTrigger>
-              <TooltipContent className="w-60" side="bottom">
-                {props.description}
-              </TooltipContent>
-            </Tooltip>
-          )}
+          {/* Description hidden to match BetCard */}
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-2 p-4">
