@@ -122,10 +122,10 @@ export default function SignUp() {
       refLink?: string;
       profileImageUrl?: string;
     }) => {
-      const locationResult = await verifyUserLocation();
-      if (!locationResult.allowed) {
-        throw new Error(locationResult.error);
-      }
+      // const locationResult = await verifyUserLocation();
+      // if (!locationResult.allowed) {
+      //   throw new Error(locationResult.error);
+      // }
 
       return await api.auth.register(userData);
     },
@@ -147,21 +147,21 @@ export default function SignUp() {
 
   const googleLoginMutation = useMutation({
     mutationFn: async () => {
-      const locationResult = await verifyUserLocation();
-      if (!locationResult.allowed) {
-        throw new Error(locationResult.error);
-      }
-      await fetch(`${import.meta.env.VITE_API_URL}/auth/location-check`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-      }).then(async res => {
-        const response = await res.json();
-        if (response?.isForcedLogout) {
-          return Promise.reject(getMessage(response));
-        }
-      });
+      // const locationResult = await verifyUserLocation();
+      // if (!locationResult.allowed) {
+      //   throw new Error(locationResult.error);
+      // }
+      // await fetch(`${import.meta.env.VITE_API_URL}/auth/location-check`, {
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'ngrok-skip-browser-warning': 'true',
+      //   },
+      // }).then(async res => {
+      //   const response = await res.json();
+      //   if (response?.isForcedLogout) {
+      //     return Promise.reject(getMessage(response));
+      //   }
+      // });
       return api.auth.googleAuth();
     },
     onError: (error: any) => {

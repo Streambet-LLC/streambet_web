@@ -339,12 +339,12 @@ export default function BetCard(props: BetCardType) {
                   <span className="text-creator-green font-semibold">{cardData.totalPot.streamCoins}</span>
                 </div>
                 <div className="flex gap-1 text-sm items-center">
-                  <img src="/icons/gold-coins.png" alt="gold-coins" className="h-4 w-4" />
+                  <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
                   <span className="text-gold-coin font-semibold">{cardData.totalPot.goldCoins}</span>
                 </div> */}
                 <div className="flex gap-1 text-sm items-center">
-                  <img src="/icons/gold-coins.png" alt="gold-coins" className="h-4 w-4" />
-                  <span className="text-gold-coin font-semibold">{cardData.totalPot.cadeCoins || 0}</span>
+                  <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
+                  <span className="text-[#B4FF39] font-semibold">{cardData.totalPot.cadeCoins || 0}</span>
                 </div>
               </div>
             </TooltipTrigger>

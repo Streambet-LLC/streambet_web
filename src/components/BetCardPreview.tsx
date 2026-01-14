@@ -142,7 +142,7 @@ export default function BetCardPreview(props: BetCardType) {
                   100
                 </div>
                 <div className="flex gap-1 text-sm items-center">
-                  <img src="/icons/gold-coins.png" alt="gold-coins" className="h-4 w-4" />
+                  <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
                   100
                 </div>
               </div>
