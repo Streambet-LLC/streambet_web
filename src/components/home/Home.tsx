@@ -52,7 +52,7 @@ export default function Home() {
 
         <div className="max-w-3xl mx-auto text-center space-y-4 p-4">
           <h1 className="text-4xl md:text-5xl font-bold">
-            Predict the Internet's <br />
+            Prediction market for the<br />
             <motion.span
               className="relative inline-block"
               whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
@@ -63,14 +63,19 @@ export default function Home() {
                 transition={shouldReduceMotion ? undefined : { duration: 3, repeat: Infinity }}
               />
               <span className="relative bg-gradient-to-r from-[#bdff00] to-[#7aff14] bg-clip-text text-transparent">
-                randomest
+                collector's
               </span>
             </motion.span>{' '}
-            moments
+            age
           </h1>
-          <p className="text-[#FFFFFFBF]">
-            Real $$$ picks on neosports, Sunday leagues, and games created on the Internet.
-          </p>
+          <div className="space-y-2">
+            <p className="text-[#FFFFFFBF]">
+              Make FREE picks on the collecting futures & happenings and accrue CadeCoins for prizes!
+            </p>
+            <p className="text-xs text-[#FFFFFF80]">
+              Check out <a href="https://pro.cardcade.fun" className="text-[#bdff00] hover:underline transition-all">Cardcade Pro</a> for real $$$ action!
+            </p>
+          </div>
         </div>
         <HomePromotedBets />
         {/* Search filter moved to navigation bar for better UX. HomeBetsFilters preserved for potential future sorting/filtering features. */}
