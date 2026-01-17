@@ -749,6 +749,11 @@ export const adminAPI = {
     return response.data;
   },
 
+  updateUserCurrency: async (payload: { userId: string; amount: number; currencyType: string }) => {
+    const response = await apiClient.patch(`/admin/coins`, payload);
+    return response.data;
+  },
+
   deleteUser: async (userId: any) => {
     const response = await apiClient.delete(`/admin/users/soft-delete/{userId}?userId=${userId}`);
     return response.data;

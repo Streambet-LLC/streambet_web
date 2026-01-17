@@ -243,7 +243,7 @@ export default function BetTokens({
         <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
           <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
           <p className="text-gray-400 text-sm text-center">
-            You need Cade Coins to place a pick
+            You need CadeCoins to place a pick
           </p>
           {/* <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
@@ -301,18 +301,18 @@ export default function BetTokens({
               >
                 {betAmount?.toLocaleString('en-US')}
               </span>{' '}
-              Cade Coins
+              CadeCoins
               <span
                 className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate"
                 title={bettingData?.bettingRounds?.[0]?.roundName}
               >
-                Available Cade Coins: {Number(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
+                Available CadeCoins: {Number(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
               </span>
             </div>
 
             <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
               <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-                Total Pot: {`${totalPot} Cade Coins`}
+                Total Pot: {`${totalPot} CadeCoins`}
               </span>
             </div>
           </div>

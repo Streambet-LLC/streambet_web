@@ -14,6 +14,7 @@ import {
 } from '../ui/pagination';
 import { cn } from '@/lib/utils';
 import _ from 'lodash';
+import { getCurrencyLabel } from '@/utils/currency';
 
 const ViewBettingDialog = ({ betRound }) => {
   console.log(betRound);
@@ -85,7 +86,7 @@ const ViewBettingDialog = ({ betRound }) => {
                 <TableCell className="font-medium">{item.username}</TableCell>
                 <TableCell>{item.email}</TableCell>
                 <TableCell>
-                  {item.amount} {_.startCase(item.currency)}
+                  {item.amount} {getCurrencyLabel(item.currency)}
                 </TableCell>
                 <TableCell>{_.startCase(item.status)}</TableCell>
                 <TableCell>{item.selectedOption}</TableCell>

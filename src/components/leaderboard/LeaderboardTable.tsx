@@ -138,7 +138,7 @@ export const LeaderboardTable = () => {
           {/* Left Stat */}
           <div className="flex-1 text-left">
             <div className="text-xs uppercase tracking-wider font-bold crt-glow-medium">
-              Total <span style={{ color: 'var(--gold-coin)' }}>Cade Coins</span>
+              Total <span style={{ color: 'var(--gold-coin)' }}>CadeCoins</span>
             </div>
             <div className="text-base md:text-xl font-mono font-bold crt-glow-medium" style={{ color: 'var(--electric-lime)' }}>
               {Math.floor(animatedTotal).toLocaleString()}
@@ -224,7 +224,7 @@ export const LeaderboardTable = () => {
                 {Math.floor(Number(entry.cadeCoins)).toLocaleString()}
               </div>
               <div className="text-[10px] md:text-xs uppercase tracking-wide crt-glow-medium" style={{ color: 'var(--gold-coin)' }}>
-                Cade Coins
+                CadeCoins
               </div>
             </div>
           </div>
