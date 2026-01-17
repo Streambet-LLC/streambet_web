@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { CurrencyAdjuster } from './CurrencyAdjuster';
+import { useToast } from '@/hooks/use-toast';
 
 
 type WalletCellProps = {
@@ -25,7 +26,7 @@ const AddTokens: React.FC<WalletCellProps> = ({
   onSaveCade,
 }) => { 
 
-
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [goldAdjust, setGoldAdjust] = useState<string>('0');
   const [cadeAdjust, setCadeAdjust] = useState<string>('0');
@@ -34,8 +35,44 @@ const AddTokens: React.FC<WalletCellProps> = ({
   const newCadeBalance = Number(cadeCoinsBalance) + (Number(cadeAdjust) || 0);
 
   const handleSave = () => {
+    // Validate that new balances are not negative
+    if (newGoldBalance < 0) {
+      toast({
+        title: 'Invalid Gold Coins Amount',
+        description: 'Gold Coins balance cannot be negative',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (newCadeBalance < 0) {
+      toast({
+        title: 'Invalid CadeCoins Amount',
+        description: 'CadeCoins balance cannot be negative',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check if any changes were made
+    if (Number(goldAdjust) === 0 && Number(cadeAdjust) === 0) {
+      toast({
+        title: 'No Changes',
+        description: 'Please adjust at least one currency before saving',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (Number(goldAdjust) !== 0) onSaveGold(newGoldBalance);
     if (Number(cadeAdjust) !== 0) onSaveCade(newCadeBalance);
+    
+    toast({
+      title: 'Success',
+      description: 'Currency balance updated successfully',
+      variant: 'default',
+    });
+    
     handleClose();
   };
 
@@ -53,7 +90,6 @@ const AddTokens: React.FC<WalletCellProps> = ({
                 src="/icons/wallet.svg"
                 className="w-full h-full object-contain"
                 alt="wallet"
-                onClick={() => setOpen(true)}
               />
             </div>
         </DialogTrigger>

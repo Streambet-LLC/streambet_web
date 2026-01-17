@@ -6,6 +6,7 @@ import Bugsnag from '@bugsnag/js';
 import { WithdrawKycPayload, WithdrawKycUsPayload, WithdrawPayload } from '@/types/withdraw';
 import { BetCard } from '@/types/bet';
 import { PrizeConfiguration, SubmitPrizeRedemptionRequest } from '@/types/prize';
+import { CurrencyType } from '@/utils/currency';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -749,7 +750,7 @@ export const adminAPI = {
     return response.data;
   },
 
-  updateUserCurrency: async (payload: { userId: string; amount: number; currencyType: string }) => {
+  updateUserCurrency: async (payload: { userId: string; amount: number; currencyType: CurrencyType }) => {
     const response = await apiClient.patch(`/admin/coins`, payload);
     return response.data;
   },

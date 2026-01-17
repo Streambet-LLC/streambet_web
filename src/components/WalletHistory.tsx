@@ -147,11 +147,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground">Coin Type</span>
                             <span className="text-xs font-medium">
-                              {user?.coinType === CurrencyType.GOLD_COINS 
-                                ? 'Gold Coins' 
-                                : user?.coinType === CurrencyType.CADE_COINS 
-                                ? 'CadeCoins' 
-                                : 'Stream Coins'}
+                              {getCurrencyLabel(user?.coinType)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center">
@@ -242,11 +238,7 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                         <TableCell className="text-[14px] text-left">{user?.roundName}</TableCell>
                         <TableCell className="text-[14px] text-left">{user?.optionName}</TableCell>
                         <TableCell className="text-[14px] text-left">
-                          {user?.coinType === CurrencyType.GOLD_COINS 
-                            ? 'Gold Coins' 
-                            : user?.coinType === CurrencyType.CADE_COINS 
-                            ? 'CadeCoins' 
-                            : 'Stream Coins'}
+                          {getCurrencyLabel(user?.coinType)}
                         </TableCell>
                         <TableCell className="text-[14px] text-left">{Math.abs(user?.amountPlaced ?? 0)?.toLocaleString('en-US')}</TableCell>
                         <TableCell className="text-[16px] text-left">

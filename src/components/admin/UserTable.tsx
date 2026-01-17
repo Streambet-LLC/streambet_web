@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { EditUserDialog } from './EditUserDialog';
+import { CurrencyType } from '@/utils/currency';
 
 interface Props {
   searchUserQuery: string;
@@ -73,13 +74,20 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     mutationFn: async ({ userId, amount, currencyType }: { 
       userId: string; 
       amount: number; 
-      currencyType: string 
+      currencyType: CurrencyType 
     }) => {
       return await api.admin.updateUserCurrency({ userId, amount, currencyType });
     },
     onSuccess: () => {
       refetchProfiles();
       refetchSession();
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to update currency balance',
+        variant: 'destructive',
+      });
     },
   });
 

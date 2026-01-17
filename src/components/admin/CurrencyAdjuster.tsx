@@ -65,7 +65,7 @@ export const CurrencyAdjuster: React.FC<CurrencyAdjusterProps> = ({
           <p className="text-sm text-white font-medium mb-2">Current Balance</p>
           <div className="bg-secondary w-[200px] px-3 py-2 rounded h-[35px] text-white text-sm font-light">
             <p className="text-sm font-light">
-              {Number(currentBalance)?.toLocaleString('en-US')}
+              {currentBalance.toLocaleString('en-US')}
             </p>
           </div>
         </div>
@@ -73,7 +73,7 @@ export const CurrencyAdjuster: React.FC<CurrencyAdjusterProps> = ({
           <p className="text-sm text-white font-medium mb-2">New Balance</p>
           <div className="bg-secondary w-[200px] px-3 py-2 rounded h-[35px] text-white text-sm font-light">
             <p className="text-sm font-light">
-              {Number(newBalance) === Number(currentBalance) ? '' : newBalance?.toLocaleString('en-US')}
+              {newBalance === currentBalance ? '' : newBalance.toLocaleString('en-US')}
             </p>
           </div>
         </div>

@@ -1,15 +1,13 @@
+const CURRENCY_LABELS = {
+  gold_coins: 'Gold Coin(s)',
+  cade_coins: 'CadeCoins',
+  sweep_coins: 'Stream Coin(s)',
+  stream_coins: 'Stream Coin(s)',
+  free_tokens: 'Free Tokens',
+} as const;
+
+export type CurrencyType = keyof typeof CURRENCY_LABELS;
+
 export const getCurrencyLabel = (currencyType: string): string => {
-  switch (currencyType) {
-    case 'gold_coins':
-      return 'Gold Coin(s)';
-    case 'cade_coins':
-      return 'CadeCoins';
-    case 'sweep_coins':
-    case 'stream_coins':
-      return 'Stream Coin(s)';
-    case 'free_tokens':
-      return 'Free Tokens';
-    default:
-      return 'Unknown Currency';
-  }
+  return CURRENCY_LABELS[currencyType as CurrencyType] ?? 'Unknown Currency';
 };
