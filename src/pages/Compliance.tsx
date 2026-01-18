@@ -11,41 +11,38 @@ const Compliance = () => {
       <main className="container flex-1 py-16">
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight">Streambet Compliance Policies</h1>
+            <h1 className="text-4xl font-bold tracking-tight">CardCade Compliance Policies</h1>
           </div>
 
           <div className="grid gap-8">
             {[
               {
-                title: "1. Play-Through Policy",
+                title: "1. Free Token Policy",
                 content: (
                   <>
                     <p className="text-muted-foreground">
-                      Streambet.tv operates exclusively under a dual-platform sweepstakes promotional model:
+                      CardCade operates as a 100% free-to-play entertainment platform:
                     </p>
                     <p className="text-muted-foreground mt-2">
-                      - Gold Coin Mode – entertainment-only social casino play with no prize redemption.
+                      - All users receive free tokens to play games and compete for prizes
                     </p>
                     <p className="text-muted-foreground">
-                      - Stream Coin Mode – promotional sweepstakes play, redeemable for prizes, with no purchase necessary.
+                      - Tokens have no monetary value and cannot be purchased
+                    </p>
+                    <p className="text-muted-foreground">
+                      - Prizes consist of merchandise, gift cards, and other non-cash rewards
                     </p>
                     <p className="text-muted-foreground mt-2">
-                      To protect the integrity of our sweepstakes, ensure compliance with applicable laws, and uphold strong anti-fraud and responsible gaming standards, we require that all coins— whether purchased (Gold Coins) or awarded (Stream Coins)—must be used in at least one qualifying contest or game before any resulting prize winnings may be redeemed.
+                      To maintain platform integrity and uphold anti-fraud standards, we require that tokens be used in gameplay. Prize winnings are eligible for redemption after meeting the following conditions:
                     </p>
                     <p className="text-muted-foreground mt-2">
-                      Prize winnings from Stream Coin gameplay are eligible for redemption only after all of the following conditions are met:
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      - Play-Through Requirement: Stream Coins must be used in eligible sweepstakes gameplay prior to withdrawal; unused Stream Coins are not redeemable for prizes. Gold Coins, which have no prize value, are ineligible for redemption.
+                      - Active Gameplay: Tokens must be used in eligible gameplay activities
                     </p>
                     <p className="text-muted-foreground">
-                      - Identity Verification (KYC): All users must complete full identity verification before any withdrawal request is processed.
+                      - Age Verification: All users must be at least 18 years old
                     </p>
                     <p className="text-muted-foreground">
-                      - Anti-Fraud & AML Safeguards: We monitor transaction and gameplay activity to detect patterns indicative of fraud, abuse, or circumvention of sweepstakes eligibility rules.
-                    </p>
-                    <p className="text-muted-foreground">
-                      - Geographic Eligibility: Withdrawals are permitted only for users located in eligible jurisdictions at the time of both gameplay and redemption.
+                      - Anti-Fraud Safeguards: We monitor gameplay activity to detect patterns indicative of fraud or abuse
                     </p>
                   </>
                 ),
@@ -58,74 +55,74 @@ const Compliance = () => {
                       1. Acceptance of Terms
                     </p>
                     <p className="text-muted-foreground">
-                      By creating an account, accessing, or participating in activities on Streambet.tv (“the Platform”), you agree to be bound by these Terms of Service (“Terms”). If you do not agree, do not use the Platform.
+                      By creating an account, accessing, or participating in activities on CardCade.tv (“the Platform”), you agree to be bound by these Terms of Service (“Terms”). If you do not agree, do not use the Platform.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
                       2. Eligibility
                     </p>
                     <p className="text-muted-foreground">
-                      - Must be at least 18 years old (or the age of majority in your jurisdiction — 19 in AL & NE).
+                      - Must be at least 18 years old (or the age of majority in your jurisdiction).
                     </p>
                     <p className="text-muted-foreground">
-                      - Must be physically located in an eligible jurisdiction at the time of participation.
-                    </p>
-                    <p className="text-muted-foreground">
-                      - Employees of Streambet.tv, its affiliates, and their immediate family members are not eligible.
+                      - Employees of CardCade, its affiliates, and their immediate family members are not eligible to win certain prizes.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
                       3. Nature of the Platform
                     </p>
                     <p className="text-muted-foreground">
-                      Streambet operates two distinct modes:
+                      CardCade is a free-to-play entertainment platform:
                     </p>
                     <p className="text-muted-foreground">
-                      - Gold Coin Mode – Entertainment-only social casino play. Gold Coins may be purchased for  gameplay but have no redemption value and cannot be exchanged for cash or merchandise.
+                      - All tokens are provided free of charge and have no monetary value
                     </p>
                     <p className="text-muted-foreground">
-                      - Stream Coin Mode – Promotional sweepstakes contests. Stream Coins cannot be purchased and are only available for free via Alternative Methods of Entry (AMOE) or as a free bonus with Gold Coin purchases. Stream Coins can be redeemed for cash or prizes once eligibility requirements are met.
+                      - Tokens cannot be purchased or exchanged for cash
+                    </p>
+                    <p className="text-muted-foreground">
+                      - Prizes are non-cash rewards such as merchandise and gift cards
                     </p>
 
                     <p className="text-muted-foreground mt-2">
                       4. User Responsibilities
                     </p>
                     <p className="text-muted-foreground">
-                      - Provide accurate registration and identity verification details.
+                      - Provide accurate registration details.
                     </p>
                     <p className="text-muted-foreground">
-                      - Use the Platform solely for lawful purposes in eligible jurisdictions.
+                      - Use the Platform solely for lawful purposes.
                     </p>
                     <p className="text-muted-foreground">
-                      - Do not attempt to manipulate results, circumvent eligibility requirements, or engage in fraud.
+                      - Do not attempt to manipulate results or engage in fraud.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
-                      5. Account Funding & Play-Through
+                      5. Token Usage
                     </p>
                     <p className="text-muted-foreground">
-                      Purchased Gold Coins or awarded Stream Coins must be played through in at least one contest before any resulting winnings (Stream Coins only) can be redeemed.
+                      Tokens must be used in gameplay activities. Prizes may be redeemed after meeting platform requirements.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
-                      6. Withdrawals & Verification
+                      6. Prize Redemption
                     </p>
                     <p className="text-muted-foreground">
-                      Withdrawals are processed only after KYC verification, geographic eligibility confirmation, and compliance review.
+                      Prize redemptions are processed after age verification and compliance review.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
                       7. Intellectual Property
                     </p>
                     <p className="text-muted-foreground">
-                      All content, branding, and technology belong to Streambet.tv or its licensors.
+                      All content, branding, and technology belong to CardCade.tv or its licensors.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
                       8. Limitation of Liability
                     </p>
                     <p className="text-muted-foreground">
-                      The Platform is provided “as-is.” Streambet.tv is not liable for damages arising from participation, except where prohibited by law.
+                      The Platform is provided “as-is.” CardCade.tv is not liable for damages arising from participation, except where prohibited by law.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
@@ -149,13 +146,13 @@ const Compliance = () => {
                       Our Commitment:
                     </p>
                     <p className="text-muted-foreground">
-                      - Enforcing age and jurisdiction restrictions, including geoblocking prohibited states.
+                      - Enforcing age restrictions.
                     </p>
                     <p className="text-muted-foreground">
                       - Providing transparent information on contest rules and prize eligibility.
                     </p>
                     <p className="text-muted-foreground">
-                      - Monitoring for patterns of excessive or harmful play, even in non-redeemable Gold Coin mode.
+                      - Monitoring for patterns of excessive or harmful play.
                     </p>
                     <p className="text-muted-foreground">
                       - Offering self-exclusion tools and account cooling-off periods upon request.
@@ -168,7 +165,7 @@ const Compliance = () => {
                       - Self-Exclusion: Permanent or temporary closure of an account upon request.
                     </p>
                     <p className="text-muted-foreground">
-                      - Purchase & Time Limits: Users may request custom limits on Gold Coin purchases and daily play time.
+                      - Time Limits: Users may request custom limits on daily play time.
                     </p>
                     <p className="text-muted-foreground">
                       - Support Resources: Links to organizations such as the National Council on Problem Gambling (<a href="https://www.ncpgambling.org" className='underline'>www.ncpgambling.org</a>).
@@ -177,17 +174,17 @@ const Compliance = () => {
                 ),
               },
               {
-                title: "4. Sweepstakes Rules Rundown",
+                title: "4. Contest Rules",
                 content: (
                   <>
                     <p className="text-muted-foreground">
-                      No Purchase Necessary
+                      Free to Play
                     </p>
                     <p className="text-muted-foreground">
-                      Participation in Stream Coin sweepstakes contests does not require a purchase. Stream Coins are available via:
+                      All contests on CardCade are 100% free to enter. Tokens are available via:
                     </p>
                     <p className="text-muted-foreground">
-                      - Mail-in request (unlimited AMOE entries)
+                      - Account registration bonuses
                     </p>
                     <p className="text-muted-foreground">
                       - Daily login bonuses
@@ -196,14 +193,14 @@ const Compliance = () => {
                       - Social media giveaways and contests
                     </p>
                     <p className="text-muted-foreground">
-                      - Complimentary gifts with Gold Coin purchases
+                      - Promotional events
                     </p>
 
                     <p className="text-muted-foreground mt-2">
                       Eligibility
                     </p>
                     <p className="text-muted-foreground">
-                      - Must meet age and jurisdiction requirements.
+                      - Must meet age requirements (18+).
                     </p>
                     <p className="text-muted-foreground">
                       - One account per person.
@@ -213,10 +210,10 @@ const Compliance = () => {
                       How to Play
                     </p>
                     <p className="text-muted-foreground">
-                      1. Obtain Stream Coins via free methods or as a complimentary bonus.
+                      1. Receive free tokens through various promotional methods.
                     </p>
                     <p className="text-muted-foreground">
-                      2. Use Stream Coins to enter eligible sweepstakes contests.
+                      2. Use tokens to enter eligible contests.
                     </p>
                     <p className="text-muted-foreground">
                       3. Winnings are determined by chance-based gameplay.
@@ -226,7 +223,7 @@ const Compliance = () => {
                       Prizes
                     </p>
                     <p className="text-muted-foreground">
-                      - Winnings are redeemable only after meeting play-through and verification requirements.
+                      - Prizes consist of merchandise, gift cards, and other non-cash rewards.
                     </p>
                     <p className="text-muted-foreground">
                       - Prizes are non-transferable.
@@ -236,109 +233,51 @@ const Compliance = () => {
                       Odds
                     </p>
                     <p className="text-muted-foreground">
-                      Odds depend on the number of eligible entries received and random chance. Free and paid bonus entries have equal odds.
+                      Odds depend on the number of eligible entries received and random chance.
                     </p>
                   </>
                 ),
               },
               {
-                title: "5. Refund Policy",
+                title: "5. Platform Policies",
                 content: (
                   <>
                     <p className="text-muted-foreground">
-                      All purchases of Gold Coins are final and non-refundable once credited, except in cases of:
+                      No Purchases Required
+                    </p>
+                    <p className="text-muted-foreground">
+                      CardCade is 100% free to play. There are no purchases, subscriptions, or fees of any kind. All tokens are provided free of charge.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
-                      - Duplicate charges caused by technical error.
+                      Account Management
                     </p>
                     <p className="text-muted-foreground">
-                      - Purchases made in jurisdictions where Gold Coin Mode is prohibited (if discovered post-purchase).
-                    </p>
-                    
-                    <p className="text-muted-foreground mt-2">
-                      Refund requests must be submitted within 7 days of the transaction and will be reviewed on a case-by-case basis.
+                      Users may close their accounts at any time by contacting support. CardCade reserves the right to suspend or terminate accounts that violate our Terms of Service.
                     </p>
                   </>
                 ),
               },
               {
-                title: "6. Accepted and Banned Jurisdictions Policy",
+                title: "6. Age Requirements",
                 content: (
                   <>
                     <p className="text-muted-foreground">
-                      Laws regarding sweepstakes gaming vary by state. For legal compliance, Streambet categorizes U.S. states as follows:
+                      CardCade is available to users who meet the minimum age requirements in their jurisdiction:
                     </p>
 
-                    <hr className='my-4' />
-
-                    <p className="text-muted-foreground font-semibold">
-                      Green Light States – Fully Permitted
-                    </p>
                     <p className="text-muted-foreground mt-2">
-                      If you reside in any of the following states, you have full access to both Gold Coin Mode and Stream Coin Mode play. Players in these states can play games for fun with Gold Coins and participate in sweepstakes promotions with Stream Coins, including redeeming prizes, subject to these Terms.
-                    </p>
-                    <p className="text-muted-foreground mt-2 font-semibold">
-                      Alabama, Alaska, Arizona, California, Colorado, Illinois, Indiana, Kansas, Maine, Massachusetts, Minnesota, Missouri, New Hampshire, New Mexico, Oklahoma, Oregon, Pennsylvania*, Rhode Island, South Dakota, Texas, Utah, Virginia, Washington D.C., Wisconsin, Wyoming
-                      <span className='font-normal'> (25 states / jurisdictions)</span>
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      *In Pennsylvania, sweepstakes with over $5,000 in prizes may require registration if advertised via direct mail.
-                    </p>
-
-                    <hr className='my-4' />
-
-                    <p className="text-muted-foreground font-semibold">
-                      Yellow Light States – Potential limitations on Gold Coins
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      In these states, you may use the Platform, but heightened compliance and monitoring are required due to older case law, pending legislation, or uncertain enforcement postures. Gold coin mode can be considered illegal gambling, or these jurisdictions have added restrictions
-                    </p>
-                    <p className="text-muted-foreground font-semibold mt-2">
-                      Florida*, Hawaii, Maryland, Mississippi, New Jersey, North Carolina, North Dakota, Ohio, South Carolina, Tennessee**, Vermont
-                      <span className='font-normal'> (11 states)</span>
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      *Florida requires sweepstakes registration and bonding if the prize pool exceeds $5,000 and the promotion lasts more than 30 days.
+                      - Must be at least 18 years old (or the age of majority in your jurisdiction)
                     </p>
                     <p className="text-muted-foreground">
-                      **Tennessee has heightened risk based on state law interpretation of chance-based games and potential classification of virtual credits as a “thing of value.”
+                      - Age verification may be required for prize redemption
+                    </p>
+                    <p className="text-muted-foreground">
+                      - Providing false age information will result in account termination
                     </p>
 
-                    <p className="text-muted-foreground font-semibold mt-2">
-                      Yellow Light States - Actively monitoring evolving regulation
-                    </p>
                     <p className="text-muted-foreground mt-2">
-                      In these states, you may use the platform, but there are more regulatory questions, quickly evolving regulation, and heightened risk of illegalization.
-                    </p>
-                    <p className="text-muted-foreground font-semibold mt-2">
-                      Arkansas, Georgia, Iowa, Kentucky, Nebraska, Delaware
-                      <span className='font-normal'> (6 states)</span>
-                    </p>
-
-                    <hr className='my-4' />
-
-                    <p className="text-muted-foreground font-semibold">
-                      Red Light States – Fully Prohibited (No Modes Available)
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      Streambet does not operate in the following states, which have taken enforcement actions or passed laws prohibiting sweepstakes casino models, even if no purchase is necessary. If you are a resident of or physically located in any of these states, you are not allowed to create an account or use the Platform in any capacity:
-                    </p>
-                    <p className="text-muted-foreground font-semibold mt-2">
-                      Connecticut, Idaho, Louisiana, Michigan, Montana* (effective October 2025), Nevada, New York, Washington, West Virginia
-                      <span className='font-normal'> (9 states)</span>
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      *Montana’s prohibition on sweepstakes casinos takes effect October 1, 2025.
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      For simplicity, Streambet can be used (whether fully or with limitations) in: FL, HI, MD, MS, NJ, NC, ND, OH, SC, TN, VT, AL, AK, AZ, CA, CO, IL, IN, KS, ME, MA, MN, MO, NH, NM, OK, OR, PA, RI, SD, TX, UT, VA, DC, WI, WY, AR, GA, IA, KY, NE, DE
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      And cannot be used in: CT, ID, LA, MI, MT, NV, NY, WA, WV
-                    </p>
-                    <p className="text-muted-foreground mt-2">
-                      If you are located in or a resident of a prohibited state, do not attempt to use Streambet. Any account created in a prohibited jurisdiction is subject to immediate closure. We may require proof of residency during registration or prize redemption. Misrepresenting your location or using VPNs or other technical measures to circumvent geolocation is a serious violation of these Terms and may result in forfeiture of prizes and account termination.
+                      As a free-to-play entertainment platform, CardCade does not have geographic restrictions. Users from any location may participate, provided they meet the age requirements and comply with their local laws.
                     </p>
                   </>
                 ),
@@ -351,7 +290,7 @@ const Compliance = () => {
                       Purpose:
                     </p>
                     <p className="text-muted-foreground">
-                      Prevent the use of Streambet’s platform for money laundering, terrorist financing, or illicit activity.
+                      Prevent the use of CardCade’s platform for money laundering, terrorist financing, or illicit activity.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
@@ -380,10 +319,10 @@ const Compliance = () => {
                       Triggers for Review:
                     </p>
                     <p className="text-muted-foreground">
-                      - Multiple high-value deposits without corresponding Gold Coin gameplay.
+                      - Multiple high-value deposits without corresponding token gameplay.
                     </p>
                     <p className="text-muted-foreground">
-                      - Immediate withdrawal attempts after obtaining Stream Coins.
+                      - Immediate withdrawal attempts after obtaining tokens.
                     </p>
                     <p className="text-muted-foreground">
                       - Frequent account funding from multiple payment methods.
@@ -396,7 +335,7 @@ const Compliance = () => {
                 content: (
                   <>
                     <p className="text-muted-foreground">
-                      Streambet maintains strict measures to ensure fairness and integrity in all games and sweepstakes contests.
+                      CardCade maintains strict measures to ensure fairness and integrity in all games and sweepstakes contests.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
@@ -442,7 +381,7 @@ const Compliance = () => {
                 content: (
                   <>
                     <p className="text-muted-foreground">
-                      To maintain fair play and protect against fraud or automated activity, Streambet imposes a daily limit of twenty (20) picks per user. If you reach this limit in a calendar day, your account may be temporarily suspended from additional play for that day. Streambet reserves the right to review such activity, request verification, and determine whether the activity constitutes suspicious, abusive, or fraudulent conduct. Accounts found in violation may be subject to prize forfeiture or permanent termination.
+                      To maintain fair play and protect against fraud or automated activity, CardCade imposes a daily limit of twenty (20) picks per user. If you reach this limit in a calendar day, your account may be temporarily suspended from additional play for that day. CardCade reserves the right to review such activity, request verification, and determine whether the activity constitutes suspicious, abusive, or fraudulent conduct. Accounts found in violation may be subject to prize forfeiture or permanent termination.
                     </p>
                   </>
                 ),

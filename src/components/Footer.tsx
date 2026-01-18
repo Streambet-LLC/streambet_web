@@ -9,7 +9,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <img src="/machine-wordmark.svg" alt="Cardcade Logo" className="mb-8" />
+            <img src="/machine-wordmark.svg" alt="CardCade Logo" className="mb-8" />
             <p className="text-sm text-muted-foreground">
               Live picks for games created on the Internet.
             </p>
@@ -133,7 +133,7 @@ export const Footer = () => {
 
         <div className="mt-8 pt-8 border-t border-border">
           <p className="text-sm text-center text-muted-foreground">
-            © {new Date().getFullYear()} Cardcade. All rights reserved.
+            © {new Date().getFullYear()} CardCade. All rights reserved.
           </p>
         </div>
       </div>

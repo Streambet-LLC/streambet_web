@@ -15,7 +15,7 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
         <div className="w-full max-w-md">
           <div className="mb-6">
             <Link to="/">
-              <img src="/machine-wordmark.svg" alt="Cardcade Logo" className="mb-6" />
+              <img src="/machine-wordmark.svg" alt="CardCade Logo" className="mb-6" />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left mb-4">{title}</h1>
             {subtitle && (
@@ -37,7 +37,7 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
           zIndex: 10,
         }}
       >
-        © Cardcade {new Date().getFullYear()}
+        © CardCade {new Date().getFullYear()}
       </div>
     </div>
   );

@@ -172,7 +172,7 @@ const ResetPassword = () => {
           zIndex: 10,
         }}
       >
-        © Cardcade {new Date().getFullYear()}
+        © CardCade {new Date().getFullYear()}
       </div>
     </>
   );

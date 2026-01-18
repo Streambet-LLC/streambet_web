@@ -86,7 +86,7 @@ export default function ProfilePrizeProgress({
           <div className="flex items-center gap-2 text-sm font-medium">
             <img 
               src="/icons/cade-coins.png" 
-              alt="Cade Coins" 
+              alt="CadeCoins" 
               className="w-5 h-5"
             />
             <span>Current: <span className="font-bold text-base">{currentCadeCoins.toLocaleString('en-US')}</span></span>

@@ -140,8 +140,8 @@ export default function CreatorApplication() {
     <MainLayout showFooter>
       <Card className="max-w-lg mx-auto">
         <CardHeader>
-          <div className="text-xl font-bold">Streambet Creator Program & Monetization Application</div>
-          <div className="text-sm text-weak">Apply here to run your own livestream on the Streambet platform and get a % of the platform's earnings! Engage your audience and make money at the same time!</div>
+          <div className="text-xl font-bold">Creator Program & Monetization Application</div>
+          <div className="text-sm text-weak">Apply here to run your own livestream on the CardCade platform and get a % of the platform's earnings! Engage your audience and make money at the same time!</div>
         </CardHeader>
         <Separator />
         <CardContent className="pt-4">
@@ -232,7 +232,7 @@ export default function CreatorApplication() {
                   name="message"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white font-light">Share about yourself. Why livestream on Streambet? What content do you make?</FormLabel>
+                      <FormLabel className="text-white font-light">Share about yourself. Why livestream on CardCade? What content do you make?</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
@@ -257,7 +257,7 @@ export default function CreatorApplication() {
                         />
                       </FormControl>
                       <FormLabel className="text-white font-light">
-                        I agree to the Streambet {" "}
+                        I agree to the CardCade {" "}
                         <a
                           href="https://discord.gg/Pnm5yXbu8h"
                           target="_blank"
