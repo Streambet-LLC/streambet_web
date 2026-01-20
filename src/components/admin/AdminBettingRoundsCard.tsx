@@ -643,12 +643,12 @@ export const AdminBettingRoundsCard = ({
                                       className="text-white ml-1 truncate max-w-[120px]"
                                       title={
                                         isSweepCoins
-                                          ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins`
+                                          ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Pro Coins`
                                           : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`
                                       }
                                     >
                                       {isSweepCoins
-                                        ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins`
+                                        ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Pro Coins`
                                         : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`}
                                     </span>
                                   </div>

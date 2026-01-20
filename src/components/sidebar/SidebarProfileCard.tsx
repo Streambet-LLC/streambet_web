@@ -110,11 +110,11 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
               className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={handleCoinsClick}
             >
-              {/* Stream Coins */}
+              {/* Pro Coins */}
               <div className="flex items-center gap-1.5">
                 <img
                   src="/icons/sweep-coins.png"
-                  alt="Stream Coins"
+                  alt="Pro Coins"
                   className="h-4 w-4"
                 />
                 <span className="text-xs font-medium text-green-500">
