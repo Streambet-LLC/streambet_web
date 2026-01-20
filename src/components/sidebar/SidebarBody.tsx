@@ -76,7 +76,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
       )}
     >
       <SidebarContent className="flex flex-col h-full">
-        <SidebarGroup className="flex flex-col gap-2 overflow-auto flex-1 pb-24">
+        <SidebarGroup className="flex flex-col gap-2 overflow-auto flex-1 pb-28 md:pb-28">
           <div className="flex justify-between items-center md:mb-2">
             {controls.open && !controls.isMobile && (
               <div className='flex items-center gap-1.5 pl-2'>
