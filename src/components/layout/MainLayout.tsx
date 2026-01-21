@@ -73,7 +73,7 @@ export const MainLayout = ({
         onSearchChange={onSearchChange}
       />
       <div className="w-full flex gap-2">
-        <div className="h-[calc(100dvh-64px)] overflow-x-auto">
+        <div className="max-h-[calc(100dvh)] overflow-y-auto">
           <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
         </div>
 
