@@ -202,16 +202,6 @@ export default function Profile() {
                     </Link>
                   )}
                 </div>
-                
-                {/* Prize Progress Section - Shows for all users */}
-                <div className="mt-6">
-                  <ProfilePrizeProgress
-                    currentCadeCoins={profile.currentCadeCoins}
-                    lifetimeCadeCoins={profile.lifetimeCadeCoins} 
-                    prizeProgress={profile.prizeProgress}
-                    isOwnProfile={profile.username === session?.username}
-                  />
-                </div>
               </div>
               {profile.isCreator && (
                 <div className="flex flex-col gap-12 mt-6 font-semibold pb-32">
