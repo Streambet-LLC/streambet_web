@@ -304,24 +304,3 @@ export const sortByPriorityPairs = <T extends {
     return aPriority - bPriority;
   });
 };
-
-export const getThumbnailUrl = (thumbnail) => {
-  if (!thumbnail) {
-    return '/placeholder.svg';
-  }
-
-  // If it's already a full URL (starts with http or https), use it directly
-  if (thumbnail.startsWith('http')) {
-    return thumbnail;
-  }
-
-  // If it's a storage path from bucket but doesn't have the storage URL prefix
-  if (
-    thumbnail.includes('stream-thumbnails/') &&
-    !thumbnail.includes(import.meta.env.VITE_SUPABASE_URL)
-  ) {
-    return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${thumbnail}`;
-  }
-
-  return getImageLink(thumbnail) || '/placeholder.svg';
-};
