@@ -77,7 +77,7 @@ const CurrencySection = ({
 /**
  * BettingRoundStatsCard - Displays betting statistics for the active round
  * 
- * Shows both currency types (Stream Coins and Gold Coins) with:
+ * Shows both currency types (Pro Coins and Gold Coins) with:
  * - Total pot amount and total bet count for each currency
  * - Per-option breakdown showing individual amounts and pick counts
  * 
@@ -94,7 +94,7 @@ export const BettingRoundStatsCard = () => {
     return activeRound.bettingVariables.length > 0;
   }, [activeRound]);
 
-  // Map betting variables to Stream Coins options
+  // Map betting variables to Pro Coins options
   const sweepCoinOptions = useMemo(() => 
     (activeRound?.bettingVariables ?? []).map(option => ({
       id: option.id,
@@ -126,10 +126,10 @@ export const BettingRoundStatsCard = () => {
         Round: {activeRound.roundName || 'Active Round'}
       </h2>
       
-      {/* Stream Coins Section */}
+      {/* Pro Coins Section */}
       <CurrencySection
         type="sweep"
-        currencyName="Stream Coins"
+        currencyName="Pro Coins"
         totalCoins={activeRound.totalSweepCoins}
         totalBets={activeRound.totalBetCountSweepCoin}
         options={sweepCoinOptions}

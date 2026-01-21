@@ -66,7 +66,7 @@ export default function CreatorPayoutsHistory() {
               <TableRow key={payout.id}>
                 <TableCell className="text-left">{payout?.createdAt ? new Date(payout.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</TableCell>
                 <TableCell className="text-left">{payout?.bettingRoundName || payout?.bettingRoundId}</TableCell>
-                <TableCell className="text-left"><span className='text-[#44E644BF]'>{payout?.amount} Stream Coins</span></TableCell>
+                <TableCell className="text-left"><span className='text-[#44E644BF]'>{payout?.amount} Pro Coins</span></TableCell>
               </TableRow>
             ))
           }
