@@ -335,7 +335,7 @@ export default function BetCard(props: BetCardType) {
             <TooltipTrigger asChild>
               <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
                 <div className="flex gap-2 text-sm items-center">
-                  <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
+                  <img src="/icons/sweep-coins.png" alt="Pro Coins" className="h-3 w-5" />
                   <span className="text-creator-green font-semibold">{cardData.totalPot.streamCoins}</span>
                 </div>
                 <div className="flex gap-1 text-sm items-center">

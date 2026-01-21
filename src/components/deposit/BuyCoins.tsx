@@ -44,7 +44,7 @@ const BuyCoins = ({
         <div className="mx-auto">
           <h2 className="text-lg font-medium mb-2">Buy Gold Coins</h2>
           <p className="text-sm text-gray-400">
-            Streambet employs a 2-token Sweepstakes model, where you can purchase gold coins packs that include Stream Coins, alongside.{' '}
+            Streambet employs a 2-token Sweepstakes model, where you can purchase gold coins packs that include Pro Coins, alongside.{' '}
             <Dialog>
               <DialogTrigger asChild>
                 <span className="text-white cursor-pointer">How it Works</span>
@@ -55,13 +55,13 @@ const BuyCoins = ({
                 </DialogHeader>
                 <DialogDescription>
                   <p>
-                    Streambet employs a 2-token Sweepstakes model, where you can purchase gold coins packs that include Stream Coins, alongside.
+                    Streambet employs a 2-token Sweepstakes model, where you can purchase gold coins packs that include Pro Coins, alongside.
                   </p>
                   <p className="mt-2">
                     Gold coins (aka free coins) can be used to make free Picks on participation streams / contents, where creators may offer prizes for engagement.
                   </p>
                   <p className="mt-2">
-                    Stream coins can be used for real-$ Picks, where creators host real-$ contests. This is where things get realllly interesting.
+                    Pro Coins can be used for real-$ Picks, where creators host real-$ contests. This is where things get realllly interesting.
                   </p>
                   <p className="mt-2">
                     Contact us with any questions via Discord, email, or Instagram.
@@ -83,7 +83,7 @@ const BuyCoins = ({
           <div className="text-sm text-gray-400 mt-2">
             <ul className="list-disc pl-5">
               <li>Gold coins = free plays</li>
-              <li>Stream coins = real-$ Picks</li>
+              <li>Pro Coins = real-$ Picks</li>
             </ul>
           </div>
           <Separator className="my-4 bg-[#232323]" />
@@ -127,7 +127,7 @@ const BuyCoins = ({
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-xs font-bold text-[#0D0D0D] uppercase bg-[#BDFF00] text-center w-14 rounded-sm">Promo</span>
-                      <span className="text-xs text-[#BDFF00]">Get {Number(option.sweepCoinCount || 0)?.toLocaleString('en-US')} free Stream Coins</span>
+                      <span className="text-xs text-[#BDFF00]">Get {Number(option.sweepCoinCount || 0)?.toLocaleString('en-US')} free Pro Coins</span>
                     </div>
                   </div>
 
