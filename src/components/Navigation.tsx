@@ -27,7 +27,8 @@ interface NavigationProps {
 export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: NavigationProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const refLink = searchParams.get('ref');
-  const [, setCookie] = useCookies(['referral-link']);
+  const promoCode = searchParams.get('promo-code');
+  const [, setCookie] = useCookies(['referral-link', 'promo-code']);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -86,6 +87,16 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
       }
     }
   }, [refLink]);
+
+  useEffect(() => {
+    if (promoCode) {
+      if (promoCode) {
+        setCookie('promo-code', promoCode, {
+          expires: moment().add(1, 'day').toDate(),
+        });
+      }
+    }
+  }, [promoCode]);
 
   const logoVariants = {
     hidden: { opacity: 0, x: -20 },
@@ -240,9 +251,9 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                 const isActive = location.pathname === item.path;
                 return (
                   <>
-                    {(item.path === "/admin" || item.path === "/creator") && 
-                      <span className='text-[#FFFFFF80]'>|</span>
-                    }
+                    {(item.path === '/admin' || item.path === '/creator') && (
+                      <span className="text-[#FFFFFF80]">|</span>
+                    )}
                     <motion.div
                       key={item.label}
                       // initial={{ opacity: 0, y: -10 }}
@@ -293,9 +304,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
             >
               {session ? (
                 <>
-                  <WalletDropdown
-                    walletBalance={session?.walletBalanceCadeCoin || 0}
-                  />
+                  <WalletDropdown walletBalance={session?.walletBalanceCadeCoin || 0} />
 
                   <UserDropdown profile={session} onLogout={handleLogoutWithRefetch} />
                 </>

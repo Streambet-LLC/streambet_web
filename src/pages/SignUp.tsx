@@ -29,13 +29,13 @@ import { useCookies } from 'react-cookie';
 export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [cookies] = useCookies(['referral-link']);
+  const [cookies] = useCookies(['referral-link', 'promo-code']);
   const [searchParams] = useSearchParams();
   const redirectParam = searchParams.get('redirect');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [promoCode, setPromoCode] = useState('');
+  const [promoCode, setPromoCode] = useState(cookies['promo-code'] ? cookies['promo-code'] : '');
   const [refLink, setRefLink] = useState(cookies['referral-link'] ? cookies['referral-link'] : '');
   const [name, setName] = useState('');
   const [tosAccepted, setTosAccepted] = useState(false);
