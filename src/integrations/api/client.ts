@@ -859,6 +859,12 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Edit betting options for stream
+  updateBetRoundLandingPageVisibility: async (roundId: string, hidden: boolean) => {
+    const response = await apiClient.patch(`/admin/rounds/${roundId}/landing-visiblity`, { hidden });
+    return response.data;
+  },
+
   // Adjust user balance
   adjustUserBalance: async (userId: string, amount: number, reason: string) => {
     const response = await apiClient.post(`/admin/users/${userId}/adjust-balance`, {
