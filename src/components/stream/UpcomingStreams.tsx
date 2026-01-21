@@ -26,7 +26,7 @@ const DesktopStreamItem = ({ stream }: { stream: any }) => {
   const totalPotAmount = Number(isSweepCoins 
     ? stream.totalBetsSweepCoinAmount || 0 
     : stream.totalBetsGoldCoinAmount || 0);
-  const currencyLabel = isSweepCoins ? 'Stream Coins' : 'gold coins';
+  const currencyLabel = isSweepCoins ? 'Pro Coins' : 'gold coins';
   
   // Format number with comma separators for en-US locale
   const formattedAmount = totalPotAmount.toLocaleString('en-US');

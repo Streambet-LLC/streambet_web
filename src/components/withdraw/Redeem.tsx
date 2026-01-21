@@ -57,7 +57,7 @@ export default function Redeem() {
       return;
     } else if (num > sweepBalance) {
       setUsdValue(null);
-      setError(`You only have ${sweepBalance} withdrawable Stream Coins`);
+      setError(`You only have ${sweepBalance} withdrawable Pro Coins`);
       return;
     }
     setLoading(true);
@@ -265,13 +265,13 @@ export default function Redeem() {
           ) : (
             <>
               <CardHeader>
-                <CardTitle>Redeem Stream Coins</CardTitle>
+                <CardTitle>Redeem Pro Coins</CardTitle>
                 <CardDescription>
-                  Enter the amount of Stream Coins to redeem.
+                  Enter the amount of Pro Coins to redeem.
                   <div className="mt-4">
                     Your withdrawable Stream Coin balance: {sweepBalance?.toLocaleString('en-US')}
                     <br />
-                    {session?.sweepCoinsPerDollar} Stream Coins = $1
+                    {session?.sweepCoinsPerDollar} Pro Coins = $1
                     <div className="flex justify-between">
                       <span>
                         Min:{' '}
@@ -294,7 +294,7 @@ export default function Redeem() {
               <CardContent>
                 <form className="space-y-4">
                   <div>
-                    <Label htmlFor="sweepCoins">Stream Coins</Label>
+                    <Label htmlFor="sweepCoins">Pro Coins</Label>
                     <Input
                       id="sweepCoins"
                       type="number"

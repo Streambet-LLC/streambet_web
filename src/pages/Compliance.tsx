@@ -30,13 +30,13 @@ const Compliance = () => {
                       - Stream Coin Mode – promotional sweepstakes play, redeemable for prizes, with no purchase necessary.
                     </p>
                     <p className="text-muted-foreground mt-2">
-                      To protect the integrity of our sweepstakes, ensure compliance with applicable laws, and uphold strong anti-fraud and responsible gaming standards, we require that all coins— whether purchased (Gold Coins) or awarded (Stream Coins)—must be used in at least one qualifying contest or game before any resulting prize winnings may be redeemed.
+                      To protect the integrity of our sweepstakes, ensure compliance with applicable laws, and uphold strong anti-fraud and responsible gaming standards, we require that all coins— whether purchased (Gold Coins) or awarded (Pro Coins)—must be used in at least one qualifying contest or game before any resulting prize winnings may be redeemed.
                     </p>
                     <p className="text-muted-foreground mt-2">
                       Prize winnings from Stream Coin gameplay are eligible for redemption only after all of the following conditions are met:
                     </p>
                     <p className="text-muted-foreground mt-2">
-                      - Play-Through Requirement: Stream Coins must be used in eligible sweepstakes gameplay prior to withdrawal; unused Stream Coins are not redeemable for prizes. Gold Coins, which have no prize value, are ineligible for redemption.
+                      - Play-Through Requirement: Pro Coins must be used in eligible sweepstakes gameplay prior to withdrawal; unused Pro Coins are not redeemable for prizes. Gold Coins, which have no prize value, are ineligible for redemption.
                     </p>
                     <p className="text-muted-foreground">
                       - Identity Verification (KYC): All users must complete full identity verification before any withdrawal request is processed.
@@ -84,7 +84,7 @@ const Compliance = () => {
                       - Gold Coin Mode – Entertainment-only social casino play. Gold Coins may be purchased for  gameplay but have no redemption value and cannot be exchanged for cash or merchandise.
                     </p>
                     <p className="text-muted-foreground">
-                      - Stream Coin Mode – Promotional sweepstakes contests. Stream Coins cannot be purchased and are only available for free via Alternative Methods of Entry (AMOE) or as a free bonus with Gold Coin purchases. Stream Coins can be redeemed for cash or prizes once eligibility requirements are met.
+                      - Stream Coin Mode – Promotional sweepstakes contests. Pro Coins cannot be purchased and are only available for free via Alternative Methods of Entry (AMOE) or as a free bonus with Gold Coin purchases. Pro Coins can be redeemed for cash or prizes once eligibility requirements are met.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
@@ -104,7 +104,7 @@ const Compliance = () => {
                       5. Account Funding & Play-Through
                     </p>
                     <p className="text-muted-foreground">
-                      Purchased Gold Coins or awarded Stream Coins must be played through in at least one contest before any resulting winnings (Stream Coins only) can be redeemed.
+                      Purchased Gold Coins or awarded Pro Coins must be played through in at least one contest before any resulting winnings (Pro Coins only) can be redeemed.
                     </p>
 
                     <p className="text-muted-foreground mt-2">
@@ -184,7 +184,7 @@ const Compliance = () => {
                       No Purchase Necessary
                     </p>
                     <p className="text-muted-foreground">
-                      Participation in Stream Coin sweepstakes contests does not require a purchase. Stream Coins are available via:
+                      Participation in Stream Coin sweepstakes contests does not require a purchase. Pro Coins are available via:
                     </p>
                     <p className="text-muted-foreground">
                       - Mail-in request (unlimited AMOE entries)
@@ -213,10 +213,10 @@ const Compliance = () => {
                       How to Play
                     </p>
                     <p className="text-muted-foreground">
-                      1. Obtain Stream Coins via free methods or as a complimentary bonus.
+                      1. Obtain Pro Coins via free methods or as a complimentary bonus.
                     </p>
                     <p className="text-muted-foreground">
-                      2. Use Stream Coins to enter eligible sweepstakes contests.
+                      2. Use Pro Coins to enter eligible sweepstakes contests.
                     </p>
                     <p className="text-muted-foreground">
                       3. Winnings are determined by chance-based gameplay.
@@ -276,7 +276,7 @@ const Compliance = () => {
                       Green Light States – Fully Permitted
                     </p>
                     <p className="text-muted-foreground mt-2">
-                      If you reside in any of the following states, you have full access to both Gold Coin Mode and Stream Coin Mode play. Players in these states can play games for fun with Gold Coins and participate in sweepstakes promotions with Stream Coins, including redeeming prizes, subject to these Terms.
+                      If you reside in any of the following states, you have full access to both Gold Coin Mode and Stream Coin Mode play. Players in these states can play games for fun with Gold Coins and participate in sweepstakes promotions with Pro Coins, including redeeming prizes, subject to these Terms.
                     </p>
                     <p className="text-muted-foreground mt-2 font-semibold">
                       Alabama, Alaska, Arizona, California, Colorado, Illinois, Indiana, Kansas, Maine, Massachusetts, Minnesota, Missouri, New Hampshire, New Mexico, Oklahoma, Oregon, Pennsylvania*, Rhode Island, South Dakota, Texas, Utah, Virginia, Washington D.C., Wisconsin, Wyoming
@@ -383,7 +383,7 @@ const Compliance = () => {
                       - Multiple high-value deposits without corresponding Gold Coin gameplay.
                     </p>
                     <p className="text-muted-foreground">
-                      - Immediate withdrawal attempts after obtaining Stream Coins.
+                      - Immediate withdrawal attempts after obtaining Pro Coins.
                     </p>
                     <p className="text-muted-foreground">
                       - Frequent account funding from multiple payment methods.
