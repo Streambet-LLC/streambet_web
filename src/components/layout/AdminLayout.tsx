@@ -20,7 +20,9 @@ export const AdminLayout = ({
     <div className="min-h-screen bg-background">
       <Navigation onDashboardClick={onDashboardClick} />
       <div className='w-full flex gap-2'>
-        <Sidebar />
+        <div className="max-h-[calc(100dvh)] overflow-y-auto">
+          <Sidebar />
+        </div>
         <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-8 pb-8 ", className)}>
           {children}
         </main>
