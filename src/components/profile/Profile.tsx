@@ -17,9 +17,6 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '../ui/button';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { PublicUserProfile } from '@/types/profile';
-import ProfilePrizeProgress from './ProfilePrizeProgress';
-import { getBadgeRingColor, getPrizeColor } from '@/utils/prizeColors';
 
 const socialsMapping = {
   instagram: {
@@ -53,7 +50,17 @@ export default function Profile() {
 
   if (!username) return <NotFound />;
 
-  const { data: profile, isFetching } = useQuery<PublicUserProfile>({
+  const { data: profile, isFetching } = useQuery<{
+    id: string;
+    username: string;
+    name: string;
+    accountCreationDate: Date;
+    profileImageUrl: string;
+    isCreator: boolean;
+    socials: { [social: string]: string };
+    isFollowed: boolean;
+    followers: number;
+  }>({
     queryKey: ['profile', { username }],
     queryFn: async () => {
       try {
@@ -105,46 +112,22 @@ export default function Profile() {
         ) : (
           <MainLayout showFooter>
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-4">
+              <div
+                className={cn('flex flex-col gap-4', !profile.isCreator && 'max-w-[584px] mx-auto')}
+              >
                 <div className="flex flex-col md:flex-row gap-6 justify-between">
                   <div className="flex gap-6">
-                    <div className="relative">
-                      <Avatar className={cn(
-                        "h-28 w-28 transition-all",
-                        profile.badgeLevel !== 'none' && `ring-4 ${getBadgeRingColor(profile.badgeLevel)} shadow-lg`
-                      )}>
-                        <AvatarImage src={getImageLink(profile.profileImageUrl)} alt={username} />
-                        <AvatarFallback>{username[0].toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      {profile.isCreator && profile.badgeLevel !== 'none' && (
-                        <div className={cn(
-                          "absolute -bottom-2 left-1/2 -translate-x-1/2",
-                          "px-2 py-1 rounded-full text-xs font-bold",
-                          "bg-background border-2",
-                          getPrizeColor(parseInt(profile.badgeLevel, 10), 'border'),
-                          getPrizeColor(parseInt(profile.badgeLevel, 10), 'text')
-                        )}>
-                          {profile.title}
-                        </div>
-                      )}
-                    </div>
+                    <Avatar className="h-28 w-28">
+                      <AvatarImage src={getImageLink(profile.profileImageUrl)} alt={username} />
+                      <AvatarFallback>{username[0].toUpperCase()}</AvatarFallback>
+                    </Avatar>
                     <div className="flex relative flex-col">
                       <div className="flex gap-2 items-center">
                         <div className="text-lg font-semibold text-white">{username}</div>
                       </div>
-                      <div className="text-xs text-gray-400 mt-2">
+                      <div className="text-xs text-gray-400">
                         Date joined: {format(profile.accountCreationDate.toString(), 'MMMM d, yyy')}
                       </div>
-                      {!profile.isCreator && profile.badgeLevel !== 'none' && (
-                        <div className={cn(
-                          "mt-2 px-3 py-1.5 rounded-full text-xs font-bold w-fit",
-                          "bg-background border-2",
-                          getPrizeColor(parseInt(profile.badgeLevel, 10), 'border'),
-                          getPrizeColor(parseInt(profile.badgeLevel, 10), 'text')
-                        )}>
-                          {profile.title}
-                        </div>
-                      )}
                       {profile.isCreator && profile.socials && (
                         <div className="flex flex-col mt-3 gap-1">
                           <p className="text-xs text-gray-100">
@@ -201,16 +184,6 @@ export default function Profile() {
                       </button>
                     </Link>
                   )}
-                </div>
-                
-                {/* Prize Progress Section - Shows for all users */}
-                <div className="mt-6">
-                  <ProfilePrizeProgress
-                    currentCadeCoins={profile.currentCadeCoins}
-                    lifetimeCadeCoins={profile.lifetimeCadeCoins} 
-                    prizeProgress={profile.prizeProgress}
-                    isOwnProfile={profile.username === session?.username}
-                  />
                 </div>
               </div>
               {profile.isCreator && (

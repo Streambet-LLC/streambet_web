@@ -5,7 +5,6 @@ import { toast } from '@/hooks/use-toast';
 import Bugsnag from '@bugsnag/js';
 import { WithdrawKycPayload, WithdrawKycUsPayload, WithdrawPayload } from '@/types/withdraw';
 import { BetCard } from '@/types/bet';
-import { PrizeConfiguration, SubmitPrizeRedemptionRequest } from '@/types/prize';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -910,22 +909,6 @@ export const adminAPI = {
     const response = await apiClient.patch(`/admin/user/${userId}/profile`, userData);
     return response.data;
   },
-
-  // Prize redemption management
-  getPrizeRedemptions: async (params?: { status?: string; userId?: string; prizeTier?: number }) => {
-    const response = await apiClient.get('/admin/prizes/redemptions', { params });
-    return response;
-  },
-
-  getRedemptionById: async (id: string) => {
-    const response = await apiClient.get(`/admin/prizes/redemptions/${id}`);
-    return response;
-  },
-
-  updateRedemptionStatus: async (id: string, payload: any) => {
-    const response = await apiClient.patch(`/admin/prizes/redemptions/${id}/status`, payload);
-    return response;
-  },
 };
 
 // Creator API
@@ -1047,77 +1030,6 @@ export const paymentAPI = {
   },
 };
 
-// Prize API
-export const prizeAPI = {
-  // Get all active prize tiers (public endpoint)
-  getActivePrizeTiers: async (): Promise<PrizeConfiguration[]> => {
-    const response = await apiClient.get('/prizes/config');
-    return response.data;
-  },
-
-  // Get all active prize tiers (admin only)
-  getAdminPrizeTiers: async (): Promise<PrizeConfiguration[]> => {
-    const response = await apiClient.get('/admin/prizes');
-    return response.data;
-  },
-
-  // Create a new prize tier (admin only)
-  createPrizeTier: async (payload: {
-    prizeTier: number;
-    amount: number;
-    name: string;
-    description?: string;
-    imageUrl?: string;
-  }): Promise<PrizeConfiguration> => {
-    const response = await apiClient.post('/admin/prizes', payload);
-    return response.data;
-  },
-
-  // Update a prize tier (admin only)
-  updatePrizeTier: async (id: string, payload: {
-    prizeTier: number;
-    amount: number;
-    name: string;
-    description?: string;
-    imageUrl?: string;
-  }): Promise<PrizeConfiguration> => {
-    const response = await apiClient.put(`/admin/prizes/${id}`, payload);
-    return response.data;
-  },
-
-  // Delete (soft delete) a prize tier (admin only)
-  deletePrizeTier: async (id: string): Promise<{ message: string }> => {
-    const response = await apiClient.delete(`/admin/prizes/${id}`);
-    return response.data;
-  },
-
-  // Get all prize tiers including inactive (admin only, for history/audit)
-  getPrizeHistory: async (): Promise<PrizeConfiguration[]> => {
-    const response = await apiClient.get('/admin/prizes/history');
-    return response.data;
-  },
-
-  // Submit prize redemption request
-  submitRedemption: async (redemptionData: SubmitPrizeRedemptionRequest) => {
-    const response = await apiClient.post('/prizes/redeem', redemptionData);
-    return response.data;
-  },
-
-  // Get user's redemptions
-  getMyRedemptions: async () => {
-    const response = await apiClient.get('/prizes/my-redemptions');
-    return response.data;
-  },
-
-  // Get user's address (secure endpoint)
-  // Note: Lives in users API since address is user data, but primarily used
-  // by prize redemption feature for shipping address pre-population
-  getMyAddress: async () => {
-    const response = await apiClient.get('/users/me/address');
-    return response.data.data; // Extract nested data object
-  },
-};
-
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,
@@ -1130,7 +1042,6 @@ export const api = {
   payment: paymentAPI,
   bets: betsAPI,
   creator: creatorAPI,
-  prize: prizeAPI,
 };
 
 export default api;
