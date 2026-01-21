@@ -40,7 +40,7 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/web
 const PRIZE_IMAGE_ASPECT_RATIO = 16 / 9;
 const PRIZE_IMAGE_MAX_WIDTH = 1200;
 const PRIZE_IMAGE_MAX_HEIGHT = 675;
-const PRIZE_IMAGE_QUALITY = 90;
+const PRIZE_IMAGE_QUALITY = 100;
 
 export const PrizeConfiguration = () => {
   const { toast } = useToast();
@@ -366,12 +366,12 @@ export const PrizeConfiguration = () => {
         throw new Error('Invalid upload response: missing image URL');
       }
       
-      setIsUploading(false);
       return url;
     } catch (error) {
       Bugsnag.notify(error);
-      setIsUploading(false);
       throw error; // Re-throw to be caught by handleCreate/handleUpdate
+    } finally {
+      setIsUploading(false);
     }
   };
 
