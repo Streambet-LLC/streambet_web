@@ -11,6 +11,7 @@ import { api } from '@/integrations/api/client';
 import { handleMutationError } from '@/lib/mutationHelpers';
 import { Loader2, Plus, Trash2, Upload, X, Edit, AlertCircle } from 'lucide-react';
 import { PrizeConfiguration as PrizeTier, CreatePrizeTierRequest, UpdatePrizeTierRequest } from '@/types/prize';
+import PhotoCropper from '../PhotoCropper';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,15 @@ import {
 import Bugsnag from '@bugsnag/js';
 import { getMessage, getThumbnailUrl } from '@/utils/helper';
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+// Prize image configuration
+const PRIZE_IMAGE_ASPECT_RATIO = 16 / 9;
+const PRIZE_IMAGE_MAX_WIDTH = 1200;
+const PRIZE_IMAGE_MAX_HEIGHT = 675;
+const PRIZE_IMAGE_QUALITY = 100;
+
 export const PrizeConfiguration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -42,6 +52,10 @@ export const PrizeConfiguration = () => {
   const [editingTier, setEditingTier] = useState<PrizeTier | null>(null);
   const [deletingTier, setDeletingTier] = useState<PrizeTier | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>('');
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   
   // Validation state
   const [validationError, setValidationError] = useState<string>('');
@@ -64,6 +78,10 @@ export const PrizeConfiguration = () => {
       imageUrl: '',
     });
     setValidationError('');
+    setImagePreviewUrl('');
+    setImageToCrop(null);
+    setSelectedImageFile(null);
+    setImageError(null);
   };
 
   // Validate tier number uniqueness
@@ -205,7 +223,7 @@ export const PrizeConfiguration = () => {
     onError: (error) => handleMutationError(error, 'Failed to delete prize tier'),
   });
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.name.trim()) {
       setValidationError('Prize name is required');
       return;
@@ -223,11 +241,36 @@ export const PrizeConfiguration = () => {
       return;
     }
 
+    // Check for image errors
+    if (imageError) {
+      toast({
+        variant: 'destructive',
+        title: 'Image Error',
+        description: imageError,
+      });
+      return;
+    }
+
     setValidationError('');
-    createMutation.mutate(formData);
+    
+    try {
+      // Upload image if new file selected
+      const imageUrl = await handleImageUpload();
+      
+      createMutation.mutate({
+        ...formData,
+        imageUrl,
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error uploading image',
+        description: getMessage(error) || 'Failed to upload prize image. Please try again.',
+      });
+    }
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!editingTier) return;
     if (!formData.name.trim()) {
       setValidationError('Prize name is required');
@@ -247,11 +290,36 @@ export const PrizeConfiguration = () => {
       return;
     }
 
+    // Check for image errors
+    if (imageError) {
+      toast({
+        variant: 'destructive',
+        title: 'Image Error',
+        description: imageError,
+      });
+      return;
+    }
+
     setValidationError('');
-    updateMutation.mutate({
-      id: editingTier.id,
-      payload: formData,
-    });
+    
+    try {
+      // Upload image if new file selected
+      const imageUrl = await handleImageUpload();
+      
+      updateMutation.mutate({
+        id: editingTier.id,
+        payload: {
+          ...formData,
+          imageUrl,
+        },
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error uploading image',
+        description: getMessage(error) || 'Failed to upload prize image. Please try again.',
+      });
+    }
   };
 
   const handleEdit = (tier: PrizeTier) => {
@@ -262,31 +330,49 @@ export const PrizeConfiguration = () => {
       description: tier.description || '',
       imageUrl: tier.imageUrl || '',
     });
+    setImagePreviewUrl(tier.imageUrl || '');
     setEditingTier(tier);
   };
 
-  const handleImageUpload = async (file: File) => {
-    let url = ''
-
-    try {
-      setIsUploading(true);
-      const response = await api.auth.uploadImage(file, 'thumbnail');
-      url = response?.data?.Key;
-      setIsUploading(false);
-    } catch (error) {
-      Bugsnag.notify(error);
-      toast({
-        variant: 'destructive',
-        title: 'Error uploading prize image',
-        description: getMessage(error) || 'Failed to upload prize image. Please try again.',
-      });
-      setIsUploading(false);
+  const handleFileSelect = (file: File) => {
+    setImageError(null);
+    
+    // Validate file type
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setImageError('Please upload a valid image file (JPEG, PNG, or WebP)');
+      return;
+    }
+    
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setImageError('Please upload an image smaller than 5MB.');
       return;
     }
 
-    const imageUrl = getThumbnailUrl(url);
+    setImageToCrop(file);
+  };
 
-    setFormData({ ...formData, imageUrl });
+  const handleImageUpload = async (): Promise<string> => {
+    if (!selectedImageFile) {
+      return formData.imageUrl; // Return existing URL if no new file
+    }
+
+    try {
+      setIsUploading(true);
+      const response = await api.auth.uploadImage(selectedImageFile, 'thumbnail');
+      const url = response?.data?.Key;
+      
+      if (!url || typeof url !== 'string') {
+        throw new Error('Invalid upload response: missing image URL');
+      }
+      
+      return url;
+    } catch (error) {
+      Bugsnag.notify(error);
+      throw error; // Re-throw to be caught by handleCreate/handleUpdate
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (isLoading) {
@@ -328,15 +414,16 @@ export const PrizeConfiguration = () => {
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {activeTiers
                 .sort((a, b) => a.prizeTier - b.prizeTier)
                 .map((tier) => (
                   <Card key={tier.id} className="border-2">
                     <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-col">
+                        {/* Content section */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
                             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
                               {tier.prizeTier}
                             </div>
@@ -347,37 +434,39 @@ export const PrizeConfiguration = () => {
                               </p>
                             </div>
                           </div>
-                          {tier.description && (
-                            <p className="text-sm text-muted-foreground ml-11">
-                              {tier.description}
-                            </p>
-                          )}
-                          {tier.imageUrl && (
-                            <div className="mt-3 ml-11">
-                              <img
-                                src={tier.imageUrl}
-                                alt={tier.name}
-                                className="w-16 h-16 rounded object-cover"
-                              />
-                            </div>
-                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(tier)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setDeletingTier(tier)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(tier)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setDeletingTier(tier)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        {tier.description && (
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {tier.description}
+                          </p>
+                        )}
+                        
+                        {/* Image section */}
+                        {tier.imageUrl && (
+                          <div className="w-full aspect-[16/9] border-t pt-2 md:pt-4">
+                            <img
+                              src={getThumbnailUrl(tier.imageUrl)}
+                              alt={tier.name}
+                              className="w-full h-full rounded object-cover"
+                            />
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -467,18 +556,22 @@ export const PrizeConfiguration = () => {
             <div className="space-y-2">
               <Label>Prize Image</Label>
               <div className="flex gap-2 items-start">
-                {formData.imageUrl ? (
+                {imagePreviewUrl ? (
                   <div className="relative">
                     <img
-                      src={formData.imageUrl}
+                      src={imagePreviewUrl}
                       alt="Preview"
-                      className="w-20 h-20 rounded object-cover"
+                      className="w-32 h-20 rounded object-cover"
                     />
                     <Button
                       size="icon"
                       variant="destructive"
                       className="absolute -top-2 -right-2 h-6 w-6"
-                      onClick={() => setFormData({ ...formData, imageUrl: '' })}
+                      onClick={() => {
+                        setImagePreviewUrl('');
+                        setSelectedImageFile(null);
+                        setFormData({ ...formData, imageUrl: '' });
+                      }}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -494,7 +587,7 @@ export const PrizeConfiguration = () => {
                       input.accept = 'image/*';
                       input.onchange = (e: any) => {
                         const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file);
+                        if (file) handleFileSelect(file);
                       };
                       input.click();
                     }}
@@ -506,6 +599,29 @@ export const PrizeConfiguration = () => {
               </div>
             </div>
           </div>
+          {imageToCrop && (
+            <PhotoCropper
+              file={imageToCrop}
+              onClose={() => setImageToCrop(null)}
+              onCrop={(file) => {
+                setSelectedImageFile(file);
+                setImageToCrop(null);
+                setImagePreviewUrl(URL.createObjectURL(file));
+              }}
+              cropperProps={{
+                aspect: PRIZE_IMAGE_ASPECT_RATIO,
+              }}
+              resizerProps={{
+                maxWidth: PRIZE_IMAGE_MAX_WIDTH,
+                maxHeight: PRIZE_IMAGE_MAX_HEIGHT,
+                compressFormat: 'JPEG',
+                quality: PRIZE_IMAGE_QUALITY,
+              }}
+            />
+          )}
+          {imageError && (
+            <div className="text-destructive text-xs mt-1">{imageError}</div>
+          )}
           {validationError && (
             <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive rounded-md">
               <AlertCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />

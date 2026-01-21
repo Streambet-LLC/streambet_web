@@ -2,10 +2,11 @@ import { MainLayout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePrizeTiers } from "@/hooks/usePrizeConfig"
 import { AlertCircle, Loader2 } from "lucide-react";
+import { getThumbnailUrl } from "@/utils/helper";
+import FeaturedBetCard from "@/components/FeaturedBetCard";
 
 export default function Prizes() {
   const { data: tiers, isLoading } = usePrizeTiers();
-
 
   return (
     <MainLayout>
@@ -23,43 +24,42 @@ export default function Prizes() {
             <p className="text-muted-foreground">Coming soon!</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tiers
               .sort((a, b) => a.prizeTier - b.prizeTier)
               .map((tier) => (
-                <Card key={tier.id} className="border-2">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
-                            {tier.prizeTier}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-lg">{tier.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {tier.amount.toLocaleString('en-US')} coins
-                            </p>
-                          </div>
-                        </div>
-                        {tier.description && (
-                          <p className="text-sm text-muted-foreground ml-11">
-                            {tier.description}
-                          </p>
-                        )}
-                        {tier.imageUrl && (
-                          <div className="mt-3 ml-11">
-                            <img
-                              src={tier.imageUrl}
-                              alt={tier.name}
-                              className="w-16 h-16 rounded object-cover"
-                            />
-                          </div>
-                        )}
+                <FeaturedBetCard key={tier.id}>
+                  <div className="p-6 flex flex-col h-full">
+                    {/* Content section */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
+                        {tier.prizeTier}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{tier.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {tier.amount.toLocaleString('en-US')} coins
+                        </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    {tier.description && (
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {tier.description}
+                      </p>
+                    )}
+                    
+                    {/* Image section */}
+                    {tier.imageUrl && (
+                      <div className="w-full aspect-[16/9] border-t pt-2 md:pt-4">
+                        <img
+                          src={getThumbnailUrl(tier.imageUrl)}
+                          alt={tier.name}
+                          className="w-full h-full rounded object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </FeaturedBetCard>
               ))}
           </div>
         )
