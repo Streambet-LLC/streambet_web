@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,7 +41,6 @@ interface StreamInfoFormProps {
   };
   isUploading: boolean;
   loading: boolean;
-  isDragging: boolean;
   onChange: (fields: Partial<StreamInfoFormProps['initialValues']>) => void;
   onFileChange: (file: File | null) => void;
   onSubmit: () => void;
@@ -68,7 +67,6 @@ export const StreamInfoForm = ({
   errors,
   isUploading,
   loading,
-  isDragging,
   onChange,
   onFileChange,
   onSubmit,
@@ -78,6 +76,7 @@ export const StreamInfoForm = ({
   onTimezoneOffsetChange,
   onChangeEventType,
 }: StreamInfoFormProps) => {
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbnailRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -95,16 +94,19 @@ export const StreamInfoForm = ({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    setIsDragging(false);
     const file = e.dataTransfer.files?.[0] || null;
     onFileChange(file);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    setIsDragging(false);
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,11 @@ import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
 import { handleMutationError } from '@/lib/mutationHelpers';
-import { Loader2, Plus, Trash2, Upload, X, Edit, AlertCircle } from 'lucide-react';
+import { Loader2, Plus, Trash2, X, Edit, AlertCircle } from 'lucide-react';
 import { PrizeConfiguration as PrizeTier, CreatePrizeTierRequest, UpdatePrizeTierRequest } from '@/types/prize';
 import PhotoCropper from '../PhotoCropper';
+import { useImageCropper } from '@/hooks/useImageCropper';
+import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
 import {
   Dialog,
   DialogContent,
@@ -33,28 +35,26 @@ import {
 import Bugsnag from '@bugsnag/js';
 import { getMessage, getThumbnailUrl } from '@/utils/helper';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
-// Prize image configuration
-const PRIZE_IMAGE_ASPECT_RATIO = 16 / 9;
-const PRIZE_IMAGE_MAX_WIDTH = 1200;
-const PRIZE_IMAGE_MAX_HEIGHT = 675;
-const PRIZE_IMAGE_QUALITY = 100;
-
 export const PrizeConfiguration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: tiers, isLoading } = useAdminPrizeTiers();
+
+  // Image upload hook
+  const imageUpload = useImageCropper({
+    checkNSFW: false,
+    onError: (error) => setImageError(error),
+  });
+
+  // Drag and drop state
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Dialog state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<PrizeTier | null>(null);
   const [deletingTier, setDeletingTier] = useState<PrizeTier | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [imageToCrop, setImageToCrop] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>('');
-  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   
   // Validation state
@@ -78,10 +78,36 @@ export const PrizeConfiguration = () => {
       imageUrl: '',
     });
     setValidationError('');
-    setImagePreviewUrl('');
-    setImageToCrop(null);
-    setSelectedImageFile(null);
+    imageUpload.clearImage();
     setImageError(null);
+  };
+
+  // Drag and drop handlers
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) imageUpload.handleFileSelect(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) imageUpload.handleFileSelect(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
   };
 
   // Validate tier number uniqueness
@@ -330,36 +356,18 @@ export const PrizeConfiguration = () => {
       description: tier.description || '',
       imageUrl: tier.imageUrl || '',
     });
-    setImagePreviewUrl(tier.imageUrl || '');
+    imageUpload.clearImage();
     setEditingTier(tier);
   };
 
-  const handleFileSelect = (file: File) => {
-    setImageError(null);
-    
-    // Validate file type
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setImageError('Please upload a valid image file (JPEG, PNG, or WebP)');
-      return;
-    }
-    
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      setImageError('Please upload an image smaller than 5MB.');
-      return;
-    }
-
-    setImageToCrop(file);
-  };
-
   const handleImageUpload = async (): Promise<string> => {
-    if (!selectedImageFile) {
+    if (!imageUpload.selectedFile) {
       return formData.imageUrl; // Return existing URL if no new file
     }
 
     try {
       setIsUploading(true);
-      const response = await api.auth.uploadImage(selectedImageFile, 'thumbnail');
+      const response = await api.auth.uploadImage(imageUpload.selectedFile, 'thumbnail');
       const url = response?.data?.Key;
       
       if (!url || typeof url !== 'string') {
@@ -555,72 +563,91 @@ export const PrizeConfiguration = () => {
             </div>
             <div className="space-y-2">
               <Label>Prize Image</Label>
-              <div className="flex gap-2 items-start">
-                {imagePreviewUrl ? (
-                  <div className="relative">
-                    <img
-                      src={imagePreviewUrl}
-                      alt="Preview"
-                      className="w-32 h-20 rounded object-cover"
-                    />
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute -top-2 -right-2 h-6 w-6"
-                      onClick={() => {
-                        setImagePreviewUrl('');
-                        setSelectedImageFile(null);
-                        setFormData({ ...formData, imageUrl: '' });
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ) : (
+              {(imageUpload.previewUrl || (editingTier && formData.imageUrl && !imageUpload.selectedFile)) ? (
+                <div className="relative">
+                  <img
+                    src={imageUpload.previewUrl || getThumbnailUrl(formData.imageUrl)}
+                    alt="Preview"
+                    className="w-full aspect-[16/9] rounded object-cover"
+                  />
                   <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={isUploading}
+                    size="icon"
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 h-6 w-6"
                     onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = 'image/*';
-                      input.onchange = (e: any) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileSelect(file);
-                      };
-                      input.click();
+                      imageUpload.clearImage();
+                      setFormData({ ...formData, imageUrl: '' });
                     }}
                   >
-                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-                    {isUploading ? "Uploading Image" : "Upload Image"}
+                    <X className="h-3 w-3" />
                   </Button>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div
+                  className={`w-full flex flex-col items-center justify-center bg-secondary rounded-xl py-4 px-2 cursor-pointer border border-border ${isDragging ? 'ring-2 ring-primary' : ''} ${imageError ? 'border-destructive' : ''}`}
+                  style={{ minHeight: 120 }}
+                  onClick={imageUpload.isValidating ? undefined : handleUploadClick}
+                  onDrop={imageUpload.isValidating ? undefined : handleDrop}
+                  onDragOver={imageUpload.isValidating ? undefined : handleDragOver}
+                  onDragLeave={imageUpload.isValidating ? undefined : handleDragLeave}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                    disabled={imageUpload.isValidating}
+                  />
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center justify-center mb-1 relative">
+                      <div
+                        className="rounded-full bg-background border-4 border-border flex items-center justify-center"
+                        style={{ width: 44, height: 44 }}
+                      >
+                        {imageUpload.isValidating ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-white" />
+                        ) : (
+                          <img
+                            src="/icons/cloud_upload.png"
+                            alt="Upload"
+                            style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-sm text-center text-muted-foreground" style={{ lineHeight: '1.7' }}>
+                      <span className="text-primary font-medium">Click to upload</span> or drag and drop
+                      <br />
+                      <span className="text-muted-foreground text-[12px]">JPEG, PNG, or WebP</span>
+                      <br />
+                      <span className="text-muted-foreground text-[10px]">Recommended aspect ratio: 16:9</span>
+                      <br />
+                      <span className="text-muted-foreground text-[10px]">Resolution: 1920x1080px</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+              {imageError && (
+                <p className="text-sm text-red-500">{imageError}</p>
+              )}
             </div>
           </div>
-          {imageToCrop && (
+          {imageUpload.fileToCrop && (
             <PhotoCropper
-              file={imageToCrop}
-              onClose={() => setImageToCrop(null)}
-              onCrop={(file) => {
-                setSelectedImageFile(file);
-                setImageToCrop(null);
-                setImagePreviewUrl(URL.createObjectURL(file));
-              }}
+              file={imageUpload.fileToCrop}
+              onClose={imageUpload.cancelCrop}
+              onCrop={imageUpload.handleCropComplete}
               cropperProps={{
-                aspect: PRIZE_IMAGE_ASPECT_RATIO,
+                aspect: IMAGE_UPLOAD_CONFIG.ASPECT_RATIO,
               }}
               resizerProps={{
-                maxWidth: PRIZE_IMAGE_MAX_WIDTH,
-                maxHeight: PRIZE_IMAGE_MAX_HEIGHT,
+                maxWidth: IMAGE_UPLOAD_CONFIG.MAX_WIDTH,
+                maxHeight: IMAGE_UPLOAD_CONFIG.MAX_HEIGHT,
                 compressFormat: 'JPEG',
-                quality: PRIZE_IMAGE_QUALITY,
+                quality: IMAGE_UPLOAD_CONFIG.QUALITY,
               }}
             />
-          )}
-          {imageError && (
-            <div className="text-destructive text-xs mt-1">{imageError}</div>
           )}
           {validationError && (
             <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive rounded-md">
@@ -641,9 +668,9 @@ export const PrizeConfiguration = () => {
             </Button>
             <Button
               onClick={editingTier ? handleUpdate : handleCreate}
-              disabled={createMutation.isPending || updateMutation.isPending}
+              disabled={isUploading || createMutation.isPending || updateMutation.isPending}
             >
-              {(createMutation.isPending || updateMutation.isPending) && (
+              {(isUploading || createMutation.isPending || updateMutation.isPending) && (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               )}
               {editingTier ? 'Update' : 'Create'}
