@@ -608,7 +608,7 @@ export default function SignUp() {
                     <p className="text-destructive text-sm">{errors.promoCode}</p>
                   )}
                 </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
+                {/* <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="refLink">Referal Code (Optional)</Label>
                   <Input
                     id="refLink"
@@ -620,7 +620,7 @@ export default function SignUp() {
                     disabled={false}
                   />
                   {errors.refLink && <p className="text-destructive text-sm">{errors.refLink}</p>}
-                </motion.div>
+                </motion.div> */}
                 <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="dob">Date of Birth</Label>
                   <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
