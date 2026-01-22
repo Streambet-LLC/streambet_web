@@ -593,7 +593,7 @@ export default function SignUp() {
                   />
                   {errors.name && <p className="text-destructive text-sm">{errors.name}</p>}
                 </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
+                {/* <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="promoCode">Promo Code (Optional)</Label>
                   <Input
                     id="promoCode"
@@ -607,7 +607,7 @@ export default function SignUp() {
                   {errors.promoCode && (
                     <p className="text-destructive text-sm">{errors.promoCode}</p>
                   )}
-                </motion.div>
+                </motion.div> */}
                 <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="refLink">Referal Code (Optional)</Label>
                   <Input
