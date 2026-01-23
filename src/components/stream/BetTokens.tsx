@@ -29,6 +29,11 @@ interface SliderMax {
 
 interface BettingData {
   bettingRounds?: BettingRound[];
+  bettingRoundsWithVariablePercentages: {
+    bettingVariables: {
+      percentage: string | number;
+    }
+  }[];
   walletGoldCoin?: number;
   walletSweepCoin?: number;
   walletCadeCoin?: number;
@@ -98,8 +103,6 @@ export default function BetTokens({
   const bettingLimits = getBettingLimits();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-
-  console.log(selectedOption);
 
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState(selectedOption ? selectedOption : '');
@@ -469,10 +472,10 @@ export default function BetTokens({
             >
               {bettingData?.bettingRounds?.[0]?.bettingVariables?.map(
                 (option: any, idx: number) => (
-                  <button
+                  <div
                     key={option.id}
                     onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
-                    className={`${
+                    className={`flex justify-between cursor-pointer ${
                       isMobile || isTabletRange
                         ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 break-words whitespace-normal'
                         : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 break-words whitespace-normal'
@@ -484,11 +487,11 @@ export default function BetTokens({
                           : '#242424',
                       color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
                     }}
-                    disabled={!isColorButtonsEnabled}
                     title={option.name}
                   >
-                    {option.name}
-                  </button>
+                    {option.name} 
+                    <span>{bettingData.bettingRoundsWithVariablePercentages[0].bettingVariables[idx].percentage}%</span>
+                  </div>
                 )
               )}
             </div>
