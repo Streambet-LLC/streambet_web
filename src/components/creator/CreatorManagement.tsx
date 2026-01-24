@@ -14,9 +14,11 @@ import {
   formatDateTimeForISO,
   getImageLink,
   getMessage,
-  isImageSFW,
   isScheduledTimeInPast,
 } from '@/utils/helper';
+import { useImageCropper } from '@/hooks/useImageCropper';
+import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
+import PhotoCropper from '../PhotoCropper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -73,7 +75,6 @@ export const CreatorManagement = ({
   const [description, setDescription] = useState('');
   const [embeddedUrl, setEmbeddedUrl] = useState('');
   const [creatorId, setCreatorId] = useState('');
-  const [thumbnailError, setThumbnailError] = useState<string | null>(null);
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
   const [isLiveStream, setIsLiveStream] = useState(false);
   const { toast } = useToast();
@@ -163,11 +164,13 @@ export const CreatorManagement = ({
     label: 'Livestream',
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
-  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | undefined>(undefined);
+  // Image upload hook for thumbnail
+  const thumbnailUpload = useImageCropper({
+    checkNSFW: true,
+    onError: (error) => setErrors(prev => ({ ...prev, thumbnail: error })),
+  });
 
   // Notify parent when stream content is being rendered
   useEffect(() => {
@@ -222,10 +225,7 @@ export const CreatorManagement = ({
     setTimezone(undefined);
 
     // Reset thumbnail related states
-    setSelectedThumbnailFile(null);
-    setThumbnailPreviewUrl(undefined);
-    setThumbnailError(null);
-    setIsDragging(false);
+    thumbnailUpload.clearImage();
     setIsUploading(false);
     setIsLiveStream(false);
 
@@ -284,7 +284,7 @@ export const CreatorManagement = ({
 
   const [validationStarted, setValidationStarted] = useState(false);
 
-  function validateForm() {
+  function validateForm(existingThumbnailUrl?: string) {
     const newErrors = {
       title: '',
       description: '',
@@ -330,7 +330,7 @@ export const CreatorManagement = ({
       }
     }
 
-    if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
+    if (!thumbnailUpload.selectedFile && !thumbnailUpload.previewUrl && !existingThumbnailUrl) {
       newErrors.thumbnail = 'Thumbnail is required';
       isValid = false;
     }
@@ -523,10 +523,8 @@ export const CreatorManagement = ({
 
       setIsLiveStream(streamData?.status === StreamStatus.LIVE);
 
-      // Set thumbnail if available
-      if (streamData.thumbnailUrl) {
-        setThumbnailPreviewUrl(getImageLink(streamData.thumbnailUrl));
-      }
+      // Note: Thumbnail is handled by thumbnailUpload.previewUrl when editing
+      // The existing thumbnail URL is shown in StreamInfoForm via streamData.thumbnailUrl
 
       // Set start date and time if scheduledStartTime is available
       if (streamData.scheduledStartTime) {
@@ -546,109 +544,22 @@ export const CreatorManagement = ({
   }
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) handleFile(file);
-  }
-  async function handleFile(file: File) {
-    // Validate file type
-    setErrors({
-      ...errors,
-      thumbnail: '',
-      title: '',
-      embeddedUrl: '',
-      startDate: '',
-    });
-
-    if (!file.type.startsWith('image/')) {
-      setErrors({
-        ...errors,
-        thumbnail: 'Please upload an image file',
-        title: '',
-        embeddedUrl: '',
-        startDate: '',
-      });
-      return;
-    }
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors({
-        ...errors,
-        thumbnail: 'Please upload an image smaller than 5MB',
-        title: '',
-        embeddedUrl: '',
-        startDate: '',
-      });
-      return;
-    }
-    // Validate image dimensions
-    const isValid = await validateImage(file);
-    if (!isValid) return;
-
-    setIsUploading(true);
-    const isSfw = await isImageSFW(URL.createObjectURL(file));
-    setIsUploading(false);
-
-    if (!isSfw) {
-      setErrors({
-        ...errors,
-        thumbnail:
-          'Sorry, but the chosen image might be inappropriate. Please choose a different one.',
-        title: '',
-        embeddedUrl: '',
-        startDate: '',
-      });
-      return;
-    }
-
-    setSelectedThumbnailFile(file);
-    setThumbnailPreviewUrl(URL.createObjectURL(file));
-    setErrors(errors => ({ ...errors, thumbnail: '' }));
-  }
-  async function validateImage(file: File): Promise<boolean> {
-    return new Promise(resolve => {
-      const img = new window.Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(img.src);
-        const isValidSize = img.width <= 1920 && img.height <= 1080;
-        if (!isValidSize) {
-          setErrors(errors => ({ ...errors, thumbnail: 'Image must be maximum 1920x1080px' }));
-          resolve(false);
-        } else {
-          resolve(true);
-        }
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        setErrors(errors => ({ ...errors, thumbnail: 'Failed to load image for validation' }));
-        resolve(false);
-      };
-    });
-  }
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
+    if (file) {
+      // Clear thumbnail error before validation
+      setErrors(prev => ({
+        ...prev,
+        thumbnail: '',
+      }));
+      thumbnailUpload.handleFileSelect(file);
     }
   }
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-    setIsDragging(true);
-  }
-  function handleDragLeave(e: React.DragEvent) {
-    e.preventDefault();
-    setIsDragging(false);
-  }
+
   function handleDeleteThumbnail() {
-    setSelectedThumbnailFile(null);
-    setThumbnailPreviewUrl(undefined);
-    setErrors({
-      ...errors,
+    thumbnailUpload.clearImage();
+    setErrors(prev => ({
+      ...prev,
       thumbnail: '',
-      title: '',
-      embeddedUrl: '',
-      startDate: '',
-    });
+    }));
     // Clear the file input to allow reselection
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -701,10 +612,10 @@ export const CreatorManagement = ({
 
     let thumbnailImageUrl = streamData?.thumbnailUrl || '';
 
-    if (selectedThumbnailFile?.name) {
+    if (thumbnailUpload.selectedFile) {
       try {
         setIsUploading(true);
-        const response = await api.auth.uploadImage(selectedThumbnailFile, 'thumbnail');
+        const response = await api.auth.uploadImage(thumbnailUpload.selectedFile, 'thumbnail');
         thumbnailImageUrl = response?.data?.Key;
         setIsUploading(false);
       } catch (error) {
@@ -763,9 +674,9 @@ export const CreatorManagement = ({
     setBettingRounds([]);
   };
 
-  // New: handle next step from info to betting
+  // Handle next step from info to betting
   const handleNextStep = async () => {
-    if (!validateForm()) {
+    if (!validateForm(streamData?.thumbnailUrl)) {
       setTimeout(() => scrollToFirstError(), 100);
       toast({
         title: 'Form error',
@@ -829,9 +740,9 @@ export const CreatorManagement = ({
   // Add useEffect for validation
   useEffect(() => {
     if (validationStarted) {
-      validateForm();
+      validateForm(streamData?.thumbnailUrl);
     }
-  }, [title, embeddedUrl, startDateObj, startTime, selectedThumbnailFile, thumbnailPreviewUrl]);
+  }, [title, description, embeddedUrl, eventType, startDateObj, startTime, timezone, isLiveStream, thumbnailUpload.selectedFile, thumbnailUpload.previewUrl, streamData?.thumbnailUrl, validationStarted]);
 
   const addNewRound = () => {
     const roundNumber = bettingRounds.length + 1;
@@ -883,7 +794,7 @@ export const CreatorManagement = ({
                 className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none text-sm sm:text-base"
                 style={{ borderRadius: '10px', fontWeight: 400 }}
                 disabled={
-                  createStreamMutation.isPending || createBetMutation.isPending || isUploading
+                  createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
                 }
                 onClick={() => setStreamAnalyticsId('')}
               >
@@ -1072,7 +983,7 @@ export const CreatorManagement = ({
                   className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
                   disabled={
-                    createStreamMutation.isPending || createBetMutation.isPending || isUploading
+                    createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
                   }
                   onClick={() => {
                     if (createStep === 'betting') {
@@ -1108,7 +1019,7 @@ export const CreatorManagement = ({
                       await handleNextStep();
                     }}
                     disabled={
-                      createStreamMutation.isPending || createBetMutation.isPending || isUploading
+                      createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
                     }
                   >
                     Next
@@ -1120,7 +1031,7 @@ export const CreatorManagement = ({
                       className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                       style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
                       disabled={
-                        createStreamMutation.isPending || createBetMutation.isPending || isUploading
+                        createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
                       }
                       onClick={addNewRound}
                     >
@@ -1141,7 +1052,7 @@ export const CreatorManagement = ({
                       title,
                       description,
                       embeddedUrl,
-                      thumbnailPreviewUrl,
+                      thumbnailPreviewUrl: thumbnailUpload.previewUrl,
                       startDateObj,
                       startTime,
                       timezone,
@@ -1150,9 +1061,8 @@ export const CreatorManagement = ({
                       eventType,
                     }}
                     errors={errors}
-                    isUploading={isUploading}
+                    isUploading={isUploading || thumbnailUpload.isValidating}
                     loading={createStreamMutation.isPending || createBetMutation.isPending}
-                    isDragging={isDragging}
                     onChange={fields => {
                       if (!validationStarted) {
                         if ('title' in fields) setTitle(fields.title ?? '');
@@ -1229,7 +1139,7 @@ export const CreatorManagement = ({
                   <BettingRounds
                     eventType={eventType.value}
                     isSaving={
-                      createStreamMutation.isPending || createBetMutation.isPending || isUploading
+                      createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
                     }
                     statusMap={
                       betStreamData?.data?.rounds
@@ -1248,7 +1158,7 @@ export const CreatorManagement = ({
                     createStream={true}
                     handleCreateStream={handleCreateStream}
                     betCardInfo={{
-                      thumbnail: thumbnailPreviewUrl,
+                      thumbnail: thumbnailUpload.previewUrl,
                       description,
                       creator: session.username,
                       streamName: title,
@@ -1595,6 +1505,24 @@ export const CreatorManagement = ({
             </div>
           )}
         </>
+      )}
+
+      {/* Photo Cropper Dialog */}
+      {thumbnailUpload.fileToCrop && (
+        <PhotoCropper
+          file={thumbnailUpload.fileToCrop}
+          onClose={thumbnailUpload.cancelCrop}
+          onCrop={thumbnailUpload.handleCropComplete}
+          cropperProps={{
+            aspect: IMAGE_UPLOAD_CONFIG.ASPECT_RATIO,
+          }}
+          resizerProps={{
+            maxWidth: IMAGE_UPLOAD_CONFIG.MAX_WIDTH,
+            maxHeight: IMAGE_UPLOAD_CONFIG.MAX_HEIGHT,
+            compressFormat: 'JPEG',
+            quality: IMAGE_UPLOAD_CONFIG.QUALITY,
+          }}
+        />
       )}
     </div>
   );

@@ -18,6 +18,9 @@ import {
   getConnectionErrorMessage,
   getImageLink,
 } from '@/utils/helper';
+import { useImageCropper } from '@/hooks/useImageCropper';
+import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
+import PhotoCropper from '../PhotoCropper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
 import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
@@ -58,7 +61,7 @@ function parseLocalDate(dateStr) {
 // Validation function for stream settings form
 function validateForm(
   { title, description, embeddedUrl, thumbnailPreviewUrl, startDateObj, startTime, timezone },
-  selectedThumbnailFile,
+  thumbnailUpload,
   isLiveStream,
   eventType
 ) {
@@ -97,7 +100,7 @@ function validateForm(
     }
   }
 
-  if (!selectedThumbnailFile && !thumbnailPreviewUrl) {
+  if (!thumbnailUpload.selectedFile && !thumbnailPreviewUrl) {
     newErrors.thumbnail = 'Thumbnail is required';
     isValid = false;
   }
@@ -136,7 +139,13 @@ export const CreatorStreamContent = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [endStreamDialogOpen, setEndStreamDialogOpen] = useState(false);
   const [editableRounds, setEditableRounds] = useState([]);
-  const [selectedThumbnailFile, setSelectedThumbnailFile] = useState<File | null>(null);
+
+  // Image upload hook for thumbnail
+  const thumbnailUpload = useImageCropper({
+    checkNSFW: true,
+    onError: (error) => setEditErrors(prev => ({ ...prev, thumbnail: error })),
+  });
+
   const [bettingUpdate, setBettingUpdate] = useState<BettingTotals | null>(null);
   const [messageList, setMessageList] = useState<any>();
   const { socketConnect, handleSocketReconnection } = useBettingStatusContext();
@@ -260,7 +269,6 @@ export const CreatorStreamContent = ({
     startDate: '',
   });
   const [isUploading, setIsUploading] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -340,16 +348,13 @@ export const CreatorStreamContent = ({
   };
 
   // Function to update thumbnail in form
-  const handleEditFileChange = file => {
-    setSelectedThumbnailFile(file);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setEditForm(prev => ({ ...prev, thumbnailPreviewUrl: url }));
-    }
+  const handleEditFileChange = (file: File) => {
+    thumbnailUpload.handleFileSelect(file);
   };
 
   // Function to delete thumbnail
   const handleEditDeleteThumbnail = () => {
+    thumbnailUpload.clearImage();
     setEditForm(prev => ({ ...prev, thumbnailPreviewUrl: '' }));
   };
 
@@ -390,7 +395,7 @@ export const CreatorStreamContent = ({
       // Only validate when settings dialog is open
       const { isValid, newErrors } = validateForm(
         editForm,
-        selectedThumbnailFile,
+        thumbnailUpload,
         isLiveStream,
         eventType
       );
@@ -402,7 +407,7 @@ export const CreatorStreamContent = ({
     editForm.thumbnailPreviewUrl,
     editForm.startDateObj,
     editForm.startTime,
-    selectedThumbnailFile,
+    thumbnailUpload.selectedFile,
     settingsOpen,
   ]);
 
@@ -410,7 +415,7 @@ export const CreatorStreamContent = ({
     // Run validation first
     const { isValid, newErrors } = validateForm(
       editForm,
-      selectedThumbnailFile,
+      thumbnailUpload,
       isLiveStream,
       eventType
     );
@@ -419,12 +424,11 @@ export const CreatorStreamContent = ({
       return;
     }
     let thumbnailImageUrl = streamInfo?.thumbnailUrl || '';
-    if (selectedThumbnailFile?.name) {
+    if (thumbnailUpload.selectedFile?.name) {
+      setIsUploading(true);
       try {
-        setIsUploading(true);
-        const response = await api.auth.uploadImage(selectedThumbnailFile, 'thumbnail');
+        const response = await api.auth.uploadImage(thumbnailUpload.selectedFile, 'thumbnail');
         thumbnailImageUrl = response?.data?.Key;
-        setIsUploading(false);
       } catch (error) {
         Bugsnag.notify(error);
         toast({
@@ -432,8 +436,9 @@ export const CreatorStreamContent = ({
           title: 'Error uploading stream thumbnail',
           description: getMessage(error) || 'Failed to upload thumbnail. Please try again.',
         });
-        setIsUploading(false);
         return;
+      } finally {
+        setIsUploading(false);
       }
     }
 
@@ -482,6 +487,8 @@ export const CreatorStreamContent = ({
       });
     }
   };
+
+  const isUploadingOrValidating = isUploading || thumbnailUpload.isValidating;
 
   return (
     <div className="flex flex-col gap-0 h-full px-6 md:px-12">
@@ -606,9 +613,9 @@ export const CreatorStreamContent = ({
                         className="bg-primary text-black font-bold px-6 py-2 rounded-lg shadow-none border-none w-[120px] h-[40px]"
                         style={{ borderRadius: '10px' }}
                         onClick={handleEditSubmit}
-                        disabled={createStreamMutation.isPending || isUploading}
+                        disabled={createStreamMutation.isPending || isUploadingOrValidating}
                       >
-                        {createStreamMutation.isPending || isUploading ? 'Saving...' : 'Update'}
+                        {createStreamMutation.isPending || isUploadingOrValidating ? 'Saving...' : 'Update'}
                       </Button>
                     </div>
                   </div>
@@ -622,9 +629,8 @@ export const CreatorStreamContent = ({
                       eventType,
                     }}
                     errors={editErrors}
-                    isUploading={isUploading}
+                    isUploading={isUploadingOrValidating}
                     loading={loading}
-                    isDragging={isDragging}
                     onChange={handleEditFormChange}
                     onFileChange={handleEditFileChange}
                     onSubmit={handleEditSubmit}
@@ -687,6 +693,24 @@ export const CreatorStreamContent = ({
           </div>
         </div>
       </div>
+
+      {/* Photo Cropper Dialog */}
+      {thumbnailUpload.fileToCrop && (
+        <PhotoCropper
+          file={thumbnailUpload.fileToCrop}
+          onClose={thumbnailUpload.cancelCrop}
+          onCrop={thumbnailUpload.handleCropComplete}
+          cropperProps={{
+            aspect: IMAGE_UPLOAD_CONFIG.ASPECT_RATIO,
+          }}
+          resizerProps={{
+            maxWidth: IMAGE_UPLOAD_CONFIG.MAX_WIDTH,
+            maxHeight: IMAGE_UPLOAD_CONFIG.MAX_HEIGHT,
+            quality: IMAGE_UPLOAD_CONFIG.QUALITY,
+          }}
+        />
+      )}
     </div>
   );
 };
+
