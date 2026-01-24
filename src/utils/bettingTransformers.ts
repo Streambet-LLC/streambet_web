@@ -12,6 +12,7 @@ export const transformForBetTokens = (activeRound: ActiveRound) => ({
     bettingVariables: activeRound.bettingVariables,
     status: activeRound.status,
   }],
+
   roundTotalBetsGoldCoinAmount: activeRound.totalGoldCoins,
   roundTotalBetsSweepCoinAmount: activeRound.totalSweepCoins,
   status: activeRound.status,
@@ -19,6 +20,7 @@ export const transformForBetTokens = (activeRound: ActiveRound) => ({
   walletSweepCoin: activeRound.walletSweepCoin,
   userBetGoldCoins: activeRound.userBetGoldCoins,
   userBetSweepCoin: activeRound.userBetSweepCoin,
+  bettingRoundsWithVariablePercentages: activeRound.bettingRoundsWithVariablePercentages,
 });
 
 /**
