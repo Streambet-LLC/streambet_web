@@ -114,6 +114,7 @@ export function useBettingSocket({
         userBetGoldCoins: bettingData.userBetGoldCoins,
         userBetSweepCoin: bettingData.userBetSweepCoin,
         userBetCadeCoin: bettingData.userBetCadeCoin,
+        bettingRoundsWithVariablePercentages: bettingData.bettingRoundsWithVariablePercentages,
       });
     }
   }, [bettingData, roundId, setActiveRound]);
