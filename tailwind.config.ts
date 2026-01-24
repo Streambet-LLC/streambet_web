@@ -1,5 +1,6 @@
 import type { Config } from 'tailwindcss';
 import animate from 'tailwindcss-animate';
+import plugin from 'tailwindcss/plugin';
 
 export default {
   darkMode: ['class'],
@@ -106,6 +107,7 @@ export default {
         'input-glow': '0px 1px 0px 0px inset rgba(189,255,0,0.15), 0px -1px 0px 0px inset rgba(255,255,255,0.1), 0px -10px 30px 0px inset rgba(189,255,0,0.08)',
         'card-subtle': '0px 1px 0px 0px inset rgba(189,255,0,0.1), 0px -1px 0px 0px inset rgba(255,255,255,0.08), 0px 4px 12px 0px rgba(0,0,0,0.6)',
         'card-subtle-hover': '0px 1px 0px 0px inset rgba(189,255,0,0.15), 0px -1px 0px 0px inset rgba(255,255,255,0.12), 0px 6px 20px 0px rgba(189,255,0,0.12), 0px 2px 8px 0px rgba(0,0,0,0.7)',
+        'tron-glow': '0 0 10px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.08)',
       },
       backgroundImage: {
         'featured-gradient': "linear-gradient(rgba(189, 255, 0, 0) 0%, rgba(189, 255, 0, 0.08) 100%), linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.85) 100%)",
@@ -135,5 +137,16 @@ export default {
       },
     },
   },
-  plugins: [animate],
+  plugins: [
+    animate,
+    plugin(function ({ addUtilities }) {
+      addUtilities({
+        '.tron-grid': {
+          backgroundImage:
+            'linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px)',
+          backgroundSize: '20px 20px',
+        },
+      });
+    }),
+  ],
 } satisfies Config;
