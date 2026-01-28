@@ -9,7 +9,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <img src="/logo.svg" alt="StreamBet Logo" className="mb-8 w-[155px]" />
+            <img src="/machine-wordmark.svg" alt="CardCade Logo" className="mb-8" />
             <p className="text-sm text-muted-foreground">
               Live picks for games created on the Internet.
             </p>

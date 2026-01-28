@@ -161,7 +161,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                     <img
                       src="/logo.svg"
                       alt="Streambet Logo"
-                      className="h-8 w-[165px] object-contain"
+                      className="h-10 object-contain"
                     />
                   </Link>
                 </div>
@@ -228,7 +228,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                 <img
                   src="/logo.svg"
                   alt="Streambet Logo"
-                  className="h-8 w-[165px] object-contain"
+                  className="h-10 object-contain"
                 />
               </Link>
             </motion.div>
