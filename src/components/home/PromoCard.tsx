@@ -41,7 +41,7 @@ export default function PromoCard({
 
   return (
     <Card className={cn(
-      "w-full overflow-hidden bg-card-grid-bg border border-card-grid-border",
+      "w-full overflow-hidden bg-card-grid-bg border-2 border-primary/50",
       className
     )}>
       <div className="relative w-full aspect-[21/9] overflow-hidden" style={{ maxHeight: '300px' }}>
