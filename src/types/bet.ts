@@ -1,4 +1,4 @@
-import { BettingCategory } from '@/enums';
+import { BettingCategory, CurrencyType } from '@/enums';
 
 export interface BetCard {
   thumbnail: string;
@@ -7,10 +7,14 @@ export interface BetCard {
   description: string;
   category: BettingCategory;
   options: {
+    id: string;
     option: string;
     percentage: number;
-    selected?: boolean;
     isWinner: boolean;
+    userBet: {
+      amount: number;
+      currency: CurrencyType;
+    } | null;
   }[];
   totalPot: {
     streamCoins: number;
