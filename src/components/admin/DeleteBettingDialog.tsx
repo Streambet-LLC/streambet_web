@@ -17,22 +17,24 @@ interface DeleteBettingDialogProps {
   title: string;
   trigger?: React.ReactNode;
   isNotCreatedStatus?: boolean;
+  isLocked?: boolean;
 }
 
-export function DeleteBettingDialog({ onConfirm, message, title, trigger, isNotCreatedStatus }: DeleteBettingDialogProps) {
+export function DeleteBettingDialog({ onConfirm, message, title, trigger, isNotCreatedStatus, isLocked }: DeleteBettingDialogProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleDeleteClick = () => {
-    if (isNotCreatedStatus) {
-      // Show error message instead of delete dialog
-      setIsDeleteDialogOpen(true);
-    } else {
-      // Show normal delete confirmation
-      setIsDeleteDialogOpen(true);
-    }
+    setIsDeleteDialogOpen(true);
   };
 
   const getDialogContent = () => {
+    if (isLocked) {
+      return {
+        title: "Cannot Delete",
+        message: "Cannot delete this option as the round is locked",
+        showConfirmButton: false
+      };
+    }
     if (isNotCreatedStatus) {
       return {
         title: "Cannot Delete",
