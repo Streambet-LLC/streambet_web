@@ -12,18 +12,9 @@ import { DeleteBettingDialog } from './DeleteBettingDialog';
 import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Edit, Copy } from 'lucide-react';
-import { BettingRoundStatus, BettingCategory } from '@/enums';
+import { BettingRoundStatus, BettingCategory, CurrencyType } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
 import { getCategoryLabel } from '@/utils/categoryHelpers';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
 import {
   TEMP_OPTION_PREFIX,
   cleanTemporaryIds,
@@ -91,7 +82,6 @@ export function BettingRounds({
 }: BettingRoundsProps) {
   const isMobile = useIsMobile();
   const [expandedRounds, setExpandedRounds] = useState<string[]>([]);
-  const [alertDialogIndex, setAlertDialogIndex] = useState<number | null>(null);
   const roundRefs = useRef<(HTMLDivElement | null)[]>([]);
   const roundsListRef = useRef<HTMLDivElement | null>(null);
   const prevRoundsLength = useRef<number>(rounds.length);
@@ -106,9 +96,14 @@ export function BettingRounds({
   const roundsOptionsPreview = useMemo(() => {
     return roundsState.map(round =>
       round.options.map(option => ({
+        id: option.optionId || '',
         option: option.option,
         percentage: 100,
         isWinner: false,
+        userBet: {
+          amount: 0,
+          currency: CurrencyType.STREAM_COINS,
+        },
       }))
     );
   }, [roundsState]);
@@ -362,7 +357,6 @@ export function BettingRounds({
                                 <InlineEditable
                                   title="Edit Round Name"
                                   value={round.roundName}
-                                  isNotCreatedStatus={isNotCreatedStatus}
                                   onSave={newName => updateRoundName(roundIndex, newName)}
                                   className={`text-white font-medium ${hasRoundError ? 'text-destructive' : ''}`}
                                   style={{
@@ -372,7 +366,6 @@ export function BettingRounds({
                                     minWidth: 0,
                                   }}
                                   minLength={2}
-                                  createdAt={round.createdAt}
                                 />
                               </div>
                               <div className="flex items-center gap-2 flex-wrap">
@@ -381,40 +374,10 @@ export function BettingRounds({
                                   className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                                   style={{ height: 33, fontSize: '16px', fontWeight: 500 }}
                                   disabled={isSaving}
-                                  onClick={() => {
-                                    if (isNotCreatedStatus) {
-                                      setAlertDialogIndex(roundIndex);
-                                    } else {
-                                      addNewOption(roundIndex);
-                                    }
-                                  }}
+                                  onClick={() => addNewOption(roundIndex)}
                                 >
                                   + New option
                                 </Button>
-                                {alertDialogIndex === roundIndex && (
-                                  <AlertDialog
-                                    open={true}
-                                    onOpenChange={open => {
-                                      if (!open) setAlertDialogIndex(null);
-                                    }}
-                                  >
-                                    <AlertDialogContent className="border border-primary">
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Cannot add new option</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          This round is already started by admin.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel
-                                          onClick={() => setAlertDialogIndex(null)}
-                                        >
-                                          Cancel
-                                        </AlertDialogCancel>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                )}
                                 <Button
                                   type="button"
                                   className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
@@ -627,7 +590,6 @@ export function BettingRounds({
                                       >
                                         <InlineEditable
                                           title="Edit Option Name"
-                                          isNotCreatedStatus={isNotCreatedStatus}
                                           value={option.option}
                                           onSave={newName =>
                                             updateOptionName(roundIndex, optionIndex, newName)
