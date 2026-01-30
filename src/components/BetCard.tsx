@@ -15,7 +15,7 @@ import api from '@/integrations/api/client';
 import moment from 'moment';
 import { LinkItUrl } from 'react-linkify-it';
 import { Badge } from './ui/badge';
-import { getBetRoundTypeLabel } from '@/utils/betRoundHelpers';
+import { getBetRoundTypeLabel, getBetRoundTypeClass } from '@/utils/betRoundHelpers';
 
 export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
