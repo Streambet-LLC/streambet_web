@@ -1,7 +1,9 @@
 import { Card } from '@/components/ui/card';
-import { getImageLink } from '@/utils/helper';
+import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { LinkItUrl } from 'react-linkify-it';
 
 interface PromoCardProps {
   name: string;
@@ -18,54 +20,64 @@ export default function PromoCard({
   creator,
   className 
 }: PromoCardProps) {
-  const getThumbnailUrl = (thumbnailPath: string) => {
-    if (!thumbnailPath) {
-      return '/placeholder.svg';
-    }
-
-    // If it's already a full URL (starts with http or https), use it directly
-    if (thumbnailPath.startsWith('http')) {
-      return thumbnailPath;
-    }
-
-    // If it's a storage path from bucket but doesn't have the storage URL prefix
-    if (
-      thumbnailPath.includes('stream-thumbnails/') &&
-      !thumbnailPath.includes(import.meta.env.VITE_SUPABASE_URL)
-    ) {
-      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${thumbnailPath}`;
-    }
-
-    return getImageLink(thumbnailPath) || '/placeholder.svg';
-  };
+  const isMobile = useIsMobile();
 
   return (
     <Card className={cn(
-      "w-full overflow-hidden bg-card-grid-bg border-2 border-primary/50",
+      "overflow-hidden bg-card-grid-bg border border-primary/50",
+      isMobile ? "w-full" : "w-3/4 mx-auto",
       className
     )}>
-      <div className="relative w-full aspect-[21/9] overflow-hidden" style={{ maxHeight: '300px' }}>
+      <div 
+        className={cn(
+          "relative w-full overflow-hidden",
+          isMobile ? "min-h-[200px]" : "aspect-[32/9] lg:aspect-[48/9] min-h-[150px]"
+        )}
+      >
         {/* Promo image */}
         <img 
           src={getThumbnailUrl(thumbnail)}
           alt={name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain bg-black"
         />
         {/* Gradient overlay with text */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-          <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
-            <h2 className="text-lg md:text-2xl font-bold text-white mb-1 line-clamp-2">
-              {name}
+        <div className={cn(
+          "absolute inset-0 bg-gradient-to-t to-transparent",
+          isMobile ? "from-black/95 via-black/60" : "from-black/90 via-black/50"
+        )}>
+          <div className={cn(
+            "absolute bottom-0 left-0 right-0",
+            isMobile ? "p-2" : "p-3"
+          )}>
+            <h2 className={cn(
+              "font-bold text-white mb-1",
+              isMobile ? "text-base" : "text-xl line-clamp-1"
+            )}>
+              <span className="[&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>a]:transition-colors">
+                <LinkItUrl>
+                  {name}
+                </LinkItUrl>
+              </span>
             </h2>
             {description && (
-              <p className="text-white/90 text-sm md:text-base max-w-3xl">
-                {description}
+              <p className={cn(
+                "text-white/90 max-w-3xl",
+                isMobile ? "text-xs" : "text-sm"
+              )}>
+                <span className="[&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>a]:transition-colors">
+                  <LinkItUrl>
+                    {description}
+                  </LinkItUrl>
+                </span>
               </p>
             )}
             {creator && (
               <Link
                 to={`/${creator}`}
-                className="inline-block mt-2 text-sm text-creator-green hover:text-foreground transition-colors"
+                className={cn(
+                  "inline-block text-xs text-creator-green hover:text-foreground transition-colors",
+                  isMobile ? "mt-1" : "mt-1.5"
+                )}
               >
                 {creator}
               </Link>

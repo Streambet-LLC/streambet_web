@@ -122,11 +122,11 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                   className={cn(
                     "h-auto overflow-visible transition-all",
                     controls.open && !controls.isMobile 
-                      ? "justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-sidebar-card-border hover:border-primary/30 hover:bg-primary/5" 
+                      ? "justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5" 
                       : "justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover",
                     selectedCategory === null 
                       ? "!bg-primary !text-black hover:!bg-primary !border-primary" 
-                      : "text-white bg-transparent"
+                      : "text-white bg-transparent border-primary/50 hover:border-primary"
                   )}
                   aria-pressed={selectedCategory === null}
                   aria-label="Show all categories"
@@ -134,14 +134,30 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                   <motion.div whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}>
                     {controls.open && !controls.isMobile ? (
                       <div className="flex items-center gap-2.5 w-full">
-                        <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center flex-shrink-0">
-                          <GemIcon className="h-4 w-4" />
+                        <div className={cn(
+                          "h-7 w-7 rounded-full border border-primary flex items-center justify-center flex-shrink-0",
+                          selectedCategory === null
+                            ? "bg-black border-black"
+                            : "bg-primary/20 border-primary"
+                        )}>
+                          <GemIcon className={cn(
+                            "h-4 w-4",
+                            selectedCategory === null ? "text-primary" : "text-primary"
+                          )} />
                         </div>
                         <span className="text-[13px] font-semibold">All</span>
                       </div>
                     ) : (
-                      <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center">
-                        <GemIcon className="h-4 w-4" />
+                      <div className={cn(
+                        "h-7 w-7 rounded-full border border-primary flex items-center justify-center",
+                        selectedCategory === null
+                          ? "bg-black border-black"
+                          : "bg-primary/20 border-primary"
+                      )}>
+                        <GemIcon className={cn(
+                          "h-4 w-4",
+                          selectedCategory === null ? "text-primary" : "text-primary"
+                        )} />
                       </div>
                     )}
                   </motion.div>
@@ -156,11 +172,11 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                       className={cn(
                         "h-auto overflow-visible transition-all cursor-pointer",
                         controls.open && !controls.isMobile 
-                          ? "justify-start text-left p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-sidebar-card-border hover:border-primary/30 hover:bg-primary/5" 
+                          ? "justify-start text-left p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5" 
                           : "justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover",
                         selectedCategory === category 
                           ? "!bg-primary !text-black hover:!bg-primary !border-primary" 
-                          : "text-white bg-transparent"
+                          : "text-white bg-transparent border-primary/50 hover:border-primary"
                       )}
                       aria-pressed={selectedCategory === category}
                       aria-label={`Filter by ${getCategoryLabel(category)}`}
@@ -168,14 +184,30 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                       <motion.div whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}>
                         {controls.open && !controls.isMobile ? (
                           <div className="flex items-center gap-2.5 w-full">
-                            <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center flex-shrink-0">
-                              <IconComponent className="h-4 w-4" />
+                            <div className={cn(
+                              "h-7 w-7 rounded-full border border-primary flex items-center justify-center flex-shrink-0",
+                              selectedCategory === category
+                                ? "bg-black border-black"
+                                : "bg-primary/20 border-primary"
+                            )}>
+                              <IconComponent className={cn(
+                                "h-4 w-4",
+                                selectedCategory === category ? "text-primary" : "text-primary"
+                              )} />
                             </div>
                             <span className="text-[13px] font-semibold">{getCategoryLabel(category)}</span>
                           </div>
                         ) : (
-                          <div className="h-7 w-7 rounded-full bg-green-500/70 flex items-center justify-center">
-                            <IconComponent className="h-4 w-4" />
+                          <div className={cn(
+                            "h-7 w-7 rounded-full border border-primary flex items-center justify-center",
+                            selectedCategory === category
+                              ? "bg-black border-black"
+                              : "bg-primary/20 border-primary"
+                          )}>
+                            <IconComponent className={cn(
+                              "h-4 w-4",
+                              selectedCategory === category ? "text-primary" : "text-primary"
+                            )} />
                           </div>
                         )}
                       </motion.div>

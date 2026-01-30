@@ -1685,11 +1685,17 @@ export const AdminManagement = ({
           onClose={thumbnailUpload.cancelCrop}
           onCrop={thumbnailUpload.handleCropComplete}
           cropperProps={{
-            aspect: IMAGE_UPLOAD_CONFIG.ASPECT_RATIO,
+            aspect: eventType?.value === 'promo' 
+              ? IMAGE_UPLOAD_CONFIG.PROMO_ASPECT_RATIO 
+              : IMAGE_UPLOAD_CONFIG.ASPECT_RATIO,
           }}
           resizerProps={{
-            maxWidth: IMAGE_UPLOAD_CONFIG.MAX_WIDTH,
-            maxHeight: IMAGE_UPLOAD_CONFIG.MAX_HEIGHT,
+            maxWidth: eventType?.value === 'promo'
+              ? IMAGE_UPLOAD_CONFIG.PROMO_MAX_WIDTH
+              : IMAGE_UPLOAD_CONFIG.MAX_WIDTH,
+            maxHeight: eventType?.value === 'promo'
+              ? IMAGE_UPLOAD_CONFIG.PROMO_MAX_HEIGHT
+              : IMAGE_UPLOAD_CONFIG.MAX_HEIGHT,
             compressFormat: 'JPEG',
             quality: IMAGE_UPLOAD_CONFIG.QUALITY,
           }}

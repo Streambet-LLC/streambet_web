@@ -40,8 +40,8 @@ export default function HomePromotedBets() {
   // Listen for stream promotion updates
   useStreamPromotionListener(refetch);
 
-  // Extract promo card and regular bets from response
-  const promoCard = data?.promoCard || null;
+  // Extract promo cards and regular bets from response
+  const promoCards = data?.promoCards || [];
   const regularBets = data?.bets || data || []; // Backwards compatible
 
   const sortedData = useMemo(() => {
@@ -51,15 +51,45 @@ export default function HomePromotedBets() {
 
   return (
     <>
-      {/* Promo Card - Shows above featured carousel */}
-      {promoCard && (
+      {/* Promo Cards Carousel - Shows above featured carousel */}
+      {isLoading ? (
         <div className="px-2 mb-6">
-          <PromoCard
-            name={promoCard.name}
-            description={promoCard.description}
-            thumbnail={promoCard.thumbnail}
-            creator={promoCard.creator}
-          />
+          <Skeleton className="w-full h-[200px] md:h-[150px] lg:min-h-[200px] rounded-lg" />
+        </div>
+      ) : promoCards && promoCards.length > 0 && (
+        <div className="px-2 mb-6">
+          <Carousel
+            opts={{
+              align: 'start',
+              loop: true,
+            }}
+          >
+            <CarouselContent>
+              {promoCards.map((promo) => (
+                <CarouselItem key={promo.streamId}>
+                  <PromoCard
+                    name={promo.name}
+                    description={promo.description}
+                    thumbnail={promo.thumbnail}
+                    creator={promo.creator}
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {promoCards.length > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <CarouselPrevious
+                  className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-primary"
+                  size="lg"
+                />
+                <CarouselDots className="relative" />
+                <CarouselNext
+                  className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-primary"
+                  size="lg"
+                />
+              </div>
+            )}
+          </Carousel>
         </div>
       )}
       
@@ -69,7 +99,7 @@ export default function HomePromotedBets() {
           className="flex-1 w-full"
           opts={{
             align: 'start',
-            loop: false,
+            loop: true,
             slidesToScroll: 1,
             containScroll: 'trimSnaps',
           }}
@@ -109,12 +139,12 @@ export default function HomePromotedBets() {
           </CarouselContent>
           <div className="flex items-center justify-between pt-4">
             <CarouselPrevious
-              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-[#BDFF00]"
+              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-primary"
               size="lg"
             />
             <CarouselDots className="relative" />
             <CarouselNext
-              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-[#BDFF00]"
+              className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-primary"
               size="lg"
             />
           </div>
