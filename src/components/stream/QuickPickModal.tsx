@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import BetTokens from './BetTokens';
 import LockTokens from './LockTokens';
 import { CurrencyType } from '@/enums';
@@ -11,8 +11,9 @@ import { useQuickPickModal } from '@/hooks/useQuickPickModal';
 import { transformForBetTokens, transformForLockTokens } from '@/utils/bettingTransformers';
 import { SignInPrompt, NoBettingData } from './QuickPickModalComponents';
 import { useToast } from '@/hooks/use-toast';
-import { Info } from 'lucide-react';
+import { Info, X } from 'lucide-react';
 import { LinkItUrl } from 'react-linkify-it';
+import { Button } from '../ui/button';
 
 interface QuickPickModalProps {
   open: boolean;
@@ -31,6 +32,7 @@ export const QuickPickModal = React.memo(
     const { session } = useAuthContext();
     const { socketConnect } = useBettingStatusContext();
     const { setActiveStreamId, setRoundId } = useBettingContext();
+    const [showPayoutInfo, setShowPayoutInfo] = useState(false);
 
     // Set active stream when modal opens, clear when it closes
     useEffect(() => {
@@ -174,25 +176,34 @@ export const QuickPickModal = React.memo(
 
           {/* Payout Disclaimer - Only shown when betting is active */}
           {activeRound && hasActiveBetting && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex items-start gap-2 px-4">
-                <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  <span className="font-semibold text-foreground">How payouts work: </span>
-                  When you win, you receive a proportional share of the losing pool. Example: You
-                  wager 100 of 500 total winning wagers (20%) → you get 20% of the losing pool. So,
-                  in this case, if the losing pool is 1000, you would get 200 (the same 20% of that
-                  side) + your original 100 wagered, so 300 total. Max payout: 4x your wager.
-                </p>
-              </div>
-              <div className="flex items-start gap-2 px-4 mt-3">
-                <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  <span className="font-semibold text-foreground">Note: </span>
-                  Payout amounts change dynamically until picks close. The final payout locks once
-                  all picks are placed.
-                </p>
-              </div>
+            <div className="mt-4 pt-4 border-t border-border relative">
+              {!showPayoutInfo ? 
+                <div className='flex items-start gap-2 hover:underline cursor-pointer px-4' onClick={() => setShowPayoutInfo(true)}>
+                  <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-xs leading-relaxed font-semibold text-foreground">How payouts work </span>
+                </div> : 
+                <>
+                  <X size={14} className='absolute right-0 cursor-pointer' onClick={() => setShowPayoutInfo(false)} />
+                  <div className="flex items-start gap-2 px-4">
+                    <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <div className="font-semibold text-foreground">How payouts work</div>
+                      When you win, you receive a proportional share of the losing pool. Example: You
+                      wager 100 of 500 total winning wagers (20%) → you get 20% of the losing pool. So,
+                      in this case, if the losing pool is 1000, you would get 200 (the same 20% of that
+                      side) + your original 100 wagered, so 300 total. Max payout: 4x your wager.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2 px-4 mt-3">
+                    <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <span className="font-semibold text-foreground">Note: </span>
+                      Payout amounts change dynamically until picks close. The final payout locks once
+                      all picks are placed.
+                    </p>
+                  </div>
+                </>
+              }
             </div>
           )}
         </DialogContent>
