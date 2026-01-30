@@ -15,7 +15,7 @@ import api from '@/integrations/api/client';
 import moment from 'moment';
 import { LinkItUrl } from 'react-linkify-it';
 import { Badge } from './ui/badge';
-import { getBetRoundTypeLabel } from '@/utils/betRoundHelpers';
+import { getBetRoundTypeLabel, getBetRoundTypeClass } from '@/utils/betRoundHelpers';
 
 export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
@@ -356,7 +356,7 @@ export default function BetCard(props: BetCardType) {
               </TooltipTrigger>
               <TooltipContent side="right">Total Pot</TooltipContent>
             </Tooltip>
-            {props.betRoundType && <Badge className="text-[10px]">{getBetRoundTypeLabel(props.betRoundType)}</Badge>}
+            {props.betRoundType && <Badge className={cn("text-[10px] border", getBetRoundTypeClass(props.betRoundType))}>{getBetRoundTypeLabel(props.betRoundType)}</Badge>}
           </div>
           {cardData.lockDate && (
             <StreamStatusBadge 
