@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Edit } from 'lucide-react';
-import moment from 'moment';
 
 interface InlineEditableProps {
   value: string;
@@ -19,9 +18,7 @@ interface InlineEditableProps {
   minLength?: number;
   placeholder?: string;
   style?: React.CSSProperties;
-  isNotCreatedStatus?: boolean;
   title?: string;
-  createdAt?: string;
 }
 
 export function InlineEditable({
@@ -30,21 +27,15 @@ export function InlineEditable({
   className = '',
   minLength = 3,
   placeholder = 'Enter text...',
-  isNotCreatedStatus,
   style,
   title,
-  createdAt = null,
 }: InlineEditableProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const [error, setError] = useState('');
-  const [showNotEditableDialog, setShowNotEditableDialog] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const editableRef = useRef<HTMLSpanElement>(null); // Reintroduce a ref for the editable span
-  const [errorMessage, setErrorMessage] = useState(
-    'Cannot edit this field as this round already started by admin'
-  );
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -53,23 +44,6 @@ export function InlineEditable({
   }, [isEditing]);
 
   const handleClick = () => {
-    if (createdAt) {
-      console.log('asdfasdf');
-
-      if (moment(createdAt).isBefore(moment().subtract(1, 'hours'))) {
-        setErrorMessage(
-          'Cannot edit this field as this its been more than 1 hour since its created'
-        );
-        setShowNotEditableDialog(true);
-        return;
-      }
-    } else {
-      if (isNotCreatedStatus) {
-        setErrorMessage('Cannot edit this field as this round already started by admin');
-        setShowNotEditableDialog(true);
-        return;
-      }
-    }
     setIsEditing(true);
     setEditValue(value);
     setError('');
@@ -109,7 +83,7 @@ export function InlineEditable({
   return (
     <>
       <TooltipProvider>
-        <Tooltip open={!isEditing && !showNotEditableDialog && isHovering}>
+        <Tooltip open={!isEditing && isHovering}>
           <TooltipTrigger asChild>
             <span
               ref={editableRef} // Assign the editableRef to the span
@@ -165,22 +139,6 @@ export function InlineEditable({
             >
               Save
             </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showNotEditableDialog} onOpenChange={setShowNotEditableDialog}>
-        <DialogContent className="border-2 border-[#7AFF14]" style={{ background: '#0D0D0D' }}>
-          <DialogHeader>
-            <DialogTitle>Cannot Edit</DialogTitle>
-          </DialogHeader>
-          <div className="py-2 text-sm">{errorMessage}</div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <button className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors h-10">
-                Close
-              </button>
-            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
