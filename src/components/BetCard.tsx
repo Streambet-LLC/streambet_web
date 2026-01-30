@@ -356,7 +356,7 @@ export default function BetCard(props: BetCardType) {
               </TooltipTrigger>
               <TooltipContent side="right">Total Pot</TooltipContent>
             </Tooltip>
-            {props.betRoundType && <Badge className="text-[10px]">{getBetRoundTypeLabel(props.betRoundType)}</Badge>}
+            {props.betRoundType && <Badge className={cn("text-[10px] border", getBetRoundTypeClass(props.betRoundType))}>{getBetRoundTypeLabel(props.betRoundType)}</Badge>}
           </div>
           {cardData.lockDate && (
             <StreamStatusBadge 
