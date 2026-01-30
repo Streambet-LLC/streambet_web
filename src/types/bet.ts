@@ -1,4 +1,4 @@
-import { BettingCategory, CurrencyType } from '@/enums';
+import { BetRoundType, BettingCategory, CurrencyType } from '@/enums';
 
 export interface BetCard {
   thumbnail: string;
@@ -26,6 +26,7 @@ export interface BetCard {
   roundId?: string | null;
   streamName: string | null;
   type: string | null;
+  betRoundType: BetRoundType;
   status?: string | null;
   streamStatus?: string | null;
   scheduledStartTime?: string | null;

@@ -45,7 +45,7 @@ const BADGE_STYLES = {
     text: 'text-[10px] text-scheduled-badge-text font-bold tracking-wide uppercase',
   },
   LOCK: {
-    container: 'bg-amber-600/10 backdrop-blur-sm flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] w-fit border-2 border-amber-500',
+    container: 'bg-amber-600/10 backdrop-blur-sm flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] w-full border-2 border-amber-500',
     icon: 'size-3 text-amber-400',
     text: 'text-[10px] text-amber-400 font-bold tracking-wide uppercase',
   },

@@ -12,7 +12,7 @@ import { DeleteBettingDialog } from './DeleteBettingDialog';
 import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Edit, Copy } from 'lucide-react';
-import { BettingRoundStatus, BettingCategory } from '@/enums';
+import { BettingRoundStatus, BettingCategory, BetRoundType } from '@/enums';
 import { toast } from '@/components/ui/use-toast';
 import { getCategoryLabel } from '@/utils/categoryHelpers';
 import {
@@ -35,6 +35,7 @@ import CalendarDatePicker from '../ui/CalendarDatePicker';
 
 import { BetCard as BetCardType } from '@/types/bet';
 import BetCardPreview from '../BetCardPreview';
+import { getBetRoundTypeLabel } from '@/utils/betRoundHelpers';
 interface BettingOption {
   optionId?: string;
   option: string;
@@ -44,6 +45,7 @@ interface BettingRound {
   roundId?: string;
   roundName: string;
   category?: BettingCategory;
+  betRoundType?: BetRoundType;
   lockDate?: Date | null;
   lockTime?: string;
   lockTimezone?: string;
@@ -207,6 +209,12 @@ export function BettingRounds({
   const updateCategory = (roundIndex: number, newCategory: BettingCategory) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].category = newCategory;
+    onRoundsChange(updatedRounds);
+  };
+
+  const updateBetRoundType = (roundIndex: number, newType: BetRoundType) => {
+    const updatedRounds = [...rounds];
+    updatedRounds[roundIndex].betRoundType = newType;
     onRoundsChange(updatedRounds);
   };
 
@@ -479,6 +487,32 @@ export function BettingRounds({
                                         className="text-white hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]"
                                       >
                                         {getCategoryLabel(cat)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-white mb-2 block">
+                                  Type
+                                </label>
+                                <Select
+                                  value={round.betRoundType || BetRoundType.PICK}
+                                  onValueChange={(value: BetRoundType) =>
+                                    updateBetRoundType(roundIndex, value)
+                                  }
+                                >
+                                  <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
+                                    <SelectValue placeholder="Select a category" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                                    {Object.values(BetRoundType).map(type => (
+                                      <SelectItem
+                                        key={type}
+                                        value={type}
+                                        className="text-white hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]"
+                                      >
+                                        {getBetRoundTypeLabel(type)}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
