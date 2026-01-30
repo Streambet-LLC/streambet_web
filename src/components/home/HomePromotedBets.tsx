@@ -16,6 +16,7 @@ import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
 import { PRIORITY_STREAMS } from '@/utils/constants';
 import { sortByPriorityPairs } from '@/utils/helper';
 import { BetCard as BetCardType } from '@/types/bet';
+import { PromoCardData, PromotedBetsResponse } from '@/types/promo';
 import { useState, useMemo } from 'react';
 
 export default function HomePromotedBets() {
@@ -28,7 +29,7 @@ export default function HomePromotedBets() {
     description: null,
   });
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch } = useQuery<PromotedBetsResponse>({
     queryKey: ['homepage-promoted-bets'],
     queryFn: async () => {
       const response = await api.bets.getPromotedBets();
@@ -41,8 +42,8 @@ export default function HomePromotedBets() {
   useStreamPromotionListener(refetch);
 
   // Extract promo cards and regular bets from response
-  const promoCards = data?.promoCards || [];
-  const regularBets = data?.bets || data || []; // Backwards compatible
+  const promoCards: PromoCardData[] = data?.promoCards || [];
+  const regularBets = data?.bets || [];
 
   const sortedData = useMemo(() => {
     if (!regularBets || regularBets.length === 0) return [];
@@ -56,7 +57,7 @@ export default function HomePromotedBets() {
         <div className="px-2 mb-6">
           <Skeleton className="w-full h-[200px] md:h-[150px] lg:min-h-[200px] rounded-lg" />
         </div>
-      ) : promoCards && promoCards.length > 0 && (
+      ) : promoCards.length > 0 && (
         <div className="px-2 mb-6">
           <Carousel
             opts={{
@@ -65,7 +66,7 @@ export default function HomePromotedBets() {
             }}
           >
             <CarouselContent>
-              {promoCards.map((promo) => (
+              {promoCards.map((promo: PromoCardData) => (
                 <CarouselItem key={promo.streamId}>
                   <PromoCard
                     name={promo.name}

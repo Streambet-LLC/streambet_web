@@ -3,7 +3,7 @@ import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { LinkItUrl } from 'react-linkify-it';
+import { LinkifiedText } from '../LinkifiedText';
 
 interface PromoCardProps {
   name: string;
@@ -54,9 +54,9 @@ export default function PromoCard({
               isMobile ? "text-base" : "text-xl line-clamp-1"
             )}>
               <span className="[&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>a]:transition-colors">
-                <LinkItUrl>
+                <LinkifiedText>
                   {name}
-                </LinkItUrl>
+                </LinkifiedText>
               </span>
             </h2>
             {description && (
@@ -65,9 +65,9 @@ export default function PromoCard({
                 isMobile ? "text-xs" : "text-sm"
               )}>
                 <span className="[&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>a]:transition-colors">
-                  <LinkItUrl>
+                  <LinkifiedText>
                     {description}
-                  </LinkItUrl>
+                  </LinkifiedText>
                 </span>
               </p>
             )}

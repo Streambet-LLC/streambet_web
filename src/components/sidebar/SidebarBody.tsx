@@ -37,6 +37,26 @@ interface SidebarBodyProps {
   setSelectedCategory?: (category: BettingCategory | null) => void;
 }
 
+const CategoryIconContainer = ({ 
+  icon: Icon, 
+  isSelected,
+  compact = false 
+}: { 
+  icon: React.ElementType; 
+  isSelected: boolean;
+  compact?: boolean;
+}) => (
+  <div className={cn(
+    "h-7 w-7 rounded-full border border-primary flex items-center justify-center",
+    !compact && "flex-shrink-0",
+    isSelected
+      ? "bg-black border-black"
+      : "bg-primary/20 border-primary"
+  )}>
+    <Icon className="h-4 w-4 text-primary" />
+  </div>
+);
+
 export default function SidebarBody({ selectedCategory, setSelectedCategory }: SidebarBodyProps) {
   const controls = useSidebar();
   const location = useLocation();
@@ -134,31 +154,18 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                   <motion.div whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}>
                     {controls.open && !controls.isMobile ? (
                       <div className="flex items-center gap-2.5 w-full">
-                        <div className={cn(
-                          "h-7 w-7 rounded-full border border-primary flex items-center justify-center flex-shrink-0",
-                          selectedCategory === null
-                            ? "bg-black border-black"
-                            : "bg-primary/20 border-primary"
-                        )}>
-                          <GemIcon className={cn(
-                            "h-4 w-4",
-                            selectedCategory === null ? "text-primary" : "text-primary"
-                          )} />
-                        </div>
+                        <CategoryIconContainer 
+                          icon={GemIcon} 
+                          isSelected={selectedCategory === null} 
+                        />
                         <span className="text-[13px] font-semibold">All</span>
                       </div>
                     ) : (
-                      <div className={cn(
-                        "h-7 w-7 rounded-full border border-primary flex items-center justify-center",
-                        selectedCategory === null
-                          ? "bg-black border-black"
-                          : "bg-primary/20 border-primary"
-                      )}>
-                        <GemIcon className={cn(
-                          "h-4 w-4",
-                          selectedCategory === null ? "text-primary" : "text-primary"
-                        )} />
-                      </div>
+                      <CategoryIconContainer 
+                        icon={GemIcon} 
+                        isSelected={selectedCategory === null}
+                        compact
+                      />
                     )}
                   </motion.div>
                 </Button>
@@ -184,31 +191,18 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                       <motion.div whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}>
                         {controls.open && !controls.isMobile ? (
                           <div className="flex items-center gap-2.5 w-full">
-                            <div className={cn(
-                              "h-7 w-7 rounded-full border border-primary flex items-center justify-center flex-shrink-0",
-                              selectedCategory === category
-                                ? "bg-black border-black"
-                                : "bg-primary/20 border-primary"
-                            )}>
-                              <IconComponent className={cn(
-                                "h-4 w-4",
-                                selectedCategory === category ? "text-primary" : "text-primary"
-                              )} />
-                            </div>
+                            <CategoryIconContainer 
+                              icon={IconComponent} 
+                              isSelected={selectedCategory === category}
+                            />
                             <span className="text-[13px] font-semibold">{getCategoryLabel(category)}</span>
                           </div>
                         ) : (
-                          <div className={cn(
-                            "h-7 w-7 rounded-full border border-primary flex items-center justify-center",
-                            selectedCategory === category
-                              ? "bg-black border-black"
-                              : "bg-primary/20 border-primary"
-                          )}>
-                            <IconComponent className={cn(
-                              "h-4 w-4",
-                              selectedCategory === category ? "text-primary" : "text-primary"
-                            )} />
-                          </div>
+                          <CategoryIconContainer 
+                            icon={IconComponent} 
+                            isSelected={selectedCategory === category}
+                            compact
+                          />
                         )}
                       </motion.div>
                     </Button>

@@ -12,7 +12,7 @@ import { transformForBetTokens, transformForLockTokens } from '@/utils/bettingTr
 import { SignInPrompt, NoBettingData } from './QuickPickModalComponents';
 import { useToast } from '@/hooks/use-toast';
 import { Info, X } from 'lucide-react';
-import { LinkItUrl } from 'react-linkify-it';
+import { LinkifiedText } from '../LinkifiedText';
 import { Button } from '../ui/button';
 
 interface QuickPickModalProps {
@@ -112,9 +112,9 @@ export const QuickPickModal = React.memo(
               </h2>
               {description && (
                 <div className="text-xs text-gray-400 text-center max-w-lg">
-                  <LinkItUrl className='text-creator-green'>
+                  <LinkifiedText className='text-creator-green'>
                     {description}
-                  </LinkItUrl>
+                  </LinkifiedText>
                 </div>
               )}
             </div>
