@@ -23,13 +23,22 @@ export enum BettingRoundStatus {
 }
 
 export enum BettingCategory {
-  TRADING_CARDS = 'trading_cards',
-  NEOSPORTS_ALTERNATIVE = 'neosports_alternative',
-  SPORTS = 'sports',
+  // TRADING_CARDS = 'trading_cards',
+  // NEOSPORTS_ALTERNATIVE = 'neosports_alternative',
+  POKEMON_CARDS = 'pokemon_cards',
+  SPORTS_CARDS = 'sports_cards',
+  // SPORTS = 'sports',
   // HOTFIX: Temporarily removed from UI - backend still supports this
   // STREAMING_COMPETITIONS = 'streaming_competitions',
   // EMERGING_SPORTS = 'emerging_sports',
   OTHER = 'other',
+}
+
+export enum BetRoundType {
+  AUCTION = 'auction',
+  FUTURE = 'future',
+  OPINION = 'opinion',
+  PICK = 'pick',
 }
 
 export enum TransactionType {

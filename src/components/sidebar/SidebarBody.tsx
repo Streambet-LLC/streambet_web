@@ -55,10 +55,8 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
   // Icon options for each category
   const getCategoryIcon = (category: BettingCategory) => {
     const iconMap = {
-      [BettingCategory.TRADING_CARDS]: LayoutGrid,
-      [BettingCategory.NEOSPORTS_ALTERNATIVE]: Goal,
-      [BettingCategory.SPORTS]: Trophy,
-      [BettingCategory.STREAMING_COMPETITIONS]: MonitorPlay,
+      [BettingCategory.POKEMON_CARDS]: LayoutGrid,
+      [BettingCategory.SPORTS_CARDS]: Goal,
       // HOTFIX: Temporarily removed from UI - backend still supports this
       // [BettingCategory.EMERGING_SPORTS]: SwordsIcon,
       [BettingCategory.OTHER]: MoreHorizontal,

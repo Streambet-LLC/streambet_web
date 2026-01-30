@@ -52,7 +52,7 @@ export default function Home() {
 
         <div className="max-w-3xl mx-auto text-center space-y-4 p-4">
           <h1 className="text-4xl md:text-5xl font-bold">
-            Prediction market for the<br />
+            Data markets for the<br />
             <motion.span
               className="relative inline-block"
               whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
