@@ -6,6 +6,7 @@ import Bugsnag from '@bugsnag/js';
 import { WithdrawKycPayload, WithdrawKycUsPayload, WithdrawPayload } from '@/types/withdraw';
 import { BetCard } from '@/types/bet';
 import { PrizeConfiguration, SubmitPrizeRedemptionRequest } from '@/types/prize';
+import { PromotedBetsResponse } from '@/types/promo';
 import { CurrencyType } from '@/utils/currency';
 
 // API base URL from environment variable
@@ -572,7 +573,7 @@ export const userStreamAPI = {
 // Bets API
 export const betsAPI = {
   // Get all promoted bets
-  getPromotedBets: async (params?: any) => {
+  getPromotedBets: async (params?: any): Promise<{ data: PromotedBetsResponse }> => {
 
     const response = await apiClient.get(`/stream/promoted-bets`, {
       params
