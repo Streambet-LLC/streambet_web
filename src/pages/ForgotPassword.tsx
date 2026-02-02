@@ -50,7 +50,7 @@ const ForgotPassword = () => {
         <div className="w-full max-w-md">
           <div className="mb-6">
             <Link to="/">
-              <img src="/machine-wordmark.svg" alt="Cardcade Logo" className="mb-8" />
+              <img src="/machine-wordmark.svg" alt="CardCade Logo" className="mb-8" />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left">Reset your password</h1>
             <p className="text-[#FFFFFFBF] mt-3 text-left font-light">
@@ -131,7 +131,7 @@ const ForgotPassword = () => {
           zIndex: 10,
         }}
       >
-        © Cardcade {new Date().getFullYear()}
+        © CardCade {new Date().getFullYear()}
       </div>
     </>
   );

@@ -60,9 +60,9 @@ export const LocationRestrictionProvider: React.FC<LocationRestrictionProviderPr
     setLocationResult(result);
   };
 
-  useEffect(() => {
-    checkLocation();
-  }, []);
+  // useEffect(() => {
+  //   checkLocation();
+  // }, []);
 
   // Set allowed result immediately when component mounts
   useEffect(() => {

@@ -29,13 +29,13 @@ import { useCookies } from 'react-cookie';
 export default function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [cookies] = useCookies(['referral-link']);
+  const [cookies] = useCookies(['referral-link', 'promo-code']);
   const [searchParams] = useSearchParams();
   const redirectParam = searchParams.get('redirect');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [promoCode, setPromoCode] = useState('');
+  const [promoCode, setPromoCode] = useState(cookies['promo-code'] ? cookies['promo-code'] : '');
   const [refLink, setRefLink] = useState(cookies['referral-link'] ? cookies['referral-link'] : '');
   const [name, setName] = useState('');
   const [tosAccepted, setTosAccepted] = useState(false);
@@ -122,10 +122,10 @@ export default function SignUp() {
       refLink?: string;
       profileImageUrl?: string;
     }) => {
-      const locationResult = await verifyUserLocation();
-      if (!locationResult.allowed) {
-        throw new Error(locationResult.error);
-      }
+      // const locationResult = await verifyUserLocation();
+      // if (!locationResult.allowed) {
+      //   throw new Error(locationResult.error);
+      // }
 
       return await api.auth.register(userData);
     },
@@ -147,21 +147,21 @@ export default function SignUp() {
 
   const googleLoginMutation = useMutation({
     mutationFn: async () => {
-      const locationResult = await verifyUserLocation();
-      if (!locationResult.allowed) {
-        throw new Error(locationResult.error);
-      }
-      await fetch(`${import.meta.env.VITE_API_URL}/auth/location-check`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-      }).then(async res => {
-        const response = await res.json();
-        if (response?.isForcedLogout) {
-          return Promise.reject(getMessage(response));
-        }
-      });
+      // const locationResult = await verifyUserLocation();
+      // if (!locationResult.allowed) {
+      //   throw new Error(locationResult.error);
+      // }
+      // await fetch(`${import.meta.env.VITE_API_URL}/auth/location-check`, {
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'ngrok-skip-browser-warning': 'true',
+      //   },
+      // }).then(async res => {
+      //   const response = await res.json();
+      //   if (response?.isForcedLogout) {
+      //     return Promise.reject(getMessage(response));
+      //   }
+      // });
       return api.auth.googleAuth();
     },
     onError: (error: any) => {
@@ -608,7 +608,7 @@ export default function SignUp() {
                     <p className="text-destructive text-sm">{errors.promoCode}</p>
                   )}
                 </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
+                {/* <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="refLink">Referal Code (Optional)</Label>
                   <Input
                     id="refLink"
@@ -620,7 +620,7 @@ export default function SignUp() {
                     disabled={false}
                   />
                   {errors.refLink && <p className="text-destructive text-sm">{errors.refLink}</p>}
-                </motion.div>
+                </motion.div> */}
                 <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="dob">Date of Birth</Label>
                   <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>

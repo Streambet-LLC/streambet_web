@@ -30,27 +30,28 @@ const GEOLOCATION_API = 'https://ipapi.co/json/';
  */
 export async function verifyUserLocation(): Promise<GeolocationResult> {
   try {
-    const response = await axios.get(GEOLOCATION_API);
-    const { country, region_code, region, ip } = response.data;
+    // const response = await axios.get(GEOLOCATION_API);
+    // const { country, region_code, region, ip } = response.data;
 
-    // If not in the US, allow access (adjust this logic based on your requirements)
-    if (country !== 'US') {
-      return { allowed: true, country, state: region, ip_address: ip };
-    }
+    // // If not in the US, allow access (adjust this logic based on your requirements)
+    // if (country !== 'US') {
+    //   return { allowed: true, country, state: region, ip_address: ip };
+    // }
 
-    // If in a restricted US state, deny access
-    if (RESTRICTED_STATES.includes(region_code)) {
-      return {
-        allowed: false,
-        country,
-        state: region,
-        ip_address: ip,
-        error: `Sorry, Streambet is not available in ${region} due to local regulations.`,
-      };
-    }
+    // // If in a restricted US state, deny access
+    // if (RESTRICTED_STATES.includes(region_code)) {
+    //   return {
+    //     allowed: false,
+    //     country,
+    //     state: region,
+    //     ip_address: ip,
+    //     error: `Sorry, Streambet is not available in ${region} due to local regulations.`,
+    //   };
+    // }
 
     // Otherwise, allow access
-    return { allowed: true, country, state: region, ip_address: ip };
+    // return { allowed: true, country, state: region, ip_address: ip };
+    return { allowed: true };
   } catch (error) {
     console.error('Geolocation check failed:', error);
     // In case of error, we could either:

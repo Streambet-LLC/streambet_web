@@ -35,6 +35,7 @@ import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds } from
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { Table, TableHead, TableHeader, TableRow } from '../ui/table';
 import ViewBettingDialog from './ViewBettingDialog';
+import HideBetRoundOnLanding from './HideBetRoundOnLanding';
 
 // Helper for status priority
 const statusPriority = [
@@ -688,6 +689,7 @@ export const AdminBettingRoundsCard = ({
                                                        )} */}
 
                         <ViewBettingDialog betRound={round.roundId} />
+                        <HideBetRoundOnLanding betRoundId={round.roundId} hidden={round.isHiddenOnLanding} />
                       </CarouselItem>
                     );
                   })

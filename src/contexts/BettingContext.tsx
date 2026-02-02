@@ -42,6 +42,11 @@ export interface ActiveRound {
   userBetGoldCoins?: number;
   userBetSweepCoin?: number;
   userBetCadeCoin?: number;
+  bettingRoundsWithVariablePercentages: {
+    bettingVariables: {
+      percentage: string | number;
+    }
+  }[];
 }
 
 export interface UserBet {
@@ -124,6 +129,7 @@ export const BettingProvider = ({ children }: BettingProviderProps) => {
     userBetGoldCoins: undefined,
     userBetSweepCoin: undefined,
     userBetCadeCoin: undefined,
+    bettingRoundsWithVariablePercentages: [],
   });
 
   // User Bet State

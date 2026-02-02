@@ -126,7 +126,7 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
               {/* Gold Coins */}
               {/* <div className="flex items-center gap-1.5">
                 <img
-                  src="/icons/gold-coins.png"
+                  src="/icons/cade-coins.png"
                   alt="Gold Coins"
                   className="h-4 w-4"
                 />
@@ -137,7 +137,7 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
 
               <div className="flex items-center gap-1.5">
                 <img
-                  src="/icons/gold-coins.png"
+                  src="/icons/cade-coins.png"
                   alt="Gold Coins"
                   className="h-4 w-4"
                 />

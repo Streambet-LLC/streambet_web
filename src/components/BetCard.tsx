@@ -7,13 +7,15 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { Video } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { QuickPickModal } from './stream/QuickPickModal';
 import { BettingRoundStatus, StreamStatus } from '@/enums';
 import { StreamStatusBadge } from '@/components/stream/StreamStatusBadge';
 import api from '@/integrations/api/client';
 import moment from 'moment';
 import { LinkItUrl } from 'react-linkify-it';
+import { Badge } from './ui/badge';
+import { getBetRoundTypeLabel, getBetRoundTypeClass } from '@/utils/betRoundHelpers';
 
 export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
@@ -60,7 +62,8 @@ export default function BetCard(props: BetCardType) {
         props.streamId,
         props.roundId,
         props.streamName,
-        selectedOption ? selectedOption.option : null
+        selectedOption ? selectedOption.option : null,
+        cardData.description
       );
     }
   };
@@ -116,6 +119,14 @@ export default function BetCard(props: BetCardType) {
       getData();
     }, 10 * 1000);
   }, [cardData]);
+
+  const displayedOptions = useMemo(() => {
+    const topOptions = cardData.options.slice(0, 2);
+    const topOptionsLabel = topOptions.map((option) => option.id);
+    const userPickedOption = cardData.options.find((option) => !!option.userBet && !topOptionsLabel.includes(option.id));
+
+    return userPickedOption ? topOptions.concat(userPickedOption) : topOptions;
+  }, [cardData])
 
   const CardWrapper = props.isFeatured ? FeaturedBetCard : Card;
 
@@ -241,20 +252,7 @@ export default function BetCard(props: BetCardType) {
                     {props.streamName}
                   </Link>
                 )}
-                {cardData.description && (
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild className="cursor-default">
-                      <CardDescription className="line-clamp-2 text-xs">
-                        {cardData.description}
-                      </CardDescription>
-                    </TooltipTrigger>
-                    <TooltipContent className="w-60" side="bottom">
-                      <LinkItUrl className='text-creator-green'>
-                        {cardData.description}
-                      </LinkItUrl>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+                {/* Description moved to QuickPickModal */}
               </div>
               <div className='relative rounded-md overflow-clip'>
                 <img
@@ -269,7 +267,7 @@ export default function BetCard(props: BetCardType) {
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-2 p-4">
-        {cardData.options.slice(0, 2).map((option, i) => (
+        {displayedOptions.map((option, i) => (
           <div
             key={i}
             onClick={
@@ -280,31 +278,38 @@ export default function BetCard(props: BetCardType) {
                 : undefined
             }
             className={cn(
-              'flex gap-4 items-center justify-between transition-all px-3 py-1 rounded-md border bg-bet-option-bg border-bet-option-border',
+              'flex flex-col justify-between transition-all px-3 py-1 rounded-md border bg-bet-option-bg border-bet-option-border',
               statuses.canOpen
                 ? 'hover:text-electric-lime hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
                 : 'cursor-not-allowed opacity-60',
               option.isWinner && '!bg-electric-lime !text-black !border-electric-lime'
             )}
           >
-            <div
-              className={cn(
-                'text-sm rounded-full font-semibold',
-                option.selected && 'text-electric-lime'
-              )}
-            >
-              {option.option}{' '}
-              {option.isWinner && (
-                <span
-                  className={cn(
-                    'ml-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-[#2a2a2a] text-white border-red-500/40'
-                  )}
-                >
-                  ✅ Winning Side
-                </span>
-              )}
+            <div className='flex flex-1 gap-4 items-center justify-between'>
+              <div
+                className={cn(
+                  'text-sm rounded-full font-semibold',
+                  option.userBet && 'text-electric-lime'
+                )}
+              >
+                {option.option}{' '}
+                {option.isWinner && (
+                  <span
+                    className={cn(
+                      'ml-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-[#2a2a2a] text-white border-red-500/40'
+                    )}
+                  >
+                    ✅ Winning Side
+                  </span>
+                )}
+              </div>
+              <div className="text-lg font-semibold flex">{option.percentage}%</div>
             </div>
-            <div className="text-lg font-semibold flex">{option.percentage}%</div>
+            {option.userBet && 
+              <div className='text-xs py-1 text-electric-lime'>
+                Your pick for {option.userBet.amount} Cade Coins
+              </div>
+            }
           </div>
         ))}
         {cardData.options.length > 2 && (
@@ -324,32 +329,35 @@ export default function BetCard(props: BetCardType) {
             )}
           >
             <div className="text-sm rounded-full font-semibold">
-              {cardData.options.length - 2} more...
+              {cardData.options.length - displayedOptions.length} more...
             </div>
           </div>
         )}
       </CardContent>
-      <CardFooter className="mt-auto p-6 pt-0">
-        <div className="flex flex-wrap items-start justify-between gap-2 w-full">
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
-                {/* <div className="flex gap-2 text-sm items-center">
-                  <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
-                  <span className="text-creator-green font-semibold">{cardData.totalPot.streamCoins}</span>
+      <CardFooter className="mt-auto p-6 pt-0 px-4 gap-2">
+        <div className="flex flex-col justify-between gap-3 w-full">
+          <div className='flex w-full justify-between'>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
+                  {/* <div className="flex gap-2 text-sm items-center">
+                    <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
+                    <span className="text-creator-green font-semibold">{cardData.totalPot.streamCoins}</span>
+                  </div>
+                  <div className="flex gap-1 text-sm items-center">
+                    <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
+                    <span className="text-gold-coin font-semibold">{cardData.totalPot.goldCoins}</span>
+                  </div> */}
+                  <div className="flex gap-1 text-sm items-center">
+                    <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
+                    <span className="text-[#B4FF39] font-semibold">{cardData.totalPot.cadeCoins || 0}</span>
+                  </div>
                 </div>
-                <div className="flex gap-1 text-sm items-center">
-                  <img src="/icons/gold-coins.png" alt="gold-coins" className="h-4 w-4" />
-                  <span className="text-gold-coin font-semibold">{cardData.totalPot.goldCoins}</span>
-                </div> */}
-                <div className="flex gap-1 text-sm items-center">
-                  <img src="/icons/gold-coins.png" alt="gold-coins" className="h-4 w-4" />
-                  <span className="text-gold-coin font-semibold">{cardData.totalPot.cadeCoins || 0}</span>
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="right">Total Pot</TooltipContent>
-          </Tooltip>
+              </TooltipTrigger>
+              <TooltipContent side="right">Total Pot</TooltipContent>
+            </Tooltip>
+            {props.betRoundType && <Badge className={cn("text-[10px] border", getBetRoundTypeClass(props.betRoundType))}>{getBetRoundTypeLabel(props.betRoundType)}</Badge>}
+          </div>
           {cardData.lockDate && (
             <StreamStatusBadge 
               status="lock" 

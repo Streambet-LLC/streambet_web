@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { EditUserDialog } from './EditUserDialog';
+import { CurrencyType } from '@/utils/currency';
 
 interface Props {
   searchUserQuery: string;
@@ -69,13 +70,24 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     },
   });
 
-  const mutationTokens = useMutation({
-    mutationFn: async ({ userId, amount }: { userId: string; amount: number }) => {
-      return await api.admin.updateUserCoins({ userId, amount });
+  const mutationCurrency = useMutation({
+    mutationFn: async ({ userId, amount, currencyType }: { 
+      userId: string; 
+      amount: number; 
+      currencyType: CurrencyType 
+    }) => {
+      return await api.admin.updateUserCurrency({ userId, amount, currencyType });
     },
     onSuccess: () => {
       refetchProfiles();
       refetchSession();
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to update currency balance',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -175,6 +187,16 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     </span>
                   </div>
 
+                  {/* CadeCoins Balance */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">CadeCoins:</span>
+                    <span className="font-medium">
+                      {user?.wallet?.cadeCoins
+                        ? user?.wallet?.cadeCoins?.toLocaleString('en-US')
+                        : '-'}
+                    </span>
+                  </div>
+
                   {/* Status */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Status:</span>
@@ -235,10 +257,22 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                   {/* Actions Row */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <AddTokens
-                      currentBalance={user?.wallet?.goldCoins}
+                      goldCoinsBalance={user?.wallet?.goldCoins}
+                      cadeCoinsBalance={user?.wallet?.cadeCoins}
                       username={user.username}
-                      onSave={newBalance => {
-                        mutationTokens.mutate({ userId: user.id, amount: newBalance });
+                      onSaveGold={newBalance => {
+                        mutationCurrency.mutate({ 
+                          userId: user.id, 
+                          amount: newBalance, 
+                          currencyType: 'gold_coins' 
+                        });
+                      }}
+                      onSaveCade={newBalance => {
+                        mutationCurrency.mutate({ 
+                          userId: user.id, 
+                          amount: newBalance, 
+                          currencyType: 'cade_coins' 
+                        });
                       }}
                     />
                     <DeleteUserDialog
@@ -260,16 +294,17 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead>Gold Balance</TableHead>
+                <TableHead>Gold Coins</TableHead>
                 <TableHead>Stream Coins</TableHead>
+                <TableHead>CadeCoins</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Verification</TableHead>
                 <TableHead>Promo Code</TableHead>
-                <TableHead>Actions</TableHead>
-                <TableHead>Gold Coins</TableHead>
-                <TableHead>Edit</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead>Wallet</TableHead>
+                <TableHead>Profile</TableHead>
                 <TableHead>Creator</TableHead>
                 <TableHead>Delete</TableHead>
               </TableRow>
@@ -277,7 +312,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
             <TableBody>
               {paginatedUsers?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={14} className="text-center py-6 text-muted-foreground">
                     No users found matching
                   </TableCell>
                 </TableRow>
@@ -310,6 +345,11 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                         : '-'}
                     </TableCell>
                     <TableCell>
+                      {user?.wallet?.cadeCoins
+                        ? Number(user?.wallet?.cadeCoins)?.toLocaleString('en-US')
+                        : '-'}
+                    </TableCell>
+                    <TableCell>
                       <span
                         className="px-2 py-1 rounded-md font-bold text-sm"
                         style={{
@@ -336,7 +376,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       )}
                     </TableCell>
                     <TableCell className="max-w-[180px]">{user.promoCode}</TableCell>
-                    <TableCell>
+                    <TableCell className="cursor-pointer" title="Set User Account Active/Inactive">
                       <Switch
                         checked={user.isActive}
                         style={{ backgroundColor: user.isActive ? '#7AFF14' : '#FF1418' }}
@@ -345,16 +385,28 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                         }}
                       />
                     </TableCell>
-                    <TableCell className="cursor-pointer" title="Gold Coin Allocation">
+                    <TableCell className="cursor-pointer" title="Edit Wallet Balances">
                       <AddTokens
-                        currentBalance={user?.wallet?.goldCoins}
+                        goldCoinsBalance={user?.wallet?.goldCoins}
+                        cadeCoinsBalance={user?.wallet?.cadeCoins}
                         username={user.username}
-                        onSave={newBalance => {
-                          mutationTokens.mutate({ userId: user.id, amount: newBalance });
+                        onSaveGold={newBalance => {
+                          mutationCurrency.mutate({ 
+                            userId: user.id, 
+                            amount: newBalance, 
+                            currencyType: 'gold_coins' 
+                          });
+                        }}
+                        onSaveCade={newBalance => {
+                          mutationCurrency.mutate({ 
+                            userId: user.id, 
+                            amount: newBalance, 
+                            currencyType: 'cade_coins' 
+                          });
                         }}
                       />
                     </TableCell>
-                    <TableCell className="cursor-pointer" title="Edit">
+                    <TableCell className="cursor-pointer" title="Edit User Profile">
                       <EditUserDialog profile={user} onUpdate={handleEditUser} />
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Toggle Creator Role">

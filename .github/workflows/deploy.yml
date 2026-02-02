@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [non_pro_stag]
+    branches: [non_pro_stag, non_pro_prod]
 
 jobs:
   build:

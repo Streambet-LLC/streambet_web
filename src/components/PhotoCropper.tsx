@@ -122,15 +122,42 @@ export default function PhotoCropper({
 
     const height = imageRef.current.height;
     const width = imageRef.current.width;
+    const aspect = cropperProps?.aspect || 1;
 
-    const length = height < width ? height : width;
+    let cropWidth: number;
+    let cropHeight: number;
+
+    // Calculate dimensions based on aspect ratio
+    if (aspect === 1) {
+      // Square crop - use existing logic
+      const length = height < width ? height : width;
+      cropWidth = length;
+      cropHeight = length;
+    } else {
+      // Non-square aspect ratio (e.g., 16:9)
+      const imageAspect = width / height;
+      
+      if (imageAspect > aspect) {
+        // Image is wider than desired aspect - constrain by height
+        cropHeight = height;
+        cropWidth = height * aspect;
+      } else {
+        // Image is taller than desired aspect - constrain by width
+        cropWidth = width;
+        cropHeight = width / aspect;
+      }
+    }
+
+    // Center the crop
+    const x = (width - cropWidth) / 2;
+    const y = (height - cropHeight) / 2;
 
     setCrop({
       unit: "px",
-      x: 0,
-      y: 0,
-      width: length,
-      height: length,
+      x,
+      y,
+      width: cropWidth,
+      height: cropHeight,
     });
   };
 
@@ -155,7 +182,7 @@ export default function PhotoCropper({
           <ReactCrop 
             crop={crop} 
             onChange={setCrop}
-            aspect={1}
+            aspect={cropperProps?.aspect || 1}
             minWidth={64}
             minHeight={64}
             keepSelection

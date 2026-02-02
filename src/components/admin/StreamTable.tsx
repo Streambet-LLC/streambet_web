@@ -160,12 +160,6 @@ export const StreamTable: React.FC<Props> = ({
   // Listen for stream promotion updates
   useStreamPromotionListener(refetchCurrentPage);
 
-  // Find currently promoted promo card (if any) for single-selection enforcement
-  const promotedPromoCardId = useMemo(() => {
-    if (!isPromoTab) return null;
-    return streams?.data?.find(stream => stream.isPromoted)?.id || null;
-  }, [streams?.data, isPromoTab]);
-
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
@@ -231,14 +225,6 @@ export const StreamTable: React.FC<Props> = ({
     updateStreamPromoted({ streamId, isPromoted: !currentPromoted });
   };
 
-  // Helper to determine if checkbox should be disabled (promo tab only)
-  const isCheckboxDisabled = (streamId: string, isPromoted: boolean) => {
-    if (!isPromoTab) return false; // Never disable for non-promo tabs
-    if (!promotedPromoCardId) return false; // No promo promoted, all enabled
-    if (isPromoted) return false; // This is the promoted one, keep it enabled
-    return true; // Different promo is promoted, disable this one
-  };
-
   const handleDeleteStream = (streamId: string) => {
     setDeletingStreamId(streamId);
     deleteStream(streamId);
@@ -300,7 +286,6 @@ export const StreamTable: React.FC<Props> = ({
                       <span className="text-sm text-muted-foreground">Promoted:</span>
                       <Checkbox
                         checked={stream?.isPromoted || false}
-                        disabled={isCheckboxDisabled(stream?.id, stream?.isPromoted)}
                         onCheckedChange={() => handlePromotedToggle(stream?.id, stream?.isPromoted)}
                       />
                     </div>
@@ -467,7 +452,6 @@ export const StreamTable: React.FC<Props> = ({
                       <TableCell>
                         <Checkbox
                           checked={stream?.isPromoted || false}
-                          disabled={isCheckboxDisabled(stream?.id, stream?.isPromoted)}
                           onCheckedChange={() => handlePromotedToggle(stream?.id, stream?.isPromoted)}
                         />
                       </TableCell>

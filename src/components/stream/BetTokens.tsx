@@ -29,6 +29,11 @@ interface SliderMax {
 
 interface BettingData {
   bettingRounds?: BettingRound[];
+  bettingRoundsWithVariablePercentages: {
+    bettingVariables: {
+      percentage: string | number;
+    }
+  }[];
   walletGoldCoin?: number;
   walletSweepCoin?: number;
   walletCadeCoin?: number;
@@ -98,8 +103,6 @@ export default function BetTokens({
   const bettingLimits = getBettingLimits();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-
-  console.log(selectedOption);
 
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState(selectedOption ? selectedOption : '');
@@ -243,7 +246,7 @@ export default function BetTokens({
         <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
           <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
           <p className="text-gray-400 text-sm text-center">
-            You need Cade Coins to place a pick
+            You need CadeCoins to place a pick
           </p>
           {/* <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
@@ -260,7 +263,7 @@ export default function BetTokens({
             Switch to 
             <div className="flex flex-row items-center gap-1">
               <img
-                src={isSweepCoins ? "/icons/gold-coins.png" : "/icons/sweep-coins.png"}
+                src={isSweepCoins ? "/icons/cade-coins.png" : "/icons/sweep-coins.png"}
                 alt="coins"
                 className={isSweepCoins ? "h-6 w-6" : "h-4 w-6"}
               />
@@ -301,18 +304,18 @@ export default function BetTokens({
               >
                 {betAmount?.toLocaleString('en-US')}
               </span>{' '}
-              Cade Coins
+              CadeCoins
               <span
                 className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate"
                 title={bettingData?.bettingRounds?.[0]?.roundName}
               >
-                Available Cade Coins: {Number(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
+                Available CadeCoins: {Number(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
               </span>
             </div>
 
             <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
               <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
-                Total Pot: {`${totalPot} Cade Coins`}
+                Total Pot: {`${totalPot} CadeCoins`}
               </span>
             </div>
           </div>
@@ -469,10 +472,10 @@ export default function BetTokens({
             >
               {bettingData?.bettingRounds?.[0]?.bettingVariables?.map(
                 (option: any, idx: number) => (
-                  <button
+                  <div
                     key={option.id}
                     onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
-                    className={`${
+                    className={`flex justify-between cursor-pointer ${
                       isMobile || isTabletRange
                         ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 break-words whitespace-normal'
                         : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 break-words whitespace-normal'
@@ -484,11 +487,11 @@ export default function BetTokens({
                           : '#242424',
                       color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
                     }}
-                    disabled={!isColorButtonsEnabled}
                     title={option.name}
                   >
-                    {option.name}
-                  </button>
+                    {option.name} 
+                    <span>{bettingData.bettingRoundsWithVariablePercentages[0].bettingVariables[idx].percentage}%</span>
+                  </div>
                 )
               )}
             </div>
