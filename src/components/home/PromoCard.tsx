@@ -24,8 +24,7 @@ export default function PromoCard({
 
   return (
     <Card className={cn(
-      "overflow-hidden bg-card-grid-bg border border-primary/50",
-      isMobile ? "w-full" : "w-3/4 mx-auto",
+      "overflow-hidden bg-card-grid-bg border border-primary/50 w-full",
       className
     )}>
       <div 

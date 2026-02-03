@@ -197,7 +197,7 @@ export default function Profile() {
                         type="button"
                         className="ml-auto self-end bg-primary text-black text-sm font-bold px-4 py-2 rounded-full hover:bg-opacity-90 transition-colors h-fit w-full md:w-fit"
                       >
-                        Create Event
+                        Create Pick
                       </button>
                     </Link>
                   )}
