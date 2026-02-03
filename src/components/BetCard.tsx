@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { getImageLink } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
-import { Video } from 'lucide-react';
+import { Video, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { QuickPickModal } from './stream/QuickPickModal';
@@ -336,7 +336,7 @@ export default function BetCard(props: BetCardType) {
       </CardContent>
       <CardFooter className="mt-auto p-6 pt-0 px-4 gap-2">
         <div className="flex flex-col justify-between gap-3 w-full">
-          <div className='flex w-full justify-between'>
+          <div className='flex w-full justify-between items-center gap-2'>
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
@@ -356,6 +356,17 @@ export default function BetCard(props: BetCardType) {
               </TooltipTrigger>
               <TooltipContent side="right">Total Pot</TooltipContent>
             </Tooltip>
+            {cardData.cadeCoinUsersCount !== undefined && cardData.cadeCoinUsersCount > 0 && (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <div className="flex gap-1 items-center text-primary text-sm cursor-pointer">
+                    <Users className="h-4 w-4" />
+                    <span className="font-semibold text-primary">{cardData.cadeCoinUsersCount}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top">Total users with Picks</TooltipContent>
+              </Tooltip>
+            )}
             {props.betRoundType && <Badge className={cn("text-[10px] border", getBetRoundTypeClass(props.betRoundType))}>{getBetRoundTypeLabel(props.betRoundType)}</Badge>}
           </div>
           {cardData.lockDate && (
