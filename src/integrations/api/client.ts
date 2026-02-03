@@ -611,6 +611,12 @@ export const betsAPI = {
 
     return response.data
   },
+
+  // Get pick timeline for a round
+  getRoundPickTimeline: async (roundId: string) => {
+    const response = await apiClient.get(`/betting/round/${roundId}/pick-timeline`);
+    return response.data;
+  },
 };
 
 // WebSocket handling

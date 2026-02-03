@@ -4,7 +4,7 @@ import FeaturedBetCard from './FeaturedBetCard';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { getImageLink } from '@/utils/helper';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Video } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
@@ -52,6 +52,18 @@ export default function BetCard(props: BetCardType) {
     }
 
     return getImageLink(thumbnail) || '/placeholder.svg';
+  };
+
+  const navigate = useNavigate();
+
+  const handleThumbnailClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (cardData.type === 'non-video') {
+      navigate(`/nonvideo/${cardData.streamId}`);
+    } else if (cardData.type === 'stream') {
+      navigate(`/stream/${cardData.streamId}`);
+    }
   };
 
   const handleClick = selectedOption => {
@@ -254,7 +266,10 @@ export default function BetCard(props: BetCardType) {
                 )}
                 {/* Description moved to QuickPickModal */}
               </div>
-              <div className='relative rounded-md overflow-clip'>
+              <div 
+                className='relative rounded-md overflow-clip cursor-pointer hover:opacity-90 transition-opacity'
+                onClick={handleThumbnailClick}
+              >
                 <img
                   src={getThumbnailUrl(cardData.thumbnail)}
                   className="aspect-video w-full object-cover"
