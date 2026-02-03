@@ -337,36 +337,38 @@ export default function BetCard(props: BetCardType) {
       <CardFooter className="mt-auto p-6 pt-0 px-4 gap-2">
         <div className="flex flex-col justify-between gap-3 w-full">
           <div className='flex w-full justify-between items-center gap-2'>
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
-                  {/* <div className="flex gap-2 text-sm items-center">
-                    <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
-                    <span className="text-creator-green font-semibold">{cardData.totalPot.streamCoins}</span>
-                  </div>
-                  <div className="flex gap-1 text-sm items-center">
-                    <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
-                    <span className="text-gold-coin font-semibold">{cardData.totalPot.goldCoins}</span>
-                  </div> */}
-                  <div className="flex gap-1 text-sm items-center">
-                    <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
-                    <span className="text-[#B4FF39] font-semibold">{cardData.totalPot.cadeCoins || 0}</span>
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">Total Pot</TooltipContent>
-            </Tooltip>
-            {cardData.cadeCoinUsersCount !== undefined && cardData.cadeCoinUsersCount > 0 && (
+            <div className="flex gap-2 items-center">
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <div className="flex gap-1 items-center text-primary text-sm cursor-pointer">
-                    <Users className="h-4 w-4" />
-                    <span className="font-semibold text-primary">{cardData.cadeCoinUsersCount}</span>
+                  <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
+                    {/* <div className="flex gap-2 text-sm items-center">
+                      <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
+                      <span className="text-creator-green font-semibold">{cardData.totalPot.streamCoins}</span>
+                    </div>
+                    <div className="flex gap-1 text-sm items-center">
+                      <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
+                      <span className="text-gold-coin font-semibold">{cardData.totalPot.goldCoins}</span>
+                    </div> */}
+                    <div className="flex gap-1 text-sm items-center">
+                      <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
+                      <span className="text-[#B4FF39] font-semibold">{cardData.totalPot.cadeCoins || 0}</span>
+                    </div>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top">Total users with Picks</TooltipContent>
+                <TooltipContent side="top">Total Pot</TooltipContent>
               </Tooltip>
-            )}
+              {cardData.cadeCoinUsersCount !== undefined && cardData.cadeCoinUsersCount > 0 && (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <div className="flex gap-1 items-center text-primary text-sm cursor-pointer">
+                      <Users className="h-4 w-4 text-gray-300" />
+                      <span className="font-semibold text-primary">{cardData.cadeCoinUsersCount}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Total users with Picks</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
             {props.betRoundType && <Badge className={cn("text-[10px] border", getBetRoundTypeClass(props.betRoundType))}>{getBetRoundTypeLabel(props.betRoundType)}</Badge>}
           </div>
           {cardData.lockDate && (
