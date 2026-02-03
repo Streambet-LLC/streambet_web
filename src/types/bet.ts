@@ -21,6 +21,7 @@ export interface BetCard {
     goldCoins: number;
     cadeCoins: number;
   },
+  cadeCoinUsersCount?: number;
   creator: string | null;
   streamId?: string | null;
   roundId?: string | null;

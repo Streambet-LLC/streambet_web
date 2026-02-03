@@ -96,7 +96,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           <DropdownMenuItem asChild className="cursor-pointer">
             <div className="flex gap-1 group">
               <Plus className="h-4 w-4 text-[#B4FF39] group-hover:text-black transition-colors" />
-              <Link to="/creator?createStream=true" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Create Event</Link>
+              <Link to="/creator?createStream=true" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Create Pick</Link>
             </div>
           </DropdownMenuItem>
         }

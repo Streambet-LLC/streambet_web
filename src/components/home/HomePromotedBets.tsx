@@ -54,11 +54,11 @@ export default function HomePromotedBets() {
     <>
       {/* Promo Cards Carousel - Shows above featured carousel */}
       {isLoading ? (
-        <div className="px-2 mb-6">
+        <div className="mb-6 w-full md:w-3/4 md:mx-auto px-2">
           <Skeleton className="w-full h-[200px] md:h-[150px] lg:min-h-[200px] rounded-lg" />
         </div>
       ) : promoCards.length > 0 && (
-        <div className="px-2 mb-6">
+        <div className="mb-6 w-full md:w-3/4 md:mx-auto px-2">
           <Carousel
             opts={{
               align: 'start',
