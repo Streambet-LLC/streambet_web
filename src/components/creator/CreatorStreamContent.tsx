@@ -143,7 +143,7 @@ export const CreatorStreamContent = ({
   // Image upload hook for thumbnail
   const thumbnailUpload = useImageCropper({
     checkNSFW: true,
-    onError: (error) => setEditErrors(prev => ({ ...prev, thumbnail: error })),
+    onError: error => setEditErrors(prev => ({ ...prev, thumbnail: error })),
   });
 
   const [bettingUpdate, setBettingUpdate] = useState<BettingTotals | null>(null);
@@ -275,8 +275,6 @@ export const CreatorStreamContent = ({
   async function fetchStreamData() {
     try {
       const streamData = await api.admin.getStream(streamId);
-      console.log(streamData?.data || undefined);
-
       setStreamInfo(streamData?.data || undefined);
 
       const newEventType = {
@@ -413,12 +411,7 @@ export const CreatorStreamContent = ({
 
   const handleEditSubmit = async () => {
     // Run validation first
-    const { isValid, newErrors } = validateForm(
-      editForm,
-      thumbnailUpload,
-      isLiveStream,
-      eventType
-    );
+    const { isValid, newErrors } = validateForm(editForm, thumbnailUpload, isLiveStream, eventType);
     setEditErrors(newErrors);
     if (!isValid) {
       return;
@@ -442,13 +435,18 @@ export const CreatorStreamContent = ({
       }
     }
 
-    const scheduledStartTime = formatDateTimeForISO(editForm.startDateObj, editForm.startTime, editForm.timezone);
-    
+    const scheduledStartTime = formatDateTimeForISO(
+      editForm.startDateObj,
+      editForm.startTime,
+      editForm.timezone
+    );
+
     if (!scheduledStartTime && editForm.startDateObj && editForm.startTime) {
       toast({
         variant: 'destructive',
         title: 'Invalid Timezone',
-        description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+        description:
+          'The selected timezone could not be processed. Please try a different timezone or contact support.',
       });
       return;
     }
@@ -615,7 +613,9 @@ export const CreatorStreamContent = ({
                         onClick={handleEditSubmit}
                         disabled={createStreamMutation.isPending || isUploadingOrValidating}
                       >
-                        {createStreamMutation.isPending || isUploadingOrValidating ? 'Saving...' : 'Update'}
+                        {createStreamMutation.isPending || isUploadingOrValidating
+                          ? 'Saving...'
+                          : 'Update'}
                       </Button>
                     </div>
                   </div>
@@ -713,4 +713,3 @@ export const CreatorStreamContent = ({
     </div>
   );
 };
-

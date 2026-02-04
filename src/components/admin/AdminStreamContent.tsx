@@ -144,7 +144,7 @@ export const AdminStreamContent = ({
   // Image upload hook for thumbnail
   const thumbnailUpload = useImageCropper({
     checkNSFW: false,
-    onError: (error) => setEditErrors(prev => ({ ...prev, thumbnail: error })),
+    onError: error => setEditErrors(prev => ({ ...prev, thumbnail: error })),
   });
 
   const [bettingUpdate, setBettingUpdate] = useState<BettingTotals | null>(null);
@@ -276,8 +276,6 @@ export const AdminStreamContent = ({
   async function fetchStreamData() {
     try {
       const streamData = await api.admin.getStream(streamId);
-      console.log(streamData?.data || undefined);
-
       setStreamInfo(streamData?.data || undefined);
 
       const newEventType = {
@@ -422,12 +420,7 @@ export const AdminStreamContent = ({
 
   const handleEditSubmit = async () => {
     // Run validation first
-    const { isValid, newErrors } = validateForm(
-      editForm,
-      thumbnailUpload,
-      isLiveStream,
-      eventType
-    );
+    const { isValid, newErrors } = validateForm(editForm, thumbnailUpload, isLiveStream, eventType);
     setEditErrors(newErrors);
 
     if (!isValid) {
@@ -453,13 +446,18 @@ export const AdminStreamContent = ({
       }
     }
 
-    const scheduledStartTime = formatDateTimeForISO(editForm.startDateObj, editForm.startTime, editForm.timezone);
-    
+    const scheduledStartTime = formatDateTimeForISO(
+      editForm.startDateObj,
+      editForm.startTime,
+      editForm.timezone
+    );
+
     if (!scheduledStartTime && editForm.startDateObj && editForm.startTime) {
       toast({
         variant: 'destructive',
         title: 'Invalid Timezone',
-        description: 'The selected timezone could not be processed. Please try a different timezone or contact support.',
+        description:
+          'The selected timezone could not be processed. Please try a different timezone or contact support.',
       });
       return;
     }
