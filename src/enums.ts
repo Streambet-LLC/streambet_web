@@ -41,6 +41,11 @@ export enum BetRoundType {
   PICK = 'pick',
 }
 
+export enum PickMechanism {
+  DEFAULT = 'default',
+  SENTIMENT = 'sentiment',
+}
+
 export enum TransactionType {
   DEPOSIT = 'deposit',
   WITHDRAWAL = 'withdrawal',

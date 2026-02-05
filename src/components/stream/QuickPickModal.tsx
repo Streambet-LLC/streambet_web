@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import BetTokens from './BetTokens';
 import LockTokens from './LockTokens';
-import { CurrencyType } from '@/enums';
+import { CurrencyType, PickMechanism } from '@/enums';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 import { useBettingContext } from '@/contexts/BettingContext';
@@ -26,7 +26,15 @@ interface QuickPickModalProps {
 }
 
 export const QuickPickModal = React.memo(
-  ({ open, onOpenChange, streamId, roundId, streamName, selectedOption, description }: QuickPickModalProps) => {
+  ({
+    open,
+    onOpenChange,
+    streamId,
+    roundId,
+    streamName,
+    selectedOption,
+    description,
+  }: QuickPickModalProps) => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { session } = useAuthContext();
@@ -112,9 +120,7 @@ export const QuickPickModal = React.memo(
               </h2>
               {description && (
                 <div className="text-xs text-gray-400 text-center max-w-lg">
-                  <LinkifiedText className='text-creator-green'>
-                    {description}
-                  </LinkifiedText>
+                  <LinkifiedText className="text-creator-green">{description}</LinkifiedText>
                 </div>
               )}
             </div>
@@ -155,6 +161,7 @@ export const QuickPickModal = React.memo(
               lockedBet={userBet.isLocked}
               handleEditBack={handleCancelEdit}
               selectedOption={selectedOption}
+              activeRound={activeRound}
             />
           ) : (
             <LockTokens
@@ -171,39 +178,78 @@ export const QuickPickModal = React.memo(
               selectedWinner={userBet.selectedOption}
               socket={socketConnect}
               lockedBet={userBet.isLocked}
+              activeRound={activeRound}
             />
           )}
 
           {/* Payout Disclaimer - Only shown when betting is active */}
           {activeRound && hasActiveBetting && (
-            <div className="mt-4 pt-4 border-t border-border relative">
-              {!showPayoutInfo ? 
-                <div className='flex items-start gap-2 hover:underline cursor-pointer px-4' onClick={() => setShowPayoutInfo(true)}>
+            <div className="mt-4 pt-4 border-t border-border relative overflow-hidden">
+              {!showPayoutInfo ? (
+                <div
+                  className="flex items-start gap-2 hover:underline cursor-pointer px-4"
+                  onClick={() => setShowPayoutInfo(true)}
+                >
                   <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-xs leading-relaxed font-semibold text-foreground">How payouts work </span>
-                </div> : 
-                <>
-                  <X size={14} className='absolute right-0 cursor-pointer' onClick={() => setShowPayoutInfo(false)} />
-                  <div className="flex items-start gap-2 px-4">
-                    <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      <div className="font-semibold text-foreground">How payouts work</div>
-                      When you win, you receive a proportional share of the losing pool. Example: You
-                      wager 100 of 500 total winning wagers (20%) → you get 20% of the losing pool. So,
-                      in this case, if the losing pool is 1000, you would get 200 (the same 20% of that
-                      side) + your original 100 wagered, so 300 total. Max payout: 4x your wager.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2 px-4 mt-3">
-                    <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      <span className="font-semibold text-foreground">Note: </span>
-                      Payout amounts change dynamically until picks close. The final payout locks once
-                      all picks are placed.
-                    </p>
-                  </div>
-                </>
-              }
+                  <span className="text-xs leading-relaxed font-semibold text-foreground">
+                    {activeRound.mechanism === PickMechanism.SENTIMENT
+                      ? 'How to Play'
+                      : 'How payouts work'}{' '}
+                  </span>
+                </div>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <X
+                    size={14}
+                    className="absolute right-0 cursor-pointer"
+                    onClick={() => setShowPayoutInfo(false)}
+                  />
+                  {activeRound.mechanism === PickMechanism.SENTIMENT ? (
+                    <div className="flex items-start gap-2 px-4">
+                      <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        <div className="font-semibold text-foreground">How to Play</div>
+                        Sentiment picking rewards you for sharing your opinion! Any time a new
+                        sentiment pick is surfaced, there is 24 hours to vote before reveal. After
+                        that, you can see the data in real time. Every day at 1500 UTC, the new
+                        picks are revealed and the previous day results from new picks are shown.
+                        You get 10 CadeCoins if you pick in the first 2 hours of the pick being
+                        surfaced and 5 CadeCoins any time after that.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 px-4">
+                      <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        <div className="font-semibold text-foreground">How payouts work</div>
+                        When you win, you receive a proportional share of the losing pool. Example:
+                        You wager 100 of 500 total winning wagers (20%) → you get 20% of the losing
+                        pool. So, in this case, if the losing pool is 1000, you would get 200 (the
+                        same 20% of that side) + your original 100 wagered, so 300 total. Max
+                        payout: 4x your wager.
+                      </p>
+                    </div>
+                  )}
+                  {activeRound.mechanism === PickMechanism.SENTIMENT ? (
+                    <div className="flex items-start gap-2 px-4 mt-3">
+                      <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        <span className="font-semibold text-foreground">Note: </span>
+                        You do not get any CadeCoins for editing your picks.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 px-4 mt-3">
+                      <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        <span className="font-semibold text-foreground">Note: </span>
+                        Payout amounts change dynamically until picks close. The final payout locks
+                        once all picks are placed.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
