@@ -1,5 +1,5 @@
 import { BetCard as BetCardType } from '@/types/bet';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import FeaturedBetCard from './FeaturedBetCard';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { getImageLink } from '@/utils/helper';
@@ -8,18 +8,17 @@ import { Link } from 'react-router-dom';
 import { Video, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
-import { QuickPickModal } from './stream/QuickPickModal';
 import { BettingRoundStatus, StreamStatus } from '@/enums';
 import { StreamStatusBadge } from '@/components/stream/StreamStatusBadge';
 import api from '@/integrations/api/client';
 import moment from 'moment';
-import { LinkItUrl } from 'react-linkify-it';
 import { Badge } from './ui/badge';
 import { getBetRoundTypeLabel, getBetRoundTypeClass } from '@/utils/betRoundHelpers';
 
 export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
   const [cardData, setCardData] = useState(props);
+
   const [statuses, setStatuses] = useState({
     statusLower: (props as any)?.status?.toString()?.toLowerCase?.() || null,
     isEnded: false,
@@ -34,13 +33,8 @@ export default function BetCard(props: BetCardType) {
   });
 
   const getThumbnailUrl = (thumbnail: string) => {
-    if (!thumbnail) {
-      return '/placeholder.svg';
-    }
-
-    if (thumbnail.startsWith('http')) {
-      return thumbnail;
-    }
+    if (!thumbnail) return '/placeholder.svg';
+    if (thumbnail.startsWith('http')) return thumbnail;
 
     if (
       thumbnail.includes('stream-thumbnails/') &&
@@ -90,17 +84,20 @@ export default function BetCard(props: BetCardType) {
     });
   };
 
-  const getData = async () => {
+  const refreshPotData = async () => {
     if (!cardData.roundId) return;
     try {
       const { data: resp } = await api.betting.getBettingCardRoundData(cardData.roundId);
       if (cardData.totalPot.streamCoins !== resp.data.totalPot.streamCoins) {
         setWiggle(true);
-        setTimeout(() => {
-          setWiggle(false);
-        }, 1000);
+        setTimeout(() => setWiggle(false), 1000);
       }
-      setCardData(resp.data);
+      // Only update pot data, preserve mechanism/meta from props
+      setCardData(prev => ({
+        ...prev,
+        totalPot: resp.data.totalPot,
+        cadeCoinUsersCount: resp.data.cadeCoinUsersCount,
+      }));
       updateStatuses(resp.data);
     } catch (e) {}
   };
@@ -110,11 +107,11 @@ export default function BetCard(props: BetCardType) {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      getData();
+    const intervalId = setInterval(() => {
+      refreshPotData();
     }, 10 * 1000);
-    return () => clearTimeout(timer);
-  }, [cardData]);
+    return () => clearInterval(intervalId);
+  }, [cardData.roundId]);
 
   const displayedOptions = useMemo(() => {
     const topOptions = cardData.options.slice(0, 2);
@@ -147,6 +144,7 @@ export default function BetCard(props: BetCardType) {
         )}
       >
         <CardHeader className="p-4 pb-0 flex flex-col gap-3">
+          {/* Stream status badges - only for streams */}
           {cardData.type === 'stream' && (
             <>
               {cardData.streamStatus === StreamStatus.SCHEDULED && (
@@ -177,39 +175,30 @@ export default function BetCard(props: BetCardType) {
                   onClick={statuses.canOpen ? () => handleClick(null) : undefined}
                   className={cn(
                     'text-md line-clamp-2',
-                    statuses.canOpen
-                      ? 'cursor-pointer hover:underline'
-                      : 'cursor-not-allowed opacity-70'
+                    statuses.canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
                   )}
                 >
                   {cardData.name}
                 </CardTitle>
-                {(statuses.isLocked ||
-                  statuses.isEnded ||
-                  statuses.isCancelled ||
-                  statuses.isCreated) && (
+                {(statuses.isLocked || statuses.isEnded || statuses.isCancelled || statuses.isCreated) && (
                   <span
                     className={cn(
                       'px-2 py-0.5 rounded-full text-xs font-semibold border',
                       statuses.isEnded || statuses.isCancelled
                         ? 'bg-[#2a2a2a] text-white border-red-500/40'
                         : statuses.isCreated
-                          ? cn(
-                              'bg-[#2a2a2a] text-white',
-                              statuses.hasOptions ? 'border-blue-400/40' : 'border-muted'
-                            )
+                          ? cn('bg-[#2a2a2a] text-white', statuses.hasOptions ? 'border-blue-400/40' : 'border-muted')
                           : 'bg-[#2a2a2a] text-white border-yellow-400/40'
                     )}
+                    title={
+                      statuses.isEnded ? 'Ended Round' : 
+                      statuses.isCancelled ? 'Cancelled Round' : 
+                      statuses.isCreated ? 'Created Round' : 'Locked Round'
+                    }
                   >
-                    {statuses.isEnded
-                      ? 'Ended'
-                      : statuses.isCancelled
-                        ? 'Cancelled'
-                        : statuses.isCreated
-                          ? statuses.hasOptions
-                            ? 'Created'
-                            : 'Draft'
-                          : 'Locked'}
+                    {statuses.isEnded ? 'Ended' : 
+                     statuses.isCancelled ? 'Cancelled' : 
+                     statuses.isCreated ? (statuses.hasOptions ? 'Created' : 'Draft') : 'Locked'}
                   </span>
                 )}
               </div>
@@ -275,7 +264,9 @@ export default function BetCard(props: BetCardType) {
               </div>
               {option.userBet && (
                 <div className="text-xs py-1 text-electric-lime">
-                  Your pick for {option.userBet.amount} Cade Coins
+                  {props.mechanism?.toLowerCase?.() === 'sentiment'
+                    ? 'Your pick'
+                    : `Your pick for ${option.userBet.amount} Cade Coins`}
                 </div>
               )}
             </div>
@@ -285,9 +276,7 @@ export default function BetCard(props: BetCardType) {
               onClick={statuses.canOpen ? () => handleClick(null) : undefined}
               className={cn(
                 'flex gap-4 items-center justify-between transition-all px-3 py-2.5 rounded-md border bg-bet-option-bg border-bet-option-border',
-                statuses.canOpen
-                  ? 'hover:text-electric-lime hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
-                  : 'cursor-not-allowed opacity-60'
+                statuses.canOpen ? 'hover:text-electric-lime hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer' : 'cursor-not-allowed opacity-60'
               )}
             >
               <div className="text-sm rounded-full font-semibold">
@@ -300,53 +289,48 @@ export default function BetCard(props: BetCardType) {
         <CardFooter className="mt-auto p-6 pt-0 px-4 gap-2">
           <div className="flex flex-col justify-between gap-3 w-full">
             <div className="flex w-full justify-between items-center gap-2">
-              <div className="flex gap-3 items-center">
-                {/* Total Pot Tooltip */}
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <div className="flex gap-1 text-sm items-center cursor-pointer">
-                      <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
-                      <span className="text-[#B4FF39] font-semibold">
-                        {cardData.totalPot.cadeCoins || 0}
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Total Pot</TooltipContent>
-                </Tooltip>
-
-                {/* User Count Tooltip */}
-                {cardData.cadeCoinUsersCount !== undefined && cardData.cadeCoinUsersCount > 0 && (
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <div className="flex gap-1 items-center text-primary text-sm cursor-pointer">
-                        <Users className="h-4 w-4 text-gray-300" />
-                        <span className="font-semibold text-primary">{cardData.cadeCoinUsersCount}</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">Total users with Picks</TooltipContent>
-                  </Tooltip>
+              <div className="flex gap-2 items-center">
+                {/* Hide CadeCoin pool for sentiment picks */}
+                {props.mechanism?.toLowerCase?.() !== 'sentiment' && (
+                  <>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <div className="flex gap-1 text-sm items-center cursor-pointer">
+                          <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
+                          <span className="text-[#B4FF39] font-semibold">
+                            {cardData.totalPot.cadeCoins || 0}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Total Pot</TooltipContent>
+                    </Tooltip>
+                    {cardData.cadeCoinUsersCount !== undefined && cardData.cadeCoinUsersCount > 0 && (
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <div className="flex gap-1 items-center text-primary text-sm cursor-pointer">
+                            <Users className="h-4 w-4 text-gray-300" />
+                            <span className="font-semibold text-primary">{cardData.cadeCoinUsersCount}</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">Total users with Picks</TooltipContent>
+                      </Tooltip>
+                    )}
+                  </>
                 )}
               </div>
-
-              {/* Bet Round Type Badge */}
               {props.betRoundType && (
                 <Badge className={cn('text-[10px] border', getBetRoundTypeClass(props.betRoundType))}>
                   {getBetRoundTypeLabel(props.betRoundType)}
                 </Badge>
               )}
             </div>
-
-            {/* Lock Date Status */}
             {cardData.lockDate && (
               <StreamStatusBadge
                 status="lock"
                 lockDate={(() => {
                   const date = new Date(cardData.lockDate);
                   const formattedDate = moment(cardData.lockDate).format('MMM D, YYYY [at] h:mm A');
-                  const timezone = date
-                    .toLocaleTimeString('en-US', { timeZoneName: 'short' })
-                    .split(' ')
-                    .pop();
+                  const timezone = date.toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop();
                   return `${formattedDate} ${timezone}`;
                 })()}
               />
