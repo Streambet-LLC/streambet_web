@@ -210,43 +210,25 @@ export default function BetCard(props: BetCardType) {
               >
                 {cardData.name}
               </CardTitle>
-              {(statuses.isLocked ||
-                statuses.isEnded ||
-                statuses.isCancelled ||
-                statuses.isCreated) && (
+              {(statuses.isLocked || statuses.isEnded || statuses.isCancelled || statuses.isCreated) && (
                 <span
                   className={cn(
                     'px-2 py-0.5 rounded-full text-xs font-semibold border',
-                    statuses.isEnded
+                    statuses.isEnded || statuses.isCancelled
                       ? 'bg-[#2a2a2a] text-white border-red-500/40'
-                      : statuses.isCancelled
-                        ? 'bg-[#2a2a2a] text-white border-red-500/40'
-                        : statuses.isCreated
-                          ? cn(
-                              'bg-[#2a2a2a] text-white',
-                              statuses.hasOptions ? 'border-blue-400/40' : 'border-muted'
-                            )
-                          : 'bg-[#2a2a2a] text-white border-yellow-400/40'
+                      : statuses.isCreated
+                        ? cn('bg-[#2a2a2a] text-white', statuses.hasOptions ? 'border-blue-400/40' : 'border-muted')
+                        : 'bg-[#2a2a2a] text-white border-yellow-400/40'
                   )}
                   title={
-                    statuses.isEnded
-                      ? 'Ended Round'
-                      : statuses.isCancelled
-                        ? 'Cancelled Round'
-                        : statuses.isCreated
-                          ? 'Created Round'
-                          : 'Locked Round'
+                    statuses.isEnded ? 'Ended Round' : 
+                    statuses.isCancelled ? 'Cancelled Round' : 
+                    statuses.isCreated ? 'Created Round' : 'Locked Round'
                   }
                 >
-                  {statuses.isEnded
-                    ? 'Ended'
-                    : statuses.isCancelled
-                      ? 'Cancelled'
-                      : statuses.isCreated
-                        ? statuses.hasOptions
-                          ? 'Created'
-                          : 'Draft'
-                        : 'Locked'}
+                  {statuses.isEnded ? 'Ended' : 
+                   statuses.isCancelled ? 'Cancelled' : 
+                   statuses.isCreated ? (statuses.hasOptions ? 'Created' : 'Draft') : 'Locked'}
                 </span>
               )}
             </div>
