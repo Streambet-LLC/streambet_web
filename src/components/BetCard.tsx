@@ -16,10 +16,12 @@ import moment from 'moment';
 import { LinkItUrl } from 'react-linkify-it';
 import { Badge } from './ui/badge';
 import { getBetRoundTypeLabel, getBetRoundTypeClass } from '@/utils/betRoundHelpers';
+import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
 
 export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
   const [cardData, setCardData] = useState(props);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [statuses, setStatuses] = useState({
     statusLower: (props as any)?.status?.toString()?.toLowerCase?.() || null,
     isEnded: false,
@@ -56,13 +58,24 @@ export default function BetCard(props: BetCardType) {
 
   const navigate = useNavigate();
 
+  const getNavigationPath = () => {
+    if (cardData.type === 'non-video') {
+      return `/nonvideo/${cardData.streamId}`;
+    } else if (cardData.type === 'stream') {
+      return `/stream/${cardData.streamId}`;
+    }
+    return null;
+  };
+
   const handleThumbnailClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     
-    if (cardData.type === 'non-video') {
-      navigate(`/nonvideo/${cardData.streamId}`);
-    } else if (cardData.type === 'stream') {
-      navigate(`/stream/${cardData.streamId}`);
+    if (cardData.type === 'non-video' && props.isForNonVideo) {
+      // If in non-video room, open full-screen image
+      setShowImageModal(true);
+    } else {
+      const path = getNavigationPath();
+      if (path) navigate(path);
     }
   };
 
@@ -143,6 +156,7 @@ export default function BetCard(props: BetCardType) {
   const CardWrapper = props.isFeatured ? FeaturedBetCard : Card;
 
   return (
+    <>
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
@@ -185,18 +199,14 @@ export default function BetCard(props: BetCardType) {
           <div className='flex flex-col'>
             <div className="flex items-center gap-2">
               <CardTitle
-                onClick={
-                  statuses.canOpen
-                    ? () => {
-                        handleClick(null);
-                      }
-                    : undefined
-                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const path = getNavigationPath();
+                  if (path) navigate(path);
+                }}
                 className={cn(
                   'text-md line-clamp-2',
-                  statuses.canOpen
-                    ? 'cursor-pointer hover:underline'
-                    : 'cursor-not-allowed opacity-70'
+                  getNavigationPath() && 'cursor-pointer hover:underline'
                 )}
               >
                 {cardData.name}
@@ -401,5 +411,20 @@ export default function BetCard(props: BetCardType) {
       </CardFooter>
     </CardWrapper>
     </motion.div>
+
+    {/* Full-screen image modal for non-video thumbnails */}
+    <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-0">
+        <DialogTitle className="sr-only">
+          {cardData.streamName || 'Full size image preview'}
+        </DialogTitle>
+        <img
+          src={getThumbnailUrl(cardData.thumbnail)}
+          alt={cardData.streamName || 'Full size image'}
+          className="w-full h-full object-contain"
+        />
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

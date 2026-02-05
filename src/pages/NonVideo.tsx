@@ -3,18 +3,13 @@ import { useParams } from 'react-router-dom';
 import { useStreamData } from '@/hooks/useStreamData';
 import { NonVideoContent } from '@/components/nonvideo';
 import { MainLayout } from '@/components/layout';
-import { useAuthContext } from '@/contexts/AuthContext';
 import { useBettingContext } from '@/contexts/BettingContext';
 
 const NonVideo = () => {
-  const { id } = useParams();
-  const nonVideoId = id;
-
-  // Get session from AuthContext
-  const { session, isLoading: isSessionLoading } = useAuthContext();
+  const { id: nonVideoId } = useParams();
 
   // Get non-video data (uses same endpoint as streams)
-  const { data: nonVideo, refetch } = useStreamData(nonVideoId!);
+  const { data: nonVideo, refetch } = useStreamData(nonVideoId ?? '', !!nonVideoId);
 
   // Initialize betting context with the active stream id
   const { setActiveStreamId } = useBettingContext();
@@ -29,12 +24,22 @@ const NonVideo = () => {
     };
   }, [nonVideoId, setActiveStreamId]);
 
+  if (!nonVideoId) {
+    return (
+      <MainLayout showFooter={false}>
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-muted-foreground">Non-video ID not found</p>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout showFooter={false}>
       <NonVideoContent
         nonVideoId={nonVideoId}
-        session={session}
         nonVideo={nonVideo?.data}
+        refetchNonVideo={refetch}
       />
     </MainLayout>
   );

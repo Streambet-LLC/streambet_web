@@ -9,10 +9,6 @@ interface NonVideoHeaderProps {
     description?: string;
     thumbnailUrl?: string;
     creatorUsername?: string;
-    roundDetails?: Array<{
-      status: string;
-      lockDate?: string;
-    }>;
   } | null;
 }
 
@@ -23,13 +19,15 @@ export const NonVideoHeader = ({ nonVideo }: NonVideoHeaderProps) => {
     <Card className="p-4 bg-card-grid-bg border-card-grid-border">
       <div className="flex gap-4">
         {/* Thumbnail */}
-        <div className="flex-shrink-0">
-          <img 
-            src={getImageLink(nonVideo.thumbnailUrl)} 
-            alt={nonVideo.name}
-            className="w-32 h-24 rounded-lg object-contain bg-muted"
-          />
-        </div>
+        {nonVideo.thumbnailUrl && (
+          <div className="flex-shrink-0">
+            <img 
+              src={getImageLink(nonVideo.thumbnailUrl)} 
+              alt={nonVideo.name}
+              className="w-32 h-24 rounded-lg object-contain bg-muted"
+            />
+          </div>
+        )}
         {/* Text Content */}
         <div className="flex-1 flex flex-col gap-2">
           <h1 className="text-2xl font-bold">{nonVideo.name}</h1>

@@ -21,6 +21,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import BetCard from '../BetCard';
 import { QuickPickModal } from './QuickPickModal';
+import { UserBetsChart } from '../UserBetsChart';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface StreamContentProps {
   streamId: string;
@@ -61,7 +63,15 @@ export const StreamContent = ({
   });
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const { socketConnect } = useBettingStatusContext();
+  const queryClient = useQueryClient();
   const [viewerCount, setViewerCount] = useState(0);
+  const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
+  const [selectedRoundName, setSelectedRoundName] = useState<string | null>(null);
+
+  const refetchStreamRef = useRef(refetchStream);
+  useEffect(() => {
+    refetchStreamRef.current = refetchStream;
+  }, [refetchStream]);
 
   useEffect(() => {
     if (stream) {
@@ -73,9 +83,27 @@ export const StreamContent = ({
       console.log(stream.roundDetails);
       if (activeRound > -1) {
         setActiveIdx(activeRound);
+        // Set selected round for chart
+        const round = stream.roundDetails[activeRound];
+        setSelectedRoundId(round.roundId);
+        setSelectedRoundName(round.roundName);
+      } else if (stream.roundDetails.length > 0) {
+        // No open round, default to first round
+        const round = stream.roundDetails[0];
+        setSelectedRoundId(round.roundId);
+        setSelectedRoundName(round.roundName);
       }
     }
   }, [stream]);
+
+  const handleBetEvent = (eventName: string, update: any) => {
+    console.log(eventName, update);
+    const roundId = update?.bet?.roundId;
+    if (roundId) {
+      queryClient.invalidateQueries({ queryKey: ['pick-timeline', roundId] });
+    }
+    refetchStreamRef.current();
+  };
 
   const setupSocketEventListeners = (socketInstance: any) => {
     if (!socketInstance) return;
@@ -113,6 +141,11 @@ export const StreamContent = ({
       });
       refetchStream();
     });
+
+    socketInstance.on('betPlaced', (update) => handleBetEvent('betPlaced', update));
+    socketInstance.on('betEdited', (update) => handleBetEvent('betEdited', update));
+    socketInstance.on('betCancelled', (update) => handleBetEvent('betCancelled', update));
+    socketInstance.on('betCancelledByAdmin', (update) => handleBetEvent('betCancelledByAdmin', update));
   };
 
   const sendMessageSocket = (data: { message: string; imageURL: string }) => {
@@ -178,6 +211,26 @@ export const StreamContent = ({
     }
   }, [carouselApi, activeIdx]);
 
+  // Sync carousel selection with chart
+  useEffect(() => {
+    if (carouselApi && stream?.roundDetails) {
+      const handleSelect = () => {
+        const selected = carouselApi.selectedScrollSnap();
+        const round = stream.roundDetails[selected];
+        if (round) {
+          setSelectedRoundId(round.roundId);
+          setSelectedRoundName(round.roundName);
+        }
+      };
+
+      carouselApi.on('select', handleSelect);
+
+      return () => {
+        carouselApi.off('select', handleSelect);
+      };
+    }
+  }, [carouselApi, stream]);
+
   return (
     <div className="space-y-8">
       {/* Stream Name and Description - Full Width Above Grid */}
@@ -225,6 +278,15 @@ export const StreamContent = ({
           </div>
         </Carousel>
       </CardContent>
+
+      {/* Pick Pool History Chart */}
+      {selectedRoundId && (
+        <UserBetsChart 
+          roundId={selectedRoundId}
+          roundName={selectedRoundName}
+        />
+      )}
+
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6 max-h-screen">
