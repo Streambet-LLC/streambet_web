@@ -3,7 +3,7 @@
 // Constant for temporary option IDs to prevent them from being sent to the database
 export const TEMP_OPTION_PREFIX = 'TEMP_OPTION_';
 import { formatDateTimeForISO } from './helper';
-import { BetRoundType, BettingCategory } from '@/enums';
+import { BetRoundType, BettingCategory, PickMechanism } from '@/enums';
 
 export interface BettingOption {
   optionId?: string;
@@ -19,6 +19,7 @@ export interface BettingRound {
   category?: BettingCategory;
   options: BettingOption[];
   betRoundType?: BetRoundType;
+  mechanism?: PickMechanism;
 }
 
 /**
@@ -32,6 +33,7 @@ export interface BettingRoundPayload {
   lockDate?: string | null;
   category?: string;
   options: BettingOption[];
+  mechanism?: string;
 }
 
 /**
@@ -42,8 +44,13 @@ export interface BettingRoundPayload {
 export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
   return apiRounds.map(round => {
     // Destructure to separate processed fields from the rest
-    const { lockDate: apiLockDate, category: apiCategory, ...restRound } = round;
-    
+    const {
+      lockDate: apiLockDate,
+      category: apiCategory,
+      mechanism: apiMechanism,
+      ...restRound
+    } = round;
+
     let lockDate = null;
     let lockTime = undefined;
     let lockTimezone = undefined;
@@ -52,16 +59,16 @@ export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
     if (apiLockDate) {
       try {
         const date = new Date(apiLockDate);
-        
+
         // Validate the date is valid
         if (!isNaN(date.getTime())) {
           lockDate = date;
-          
+
           // Extract time in HH:mm format
           const hours = date.getHours().toString().padStart(2, '0');
           const minutes = date.getMinutes().toString().padStart(2, '0');
           lockTime = `${hours}:${minutes}`;
-          
+
           // Get timezone from the date (user's local timezone)
           lockTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         }
@@ -77,6 +84,7 @@ export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
       lockTime,
       lockTimezone,
       category: apiCategory as BettingCategory,
+      mechanism: apiMechanism as PickMechanism,
     };
   });
 };
@@ -92,11 +100,13 @@ export const cleanTemporaryIds = (roundsData: BettingRound[]): BettingRoundPaylo
     roundId: round.roundId,
     roundName: round.roundName,
     // Convert date/time/timezone to UTC ISO string using the same helper as stream scheduling
-    lockDate: round.lockDate && round.lockTime
-      ? formatDateTimeForISO(round.lockDate, round.lockTime, round.lockTimezone)
-      : null,
+    lockDate:
+      round.lockDate && round.lockTime
+        ? formatDateTimeForISO(round.lockDate, round.lockTime, round.lockTimezone)
+        : null,
     category: round.category,
     betRoundType: round.betRoundType,
+    mechanism: round.mechanism,
     options: round.options.map(option => {
       // Remove only temporary option IDs, keep real ones and other properties
       if (option.optionId && option.optionId.startsWith(TEMP_OPTION_PREFIX)) {
@@ -106,7 +116,7 @@ export const cleanTemporaryIds = (roundsData: BettingRound[]): BettingRoundPaylo
       }
       // Keep the option as is if it has a real optionId or no optionId
       return option;
-    })
+    }),
   }));
 };
 

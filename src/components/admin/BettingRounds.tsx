@@ -11,8 +11,14 @@ import {
 import { DeleteBettingDialog } from './DeleteBettingDialog';
 import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Edit, Copy } from 'lucide-react';
-import { BettingRoundStatus, BettingCategory, BetRoundType, CurrencyType } from '@/enums';
+import { Edit, Copy, AlertCircle } from 'lucide-react';
+import {
+  BettingRoundStatus,
+  BettingCategory,
+  BetRoundType,
+  CurrencyType,
+  PickMechanism,
+} from '@/enums';
 import { toast } from '@/components/ui/use-toast';
 import { getCategoryLabel } from '@/utils/categoryHelpers';
 import {
@@ -27,6 +33,11 @@ import CalendarDatePicker from '../ui/CalendarDatePicker';
 import { BetCard as BetCardType } from '@/types/bet';
 import BetCardPreview from '../BetCardPreview';
 import { getBetRoundTypeLabel } from '@/utils/betRoundHelpers';
+import {
+  getPickMechanismLabel,
+  SENTIMENT_REVEAL_RULES,
+  MAX_SENTIMENT_OPTIONS,
+} from '@/utils/pickMechanismHelpers';
 interface BettingOption {
   optionId?: string;
   option: string;
@@ -37,6 +48,7 @@ interface BettingRound {
   roundName: string;
   category?: BettingCategory;
   betRoundType?: BetRoundType;
+  mechanism?: PickMechanism;
   lockDate?: Date | null;
   lockTime?: string;
   lockTimezone?: string;
@@ -162,6 +174,7 @@ export function BettingRounds({
 
     const newRound: BettingRound = {
       roundName: defaultName,
+      mechanism: PickMechanism.DEFAULT,
       lockDate: null,
       lockTime: undefined,
       lockTimezone: undefined,
@@ -210,6 +223,37 @@ export function BettingRounds({
   const updateBetRoundType = (roundIndex: number, newType: BetRoundType) => {
     const updatedRounds = [...rounds];
     updatedRounds[roundIndex].betRoundType = newType;
+
+    // Auto-set mechanism to SENTIMENT when OPINION is selected
+    if (newType === BetRoundType.OPINION) {
+      updatedRounds[roundIndex].mechanism = PickMechanism.SENTIMENT;
+    }
+
+    onRoundsChange(updatedRounds);
+  };
+
+  const updateMechanism = (roundIndex: number, newMechanism: PickMechanism) => {
+    const updatedRounds = [...rounds];
+    const round = updatedRounds[roundIndex];
+    updatedRounds[roundIndex].mechanism = newMechanism;
+
+    // Auto-trim options if switching to SENTIMENT with more than 5 options
+    if (newMechanism === PickMechanism.SENTIMENT && round.options.length > MAX_SENTIMENT_OPTIONS) {
+      const removedCount = round.options.length - MAX_SENTIMENT_OPTIONS;
+      updatedRounds[roundIndex].options = round.options.slice(0, MAX_SENTIMENT_OPTIONS);
+      toast({
+        title: 'Options Trimmed',
+        description: `Removed ${removedCount} option(s) to comply with sentiment pick maximum of ${MAX_SENTIMENT_OPTIONS}.`,
+      });
+    }
+
+    // Clear lock date and time if switching to SENTIMENT
+    if (newMechanism === PickMechanism.SENTIMENT) {
+      updatedRounds[roundIndex].lockDate = null;
+      updatedRounds[roundIndex].lockTime = null;
+      updatedRounds[roundIndex].lockTimezone = null;
+    }
+
     onRoundsChange(updatedRounds);
   };
 
@@ -221,6 +265,20 @@ export function BettingRounds({
 
   const addNewOption = (roundIndex: number) => {
     const round = rounds[roundIndex];
+
+    // Check if sentiment mechanism with max options
+    if (
+      round.mechanism === PickMechanism.SENTIMENT &&
+      round.options.length >= MAX_SENTIMENT_OPTIONS
+    ) {
+      toast({
+        title: 'Maximum Options Reached',
+        description: `Sentiment picks can have a maximum of ${MAX_SENTIMENT_OPTIONS} options.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const optionNumber = round.options.length + 1;
     const newOptionId =
       TEMP_OPTION_PREFIX + Date.now().toString() + Math.random().toString(36).slice(2);
@@ -283,6 +341,9 @@ export function BettingRounds({
     const round = rounds[roundIndex];
     const newRound: BettingRound = {
       roundName: round.roundName,
+      category: round.category,
+      betRoundType: round.betRoundType,
+      mechanism: round.mechanism,
       lockDate: round.lockDate || null,
       lockTime: round.lockTime,
       lockTimezone: round.lockTimezone,
@@ -348,9 +409,7 @@ export function BettingRounds({
                             className="border-none px-0 py-0 w-full"
                             style={{ borderTopLeftRadius: 12, maxWidth: 'calc(100% - 56px)' }}
                           >
-                            <div
-                              className="flex flex-col gap-2 px-4 py-2 w-full"
-                            >
+                            <div className="flex flex-col gap-2 px-4 py-2 w-full">
                               <div className="flex items-center gap-2 group min-w-0">
                                 <Button
                                   type="button"
@@ -379,10 +438,20 @@ export function BettingRounds({
                               <div className="flex items-center gap-2 flex-wrap">
                                 <Button
                                   type="button"
-                                  className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
+                                  className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                   style={{ height: 33, fontSize: '16px', fontWeight: 500 }}
-                                  disabled={isSaving}
+                                  disabled={
+                                    isSaving ||
+                                    (round.mechanism === PickMechanism.SENTIMENT &&
+                                      round.options.length >= MAX_SENTIMENT_OPTIONS)
+                                  }
                                   onClick={() => addNewOption(roundIndex)}
+                                  title={
+                                    round.mechanism === PickMechanism.SENTIMENT &&
+                                    round.options.length >= MAX_SENTIMENT_OPTIONS
+                                      ? `Maximum ${MAX_SENTIMENT_OPTIONS} options for sentiment picks`
+                                      : ''
+                                  }
                                 >
                                   + New option
                                 </Button>
@@ -481,65 +550,111 @@ export function BettingRounds({
                                   </SelectContent>
                                 </Select>
                               </div>
+                              <div>
+                                <label className="text-sm font-medium text-white mb-2 block">
+                                  Pick Mechanism
+                                </label>
+                                <Select
+                                  value={round.mechanism || PickMechanism.DEFAULT}
+                                  onValueChange={(value: PickMechanism) =>
+                                    updateMechanism(roundIndex, value)
+                                  }
+                                >
+                                  <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
+                                    <SelectValue placeholder="Select a mechanism" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                                    {Object.values(PickMechanism).map(mechanism => (
+                                      <SelectItem
+                                        key={mechanism}
+                                        value={mechanism}
+                                        className="text-white hover:bg-[#2a2a2a] focus:bg-[#2a2a2a]"
+                                      >
+                                        {getPickMechanismLabel(mechanism as PickMechanism)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              {round.mechanism === PickMechanism.SENTIMENT && (
+                                <div className="border border-blue-500/30 bg-blue-500/5 rounded-lg p-3 space-y-2">
+                                  <div className="flex gap-2">
+                                    <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                                    <div className="text-sm text-blue-300 space-y-1">
+                                      {SENTIMENT_REVEAL_RULES.map((rule, idx) => (
+                                        <div key={idx}>{rule}</div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-blue-400 mt-2">
+                                    Maximum {MAX_SENTIMENT_OPTIONS} options allowed for sentiment
+                                    picks.
+                                  </div>
+                                </div>
+                              )}
                               {editStreamId && (
                                 <p className="text-sm text-muted-foreground mb-2">
-                                  Note: When editing, the actual scheduled time is converted and displayed in your current timezone.
-                                  If editing the time, verify correct timezone is set before saving.
+                                  Note: When editing, the actual scheduled time is converted and
+                                  displayed in your current timezone. If editing the time, verify
+                                  correct timezone is set before saving.
                                 </p>
                               )}
-                              <CalendarDatePicker
-                                label={'Optional Auto Lock Date'}
-                                error={
-                                  roundErrors.find(
-                                    error =>
-                                      error.type === 'round' && error.message.includes('Auto lock')
-                                  )?.message || ''
-                                }
-                                isLive={false}
-                                isUploading={false}
-                                onClick={e => {
-                                  // if (isLive) {
-                                  //   e.preventDefault();
-                                  //   toast({
-                                  //     title: 'You cannot edit scheduled date of live stream',
-                                  //     variant: 'destructive',
-                                  //   });
-                                  //   return;
-                                  // }
-                                }}
-                                dateVal={round.lockDate}
-                                timeVal={round.lockTime}
-                                timezoneVal={round.lockTimezone}
-                                onChange={newData => {
-                                  updateLockDate(roundIndex, newData.date);
-                                  updateLockTime(roundIndex, newData.time);
-                                  // Auto-set timezone to user's local timezone if not already set
-                                  if (newData.date && !round.lockTimezone) {
-                                    updateLockTimezone(
-                                      roundIndex,
-                                      Intl.DateTimeFormat().resolvedOptions().timeZone
-                                    );
+                              {round.mechanism !== PickMechanism.SENTIMENT && (
+                                <CalendarDatePicker
+                                  label={'Optional Auto Lock Date'}
+                                  error={
+                                    roundErrors.find(
+                                      error =>
+                                        error.type === 'round' &&
+                                        error.message.includes('Auto lock')
+                                    )?.message || ''
                                   }
-                                }}
-                                onChangeDate={newDate => {
-                                  updateLockDate(roundIndex, newDate);
-                                  // Auto-set timezone to user's local timezone if not already set
-                                  if (newDate && !round.lockTimezone) {
-                                    updateLockTimezone(
-                                      roundIndex,
-                                      Intl.DateTimeFormat().resolvedOptions().timeZone
-                                    );
-                                  }
-                                }}
-                                onChangeTime={newTime => {
-                                  console.log(newTime);
+                                  isLive={false}
+                                  isUploading={false}
+                                  onClick={e => {
+                                    // if (isLive) {
+                                    //   e.preventDefault();
+                                    //   toast({
+                                    //     title: 'You cannot edit scheduled date of live stream',
+                                    //     variant: 'destructive',
+                                    //   });
+                                    //   return;
+                                    // }
+                                  }}
+                                  dateVal={round.lockDate}
+                                  timeVal={round.lockTime}
+                                  timezoneVal={round.lockTimezone}
+                                  onChange={newData => {
+                                    updateLockDate(roundIndex, newData.date);
+                                    updateLockTime(roundIndex, newData.time);
+                                    // Auto-set timezone to user's local timezone if not already set
+                                    if (newData.date && !round.lockTimezone) {
+                                      updateLockTimezone(
+                                        roundIndex,
+                                        Intl.DateTimeFormat().resolvedOptions().timeZone
+                                      );
+                                    }
+                                  }}
+                                  onChangeDate={newDate => {
+                                    updateLockDate(roundIndex, newDate);
+                                    // Auto-set timezone to user's local timezone if not already set
+                                    if (newDate && !round.lockTimezone) {
+                                      updateLockTimezone(
+                                        roundIndex,
+                                        Intl.DateTimeFormat().resolvedOptions().timeZone
+                                      );
+                                    }
+                                  }}
+                                  onChangeTime={newTime => {
+                                    console.log(newTime);
 
-                                  updateLockTime(roundIndex, newTime.target.value);
-                                }}
-                                onChangeTimezone={newTimezone => {
-                                  updateLockTimezone(roundIndex, newTimezone);
-                                }}
-                              />
+                                    updateLockTime(roundIndex, newTime.target.value);
+                                  }}
+                                  onChangeTimezone={newTimezone => {
+                                    updateLockTimezone(roundIndex, newTimezone);
+                                  }}
+                                />
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -725,7 +840,9 @@ export function BettingRounds({
                               {...betCardInfo}
                               name={roundsState[roundIndex].roundName}
                               category={roundsState[roundIndex].category || BettingCategory.OTHER}
-                              betRoundType={roundsState[roundIndex].betRoundType || BetRoundType.PICK}
+                              betRoundType={
+                                roundsState[roundIndex].betRoundType || BetRoundType.PICK
+                              }
                               options={roundsOptionsPreview[roundIndex]}
                               totalPot={{
                                 streamCoins: 0,
