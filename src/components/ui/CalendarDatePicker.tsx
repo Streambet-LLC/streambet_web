@@ -7,8 +7,6 @@ import { TimezoneOffsetSelect } from './TimezoneOffsetSelect';
 import { getTimezoneAbbreviation } from '@/utils/helper';
 
 function formatTime12hr(time24) {
-  console.log(time24);
-
   if (!time24) return '';
   const [hour, minute] = time24.split(':');
   const date = new Date();
@@ -50,9 +48,11 @@ const CalendarDatePicker = ({
             </span>
             <span className={dateVal ? '' : 'text-[#FFFFFFBF]'}>
               {dateVal && dateVal instanceof Date && !isNaN(dateVal.getTime())
-                ? dateVal.toLocaleDateString() + 
+                ? dateVal.toLocaleDateString() +
                   (timeVal ? ` ${formatTime12hr(timeVal)}` : '') +
-                  (timezoneVal && dateVal ? ` (${getTimezoneAbbreviation(timezoneVal, dateVal)})` : '')
+                  (timezoneVal && dateVal
+                    ? ` (${getTimezoneAbbreviation(timezoneVal, dateVal)})`
+                    : '')
                 : 'Pick a date & time'}
             </span>
             {!isLive && (dateVal || timeVal) && (
@@ -108,10 +108,7 @@ const CalendarDatePicker = ({
             />
           </div>
           {onChangeTimezone && (
-            <TimezoneOffsetSelect
-              value={timezoneVal}
-              onChange={onChangeTimezone}
-            />
+            <TimezoneOffsetSelect value={timezoneVal} onChange={onChangeTimezone} />
           )}
         </PopoverContent>
       </Popover>

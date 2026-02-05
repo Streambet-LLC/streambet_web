@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/carousel';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { BettingRoundStatus, CurrencyType } from '@/enums';
+import { BetRoundType, BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink, getMessage } from '@/utils/helper';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import api from '@/integrations/api/client';
@@ -31,7 +31,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds } from '@/utils/bettingRoundsUtils';
+import {
+  cleanTemporaryIds,
+  appendCountersToDuplicates,
+  deserializeRounds,
+} from '@/utils/bettingRoundsUtils';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { Table, TableHead, TableHeader, TableRow } from '../ui/table';
 import ViewBettingDialog from './ViewBettingDialog';
@@ -69,6 +73,8 @@ export const AdminBettingRoundsCard = ({
   streamInfo,
   bettingUpdate,
 }) => {
+  console.log(betData);
+
   const [carouselApi, setCarouselApi] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [rounds, setRounds] = useState([]);
@@ -88,6 +94,8 @@ export const AdminBettingRoundsCard = ({
     setStatusMap(betData ? Object.fromEntries(betData.map(r => [r?.roundId, r?.status])) : {});
     // Use deserializeRounds to properly parse lockDate into date, time, and timezone
     const deserializedRounds = deserializeRounds(betData || []);
+    console.log(deserializedRounds);
+
     setEditableRounds(
       deserializedRounds.map(r => ({
         roundId: r.roundId,
@@ -97,6 +105,7 @@ export const AdminBettingRoundsCard = ({
         lockTime: r.lockTime,
         lockTimezone: r.lockTimezone,
         category: r.category,
+        betRoundType: r.betRoundType,
       }))
     );
   }, [betData]);
@@ -687,9 +696,18 @@ export const AdminBettingRoundsCard = ({
                                                                  }}
                                                             />
                                                        )} */}
-
+                        {isWinner && (
+                          <p className="text-xs mb-1">
+                            Winning Option:{' '}
+                            {round.options.filter(item => item.is_winning_option).at(0)?.option ??
+                              'No Option'}
+                          </p>
+                        )}
                         <ViewBettingDialog betRound={round.roundId} />
-                        <HideBetRoundOnLanding betRoundId={round.roundId} hidden={round.isHiddenOnLanding} />
+                        <HideBetRoundOnLanding
+                          betRoundId={round.roundId}
+                          hidden={round.isHiddenOnLanding}
+                        />
                       </CarouselItem>
                     );
                   })

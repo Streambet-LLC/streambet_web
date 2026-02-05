@@ -169,7 +169,7 @@ export const CreatorManagement = ({
   // Image upload hook for thumbnail
   const thumbnailUpload = useImageCropper({
     checkNSFW: true,
-    onError: (error) => setErrors(prev => ({ ...prev, thumbnail: error })),
+    onError: error => setErrors(prev => ({ ...prev, thumbnail: error })),
   });
 
   // Notify parent when stream content is being rendered
@@ -346,8 +346,6 @@ export const CreatorManagement = ({
       return response?.data;
     },
   });
-
-  console.log(creatorAnalytics);
 
   const {
     data: betStreamData,
@@ -742,7 +740,20 @@ export const CreatorManagement = ({
     if (validationStarted) {
       validateForm(streamData?.thumbnailUrl);
     }
-  }, [title, description, embeddedUrl, eventType, startDateObj, startTime, timezone, isLiveStream, thumbnailUpload.selectedFile, thumbnailUpload.previewUrl, streamData?.thumbnailUrl, validationStarted]);
+  }, [
+    title,
+    description,
+    embeddedUrl,
+    eventType,
+    startDateObj,
+    startTime,
+    timezone,
+    isLiveStream,
+    thumbnailUpload.selectedFile,
+    thumbnailUpload.previewUrl,
+    streamData?.thumbnailUrl,
+    validationStarted,
+  ]);
 
   const addNewRound = () => {
     const roundNumber = bettingRounds.length + 1;
@@ -794,7 +805,10 @@ export const CreatorManagement = ({
                 className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none text-sm sm:text-base"
                 style={{ borderRadius: '10px', fontWeight: 400 }}
                 disabled={
-                  createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
+                  createStreamMutation.isPending ||
+                  createBetMutation.isPending ||
+                  isUploading ||
+                  thumbnailUpload.isValidating
                 }
                 onClick={() => setStreamAnalyticsId('')}
               >
@@ -983,7 +997,10 @@ export const CreatorManagement = ({
                   className="flex w-[94px] h-[44px] items-center gap-2 bg-[#272727] text-white px-5 py-2 rounded-lg shadow-none border-none"
                   style={{ borderRadius: '10px', fontWeight: 400 }}
                   disabled={
-                    createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
+                    createStreamMutation.isPending ||
+                    createBetMutation.isPending ||
+                    isUploading ||
+                    thumbnailUpload.isValidating
                   }
                   onClick={() => {
                     if (createStep === 'betting') {
@@ -1019,7 +1036,10 @@ export const CreatorManagement = ({
                       await handleNextStep();
                     }}
                     disabled={
-                      createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
+                      createStreamMutation.isPending ||
+                      createBetMutation.isPending ||
+                      isUploading ||
+                      thumbnailUpload.isValidating
                     }
                   >
                     Next
@@ -1031,7 +1051,10 @@ export const CreatorManagement = ({
                       className="bg-[#272727] text-white font-medium px-3 rounded-lg border-none text-sm flex items-center justify-center hover:bg-[#232323] focus:bg-[#232323] active:bg-[#1a1a1a] transition-colors"
                       style={{ height: 44, fontSize: '16px', fontWeight: 500 }}
                       disabled={
-                        createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
+                        createStreamMutation.isPending ||
+                        createBetMutation.isPending ||
+                        isUploading ||
+                        thumbnailUpload.isValidating
                       }
                       onClick={addNewRound}
                     >
@@ -1139,7 +1162,10 @@ export const CreatorManagement = ({
                   <BettingRounds
                     eventType={eventType.value}
                     isSaving={
-                      createStreamMutation.isPending || createBetMutation.isPending || isUploading || thumbnailUpload.isValidating
+                      createStreamMutation.isPending ||
+                      createBetMutation.isPending ||
+                      isUploading ||
+                      thumbnailUpload.isValidating
                     }
                     statusMap={
                       betStreamData?.data?.rounds

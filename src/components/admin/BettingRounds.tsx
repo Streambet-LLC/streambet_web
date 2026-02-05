@@ -82,6 +82,8 @@ export function BettingRounds({
   handleCreateStream,
   betCardInfo,
 }: BettingRoundsProps) {
+  console.log(rounds);
+
   const isMobile = useIsMobile();
   const [expandedRounds, setExpandedRounds] = useState<string[]>([]);
   const roundRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -348,9 +350,7 @@ export function BettingRounds({
                             className="border-none px-0 py-0 w-full"
                             style={{ borderTopLeftRadius: 12, maxWidth: 'calc(100% - 56px)' }}
                           >
-                            <div
-                              className="flex flex-col gap-2 px-4 py-2 w-full"
-                            >
+                            <div className="flex flex-col gap-2 px-4 py-2 w-full">
                               <div className="flex items-center gap-2 group min-w-0">
                                 <Button
                                   type="button"
@@ -483,8 +483,9 @@ export function BettingRounds({
                               </div>
                               {editStreamId && (
                                 <p className="text-sm text-muted-foreground mb-2">
-                                  Note: When editing, the actual scheduled time is converted and displayed in your current timezone.
-                                  If editing the time, verify correct timezone is set before saving.
+                                  Note: When editing, the actual scheduled time is converted and
+                                  displayed in your current timezone. If editing the time, verify
+                                  correct timezone is set before saving.
                                 </p>
                               )}
                               <CalendarDatePicker
@@ -532,8 +533,6 @@ export function BettingRounds({
                                   }
                                 }}
                                 onChangeTime={newTime => {
-                                  console.log(newTime);
-
                                   updateLockTime(roundIndex, newTime.target.value);
                                 }}
                                 onChangeTimezone={newTimezone => {
@@ -725,7 +724,9 @@ export function BettingRounds({
                               {...betCardInfo}
                               name={roundsState[roundIndex].roundName}
                               category={roundsState[roundIndex].category || BettingCategory.OTHER}
-                              betRoundType={roundsState[roundIndex].betRoundType || BetRoundType.PICK}
+                              betRoundType={
+                                roundsState[roundIndex].betRoundType || BetRoundType.PICK
+                              }
                               options={roundsOptionsPreview[roundIndex]}
                               totalPot={{
                                 streamCoins: 0,

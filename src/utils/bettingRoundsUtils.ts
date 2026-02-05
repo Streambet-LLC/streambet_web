@@ -43,7 +43,7 @@ export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
   return apiRounds.map(round => {
     // Destructure to separate processed fields from the rest
     const { lockDate: apiLockDate, category: apiCategory, ...restRound } = round;
-    
+
     let lockDate = null;
     let lockTime = undefined;
     let lockTimezone = undefined;
@@ -52,16 +52,16 @@ export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
     if (apiLockDate) {
       try {
         const date = new Date(apiLockDate);
-        
+
         // Validate the date is valid
         if (!isNaN(date.getTime())) {
           lockDate = date;
-          
+
           // Extract time in HH:mm format
           const hours = date.getHours().toString().padStart(2, '0');
           const minutes = date.getMinutes().toString().padStart(2, '0');
           lockTime = `${hours}:${minutes}`;
-          
+
           // Get timezone from the date (user's local timezone)
           lockTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         }

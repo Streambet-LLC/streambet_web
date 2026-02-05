@@ -6,7 +6,7 @@ import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PRESET_PERCENTAGES } from '@/utils/constants';
-import { Button } from "../ui/button";
+import { Button } from '../ui/button';
 import { useDepositContext } from '@/contexts/DepositContext';
 
 interface BettingVariable {
@@ -32,7 +32,7 @@ interface BettingData {
   bettingRoundsWithVariablePercentages: {
     bettingVariables: {
       percentage: string | number;
-    }
+    };
   }[];
   walletGoldCoin?: number;
   walletSweepCoin?: number;
@@ -236,18 +236,13 @@ export default function BetTokens({
     walletBalance === 0 &&
     (!isEditing || (isEditing && updatedCurrency !== currency));
 
-
-  console.log("WB", bettingData)
-
   return (
     <div>
       {/* Zero Balance Message */}
       {hasZeroBalance ? (
         <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
           <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
-          <p className="text-gray-400 text-sm text-center">
-            You need CadeCoins to place a pick
-          </p>
+          <p className="text-gray-400 text-sm text-center">You need CadeCoins to place a pick</p>
           {/* <button
             className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
             onClick={() => setDepositOpen(true)}
@@ -309,7 +304,8 @@ export default function BetTokens({
                 className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate"
                 title={bettingData?.bettingRounds?.[0]?.roundName}
               >
-                Available CadeCoins: {Number(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
+                Available CadeCoins:{' '}
+                {Number(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
               </span>
             </div>
 
@@ -377,7 +373,7 @@ export default function BetTokens({
               {(() => {
                 const maxBetLimit = bettingLimits.maxCadeCoinsBet;
                 const baseWalletBalance = Number(session?.walletBalanceCadeCoin) || 0;
-                 
+
                 const currentBetAmount = isEditing ? Number(bettingData?.userBetCadeCoins) || 0 : 0;
                 const totalAvailableBalance = Math.min(
                   baseWalletBalance + currentBetAmount,
@@ -489,8 +485,14 @@ export default function BetTokens({
                     }}
                     title={option.name}
                   >
-                    {option.name} 
-                    <span>{bettingData.bettingRoundsWithVariablePercentages[0].bettingVariables[idx].percentage}%</span>
+                    {option.name}
+                    <span>
+                      {
+                        bettingData.bettingRoundsWithVariablePercentages[0].bettingVariables[idx]
+                          .percentage
+                      }
+                      %
+                    </span>
                   </div>
                 )
               )}

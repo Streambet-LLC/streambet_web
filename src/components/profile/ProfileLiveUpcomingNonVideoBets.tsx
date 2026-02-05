@@ -40,8 +40,6 @@ export default function ProfileLiveUpcomingNonVideoBets({ username }: { username
   const totalPages = Math.ceil((nonVideoBets?.total || 0) / 4);
 
   const handlePageChange = (page: number) => {
-    console.log(page);
-    console.log(totalPages);
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
