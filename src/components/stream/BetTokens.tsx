@@ -591,7 +591,9 @@ export default function BetTokens({
                 className="break-words whitespace-normal w-full text-center px-4"
                 title={selectedColor}
               >
-                {`Pick ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
+                {isSentimentPick
+                  ? `Pick ${selectedColor}`
+                  : `Pick ${betAmount?.toLocaleString('en-US')} on ${selectedColor}`}
               </div>
             )}
           </button>
