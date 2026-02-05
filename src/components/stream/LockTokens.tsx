@@ -155,12 +155,14 @@ export default function LockTokens({
 
           {!lockedBet && (
             <div className="flex justify-center gap-4 pb-8">
-              <button
-                onClick={handleCancelClick}
-                className="bg-[#242424] w-[95px] text-white px-6 py-2 rounded-[28px] text-xs font-semibold"
-              >
-                Cancel
-              </button>
+              {activeRound?.mechanism !== PickMechanism.SENTIMENT && (
+                <button
+                  onClick={handleCancelClick}
+                  className="bg-[#242424] w-[95px] text-white px-6 py-2 rounded-[28px] text-xs font-semibold hover:bg-[#303030]"
+                >
+                  Cancel
+                </button>
+              )}
               <button
                 onClick={handleBetEdit}
                 className="bg-[#242424] w-[95px] text-white text-xs font-semibold px-6 py-2 rounded-[28px]"
