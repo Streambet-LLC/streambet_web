@@ -35,7 +35,7 @@ export default function BetCard(props: BetCardType) {
     isForStream: false,
   });
 
-  const getThumbnailUrl = thumbnail => {
+  const getThumbnailUrl = (thumbnail: string) => {
     if (!thumbnail) {
       return '/placeholder.svg';
     }
@@ -79,9 +79,8 @@ export default function BetCard(props: BetCardType) {
     }
   };
 
-  const handleClick = selectedOption => {
+  const handleClick = (selectedOption: any) => {
     if (statuses.canOpen) {
-      console.log(selectedOption);
 
       props.setQuickPick(
         props.streamId,
@@ -93,8 +92,8 @@ export default function BetCard(props: BetCardType) {
     }
   };
 
-  const updateStatuses = data => {
-    const statusLower = (data as any)?.status?.toString()?.toLowerCase?.() || null;
+  const updateStatuses = (data: any) => {
+    const statusLower = data?.status?.toString()?.toLowerCase() || null;
     const isEnded = statusLower === BettingRoundStatus.CLOSED || statusLower === 'ended';
     const isLocked = statusLower === BettingRoundStatus.LOCKED;
     const isCancelled = statusLower === BettingRoundStatus.CANCELLED;
@@ -140,9 +139,10 @@ export default function BetCard(props: BetCardType) {
   }, []);
 
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       getData();
     }, 10 * 1000);
+    return () => clearTimeout(timer);
   }, [cardData]);
 
   const displayedOptions = useMemo(() => {
@@ -365,14 +365,6 @@ export default function BetCard(props: BetCardType) {
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <div className="flex gap-2 items-center text-gray-400 cursor-pointer">
-                  {/* <div className="flex gap-2 text-sm items-center">
-                    <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-3 w-5" />
-                    <span className="text-creator-green font-semibold">{cardData.totalPot.streamCoins}</span>
-                  </div>
-                  <div className="flex gap-1 text-sm items-center">
-                    <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
-                    <span className="text-gold-coin font-semibold">{cardData.totalPot.goldCoins}</span>
-                  </div> */}
                   <div className="flex gap-1 text-sm items-center">
                     <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
                     <span className="text-[#B4FF39] font-semibold">{cardData.totalPot.cadeCoins || 0}</span>
