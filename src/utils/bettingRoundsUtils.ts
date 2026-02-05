@@ -108,14 +108,17 @@ export const cleanTemporaryIds = (roundsData: BettingRound[]): BettingRoundPaylo
     betRoundType: round.betRoundType,
     mechanism: round.mechanism,
     options: round.options.map(option => {
-      // Remove only temporary option IDs, keep real ones and other properties
-      if (option.optionId && option.optionId.startsWith(TEMP_OPTION_PREFIX)) {
-        // Remove the temporary optionId, keep other properties
-        const { optionId, ...cleanOption } = option;
-        return cleanOption;
+      // Create a clean option with only id and option properties
+      const cleanOption: BettingOption = {
+        option: option.option,
+      };
+
+      // Add optionId if it exists and is not temporary
+      if (option.optionId && !option.optionId.startsWith(TEMP_OPTION_PREFIX)) {
+        cleanOption.optionId = option.optionId;
       }
-      // Keep the option as is if it has a real optionId or no optionId
-      return option;
+
+      return cleanOption;
     }),
   }));
 };
