@@ -237,6 +237,13 @@ export function BettingRounds({
       });
     }
 
+    // Clear lock date and time if switching to SENTIMENT
+    if (newMechanism === PickMechanism.SENTIMENT) {
+      updatedRounds[roundIndex].lockDate = null;
+      updatedRounds[roundIndex].lockTime = null;
+      updatedRounds[roundIndex].lockTimezone = null;
+    }
+
     onRoundsChange(updatedRounds);
   };
 
@@ -614,48 +621,51 @@ export function BettingRounds({
                                   correct timezone is set before saving.
                                 </p>
                               )}
-                              <CalendarDatePicker
-                                label={'Optional Auto Lock Date'}
-                                error={
-                                  roundErrors.find(
-                                    error =>
-                                      error.type === 'round' && error.message.includes('Auto lock')
-                                  )?.message || ''
-                                }
-                                isLive={false}
-                                isUploading={false}
-                                onClick={e => {}}
-                                dateVal={round.lockDate}
-                                timeVal={round.lockTime}
-                                timezoneVal={round.lockTimezone}
-                                onChange={newData => {
-                                  updateLockDate(roundIndex, newData.date);
-                                  updateLockTime(roundIndex, newData.time);
-                                  // Auto-set timezone to user's local timezone if not already set
-                                  if (newData.date && !round.lockTimezone) {
-                                    updateLockTimezone(
-                                      roundIndex,
-                                      Intl.DateTimeFormat().resolvedOptions().timeZone
-                                    );
+                              {round.mechanism !== PickMechanism.SENTIMENT && (
+                                <CalendarDatePicker
+                                  label={'Optional Auto Lock Date'}
+                                  error={
+                                    roundErrors.find(
+                                      error =>
+                                        error.type === 'round' &&
+                                        error.message.includes('Auto lock')
+                                    )?.message || ''
                                   }
-                                }}
-                                onChangeDate={newDate => {
-                                  updateLockDate(roundIndex, newDate);
-                                  // Auto-set timezone to user's local timezone if not already set
-                                  if (newDate && !round.lockTimezone) {
-                                    updateLockTimezone(
-                                      roundIndex,
-                                      Intl.DateTimeFormat().resolvedOptions().timeZone
-                                    );
-                                  }
-                                }}
-                                onChangeTime={newTime => {
-                                  updateLockTime(roundIndex, newTime.target.value);
-                                }}
-                                onChangeTimezone={newTimezone => {
-                                  updateLockTimezone(roundIndex, newTimezone);
-                                }}
-                              />
+                                  isLive={false}
+                                  isUploading={false}
+                                  onClick={e => {}}
+                                  dateVal={round.lockDate}
+                                  timeVal={round.lockTime}
+                                  timezoneVal={round.lockTimezone}
+                                  onChange={newData => {
+                                    updateLockDate(roundIndex, newData.date);
+                                    updateLockTime(roundIndex, newData.time);
+                                    // Auto-set timezone to user's local timezone if not already set
+                                    if (newData.date && !round.lockTimezone) {
+                                      updateLockTimezone(
+                                        roundIndex,
+                                        Intl.DateTimeFormat().resolvedOptions().timeZone
+                                      );
+                                    }
+                                  }}
+                                  onChangeDate={newDate => {
+                                    updateLockDate(roundIndex, newDate);
+                                    // Auto-set timezone to user's local timezone if not already set
+                                    if (newDate && !round.lockTimezone) {
+                                      updateLockTimezone(
+                                        roundIndex,
+                                        Intl.DateTimeFormat().resolvedOptions().timeZone
+                                      );
+                                    }
+                                  }}
+                                  onChangeTime={newTime => {
+                                    updateLockTime(roundIndex, newTime.target.value);
+                                  }}
+                                  onChangeTimezone={newTimezone => {
+                                    updateLockTimezone(roundIndex, newTimezone);
+                                  }}
+                                />
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
