@@ -300,14 +300,7 @@ export default function BetTokens({
           <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
             {isSentimentPick ? (
               <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
-                Earn CadeCoins
-                <span
-                  className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate"
-                  title={bettingData?.bettingRounds?.[0]?.roundName}
-                >
-                  Available CadeCoins:{' '}
-                  {Number(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
-                </span>
+                Earn CadeCoins for Sharing Picks
               </div>
             ) : (
               <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
