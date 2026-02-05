@@ -178,6 +178,7 @@ export const QuickPickModal = React.memo(
               selectedWinner={userBet.selectedOption}
               socket={socketConnect}
               lockedBet={userBet.isLocked}
+              activeRound={activeRound}
             />
           )}
 
