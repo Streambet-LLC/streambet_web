@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { getConnectionErrorMessage } from '@/utils/helper';
+import Bugsnag from '@bugsnag/js';
 
 interface RoundDetails {
   roundId: string;
@@ -69,6 +70,8 @@ export const NonVideoContent = ({
   const round = nonVideo?.roundDetails?.[0];
 
   const refetchNonVideoRef = useRef(refetchNonVideo);
+  const lastErrorToastRef = useRef<number>(0);
+  
   useEffect(() => {
     refetchNonVideoRef.current = refetchNonVideo;
   }, [refetchNonVideo]);
@@ -92,7 +95,9 @@ export const NonVideoContent = ({
 
   useEffect(() => {
     const handleBetEvent = (eventName: string, update: any) => {
-      console.log(eventName, update);
+      if (import.meta.env.DEV) {
+        console.log(eventName, update);
+      }
       const roundId = update?.bet?.roundId;
       if (roundId) {
         queryClient.invalidateQueries({ queryKey: ['pick-timeline', roundId] });
@@ -110,23 +115,31 @@ export const NonVideoContent = ({
 
       // Handle disconnection events
       socketInstance.on('disconnect', (reason: string) => {
-        console.log('Socket disconnected:', reason);
+        Bugsnag.leaveBreadcrumb('Socket disconnected', { reason, nonVideoId });
         // Socket.IO will automatically attempt to reconnect with exponential backoff
         // No manual reconnection needed here
       });
 
-      // Handle reconnection - rejoin stream after Socket.IO reconnects
-      socketInstance.on('reconnect', () => {
-        console.log('Socket reconnected, rejoining stream');
-        api.socket.joinStream(nonVideoId, socketConnect);
-      });
-
       socketInstance.on('connect_error', (error: any) => {
-        console.log('Socket connection error:', error);
-        toast({
-          description: getConnectionErrorMessage(),
-          variant: 'destructive',
-        });
+        const now = Date.now();
+        if (now - lastErrorToastRef.current > 5000) {
+          lastErrorToastRef.current = now;
+          
+          Bugsnag.notify(new Error('Socket connection error'), (event) => {
+            event.severity = 'warning';
+            event.context = 'NonVideo Socket';
+            event.addMetadata('socket', { 
+              nonVideoId, 
+              errorMessage: error?.message,
+              errorType: error?.type 
+            });
+          });
+          
+          toast({
+            description: getConnectionErrorMessage(),
+            variant: 'destructive',
+          });
+        }
       });
     };
 
@@ -143,7 +156,6 @@ export const NonVideoContent = ({
         socketConnect.off('betCancelled');
         socketConnect.off('betCancelledByAdmin');
         socketConnect.off('disconnect');
-        socketConnect.off('reconnect');
         socketConnect.off('connect_error');
       }
     };
