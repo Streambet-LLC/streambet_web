@@ -31,7 +31,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds } from '@/utils/bettingRoundsUtils';
+import {
+  cleanTemporaryIds,
+  appendCountersToDuplicates,
+  deserializeRounds,
+} from '@/utils/bettingRoundsUtils';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { Table, TableHead, TableHeader, TableRow } from '../ui/table';
 import ViewBettingDialog from './ViewBettingDialog';
@@ -69,6 +73,8 @@ export const AdminBettingRoundsCard = ({
   streamInfo,
   bettingUpdate,
 }) => {
+  console.log(betData);
+
   const [carouselApi, setCarouselApi] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [rounds, setRounds] = useState([]);
@@ -687,9 +693,18 @@ export const AdminBettingRoundsCard = ({
                                                                  }}
                                                             />
                                                        )} */}
-
+                        {isWinner && (
+                          <p className="text-xs mb-1">
+                            Winning Option:{' '}
+                            {round.options.filter(item => item.is_winning_option).at(0)?.option ??
+                              'No Option'}
+                          </p>
+                        )}
                         <ViewBettingDialog betRound={round.roundId} />
-                        <HideBetRoundOnLanding betRoundId={round.roundId} hidden={round.isHiddenOnLanding} />
+                        <HideBetRoundOnLanding
+                          betRoundId={round.roundId}
+                          hidden={round.isHiddenOnLanding}
+                        />
                       </CarouselItem>
                     );
                   })

@@ -17,8 +17,6 @@ import _ from 'lodash';
 import { getCurrencyLabel } from '@/utils/currency';
 
 const ViewBettingDialog = ({ betRound }) => {
-  console.log(betRound);
-
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
