@@ -158,7 +158,7 @@ export default function BetTokens({
     setSelectedColor(color);
   };
 
-  const isColorButtonsEnabled = betAmount > 0 || selectedOption !== null;
+  const isColorButtonsEnabled = isSentimentPick || betAmount > 0 || selectedOption !== null;
   const isBetButtonEnabled = selectedColor !== '';
 
   useEffect(() => {
@@ -559,7 +559,7 @@ export default function BetTokens({
 
           <button
             className="w-full bg-[#BDFF00] text-black font-bold py-2 rounded-full hover:brightness-105 transition text-lg sm:text-base text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            disabled={!isBetButtonEnabled || betAmount <= 0}
+            disabled={!isBetButtonEnabled || (betAmount <= 0 && !isSentimentPick)}
             onClick={handleBet}
           >
             {loading ? (
@@ -591,7 +591,7 @@ export default function BetTokens({
                 className="break-words whitespace-normal w-full text-center px-4"
                 title={selectedColor}
               >
-                {!selectedColor || betAmount === 0
+                {!selectedColor || (betAmount === 0 && !isSentimentPick)
                   ? 'Make Your Pick'
                   : isSentimentPick
                     ? `Pick ${selectedColor}`
