@@ -40,7 +40,7 @@ interface LockTokens {
   lockedBet?: boolean; // Track if bet is locked
   isStreamScheduled?: boolean;
   updatedCurrency: CurrencyType;
-  activeRound?: any; // For accessing mechanism
+  activeRound?: any; // For accessing mechanism, firstRevealTime, isInitialRevealPeriod
 }
 
 export default function LockTokens({
@@ -63,6 +63,7 @@ export default function LockTokens({
   const [localOption, setLocalOption] = useState(selectedWinner || '');
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [timeUntilReveal, setTimeUntilReveal] = useState('');
+  const [isInInitialPeriod, setIsInInitialPeriod] = useState(true);
 
   useEffect(() => {
     setLocalBetAmount(0);
@@ -74,13 +75,21 @@ export default function LockTokens({
     setLocalOption(selectedWinner);
   }, [selectedAmount, selectedWinner]);
 
-  // Countdown timer for sentiment picks
+  // Determine if sentiment pick is in initial reveal period (first 24 hours)
   useEffect(() => {
     if (activeRound?.mechanism !== PickMechanism.SENTIMENT) return;
 
+    // Use isInitialRevealPeriod from backend if available
+    if (activeRound?.isInitialRevealPeriod !== undefined) {
+      setIsInInitialPeriod(activeRound.isInitialRevealPeriod);
+    }
+  }, [activeRound?.isInitialRevealPeriod, activeRound?.mechanism]);
+
+  // Countdown timer for sentiment picks - ONLY in initial reveal period
+  useEffect(() => {
+    if (activeRound?.mechanism !== PickMechanism.SENTIMENT || !isInInitialPeriod) return;
+
     const calculateCountdown = () => {
-      // For now, pretend all sentiment picks haven't been revealed
-      // Calculate time until next 1500 UTC
       const now = new Date();
       let nextReveal = new Date(now);
       nextReveal.setUTCHours(15, 0, 0, 0);
@@ -102,7 +111,7 @@ export default function LockTokens({
     const interval = setInterval(calculateCountdown, 1000);
 
     return () => clearInterval(interval);
-  }, [activeRound?.mechanism]);
+  }, [activeRound?.mechanism, isInInitialPeriod]);
 
   const handleCancelBet = () => {
     cancelBet({ betId: updatedBetId || getRoundData?.betId, currencyType: updatedCurrency });
@@ -134,38 +143,64 @@ export default function LockTokens({
             <p className="text-5xl sm:text-6xl font-bold text-[#BDFF00] text-center mb-8">
               {localOption}
             </p>
-            <p className="text-sm text-[#606060] font-semibold mb-2">Reveal in</p>
-            <p className="text-2xl font-bold text-white mb-8">{timeUntilReveal}</p>
 
-            <p className="text-sm text-[#606060] font-semibold mb-4">Other Options</p>
-            {/* Other options */}
-            <div className="flex flex-wrap gap-2 justify-center max-w-sm mb-8">
-              {bettingData?.bettingRounds?.[0]?.bettingVariables
-                ?.filter(option => option.name !== localOption)
-                .map(option => (
-                  <div
-                    key={option.id}
-                    className="bg-[#242424] text-[#D7DFEF] px-4 py-2 rounded-[20px] text-sm font-medium border border-[#2C2C2C]"
-                  >
-                    {option.name}
-                  </div>
-                ))}
-            </div>
+            {isInInitialPeriod ? (
+              // Show timer during initial 24-hour reveal period
+              <>
+                <p className="text-sm text-[#606060] font-semibold mb-2">Reveal in</p>
+                <p className="text-2xl font-bold text-white mb-8">{timeUntilReveal}</p>
+
+                <p className="text-sm text-[#606060] font-semibold mb-4">Other Options</p>
+                {/* Other options */}
+                <div className="flex flex-wrap gap-2 justify-center max-w-sm mb-8">
+                  {bettingData?.bettingRounds?.[0]?.bettingVariables
+                    ?.filter(option => option.name !== localOption)
+                    .map(option => (
+                      <div
+                        key={option.id}
+                        className="bg-[#242424] text-[#D7DFEF] px-4 py-2 rounded-[20px] text-sm font-medium border border-[#2C2C2C]"
+                      >
+                        {option.name}
+                      </div>
+                    ))}
+                </div>
+              </>
+            ) : (
+              // Show results after initial period with real-time updates
+              <>
+                <p className="text-sm text-[#606060] font-semibold mb-6">Live Results</p>
+                <div className="w-full max-w-sm space-y-3">
+                  {bettingData?.bettingRounds?.[0]?.bettingVariables?.map(option => (
+                    <div
+                      key={option.id}
+                      className={`flex items-center justify-between p-3 rounded-[8px] border ${
+                        option.name === localOption
+                          ? 'bg-[#BDFF00]/10 border-[#BDFF00]/50'
+                          : 'bg-[#1a1a1a] border-[#2C2C2C]'
+                      }`}
+                    >
+                      <span
+                        className={`text-sm font-medium ${
+                          option.name === localOption ? 'text-[#BDFF00]' : 'text-[#D7DFEF]'
+                        }`}
+                      >
+                        {option.name}
+                      </span>
+                      <span className="text-sm font-semibold text-white">
+                        {option.percentage || 0}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {!lockedBet && (
             <div className="flex justify-center gap-4 pb-8">
-              {activeRound?.mechanism !== PickMechanism.SENTIMENT && (
-                <button
-                  onClick={handleCancelClick}
-                  className="bg-[#242424] w-[95px] text-white px-6 py-2 rounded-[28px] text-xs font-semibold hover:bg-[#303030]"
-                >
-                  Cancel
-                </button>
-              )}
               <button
                 onClick={handleBetEdit}
-                className="bg-[#242424] w-[95px] text-white text-xs font-semibold px-6 py-2 rounded-[28px]"
+                className="bg-[#242424] w-[95px] text-white text-xs font-semibold px-6 py-2 rounded-[28px] hover:bg-[#303030]"
               >
                 Edit
               </button>
