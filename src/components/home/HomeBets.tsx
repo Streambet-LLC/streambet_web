@@ -85,7 +85,22 @@ export default function HomeBets({
     if (!tabsRef.current) return;
 
     if (selectedCategory !== undefined) {
-      tabsRef.current.scrollIntoView({ behavior: 'smooth' });
+      const scrollContainer = tabsRef.current.closest('main');
+      if (!scrollContainer) return;
+      
+      const elementRect = tabsRef.current.getBoundingClientRect();
+      const containerRect = scrollContainer.getBoundingClientRect();
+      
+      // Calculate the position of the element within the scroll container
+      const relativeTop = elementRect.top - containerRect.top;
+      
+      // Calculate target scroll position with offset (80px from top of container so hero section doesn't get hidden)
+      const targetScrollTop = scrollContainer.scrollTop + relativeTop - 80;
+      
+      scrollContainer.scrollTo({
+        top: targetScrollTop,
+        behavior: 'smooth'
+      });
     }
   }, [selectedCategory]);
 

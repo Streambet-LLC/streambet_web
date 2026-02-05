@@ -73,6 +73,8 @@ export const AdminBettingRoundsCard = ({
   streamInfo,
   bettingUpdate,
 }) => {
+  console.log(betData);
+
   const [carouselApi, setCarouselApi] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [rounds, setRounds] = useState([]);
@@ -694,7 +696,13 @@ export const AdminBettingRoundsCard = ({
                                                                  }}
                                                             />
                                                        )} */}
-
+                        {isWinner && (
+                          <p className="text-xs mb-1">
+                            Winning Option:{' '}
+                            {round.options.filter(item => item.is_winning_option).at(0)?.option ??
+                              'No Option'}
+                          </p>
+                        )}
                         <ViewBettingDialog betRound={round.roundId} />
                         <HideBetRoundOnLanding
                           betRoundId={round.roundId}

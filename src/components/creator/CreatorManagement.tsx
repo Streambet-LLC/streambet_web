@@ -126,7 +126,7 @@ export const CreatorManagement = ({
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: getMessage(error) || 'Failed to create event',
+        description: getMessage(error) || 'Failed to create Pick',
         variant: 'destructive',
       });
     },
@@ -144,7 +144,7 @@ export const CreatorManagement = ({
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: getMessage(error) || 'Failed to create event',
+        description: getMessage(error) || 'Failed to create Pick',
         variant: 'destructive',
       });
     },
@@ -1021,8 +1021,8 @@ export const CreatorManagement = ({
                       ? 'Edit your Picks options'
                       : 'Create your Picks options'
                     : editStreamId
-                      ? 'Manage Event'
-                      : 'Create Event'}
+                      ? 'Manage Pick'
+                      : 'Create Pick'}
                 </span>
                 {/* Step 1: Next button, Step 2: Submit button */}
                 {createStep === 'info' ? (
@@ -1418,7 +1418,7 @@ export const CreatorManagement = ({
                     setShowBettingValidation(false);
                   }}
                 >
-                  Create Event
+                  Create Pick
                 </button>
               </div>
             )}
@@ -1457,7 +1457,7 @@ export const CreatorManagement = ({
                     setShowBettingValidation(false);
                   }}
                 >
-                  Create Event
+                  Create Pick
                 </button>
               </div>
             )}
