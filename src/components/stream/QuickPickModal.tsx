@@ -184,7 +184,7 @@ export const QuickPickModal = React.memo(
 
           {/* Payout Disclaimer - Only shown when betting is active */}
           {activeRound && hasActiveBetting && (
-            <div className="mt-4 pt-4 border-t border-border relative">
+            <div className="mt-4 pt-4 border-t border-border relative overflow-hidden">
               {!showPayoutInfo ? (
                 <div
                   className="flex items-start gap-2 hover:underline cursor-pointer px-4"
@@ -198,7 +198,7 @@ export const QuickPickModal = React.memo(
                   </span>
                 </div>
               ) : (
-                <>
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <X
                     size={14}
                     className="absolute right-0 cursor-pointer"
@@ -248,7 +248,7 @@ export const QuickPickModal = React.memo(
                       </p>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
           )}
