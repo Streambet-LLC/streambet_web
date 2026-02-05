@@ -317,7 +317,9 @@ export default function BetCard(props: BetCardType) {
               </div>
               {option.userBet && (
                 <div className="text-xs py-1 text-electric-lime">
-                  Your pick for {option.userBet.amount} Cade Coins
+                  {props.mechanism?.toLowerCase?.() === 'sentiment'
+                    ? 'Your pick'
+                    : `Your pick for ${option.userBet.amount} Cade Coins`}
                 </div>
               )}
             </div>
