@@ -40,12 +40,10 @@ export default function BetCard(props: BetCardType) {
       return '/placeholder.svg';
     }
 
-    // If it's already a full URL (starts with http or https), use it directly
     if (thumbnail.startsWith('http')) {
       return thumbnail;
     }
 
-    // If it's a storage path from bucket but doesn't have the storage URL prefix
     if (
       thumbnail.includes('stream-thumbnails/') &&
       !thumbnail.includes(import.meta.env.VITE_SUPABASE_URL)
@@ -81,7 +79,6 @@ export default function BetCard(props: BetCardType) {
 
   const handleClick = (selectedOption: any) => {
     if (statuses.canOpen) {
-
       props.setQuickPick(
         props.streamId,
         props.roundId,
@@ -130,8 +127,7 @@ export default function BetCard(props: BetCardType) {
       }
       setCardData(resp.data);
       updateStatuses(resp.data);
-    } catch (e) {
-    }
+    } catch (e) {}
   };
 
   useEffect(() => {
@@ -147,11 +143,13 @@ export default function BetCard(props: BetCardType) {
 
   const displayedOptions = useMemo(() => {
     const topOptions = cardData.options.slice(0, 2);
-    const topOptionsLabel = topOptions.map((option) => option.id);
-    const userPickedOption = cardData.options.find((option) => !!option.userBet && !topOptionsLabel.includes(option.id));
+    const topOptionsLabel = topOptions.map(option => option.id);
+    const userPickedOption = cardData.options.find(
+      option => !!option.userBet && !topOptionsLabel.includes(option.id)
+    );
 
     return userPickedOption ? topOptions.concat(userPickedOption) : topOptions;
-  }, [cardData])
+  }, [cardData]);
 
   const CardWrapper = props.isFeatured ? FeaturedBetCard : Card;
 
@@ -160,13 +158,17 @@ export default function BetCard(props: BetCardType) {
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className={cn("group h-full", props.isFeatured && "pt-1 overflow-hidden rounded-featured-card")}
+      className={cn(
+        'group h-full', 
+        props.isFeatured && 'pt-1 overflow-hidden rounded-featured-card'
+      )}
     >
       <CardWrapper
         className={cn(
           'h-full flex flex-col overflow-hidden transition-all duration-200 rounded-xl',
           wiggle && 'wiggle',
-          !props.isFeatured && 'relative bg-card-grid-bg border border-card-grid-border shadow-[0px_2px_8px_0px_rgba(0,0,0,0.5)] hover:border-card-grid-border-hover hover:shadow-[0px_4px_16px_0px_rgba(189,255,0,0.1)]',
+          !props.isFeatured && 
+            'relative bg-card-grid-bg border border-card-grid-border shadow-[0px_2px_8px_0px_rgba(0,0,0,0.5)] hover:border-card-grid-border-hover hover:shadow-[0px_4px_16px_0px_rgba(189,255,0,0.1)]',
           props.isFeatured && 'bg-transparent border-0 shadow-none min-h-[420px]'
         )}
       >
