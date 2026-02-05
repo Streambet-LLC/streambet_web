@@ -214,8 +214,6 @@ export function useBettingSocket({
 
     // Handle bet placed successfully
     const handleBetPlaced = (update: any) => {
-      console.log(update);
-
       if (update?.bet?.userId === session?.id) {
         queryClient.invalidateQueries({ queryKey: ['session'] });
 

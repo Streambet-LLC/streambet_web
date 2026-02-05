@@ -161,7 +161,6 @@ export default function Redeem() {
     try {
       const message = JSON.parse(data);
 
-      console.log(message);
       if (message?.data === 'accountLinked') {
         getWithdrawerData();
         setWithdrawingState('payout');
@@ -201,8 +200,6 @@ export default function Redeem() {
   //     }
   //   }
   // }, [isWithdrawerDataLoading, withdrawerInfo, sweepCoins, usdValue, generateTokens]);
-
-  console.log(sessionKey);
 
   if (withdrawing && !!withdrawerInfo) {
     return (

@@ -70,7 +70,6 @@ export const StreamContent = ({
         round => round.status?.toLowerCase() === BettingRoundStatus.OPEN
       );
 
-      console.log(stream.roundDetails);
       if (activeRound > -1) {
         setActiveIdx(activeRound);
       }
@@ -197,7 +196,13 @@ export const StreamContent = ({
                     <BetCard
                       {...round}
                       isForStream
-                      setQuickPick={(streamId, roundId, streamName, selectedOption, description) => {
+                      setQuickPick={(
+                        streamId,
+                        roundId,
+                        streamName,
+                        selectedOption,
+                        description
+                      ) => {
                         setQuickPickModalSettings({
                           streamId,
                           streamName,
