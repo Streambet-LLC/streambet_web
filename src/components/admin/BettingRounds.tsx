@@ -94,6 +94,8 @@ export function BettingRounds({
   handleCreateStream,
   betCardInfo,
 }: BettingRoundsProps) {
+  console.log(rounds);
+
   const isMobile = useIsMobile();
   const [expandedRounds, setExpandedRounds] = useState<string[]>([]);
   const roundRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -646,7 +648,6 @@ export function BettingRounds({
                                     }
                                   }}
                                   onChangeTime={newTime => {
-                                    console.log(newTime);
 
                                     updateLockTime(roundIndex, newTime.target.value);
                                   }}

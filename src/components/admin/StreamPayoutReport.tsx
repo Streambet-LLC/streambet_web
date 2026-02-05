@@ -45,10 +45,6 @@ const StreamPayoutReport = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, search]);
 
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
-
   return (
     <>
       <SearchInput

@@ -1,7 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { DeleteBettingDialog } from './DeleteBettingDialog';
 import { InlineEditable } from './InlineEditable';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -919,7 +925,7 @@ export function BettingRounds({
 
 export function validateRounds(rounds: BettingRound[]): ValidationError[] {
   const errors: ValidationError[] = [];
-  
+
   // Check for duplicate round names
   const roundNames = rounds.map(round => round.roundName.toLowerCase().trim());
   const duplicateRoundNames = new Set<string>();
@@ -928,7 +934,7 @@ export function validateRounds(rounds: BettingRound[]): ValidationError[] {
       duplicateRoundNames.add(name);
     }
   });
-  
+
   rounds.forEach((round, roundIndex) => {
     // if (duplicateRoundNames.has(round.roundName.toLowerCase().trim())) {
     //   errors.push({
@@ -937,18 +943,18 @@ export function validateRounds(rounds: BettingRound[]): ValidationError[] {
     //     message: 'Round name must be unique'
     //   });
     // }
-    
+
     // Check if auto-lock date is in the past
     if (round.lockDate && round.lockTime) {
       if (isScheduledTimeInPast(round.lockDate, round.lockTime, round.lockTimezone)) {
         errors.push({
           type: 'round',
           roundIndex,
-          message: 'Auto lock time must be in the future'
+          message: 'Auto lock time must be in the future',
         });
       }
     }
-    
+
     // Check for duplicate option names within the same round
     const optionNames = round.options.map(option => option.option.toLowerCase().trim());
     const nameCounts = optionNames.reduce(
@@ -967,6 +973,6 @@ export function validateRounds(rounds: BettingRound[]): ValidationError[] {
       });
     }
   });
-  
+
   return errors;
 }

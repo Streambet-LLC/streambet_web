@@ -123,17 +123,28 @@ export const StreamInfoForm = ({
           <TooltipProvider delayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button type="button" className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded" aria-label="Event type information">
-                  <Info className="w-4 h-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors" aria-hidden="true" />
+                <button
+                  type="button"
+                  className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
+                  aria-label="Event type information"
+                >
+                  <Info
+                    className="w-4 h-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                    aria-hidden="true"
+                  />
                 </button>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <div className="space-y-2 text-sm">
                   <p>
-                    <span className="font-semibold">Livestream:</span> Select if you're casting live video to Streambet from platforms like Twitch, Kick, or YouTube. Requires Embed URL and Start date/time.
+                    <span className="font-semibold">Livestream:</span> Select if you're casting live
+                    video to Streambet from platforms like Twitch, Kick, or YouTube. Requires Embed
+                    URL and Start date/time.
                   </p>
                   <p>
-                    <span className="font-semibold">Non Video:</span> Select for events that don't require live video streaming or if you're streaming elsewhere. No Embed URL or Start date/time needed.
+                    <span className="font-semibold">Non Video:</span> Select for events that don't
+                    require live video streaming or if you're streaming elsewhere. No Embed URL or
+                    Start date/time needed.
                   </p>
                 </div>
               </TooltipContent>
@@ -339,104 +350,111 @@ export const StreamInfoForm = ({
       </div>
       {/* Start date - Only for livestreams */}
       {initialValues.eventType.value === 'stream' && (
-      <div>
-        <Label className="text-white font-light mb-3 block">Start date & time</Label>
-        {isEdit && (
-          <p className="text-sm text-muted-foreground mb-2">
-            Note: When editing, the actual scheduled time is converted and displayed in your current timezone.
-            If editing the time, verify correct timezone is set before saving.
-          </p>
-        )}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className={`w-full pl-10 mt-2 flex items-center h-10 rounded-md relative
+        <div>
+          <Label className="text-white font-light mb-3 block">Start date & time</Label>
+          {isEdit && (
+            <p className="text-sm text-muted-foreground mb-2">
+              Note: When editing, the actual scheduled time is converted and displayed in your
+              current timezone. If editing the time, verify correct timezone is set before saving.
+            </p>
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className={`w-full pl-10 mt-2 flex items-center h-10 rounded-md relative
       ${errors.startDate ? 'border border-red-500' : 'border-none'}
       ${isLive ? 'bg-[#232323] opacity-60 cursor-not-allowed' : 'bg-[#272727] text-[#D7DFEF]'}
     `}
-              style={{ textAlign: 'left' }}
-              onClick={e => {
-                if (isLive) {
-                  e.preventDefault();
-                  toast({
-                    title: 'You cannot edit scheduled date of live stream',
-                    variant: 'destructive',
-                  });
-                  return;
-                }
-              }}
-              disabled={isUploading}
-            >
-              <span className="absolute left-3 top-1/2 -translate-y-1/2">
-                <CalendarIcon className="h-5 w-5 text-white" />
-              </span>
-              <span className={initialValues.startDateObj ? '' : 'text-[#FFFFFFBF]'}>
-                {initialValues.startDateObj
-                  ? initialValues.startDateObj.toLocaleDateString() +
-                    (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '')
-                  : 'Pick a date & time'}
-                {initialValues.startDateObj && initialValues.startTime && initialValues.timezone && (
-                  <>
-                    {' '}
-                    ({getTimezoneAbbreviation(initialValues.timezone, initialValues.startDateObj)})
-                  </>
+                style={{ textAlign: 'left' }}
+                onClick={e => {
+                  if (isLive) {
+                    e.preventDefault();
+                    toast({
+                      title: 'You cannot edit scheduled date of live stream',
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+                }}
+                disabled={isUploading}
+              >
+                <span className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <CalendarIcon className="h-5 w-5 text-white" />
+                </span>
+                <span className={initialValues.startDateObj ? '' : 'text-[#FFFFFFBF]'}>
+                  {initialValues.startDateObj
+                    ? initialValues.startDateObj.toLocaleDateString() +
+                      (initialValues.startTime ? ` ${formatTime12hr(initialValues.startTime)}` : '')
+                    : 'Pick a date & time'}
+                  {initialValues.startDateObj &&
+                    initialValues.startTime &&
+                    initialValues.timezone && (
+                      <>
+                        {' '}
+                        (
+                        {getTimezoneAbbreviation(
+                          initialValues.timezone,
+                          initialValues.startDateObj
+                        )}
+                        )
+                      </>
+                    )}
+                </span>
+                {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
+                    onClick={e => {
+                      e.stopPropagation();
+                      onChange({ startDateObj: null, startTime: '' });
+                    }}
+                  >
+                    <XIcon className="h-4 w-4 text-white" />
+                  </button>
                 )}
-              </span>
-              {!isLive && (initialValues.startDateObj || initialValues.startTime) && (
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent p-0"
-                  onClick={e => {
-                    e.stopPropagation();
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={initialValues.startDateObj || undefined}
+                onSelect={date => {
+                  if (date) {
+                    // Set both date and time in a single onChange call to ensure atomic update
+                    onChange({
+                      startDateObj: date,
+                      startTime: initialValues.startTime || '00:00',
+                    });
+                  } else {
                     onChange({ startDateObj: null, startTime: '' });
-                  }}
-                >
-                  <XIcon className="h-4 w-4 text-white" />
-                </button>
-              )}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={initialValues.startDateObj || undefined}
-              onSelect={date => {
-                if (date) {
-                  // Set both date and time in a single onChange call to ensure atomic update
-                  onChange({
-                    startDateObj: date,
-                    startTime: initialValues.startTime || '00:00',
-                  });
-                } else {
-                  onChange({ startDateObj: null, startTime: '' });
-                }
-                onStartDateChange(date);
-              }}
-              initialFocus
-              showOutsideDays
-              disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
-            />
-            <div className="flex items-center gap-2 p-2">
-              <span className="text-xs text-white">Time:</span>
-              <input
-                type="time"
-                value={initialValues.startTime}
-                onChange={onStartTimeChange}
-                className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
-                style={{ color: 'white' }}
+                  }
+                  onStartDateChange(date);
+                }}
+                initialFocus
+                showOutsideDays
+                disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
               />
-            </div>
-            <TimezoneOffsetSelect
-              value={initialValues.timezone}
-              onChange={onTimezoneOffsetChange}
-            />
-          </PopoverContent>
-        </Popover>
-        {errors.startDate && (
-          <div className="text-destructive text-xs mt-1">{errors.startDate}</div>
-        )}
-      </div>
+              <div className="flex items-center gap-2 p-2">
+                <span className="text-xs text-white">Time:</span>
+                <input
+                  type="time"
+                  value={initialValues.startTime}
+                  onChange={onStartTimeChange}
+                  className="bg-[#272727] text-[#D7DFEF] border border-input rounded px-2 py-1 text-sm"
+                  style={{ color: 'white' }}
+                />
+              </div>
+              <TimezoneOffsetSelect
+                value={initialValues.timezone}
+                onChange={onTimezoneOffsetChange}
+              />
+            </PopoverContent>
+          </Popover>
+          {errors.startDate && (
+            <div className="text-destructive text-xs mt-1">{errors.startDate}</div>
+          )}
+        </div>
       )}
     </form>
   );

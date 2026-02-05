@@ -398,26 +398,38 @@ export default function BetTokens({
                     maxBetLimit
                   );
 
-                  // Filter out buttons with zero value to prevent showing "0 tokens"
-                  return PRESET_PERCENTAGES.map(percentage => {
-                    const value = Math.floor(totalAvailableBalance * percentage);
-                    return { percentage, value };
-                  })
-                    .filter(item => item.value > 0)
-                    .map(({ percentage, value }) => (
-                      <button
-                        key={`${percentage}-${value}`}
-                        onClick={() =>
-                          session && !lockedOptions && setBetAmount(Math.min(value, sliderMax || 0))
-                        }
-                        disabled={session == null || lockedOptions}
-                        className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                      >
-                        {value} tokens
-                      </button>
-                    ));
-                })()}
-              </div>
+            {/* Preset Amount Buttons row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
+              {(() => {
+                const maxBetLimit = bettingLimits.maxCadeCoinsBet;
+                const baseWalletBalance = Number(session?.walletBalanceCadeCoin) || 0;
+
+                const currentBetAmount = isEditing ? Number(bettingData?.userBetCadeCoins) || 0 : 0;
+                const totalAvailableBalance = Math.min(
+                  baseWalletBalance + currentBetAmount,
+                  maxBetLimit
+                );
+
+                // Filter out buttons with zero value to prevent showing "0 tokens"
+                return PRESET_PERCENTAGES.map(percentage => {
+                  const value = Math.floor(totalAvailableBalance * percentage);
+                  return { percentage, value };
+                })
+                  .filter(item => item.value > 0)
+                  .map(({ percentage, value }) => (
+                    <button
+                      key={`${percentage}-${value}`}
+                      onClick={() =>
+                        session && !lockedOptions && setBetAmount(Math.min(value, sliderMax || 0))
+                      }
+                      disabled={session == null || lockedOptions}
+                      className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    >
+                      {value} tokens
+                    </button>
+                  ));
+              })()}
+            </div>
 
               <style>
                 {`
