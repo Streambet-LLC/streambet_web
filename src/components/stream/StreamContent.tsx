@@ -22,7 +22,8 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import BetCard from '../BetCard';
 import { QuickPickModal } from './QuickPickModal';
 import { UserBetsChart } from '../UserBetsChart';
-import { useQueryClient } from '@tanstack/react-query';
+import { useStreamSocketEvents } from '@/hooks/useStreamSocketEvents';
+import type { Socket } from 'socket.io-client';
 
 interface StreamContentProps {
   streamId: string;
@@ -63,15 +64,9 @@ export const StreamContent = ({
   });
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const { socketConnect } = useBettingStatusContext();
-  const queryClient = useQueryClient();
   const [viewerCount, setViewerCount] = useState(0);
   const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
   const [selectedRoundName, setSelectedRoundName] = useState<string | null>(null);
-
-  const refetchStreamRef = useRef(refetchStream);
-  useEffect(() => {
-    refetchStreamRef.current = refetchStream;
-  }, [refetchStream]);
 
   useEffect(() => {
     if (stream) {
@@ -95,40 +90,47 @@ export const StreamContent = ({
     }
   }, [stream]);
 
-  const handleBetEvent = (eventName: string, update: any) => {
-    console.log(eventName, update);
-    const roundId = update?.bet?.roundId;
-    if (roundId) {
-      queryClient.invalidateQueries({ queryKey: ['pick-timeline', roundId] });
-    }
-    refetchStreamRef.current();
-  };
+  // Use the shared socket event handling hook for bet events
+  useStreamSocketEvents({
+    streamId,
+    socketConnect,
+    onDataUpdate: refetchStream,
+    context: 'stream',
+  });
 
-  const setupSocketEventListeners = (socketInstance: any) => {
+  const setupSocketEventListeners = (socketInstance: Socket) => {
     if (!socketInstance) return;
 
     socketInstance.on('newMessage', update => {
-      console.log('newMessage', update);
+      if (import.meta.env.DEV) {
+        console.log('newMessage', update);
+      }
       setMessageList(update);
     });
 
     // Handle disconnection events
     socketInstance.on('disconnect', (reason: string) => {
-      console.log('Socket disconnected:', reason);
+      if (import.meta.env.DEV) {
+        console.log('Socket disconnected:', reason);
+      }
       if (reason !== 'io client disconnect') {
         // Only attempt reconnection if it wasn't an intentional disconnect
         api.socket.joinStream(streamId, socketConnect);
       }
     });
 
-    socketInstance.on('connect_error', (error: any) => {
-      console.log('Socket connection error:', error);
+    socketInstance.on('connect_error', (error: Error) => {
+      if (import.meta.env.DEV) {
+        console.log('Socket connection error:', error);
+      }
       api.socket.joinStream(streamId, socketConnect);
       setLoading(false);
     });
 
     socketInstance.on('viewerCountUpdated', count => {
-      console.log('viewerCountUpdated', count);
+      if (import.meta.env.DEV) {
+        console.log('viewerCountUpdated', count);
+      }
       setViewerCount(count);
     });
 
@@ -140,11 +142,6 @@ export const StreamContent = ({
       });
       refetchStream();
     });
-
-    socketInstance.on('betPlaced', (update) => handleBetEvent('betPlaced', update));
-    socketInstance.on('betEdited', (update) => handleBetEvent('betEdited', update));
-    socketInstance.on('betCancelled', (update) => handleBetEvent('betCancelled', update));
-    socketInstance.on('betCancelledByAdmin', (update) => handleBetEvent('betCancelledByAdmin', update));
   };
 
   const sendMessageSocket = (data: { message: string; imageURL: string }) => {
@@ -189,20 +186,16 @@ export const StreamContent = ({
         socketConnect.off('potentialAmountUpdate');
         socketConnect.off('bettingLocked');
         socketConnect.off('winnerDeclared');
-        socketConnect.off('betPlaced');
         socketConnect.off('betOpened');
-        socketConnect.off('betCancelledByAdmin');
-        socketConnect.off('betCancelled');
-        socketConnect.off('betEdited');
-        socketConnect.off('newMessage');
         socketConnect.off('roundUpdated');
+        socketConnect.off('newMessage');
         socketConnect.off('streamEnded');
         socketConnect.off('disconnect');
         socketConnect.off('connect_error');
         socketConnect.off('error');
       }
     };
-  }, [streamId, socketConnect]);
+  }, [streamId, socketConnect, toast]);
 
   useEffect(() => {
     if (carouselApi && typeof activeIdx === 'number') {

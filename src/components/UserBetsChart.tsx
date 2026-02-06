@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -68,6 +69,19 @@ interface UserBetsChartProps {
   roundName?: string;
 }
 
+// Recharts Tooltip Types
+interface TooltipPayloadItem {
+  dataKey: string;
+  value: number;
+  color: string;
+  payload: ChartDataPoint;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+}
+
 // Sample data if too many points for performance
 const sampleData = <T,>(data: T[], maxPoints: number): T[] => {
   if (data.length <= maxPoints) return data;
@@ -84,9 +98,10 @@ const sampleData = <T,>(data: T[], maxPoints: number): T[] => {
 };
 
 // Calculate odds: (total pool - option stake) / option stake, displayed as X:1
-const calculateRatio = (optionValue: number, totalPool: number): string => {
-  if (optionValue === 0) return 'No bets'; // Can't calculate odds with no stake
-  if (totalPool === 0) return 'No bets';
+const calculateRatio = (optionValue: number, totalPool: number): string | null => {
+  if (optionValue === 0 || totalPool === 0) {
+    return null; // Can't calculate odds with no stake or no pool
+  }
   
   const odds = (totalPool - optionValue) / optionValue;
   return odds.toFixed(ODDS_DECIMAL_PLACES).replace(/\.?0+$/, '') + ':1'; // Format as X:1
@@ -108,7 +123,7 @@ export const UserBetsChart = ({ roundId, roundName }: UserBetsChartProps) => {
   }
 
   if (isLoading) {
-    return <ChartStateCard roundName={roundName} message="Loading pick activity..." isMobile={isMobile} />;
+    return <ChartSkeletonLoader roundName={roundName} isMobile={isMobile} />;
   }
 
   if (isError) {
@@ -150,17 +165,17 @@ export const UserBetsChart = ({ roundId, roundName }: UserBetsChartProps) => {
   const displayData = sampleData(chartData, MAX_POINTS);
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (!active || !payload?.length) return null;
 
     // Calculate total pool from all options
-    const total = payload.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
+    const total = payload.reduce((sum: number, item: TooltipPayloadItem) => sum + (item.value || 0), 0);
 
     return (
       <div className="bg-card-grid-bg border border-card-grid-border rounded-lg p-3 shadow-lg">
         <p className="text-sm text-muted-foreground mb-2">{payload[0]?.payload?.fullTime}</p>
         <div className="space-y-2">
-          {payload.map((item: any) => {
+          {payload.map((item: TooltipPayloadItem) => {
             const option = optionsWithBets.find((opt: TimelineOption) => opt.name === item.dataKey);
             if (!option) return null;
             const optionValue = item.value || 0;
@@ -172,7 +187,7 @@ export const UserBetsChart = ({ roundId, roundName }: UserBetsChartProps) => {
                 <p className="text-sm font-medium" style={{ color: item.color }}>
                   {option.name}: {optionValue.toLocaleString()} CadeCoins ({userCount} users)
                 </p>
-                {ratio !== 'No bets' && (
+                {ratio && (
                   <p className="text-xs text-muted-foreground pl-4">
                     Odds: {ratio}
                   </p>
@@ -245,6 +260,30 @@ const ChartStateCard = ({ roundName, message, isMobile }: { roundName?: string; 
     </div>
     <div className="flex items-center justify-center" style={{ height: CHART_EMPTY_STATE_HEIGHT }}>
       <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>{message}</p>
+    </div>
+  </Card>
+);
+
+// Skeleton loader component for loading state
+const ChartSkeletonLoader = ({ roundName, isMobile }: { roundName?: string; isMobile: boolean }) => (
+  <Card className={`${isMobile ? 'p-2' : 'p-6'} bg-card-grid-bg border-card-grid-border`}>
+    <div className="mb-4">
+      <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`}>
+        Pick Pool History{roundName ? ` - ${roundName}` : ''}
+      </h3>
+      <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>Cumulative CadeCoin amounts over time</p>
+    </div>
+    <div className="space-y-4" style={{ height: isMobile ? CHART_HEIGHT_MOBILE : CHART_HEIGHT_DESKTOP }}>
+      {/* Chart area skeleton */}
+      <Skeleton className="w-full h-full rounded-lg" />
+      {/* Legend skeleton */}
+      {!isMobile && (
+        <div className="flex justify-center gap-4">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      )}
     </div>
   </Card>
 );

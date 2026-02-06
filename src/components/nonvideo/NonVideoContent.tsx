@@ -1,14 +1,28 @@
 import { NonVideoHeader } from './NonVideoHeader';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { QuickPickModal } from '../stream/QuickPickModal';
 import { UserBetsChart } from '../UserBetsChart';
 import BetCard from '../BetCard';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
-import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
-import api from '@/integrations/api/client';
-import { getConnectionErrorMessage } from '@/utils/helper';
-import Bugsnag from '@bugsnag/js';
+import { useStreamSocketEvents } from '@/hooks/useStreamSocketEvents';
+import { BettingCategory, BetRoundType, CurrencyType } from '@/enums';
+
+interface RoundOption {
+  id: string;
+  option: string;
+  percentage: number;
+  isWinner: boolean;
+  userBet: {
+    amount: number;
+    currency: CurrencyType;
+  } | null;
+}
+
+interface TotalPot {
+  streamCoins: number;
+  goldCoins: number;
+  cadeCoins: number;
+}
 
 interface RoundDetails {
   roundId: string;
@@ -16,14 +30,16 @@ interface RoundDetails {
   status: string;
   name: string;
   description: string;
-  category: any;
-  options: any[];
-  totalPot: any;
+  category: BettingCategory;
+  options: RoundOption[];
+  totalPot: TotalPot;
   type: string;
   streamId: string;
-  creator: any;
-  betRoundType: any;
-  [key: string]: any; // Allow additional properties
+  creator: string | null;
+  betRoundType: BetRoundType;
+  mechanism?: string;
+  lockDate?: string;
+  cadeCoinUsersCount?: number;
 }
 
 interface NonVideo {
@@ -32,7 +48,9 @@ interface NonVideo {
   thumbnailUrl?: string;
   creatorUsername?: string;
   roundDetails?: RoundDetails[];
-  [key: string]: any;
+  viewerCount?: number;
+  status?: string;
+  streamType?: string;
 }
 
 interface QuickPickModalSettings {
@@ -55,8 +73,6 @@ export const NonVideoContent = ({
   refetchNonVideo,
 }: NonVideoContentProps) => {
   const { socketConnect } = useBettingStatusContext();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   
   const [quickPickOpen, setQuickPickOpen] = useState(false);
   const [quickPickModalSettings, setQuickPickModalSettings] = useState<QuickPickModalSettings>({
@@ -69,12 +85,13 @@ export const NonVideoContent = ({
 
   const round = nonVideo?.roundDetails?.[0];
 
-  const refetchNonVideoRef = useRef(refetchNonVideo);
-  const lastErrorToastRef = useRef<number>(0);
-  
-  useEffect(() => {
-    refetchNonVideoRef.current = refetchNonVideo;
-  }, [refetchNonVideo]);
+  // Use the shared socket event handling hook
+  useStreamSocketEvents({
+    streamId: nonVideoId,
+    socketConnect,
+    onDataUpdate: refetchNonVideo,
+    context: 'nonvideo',
+  });
 
   const handleQuickPick = (
     streamId: string | null,
@@ -92,74 +109,6 @@ export const NonVideoContent = ({
     });
     setQuickPickOpen(true);
   };
-
-  useEffect(() => {
-    const handleBetEvent = (eventName: string, update: any) => {
-      if (import.meta.env.DEV) {
-        console.log(eventName, update);
-      }
-      const roundId = update?.bet?.roundId;
-      if (roundId) {
-        queryClient.invalidateQueries({ queryKey: ['pick-timeline', roundId] });
-      }
-      refetchNonVideoRef.current();
-    };
-
-    const setupSocketEventListeners = (socketInstance: any) => {
-      if (!socketInstance) return;
-
-      socketInstance.on('betPlaced', (update) => handleBetEvent('betPlaced', update));
-      socketInstance.on('betEdited', (update) => handleBetEvent('betEdited', update));
-      socketInstance.on('betCancelled', (update) => handleBetEvent('betCancelled', update));
-      socketInstance.on('betCancelledByAdmin', (update) => handleBetEvent('betCancelledByAdmin', update));
-
-      // Handle disconnection events
-      socketInstance.on('disconnect', (reason: string) => {
-        Bugsnag.leaveBreadcrumb('Socket disconnected', { reason, nonVideoId });
-        // Socket.IO will automatically attempt to reconnect with exponential backoff
-        // No manual reconnection needed here
-      });
-
-      socketInstance.on('connect_error', (error: any) => {
-        const now = Date.now();
-        if (now - lastErrorToastRef.current > 5000) {
-          lastErrorToastRef.current = now;
-          
-          Bugsnag.notify(new Error('Socket connection error'), (event) => {
-            event.severity = 'warning';
-            event.context = 'NonVideo Socket';
-            event.addMetadata('socket', { 
-              nonVideoId, 
-              errorMessage: error?.message,
-              errorType: error?.type 
-            });
-          });
-          
-          toast({
-            description: getConnectionErrorMessage(),
-            variant: 'destructive',
-          });
-        }
-      });
-    };
-
-    if (socketConnect && nonVideoId) {
-      api.socket.joinStream(nonVideoId, socketConnect);
-      setupSocketEventListeners(socketConnect);
-    }
-
-    return () => {
-      if (socketConnect) {
-        api.socket.leaveStream(nonVideoId, socketConnect);
-        socketConnect.off('betPlaced');
-        socketConnect.off('betEdited');
-        socketConnect.off('betCancelled');
-        socketConnect.off('betCancelledByAdmin');
-        socketConnect.off('disconnect');
-        socketConnect.off('connect_error');
-      }
-    };
-  }, [nonVideoId, socketConnect, queryClient, toast]);
 
   return (
     <div className="space-y-6">

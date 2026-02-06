@@ -570,6 +570,23 @@ export const userStreamAPI = {
   },
 };
 
+// Bets API Types
+interface TimelineOption {
+  id: string;
+  name: string;
+  userCount: number;
+}
+
+interface TimelinePoint {
+  timestamp: string;
+  [key: string]: number | string; // Dynamic keys for option values and user counts
+}
+
+interface RoundPickTimelineResponse {
+  options: TimelineOption[];
+  timeline: TimelinePoint[];
+}
+
 // Bets API
 export const betsAPI = {
   // Get all promoted bets
@@ -613,9 +630,31 @@ export const betsAPI = {
   },
 
   // Get pick timeline for a round
-  getRoundPickTimeline: async (roundId: string) => {
-    const response = await apiClient.get(`/betting/round/${roundId}/pick-timeline`);
-    return response.data;
+  getRoundPickTimeline: async (roundId: string): Promise<{ data: RoundPickTimelineResponse }> => {
+    try {
+      const response = await apiClient.get(`/betting/round/${roundId}/pick-timeline`);
+      
+      // Validate response structure
+      if (!response.data?.data?.options || !response.data?.data?.timeline) {
+        if (import.meta.env.DEV) {
+          console.error('Invalid response structure from pick timeline API:', response.data);
+        }
+        throw new Error('Invalid response structure from pick timeline API');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      if (import.meta.env.DEV) {
+        console.error('Failed to fetch round pick timeline:', error);
+      }
+      
+      // Re-throw with more context
+      throw new Error(
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to fetch pick timeline data'
+      );
+    }
   },
 };
 
