@@ -342,7 +342,7 @@ export default function BetCard(props: BetCardType) {
                 status="lock"
                 lockDate={(() => {
                   const date = new Date(cardData.lockDate);
-                  const formattedDate = moment(cardData.lockDate).format('MMM D, YYYY [at] h:mm A');
+                  const formattedDate = moment(cardData.lockDate).format('MMM D [at] h:mm A');
                   const timezone = date
                     .toLocaleTimeString('en-US', { timeZoneName: 'short' })
                     .split(' ')
