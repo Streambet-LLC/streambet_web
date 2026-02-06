@@ -169,7 +169,7 @@ export function formatTime(dateString: string) {
 
 export function formatDate(dateString: string) {
   const date = new Date(dateString);
-  return format(date, 'EEEE, MMM do, yyyy');
+  return format(date, 'MMM d');
 };
 
 export function formatDateTime(dateString: string) {
