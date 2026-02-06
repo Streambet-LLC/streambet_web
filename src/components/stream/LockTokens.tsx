@@ -92,10 +92,10 @@ export default function LockTokens({
     const calculateCountdown = () => {
       const now = new Date();
       let nextReveal = new Date(now);
-      nextReveal.setUTCHours(15, 0, 0, 0);
+      nextReveal.setUTCHours(1, 0, 0, 0);
 
       // If we've already passed 1500 UTC today, set to tomorrow
-      if (now.getUTCHours() >= 15) {
+      if (now.getUTCHours() >= 1) {
         nextReveal.setUTCDate(nextReveal.getUTCDate() + 1);
       }
 

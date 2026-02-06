@@ -587,8 +587,11 @@ export function BettingRounds({
                                   onValueChange={(value: PickMechanism) =>
                                     updateMechanism(roundIndex, value)
                                   }
+                                  disabled={!!round.roundId}
                                 >
-                                  <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
+                                  <SelectTrigger
+                                    className={`w-full bg-[#1a1a1a] border-[#2a2a2a] text-white ${round.roundId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  >
                                     <SelectValue placeholder="Select a mechanism" />
                                   </SelectTrigger>
                                   <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
@@ -603,6 +606,11 @@ export function BettingRounds({
                                     ))}
                                   </SelectContent>
                                 </Select>
+                                {round.roundId && (
+                                  <p className="text-xs text-yellow-400/70 mt-1">
+                                    Pick mechanism cannot be changed after creation
+                                  </p>
+                                )}
                               </div>
                               {round.mechanism === PickMechanism.SENTIMENT && (
                                 <div className="border border-blue-500/30 bg-blue-500/5 rounded-lg p-3 space-y-2">
