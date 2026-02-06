@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
-import { BettingRoundStatus, CurrencyType } from '@/enums';
+import { BettingRoundStatus, CurrencyType, PickMechanism } from '@/enums';
 import { useBettingSocket } from '@/hooks/useBettingSocket';
 import { useBettingStatusContext } from './BettingStatusContext';
 import { useAuthContext } from './AuthContext';
@@ -28,6 +28,7 @@ export interface ActiveRound {
   id: string | null;
   name: string;
   status: BettingRoundStatus;
+  mechanism?: PickMechanism;
   totalGoldCoins: number;
   totalSweepCoins: number;
   totalCadeCoins: number;
@@ -45,7 +46,7 @@ export interface ActiveRound {
   bettingRoundsWithVariablePercentages: {
     bettingVariables: {
       percentage: string | number;
-    }
+    };
   }[];
 }
 

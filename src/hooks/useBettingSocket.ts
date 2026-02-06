@@ -100,6 +100,7 @@ export function useBettingSocket({
         id: betRound.id,
         name: betRound.roundName,
         status: betRound.status,
+        mechanism: betRound.mechanism,
         totalGoldCoins: bettingData.roundTotalBetsGoldCoinAmount ?? 0,
         totalSweepCoins: bettingData.roundTotalBetsSweepCoinAmount ?? 0,
         totalCadeCoins: bettingData.roundTotalBetsCadeCoinAmount ?? 0,

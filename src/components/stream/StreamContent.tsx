@@ -21,6 +21,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import BetCard from '../BetCard';
 import { QuickPickModal } from './QuickPickModal';
+import { UserBetsChart } from '../UserBetsChart';
+import { useStreamSocketEvents } from '@/hooks/useStreamSocketEvents';
+import type { Socket } from 'socket.io-client';
 
 interface StreamContentProps {
   streamId: string;
@@ -62,6 +65,8 @@ export const StreamContent = ({
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const { socketConnect } = useBettingStatusContext();
   const [viewerCount, setViewerCount] = useState(0);
+  const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
+  const [selectedRoundName, setSelectedRoundName] = useState<string | null>(null);
 
   useEffect(() => {
     if (stream) {
@@ -72,35 +77,60 @@ export const StreamContent = ({
 
       if (activeRound > -1) {
         setActiveIdx(activeRound);
+        // Set selected round for chart
+        const round = stream.roundDetails[activeRound];
+        setSelectedRoundId(round.roundId);
+        setSelectedRoundName(round.roundName);
+      } else if (stream.roundDetails.length > 0) {
+        // No open round, default to first round
+        const round = stream.roundDetails[0];
+        setSelectedRoundId(round.roundId);
+        setSelectedRoundName(round.roundName);
       }
     }
   }, [stream]);
 
-  const setupSocketEventListeners = (socketInstance: any) => {
+  // Use the shared socket event handling hook for bet events
+  useStreamSocketEvents({
+    streamId,
+    socketConnect,
+    onDataUpdate: refetchStream,
+    context: 'stream',
+  });
+
+  const setupSocketEventListeners = (socketInstance: Socket) => {
     if (!socketInstance) return;
 
     socketInstance.on('newMessage', update => {
-      console.log('newMessage', update);
+      if (import.meta.env.DEV) {
+        console.log('newMessage', update);
+      }
       setMessageList(update);
     });
 
     // Handle disconnection events
     socketInstance.on('disconnect', (reason: string) => {
-      console.log('Socket disconnected:', reason);
+      if (import.meta.env.DEV) {
+        console.log('Socket disconnected:', reason);
+      }
       if (reason !== 'io client disconnect') {
         // Only attempt reconnection if it wasn't an intentional disconnect
         api.socket.joinStream(streamId, socketConnect);
       }
     });
 
-    socketInstance.on('connect_error', (error: any) => {
-      console.log('Socket connection error:', error);
+    socketInstance.on('connect_error', (error: Error) => {
+      if (import.meta.env.DEV) {
+        console.log('Socket connection error:', error);
+      }
       api.socket.joinStream(streamId, socketConnect);
       setLoading(false);
     });
 
     socketInstance.on('viewerCountUpdated', count => {
-      console.log('viewerCountUpdated', count);
+      if (import.meta.env.DEV) {
+        console.log('viewerCountUpdated', count);
+      }
       setViewerCount(count);
     });
 
@@ -156,26 +186,42 @@ export const StreamContent = ({
         socketConnect.off('potentialAmountUpdate');
         socketConnect.off('bettingLocked');
         socketConnect.off('winnerDeclared');
-        socketConnect.off('betPlaced');
         socketConnect.off('betOpened');
-        socketConnect.off('betCancelledByAdmin');
-        socketConnect.off('betCancelled');
-        socketConnect.off('betEdited');
-        socketConnect.off('newMessage');
         socketConnect.off('roundUpdated');
+        socketConnect.off('newMessage');
         socketConnect.off('streamEnded');
         socketConnect.off('disconnect');
         socketConnect.off('connect_error');
         socketConnect.off('error');
       }
     };
-  }, [streamId, socketConnect]);
+  }, [streamId, socketConnect, toast]);
 
   useEffect(() => {
     if (carouselApi && typeof activeIdx === 'number') {
       setTimeout(() => carouselApi.scrollTo(activeIdx), 500);
     }
   }, [carouselApi, activeIdx]);
+
+  // Sync carousel selection with chart
+  useEffect(() => {
+    if (carouselApi && stream?.roundDetails) {
+      const handleSelect = () => {
+        const selected = carouselApi.selectedScrollSnap();
+        const round = stream.roundDetails[selected];
+        if (round) {
+          setSelectedRoundId(round.roundId);
+          setSelectedRoundName(round.roundName);
+        }
+      };
+
+      carouselApi.on('select', handleSelect);
+
+      return () => {
+        carouselApi.off('select', handleSelect);
+      };
+    }
+  }, [carouselApi, stream]);
 
   return (
     <div className="space-y-8">
@@ -230,6 +276,15 @@ export const StreamContent = ({
           </div>
         </Carousel>
       </CardContent>
+
+      {/* Pick Pool History Chart */}
+      {selectedRoundId && (
+        <UserBetsChart 
+          roundId={selectedRoundId}
+          roundName={selectedRoundName}
+        />
+      )}
+
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6 max-h-screen">

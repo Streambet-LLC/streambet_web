@@ -3,7 +3,7 @@
 // Constant for temporary option IDs to prevent them from being sent to the database
 export const TEMP_OPTION_PREFIX = 'TEMP_OPTION_';
 import { formatDateTimeForISO } from './helper';
-import { BetRoundType, BettingCategory } from '@/enums';
+import { BetRoundType, BettingCategory, PickMechanism } from '@/enums';
 
 export interface BettingOption {
   optionId?: string;
@@ -19,6 +19,7 @@ export interface BettingRound {
   category?: BettingCategory;
   options: BettingOption[];
   betRoundType?: BetRoundType;
+  mechanism?: PickMechanism;
 }
 
 /**
@@ -32,6 +33,7 @@ export interface BettingRoundPayload {
   lockDate?: string | null;
   category?: string;
   options: BettingOption[];
+  mechanism?: string;
 }
 
 /**
@@ -42,7 +44,13 @@ export interface BettingRoundPayload {
 export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
   return apiRounds.map(round => {
     // Destructure to separate processed fields from the rest
-    const { lockDate: apiLockDate, category: apiCategory, ...restRound } = round;
+    const {
+      lockDate: apiLockDate,
+      category: apiCategory,
+      mechanism: apiMechanism,
+      type: apiType,
+      ...restRound
+    } = round;
 
     let lockDate = null;
     let lockTime = undefined;
@@ -77,6 +85,8 @@ export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
       lockTime,
       lockTimezone,
       category: apiCategory as BettingCategory,
+      betRoundType: apiType as BetRoundType,
+      mechanism: apiMechanism as PickMechanism,
     };
   });
 };
@@ -92,21 +102,26 @@ export const cleanTemporaryIds = (roundsData: BettingRound[]): BettingRoundPaylo
     roundId: round.roundId,
     roundName: round.roundName,
     // Convert date/time/timezone to UTC ISO string using the same helper as stream scheduling
-    lockDate: round.lockDate && round.lockTime
-      ? formatDateTimeForISO(round.lockDate, round.lockTime, round.lockTimezone)
-      : null,
+    lockDate:
+      round.lockDate && round.lockTime
+        ? formatDateTimeForISO(round.lockDate, round.lockTime, round.lockTimezone)
+        : null,
     category: round.category,
     betRoundType: round.betRoundType,
+    mechanism: round.mechanism,
     options: round.options.map(option => {
-      // Remove only temporary option IDs, keep real ones and other properties
-      if (option.optionId && option.optionId.startsWith(TEMP_OPTION_PREFIX)) {
-        // Remove the temporary optionId, keep other properties
-        const { optionId, ...cleanOption } = option;
-        return cleanOption;
+      // Create a clean option with only id and option properties
+      const cleanOption: BettingOption = {
+        option: option.option,
+      };
+
+      // Add optionId if it exists and is not temporary
+      if (option.optionId && !option.optionId.startsWith(TEMP_OPTION_PREFIX)) {
+        cleanOption.optionId = option.optionId;
       }
-      // Keep the option as is if it has a real optionId or no optionId
-      return option;
-    })
+
+      return cleanOption;
+    }),
   }));
 };
 
