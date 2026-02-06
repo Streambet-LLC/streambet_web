@@ -48,6 +48,7 @@ export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
       lockDate: apiLockDate,
       category: apiCategory,
       mechanism: apiMechanism,
+      type: apiType,
       ...restRound
     } = round;
 
@@ -84,6 +85,7 @@ export const deserializeRounds = (apiRounds: any[]): BettingRound[] => {
       lockTime,
       lockTimezone,
       category: apiCategory as BettingCategory,
+      betRoundType: apiType as BetRoundType,
       mechanism: apiMechanism as PickMechanism,
     };
   });
