@@ -4,7 +4,7 @@ import FeaturedBetCard from './FeaturedBetCard';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { getImageLink } from '@/utils/helper';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Video, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
@@ -14,11 +14,13 @@ import api from '@/integrations/api/client';
 import moment from 'moment';
 import { Badge } from './ui/badge';
 import { getBetRoundTypeLabel, getBetRoundTypeClass } from '@/utils/betRoundHelpers';
+import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
 import { useCountdown } from '@/hooks/use-countdown';
 
 export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
   const [cardData, setCardData] = useState(props);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   // For sentiment picks in initial reveal period, countdown to next 1 AM UTC
   const revealCountdownTarget =
@@ -64,6 +66,37 @@ export default function BetCard(props: BetCardType) {
     }
 
     return getImageLink(thumbnail) || '/placeholder.svg';
+  };
+
+  const navigate = useNavigate();
+
+  const getNavigationPath = () => {
+    if (cardData.type === 'non-video') {
+      return `/nonvideo/${cardData.streamId}`;
+    } else if (cardData.type === 'stream') {
+      return `/stream/${cardData.streamId}`;
+    }
+    return null;
+  };
+
+  const handleThumbnailClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    
+    // For sentiment/opinion bets, open QuickPick modal
+    if (props.mechanism?.toLowerCase?.() === 'sentiment') {
+      handleClick(null);
+      return;
+    }
+    
+    // For non-video in non-video room, show full-screen image
+    if (cardData.type === 'non-video' && props.isForNonVideo) {
+      setShowImageModal(true);
+      return;
+    }
+    
+    // For stream/non-video, navigate to their room
+    const path = getNavigationPath();
+    if (path) navigate(path);
   };
 
   const handleClick = (selectedOption: any) => {
@@ -146,14 +179,15 @@ export default function BetCard(props: BetCardType) {
   const CardWrapper = props.isFeatured ? FeaturedBetCard : Card;
 
   return (
-    <motion.div
-      whileHover={{ y: -2 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className={cn(
-        'group h-full',
-        props.isFeatured && 'pt-1 overflow-hidden rounded-featured-card'
-      )}
-    >
+    <>
+      <motion.div
+        whileHover={{ y: -2 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        className={cn(
+          'group h-full',
+          props.isFeatured && 'pt-1 overflow-hidden rounded-featured-card'
+        )}
+      >
       <CardWrapper
         className={cn(
           'h-full flex flex-col overflow-hidden transition-all duration-200 rounded-xl',
@@ -192,12 +226,24 @@ export default function BetCard(props: BetCardType) {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <CardTitle
-                  onClick={statuses.canOpen ? () => handleClick(null) : undefined}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // For sentiment, open QuickPick modal
+                    if (props.mechanism?.toLowerCase?.() === 'sentiment') {
+                      if (statuses.canOpen) handleClick(null);
+                      return;
+                    }
+                    // For stream/non-video, navigate to their room
+                    const path = getNavigationPath();
+                    if (path) navigate(path);
+                  }}
                   className={cn(
                     'text-md line-clamp-2',
-                    statuses.canOpen
-                      ? 'cursor-pointer hover:underline'
-                      : 'cursor-not-allowed opacity-70'
+                    // Sentiment: only clickable if canOpen
+                    props.mechanism?.toLowerCase?.() === 'sentiment'
+                      ? statuses.canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
+                      // Stream/Non-video: always clickable if has path
+                      : getNavigationPath() ? 'cursor-pointer hover:underline' : ''
                   )}
                 >
                   {cardData.name}
@@ -262,7 +308,10 @@ export default function BetCard(props: BetCardType) {
                     </Link>
                   )}
                 </div>
-                <div className="relative rounded-md overflow-clip">
+                <div 
+                  className="relative rounded-md overflow-clip cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={handleThumbnailClick}
+                >
                   <img
                     src={getThumbnailUrl(cardData.thumbnail)}
                     className="aspect-video w-full object-cover"
@@ -403,5 +452,17 @@ export default function BetCard(props: BetCardType) {
         </CardFooter>
       </CardWrapper>
     </motion.div>
+
+    <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+      <DialogTitle className="sr-only">Bet Image</DialogTitle>
+      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent">
+        <img
+          src={getThumbnailUrl(cardData.thumbnail)}
+          alt="Full size thumbnail"
+          className="w-full h-full object-contain rounded-lg"
+        />
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

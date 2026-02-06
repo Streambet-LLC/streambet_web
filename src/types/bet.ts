@@ -33,6 +33,7 @@ export interface BetCard {
   streamStatus?: string | null;
   scheduledStartTime?: string | null;
   isForStream?: boolean;
+  isForNonVideo?: boolean;
   isFeatured?: boolean;
   firstRevealTime?: string | null;
   lastRevealTime?: string | null;
