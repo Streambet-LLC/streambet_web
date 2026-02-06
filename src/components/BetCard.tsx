@@ -20,13 +20,22 @@ export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
   const [cardData, setCardData] = useState(props);
 
-  // For sentiment picks in initial reveal period, show countdown until results become real-time (24h after firstRevealTime)
+  // For sentiment picks in initial reveal period, countdown to next 1 AM UTC
   const revealCountdownTarget =
-    props.mechanism?.toLowerCase?.() === 'sentiment' &&
-    props.isInitialRevealPeriod &&
-    props.firstRevealTime
-      ? new Date(new Date(props.firstRevealTime).getTime() + 24 * 60 * 60 * 1000).toISOString()
-      : props.firstRevealTime;
+    props.mechanism?.toLowerCase?.() === 'sentiment' && props.isInitialRevealPeriod
+      ? (() => {
+          const now = new Date();
+          const next1AMUTC = new Date(now);
+          next1AMUTC.setUTCHours(1, 0, 0, 0);
+
+          // If 1 AM UTC has already passed today, move to tomorrow
+          if (now >= next1AMUTC) {
+            next1AMUTC.setUTCDate(next1AMUTC.getUTCDate() + 1);
+          }
+
+          return next1AMUTC.toISOString();
+        })()
+      : null;
 
   const { timeLeft: revealCountdown } = useCountdown(revealCountdownTarget);
 
