@@ -14,10 +14,21 @@ import api from '@/integrations/api/client';
 import moment from 'moment';
 import { Badge } from './ui/badge';
 import { getBetRoundTypeLabel, getBetRoundTypeClass } from '@/utils/betRoundHelpers';
+import { useCountdown } from '@/hooks/use-countdown';
 
 export default function BetCard(props: BetCardType) {
   const [wiggle, setWiggle] = useState(false);
   const [cardData, setCardData] = useState(props);
+
+  // For sentiment picks in initial reveal period, show countdown until results become real-time (24h after firstRevealTime)
+  const revealCountdownTarget =
+    props.mechanism?.toLowerCase?.() === 'sentiment' &&
+    props.isInitialRevealPeriod &&
+    props.firstRevealTime
+      ? new Date(new Date(props.firstRevealTime).getTime() + 24 * 60 * 60 * 1000).toISOString()
+      : props.firstRevealTime;
+
+  const { timeLeft: revealCountdown } = useCountdown(revealCountdownTarget);
 
   const [statuses, setStatuses] = useState({
     statusLower: (props as any)?.status?.toString()?.toLowerCase?.() || null,
@@ -175,30 +186,48 @@ export default function BetCard(props: BetCardType) {
                   onClick={statuses.canOpen ? () => handleClick(null) : undefined}
                   className={cn(
                     'text-md line-clamp-2',
-                    statuses.canOpen ? 'cursor-pointer hover:underline' : 'cursor-not-allowed opacity-70'
+                    statuses.canOpen
+                      ? 'cursor-pointer hover:underline'
+                      : 'cursor-not-allowed opacity-70'
                   )}
                 >
                   {cardData.name}
                 </CardTitle>
-                {(statuses.isLocked || statuses.isEnded || statuses.isCancelled || statuses.isCreated) && (
+                {(statuses.isLocked ||
+                  statuses.isEnded ||
+                  statuses.isCancelled ||
+                  statuses.isCreated) && (
                   <span
                     className={cn(
                       'px-2 py-0.5 rounded-full text-xs font-semibold border',
                       statuses.isEnded || statuses.isCancelled
                         ? 'bg-[#2a2a2a] text-white border-red-500/40'
                         : statuses.isCreated
-                          ? cn('bg-[#2a2a2a] text-white', statuses.hasOptions ? 'border-blue-400/40' : 'border-muted')
+                          ? cn(
+                              'bg-[#2a2a2a] text-white',
+                              statuses.hasOptions ? 'border-blue-400/40' : 'border-muted'
+                            )
                           : 'bg-[#2a2a2a] text-white border-yellow-400/40'
                     )}
                     title={
-                      statuses.isEnded ? 'Ended Round' : 
-                      statuses.isCancelled ? 'Cancelled Round' : 
-                      statuses.isCreated ? 'Created Round' : 'Locked Round'
+                      statuses.isEnded
+                        ? 'Ended Round'
+                        : statuses.isCancelled
+                          ? 'Cancelled Round'
+                          : statuses.isCreated
+                            ? 'Created Round'
+                            : 'Locked Round'
                     }
                   >
-                    {statuses.isEnded ? 'Ended' : 
-                     statuses.isCancelled ? 'Cancelled' : 
-                     statuses.isCreated ? (statuses.hasOptions ? 'Created' : 'Draft') : 'Locked'}
+                    {statuses.isEnded
+                      ? 'Ended'
+                      : statuses.isCancelled
+                        ? 'Cancelled'
+                        : statuses.isCreated
+                          ? statuses.hasOptions
+                            ? 'Created'
+                            : 'Draft'
+                          : 'Locked'}
                   </span>
                 )}
               </div>
@@ -252,7 +281,12 @@ export default function BetCard(props: BetCardType) {
               )}
             >
               <div className="flex flex-1 gap-4 items-center justify-between">
-                <div className={cn('text-sm rounded-full font-semibold', option.userBet && 'text-electric-lime')}>
+                <div
+                  className={cn(
+                    'text-sm rounded-full font-semibold',
+                    option.userBet && 'text-electric-lime'
+                  )}
+                >
                   {option.option}{' '}
                   {option.isWinner && (
                     <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-[#2a2a2a] text-white border-red-500/40">
@@ -260,7 +294,12 @@ export default function BetCard(props: BetCardType) {
                     </span>
                   )}
                 </div>
-                <div className="text-lg font-semibold flex">{option.percentage}%</div>
+                {/* Hide 0% during initial reveal period for sentiment picks */}
+                {!(
+                  props.mechanism?.toLowerCase?.() === 'sentiment' &&
+                  props.isInitialRevealPeriod &&
+                  option.percentage === 0
+                ) && <div className="text-lg font-semibold flex">{option.percentage}%</div>}
               </div>
               {option.userBet && (
                 <div className="text-xs py-1 text-electric-lime">
@@ -276,7 +315,9 @@ export default function BetCard(props: BetCardType) {
               onClick={statuses.canOpen ? () => handleClick(null) : undefined}
               className={cn(
                 'flex gap-4 items-center justify-between transition-all px-3 py-2.5 rounded-md border bg-bet-option-bg border-bet-option-border',
-                statuses.canOpen ? 'hover:text-electric-lime hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer' : 'cursor-not-allowed opacity-60'
+                statuses.canOpen
+                  ? 'hover:text-electric-lime hover:shadow-[0_0_20px_rgba(189,255,0,0.4)] cursor-pointer'
+                  : 'cursor-not-allowed opacity-60'
               )}
             >
               <div className="text-sm rounded-full font-semibold">
@@ -290,6 +331,12 @@ export default function BetCard(props: BetCardType) {
           <div className="flex flex-col justify-between gap-3 w-full">
             <div className="flex w-full justify-between items-center gap-2">
               <div className="flex gap-2 items-center">
+                {/* Reveal countdown for sentiment picks in initial reveal period */}
+                {props.mechanism?.toLowerCase?.() === 'sentiment' &&
+                  props.isInitialRevealPeriod &&
+                  revealCountdown && (
+                    <div className="text-xs text-muted-foreground">Reveal: {revealCountdown}</div>
+                  )}
                 {/* Hide CadeCoin pool for sentiment picks */}
                 {props.mechanism?.toLowerCase?.() !== 'sentiment' && (
                   <>
@@ -304,22 +351,27 @@ export default function BetCard(props: BetCardType) {
                       </TooltipTrigger>
                       <TooltipContent side="top">Total Pot</TooltipContent>
                     </Tooltip>
-                    {cardData.cadeCoinUsersCount !== undefined && cardData.cadeCoinUsersCount > 0 && (
-                      <Tooltip delayDuration={0}>
-                        <TooltipTrigger asChild>
-                          <div className="flex gap-1 items-center text-primary text-sm cursor-pointer">
-                            <Users className="h-4 w-4 text-gray-300" />
-                            <span className="font-semibold text-primary">{cardData.cadeCoinUsersCount}</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">Total users with Picks</TooltipContent>
-                      </Tooltip>
-                    )}
+                    {cardData.cadeCoinUsersCount !== undefined &&
+                      cardData.cadeCoinUsersCount > 0 && (
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <div className="flex gap-1 items-center text-primary text-sm cursor-pointer">
+                              <Users className="h-4 w-4 text-gray-300" />
+                              <span className="font-semibold text-primary">
+                                {cardData.cadeCoinUsersCount}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Total users with Picks</TooltipContent>
+                        </Tooltip>
+                      )}
                   </>
                 )}
               </div>
               {props.betRoundType && (
-                <Badge className={cn('text-[10px] border', getBetRoundTypeClass(props.betRoundType))}>
+                <Badge
+                  className={cn('text-[10px] border', getBetRoundTypeClass(props.betRoundType))}
+                >
                   {getBetRoundTypeLabel(props.betRoundType)}
                 </Badge>
               )}
@@ -330,7 +382,10 @@ export default function BetCard(props: BetCardType) {
                 lockDate={(() => {
                   const date = new Date(cardData.lockDate);
                   const formattedDate = moment(cardData.lockDate).format('MMM D, YYYY [at] h:mm A');
-                  const timezone = date.toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop();
+                  const timezone = date
+                    .toLocaleTimeString('en-US', { timeZoneName: 'short' })
+                    .split(' ')
+                    .pop();
                   return `${formattedDate} ${timezone}`;
                 })()}
               />
