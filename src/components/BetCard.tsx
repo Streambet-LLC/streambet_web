@@ -393,9 +393,10 @@ export default function BetCard(props: BetCardType) {
             <div className="flex flex-col justify-between gap-3 w-full">
               <div className="flex w-full justify-between items-center gap-2">
                 <div className="flex gap-2 items-center">
-                  {/* Reveal countdown for sentiment picks in initial reveal period */}
+                  {/* Reveal countdown for sentiment picks in initial reveal period (hide when results visible) */}
                   {props.mechanism?.toLowerCase?.() === 'sentiment' &&
                     props.isInitialRevealPeriod &&
+                    cardData.options.some(o => Number(o.percentage) === 0) &&
                     revealCountdown && (
                       <div className="text-xs text-muted-foreground">Reveal: {revealCountdown}</div>
                     )}
