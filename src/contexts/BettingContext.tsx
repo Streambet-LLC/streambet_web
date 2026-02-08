@@ -43,6 +43,7 @@ export interface ActiveRound {
   userBetGoldCoins?: number;
   userBetSweepCoin?: number;
   userBetCadeCoin?: number;
+  isInitialRevealPeriod?: boolean;
   bettingRoundsWithVariablePercentages: {
     bettingVariables: {
       percentage: string | number;
