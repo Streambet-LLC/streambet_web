@@ -69,19 +69,30 @@ export function useBettingSocket({
         bettingData.bettingRounds.find((r: any) => r.status === BettingRoundStatus.OPEN) ||
         bettingData.bettingRounds[0];
       const betRound = preferredRound;
+      const roundIndex = bettingData.bettingRounds.findIndex(
+        (round: any) => round.id === betRound.id
+      );
 
       // Map betting variables with enhanced statistics
-      const enhancedVariables: BettingVariableStats[] = (betRound.bettingVariables || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        optionName: item.name,
-        totalBetsGoldCoin: Number(item.totalBetsGoldCoinAmount || 0),
-        totalBetsSweepCoin: Number(item.totalBetsSweepCoinAmount || 0),
-        totalBetsCadeCoin: Number(item.totalBetsCadeCoinAmount || 0),
-        betCountGoldCoin: Number(item.betCountGoldCoin || 0),
-        betCountSweepCoin: Number(item.betCountSweepCoin || 0),
-        betCountCadeCoin: Number(item.betCountCadeCoin || 0),
-      }));
+      const enhancedVariables: BettingVariableStats[] = (betRound.bettingVariables || []).map(
+        (item, idx) => ({
+          id: item.id,
+          name: item.name,
+          optionName: item.name,
+          totalBetsGoldCoin: Number(item.totalBetsGoldCoinAmount || 0),
+          totalBetsSweepCoin: Number(item.totalBetsSweepCoinAmount || 0),
+          totalBetsCadeCoin: Number(item.totalBetsCadeCoinAmount || 0),
+          betCountGoldCoin: Number(item.betCountGoldCoin || 0),
+          betCountSweepCoin: Number(item.betCountSweepCoin || 0),
+          betCountCadeCoin: Number(item.betCountCadeCoin || 0),
+          percentage:
+            roundIndex >= 0
+              ? bettingData.bettingRoundsWithVariablePercentages?.[roundIndex]?.bettingVariables?.[
+                  idx
+                ]?.percentage
+              : 0,
+        })
+      );
 
       // Calculate totals across all betting variables
       const totalBetCountGoldCoin = enhancedVariables.reduce(
