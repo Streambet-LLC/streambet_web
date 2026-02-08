@@ -186,9 +186,17 @@ export default function LockTokens({
                       >
                         {option.name}
                       </span>
-                      <span className="text-sm font-semibold text-white">
-                        {option.percentage || 0}%
-                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-sm font-semibold text-white">
+                          {option.percentage || 0}%
+                        </span>
+                        {activeRound?.mechanism === PickMechanism.SENTIMENT &&
+                          option.betCountCadeCoin > 0 && (
+                            <span className="text-xs text-[#606060]">
+                              {option.betCountCadeCoin} picks
+                            </span>
+                          )}
+                      </div>
                     </div>
                   ))}
                 </div>
