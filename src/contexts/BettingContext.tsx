@@ -22,6 +22,7 @@ export interface BettingVariableStats {
   betCountGoldCoin: number;
   betCountSweepCoin: number;
   betCountCadeCoin: number;
+  percentage?: string | number;
 }
 
 export interface ActiveRound {
