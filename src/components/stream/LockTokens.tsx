@@ -193,7 +193,8 @@ export default function LockTokens({
                         {activeRound?.mechanism === PickMechanism.SENTIMENT &&
                           option.betCountCadeCoin > 0 && (
                             <span className="text-xs text-[#606060]">
-                              {option.betCountCadeCoin} picks
+                              {option.betCountCadeCoin}{' '}
+                              {option.betCountCadeCoin === 1 ? 'pick' : 'picks'}
                             </span>
                           )}
                       </div>
