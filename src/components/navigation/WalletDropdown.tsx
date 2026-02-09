@@ -30,14 +30,14 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
       <div className="flex items-center gap-2">
         {currency === CurrencyType.GOLD_COINS && 
           <div className="flex items-center">
-            <Button variant="ghost" className="gap-2 group">
+            <Button variant="ghost" className="gap-2 group" onClick={() => setDepositOpen(true)}>
               <img
                 src="/icons/cade-coins.png"
                 alt="gold-coins"
                 className="h-6 w-6"
               />
               {/* <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" /> */}
-              <button onClick={() => setDepositOpen(true)} className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</button>
+              <span className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</span>
             </Button>
           </div>
         } 
@@ -47,14 +47,14 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" className="gap-2 group items-center">
+                    <Button variant="ghost" className="gap-2 group items-center" onClick={() => setDepositOpen(true)}>
                       <img
                         src="/icons/sweep-coins.png"
                         alt="Stream Coins"
                         className="h-4 w-6"
                       />
                       {/* <BanknoteArrowUp className="h-4 w-4 text-[#BDFF00] group-hover:text-black transition-colors" /> */}
-                      <button onClick={() => setDepositOpen(true)} className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</button>
+                      <span className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent hidden side="bottom" className="max-w-[250px]">
@@ -76,7 +76,7 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
                 alt="gold-coins"
                 className="h-6 w-6"
               />
-              <button className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} CadeCoins</button>
+              <span className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} CadeCoins</span>
             </Button>
           </div>
         } 

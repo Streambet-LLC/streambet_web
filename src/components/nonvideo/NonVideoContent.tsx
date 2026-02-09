@@ -121,32 +121,20 @@ export const NonVideoContent = ({
           {/* User Bets Chart */}
           <UserBetsChart 
             roundId={round?.roundId}
-            roundName={round?.roundName}
           />
         </div>
         {/* Right Column - 1/3 */}
         <div className="lg:col-span-1">
-          {/* Bet Card - Clickable */}
+          {/* Bet Card */}
           {round && nonVideo && (
-            <div 
-              onClick={() => handleQuickPick(
-                nonVideoId,
-                round.roundId,
-                nonVideo.name,
-                null,
-                nonVideo.description ?? null
-              )}
-              className="cursor-pointer"
-            >
-              <BetCard 
-                {...round}
-                isForNonVideo
-                streamId={nonVideoId}
-                streamName={nonVideo.name}
-                thumbnail={nonVideo.thumbnailUrl}
-                setQuickPick={handleQuickPick}
-              />
-            </div>
+            <BetCard 
+              {...round}
+              isForNonVideo
+              streamId={nonVideoId}
+              streamName={nonVideo.name}
+              thumbnail={nonVideo.thumbnailUrl}
+              setQuickPick={handleQuickPick}
+            />
           )}
         </div>
       </div>

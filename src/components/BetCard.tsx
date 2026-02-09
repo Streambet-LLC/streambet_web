@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { getImageLink } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
-import { Video, Users } from 'lucide-react';
+import { Video, Users, Expand } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { BettingRoundStatus, StreamStatus } from '@/enums';
@@ -97,6 +97,13 @@ export default function BetCard(props: BetCardType) {
     // For stream/non-video, navigate to their room
     const path = getNavigationPath();
     if (path) navigate(path);
+  };
+
+  const handleThumbnailKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleThumbnailClick(e as any);
+    }
   };
 
   const handleClick = (selectedOption: any) => {
@@ -315,6 +322,10 @@ export default function BetCard(props: BetCardType) {
                   <div
                     className="relative rounded-md overflow-clip cursor-pointer hover:opacity-90 transition-opacity"
                     onClick={handleThumbnailClick}
+                    onKeyDown={handleThumbnailKeyDown}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={cardData.type === 'non-video' && props.isForNonVideo ? "Expand image to full screen" : "View content"}
                   >
                     <img
                       src={getThumbnailUrl(cardData.thumbnail)}
@@ -323,6 +334,12 @@ export default function BetCard(props: BetCardType) {
                     />
                     <div className="top-0 absolute w-full h-full bg-gradient-to-t from-[#bdff001a]" />
                     <div className="top-0 absolute w-full h-full bg-gradient-to-t from-[#00000080] z-10" />
+                    {/* Expand icon - decorative visual hint */}
+                    {cardData.type === 'non-video' && props.isForNonVideo && (
+                      <div className="absolute top-2 right-2 z-20 bg-black/60 rounded-md p-1.5 hover:bg-black/80 transition-colors pointer-events-none">
+                        <Expand className="h-4 w-4 text-white" aria-hidden="true" />
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -475,7 +492,7 @@ export default function BetCard(props: BetCardType) {
 
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
         <DialogTitle className="sr-only">Bet Image</DialogTitle>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent" aria-describedby={undefined}>
           <img
             src={getThumbnailUrl(cardData.thumbnail)}
             alt="Full size thumbnail"
