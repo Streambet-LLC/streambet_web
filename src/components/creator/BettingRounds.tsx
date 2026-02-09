@@ -554,7 +554,7 @@ export function BettingRounds({
                               </div>
                               <div>
                                 <label className="text-sm font-medium text-white mb-2 block">
-                                  Type
+                                  Category
                                 </label>
                                 <Select
                                   value={round.betRoundType || BetRoundType.PICK}
