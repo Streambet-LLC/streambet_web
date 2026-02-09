@@ -7,10 +7,16 @@ import { useState, useEffect, useRef } from 'react';
 import { BetRoundType, BettingCategory } from '@/enums';
 import { useDebounce } from '@/lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';
+import HomeBetTypes from './HomeBetTypes';
+
 export default function Home() {
   const [filters, setFilters] = useState({});
-  const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null>(null);
-  const [selectedBetType, setSelectedBetType] = useState<BetRoundType | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null | undefined>(
+    undefined
+  );
+  const [selectedBetType, setSelectedBetType] = useState<BetRoundType | null | undefined>(
+    undefined
+  );
   const [searchValue, setSearchValue] = useState('');
   const shouldReduceMotion = useReducedMotion();
 
@@ -34,6 +40,8 @@ export default function Home() {
       setSelectedBetType={setSelectedBetType}
       searchValue={searchValue}
       onSearchChange={setSearchValue}
+      selectedBetType={selectedBetType}
+      setSelectedBetType={setSelectedBetType}
     >
       <div className="w-full flex flex-col gap-6" ref={homeRef}>
         {/* Mobile Search Bar - Only visible on mobile */}
@@ -94,6 +102,12 @@ export default function Home() {
           selectedBetType={selectedBetType}
           setSelectedBetType={setSelectedBetType}
         />
+        <HomeBetTypes
+          filters={filters}
+          selectedBetType={selectedBetType}
+          setSelectedBetType={setSelectedBetType}
+        />
+        {/* <UpcomingHomeBets /> */}
       </div>
     </MainLayout>
   );
