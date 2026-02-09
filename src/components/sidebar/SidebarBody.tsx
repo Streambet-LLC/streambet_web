@@ -164,7 +164,7 @@ export default function SidebarBody({
                   asChild
                   onClick={() => setSelectedCategory?.(null)}
                   className={cn(
-                    'h-auto overflow-visible transition-all',
+                    'h-auto overflow-visible transition-all cursor-pointer',
                     controls.open && !controls.isMobile
                       ? 'justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
                       : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',
@@ -254,7 +254,7 @@ export default function SidebarBody({
                   asChild
                   onClick={() => setSelectedBetType?.(null)}
                   className={cn(
-                    'h-auto overflow-visible transition-all',
+                    'h-auto overflow-visible transition-all cursor-pointer',
                     controls.open && !controls.isMobile
                       ? 'justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
                       : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',
