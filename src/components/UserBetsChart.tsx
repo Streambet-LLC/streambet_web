@@ -47,6 +47,16 @@ const Y_AXIS_LABEL_ANGLE = -90;
 // Formatting
 const ODDS_DECIMAL_PLACES = 2;
 
+// Reusable header component
+const ChartHeader = ({ isMobile }: { isMobile: boolean }) => (
+  <div className="mb-4">
+    <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`}>
+      Pool History
+    </h3>
+    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>Cumulative CadeCoin amounts over time</p>
+  </div>
+);
+
 interface TimelineOption {
   id: string;
   name: string;
@@ -66,7 +76,6 @@ interface ChartDataPoint {
 
 interface UserBetsChartProps {
   roundId?: string;
-  roundName?: string;
 }
 
 // Recharts Tooltip Types
@@ -107,7 +116,7 @@ const calculateRatio = (optionValue: number, totalPool: number): string | null =
   return odds.toFixed(ODDS_DECIMAL_PLACES).replace(/\.?0+$/, '') + ':1'; // Format as X:1
 };
 
-export const UserBetsChart = ({ roundId, roundName }: UserBetsChartProps) => {
+export const UserBetsChart = ({ roundId }: UserBetsChartProps) => {
   const isMobile = useIsMobile();
   
   // Fetch timeline data
@@ -119,19 +128,19 @@ export const UserBetsChart = ({ roundId, roundName }: UserBetsChartProps) => {
 
   // Handle states
   if (!roundId) {
-    return <ChartStateCard roundName={roundName} message="Chart will be available once a round opens" isMobile={isMobile} />;
+    return <ChartStateCard message="Chart will be available once a round opens" isMobile={isMobile} />;
   }
 
   if (isLoading) {
-    return <ChartSkeletonLoader roundName={roundName} isMobile={isMobile} />;
+    return <ChartSkeletonLoader isMobile={isMobile} />;
   }
 
   if (isError) {
-    return <ChartStateCard roundName={roundName} message="Failed to load pick activity" isMobile={isMobile} />;
+    return <ChartStateCard message="Failed to load pick activity" isMobile={isMobile} />;
   }
 
   if (!data?.data?.timeline?.length) {
-    return <ChartStateCard roundName={roundName} message="Be the first to place a pick!" isMobile={isMobile} />;
+    return <ChartStateCard message="Be the first to place a pick!" isMobile={isMobile} />;
   }
 
   // Process data for chart
@@ -207,12 +216,7 @@ export const UserBetsChart = ({ roundId, roundName }: UserBetsChartProps) => {
 
   return (
     <Card className={`${isMobile ? 'p-2' : 'p-6'} bg-card-grid-bg border-card-grid-border`}>
-      <div className="mb-4">
-        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`}>
-          Pick Pool History{roundName ? ` - ${roundName}` : ''}
-        </h3>
-        <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>Cumulative CadeCoin amounts over time</p>
-      </div>
+      <ChartHeader isMobile={isMobile} />
       <ResponsiveContainer width="100%" height={isMobile ? CHART_HEIGHT_MOBILE : CHART_HEIGHT_DESKTOP}>
         <LineChart data={displayData}>
           <CartesianGrid strokeDasharray={GRID_STROKE_PATTERN} stroke={GRID_STROKE_COLOR} />
@@ -250,14 +254,9 @@ export const UserBetsChart = ({ roundId, roundName }: UserBetsChartProps) => {
 };
 
 // Helper component
-const ChartStateCard = ({ roundName, message, isMobile }: { roundName?: string; message: string; isMobile: boolean }) => (
+const ChartStateCard = ({ message, isMobile }: { message: string; isMobile: boolean }) => (
   <Card className={`${isMobile ? 'p-2' : 'p-6'} bg-card-grid-bg border-card-grid-border`}>
-    <div className="mb-4">
-      <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`}>
-        Pick Pool History{roundName ? ` - ${roundName}` : ''}
-      </h3>
-      <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>Cumulative CadeCoin amounts over time</p>
-    </div>
+    <ChartHeader isMobile={isMobile} />
     <div className="flex items-center justify-center" style={{ height: CHART_EMPTY_STATE_HEIGHT }}>
       <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>{message}</p>
     </div>
@@ -265,14 +264,9 @@ const ChartStateCard = ({ roundName, message, isMobile }: { roundName?: string; 
 );
 
 // Skeleton loader component for loading state
-const ChartSkeletonLoader = ({ roundName, isMobile }: { roundName?: string; isMobile: boolean }) => (
+const ChartSkeletonLoader = ({ isMobile }: { isMobile: boolean }) => (
   <Card className={`${isMobile ? 'p-2' : 'p-6'} bg-card-grid-bg border-card-grid-border`}>
-    <div className="mb-4">
-      <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`}>
-        Pick Pool History{roundName ? ` - ${roundName}` : ''}
-      </h3>
-      <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>Cumulative CadeCoin amounts over time</p>
-    </div>
+    <ChartHeader isMobile={isMobile} />
     <div className="space-y-4" style={{ height: isMobile ? CHART_HEIGHT_MOBILE : CHART_HEIGHT_DESKTOP }}>
       {/* Chart area skeleton */}
       <Skeleton className="w-full h-full rounded-lg" />
