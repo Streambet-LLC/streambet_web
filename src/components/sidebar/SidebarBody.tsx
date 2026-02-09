@@ -149,13 +149,13 @@ export default function SidebarBody({
               <div className="border-t border-border my-2" />
               {controls.open && !controls.isMobile && (
                 <div className="text-sm font-semibold pl-2 mb-2" id="sidebar-categories-label">
-                  Categories
+                  Markets
                 </div>
               )}
               <div
                 className="flex flex-col gap-2"
                 role="navigation"
-                aria-label="Pick categories"
+                aria-label="Pick markets"
                 aria-labelledby={
                   controls.open && !controls.isMobile ? 'sidebar-categories-label' : undefined
                 }
@@ -164,7 +164,7 @@ export default function SidebarBody({
                   asChild
                   onClick={() => setSelectedCategory?.(null)}
                   className={cn(
-                    'h-auto overflow-visible transition-all',
+                    'h-auto overflow-visible transition-all cursor-pointer',
                     controls.open && !controls.isMobile
                       ? 'justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
                       : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',
@@ -173,7 +173,7 @@ export default function SidebarBody({
                       : 'text-white bg-transparent border-primary/50 hover:border-primary'
                   )}
                   aria-pressed={selectedCategory === null}
-                  aria-label="Show all categories"
+                  aria-label="Show all markets"
                 >
                   <motion.div whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}>
                     {controls.open && !controls.isMobile ? (
@@ -239,13 +239,13 @@ export default function SidebarBody({
               <div className="border-t border-border my-2" />
               {controls.open && !controls.isMobile && (
                 <div className="text-sm font-semibold pl-2 mb-2" id="sidebar-bet-type-label">
-                  Types
+                  Categories
                 </div>
               )}
               <div
                 className="flex flex-col gap-2"
                 role="navigation"
-                aria-label="Pick type"
+                aria-label="Pick category"
                 aria-labelledby={
                   controls.open && !controls.isMobile ? 'sidebar-bet-type-label' : undefined
                 }
@@ -254,7 +254,7 @@ export default function SidebarBody({
                   asChild
                   onClick={() => setSelectedBetType?.(null)}
                   className={cn(
-                    'h-auto overflow-visible transition-all',
+                    'h-auto overflow-visible transition-all cursor-pointer',
                     controls.open && !controls.isMobile
                       ? 'justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
                       : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',

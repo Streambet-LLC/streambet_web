@@ -1,8 +1,6 @@
-import BetCard from '@/components/BetCard';
 import { MainLayout } from '@/components/layout';
 import HomePromotedBets from './HomePromotedBets';
 import HomeBets from './HomeBets';
-import UpcomingHomeBets from './UpcomingHomeBets';
 import { SearchInput } from '@/components/ui/SearchInput';
 // import HomeBetsFilters from './HomeBetsFilters'; // Search moved to navigation bar, but keeping for potential future use
 import { useState, useEffect, useRef } from 'react';
@@ -38,6 +36,8 @@ export default function Home() {
       showFooter
       selectedCategory={selectedCategory}
       setSelectedCategory={setSelectedCategory}
+      selectedBetType={selectedBetType}
+      setSelectedBetType={setSelectedBetType}
       searchValue={searchValue}
       onSearchChange={setSearchValue}
       selectedBetType={selectedBetType}
@@ -99,6 +99,8 @@ export default function Home() {
           filters={filters}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
+          selectedBetType={selectedBetType}
+          setSelectedBetType={setSelectedBetType}
         />
         <HomeBetTypes
           filters={filters}
