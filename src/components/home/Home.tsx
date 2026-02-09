@@ -6,13 +6,17 @@ import UpcomingHomeBets from './UpcomingHomeBets';
 import { SearchInput } from '@/components/ui/SearchInput';
 // import HomeBetsFilters from './HomeBetsFilters'; // Search moved to navigation bar, but keeping for potential future use
 import { useState, useEffect, useRef } from 'react';
-import { BettingCategory } from '@/enums';
+import { BetRoundType, BettingCategory } from '@/enums';
 import { useDebounce } from '@/lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';
+import HomeBetTypes from './HomeBetTypes';
 
 export default function Home() {
   const [filters, setFilters] = useState({});
   const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null | undefined>(
+    undefined
+  );
+  const [selectedBetType, setSelectedBetType] = useState<BetRoundType | null | undefined>(
     undefined
   );
   const [searchValue, setSearchValue] = useState('');
@@ -36,6 +40,8 @@ export default function Home() {
       setSelectedCategory={setSelectedCategory}
       searchValue={searchValue}
       onSearchChange={setSearchValue}
+      selectedBetType={selectedBetType}
+      setSelectedBetType={setSelectedBetType}
     >
       <div className="w-full flex flex-col gap-6" ref={homeRef}>
         {/* Mobile Search Bar - Only visible on mobile */}
@@ -52,7 +58,8 @@ export default function Home() {
 
         <div className="max-w-3xl mx-auto text-center space-y-4 p-4">
           <h1 className="text-4xl md:text-5xl font-bold">
-            Data markets for the<br />
+            Data markets for the
+            <br />
             <motion.span
               className="relative inline-block"
               whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
@@ -70,10 +77,18 @@ export default function Home() {
           </h1>
           <div className="space-y-2">
             <p className="text-[#FFFFFFBF]">
-              Make FREE picks on cards / collectibles futures & happenings, and accrue CadeCoins for prizes!
+              Make FREE picks on cards / collectibles futures & happenings, and accrue CadeCoins for
+              prizes!
             </p>
             <p className="text-xs text-[#FFFFFF80]">
-              Check out <a href="https://pro.cardcade.fun" className="text-[#bdff00] hover:underline transition-all">CardCade Pro</a> for real $$$ action! [Late Feb]
+              Check out{' '}
+              <a
+                href="https://pro.cardcade.fun"
+                className="text-[#bdff00] hover:underline transition-all"
+              >
+                CardCade Pro
+              </a>{' '}
+              for real $$$ action! [Late Feb]
             </p>
           </div>
         </div>
@@ -84,6 +99,11 @@ export default function Home() {
           filters={filters}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
+        />
+        <HomeBetTypes
+          filters={filters}
+          selectedBetType={selectedBetType}
+          setSelectedBetType={setSelectedBetType}
         />
         {/* <UpcomingHomeBets /> */}
       </div>
