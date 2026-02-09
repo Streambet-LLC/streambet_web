@@ -127,7 +127,7 @@ export default function HomeBets({
         <div
           className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
           role="tablist"
-          aria-label="Betting categories"
+          aria-label="Betting markets"
         >
           <Button
             variant="outline"
