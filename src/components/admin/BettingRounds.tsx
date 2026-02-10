@@ -502,7 +502,7 @@ export function BettingRounds({
                             <div className="space-y-2">
                               <div>
                                 <label className="text-sm font-medium text-white mb-2 block">
-                                  Category
+                                  Market
                                 </label>
                                 <Select
                                   value={round.category || BettingCategory.OTHER}
@@ -511,7 +511,7 @@ export function BettingRounds({
                                   }
                                 >
                                   <SelectTrigger className="w-full bg-[#1a1a1a] border-[#2a2a2a] text-white">
-                                    <SelectValue placeholder="Select a category" />
+                                    <SelectValue placeholder="Select a market" />
                                   </SelectTrigger>
                                   <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
                                     {Object.values(BettingCategory).map(cat => (
@@ -528,7 +528,7 @@ export function BettingRounds({
                               </div>
                               <div>
                                 <label className="text-sm font-medium text-white mb-2 block">
-                                  Type
+                                  Category
                                 </label>
                                 <Select
                                   value={round.betRoundType || BetRoundType.PICK}

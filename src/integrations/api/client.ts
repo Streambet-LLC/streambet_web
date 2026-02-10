@@ -472,7 +472,15 @@ export const bettingAPI = {
 
   // Get betting options for a stream
   getBettingData: async (streamId: string, userId?: string, roundId?: string) => {
-    const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}&roundId=${roundId}`);
+    const params = new URLSearchParams();
+    if (userId && userId !== 'undefined') {
+      params.append('userId', userId);
+    }
+    if (roundId && roundId !== 'null') {
+      params.append('roundId', roundId);
+    }
+    const queryString = params.toString();
+    const response = await apiClient.get(`/stream/bet-round/${streamId}${queryString ? `?${queryString}` : ''}`);
     return response.data;
   },
 
