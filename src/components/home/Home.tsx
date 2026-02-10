@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from 'react';
 import { BettingCategory } from '@/enums';
 import { useDebounce } from '@/lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';
+import LiveFeedUpdate from './LiveFeedUpdate';
 
 export default function Home() {
   const [filters, setFilters] = useState({});
@@ -52,7 +53,8 @@ export default function Home() {
 
         <div className="max-w-3xl mx-auto text-center space-y-4 p-4">
           <h1 className="text-4xl md:text-5xl font-bold">
-            Data markets for the<br />
+            Data markets for the
+            <br />
             <motion.span
               className="relative inline-block"
               whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
@@ -70,13 +72,22 @@ export default function Home() {
           </h1>
           <div className="space-y-2">
             <p className="text-[#FFFFFFBF]">
-              Make FREE picks on cards / collectibles futures & happenings, and accrue CadeCoins for prizes!
+              Make FREE picks on cards / collectibles futures & happenings, and accrue CadeCoins for
+              prizes!
             </p>
             <p className="text-xs text-[#FFFFFF80]">
-              Check out <a href="https://pro.cardcade.fun" className="text-[#bdff00] hover:underline transition-all">CardCade Pro</a> for real $$$ action! [Late Feb]
+              Check out{' '}
+              <a
+                href="https://pro.cardcade.fun"
+                className="text-[#bdff00] hover:underline transition-all"
+              >
+                CardCade Pro
+              </a>{' '}
+              for real $$$ action! [Late Feb]
             </p>
           </div>
         </div>
+        <LiveFeedUpdate />
         <HomePromotedBets />
         {/* Search filter moved to navigation bar for better UX. HomeBetsFilters preserved for potential future sorting/filtering features. */}
         {/* <HomeBetsFilters onChange={setFilters} /> */}
