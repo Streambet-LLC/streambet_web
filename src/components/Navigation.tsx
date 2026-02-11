@@ -116,7 +116,6 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
     { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
     { label: 'Prizes', icon: undefined, path: '/prizes' },
     { label: 'How To Play', icon: undefined, path: '/how-to-play' },
-    { label: 'Browse', icon: undefined, path: '/creators' },
     (session?.role === 'admin' || session?.role === 'creator') && {
       label: session?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard',
       path: session?.role === 'admin' ? '/admin' : '/creator',
