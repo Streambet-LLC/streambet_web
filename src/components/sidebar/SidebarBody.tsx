@@ -1,7 +1,6 @@
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarTrigger, useSidebar } from '../ui/sidebar';
 import SidebarStreamCard from './SidebarStreamCard';
-import { SidebarProfileCard } from './SidebarProfileCard';
 import { Button } from '../ui/button';
 import { motion } from 'framer-motion';
 import {
@@ -16,14 +15,16 @@ import {
   NotepadTextIcon,
   MousePointerClickIcon,
 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { BetRoundType, BettingCategory } from '@/enums';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { getCategoryLabel, getTypeLabel } from '@/utils/categoryHelpers';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { getImageLink } from '@/utils/helper';
 
 type TopStream = {
   id: string;
@@ -31,6 +32,12 @@ type TopStream = {
   views: number;
   pfp: string;
   creator: string;
+};
+
+type Creator = {
+  id: string;
+  username: string;
+  profileImageUrl: string;
 };
 
 interface SidebarBodyProps {
@@ -80,6 +87,27 @@ export default function SidebarBody({
     },
   });
 
+  const { data: creators } = useQuery({
+    queryKey: ['sidebar-creators'],
+    queryFn: async () => {
+      const response = await api.user.getCreators();
+      return response.data as Creator[];
+    },
+  });
+
+  // Shuffle and limit creators to 5
+  const randomizedCreators = useMemo(() => {
+    if (!creators || creators.length === 0) return [];
+
+    // Fisher-Yates shuffle algorithm
+    const shuffled = [...creators];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, 5);
+  }, [creators]);
+
   // Icon options for each category
   const getCategoryIcon = (category: BettingCategory) => {
     const iconMap = {
@@ -112,7 +140,7 @@ export default function SidebarBody({
       )}
     >
       <SidebarContent className="flex flex-col h-full">
-        <SidebarGroup className="flex flex-col gap-2 overflow-auto flex-1 pb-28 md:pb-48">
+        <SidebarGroup className="flex flex-col gap-2 overflow-auto flex-1 pb-16">
           <div className="flex justify-between items-center md:mb-2">
             {controls.open && !controls.isMobile && (
               <div className="flex items-center gap-1.5 pl-2">
@@ -325,20 +353,65 @@ export default function SidebarBody({
               </div>
             </>
           )}
+
+          {/* Creators Section - Always Show */}
+          <div className="border-t border-border my-2" />
+          {controls.open && !controls.isMobile && (
+            <div
+              className="flex items-center justify-between pl-2 mb-2"
+              id="sidebar-creators-label"
+            >
+              <div className="text-sm font-semibold">Creators</div>
+              <Link
+                to="/creators"
+                className="text-xs text-primary hover:text-primary/80 transition-colors pr-2 font-medium"
+              >
+                See All
+              </Link>
+            </div>
+          )}
+          <div
+            className="flex flex-col gap-2"
+            role="navigation"
+            aria-label="Featured creators"
+            aria-labelledby={
+              controls.open && !controls.isMobile ? 'sidebar-creators-label' : undefined
+            }
+          >
+            {randomizedCreators && randomizedCreators.length > 0
+              ? randomizedCreators.map(creator => (
+                  <Link
+                    key={creator.id}
+                    to={`/${creator.username}`}
+                    className={cn(
+                      'h-auto overflow-visible transition-all cursor-pointer no-underline',
+                      controls.open && !controls.isMobile
+                        ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
+                        : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
+                    )}
+                  >
+                    <Avatar
+                      className={cn(controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7')}
+                    >
+                      <AvatarImage
+                        src={getImageLink(creator.profileImageUrl)}
+                        alt={creator.username}
+                      />
+                      <AvatarFallback className="text-[10px]">
+                        {creator.username[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {controls.open && !controls.isMobile && (
+                      <span className="text-[13px] font-semibold text-primary truncate">
+                        {creator.username}
+                      </span>
+                    )}
+                  </Link>
+                ))
+              : null}
+          </div>
         </SidebarGroup>
       </SidebarContent>
-
-      {/* Profile Card at Bottom - Fixed to bottom of viewport */}
-      {session && (
-        <div
-          className={cn(
-            'fixed bottom-0 z-20',
-            controls.open && !controls.isMobile ? 'w-60' : controls.isMobile ? 'w-[50px]' : 'w-fit'
-          )}
-        >
-          <SidebarProfileCard compact={!controls.open || controls.isMobile} />
-        </div>
-      )}
     </Sidebar>
   );
 }
