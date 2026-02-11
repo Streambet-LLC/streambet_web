@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { BetRoundType, BettingCategory } from '@/enums';
 import { useDebounce } from '@/lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';
+import LiveFeedUpdate from './LiveFeedUpdate';
 import HomeBetTypes from './HomeBetTypes';
 
 export default function Home() {
@@ -92,6 +93,7 @@ export default function Home() {
             </p>
           </div>
         </div>
+        <LiveFeedUpdate />
         <HomePromotedBets />
         {/* Search filter moved to navigation bar for better UX. HomeBetsFilters preserved for potential future sorting/filtering features. */}
         {/* <HomeBetsFilters onChange={setFilters} /> */}
