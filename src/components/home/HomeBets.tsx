@@ -154,7 +154,7 @@ export default function HomeBets({
             }`}
             onClick={() => setSelectedBetType(null)}
           >
-            All Types
+            All Markets
           </Button>
           {Object.values(BetRoundType).map(type => (
             <Button
@@ -193,7 +193,7 @@ export default function HomeBets({
             }`}
             onClick={() => setSelectedCategory(null)}
           >
-            All
+            All Categories
           </Button>
           {Object.values(BettingCategory).map(category => (
             <Button
