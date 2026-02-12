@@ -47,6 +47,7 @@ import { CookiesProvider } from 'react-cookie';
 import CreatorApplication from './pages/CreatorApplication';
 import Prizes from './pages/Prizes';
 import HowToPlay from './pages/HowToPlay';
+import Shop from './pages/Shop';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -125,6 +126,7 @@ const App = () => {
                       <Route path="/creators" element={<Creators />} />
                       <Route path="/prizes" element={<Prizes />} />
                       <Route path="/how-to-play" element={<HowToPlay />} />
+                      <Route path="/shop" element={<Shop />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/auth/verify-email" element={<VerifyEmail />} />
