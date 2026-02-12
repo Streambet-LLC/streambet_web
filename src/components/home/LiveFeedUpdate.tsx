@@ -41,7 +41,7 @@ const LiveFeedUpdate = () => {
   }, [data]);
 
   useEffect(() => {
-    const newSocket = api.socket.connect();
+    const newSocket = api.socket.connect(false);
 
     newSocket.on('connect', () => {
       api.socket.joinLiveFeed(newSocket);

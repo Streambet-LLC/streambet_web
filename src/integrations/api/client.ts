@@ -674,10 +674,10 @@ export const betsAPI = {
 // WebSocket handling
 export const socketAPI = {
   // Connect to WebSocket
-  connect: () => {
+  connect: (withAuth = true) => {
     const token = localStorage.getItem('refreshToken');
     console.log("socket connection iniiated")
-    if (!token) return null;
+    if (!token && withAuth) return null;
     console.log("socket connected confirmed")
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
