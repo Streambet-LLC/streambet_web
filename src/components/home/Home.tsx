@@ -81,7 +81,7 @@ export default function Home() {
               Make FREE picks on cards / collectibles futures & happenings, and accrue CadeCoins for
               prizes!
             </p>
-            <p className="text-xs text-[#FFFFFF80]">
+            {/* <p className="text-xs text-[#FFFFFF80]">
               Check out{' '}
               <a
                 href="https://pro.cardcade.fun"
@@ -90,7 +90,7 @@ export default function Home() {
                 CardCade Pro
               </a>{' '}
               for real $$$ action! [Late Feb]
-            </p>
+            </p> */}
           </div>
         </div>
         <LiveFeedUpdate />
