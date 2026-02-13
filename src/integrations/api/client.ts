@@ -473,7 +473,15 @@ export const bettingAPI = {
 
   // Get betting options for a stream
   getBettingData: async (streamId: string, userId?: string, roundId?: string) => {
-    const response = await apiClient.get(`/stream/bet-round/${streamId}?userId=${userId}&roundId=${roundId}`);
+    const params = new URLSearchParams();
+    if (userId && userId !== 'undefined') {
+      params.append('userId', userId);
+    }
+    if (roundId && roundId !== 'null') {
+      params.append('roundId', roundId);
+    }
+    const queryString = params.toString();
+    const response = await apiClient.get(`/stream/bet-round/${streamId}${queryString ? `?${queryString}` : ''}`);
     return response.data;
   },
 
@@ -590,6 +598,11 @@ interface RoundPickTimelineResponse {
 
 // Bets API
 export const betsAPI = {
+  getLatestLiveFeed: async () => {
+    const response = await apiClient.get(`/stream/last-live-feeds`);
+    return response.data
+  },
+
   // Get all promoted bets
   getPromotedBets: async (params?: any): Promise<{ data: PromotedBetsResponse }> => {
 
@@ -634,7 +647,7 @@ export const betsAPI = {
   getRoundPickTimeline: async (roundId: string): Promise<{ data: RoundPickTimelineResponse }> => {
     try {
       const response = await apiClient.get(`/betting/round/${roundId}/pick-timeline`);
-      
+
       // Validate response structure
       if (!response.data?.data?.options || !response.data?.data?.timeline) {
         if (import.meta.env.DEV) {
@@ -642,17 +655,17 @@ export const betsAPI = {
         }
         throw new Error('Invalid response structure from pick timeline API');
       }
-      
+
       return response.data;
     } catch (error: any) {
       if (import.meta.env.DEV) {
         console.error('Failed to fetch round pick timeline:', error);
       }
-      
+
       // Re-throw with more context
       throw new Error(
-        error.response?.data?.message || 
-        error.message || 
+        error.response?.data?.message ||
+        error.message ||
         'Failed to fetch pick timeline data'
       );
     }
@@ -662,10 +675,10 @@ export const betsAPI = {
 // WebSocket handling
 export const socketAPI = {
   // Connect to WebSocket
-  connect: () => {
+  connect: (withAuth = true) => {
     const token = localStorage.getItem('refreshToken');
     console.log("socket connection iniiated")
-    if (!token) return null;
+    if (!token && withAuth) return null;
     console.log("socket connected confirmed")
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
@@ -731,6 +744,13 @@ export const socketAPI = {
     console.log(socket, 'joinCommonStream joined')
     if (socket) {
       socket.emit('joinCardCade', 'streambet');
+    }
+  },
+
+  joinLiveFeed: (socket: any) => {
+    console.log(socket, 'joinLiveFeed joined')
+    if (socket) {
+      socket.emit('joinLiveFeed');
     }
   },
 

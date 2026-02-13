@@ -4,7 +4,7 @@ import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import Sidebar from '../sidebar/Sidebar';
 import { cn } from '@/lib/utils';
-import { BettingCategory } from '@/enums';
+import { BetRoundType, BettingCategory } from '@/enums';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -14,6 +14,8 @@ interface MainLayoutProps {
   onDashboardClick?: () => void;
   selectedCategory?: BettingCategory | null;
   setSelectedCategory?: (category: BettingCategory | null) => void;
+  selectedBetType?: BetRoundType | null;
+  setSelectedBetType?: (type: BetRoundType | null) => void;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
 }
@@ -26,6 +28,8 @@ export const MainLayout = ({
   onDashboardClick,
   selectedCategory,
   setSelectedCategory,
+  selectedBetType,
+  setSelectedBetType,
   searchValue,
   onSearchChange,
 }: MainLayoutProps) => {
@@ -52,7 +56,12 @@ export const MainLayout = ({
           }}></div>
         </div> */}
 
-          <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+          <Sidebar
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedBetType={selectedBetType}
+            setSelectedBetType={setSelectedBetType}
+          />
 
           {/* Main Content */}
           <main
@@ -74,7 +83,12 @@ export const MainLayout = ({
       />
       <div className="w-full flex gap-2">
         <div className="max-h-[calc(100dvh)] overflow-y-auto">
-          <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
+          <Sidebar
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedBetType={selectedBetType}
+            setSelectedBetType={setSelectedBetType}
+          />
         </div>
 
         <main

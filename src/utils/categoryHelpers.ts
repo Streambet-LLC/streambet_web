@@ -1,4 +1,4 @@
-import { BettingCategory } from '@/enums';
+import { BetRoundType, BettingCategory } from '@/enums';
 
 export const getCategoryLabel = (category: BettingCategory): string => {
   const labels: Record<BettingCategory, string> = {
@@ -13,4 +13,14 @@ export const getCategoryLabel = (category: BettingCategory): string => {
     [BettingCategory.OTHER]: 'Other',
   };
   return labels[category];
+};
+
+export const getTypeLabel = (type: BetRoundType): string => {
+  const labels: Record<BetRoundType, string> = {
+    [BetRoundType.AUCTION]: 'Auction',
+    [BetRoundType.FUTURE]: 'Future',
+    [BetRoundType.OPINION]: 'Opinion',
+    [BetRoundType.PICK]: 'Pick',
+  };
+  return labels[type];
 };

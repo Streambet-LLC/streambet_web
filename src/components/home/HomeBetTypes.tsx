@@ -13,21 +13,17 @@ import { BetRoundType, BettingCategory } from '@/enums';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getCategoryLabel, getTypeLabel } from '@/utils/categoryHelpers';
 
-interface HomeBetsProps {
+interface HomeBetTypeProps {
   filters: any;
-  selectedCategory: BettingCategory | null;
-  setSelectedCategory: (category: BettingCategory | null) => void;
   selectedBetType: BetRoundType | null;
   setSelectedBetType: (type: BetRoundType | null) => void;
 }
 
-export default function HomeBets({
+export default function HomeBetTypes({
   filters,
-  selectedCategory,
-  setSelectedCategory,
   selectedBetType,
   setSelectedBetType,
-}: HomeBetsProps) {
+}: HomeBetTypeProps) {
   const isMobile = useIsMobile();
   const [displayCount, setDisplayCount] = useState(24);
   const [quickPickOpen, setQuickPickOpen] = useState(false);
@@ -42,7 +38,7 @@ export default function HomeBets({
 
   const { data, hasNextPage, fetchNextPage, isLoading, isFetchingNextPage, refetch } =
     useInfiniteQuery({
-      queryKey: ['homepage-bets', filters],
+      queryKey: ['homepage-bet-types', filters],
       queryFn: async ({ pageParam }) => {
         const response = await api.bets.getBets({
           page: pageParam,
@@ -62,7 +58,7 @@ export default function HomeBets({
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Get all bets, sort by priority pairs, and filter by category/type client-side
+  // Get all bets, sort by priority pairs, and filter by category client-side
   const sortedBets = useMemo(() => {
     // Deserialize API response with proper typing
     const allBets =
@@ -71,7 +67,6 @@ export default function HomeBets({
           ({ data: bets }) =>
             bets?.map((bet: any) => ({
               ...bet,
-              category: bet.category as BettingCategory,
               betRoundType: bet.betRoundType as BetRoundType,
             })) || []
         )
@@ -79,43 +74,35 @@ export default function HomeBets({
 
     const sorted = sortByPriorityPairs(allBets, PRIORITY_STREAMS);
 
-    let filtered = sorted;
-
     // Client-side category filtering
-    if (selectedCategory !== null) {
-      filtered = filtered.filter(bet => bet.category === selectedCategory);
+    if (selectedBetType) {
+      return sorted.filter(bet => bet.betRoundType === selectedBetType);
     }
-
-    // Client-side bet type filtering
-    if (selectedBetType !== null) {
-      filtered = filtered.filter(bet => bet.betRoundType === selectedBetType);
-    }
-
-    return filtered;
-  }, [data, selectedCategory, selectedBetType]);
+    return sorted;
+  }, [data, selectedBetType]);
 
   useEffect(() => {
     if (!tabsRef.current) return;
 
-    if (selectedCategory === null && selectedBetType === null) return;
+    if (selectedBetType !== undefined) {
+      const scrollContainer = tabsRef.current.closest('main');
+      if (!scrollContainer) return;
 
-    const scrollContainer = tabsRef.current.closest('main');
-    if (!scrollContainer) return;
+      const elementRect = tabsRef.current.getBoundingClientRect();
+      const containerRect = scrollContainer.getBoundingClientRect();
 
-    const elementRect = tabsRef.current.getBoundingClientRect();
-    const containerRect = scrollContainer.getBoundingClientRect();
+      // Calculate the position of the element within the scroll container
+      const relativeTop = elementRect.top - containerRect.top;
 
-    // Calculate the position of the element within the scroll container
-    const relativeTop = elementRect.top - containerRect.top;
+      // Calculate target scroll position with offset (80px from top of container so hero section doesn't get hidden)
+      const targetScrollTop = scrollContainer.scrollTop + relativeTop - 80;
 
-    // Calculate target scroll position with offset (80px from top of container so hero section doesn't get hidden)
-    const targetScrollTop = scrollContainer.scrollTop + relativeTop - 80;
-
-    scrollContainer.scrollTo({
-      top: targetScrollTop,
-      behavior: 'smooth',
-    });
-  }, [selectedCategory, selectedBetType]);
+      scrollContainer.scrollTo({
+        top: targetScrollTop,
+        behavior: 'smooth',
+      });
+    }
+  }, [selectedBetType]);
 
   // Display only first N items (client-side pagination)
   const displayedBets = sortedBets.slice(0, displayCount);
@@ -133,10 +120,10 @@ export default function HomeBets({
   return (
     <>
       <h2 ref={tabsRef} className="text-2xl font-bold mb-4 px-2">
-        All Picks:
+        All Types:
       </h2>
       <div className="flex flex-col gap-4">
-        {/* Bet Type Tabs */}
+        {/* Category Tabs */}
         <div
           className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
           role="tablist"
@@ -146,7 +133,7 @@ export default function HomeBets({
             variant="outline"
             role="tab"
             aria-selected={selectedBetType === null}
-            aria-controls="betting-cards-panel"
+            aria-controls="betting-types-panel"
             className={`${
               selectedBetType === null
                 ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
@@ -154,7 +141,7 @@ export default function HomeBets({
             }`}
             onClick={() => setSelectedBetType(null)}
           >
-            All Markets
+            All
           </Button>
           {Object.values(BetRoundType).map(type => (
             <Button
@@ -162,7 +149,7 @@ export default function HomeBets({
               variant="outline"
               role="tab"
               aria-selected={selectedBetType === type}
-              aria-controls="betting-cards-panel"
+              aria-controls="betting-types-panel"
               className={`${
                 selectedBetType === type
                   ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
@@ -174,56 +161,15 @@ export default function HomeBets({
             </Button>
           ))}
         </div>
-
-        {/* Category Tabs */}
-        <div
-          className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
-          role="tablist"
-          aria-label="Betting categories"
-        >
-          <Button
-            variant="outline"
-            role="tab"
-            aria-selected={selectedCategory === null}
-            aria-controls="betting-cards-panel"
-            className={`${
-              selectedCategory === null
-                ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
-                : `border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
-            }`}
-            onClick={() => setSelectedCategory(null)}
-          >
-            All Categories
-          </Button>
-          {Object.values(BettingCategory).map(category => (
-            <Button
-              key={category}
-              variant="outline"
-              role="tab"
-              aria-selected={selectedCategory === category}
-              aria-controls="betting-cards-panel"
-              className={`${
-                selectedCategory === category
-                  ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
-                  : `border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
-              }`}
-              onClick={() => setSelectedCategory(category)}
-            >
-              {getCategoryLabel(category)}
-            </Button>
-          ))}
-        </div>
       </div>
 
       <div
         className="flex flex-col gap-4"
         role="tabpanel"
-        id="betting-cards-panel"
-        aria-label={(() => {
-          const categoryLabel = selectedCategory ? getCategoryLabel(selectedCategory) : 'All';
-          const typeLabel = selectedBetType ? getTypeLabel(selectedBetType) : 'All';
-          return `${typeLabel} ${categoryLabel} betting cards`;
-        })()}
+        id="betting-types-panel"
+        aria-label={
+          selectedBetType ? `${getTypeLabel(selectedBetType)} betting cards` : 'All betting cards'
+        }
       >
         {!isLoading && displayedBets.length === 0 && (
           <div className="mx-auto text-weak">No bets found.</div>
