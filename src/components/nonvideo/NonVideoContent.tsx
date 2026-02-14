@@ -117,7 +117,7 @@ export const NonVideoContent = ({
         {/* Left Column - 2/3 */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header Card */}
-          <NonVideoHeader nonVideo={nonVideo} />
+          <NonVideoHeader nonVideo={nonVideo} roundTitle={round?.name} />
           {/* User Bets Chart */}
           <UserBetsChart 
             roundId={round?.roundId}

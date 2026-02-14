@@ -43,19 +43,30 @@ const LiveFeedUpdate = () => {
   useEffect(() => {
     const newSocket = api.socket.connect(false);
 
-    newSocket.on('connect', () => {
+    const handleConnect = () => {
       api.socket.joinLiveFeed(newSocket);
-    });
+    };
 
-    newSocket.on('reconnect', () => {
+    const handleReconnect = () => {
       api.socket.joinLiveFeed(newSocket);
-    });
+    };
+
+    newSocket.on('connect', handleConnect);
+    newSocket.on('reconnect', handleReconnect);
 
     if (newSocket.connected) {
       api.socket.joinLiveFeed(newSocket);
     }
 
     setupSocketEventListeners(newSocket);
+
+    // Cleanup function to prevent duplicate listeners
+    return () => {
+      newSocket.off('connect', handleConnect);
+      newSocket.off('reconnect', handleReconnect);
+      newSocket.off('live-feed-update');
+      newSocket.disconnect();
+    };
   }, []);
 
   const renderItems = event => {
@@ -142,7 +153,7 @@ const LiveFeedUpdate = () => {
                 transition={{ type: 'spring', stiffness: 100 }}
               >
                 <div className="mb-2 flex justify-between border-b-4 border-dotted ease-in duration-1000 ">
-                  <p className=" text-sm">{renderItems(event)}</p>
+                  <div className=" text-sm">{renderItems(event)}</div>
                   <p className="text-gray-500 text-xs">~ {moment(event.createdAt).fromNow()}</p>
                 </div>
               </motion.div>

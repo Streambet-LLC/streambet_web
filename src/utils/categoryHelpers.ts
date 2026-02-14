@@ -17,10 +17,10 @@ export const getCategoryLabel = (category: BettingCategory): string => {
 
 export const getTypeLabel = (type: BetRoundType): string => {
   const labels: Record<BetRoundType, string> = {
-    [BetRoundType.AUCTION]: 'Auction',
-    [BetRoundType.FUTURE]: 'Future',
-    [BetRoundType.OPINION]: 'Opinion',
-    [BetRoundType.PICK]: 'Pick',
+    [BetRoundType.AUCTION]: 'Auctions',
+    [BetRoundType.FUTURE]: 'Futures',
+    [BetRoundType.OPINION]: 'Opinions',
+    [BetRoundType.PICK]: 'Picks',
   };
   return labels[type];
 };

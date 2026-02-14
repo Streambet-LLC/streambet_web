@@ -369,8 +369,6 @@ export const AdminManagement = ({
       const streamId = viewStreamId || editStreamId;
       if (streamId) {
         const response = await adminAPI.getCardCadeData(streamId);
-        console.log(response);
-
         return response?.data;
       }
       return undefined;
