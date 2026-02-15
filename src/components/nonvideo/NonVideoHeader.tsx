@@ -10,9 +10,10 @@ interface NonVideoHeaderProps {
     thumbnailUrl?: string;
     creatorUsername?: string;
   } | null;
+  roundTitle?: string;
 }
 
-export const NonVideoHeader = ({ nonVideo }: NonVideoHeaderProps) => {
+export const NonVideoHeader = ({ nonVideo, roundTitle }: NonVideoHeaderProps) => {
   if (!nonVideo) return null;
 
   return (
@@ -23,14 +24,14 @@ export const NonVideoHeader = ({ nonVideo }: NonVideoHeaderProps) => {
           <div className="flex-shrink-0">
             <img 
               src={getImageLink(nonVideo.thumbnailUrl)} 
-              alt={nonVideo.name}
+              alt={roundTitle || nonVideo.name}
               className="w-32 h-24 rounded-lg object-contain bg-muted"
             />
           </div>
         )}
         {/* Text Content */}
         <div className="flex-1 flex flex-col gap-2">
-          <h1 className="text-2xl font-bold">{nonVideo.name}</h1>
+          <h1 className="text-2xl font-bold">{roundTitle || nonVideo.name}</h1>
           {nonVideo.description && (
             <p className="text-sm text-muted-foreground">
               <span className="[&>a]:text-primary [&>a]:underline [&>a]:hover:text-primary/80 [&>a]:transition-colors">
