@@ -597,6 +597,11 @@ interface RoundPickTimelineResponse {
 
 // Bets API
 export const betsAPI = {
+  getLatestLiveFeed: async () => {
+    const response = await apiClient.get(`/stream/last-live-feeds`);
+    return response.data
+  },
+
   // Get all promoted bets
   getPromotedBets: async (params?: any): Promise<{ data: PromotedBetsResponse }> => {
 
@@ -641,7 +646,7 @@ export const betsAPI = {
   getRoundPickTimeline: async (roundId: string): Promise<{ data: RoundPickTimelineResponse }> => {
     try {
       const response = await apiClient.get(`/betting/round/${roundId}/pick-timeline`);
-      
+
       // Validate response structure
       if (!response.data?.data?.options || !response.data?.data?.timeline) {
         if (import.meta.env.DEV) {
@@ -649,17 +654,17 @@ export const betsAPI = {
         }
         throw new Error('Invalid response structure from pick timeline API');
       }
-      
+
       return response.data;
     } catch (error: any) {
       if (import.meta.env.DEV) {
         console.error('Failed to fetch round pick timeline:', error);
       }
-      
+
       // Re-throw with more context
       throw new Error(
-        error.response?.data?.message || 
-        error.message || 
+        error.response?.data?.message ||
+        error.message ||
         'Failed to fetch pick timeline data'
       );
     }
@@ -738,6 +743,13 @@ export const socketAPI = {
     console.log(socket, 'joinCommonStream joined')
     if (socket) {
       socket.emit('joinCardCade', 'streambet');
+    }
+  },
+
+  joinLiveFeed: (socket: any) => {
+    console.log(socket, 'joinLiveFeed joined')
+    if (socket) {
+      socket.emit('joinLiveFeed');
     }
   },
 
