@@ -8,6 +8,7 @@ import { BetCard } from '@/types/bet';
 import { PrizeConfiguration, SubmitPrizeRedemptionRequest } from '@/types/prize';
 import { PromotedBetsResponse } from '@/types/promo';
 import { CurrencyType } from '@/utils/currency';
+import { SpinStatusResponse, SpinResultResponse } from '@/types/daily-spin';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -1125,6 +1126,21 @@ export const paymentAPI = {
   },
 };
 
+// Daily Spin API
+export const dailySpinAPI = {
+  // Get daily spin status
+  getStatus: async (): Promise<SpinStatusResponse> => {
+    const response = await apiClient.get('/daily-spin/status');
+    return response.data;
+  },
+
+  // Execute daily spin
+  executeSpin: async (): Promise<SpinResultResponse> => {
+    const response = await apiClient.post('/daily-spin/spin');
+    return response.data;
+  },
+};
+
 // Prize API
 export const prizeAPI = {
   // Get all active prize tiers (public endpoint)
@@ -1209,6 +1225,7 @@ export const api = {
   bets: betsAPI,
   creator: creatorAPI,
   prize: prizeAPI,
+  dailySpin: dailySpinAPI,
 };
 
 export default api;
