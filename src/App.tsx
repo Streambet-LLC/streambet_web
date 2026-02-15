@@ -47,6 +47,7 @@ import { CookiesProvider } from 'react-cookie';
 import CreatorApplication from './pages/CreatorApplication';
 import Prizes from './pages/Prizes';
 import HowToPlay from './pages/HowToPlay';
+import { DailySpin } from './pages/DailySpin';
 import Shop from './pages/Shop';
 
 // Create a client
@@ -114,6 +115,7 @@ const App = () => {
                         />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/creator-application" element={<CreatorApplication />} />
+                        <Route path="/daily-spin" element={<DailySpin />} />
                       </Route>
 
                       {/* Public Routes */}
