@@ -73,8 +73,6 @@ export const AdminBettingRoundsCard = ({
   streamInfo,
   bettingUpdate,
 }) => {
-  console.log(betData);
-
   const [carouselApi, setCarouselApi] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [rounds, setRounds] = useState([]);

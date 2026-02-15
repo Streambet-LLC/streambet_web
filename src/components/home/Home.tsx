@@ -41,8 +41,6 @@ export default function Home() {
       setSelectedBetType={setSelectedBetType}
       searchValue={searchValue}
       onSearchChange={setSearchValue}
-      selectedBetType={selectedBetType}
-      setSelectedBetType={setSelectedBetType}
     >
       <div className="w-full flex flex-col gap-6" ref={homeRef}>
         {/* Mobile Search Bar - Only visible on mobile */}

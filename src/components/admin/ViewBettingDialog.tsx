@@ -72,10 +72,11 @@ const ViewBettingDialog = ({ betRound }) => {
             <TableRow>
               <TableHead>Username</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Bet Amount</TableHead>
+              <TableHead>Currency</TableHead>
+              <TableHead>Pick Amount</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Selected Option</TableHead>
-              <TableHead>Payout Amount</TableHead>
+              <TableHead>Payout</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className="[&_td]:font-light">
@@ -83,12 +84,11 @@ const ViewBettingDialog = ({ betRound }) => {
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.username}</TableCell>
                 <TableCell>{item.email}</TableCell>
-                <TableCell>
-                  {item.amount} {getCurrencyLabel(item.currency)}
-                </TableCell>
+                <TableCell>{getCurrencyLabel(item.currency)}</TableCell>
+                <TableCell>{(parseFloat(item.amount) || 0).toLocaleString('en-US')}</TableCell>
                 <TableCell>{_.startCase(item.status)}</TableCell>
                 <TableCell>{item.selectedOption}</TableCell>
-                <TableCell>{item.payoutAmount}</TableCell>
+                <TableCell>{(parseFloat(item.payoutAmount) || 0).toLocaleString('en-US')}</TableCell>
               </TableRow>
             ))}
           </TableBody>

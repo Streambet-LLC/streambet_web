@@ -217,7 +217,6 @@ export const AdminStreamContent = ({
   };
 
   useEffect(() => {
-    console.log('socketConnect value', socketConnect);
     if (socketConnect) {
       api.socket.joinStream(streamId, socketConnect);
 

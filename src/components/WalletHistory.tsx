@@ -21,7 +21,6 @@ import { getCurrencyLabel } from '@/utils/currency';
 
 
 interface Props {
-  searchUserQuery: string;
   historyType?: HistoryType;
 }
 
@@ -122,7 +121,10 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                   ))
               : paginatedUsers?.length === 0
                 ? (<div className="text-center py-6 text-muted-foreground text-base">No picks history found</div>)
-                : paginatedUsers?.map(user => (
+                : paginatedUsers?.map(user => {
+                    const amountWon = parseFloat(user?.amountWon) || 0;
+                    const amountLost = parseFloat(user?.amountLost) || 0;
+                    return (
                     <Card key={user.id} className="bg-[#181A20] border border-[#23272F] rounded-lg shadow-sm">
                       <CardContent className="p-3 space-y-2">
                         <div className="flex flex-col gap-1">
@@ -164,16 +166,17 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground">Won</span>
-                            <span className="text-xs font-medium" style={{ color: Number(user?.amountWon || 0) > 0 ? '#44E644BF' : undefined }}>{(user?.amountWon ?? 0).toLocaleString('en-US')}</span>
+                            <span className="text-xs font-medium" style={{ color: amountWon > 0 ? '#44E644BF' : undefined }}>{amountWon.toLocaleString('en-US')}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground">Lost</span>
-                            <span className="text-xs font-medium" style={{ color: Number(user?.amountLost || 0) > 0 ? '#F84B4BBF' : undefined }}>{Number(user?.amountLost || 0) > 0 ? `-${Math.abs(user?.amountLost).toLocaleString('en-US')}` : '0'}</span>
+                            <span className="text-xs font-medium" style={{ color: amountLost > 0 ? '#F84B4BBF' : undefined }}>{amountLost > 0 ? `-${amountLost.toLocaleString('en-US')}` : '0'}</span>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
           </div>
         ) : (
           <div className="border bg-[#0D0D0D]">
@@ -231,7 +234,10 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedUsers?.map(user => (
+                    paginatedUsers?.map(user => {
+                      const amountWon = parseFloat(user?.amountWon) || 0;
+                      const amountLost = parseFloat(user?.amountLost) || 0;
+                      return (
                       <TableRow key={user.id}>
                         <TableCell className="text-[14px] text-left">{user?.date ? new Date(user.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</TableCell>
                         <TableCell className="text-[14px] text-left">{user?.streamName}</TableCell>
@@ -246,10 +252,11 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                             {user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : ''}
                           </span>
                         </TableCell>
-                        <TableCell className={`text-[14px] text-left ${Number(user?.amountWon || 0) > 0 ? '!text-[#44E644BF]' : ''}`}>{(user?.amountWon ?? 0).toLocaleString('en-US')}</TableCell>
-                        <TableCell className={`text-[14px] text-left ${Number(user?.amountLost || 0) > 0 ? '!text-[#F84B4BBF]' : ''}`}>{Number(user?.amountLost || 0) > 0 ? `-${Math.abs(user?.amountLost).toLocaleString('en-US')}` : '0'}</TableCell>
+                        <TableCell className={`text-[14px] text-left ${amountWon > 0 ? '!text-[#44E644BF]' : ''}`}>{amountWon.toLocaleString('en-US')}</TableCell>
+                        <TableCell className={`text-[14px] text-left ${amountLost > 0 ? '!text-[#F84B4BBF]' : ''}`}>{amountLost > 0 ? `-${amountLost.toLocaleString('en-US')}` : '0'}</TableCell>
                       </TableRow>
-                    ))
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
