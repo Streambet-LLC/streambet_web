@@ -81,19 +81,19 @@ export default function BetCard(props: BetCardType) {
 
   const handleThumbnailClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
-    
+
     // For sentiment/opinion bets, open QuickPick modal
     if (props.mechanism?.toLowerCase?.() === 'sentiment') {
       handleClick(null);
       return;
     }
-    
+
     // For non-video in non-video room, show full-screen image
     if (cardData.type === 'non-video' && props.isForNonVideo) {
       setShowImageModal(true);
       return;
     }
-    
+
     // For stream/non-video, navigate to their room
     const path = getNavigationPath();
     if (path) navigate(path);
@@ -174,7 +174,8 @@ export default function BetCard(props: BetCardType) {
   }, [cardData.roundId]);
 
   const displayedOptions = useMemo(() => {
-    const topOptions = cardData.options.slice(0, 2);
+    const topOptions =
+      cardData.options.length === 3 ? cardData.options : cardData.options.slice(0, 2);
     const topOptionsLabel = topOptions.map(option => option.id);
     const userPickedOption = cardData.options.find(
       option => !!option.userBet && !topOptionsLabel.includes(option.id)
@@ -325,7 +326,11 @@ export default function BetCard(props: BetCardType) {
                     onKeyDown={handleThumbnailKeyDown}
                     tabIndex={0}
                     role="button"
-                    aria-label={cardData.type === 'non-video' && props.isForNonVideo ? "Expand image to full screen" : "View content"}
+                    aria-label={
+                      cardData.type === 'non-video' && props.isForNonVideo
+                        ? 'Expand image to full screen'
+                        : 'View content'
+                    }
                   >
                     <img
                       src={getThumbnailUrl(cardData.thumbnail)}
@@ -389,7 +394,7 @@ export default function BetCard(props: BetCardType) {
                 )}
               </div>
             ))}
-            {cardData.options.length > 2 && (
+            {cardData.options.length > 3 && (
               <div
                 onClick={statuses.canOpen ? () => handleClick(null) : undefined}
                 className={cn(
@@ -492,7 +497,10 @@ export default function BetCard(props: BetCardType) {
 
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
         <DialogTitle className="sr-only">Bet Image</DialogTitle>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent" aria-describedby={undefined}>
+        <DialogContent
+          className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent"
+          aria-describedby={undefined}
+        >
           <img
             src={getThumbnailUrl(cardData.thumbnail)}
             alt="Full size thumbnail"
