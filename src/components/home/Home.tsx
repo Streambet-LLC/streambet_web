@@ -2,21 +2,19 @@ import { MainLayout } from '@/components/layout';
 import HomePromotedBets from './HomePromotedBets';
 import HomeBets from './HomeBets';
 import { SearchInput } from '@/components/ui/SearchInput';
-// import HomeBetsFilters from './HomeBetsFilters'; // Search moved to navigation bar, but keeping for potential future use
 import { useState, useEffect, useRef } from 'react';
 import { BetRoundType, BettingCategory } from '@/enums';
 import { useDebounce } from '@/lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';
 import LiveFeedUpdate from './LiveFeedUpdate';
-import HomeBetTypes from './HomeBetTypes';
 
 export default function Home() {
   const [filters, setFilters] = useState({});
   const [selectedCategory, setSelectedCategory] = useState<BettingCategory | null | undefined>(
-    undefined
+    null
   );
   const [selectedBetType, setSelectedBetType] = useState<BetRoundType | null | undefined>(
-    undefined
+    null
   );
   const [searchValue, setSearchValue] = useState('');
   const shouldReduceMotion = useReducedMotion();
@@ -99,11 +97,6 @@ export default function Home() {
           filters={filters}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
-          selectedBetType={selectedBetType}
-          setSelectedBetType={setSelectedBetType}
-        />
-        <HomeBetTypes
-          filters={filters}
           selectedBetType={selectedBetType}
           setSelectedBetType={setSelectedBetType}
         />
