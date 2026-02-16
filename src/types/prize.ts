@@ -153,3 +153,31 @@ export interface UserAddress {
   zipCode: string | null;
   country: string | null;
 }
+/**
+ * Prize purchase with combined payment (coins + USD)
+ * 50 Cade coins = $1
+ */
+export interface PrizePurchaseRequest {
+  prizeConfigId: string;
+  shippingAddress: ShippingAddress;
+  paymentMethod: 'coins' | 'usd' | 'combined';
+  coinsAmount: number; // Amount of coins to use (0 for USD-only)
+  usdAmount: number; // Amount in USD (0 for coins-only)
+  totalPrice: number; // Total price in USD (coins converted to USD)
+}
+
+export interface PrizeOrder {
+  id: string;
+  userId: string;
+  prizeConfigId: string;
+  shippingAddress: ShippingAddress;
+  paymentMethod: 'coins' | 'usd' | 'combined';
+  coinsDeducted: number;
+  usdCharged: number;
+  totalPrice: number;
+  stripePriceId?: string; // For USD payment via Stripe
+  stripeSessionId?: string;
+  status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}

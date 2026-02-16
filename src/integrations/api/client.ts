@@ -1168,13 +1168,16 @@ export const prizeAPI = {
   },
 
   // Update a prize tier (admin only)
-  updatePrizeTier: async (id: string, payload: {
-    prizeTier: number;
-    amount: number;
-    name: string;
-    description?: string;
-    imageUrl?: string;
-  }): Promise<PrizeConfiguration> => {
+  updatePrizeTier: async (
+    id: string,
+    payload: {
+      prizeTier: number;
+      amount: number;
+      name: string;
+      description?: string;
+      imageUrl?: string;
+    }
+  ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/admin/prizes/${id}`, payload);
     return response.data;
   },
@@ -1200,6 +1203,24 @@ export const prizeAPI = {
   // Get user's redemptions
   getMyRedemptions: async () => {
     const response = await apiClient.get('/prizes/my-redemptions');
+    return response.data;
+  },
+
+  // Create a prize purchase order (coins + USD combined payment)
+  createPrizeOrder: async (orderData: any) => {
+    const response = await apiClient.post('/prizes/purchase', orderData);
+    return response.data;
+  },
+
+  // Confirm prize order after Stripe success redirect
+  confirmPrizeOrder: async (orderId: string) => {
+    const response = await apiClient.post(`/prizes/webhook/stripe-success/${orderId}`);
+    return response.data;
+  },
+
+  // Get user's prize orders
+  getMyOrders: async () => {
+    const response = await apiClient.get('/prizes/my-orders');
     return response.data;
   },
 
