@@ -89,7 +89,7 @@ export default function Home() {
             </p> */}
           </div>
         </div>
-        <LiveFeedUpdate />
+        {/* <LiveFeedUpdate /> */}
         <HomePromotedBets />
         {/* Search filter moved to navigation bar for better UX. HomeBetsFilters preserved for potential future sorting/filtering features. */}
         {/* <HomeBetsFilters onChange={setFilters} /> */}
