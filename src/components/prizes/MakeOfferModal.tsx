@@ -72,7 +72,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
         return;
       }
 
-      // Check authentication
       if (!session) {
         toast({
           title: 'Authentication Required',
@@ -83,7 +82,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
         return;
       }
 
-      // Make API call to submit offer using prizeAPI
       await prizeAPI.makeOffer({
         prizeConfigId: prize.id,
         shippingAddress,
@@ -98,7 +96,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
 
       onClose();
 
-      // Reset form
       setOfferAmount('');
       setOfferNotes('');
       setShippingAddress({
@@ -130,7 +127,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Price Information */}
           <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center gap-4">
               {prize.imageUrl && (
@@ -157,7 +153,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Offer Amount */}
             <div className="space-y-2">
               <Label htmlFor="offerAmount" className="text-base font-semibold">
                 Your Offer Amount ($) *
@@ -181,7 +176,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
               />
             </div>
 
-            {/* Optional Notes */}
             <div className="space-y-2">
               <Label htmlFor="offerNotes">Notes (Optional)</Label>
               <Textarea
@@ -195,11 +189,9 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
               <p className="text-xs text-muted-foreground">{offerNotes.length}/500</p>
             </div>
 
-            {/* Shipping Address */}
             <div className="space-y-4">
               <Label className="text-base font-semibold">Shipping Address</Label>
 
-              {/* Address Line 1 */}
               <div className="space-y-2">
                 <Label htmlFor="address1">Street Address *</Label>
                 <Input
@@ -213,7 +205,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                 />
               </div>
 
-              {/* Address Line 2 */}
               <div className="space-y-2">
                 <Label htmlFor="address2">Apartment, Suite, etc.</Label>
                 <Input
@@ -226,7 +217,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                 />
               </div>
 
-              {/* City & State */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="city">City *</Label>
@@ -252,7 +242,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                 </div>
               </div>
 
-              {/* ZIP Code */}
               <div className="space-y-2">
                 <Label htmlFor="zip">ZIP/Postal Code *</Label>
                 <Input
@@ -266,7 +255,6 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                 />
               </div>
 
-              {/* Country */}
               <div className="space-y-2">
                 <Label htmlFor="country">Country *</Label>
                 <Input
@@ -276,11 +264,12 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                   disabled
                   className="bg-muted cursor-not-allowed"
                 />
-                <p className="text-xs text-muted-foreground">We currently ship to the United States only</p>
+                <p className="text-xs text-muted-foreground">
+                  We currently ship to the United States only
+                </p>
               </div>
             </div>
 
-            {/* Submit Button */}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>

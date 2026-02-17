@@ -8,13 +8,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -22,8 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { prizeAPI } from '@/integrations/api/client';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { handleMutationError } from '@/lib/mutationHelpers';
-import type { PrizePurchaseRequest, ShippingAddress } from '@/types/prize';
-import { cn } from '@/lib/utils';
+import type { PrizePurchaseRequest } from '@/types/prize';
 
 interface PrizeCheckoutModalProps {
   isOpen: boolean;
@@ -87,7 +79,6 @@ export default function PrizeCheckoutModal({
     }
   }, [userAddress]);
 
-  // Always keep coinsAmount set to totalAmount (prize + shipping) for the "CadeCoins Only" display
   useEffect(() => {
     setCoinsAmount(totalAmount);
   }, [totalAmount]);
@@ -144,12 +135,7 @@ export default function PrizeCheckoutModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !formData.addressLine1 ||
-      !formData.city ||
-      !formData.state ||
-      !formData.zipCode
-    ) {
+    if (!formData.addressLine1 || !formData.city || !formData.state || !formData.zipCode) {
       toast({
         title: 'Error',
         description: 'Please fill in all required address fields',
@@ -212,7 +198,6 @@ export default function PrizeCheckoutModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Price Information */}
           <div className="bg-muted p-4 rounded-lg">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -235,11 +220,9 @@ export default function PrizeCheckoutModal({
             </p>
           </div>
 
-          {/* Payment Method Selection */}
           <div className="space-y-3">
             <Label className="text-base font-semibold">Payment Method</Label>
             <div className="grid grid-cols-1 gap-3">
-              {/* Coins Only */}
               <label
                 className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
                 style={{
@@ -265,7 +248,6 @@ export default function PrizeCheckoutModal({
                 </div>
               </label>
 
-              {/* USD Only */}
               <label
                 className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
                 style={{
@@ -286,7 +268,6 @@ export default function PrizeCheckoutModal({
                 </div>
               </label>
 
-              {/* Combined */}
               <label
                 className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
                 style={{
@@ -311,7 +292,6 @@ export default function PrizeCheckoutModal({
             </div>
           </div>
 
-          {/* Combined Payment Breakdown */}
           {paymentMethod === 'combined' && (
             <div className="space-y-3 p-4 bg-muted rounded-lg">
               <div className="space-y-2">
@@ -331,7 +311,6 @@ export default function PrizeCheckoutModal({
                       )
                     );
                     setCombinedCoinsAmount(newCoinsAmount);
-                    // Automatically update USD to pay the remaining amount
                     const remaining = prizeAmount - newCoinsAmount;
                     setUsdAmount(parseFloat((remaining / COINS_TO_USD).toFixed(2)));
                   }}
@@ -368,7 +347,6 @@ export default function PrizeCheckoutModal({
             </div>
           )}
 
-          {/* Shipping Address */}
           <div className="space-y-4">
             <Label className="text-base font-semibold">Shipping Address</Label>
 
@@ -379,7 +357,6 @@ export default function PrizeCheckoutModal({
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Address Line 1 */}
                 <div className="space-y-2">
                   <Label htmlFor="address1">Street Address *</Label>
                   <Input
@@ -391,7 +368,6 @@ export default function PrizeCheckoutModal({
                   />
                 </div>
 
-                {/* Address Line 2 */}
                 <div className="space-y-2">
                   <Label htmlFor="address2">Apartment, Suite, etc.</Label>
                   <Input
@@ -402,7 +378,6 @@ export default function PrizeCheckoutModal({
                   />
                 </div>
 
-                {/* City & State */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City *</Label>
@@ -426,7 +401,6 @@ export default function PrizeCheckoutModal({
                   </div>
                 </div>
 
-                {/* ZIP Code */}
                 <div className="space-y-2">
                   <Label htmlFor="zip">ZIP/Postal Code *</Label>
                   <Input
@@ -438,7 +412,6 @@ export default function PrizeCheckoutModal({
                   />
                 </div>
 
-                {/* Country */}
                 <div className="space-y-2">
                   <Label htmlFor="country">Country *</Label>
                   <Input
@@ -448,10 +421,11 @@ export default function PrizeCheckoutModal({
                     disabled
                     className="bg-muted cursor-not-allowed"
                   />
-                  <p className="text-xs text-muted-foreground">We currently ship to the United States only</p>
+                  <p className="text-xs text-muted-foreground">
+                    We currently ship to the United States only
+                  </p>
                 </div>
 
-                {/* Order Summary */}
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
@@ -465,7 +439,6 @@ export default function PrizeCheckoutModal({
                   </AlertDescription>
                 </Alert>
 
-                {/* Submit Button */}
                 <Button
                   type="submit"
                   className="w-full"
