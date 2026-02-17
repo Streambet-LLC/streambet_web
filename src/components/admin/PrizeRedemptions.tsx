@@ -238,8 +238,11 @@ export const PrizeRedemptions = () => {
                   <TableCell>
                     {redemption.paymentMethod ? (
                       <div className="flex flex-col text-sm">
-                        <span className="font-medium capitalize">
-                          {redemption.paymentMethod.replace(/_/g, ' ')}
+                        <span className="font-medium">
+                          {redemption.paymentMethod === 'usd'
+                            ? 'USD'
+                            : redemption.paymentMethod.replace(/_/g, ' ').charAt(0).toUpperCase() +
+                              redemption.paymentMethod.replace(/_/g, ' ').slice(1)}
                         </span>
                         {redemption.paymentMethod !== 'usd' && redemption.coinsDeducted ? (
                           <span className="text-xs text-muted-foreground">

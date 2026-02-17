@@ -68,14 +68,17 @@ export default function Prizes() {
     return 'slab';
   };
 
-  const displayPrizes: PrizeDisplay[] = (tiers || []).map(prize => ({
-    id: prize.id,
-    name: prize.name,
-    description: prize.description || undefined,
-    imageUrl: prize.imageUrl || undefined,
-    category: mapCategory(prize),
-    amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
-  }));
+  const displayPrizes: PrizeDisplay[] = (tiers || [])
+    .filter(prize => prize.stock > 0) // Filter out items with zero stock
+    .map(prize => ({
+      id: prize.id,
+      name: prize.name,
+      description: prize.description || undefined,
+      imageUrl: prize.imageUrl || undefined,
+      category: mapCategory(prize),
+      amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
+      stock: prize.stock,
+    }));
 
   return (
     <MainLayout>

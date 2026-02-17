@@ -13,6 +13,8 @@ export interface PrizeConfiguration {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  category: 'slab' | 'sealed';
+  stock: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -24,22 +26,24 @@ export interface PrizeConfiguration {
  * DTO for creating a new prize tier
  */
 export interface CreatePrizeTierRequest {
-  prizeTier: number;
   amount: number;
   name: string;
   description?: string;
   imageUrl?: string;
+  category: 'slab' | 'sealed';
+  stock: number;
 }
 
 /**
  * DTO for updating an existing prize tier
  */
 export interface UpdatePrizeTierRequest {
-  prizeTier: number;
   amount: number;
   name: string;
   description?: string;
   imageUrl?: string;
+  category: 'slab' | 'sealed';
+  stock: number;
 }
 
 /**

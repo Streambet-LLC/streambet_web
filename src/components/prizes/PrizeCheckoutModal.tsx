@@ -102,7 +102,12 @@ export default function PrizeCheckoutModal({
     }
   }, [paymentMethod, prizeAmount, userCadeCoins]);
 
-  const displayCoinsAmount = paymentMethod === 'combined' ? combinedCoinsAmount : coinsAmount;
+  const displayCoinsAmount =
+    paymentMethod === 'combined'
+      ? combinedCoinsAmount
+      : paymentMethod === 'coins'
+        ? coinsAmount
+        : 0;
   const totalPrice = displayCoinsAmount / COINS_TO_USD + usdAmount;
   const hasEnoughCoins = userCadeCoins >= coinsAmount;
   const createOrderMutation = useMutation({
@@ -110,6 +115,7 @@ export default function PrizeCheckoutModal({
     onSuccess: response => {
       queryClient.invalidateQueries({ queryKey: ['userOrders'] });
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
 
       if (response.stripeSessionUrl) {
         window.location.href = response.stripeSessionUrl;
@@ -168,7 +174,12 @@ export default function PrizeCheckoutModal({
       return;
     }
 
-    const finalCoinsAmount = paymentMethod === 'combined' ? combinedCoinsAmount : coinsAmount;
+    const finalCoinsAmount =
+      paymentMethod === 'combined'
+        ? combinedCoinsAmount
+        : paymentMethod === 'coins'
+          ? coinsAmount
+          : 0;
     const finalTotalPrice = finalCoinsAmount / COINS_TO_USD + usdAmount;
 
     createOrderMutation.mutate({
@@ -296,17 +307,19 @@ export default function PrizeCheckoutModal({
                   min="0"
                   max={Math.min(userCadeCoins, prizeAmount)}
                   value={combinedCoinsAmount}
-                  onChange={e =>
-                    setCombinedCoinsAmount(
-                      Math.max(
-                        0,
-                        Math.min(
-                          Math.floor(Number(e.target.value)),
-                          Math.min(userCadeCoins, prizeAmount)
-                        )
+                  onChange={e => {
+                    const newCoinsAmount = Math.max(
+                      0,
+                      Math.min(
+                        Math.floor(Number(e.target.value)),
+                        Math.min(userCadeCoins, prizeAmount)
                       )
-                    )
-                  }
+                    );
+                    setCombinedCoinsAmount(newCoinsAmount);
+                    // Automatically update USD to pay the remaining amount
+                    const remaining = prizeAmount - newCoinsAmount;
+                    setUsdAmount(parseFloat((remaining / COINS_TO_USD).toFixed(2)));
+                  }}
                   placeholder="Amount in coins"
                 />
               </div>
@@ -459,7 +472,7 @@ export default function PrizeCheckoutModal({
                     `Need ${coinsAmount - userCadeCoins} more CadeCoins!`
                   ) : paymentMethod === 'coins' ? (
                     `Complete Purchase - ${coinsAmount.toLocaleString()} CadeCoins`
-                  ) : paymentMethod === 'combined' ? (
+                  ) : paymentMethod === 'usd' ? (
                     `Complete Purchase - $${usdAmount.toFixed(2)}`
                   ) : (
                     `Complete Purchase - $${(combinedCoinsAmount / COINS_TO_USD + usdAmount).toFixed(2)}`

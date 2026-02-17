@@ -4,13 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
 import { handleMutationError } from '@/lib/mutationHelpers';
 import { Loader2, Plus, Trash2, X, Edit, AlertCircle } from 'lucide-react';
-import { PrizeConfiguration as PrizeTier, CreatePrizeTierRequest, UpdatePrizeTierRequest } from '@/types/prize';
+import {
+  PrizeConfiguration as PrizeTier,
+  CreatePrizeTierRequest,
+  UpdatePrizeTierRequest,
+} from '@/types/prize';
 import PhotoCropper from '../PhotoCropper';
 import { useImageCropper } from '@/hooks/useImageCropper';
 import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
@@ -43,7 +54,7 @@ export const PrizeConfiguration = () => {
   // Image upload hook
   const imageUpload = useImageCropper({
     checkNSFW: false,
-    onError: (error) => setImageError(error),
+    onError: error => setImageError(error),
   });
 
   // Drag and drop state
@@ -56,26 +67,28 @@ export const PrizeConfiguration = () => {
   const [deletingTier, setDeletingTier] = useState<PrizeTier | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
-  
+
   // Validation state
   const [validationError, setValidationError] = useState<string>('');
 
   // Form state
   const [formData, setFormData] = useState<CreatePrizeTierRequest>({
-    prizeTier: 1,
     amount: 500,
     name: '',
     description: '',
     imageUrl: '',
+    category: 'slab',
+    stock: 0,
   });
 
   const resetForm = () => {
     setFormData({
-      prizeTier: 1,
       amount: 500,
       name: '',
       description: '',
       imageUrl: '',
+      category: 'slab',
+      stock: 0,
     });
     setValidationError('');
     imageUpload.clearImage();
@@ -115,7 +128,7 @@ export const PrizeConfiguration = () => {
     tierNumber: number,
     existingTiers: PrizeTier[]
   ): { isValid: boolean; error?: string } => {
-    if (existingTiers.some((t) => t.prizeTier === tierNumber)) {
+    if (existingTiers.some(t => t.prizeTier === tierNumber)) {
       return { isValid: false, error: `Tier ${tierNumber} already exists` };
     }
     return { isValid: true };
@@ -126,7 +139,7 @@ export const PrizeConfiguration = () => {
     amount: number,
     existingTiers: PrizeTier[]
   ): { isValid: boolean; error?: string } => {
-    if (existingTiers.some((t) => Number(t.amount) === amount)) {
+    if (existingTiers.some(t => Number(t.amount) === amount)) {
       return {
         isValid: false,
         error: `A prize with ${amount.toLocaleString('en-US')} coins already exists`,
@@ -135,70 +148,16 @@ export const PrizeConfiguration = () => {
     return { isValid: true };
   };
 
-  // Validate amount is greater than all lower tier amounts
-  const isAmountGreaterThanLowerTiers = (
-    tierNumber: number,
-    amount: number,
-    existingTiers: PrizeTier[]
-  ): { isValid: boolean; error?: string } => {
-    const lowerTiers = existingTiers.filter((t) => t.prizeTier < tierNumber);
-    
-    for (const tier of lowerTiers) {
-      if (Number(tier.amount) >= amount) {
-        return {
-          isValid: false,
-          error: `Tier ${tierNumber} amount (${amount.toLocaleString('en-US')}) must be greater than Tier ${tier.prizeTier} (${Number(tier.amount).toLocaleString('en-US')})`,
-        };
-      }
-    }
-    return { isValid: true };
-  };
-
-  // Validate amount is less than all higher tier amounts
-  const isAmountLessThanHigherTiers = (
-    tierNumber: number,
-    amount: number,
-    existingTiers: PrizeTier[]
-  ): { isValid: boolean; error?: string } => {
-    const higherTiers = existingTiers.filter((t) => t.prizeTier > tierNumber);
-    
-    for (const tier of higherTiers) {
-      if (Number(tier.amount) <= amount) {
-        return {
-          isValid: false,
-          error: `Tier ${tierNumber} amount (${amount.toLocaleString('en-US')}) must be less than Tier ${tier.prizeTier} (${Number(tier.amount).toLocaleString('en-US')})`,
-        };
-      }
-    }
-    return { isValid: true };
-  };
-
-  // Main orchestration function - runs all validations
-  const validateTierOrder = (
-    tierNumber: number,
+  // Main validation function - just check amount uniqueness
+  const validatePrizeAmount = (
     amount: number,
     existingTiers: PrizeTier[],
     editingTierId?: string
   ): { isValid: boolean; error?: string } => {
     // Filter out the tier being edited
-    const otherTiers = existingTiers.filter((t) => t.id !== editingTierId);
+    const otherTiers = existingTiers.filter(t => t.id !== editingTierId);
 
-    // Run validations in order, returning first failure
-    const validations = [
-      () => isTierNumberUnique(tierNumber, otherTiers),
-      () => isAmountUnique(amount, otherTiers),
-      () => isAmountGreaterThanLowerTiers(tierNumber, amount, otherTiers),
-      () => isAmountLessThanHigherTiers(tierNumber, amount, otherTiers),
-    ];
-
-    for (const validate of validations) {
-      const result = validate();
-      if (!result.isValid) {
-        return result;
-      }
-    }
-
-    return { isValid: true };
+    return isAmountUnique(amount, otherTiers);
   };
 
   // Create mutation
@@ -209,12 +168,12 @@ export const PrizeConfiguration = () => {
       queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
       toast({
         title: 'Success!',
-        description: 'Prize tier created successfully',
+        description: 'Item created successfully',
       });
       setIsCreateOpen(false);
       resetForm();
     },
-    onError: (error) => handleMutationError(error, 'Failed to create prize tier'),
+    onError: error => handleMutationError(error, 'Failed to create item'),
   });
 
   // Update mutation
@@ -226,12 +185,12 @@ export const PrizeConfiguration = () => {
       queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
       toast({
         title: 'Success!',
-        description: 'Prize tier updated successfully',
+        description: 'Item updated successfully',
       });
       setEditingTier(null);
       resetForm();
     },
-    onError: (error) => handleMutationError(error, 'Failed to update prize tier'),
+    onError: error => handleMutationError(error, 'Failed to update item'),
   });
 
   // Delete mutation
@@ -242,25 +201,21 @@ export const PrizeConfiguration = () => {
       queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
       toast({
         title: 'Success!',
-        description: 'Prize tier deleted successfully',
+        description: 'Item deleted successfully',
       });
       setDeletingTier(null);
     },
-    onError: (error) => handleMutationError(error, 'Failed to delete prize tier'),
+    onError: error => handleMutationError(error, 'Failed to delete item'),
   });
 
   const handleCreate = async () => {
     if (!formData.name.trim()) {
-      setValidationError('Prize name is required');
+      setValidationError('Item name is required');
       return;
     }
 
-    // Validate tier ordering
-    const validation = validateTierOrder(
-      formData.prizeTier,
-      formData.amount,
-      tiers || []
-    );
+    // Validate amount is unique
+    const validation = validatePrizeAmount(formData.amount, tiers || []);
 
     if (!validation.isValid) {
       setValidationError(validation.error || 'Validation failed');
@@ -278,11 +233,11 @@ export const PrizeConfiguration = () => {
     }
 
     setValidationError('');
-    
+
     try {
       // Upload image if new file selected
       const imageUrl = await handleImageUpload();
-      
+
       createMutation.mutate({
         ...formData,
         imageUrl,
@@ -291,7 +246,7 @@ export const PrizeConfiguration = () => {
       toast({
         variant: 'destructive',
         title: 'Error uploading image',
-        description: getMessage(error) || 'Failed to upload prize image. Please try again.',
+        description: getMessage(error) || 'Failed to upload item image. Please try again.',
       });
     }
   };
@@ -299,17 +254,12 @@ export const PrizeConfiguration = () => {
   const handleUpdate = async () => {
     if (!editingTier) return;
     if (!formData.name.trim()) {
-      setValidationError('Prize name is required');
+      setValidationError('Item name is required');
       return;
     }
 
-    // Validate tier ordering
-    const validation = validateTierOrder(
-      formData.prizeTier,
-      formData.amount,
-      tiers || [],
-      editingTier.id
-    );
+    // Validate amount is unique
+    const validation = validatePrizeAmount(formData.amount, tiers || [], editingTier.id);
 
     if (!validation.isValid) {
       setValidationError(validation.error || 'Validation failed');
@@ -327,11 +277,11 @@ export const PrizeConfiguration = () => {
     }
 
     setValidationError('');
-    
+
     try {
       // Upload image if new file selected
       const imageUrl = await handleImageUpload();
-      
+
       updateMutation.mutate({
         id: editingTier.id,
         payload: {
@@ -343,18 +293,19 @@ export const PrizeConfiguration = () => {
       toast({
         variant: 'destructive',
         title: 'Error uploading image',
-        description: getMessage(error) || 'Failed to upload prize image. Please try again.',
+        description: getMessage(error) || 'Failed to upload item image. Please try again.',
       });
     }
   };
 
   const handleEdit = (tier: PrizeTier) => {
     setFormData({
-      prizeTier: tier.prizeTier,
       amount: tier.amount,
       name: tier.name,
       description: tier.description || '',
       imageUrl: tier.imageUrl || '',
+      category: tier.category,
+      stock: tier.stock,
     });
     imageUpload.clearImage();
     setEditingTier(tier);
@@ -369,11 +320,11 @@ export const PrizeConfiguration = () => {
       setIsUploading(true);
       const response = await api.auth.uploadImage(imageUpload.selectedFile, 'thumbnail');
       const url = response?.data?.Key;
-      
+
       if (!url || typeof url !== 'string') {
         throw new Error('Invalid upload response: missing image URL');
       }
-      
+
       return url;
     } catch (error) {
       Bugsnag.notify(error);
@@ -401,14 +352,12 @@ export const PrizeConfiguration = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Prize Configuration</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Manage prize tiers that users can achieve
-              </p>
+              <CardTitle>Shop Configuration</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">Manage items in the shop</p>
             </div>
             <Button onClick={() => setIsCreateOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Tier
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline ml-2">Add Item</span>
             </Button>
           </div>
         </CardHeader>
@@ -422,32 +371,47 @@ export const PrizeConfiguration = () => {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {activeTiers
-                .sort((a, b) => a.prizeTier - b.prizeTier)
-                .map((tier) => (
-                  <Card key={tier.id} className="border-2">
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col">
-                        {/* Content section */}
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
-                              {tier.prizeTier}
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-lg">{tier.name}</h3>
+            <div className="space-y-6">
+              {/* Slab Category Section */}
+              {activeTiers.some(t => t.category === 'slab') && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-primary">Slab Prizes</h3>
+                  <div className="space-y-3">
+                    {activeTiers
+                      .filter(t => t.category === 'slab')
+                      .sort((a, b) => a.prizeTier - b.prizeTier)
+                      .map(tier => (
+                        <div
+                          key={tier.id}
+                          className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
+                        >
+                          {/* Left side - prize info */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base mb-1">{tier.name}</h3>
+                            <div className="flex items-center gap-3 flex-wrap">
                               <p className="text-sm text-muted-foreground">
                                 {tier.amount.toLocaleString('en-US')} coins
                               </p>
+                              <span
+                                className={`text-xs px-2 py-1 rounded font-medium ${
+                                  tier.stock > 0
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100'
+                                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100'
+                                }`}
+                              >
+                                Stock: {tier.stock}
+                              </span>
                             </div>
+                            {tier.description && (
+                              <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
+                                {tier.description}
+                              </p>
+                            )}
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEdit(tier)}
-                            >
+
+                          {/* Right side - actions */}
+                          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                            <Button size="sm" variant="outline" onClick={() => handleEdit(tier)}>
                               <Edit className="w-4 h-4" />
                             </Button>
                             <Button
@@ -459,26 +423,66 @@ export const PrizeConfiguration = () => {
                             </Button>
                           </div>
                         </div>
-                        {tier.description && (
-                          <p className="text-sm text-muted-foreground mb-4">
-                            {tier.description}
-                          </p>
-                        )}
-                        
-                        {/* Image section */}
-                        {tier.imageUrl && (
-                          <div className="w-full aspect-[16/9] border-t pt-2 md:pt-4">
-                            <img
-                              src={getThumbnailUrl(tier.imageUrl)}
-                              alt={tier.name}
-                              className="w-full h-full rounded object-cover"
-                            />
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sealed Category Section */}
+              {activeTiers.some(t => t.category === 'sealed') && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 text-primary">Sealed Prizes</h3>
+                  <div className="space-y-3">
+                    {activeTiers
+                      .filter(t => t.category === 'sealed')
+                      .sort((a, b) => a.prizeTier - b.prizeTier)
+                      .map(tier => (
+                        <div
+                          key={tier.id}
+                          className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
+                        >
+                          {/* Left side - prize info */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base mb-1">{tier.name}</h3>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <p className="text-sm text-muted-foreground">
+                                {tier.amount.toLocaleString('en-US')} coins
+                              </p>
+                              <span
+                                className={`text-xs px-2 py-1 rounded font-medium ${
+                                  tier.stock > 0
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100'
+                                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100'
+                                }`}
+                              >
+                                Stock: {tier.stock}
+                              </span>
+                            </div>
+                            {tier.description && (
+                              <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
+                                {tier.description}
+                              </p>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+
+                          {/* Right side - actions */}
+                          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                            <Button size="sm" variant="outline" onClick={() => handleEdit(tier)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setDeletingTier(tier)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -487,7 +491,7 @@ export const PrizeConfiguration = () => {
       {/* Create/Edit Dialog */}
       <Dialog
         open={isCreateOpen || editingTier !== null}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           if (!open) {
             setIsCreateOpen(false);
             setEditingTier(null);
@@ -495,35 +499,18 @@ export const PrizeConfiguration = () => {
           }
         }}
       >
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingTier ? 'Edit Prize Tier' : 'Create Prize Tier'}
-            </DialogTitle>
+            <DialogTitle>{editingTier ? 'Edit Item' : 'Create Item'}</DialogTitle>
             <DialogDescription>
               {editingTier
-                ? 'Update the prize tier details. This will create a new version and deactivate the old one.'
-                : 'Add a new prize tier for users to achieve.'}
+                ? 'Update the item details. This will create a new version and deactivate the old one.'
+                : 'Add a new item for users to purchase.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="prizeTier">
-                Tier Number <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="prizeTier"
-                type="number"
-                min="1"
-                value={formData.prizeTier}
-                onChange={(e) => {
-                  setFormData({ ...formData, prizeTier: parseInt(e.target.value) || 1 });
-                  setValidationError('');
-                }}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">
+          <div className="space-y-5 py-4">
+            <div className="space-y-2.5">
+              <Label htmlFor="amount" className="text-base font-medium">
                 Coin Amount <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -531,61 +518,104 @@ export const PrizeConfiguration = () => {
                 type="number"
                 min="1"
                 value={formData.amount}
-                onChange={(e) => {
+                onChange={e => {
                   setFormData({ ...formData, amount: parseInt(e.target.value) || 0 });
                   setValidationError('');
                 }}
+                className="h-12 text-base"
+                placeholder="0"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="name">
+            <div className="space-y-2.5">
+              <Label htmlFor="name" className="text-base font-medium">
                 Prize Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => {
+                onChange={e => {
                   setFormData({ ...formData, name: e.target.value });
                   setValidationError('');
                 }}
+                className="h-12 text-base"
                 placeholder="e.g., Collector"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+            <div className="space-y-2.5">
+              <Label htmlFor="category" className="text-base font-medium">
+                Prize Category <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.category}
+                onValueChange={value => {
+                  setFormData({ ...formData, category: value as 'slab' | 'sealed' });
+                  setValidationError('');
+                }}
+              >
+                <SelectTrigger id="category" className="h-12 text-base">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="slab">Slab</SelectItem>
+                  <SelectItem value="sealed">Sealed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2.5">
+              <Label htmlFor="stock" className="text-base font-medium">
+                Stock Quantity
+              </Label>
+              <Input
+                id="stock"
+                type="number"
+                min="0"
+                value={formData.stock}
+                onChange={e => {
+                  setFormData({ ...formData, stock: parseInt(e.target.value) || 0 });
+                  setValidationError('');
+                }}
+                className="h-12 text-base"
+                placeholder="0 = unlimited"
+              />
+            </div>
+            <div className="space-y-2.5">
+              <Label htmlFor="description" className="text-base font-medium">
+                Description
+              </Label>
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Prize description..."
-                rows={3}
+                rows={4}
+                className="text-base resize-none"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Prize Image</Label>
-              {(imageUpload.previewUrl || (editingTier && formData.imageUrl && !imageUpload.selectedFile)) ? (
-                <div className="relative">
+            <div className="space-y-2.5">
+              <Label className="text-base font-medium">Prize Image</Label>
+              {imageUpload.previewUrl ||
+              (editingTier && formData.imageUrl && !imageUpload.selectedFile) ? (
+                <div className="relative rounded-lg overflow-hidden">
                   <img
                     src={imageUpload.previewUrl || getThumbnailUrl(formData.imageUrl)}
                     alt="Preview"
-                    className="w-full aspect-[16/9] rounded object-cover"
+                    className="w-full aspect-[16/9] object-cover"
                   />
                   <Button
                     size="icon"
                     variant="destructive"
-                    className="absolute -top-2 -right-2 h-6 w-6"
+                    className="absolute top-2 right-2 h-10 w-10 shadow-lg"
                     onClick={() => {
                       imageUpload.clearImage();
                       setFormData({ ...formData, imageUrl: '' });
                     }}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-5 w-5" />
                   </Button>
                 </div>
               ) : (
                 <div
-                  className={`w-full flex flex-col items-center justify-center bg-secondary rounded-xl py-4 px-2 cursor-pointer border border-border ${isDragging ? 'ring-2 ring-primary' : ''} ${imageError ? 'border-destructive' : ''}`}
-                  style={{ minHeight: 120 }}
+                  className={`w-full flex flex-col items-center justify-center bg-secondary rounded-lg py-8 px-4 cursor-pointer border-2 border-dashed transition-colors ${isDragging ? 'ring-2 ring-primary border-primary' : 'border-border'} ${imageError ? 'border-destructive' : ''}`}
                   onClick={imageUpload.isValidating ? undefined : handleUploadClick}
                   onDrop={imageUpload.isValidating ? undefined : handleDrop}
                   onDragOver={imageUpload.isValidating ? undefined : handleDragOver}
@@ -599,38 +629,26 @@ export const PrizeConfiguration = () => {
                     onChange={handleFileInputChange}
                     disabled={imageUpload.isValidating}
                   />
-                  <div className="flex flex-col items-center">
-                    <div className="flex items-center justify-center mb-1 relative">
-                      <div
-                        className="rounded-full bg-background border-4 border-border flex items-center justify-center"
-                        style={{ width: 44, height: 44 }}
-                      >
-                        {imageUpload.isValidating ? (
-                          <Loader2 className="h-6 w-6 animate-spin text-white" />
-                        ) : (
-                          <img
-                            src="/icons/cloud_upload.png"
-                            alt="Upload"
-                            style={{ width: 28, height: 19, objectFit: 'contain', display: 'block' }}
-                          />
-                        )}
-                      </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="rounded-full bg-background border-4 border-border flex items-center justify-center p-3">
+                      {imageUpload.isValidating ? (
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      ) : (
+                        <img src="/icons/cloud_upload.png" alt="Upload" className="w-8 h-8" />
+                      )}
                     </div>
-                    <span className="text-sm text-center text-muted-foreground" style={{ lineHeight: '1.7' }}>
-                      <span className="text-primary font-medium">Click to upload</span> or drag and drop
-                      <br />
-                      <span className="text-muted-foreground text-[12px]">JPEG, PNG, or WebP</span>
-                      <br />
-                      <span className="text-muted-foreground text-[10px]">Recommended aspect ratio: 16:9</span>
-                      <br />
-                      <span className="text-muted-foreground text-[10px]">Resolution: 1920x1080px</span>
-                    </span>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-primary">Click to upload</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">or drag and drop</p>
+                      <p className="text-xs text-muted-foreground mt-2">JPEG, PNG, or WebP</p>
+                      <p className="text-xs text-muted-foreground">
+                        Aspect ratio 16:9 • 1920x1080px
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
-              {imageError && (
-                <p className="text-sm text-red-500">{imageError}</p>
-              )}
+              {imageError && <p className="text-sm text-red-500 mt-2">{imageError}</p>}
             </div>
           </div>
           {imageUpload.fileToCrop && (
@@ -655,7 +673,7 @@ export const PrizeConfiguration = () => {
               <p className="text-sm text-destructive">{validationError}</p>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-2 pt-4">
             <Button
               variant="outline"
               onClick={() => {
@@ -663,12 +681,14 @@ export const PrizeConfiguration = () => {
                 setEditingTier(null);
                 resetForm();
               }}
+              className="h-12 sm:h-10 text-base sm:text-sm"
             >
               Cancel
             </Button>
             <Button
               onClick={editingTier ? handleUpdate : handleCreate}
               disabled={isUploading || createMutation.isPending || updateMutation.isPending}
+              className="h-12 sm:h-10 text-base sm:text-sm"
             >
               {(isUploading || createMutation.isPending || updateMutation.isPending) && (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -685,8 +705,8 @@ export const PrizeConfiguration = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Prize Tier</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deletingTier?.name}&quot;? This will
-              deactivate the tier but preserve it in history for data integrity.
+              Are you sure you want to delete &quot;{deletingTier?.name}&quot;? This will deactivate
+              the tier but preserve it in history for data integrity.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -699,9 +719,7 @@ export const PrizeConfiguration = () => {
               }}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending && (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              )}
+              {deleteMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
