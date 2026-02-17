@@ -82,7 +82,7 @@ export default function PrizeCheckoutModal({
         city: userAddress.city || '',
         state: userAddress.state || '',
         zipCode: userAddress.zipCode || '',
-        country: userAddress.country || '',
+        country: 'United States',
       });
     }
   }, [userAddress]);
@@ -148,8 +148,7 @@ export default function PrizeCheckoutModal({
       !formData.addressLine1 ||
       !formData.city ||
       !formData.state ||
-      !formData.zipCode ||
-      !formData.country
+      !formData.zipCode
     ) {
       toast({
         title: 'Error',
@@ -444,11 +443,12 @@ export default function PrizeCheckoutModal({
                   <Label htmlFor="country">Country *</Label>
                   <Input
                     id="country"
-                    value={formData.country}
-                    onChange={e => updateField('country', e.target.value)}
-                    placeholder="United States"
-                    required
+                    type="text"
+                    value="United States"
+                    disabled
+                    className="bg-muted cursor-not-allowed"
                   />
+                  <p className="text-xs text-muted-foreground">We currently ship to the United States only</p>
                 </div>
 
                 {/* Order Summary */}

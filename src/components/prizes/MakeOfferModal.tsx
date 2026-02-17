@@ -53,7 +53,7 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
     city: '',
     state: '',
     zipCode: '',
-    country: 'US',
+    country: 'United States',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,7 +107,7 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
         city: '',
         state: '',
         zipCode: '',
-        country: 'US',
+        country: 'United States',
       });
     } catch (error: any) {
       console.error('Failed to submit offer:', error);
@@ -271,13 +271,12 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                 <Label htmlFor="country">Country *</Label>
                 <Input
                   id="country"
-                  value={shippingAddress.country}
-                  onChange={e =>
-                    setShippingAddress({ ...shippingAddress, country: e.target.value })
-                  }
-                  placeholder="United States"
-                  required
+                  type="text"
+                  value="United States"
+                  disabled
+                  className="bg-muted cursor-not-allowed"
                 />
+                <p className="text-xs text-muted-foreground">We currently ship to the United States only</p>
               </div>
             </div>
 
