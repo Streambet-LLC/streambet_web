@@ -57,6 +57,9 @@ export default function PrizeCheckoutModal({
 
   const [paymentMethod, setPaymentMethod] = useState<'coins' | 'usd' | 'combined'>('coins');
   const [coinsAmount, setCoinsAmount] = useState(userCadeCoins >= prizeAmount ? prizeAmount : 0);
+  const [combinedCoinsAmount, setCombinedCoinsAmount] = useState(
+    userCadeCoins >= prizeAmount ? prizeAmount : 0
+  );
   const [usdAmount, setUsdAmount] = useState(0);
 
   const [formData, setFormData] = useState({
@@ -81,18 +84,26 @@ export default function PrizeCheckoutModal({
     }
   }, [userAddress]);
 
+  // Always keep coinsAmount set to prizeAmount for the "CadeCoins Only" display
+  useEffect(() => {
+    setCoinsAmount(prizeAmount);
+  }, [prizeAmount]);
+
   useEffect(() => {
     const method = paymentMethod as string;
     if (method === 'coins') {
-      setCoinsAmount(Math.min(prizeAmount, userCadeCoins));
       setUsdAmount(0);
     } else if (method === 'usd') {
-      setCoinsAmount(0);
       setUsdAmount(parseFloat((prizeAmount / COINS_TO_USD).toFixed(2)));
+    } else if (method === 'combined') {
+      const maxCoins = Math.min(userCadeCoins, prizeAmount);
+      setCombinedCoinsAmount(maxCoins);
+      setUsdAmount(parseFloat(((prizeAmount - maxCoins) / COINS_TO_USD).toFixed(2)));
     }
   }, [paymentMethod, prizeAmount, userCadeCoins]);
 
-  const totalPrice = coinsAmount / COINS_TO_USD + usdAmount;
+  const displayCoinsAmount = paymentMethod === 'combined' ? combinedCoinsAmount : coinsAmount;
+  const totalPrice = displayCoinsAmount / COINS_TO_USD + usdAmount;
   const hasEnoughCoins = userCadeCoins >= coinsAmount;
   const createOrderMutation = useMutation({
     mutationFn: (data: PrizePurchaseRequest) => prizeAPI.createPrizeOrder(data),
@@ -139,7 +150,7 @@ export default function PrizeCheckoutModal({
       return;
     }
 
-    if (paymentMethod !== 'usd' && !hasEnoughCoins) {
+    if (paymentMethod === 'coins' && !hasEnoughCoins) {
       toast({
         title: 'Error',
         description: `Insufficient CadeCoins. You need ${coinsAmount}, but have ${userCadeCoins}`,
@@ -148,7 +159,7 @@ export default function PrizeCheckoutModal({
       return;
     }
 
-    if (paymentMethod === 'combined' && (coinsAmount === 0 || usdAmount === 0)) {
+    if (paymentMethod === 'combined' && (combinedCoinsAmount === 0 || usdAmount === 0)) {
       toast({
         title: 'Error',
         description: 'For combined payment, both coins and USD amounts must be greater than 0',
@@ -156,6 +167,9 @@ export default function PrizeCheckoutModal({
       });
       return;
     }
+
+    const finalCoinsAmount = paymentMethod === 'combined' ? combinedCoinsAmount : coinsAmount;
+    const finalTotalPrice = finalCoinsAmount / COINS_TO_USD + usdAmount;
 
     createOrderMutation.mutate({
       prizeConfigId: prizeId,
@@ -168,9 +182,9 @@ export default function PrizeCheckoutModal({
         country: formData.country,
       },
       paymentMethod,
-      coinsAmount,
+      coinsAmount: finalCoinsAmount,
       usdAmount,
-      totalPrice,
+      totalPrice: finalTotalPrice,
     });
   };
 
@@ -275,20 +289,15 @@ export default function PrizeCheckoutModal({
           {paymentMethod === 'combined' && (
             <div className="space-y-3 p-4 bg-muted rounded-lg">
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="coins">CadeCoins to Use</Label>
-                  <span className="text-sm text-muted-foreground">
-                    {(coinsAmount / COINS_TO_USD).toFixed(2)} USD
-                  </span>
-                </div>
+                <Label htmlFor="coins">CadeCoins to Use</Label>
                 <Input
                   id="coins"
                   type="number"
                   min="0"
                   max={Math.min(userCadeCoins, prizeAmount)}
-                  value={coinsAmount}
+                  value={combinedCoinsAmount}
                   onChange={e =>
-                    setCoinsAmount(
+                    setCombinedCoinsAmount(
                       Math.max(
                         0,
                         Math.min(
@@ -314,7 +323,7 @@ export default function PrizeCheckoutModal({
                   step="0.01"
                   value={usdAmount}
                   onChange={e => {
-                    const remaining = prizeAmount - coinsAmount;
+                    const remaining = prizeAmount - combinedCoinsAmount;
                     const maxUSD = remaining / COINS_TO_USD;
                     setUsdAmount(Math.max(0, Math.min(Number(e.target.value), maxUSD)));
                   }}
@@ -325,7 +334,7 @@ export default function PrizeCheckoutModal({
               <div className="pt-2 border-t">
                 <div className="flex justify-between items-center font-semibold">
                   <span>Total:</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>${(combinedCoinsAmount / COINS_TO_USD + usdAmount).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -417,11 +426,13 @@ export default function PrizeCheckoutModal({
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    Total: ${totalPrice.toFixed(2)} •{' '}
-                    {paymentMethod === 'coins' && 'Paid in full with CadeCoins'}
-                    {paymentMethod === 'usd' && 'Paid by card'}
-                    {paymentMethod === 'combined' &&
-                      `${coinsAmount.toLocaleString()} coins + $${usdAmount.toFixed(2)} card`}
+                    {paymentMethod === 'coins'
+                      ? `Total: ${coinsAmount.toLocaleString()} CadeCoins`
+                      : paymentMethod === 'usd'
+                        ? `Total: $${totalPrice.toFixed(2)} • Paid by card`
+                        : paymentMethod === 'combined'
+                          ? `Total: ${combinedCoinsAmount.toLocaleString()} coins + $${usdAmount.toFixed(2)} card`
+                          : ''}
                   </AlertDescription>
                 </Alert>
 
@@ -436,7 +447,7 @@ export default function PrizeCheckoutModal({
                     !formData.state ||
                     !formData.zipCode ||
                     !formData.country ||
-                    (paymentMethod !== 'usd' && !hasEnoughCoins)
+                    (paymentMethod === 'coins' && !hasEnoughCoins)
                   }
                 >
                   {createOrderMutation.isPending ? (
@@ -444,8 +455,14 @@ export default function PrizeCheckoutModal({
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Processing...
                     </>
+                  ) : paymentMethod === 'coins' && !hasEnoughCoins ? (
+                    `Need ${coinsAmount - userCadeCoins} more CadeCoins!`
+                  ) : paymentMethod === 'coins' ? (
+                    `Complete Purchase - ${coinsAmount.toLocaleString()} CadeCoins`
+                  ) : paymentMethod === 'combined' ? (
+                    `Complete Purchase - $${usdAmount.toFixed(2)}`
                   ) : (
-                    `Complete Purchase - $${totalPrice.toFixed(2)}`
+                    `Complete Purchase - $${(combinedCoinsAmount / COINS_TO_USD + usdAmount).toFixed(2)}`
                   )}
                 </Button>
               </form>

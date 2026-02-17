@@ -176,7 +176,7 @@ export const PrizeRedemptions = () => {
           </Label>
           <Select
             value={filterStatus}
-            onValueChange={(value) => {
+            onValueChange={value => {
               setFilterStatus(value as ShippingStatus | 'all');
               setCurrentPage(1); // Reset to first page when filter changes
             }}
@@ -204,18 +204,21 @@ export const PrizeRedemptions = () => {
                 <TableHead>Prize</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead>Payment Method</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Tracking</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {redemptions.map((redemption) => (
+              {redemptions.map(redemption => (
                 <TableRow key={redemption.id}>
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">{redemption.user?.username || 'Unknown'}</span>
-                      <span className="text-xs text-muted-foreground">{redemption.user?.email}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {redemption.user?.email}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -231,6 +234,27 @@ export const PrizeRedemptions = () => {
                   <TableCell className="capitalize">{redemption.prizeCategory}</TableCell>
                   <TableCell className="text-sm">
                     {format(new Date(redemption.dateRedeemed), 'MMM dd, yyyy')}
+                  </TableCell>
+                  <TableCell>
+                    {redemption.paymentMethod ? (
+                      <div className="flex flex-col text-sm">
+                        <span className="font-medium capitalize">
+                          {redemption.paymentMethod.replace(/_/g, ' ')}
+                        </span>
+                        {redemption.paymentMethod !== 'usd' && redemption.coinsDeducted ? (
+                          <span className="text-xs text-muted-foreground">
+                            {redemption.coinsDeducted.toLocaleString('en-US')} coins
+                          </span>
+                        ) : null}
+                        {redemption.usdCharged && (
+                          <span className="text-xs text-muted-foreground">
+                            ${redemption.usdCharged}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">-</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(redemption.shippingStatus)}>
@@ -327,7 +351,8 @@ export const PrizeRedemptions = () => {
               <div className="rounded-lg border p-3 bg-muted/50">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
-                    {selectedRedemption.user?.username} - {selectedRedemption.prizeConfiguration?.name}
+                    {selectedRedemption.user?.username} -{' '}
+                    {selectedRedemption.prizeConfiguration?.name}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Category: {selectedRedemption.prizeCategory}
@@ -340,7 +365,7 @@ export const PrizeRedemptions = () => {
                 <Label htmlFor="status">Shipping Status *</Label>
                 <Select
                   value={newStatus}
-                  onValueChange={(value) => setNewStatus(value as ShippingStatus)}
+                  onValueChange={value => setNewStatus(value as ShippingStatus)}
                 >
                   <SelectTrigger id="status">
                     <SelectValue />
@@ -361,7 +386,7 @@ export const PrizeRedemptions = () => {
                 <Input
                   id="tracking"
                   value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  onChange={e => setTrackingNumber(e.target.value)}
                   placeholder="1Z999AA10123456784"
                 />
               </div>
@@ -376,7 +401,7 @@ export const PrizeRedemptions = () => {
                     <SelectValue placeholder="Select carrier" />
                   </SelectTrigger>
                   <SelectContent>
-                    {SHIPPING_CARRIERS.map((carrier) => (
+                    {SHIPPING_CARRIERS.map(carrier => (
                       <SelectItem key={carrier} value={carrier}>
                         {carrier}
                       </SelectItem>
@@ -442,7 +467,9 @@ export const PrizeRedemptions = () => {
                   <Label className="text-xs text-muted-foreground">Street Address</Label>
                   <p className="font-medium">{selectedRedemption.user.address || 'Not provided'}</p>
                   {selectedRedemption.user.address2 && (
-                    <p className="text-sm text-muted-foreground mt-1">{selectedRedemption.user.address2}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {selectedRedemption.user.address2}
+                    </p>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -467,10 +494,7 @@ export const PrizeRedemptions = () => {
                 </div>
               </div>
 
-              <Button
-                onClick={() => setIsAddressDialogOpen(false)}
-                className="w-full"
-              >
+              <Button onClick={() => setIsAddressDialogOpen(false)} className="w-full">
                 Close
               </Button>
             </div>

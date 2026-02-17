@@ -1,15 +1,17 @@
 import { MainLayout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
-import { usePrizeTiers } from "@/hooks/usePrizeConfig"
-import { AlertCircle, Loader2, ShoppingCart } from 'lucide-react';
-import { getThumbnailUrl } from '@/utils/helper';
-import FeaturedBetCard from '@/components/FeaturedBetCard';
-import { Button } from '@/components/ui/button';
-import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
+import { usePrizeTiers } from '@/hooks/usePrizeConfig';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { prizeAPI } from '@/integrations/api/client';
 import { toast } from '@/hooks/use-toast';
+import {
+  PrizesByCategory,
+  PrizeCategoryType,
+  Prize as PrizeDisplay,
+} from '@/components/prizes/PrizesByCategory';
+import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
 
 export default function Prizes() {
   const { data: tiers, isLoading } = usePrizeTiers();
@@ -61,12 +63,25 @@ export default function Prizes() {
     window.history.replaceState({}, '', next.pathname + (next.search ? `?${next.search}` : ''));
   }, []);
 
+  const mapCategory = (prize: any): PrizeCategoryType => {
+    if (prize.category) return prize.category;
+    return 'slab';
+  };
+
+  const displayPrizes: PrizeDisplay[] = (tiers || []).map(prize => ({
+    id: prize.id,
+    name: prize.name,
+    description: prize.description || undefined,
+    imageUrl: prize.imageUrl || undefined,
+    category: mapCategory(prize),
+    amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
+  }));
+
   return (
     <MainLayout>
       <h2 className="text-xl font-semibold">Prizes</h2>
       <h2 className="text-sm text-gray-500 mb-4">
-        Purchase prizes with CadeCoins or USD, or a combination of both! Exchange rate: 50 coins =
-        $1
+        Purchase prizes with CadeCoins or USD, or a combination of both!
       </h2>
       {isLoading ? (
         <Card>
@@ -74,66 +89,23 @@ export default function Prizes() {
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </CardContent>
         </Card>
-      ) : tiers.length === 0 ? (
+      ) : displayPrizes.length === 0 ? (
         <div className="text-center py-12">
           <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">Coming soon!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {tiers
-            .sort((a, b) => a.prizeTier - b.prizeTier)
-            .map(tier => (
-              <FeaturedBetCard key={tier.id}>
-                <div className="p-6 flex flex-col h-full">
-                  {/* Content section */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
-                      {tier.prizeTier}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{tier.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {tier.amount.toLocaleString('en-US')} coins • $
-                        {(tier.amount / 50).toFixed(2)} USD
-                      </p>
-                    </div>
-                  </div>
-                  {tier.description && (
-                    <p className="text-sm text-muted-foreground mb-4">{tier.description}</p>
-                  )}
-
-                  {/* Image section */}
-                  {tier.imageUrl && (
-                    <div className="w-full aspect-[16/9] border-t pt-2 md:pt-4">
-                      <img
-                        src={getThumbnailUrl(tier.imageUrl)}
-                        alt={tier.name}
-                        className="w-full h-full rounded object-cover"
-                      />
-                    </div>
-                  )}
-
-                  {/* Purchase Button */}
-                  <Button
-                    className="mt-4 w-full gap-2"
-                    onClick={() =>
-                      setSelectedPrizeForCheckout({
-                        id: tier.id,
-                        name: tier.name,
-                        amount: tier.amount,
-                      })
-                    }
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    Buy Now
-                  </Button>
-                </div>
-              </FeaturedBetCard>
-            ))}
-        </div>
+        <PrizesByCategory
+          prizes={displayPrizes}
+          onPrizeClick={prize =>
+            setSelectedPrizeForCheckout({
+              id: prize.id,
+              name: prize.name,
+              amount: prize.amount ?? 0,
+            })
+          }
+        />
       )}
-
       {/* Checkout Modal */}
       {selectedPrizeForCheckout && (
         <PrizeCheckoutModal
