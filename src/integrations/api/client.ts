@@ -817,13 +817,44 @@ export const adminAPI = {
     return response.data;
   },
 
-  updateUserCurrency: async (payload: { userId: string; amount: number; currencyType: CurrencyType }) => {
+  updateUserCurrency: async (payload: {
+    userId: string;
+    amount: number;
+    currencyType: CurrencyType;
+  }) => {
     const response = await apiClient.patch(`/admin/coins`, payload);
     return response.data;
   },
 
   deleteUser: async (userId: any) => {
     const response = await apiClient.delete(`/admin/users/soft-delete/{userId}?userId=${userId}`);
+    return response.data;
+  },
+
+  // Get all prize orders
+  getPrizeOrders: async () => {
+    const response = await apiClient.get('/admin/prizes/orders');
+    return response.data;
+  },
+
+  // Counter a prize offer
+  counterPrizeOffer: async (
+    orderId: string,
+    data: { counterOfferAmount: number; offerNotes?: string }
+  ) => {
+    const response = await apiClient.patch(`/admin/prizes/orders/${orderId}/counter`, data);
+    return response.data;
+  },
+
+  // Accept a prize offer
+  acceptPrizeOffer: async (orderId: string) => {
+    const response = await apiClient.patch(`/admin/prizes/orders/${orderId}/accept-offer`);
+    return response.data;
+  },
+
+  // Reject a prize offer
+  rejectPrizeOffer: async (orderId: string) => {
+    const response = await apiClient.patch(`/admin/prizes/orders/${orderId}/reject-offer`);
     return response.data;
   },
 
@@ -935,7 +966,9 @@ export const adminAPI = {
 
   // Edit betting options for stream
   updateBetRoundLandingPageVisibility: async (roundId: string, hidden: boolean) => {
-    const response = await apiClient.patch(`/admin/rounds/${roundId}/landing-visiblity`, { hidden });
+    const response = await apiClient.patch(`/admin/rounds/${roundId}/landing-visiblity`, {
+      hidden,
+    });
     return response.data;
   },
 
@@ -991,7 +1024,11 @@ export const adminAPI = {
   },
 
   // Prize redemption management
-  getPrizeRedemptions: async (params?: { status?: string; userId?: string; prizeTier?: number }) => {
+  getPrizeRedemptions: async (params?: {
+    status?: string;
+    userId?: string;
+    prizeTier?: number;
+  }) => {
     const response = await apiClient.get('/admin/prizes/redemptions', { params });
     return response;
   },
@@ -1042,7 +1079,7 @@ export const creatorAPI = {
   },
 
   // Get stream details based on stream ID
-  getCreatorPayoutsHistory: async (params?: { page?: number, limit?: number }) => {
+  getCreatorPayoutsHistory: async (params?: { page?: number; limit?: number }) => {
     const response = await apiClient.get(`/creator/payoutsHistory`, { params });
     return response.data;
   },
@@ -1066,8 +1103,7 @@ export const creatorAPI = {
     const response = await apiClient.delete(`/creator/application`);
     return response.data;
   },
-}
-
+};
 
 // Payment API
 export const paymentAPI = {
@@ -1081,8 +1117,8 @@ export const paymentAPI = {
   getWithdrawerData: async () => {
     const response = await apiClient.get('/payments/coinflow/withdrawer', {
       params: {
-        redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`
-      }
+        redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`,
+      },
     });
     return response;
   },
@@ -1103,7 +1139,9 @@ export const paymentAPI = {
 
   // Delete bank account
   deleteBankAccount: async (bankToken: string) => {
-    const response = await apiClient.delete(`/payments/coinflow/delete-withdrawer-account?token=${bankToken}`);
+    const response = await apiClient.delete(
+      `/payments/coinflow/delete-withdrawer-account?token=${bankToken}`
+    );
     return response.data;
   },
 
@@ -1111,7 +1149,7 @@ export const paymentAPI = {
   registerKyc: async (payload: WithdrawKycPayload) => {
     const response = await apiClient.post(`/payments/coinflow/withdraw/kyc`, {
       redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`,
-      ...payload
+      ...payload,
     });
     return response;
   },
@@ -1120,7 +1158,7 @@ export const paymentAPI = {
   registerKycUs: async (payload: WithdrawKycUsPayload) => {
     const response = await apiClient.post(`/payments/coinflow/withdraw/kyc-us`, {
       redirectLink: `${import.meta.env.VITE_APP_HOST_URL}/withdraw`,
-      ...payload
+      ...payload,
     });
     return response;
   },
@@ -1230,6 +1268,23 @@ export const prizeAPI = {
   getMyAddress: async () => {
     const response = await apiClient.get('/users/me/address');
     return response.data.data; // Extract nested data object
+  },
+
+  // Accept a counter offer on a prize order
+  acceptCounterOffer: async (orderId: string) => {
+    const response = await apiClient.post(`/prizes/orders/${orderId}/accept-counter`);
+    return response.data;
+  },
+
+  // Make an offer on a prize
+  makeOffer: async (offerData: {
+    prizeConfigId: string;
+    shippingAddress: any;
+    offerAmount: number;
+    offerNotes?: string;
+  }) => {
+    const response = await apiClient.post('/prizes/make-offer', offerData);
+    return response.data;
   },
 };
 

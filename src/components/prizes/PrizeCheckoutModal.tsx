@@ -35,6 +35,8 @@ interface PrizeCheckoutModalProps {
 }
 
 const COINS_TO_USD = 50; // 50 coins = $1
+const SHIPPING_FEE_USD = 5; // $5 shipping fee
+const SHIPPING_FEE_COINS = SHIPPING_FEE_USD * COINS_TO_USD; // 250 coins
 
 export default function PrizeCheckoutModal({
   isOpen,
@@ -45,6 +47,7 @@ export default function PrizeCheckoutModal({
   userCadeCoins,
 }: PrizeCheckoutModalProps) {
   const queryClient = useQueryClient();
+  const totalAmount = prizeAmount + SHIPPING_FEE_COINS;
 
   const { data: userAddress, isLoading: isLoadingAddress } = useQuery({
     queryKey: ['userAddress'],
@@ -56,9 +59,9 @@ export default function PrizeCheckoutModal({
   });
 
   const [paymentMethod, setPaymentMethod] = useState<'coins' | 'usd' | 'combined'>('coins');
-  const [coinsAmount, setCoinsAmount] = useState(userCadeCoins >= prizeAmount ? prizeAmount : 0);
+  const [coinsAmount, setCoinsAmount] = useState(userCadeCoins >= totalAmount ? totalAmount : 0);
   const [combinedCoinsAmount, setCombinedCoinsAmount] = useState(
-    userCadeCoins >= prizeAmount ? prizeAmount : 0
+    userCadeCoins >= totalAmount ? totalAmount : 0
   );
   const [usdAmount, setUsdAmount] = useState(0);
 
@@ -84,23 +87,23 @@ export default function PrizeCheckoutModal({
     }
   }, [userAddress]);
 
-  // Always keep coinsAmount set to prizeAmount for the "CadeCoins Only" display
+  // Always keep coinsAmount set to totalAmount (prize + shipping) for the "CadeCoins Only" display
   useEffect(() => {
-    setCoinsAmount(prizeAmount);
-  }, [prizeAmount]);
+    setCoinsAmount(totalAmount);
+  }, [totalAmount]);
 
   useEffect(() => {
     const method = paymentMethod as string;
     if (method === 'coins') {
       setUsdAmount(0);
     } else if (method === 'usd') {
-      setUsdAmount(parseFloat((prizeAmount / COINS_TO_USD).toFixed(2)));
+      setUsdAmount(parseFloat((totalAmount / COINS_TO_USD).toFixed(2)));
     } else if (method === 'combined') {
-      const maxCoins = Math.min(userCadeCoins, prizeAmount);
+      const maxCoins = Math.min(userCadeCoins, totalAmount);
       setCombinedCoinsAmount(maxCoins);
-      setUsdAmount(parseFloat(((prizeAmount - maxCoins) / COINS_TO_USD).toFixed(2)));
+      setUsdAmount(parseFloat(((totalAmount - maxCoins) / COINS_TO_USD).toFixed(2)));
     }
-  }, [paymentMethod, prizeAmount, userCadeCoins]);
+  }, [paymentMethod, totalAmount, userCadeCoins]);
 
   const displayCoinsAmount =
     paymentMethod === 'combined'
@@ -212,10 +215,23 @@ export default function PrizeCheckoutModal({
         <div className="space-y-6">
           {/* Price Information */}
           <div className="bg-muted p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">
-              Price: {(prizeAmount / COINS_TO_USD).toFixed(2)} USD
-            </p>
-            <p className="text-sm text-muted-foreground">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Prize:</span>
+                <span className="text-muted-foreground">
+                  ${(prizeAmount / COINS_TO_USD).toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Shipping:</span>
+                <span className="text-muted-foreground">${SHIPPING_FEE_USD.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm font-semibold border-t pt-2">
+                <span>Total:</span>
+                <span>${(totalAmount / COINS_TO_USD).toFixed(2)}</span>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mt-3">
               Your Balance: {userCadeCoins.toLocaleString('en-US')} CadeCoins
             </p>
           </div>
@@ -336,7 +352,7 @@ export default function PrizeCheckoutModal({
                   step="0.01"
                   value={usdAmount}
                   onChange={e => {
-                    const remaining = prizeAmount - combinedCoinsAmount;
+                    const remaining = totalAmount - combinedCoinsAmount;
                     const maxUSD = remaining / COINS_TO_USD;
                     setUsdAmount(Math.max(0, Math.min(Number(e.target.value), maxUSD)));
                   }}

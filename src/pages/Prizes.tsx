@@ -28,6 +28,47 @@ export default function Prizes() {
     const params = new URLSearchParams(window.location.search);
     const status = params.get('status');
     const orderId = params.get('orderId');
+    const acceptCounter = params.get('acceptCounter');
+
+    // Handle counter offer acceptance
+    if (acceptCounter) {
+      if (!session) {
+        toast({
+          title: 'Sign in required',
+          description: 'Please sign in to accept this counter offer.',
+          variant: 'destructive',
+        });
+        params.delete('acceptCounter');
+        const next = new URL(window.location.href);
+        next.search = params.toString();
+        window.history.replaceState({}, '', next.pathname + (next.search ? `?${next.search}` : ''));
+        return;
+      }
+
+      // Accept counter offer
+      prizeAPI
+        .acceptCounterOffer(acceptCounter)
+        .then((response: any) => {
+          // Redirect to Stripe checkout
+          if (response.stripeSessionUrl) {
+            window.location.href = response.stripeSessionUrl;
+          } else {
+            toast({
+              title: 'Error',
+              description: 'Failed to create checkout session.',
+              variant: 'destructive',
+            });
+          }
+        })
+        .catch(() => {
+          toast({
+            title: 'Error',
+            description: 'Failed to accept counter offer. Please try again.',
+            variant: 'destructive',
+          });
+        });
+      return;
+    }
 
     if (!status) {
       return;
@@ -61,7 +102,7 @@ export default function Prizes() {
     const next = new URL(window.location.href);
     next.search = params.toString();
     window.history.replaceState({}, '', next.pathname + (next.search ? `?${next.search}` : ''));
-  }, []);
+  }, [session]);
 
   const mapCategory = (prize: any): PrizeCategoryType => {
     if (prize.category) return prize.category;

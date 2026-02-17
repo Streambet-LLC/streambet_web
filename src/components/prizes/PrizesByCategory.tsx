@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import FeaturedBetCard from '@/components/FeaturedBetCard';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, DollarSign } from 'lucide-react';
 import { getThumbnailUrl } from '@/utils/helper';
+import { MakeOfferModal } from './MakeOfferModal';
 
 export type PrizeCategoryType = 'slab' | 'sealed';
 
@@ -27,6 +28,9 @@ const CATEGORY_LABELS: Record<PrizeCategoryType, string> = {
 };
 
 export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({ prizes, onPrizeClick }) => {
+  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
+  const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
+
   const categories: Record<PrizeCategoryType, Prize[]> = {
     slab: [],
     sealed: [],
@@ -77,18 +81,34 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({ prizes, onPr
                           Stock: {prize.stock} {prize.stock === 1 ? 'item' : 'items'}
                         </p>
                       )}
-                      <Button
-                        className="mt-auto w-full gap-2"
-                        type="button"
-                        tabIndex={0}
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (onPrizeClick) onPrizeClick(prize);
-                        }}
-                      >
-                        <ShoppingCart className="w-4 h-4" />
-                        Buy Now
-                      </Button>
+                      <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+                        <Button
+                          className="flex-1 gap-2"
+                          type="button"
+                          tabIndex={0}
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (onPrizeClick) onPrizeClick(prize);
+                          }}
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                          Buy Now
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="flex-1 gap-2 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00]"
+                          type="button"
+                          tabIndex={0}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedPrize(prize);
+                            setIsOfferModalOpen(true);
+                          }}
+                        >
+                          <DollarSign className="w-4 h-4" />
+                          Make Offer
+                        </Button>
+                      </div>
                     </div>
                   </FeaturedBetCard>
                 ))}
@@ -103,6 +123,18 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({ prizes, onPr
           </span>
           None Available
         </div>
+      )}
+
+      {/* Make Offer Modal */}
+      {selectedPrize && (
+        <MakeOfferModal
+          isOpen={isOfferModalOpen}
+          onClose={() => {
+            setIsOfferModalOpen(false);
+            setSelectedPrize(null);
+          }}
+          prize={selectedPrize}
+        />
       )}
     </div>
   );
