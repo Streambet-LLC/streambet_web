@@ -141,7 +141,7 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                 <div className="text-sm text-muted-foreground space-y-1 mt-1">
                   <div className="flex justify-between">
                     <span>Price:</span>
-                    <span>${prize.amount.toFixed(2)}</span>
+                    <span>${(prize.amount / 50).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping:</span>
