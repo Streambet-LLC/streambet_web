@@ -12,6 +12,8 @@ import {
   Prize as PrizeDisplay,
 } from '@/components/prizes/PrizesByCategory';
 import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
+import { title } from 'process';
+import { deserialize } from 'v8';
 
 export default function Prizes() {
   const { data: tiers, isLoading } = usePrizeTiers();
@@ -24,11 +26,29 @@ export default function Prizes() {
 
   const digitalRipsPartners = [
     {
+      title: 'E-Pick',
+      imageUrl: 'https://image.e-pick.xyz/_next/static/media/e-pick_logo.b6be4fc8.svg',
+      link: 'https://e-pick.xyz',
+      description: 'Rip open digital boxes with E-Pick and spin a daily wheel to earn coins!',
+    },
+    {
+      title: 'Holos',
+      imageUrl: 'https://holos-market.com/images/logo.png',
+      link: 'https://holos-market.com/',
+      description: 'Randomized TCG packs that you can redeem globally!',
+    },
+    {
       title: 'Packz',
       imageUrl: 'https://packz.io/assets/logos/packz/transparent.svg',
       link: 'https://packz.io/?aff=THECARDCADE',
       description:
         'Get a Sweat-Free Pack on your first rip which guarantees 100% buyback on pulls up to $100!',
+    },
+    {
+      title: 'Collectibles',
+      imageUrl: 'https://collectibles.com/_next/static/media/main_logo_dark.a689c4f4.svg',
+      link: 'https://collectibles.com',
+      description: 'Sign up and earn rewards for actions you do every day!',
     },
   ];
 
