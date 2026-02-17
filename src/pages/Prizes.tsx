@@ -22,6 +22,16 @@ export default function Prizes() {
     amount: number;
   } | null>(null);
 
+  const digitalRipsPartners = [
+    {
+      title: 'Packz',
+      imageUrl: 'https://packz.io/assets/logos/packz/transparent.svg',
+      link: 'https://packz.io/?aff=THECARDCADE',
+      description:
+        'Get a Sweat-Free Pack on your first rip which guarantees 100% buyback on pulls up to $100!',
+    },
+  ];
+
   const userCadeCoins = session?.walletBalanceCadeCoin || 0;
 
   useEffect(() => {
@@ -136,16 +146,54 @@ export default function Prizes() {
           <p className="text-muted-foreground">Coming soon!</p>
         </div>
       ) : (
-        <PrizesByCategory
-          prizes={displayPrizes}
-          onPrizeClick={prize =>
-            setSelectedPrizeForCheckout({
-              id: prize.id,
-              name: prize.name,
-              amount: prize.amount ?? 0,
-            })
-          }
-        />
+        <>
+          <PrizesByCategory
+            prizes={displayPrizes}
+            onPrizeClick={prize =>
+              setSelectedPrizeForCheckout({
+                id: prize.id,
+                name: prize.name,
+                amount: prize.amount ?? 0,
+              })
+            }
+          />
+
+          <section className="mt-10 space-y-4">
+            <div>
+              <h3 className="text-2xl font-bold">Digital Rips</h3>
+              <p className="text-sm text-gray-500">Step 1: Rip packs. Step 2: Cheer.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {digitalRipsPartners.map(partner => (
+                <a
+                  key={partner.title}
+                  href={partner.link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block"
+                >
+                  <Card className="h-full hover:border-[#D4FF00] transition-colors">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="w-full aspect-[16/10] overflow-hidden rounded-md">
+                        <img
+                          src={partner.imageUrl}
+                          alt={partner.title}
+                          className="h-full w-full object-contain"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-base font-semibold">{partner.title}</h4>
+                        <p className="text-sm text-muted-foreground">{partner.description}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </a>
+              ))}
+            </div>
+          </section>
+        </>
       )}
       {/* Checkout Modal */}
       {selectedPrizeForCheckout && (
