@@ -30,7 +30,6 @@ export default function Prizes() {
     const orderId = params.get('orderId');
     const acceptCounter = params.get('acceptCounter');
 
-    // Handle counter offer acceptance
     if (acceptCounter) {
       if (!session) {
         toast({
@@ -45,11 +44,9 @@ export default function Prizes() {
         return;
       }
 
-      // Accept counter offer
       prizeAPI
         .acceptCounterOffer(acceptCounter)
         .then((response: any) => {
-          // Redirect to Stripe checkout
           if (response.stripeSessionUrl) {
             window.location.href = response.stripeSessionUrl;
           } else {
@@ -110,7 +107,7 @@ export default function Prizes() {
   };
 
   const displayPrizes: PrizeDisplay[] = (tiers || [])
-    .filter(prize => prize.stock > 0) // Filter out items with zero stock
+    .filter(prize => prize.stock > 0)
     .map(prize => ({
       id: prize.id,
       name: prize.name,
@@ -123,9 +120,9 @@ export default function Prizes() {
 
   return (
     <MainLayout>
-      <h2 className="text-xl font-semibold">Prizes</h2>
+      <h2 className="text-xl font-semibold">Redemption</h2>
       <h2 className="text-sm text-gray-500 mb-4">
-        Purchase prizes with CadeCoins or USD, or a combination of both!
+        Redeem items with CadeCoins or USD, or a combination of both!
       </h2>
       {isLoading ? (
         <Card>
