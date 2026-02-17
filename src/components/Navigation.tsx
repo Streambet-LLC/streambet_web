@@ -114,9 +114,8 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
   const menuItems = [
     { label: 'Picks', icon: undefined, path: '/' },
     { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
-    { label: 'Prizes', icon: undefined, path: '/prizes' },
-    { label: 'How To Play', icon: undefined, path: '/how-to-play' },
     { label: 'Shop', icon: undefined, path: '/shop' },
+    { label: 'How To Play', icon: undefined, path: '/how-to-play' },
     (session?.role === 'admin' || session?.role === 'creator') && {
       label: session?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard',
       path: session?.role === 'admin' ? '/admin' : '/creator',
