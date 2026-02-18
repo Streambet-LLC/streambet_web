@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-import { BettingRoundStatus, CurrencyType, PickMechanism } from '@/enums';
+import { BettingRoundStatus, PickMechanism } from '@/enums';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { PRESET_PERCENTAGES } from '@/utils/constants';
-import { Button } from '../ui/button';
-import { useDepositContext } from '@/contexts/DepositContext';
+import {
+  calculatePresetAmounts,
+  validateBetAmount,
+  percentageToAmount,
+  getSliderBackground,
+} from '@/utils/bet-slider-helpers';
 
 interface BettingVariable {
   id: string;
@@ -16,16 +18,9 @@ interface BettingVariable {
 
 interface BettingRound {
   roundName?: string;
-  roundTotalBetsGoldCoinAmount: number;
-  roundTotalBetsSweepCoinAmount: number;
   bettingVariables?: BettingVariable[];
   status?: BettingRoundStatus;
   mechanism?: PickMechanism;
-}
-
-interface SliderMax {
-  goldCoins?: number;
-  sweepCoins?: number;
 }
 
 interface BettingData {
@@ -35,37 +30,22 @@ interface BettingData {
       percentage: string | number;
     };
   }[];
-  walletGoldCoin?: number;
-  walletSweepCoin?: number;
   walletCadeCoin?: number;
-  roundTotalBetsGoldCoinAmount: number;
-  roundTotalBetsSweepCoinAmount: number;
   roundTotalBetsCadeCoinAmount: number;
   status?: BettingRoundStatus;
-  userBetGoldCoins?: number;
-  userBetSweepCoin?: number;
   userBetCadeCoins?: number;
   mechanism?: PickMechanism;
 }
 
-interface getRoundData {
-  betAmount?: number;
-  potentialGoldCoinAmt?: number;
-  optionName?: string;
-}
-
 interface BetTokensProps {
-  streamId?: string;
   session: any;
   bettingData?: BettingData;
-  updatedSliderMax: SliderMax;
   placeBet: (data: { bettingVariableId: string; amount: number; currencyType: string }) => void;
   editBetMutation?: (data: {
     newBettingVariableId: string;
     newAmount: number;
     newCurrencyType: string;
   }) => void;
-  getRoundData?: getRoundData;
   resetKey?: number;
   totalPot?: number;
   lockedOptions?: boolean;
@@ -81,9 +61,7 @@ interface BetTokensProps {
 }
 
 export default function BetTokens({
-  streamId,
   updatedCurrency,
-  updatedSliderMax,
   isEditing,
   loading,
   totalPot,
@@ -93,7 +71,6 @@ export default function BetTokens({
   session,
   bettingData,
   placeBet,
-  getRoundData,
   editBetMutation,
   resetKey,
   lockedBet,
@@ -102,11 +79,10 @@ export default function BetTokens({
   activeRound,
 }: BetTokensProps) {
   const { toast } = useToast();
-  const { currency, setCurrency } = useCurrencyContext();
+  const { currency } = useCurrencyContext();
   const { getBettingLimits } = useAuthContext();
   const bettingLimits = getBettingLimits();
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
 
   // Determine if this is a sentiment pick
   const isSentimentPick = activeRound?.mechanism === PickMechanism.SENTIMENT;
@@ -114,31 +90,8 @@ export default function BetTokens({
   const [betAmount, setBetAmount] = useState(selectedAmount || 0);
   const [selectedColor, setSelectedColor] = useState(selectedOption ? selectedOption : '');
   const [sliderMax, setSliderMax] = useState<number | undefined>();
-  const [isTabletRange, setIsTabletRange] = useState(false);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
-  const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
-  const { setOpen: setDepositOpen } = useDepositContext();
-
-  const handleCurrencyChange = () => {
-    setCurrency(isSweepCoins ? CurrencyType.GOLD_COINS : CurrencyType.SWEEP_COINS);
-
-    toast({
-      description: `Switched wallet to ${isSweepCoins ? 'Gold Coins' : 'Sweep Coins'}`,
-    });
-  };
-
-  // Check for tablet range (773px to 1024px)
-  useEffect(() => {
-    const checkTabletRange = () => {
-      setIsTabletRange(window.innerWidth >= 773 && window.innerWidth <= 1024);
-    };
-
-    checkTabletRange();
-    window.addEventListener('resize', checkTabletRange);
-
-    return () => window.removeEventListener('resize', checkTabletRange);
-  }, []);
 
   // Check if scroll is needed
   useEffect(() => {
@@ -168,8 +121,8 @@ export default function BetTokens({
 
     const walletBalance = Number(bettingData?.walletCadeCoin) || 0;
 
-    // Round down: only whole number bets allowed
-    setSliderMax(Math.floor(Math.min(walletBalance + currentBetAmount, maxBetLimit)));
+    // Calculate maximum bet amount allowing decimals
+    setSliderMax(Math.min(walletBalance + currentBetAmount, maxBetLimit));
 
     // Only set selectedColor if selectedWinner exists in current round's options
     const optionExists = bettingData?.bettingRounds?.[0]?.bettingVariables?.some(
@@ -186,8 +139,6 @@ export default function BetTokens({
     selectedWinner,
     currency,
     updatedCurrency,
-    updatedSliderMax,
-    getRoundData,
     bettingData,
     session,
     isEditing,
@@ -247,38 +198,16 @@ export default function BetTokens({
     <div>
       {/* Zero Balance Message */}
       {hasZeroBalance ? (
-        <div className="bg-[#181818] p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
+        <div className="bg-dark-bg p-4 rounded-[16px] flex flex-col items-center space-y-3 w-full mx-auto">
           <h2 className="text-white text-lg font-semibold">Your wallet balance is 0</h2>
           <p className="text-gray-400 text-sm text-center">You need CadeCoins to place a pick</p>
-          {/* <button
-            className="w-full bg-lime-400 text-black font-medium py-2 rounded-full hover:bg-lime-300 transition"
-            onClick={() => setDepositOpen(true)}
-          >
-            Buy Coins
-          </button> */}
-          {/* <div className="text-sm">or</div> */}
-          {/* <Button
-            variant="outline"
-            className="w-full text-white text-sm justify-center font-medium py-2 rounded-full transition"
-            onClick={handleCurrencyChange}
-          >
-            Switch to 
-            <div className="flex flex-row items-center gap-1">
-              <img
-                src={isSweepCoins ? "/icons/cade-coins.png" : "/icons/sweep-coins.png"}
-                alt="coins"
-                className={isSweepCoins ? "h-6 w-6" : "h-4 w-6"}
-              />
-              {isSweepCoins ? "Gold Coins" : "Sweep Coins"}
-            </div>
-          </Button> */}
         </div>
       ) : isBettingAvailable ? (
         <div
-          className="rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-base sm:text-base text-xs"
+          className="rounded-2xl p-4 w-full text-white space-y-4 shadow-lg border text-xs sm:text-base"
           style={{
-            background: 'rgba(24, 24, 24, 1)',
-            border: '0.62px solid rgba(44, 44, 44, 1)',
+            background: 'var(--dark-bg)',
+            border: '0.62px solid var(--dark-border)',
             opacity: session == null ? 0.4 : 1,
             pointerEvents: session == null ? 'none' : 'auto',
           }}
@@ -297,23 +226,22 @@ export default function BetTokens({
             </div>
           )}
 
-          <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-xl font-medium sm:text-xl text-sm gap-2">
+          <div className="flex flex-col xs:flex-col sm:flex-row items-start sm:items-center justify-between w-full text-sm font-medium sm:text-xl gap-2">
             {isSentimentPick ? (
-              <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
+              <div className="text-white text-base font-bold sm:text-xl md:text-2xl">
                 Earn CadeCoins for Sharing Picks
               </div>
             ) : (
-              <div className="text-[rgba(255,255,255,1)] text-2xl font-bold sm:text-xl text-base">
+              <div className="text-white text-base font-bold sm:text-xl md:text-2xl">
                 Pick{' '}
                 <span
-                  style={{ color: 'rgba(189,255,0,1)' }}
-                  className="text-2xl font-bold sm:text-xl text-base"
+                  className="text-electric-lime text-base font-bold sm:text-xl md:text-2xl"
                 >
                   {betAmount?.toLocaleString('en-US')}
                 </span>{' '}
                 CadeCoins
                 <span
-                  className="ml-3 bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px] max-w-[160px] truncate"
+                  className="ml-3 bg-dark-surface rounded-[28px] px-4 py-2 text-white text-[10px] font-normal sm:text-xs max-w-[160px] truncate"
                   title={bettingData?.bettingRounds?.[0]?.roundName}
                 >
                   Available CadeCoins:{' '}
@@ -324,7 +252,7 @@ export default function BetTokens({
 
             {!isSentimentPick && (
               <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
-                <span className="bg-[#242424] rounded-[28px] px-4 py-2 text-[rgba(255, 255, 255, 1)] text-xs font-normal sm:text-xs text-[10px]">
+                <span className="bg-dark-surface rounded-[28px] px-4 py-2 text-white text-[10px] font-normal sm:text-xs">
                   Total Pot: {`${totalPot} CadeCoins`}
                 </span>
               </div>
@@ -342,24 +270,34 @@ export default function BetTokens({
                   step={1}
                   value={betAmount}
                   disabled={session == null || lockedOptions}
-                  onChange={e => {
-                    const value = Math.max(
-                      0,
-                      Math.min(Math.floor(Number(e.target.value) || 0), Math.floor(sliderMax || 0))
-                    );
-                    setBetAmount(value);
+                  onFocus={e => {
+                    e.target.select();
                   }}
-                  className="w-[90px] bg-[#272727] px-3 py-2 rounded-lg text-[#FFFFFF] text-sm font-normal border border-[#444] number-input-visible-arrows"
+                  onChange={e => {
+                    const value = validateBetAmount(e.target.value, sliderMax || 0);
+                    if (value !== null) {
+                      setBetAmount(value);
+                    }
+                  }}
+                  className="w-[90px] bg-input-bg px-3 py-2 rounded-lg text-white text-sm font-normal border border-input-border"
+                  style={{
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'textfield',
+                  } as React.CSSProperties}
                 />
 
                 <input
                   type="range"
                   min={0}
-                  max={sliderMax}
-                  step={1}
-                  value={betAmount}
+                  max={100}
+                  step={0.1}
+                  value={sliderMax > 0 ? (betAmount / sliderMax) * 100 : 0}
                   disabled={session == null}
-                  onChange={e => !lockedOptions && setBetAmount(Math.floor(Number(e.target.value)))}
+                  onChange={e => {
+                    if (!lockedOptions && sliderMax) {
+                      setBetAmount(percentageToAmount(Number(e.target.value), sliderMax));
+                    }
+                  }}
                   onMouseDown={() => {
                     if (Number(sliderMax) === 0) {
                       toast({
@@ -374,99 +312,52 @@ export default function BetTokens({
                       });
                     }
                   }}
-                  className="flex-1 h-[25px] appearance-none rounded-full bg-transparent bet-slider-gradient"
+                  className="flex-1 h-[25px] rounded-full"
                   style={{
-                    MozAppearance: 'none',
-                    WebkitAppearance: 'none',
                     appearance: 'none',
-                    border: '0.56px solid rgba(186, 186, 186, 1)',
-                  }}
+                    WebkitAppearance: 'none',
+                    background: getSliderBackground(betAmount, sliderMax || 0),
+                    border: '0.56px solid var(--slider-border)',
+                  } as React.CSSProperties}
                 />
               </div>
 
+              <style>{`
+                input[type="range"]::-webkit-slider-thumb {
+                  appearance: none;
+                  width: 32px;
+                  height: 32px;
+                  background: url('/icons/thumb.svg') no-repeat center;
+                  cursor: pointer;
+                }
+                input[type="range"]::-moz-range-thumb {
+                  width: 32px;
+                  height: 32px;
+                  background: url('/icons/thumb.svg') no-repeat center;
+                  border: none;
+                  cursor: pointer;
+                }
+              `}</style>
+
               {/* Preset Amount Buttons row */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
-                {(() => {
-                  const maxBetLimit = bettingLimits.maxCadeCoinsBet;
-                  const baseWalletBalance = Number(session?.walletBalanceCadeCoin) || 0;
-
-                  const currentBetAmount = isEditing
-                    ? Number(bettingData?.userBetCadeCoins) || 0
-                    : 0;
-                  const totalAvailableBalance = Math.min(
-                    baseWalletBalance + currentBetAmount,
-                    maxBetLimit
-                  );
-
-                  // Filter out buttons with zero value to prevent showing "0 tokens"
-                  return PRESET_PERCENTAGES.map(percentage => {
-                    const value = Math.floor(totalAvailableBalance * percentage);
-                    return { percentage, value };
-                  })
-                    .filter(item => item.value > 0)
-                    .map(({ percentage, value }) => (
-                      <button
-                        key={`${percentage}-${value}`}
-                        onClick={() =>
-                          session && !lockedOptions && setBetAmount(Math.min(value, sliderMax || 0))
-                        }
-                        disabled={session == null || lockedOptions}
-                        className="bg-[#BDFF00] text-black border-[#BDFF00] hover:bg-[#9AE600] hover:border-[#9AE600] text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                      >
-                        {value} tokens
-                      </button>
-                    ));
-                })()}
+                {calculatePresetAmounts({
+                  maxBetLimit: bettingLimits.maxCadeCoinsBet,
+                  walletBalance: Number(session?.walletBalanceCadeCoin) || 0,
+                  currentBetAmount: isEditing ? Number(bettingData?.userBetCadeCoins) || 0 : 0,
+                }).map(({ percentage, value }) => (
+                  <button
+                    key={`${percentage}-${value}`}
+                    onClick={() =>
+                      session && !lockedOptions && setBetAmount(Math.min(value, sliderMax || 0))
+                    }
+                    disabled={session == null || lockedOptions}
+                    className="bg-electric-lime text-black border-electric-lime hover:bg-electric-lime-hover hover:border-electric-lime-hover text-xs py-2 px-2 rounded-md font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {value} tokens
+                  </button>
+                ))}
               </div>
-
-              <style>
-                {`
-            /* Number input with always visible arrows */
-            input[type="number"].number-input-visible-arrows::-webkit-inner-spin-button,
-            input[type="number"].number-input-visible-arrows::-webkit-outer-spin-button {
-              opacity: 1;
-            }
-            
-            input[type="range"].bet-slider-gradient {
-              background: linear-gradient(90deg, #7FFF00 0%, #32CD32 100%);
-              background-size: ${(betAmount / (sliderMax || 1)) * 100}% 100%;
-              background-repeat: no-repeat;
-            }
-            input[type="range"]::-webkit-slider-thumb {
-              appearance: none;
-              height: 32px;
-              width: 32px;
-              background: url('/icons/thumb.svg') no-repeat ;
-              cursor: pointer;
-            }
-            input[type="range"]::-moz-range-thumb {
-              height: 32px;
-              width: 32px;
-              background: url('/icons/thumb.svg') no-repeat;
-              cursor: pointer;
-            }
-            input[type="range"]::-ms-thumb {
-              height: 32px;
-              width: 32px;
-              background: url('/icons/thumb.svg') no-repeat;
-              cursor: pointer;
-            }
-            /* Track for Firefox */
-            input[type="range"].bet-slider-gradient::-moz-range-progress {
-              background: linear-gradient(90deg, #7FFF00 0%, #32CD32 100%);
-            }
-            input[type="range"].bet-slider-gradient::-moz-range-track {
-              background: #242424;
-            }
-            /* Track for IE */
-            input[type="range"].bet-slider-gradient::-ms-fill-lower {
-              background: linear-gradient(90deg, #7FFF00 0%, #32CD32 100%);
-            }
-            input[type="range"].bet-slider-gradient::-ms-fill-upper {
-              background: #242424;
-            }
-          `}
-              </style>
             </div>
           ) : (
             <div className="space-y-3 pt-2">
@@ -474,11 +365,11 @@ export default function BetTokens({
                 <p className="text-sm text-blue-300 font-semibold">Sentiment Pick Rewards</p>
                 <ul className="text-xs text-blue-200 mt-2 space-y-1">
                   <li>
-                    • <span className="font-semibold text-[#BDFF00]">10 CadeCoins</span> - if you
+                    • <span className="font-semibold text-electric-lime">10 CadeCoins</span> - if you
                     vote within 2 hours of the 1500 UTC cycle
                   </li>
                   <li>
-                    • <span className="font-semibold text-[#BDFF00]">5 CadeCoins</span> - if you
+                    • <span className="font-semibold text-electric-lime">5 CadeCoins</span> - if you
                     vote anytime after that
                   </li>
                   <li>
@@ -496,13 +387,11 @@ export default function BetTokens({
               className={`${
                 isMobile
                   ? 'grid grid-cols-2 gap-2 pb-1 overflow-y-auto max-h-[200px]'
-                  : isTabletRange
-                    ? 'grid grid-cols-2 gap-2 pb-1 overflow-y-auto max-h-[200px]'
-                    : `grid gap-2 pb-1 ${
-                        bettingData?.bettingRounds?.[0]?.bettingVariables?.length === 2
-                          ? 'grid-cols-2' // center the two buttons
-                          : 'grid-cols-2 sm:grid-cols-4'
-                      }`
+                  : `grid gap-2 pb-1 ${
+                      bettingData?.bettingRounds?.[0]?.bettingVariables?.length === 2
+                        ? 'grid-cols-2' // center the two buttons
+                        : 'grid-cols-2 sm:grid-cols-4'
+                    }`
               }`}
             >
               {bettingData?.bettingRounds?.[0]?.bettingVariables?.map(
@@ -511,16 +400,16 @@ export default function BetTokens({
                     key={option.id}
                     onClick={() => isColorButtonsEnabled && handleColorClick(option.name)}
                     className={`flex justify-between cursor-pointer ${
-                      isMobile || isTabletRange
-                        ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base px-2 break-words whitespace-normal'
-                        : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-[#242424] text-base sm:text-base text-xs px-2 break-words whitespace-normal'
+                      isMobile
+                        ? 'w-full py-3.5 rounded-[28px] font-medium transition bg-dark-surface text-base px-2 break-words whitespace-normal'
+                        : 'flex-1 py-3.5 rounded-[28px] font-medium transition bg-dark-surface text-xs sm:text-base px-2 break-words whitespace-normal'
                     } ${!isColorButtonsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                     style={{
                       border:
                         selectedColor === option.name
-                          ? '1px solid rgba(189, 255, 0, 1)'
-                          : '#242424',
-                      color: selectedColor === option.name ? 'rgba(189, 255, 0, 1)' : '#FFFFFF',
+                          ? '1px solid var(--electric-lime)'
+                          : '1px solid transparent',
+                      color: selectedColor === option.name ? 'var(--electric-lime)' : 'white',
                     }}
                     title={option.name}
                   >
@@ -540,8 +429,8 @@ export default function BetTokens({
             </div>
 
             {/* Scroll indicator */}
-            {showScrollIndicator && (isMobile || isTabletRange) && (
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-gradient-to-t from-[#242424] to-transparent h-6 w-full pointer-events-none flex items-center justify-center">
+            {showScrollIndicator && isMobile && (
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-gradient-to-t from-dark-surface to-transparent h-6 w-full pointer-events-none flex items-center justify-center">
                 <div className="flex space-x-1">
                   <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
                   <div
@@ -558,7 +447,7 @@ export default function BetTokens({
           </div>
 
           <button
-            className="w-full bg-[#BDFF00] text-black font-bold py-2 rounded-full hover:brightness-105 transition text-lg sm:text-base text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full bg-electric-lime text-black font-bold py-2 rounded-full hover:brightness-105 transition text-xs sm:text-base md:text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             disabled={!isBetButtonEnabled || (betAmount <= 0 && !isSentimentPick)}
             onClick={handleBet}
           >
@@ -602,12 +491,12 @@ export default function BetTokens({
         </div>
       ) : (
         <div
-          className="h-[220px] relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]"
-          style={{ border: '0.62px solid #181818' }}
+          className="h-[220px] relative mx-auto rounded-[16px] shadow-lg border-b border-dark-border"
+          style={{ border: '0.62px solid var(--dark-bg)' }}
         >
           <div className="relative z-10 h-full flex flex-col justify-between">
             <div>
-              <p className="text-2xl font-bold text-[#FFFFFF] text-center pt-20 pb-4">
+              <p className="text-2xl font-bold text-white text-center pt-20 pb-4">
                 Picks are locked for this round
               </p>
             </div>
@@ -616,7 +505,7 @@ export default function BetTokens({
               className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[250px] pointer-events-none z-0"
               style={{
                 background:
-                  'radial-gradient(60% 100% at 50% 100%, rgba(189, 255, 0, 0.25) -140%, transparent 100%)',
+                  'radial-gradient(60% 100% at 50% 100%, var(--electric-lime-glow) -140%, transparent 100%)',
               }}
             ></div>
           </div>

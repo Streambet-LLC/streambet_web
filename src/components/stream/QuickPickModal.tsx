@@ -13,7 +13,6 @@ import { SignInPrompt, NoBettingData } from './QuickPickModalComponents';
 import { useToast } from '@/hooks/use-toast';
 import { Info, X } from 'lucide-react';
 import { LinkifiedText } from '../LinkifiedText';
-import { Button } from '../ui/button';
 
 interface QuickPickModalProps {
   open: boolean;
@@ -65,7 +64,6 @@ export const QuickPickModal = React.memo(
       resetKey,
       showBetTokens,
       totalPot,
-      updatedSliderMax,
       hasActiveBetting,
       handlePlaceBet,
       handleEditBet,
@@ -146,10 +144,8 @@ export const QuickPickModal = React.memo(
             <BetTokens
               session={session}
               bettingData={transformForBetTokens(activeRound)}
-              updatedSliderMax={updatedSliderMax}
               placeBet={placedBetSocket}
               editBetMutation={editBetSocket}
-              getRoundData={transformForLockTokens(userBet)}
               resetKey={resetKey}
               totalPot={totalPot}
               lockedOptions={activeRound.isLocked}
