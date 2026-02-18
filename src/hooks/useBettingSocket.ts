@@ -40,6 +40,17 @@ export function useBettingSocket({
   // Debounce timer ref at hook level
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Helper function to get potential winnings based on currency type
+  const getPotentialWinnings = (data: any, currencyType: CurrencyType): number => {
+    if (currencyType === CurrencyType.SWEEP_COINS) {
+      return data?.potentialSweepCoinWinningAmount || data?.potentialSweepCoinAmt || 0;
+    } else if (currencyType === CurrencyType.CADE_COINS) {
+      return data?.potentialCadeCoinWinningAmount || data?.potentialCadeCoinAmt || 0;
+    } else {
+      return data?.potentialGoldCoinWinningAmount || data?.potentialGoldCoinAmt || 0;
+    }
+  };
+
   // Query 1: Fetch betting data for the stream
   const { data: bettingData, refetch: refetchBettingData } = useQuery({
     queryKey: ['bettingData', streamId, session?.id, roundId],
@@ -147,14 +158,13 @@ export function useBettingSocket({
   // Update userBet when getRoundData changes
   useEffect(() => {
     if (getRoundData) {
-      const isSweep = getRoundData.currencyType === CurrencyType.SWEEP_COINS;
+      const potentialWinnings = getPotentialWinnings(getRoundData, getRoundData.currencyType);
+      
       setUserBet({
         betId: getRoundData.betId,
         amount: getRoundData.betAmount,
         selectedOption: getRoundData.optionName,
-        potentialWinnings: isSweep
-          ? getRoundData.potentialSweepCoinAmt
-          : getRoundData.potentialGoldCoinAmt,
+        potentialWinnings,
         currencyType: getRoundData.currencyType,
         isLocked: getRoundData.status === BettingRoundStatus.LOCKED,
       });
@@ -234,7 +244,7 @@ export function useBettingSocket({
           betId: update?.bet?.id,
           amount: update?.amount,
           selectedOption: update?.selectedWinner,
-          potentialWinnings: update?.potentialCadeCoinWinningAmount,
+          potentialWinnings: getPotentialWinnings(update, update?.bet?.currencyType),
           currencyType: update?.bet?.currencyType,
           isLocked: false,
         });
@@ -306,15 +316,13 @@ export function useBettingSocket({
     // Handle bet edited
     const handleBetEdited = (update: any) => {
       if (update?.bet?.userId === session?.id) {
-        const isSweep = update?.currencyType === CurrencyType.SWEEP_COINS;
+        const potentialWinnings = getPotentialWinnings(update, update?.currencyType);
 
         setUserBet({
           betId: update?.bet?.id,
           amount: update?.amount,
           selectedOption: update?.selectedWinner,
-          potentialWinnings: isSweep
-            ? update?.potentialSweepCoinWinningAmount
-            : update?.potentialGoldCoinWinningAmount,
+          potentialWinnings,
           currencyType: update?.currencyType,
           isLocked: false,
         });
