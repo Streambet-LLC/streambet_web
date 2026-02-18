@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils';
 import StreamPayoutReport from './StreamPayoutReport';
 import { PrizeConfiguration } from './PrizeConfiguration';
 import { PrizeRedemptions } from './PrizeRedemptions';
+import { PrizeOrders } from './PrizeOrders';
 
 export const AdminManagement = ({
   session,
@@ -107,6 +108,7 @@ export const AdminManagement = ({
     { key: 'stream-payout', label: 'Stream Payout' },
     { key: 'prize-settings', label: 'Prize Settings' },
     { key: 'prize-redemptions', label: 'Prize Redemptions' },
+    { key: 'prize-offers', label: 'Prize Offers' },
   ];
 
   const createStreamMutation = useMutation({
@@ -1699,6 +1701,12 @@ export const AdminManagement = ({
           {activeTab === 'prize-redemptions' && (
             <div className="space-y-4">
               <PrizeRedemptions />
+            </div>
+          )}
+
+          {activeTab === 'prize-offers' && (
+            <div className="space-y-4">
+              <PrizeOrders />
             </div>
           )}
         </>
