@@ -134,31 +134,7 @@ export const PrizeConfiguration = () => {
     return { isValid: true };
   };
 
-  // Validate amount uniqueness
-  const isAmountUnique = (
-    amount: number,
-    existingTiers: PrizeTier[]
-  ): { isValid: boolean; error?: string } => {
-    if (existingTiers.some(t => Number(t.amount) === amount)) {
-      return {
-        isValid: false,
-        error: `A prize with ${amount.toLocaleString('en-US')} coins already exists`,
-      };
-    }
-    return { isValid: true };
-  };
 
-  // Main validation function - just check amount uniqueness
-  const validatePrizeAmount = (
-    amount: number,
-    existingTiers: PrizeTier[],
-    editingTierId?: string
-  ): { isValid: boolean; error?: string } => {
-    // Filter out the tier being edited
-    const otherTiers = existingTiers.filter(t => t.id !== editingTierId);
-
-    return isAmountUnique(amount, otherTiers);
-  };
 
   // Create mutation
   const createMutation = useMutation({
@@ -214,14 +190,6 @@ export const PrizeConfiguration = () => {
       return;
     }
 
-    // Validate amount is unique
-    const validation = validatePrizeAmount(formData.amount, tiers || []);
-
-    if (!validation.isValid) {
-      setValidationError(validation.error || 'Validation failed');
-      return;
-    }
-
     // Check for image errors
     if (imageError) {
       toast({
@@ -255,14 +223,6 @@ export const PrizeConfiguration = () => {
     if (!editingTier) return;
     if (!formData.name.trim()) {
       setValidationError('Item name is required');
-      return;
-    }
-
-    // Validate amount is unique
-    const validation = validatePrizeAmount(formData.amount, tiers || [], editingTier.id);
-
-    if (!validation.isValid) {
-      setValidationError(validation.error || 'Validation failed');
       return;
     }
 
