@@ -7,23 +7,14 @@ import type { ActiveRound, UserBet } from '@/contexts/BettingContext';
  */
 export const transformForBetTokens = (activeRound: ActiveRound) => ({
   bettingRounds: [{
-    roundTotalBetsGoldCoinAmount: activeRound.totalGoldCoins,
-    roundTotalBetsSweepCoinAmount: activeRound.totalSweepCoins,
-    roundTotalBetsCadeCoinAmount: activeRound.totalCadeCoins,
     bettingVariables: activeRound.bettingVariables,
     status: activeRound.status,
   }],
 
-  roundTotalBetsGoldCoinAmount: activeRound.totalGoldCoins,
-  roundTotalBetsSweepCoinAmount: activeRound.totalSweepCoins,
   roundTotalBetsCadeCoinAmount: activeRound.totalCadeCoins,
   status: activeRound.status,
-  walletGoldCoin: activeRound.walletGoldCoin,
-  walletSweepCoin: activeRound.walletSweepCoin,
   walletCadeCoin: activeRound.walletCadeCoin,
-  userBetGoldCoins: activeRound.userBetGoldCoins,
-  userBetSweepCoin: activeRound.userBetSweepCoin,
-  userBetCadeCoin: activeRound.userBetCadeCoin,
+  userBetCadeCoins: activeRound.userBetCadeCoin,
   bettingRoundsWithVariablePercentages: activeRound.bettingRoundsWithVariablePercentages,
 });
 

@@ -55,22 +55,19 @@ export default function Home() {
 
         <div className="max-w-3xl mx-auto text-center space-y-4 p-4">
           <h1 className="text-4xl md:text-5xl font-bold">
-            Data markets for the
-            <br />
             <motion.span
               className="relative inline-block"
               whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
             >
               <motion.span
-                className="absolute inset-0 bg-gradient-to-r from-[#bdff00] to-[#7aff14] blur-lg opacity-30"
+                className="absolute inset-0 bg-gradient-to-r from-electric-lime to-creator-green blur-lg opacity-30"
                 animate={shouldReduceMotion ? undefined : { scale: [1, 1.2, 1] }}
                 transition={shouldReduceMotion ? undefined : { duration: 3, repeat: Infinity }}
               />
-              <span className="relative bg-gradient-to-r from-[#bdff00] to-[#7aff14] bg-clip-text text-transparent">
-                collector's
+              <span className="relative bg-gradient-to-r from-electric-lime to-creator-green bg-clip-text text-transparent">
+                cardcade
               </span>
-            </motion.span>{' '}
-            age
+            </motion.span>
           </h1>
           <div className="space-y-2">
             <p className="text-[#FFFFFFBF]">

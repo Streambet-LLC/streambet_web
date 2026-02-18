@@ -1,17 +1,11 @@
 import { useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { useBettingContext } from '@/contexts/BettingContext';
-import { useCurrencyContext } from '@/contexts/CurrencyContext';
-import { CurrencyType } from '@/enums';
 
 /**
  * Custom hook to manage QuickPickModal state and actions
  * Handles view switching and betting actions with network error handling
  */
 export const useQuickPickModal = () => {
-  const { toast } = useToast();
-  const { currency } = useCurrencyContext();
-  
   const {
     activeRound,
     userBet,
@@ -28,13 +22,7 @@ export const useQuickPickModal = () => {
 
   // Derive computed values
   const showBetTokens = !userBet.betId || isEditing;
-  const isSweep = currency === CurrencyType.SWEEP_COINS;
   const totalPot = activeRound.totalCadeCoins;
-  const updatedSliderMax = {
-    goldCoins: activeRound.walletGoldCoin,
-    sweepCoins: activeRound.walletSweepCoin,
-    cadeCoins: activeRound.walletCadeCoin,
-  };
   const hasActiveBetting = activeRound.bettingVariables && activeRound.bettingVariables.length > 0;
 
   // Place bet - errors handled by socket event handlers
@@ -45,7 +33,7 @@ export const useQuickPickModal = () => {
     [placeBet]
   );
 
-  // Edit bet - errors handled by socket event handlers
+  // Edit bet
   const handleEditBet = useCallback(
     (betId: string, newBettingVariableId: string, newAmount: number, newCurrencyType: string) => {
       editBet(betId, newBettingVariableId, newAmount, newCurrencyType);
@@ -53,7 +41,7 @@ export const useQuickPickModal = () => {
     [editBet]
   );
 
-  // Cancel bet - errors handled by socket event handlers
+  // Cancel bet
   const handleCancelBet = useCallback(
     (betId: string, currencyType: string) => {
       cancelBet(betId, currencyType);
@@ -83,7 +71,6 @@ export const useQuickPickModal = () => {
     showBetTokens,
     // Computed values
     totalPot,
-    updatedSliderMax,
     hasActiveBetting,
     // Actions
     handlePlaceBet,
