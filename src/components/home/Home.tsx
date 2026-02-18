@@ -54,20 +54,22 @@ export default function Home() {
         </div>
 
         <div className="max-w-3xl mx-auto text-center space-y-4 p-4">
-          <h1 className="text-4xl md:text-5xl font-bold">
-            <motion.span
+          <h1 className="text-4xl md:text-5xl font-bold flex justify-center">
+            <motion.div
               className="relative inline-block"
               whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
             >
-              <motion.span
+              <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-electric-lime to-creator-green blur-lg opacity-30"
                 animate={shouldReduceMotion ? undefined : { scale: [1, 1.2, 1] }}
                 transition={shouldReduceMotion ? undefined : { duration: 3, repeat: Infinity }}
               />
-              <span className="relative bg-gradient-to-r from-electric-lime to-creator-green bg-clip-text text-transparent">
-                cardcade
-              </span>
-            </motion.span>
+              <img
+                src="/wordmark.svg"
+                alt="CardCade"
+                className="relative h-12 md:h-16 w-auto object-contain"
+              />
+            </motion.div>
           </h1>
           <div className="space-y-2">
             <p className="text-[#FFFFFFBF]">
