@@ -146,6 +146,7 @@ export default function Prizes() {
       category: mapCategory(prize),
       amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
       stock: prize.stock,
+      purchaseOption: prize.purchaseOption,
     }));
 
   return (
