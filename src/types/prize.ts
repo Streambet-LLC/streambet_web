@@ -15,6 +15,7 @@ export interface PrizeConfiguration {
   imageUrl: string | null;
   category: 'slab' | 'sealed';
   stock: number;
+  purchaseOption: 'offers_only' | 'buy_only' | 'both';
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -32,6 +33,7 @@ export interface CreatePrizeTierRequest {
   imageUrl?: string;
   category: 'slab' | 'sealed';
   stock: number;
+  purchaseOption: 'offers_only' | 'buy_only' | 'both';
 }
 
 /**
@@ -44,6 +46,7 @@ export interface UpdatePrizeTierRequest {
   imageUrl?: string;
   category: 'slab' | 'sealed';
   stock: number;
+  purchaseOption: 'offers_only' | 'buy_only' | 'both';
 }
 
 /**

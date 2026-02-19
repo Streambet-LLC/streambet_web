@@ -1195,11 +1195,14 @@ export const prizeAPI = {
 
   // Create a new prize tier (admin only)
   createPrizeTier: async (payload: {
-    prizeTier: number;
+    prizeTier?: number;
     amount: number;
     name: string;
     description?: string;
     imageUrl?: string;
+    category?: 'slab' | 'sealed';
+    stock?: number;
+    purchaseOption?: 'offers_only' | 'buy_only' | 'both';
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/admin/prizes', payload);
     return response.data;
@@ -1209,11 +1212,14 @@ export const prizeAPI = {
   updatePrizeTier: async (
     id: string,
     payload: {
-      prizeTier: number;
+      prizeTier?: number;
       amount: number;
       name: string;
       description?: string;
       imageUrl?: string;
+      category?: 'slab' | 'sealed';
+      stock?: number;
+      purchaseOption?: 'offers_only' | 'buy_only' | 'both';
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/admin/prizes/${id}`, payload);

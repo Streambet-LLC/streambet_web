@@ -15,6 +15,7 @@ export interface Prize {
   category: PrizeCategoryType;
   amount?: number;
   stock?: number;
+  purchaseOption?: 'offers_only' | 'buy_only' | 'both';
 }
 
 interface PrizesByCategoryProps {
@@ -70,7 +71,8 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({ prizes, onPr
                       {prize.description && (
                         <p className="text-sm text-muted-foreground mb-2">{prize.description}</p>
                       )}
-                      {typeof prize.amount === 'number' && (
+                      {typeof prize.amount === 'number' &&
+                        prize.purchaseOption !== 'offers_only' && (
                         <p className="text-sm text-muted-foreground mb-2">
                           {prize.amount.toLocaleString('en-US')} coins • $
                           {(prize.amount / 50).toFixed(2)} USD
@@ -82,32 +84,36 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({ prizes, onPr
                         </p>
                       )}
                       <div className="flex flex-col sm:flex-row gap-2 mt-auto">
-                        <Button
-                          className="flex-1 gap-2"
-                          type="button"
-                          tabIndex={0}
-                          onClick={e => {
-                            e.stopPropagation();
-                            if (onPrizeClick) onPrizeClick(prize);
-                          }}
-                        >
-                          <ShoppingCart className="w-4 h-4" />
-                          Buy Now
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="flex-1 gap-2 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00]"
-                          type="button"
-                          tabIndex={0}
-                          onClick={e => {
-                            e.stopPropagation();
-                            setSelectedPrize(prize);
-                            setIsOfferModalOpen(true);
-                          }}
-                        >
-                          <DollarSign className="w-4 h-4" />
-                          Make Offer
-                        </Button>
+                        {prize.purchaseOption !== 'offers_only' && (
+                          <Button
+                            className="flex-1 gap-2"
+                            type="button"
+                            tabIndex={0}
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (onPrizeClick) onPrizeClick(prize);
+                            }}
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                            Buy Now
+                          </Button>
+                        )}
+                        {prize.purchaseOption !== 'buy_only' && (
+                          <Button
+                            variant="outline"
+                            className="flex-1 gap-2 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00]"
+                            type="button"
+                            tabIndex={0}
+                            onClick={e => {
+                              e.stopPropagation();
+                              setSelectedPrize(prize);
+                              setIsOfferModalOpen(true);
+                            }}
+                          >
+                            <DollarSign className="w-4 h-4" />
+                            Make Offer
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </FeaturedBetCard>
