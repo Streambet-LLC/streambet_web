@@ -79,6 +79,7 @@ export const PrizeConfiguration = () => {
     imageUrl: '',
     category: 'slab',
     stock: 0,
+    purchaseOption: 'both',
   });
 
   const resetForm = () => {
@@ -89,6 +90,7 @@ export const PrizeConfiguration = () => {
       imageUrl: '',
       category: 'slab',
       stock: 0,
+      purchaseOption: 'both',
     });
     setValidationError('');
     imageUpload.clearImage();
@@ -266,6 +268,7 @@ export const PrizeConfiguration = () => {
       imageUrl: tier.imageUrl || '',
       category: tier.category,
       stock: tier.stock,
+      purchaseOption: tier.purchaseOption || 'both',
     });
     imageUpload.clearImage();
     setEditingTier(tier);
@@ -518,6 +521,30 @@ export const PrizeConfiguration = () => {
                 <SelectContent>
                   <SelectItem value="slab">Slab</SelectItem>
                   <SelectItem value="sealed">Sealed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2.5">
+              <Label htmlFor="purchaseOption" className="text-base font-medium">
+                Purchase Option <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.purchaseOption}
+                onValueChange={value => {
+                  setFormData({
+                    ...formData,
+                    purchaseOption: value as 'offers_only' | 'buy_only' | 'both',
+                  });
+                  setValidationError('');
+                }}
+              >
+                <SelectTrigger id="purchaseOption" className="h-12 text-base">
+                  <SelectValue placeholder="Select purchase option" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="offers_only">Offers Only</SelectItem>
+                  <SelectItem value="buy_only">Buy Only</SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
                 </SelectContent>
               </Select>
             </div>
