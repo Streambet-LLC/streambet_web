@@ -832,8 +832,8 @@ export const adminAPI = {
   },
 
   // Get all prize orders
-  getPrizeOrders: async () => {
-    const response = await apiClient.get('/admin/prizes/orders');
+  getPrizeOrders: async (params?: { status?: string; range?: string }) => {
+    const response = await apiClient.get('/admin/prizes/orders', { params });
     return response.data;
   },
 
