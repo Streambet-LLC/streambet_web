@@ -184,7 +184,14 @@ export interface PrizeOrder {
   totalPrice: number;
   stripePriceId?: string; // For USD payment via Stripe
   stripeSessionId?: string;
-  status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status:
+    | 'pending'
+    | 'buy_attempted'
+    | 'paid'
+    | 'processing'
+    | 'shipped'
+    | 'delivered'
+    | 'cancelled';
   createdAt: string;
   updatedAt: string;
 }

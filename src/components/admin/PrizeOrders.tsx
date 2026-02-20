@@ -22,6 +22,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Loader2, DollarSign, X, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { handleMutationError } from '@/lib/mutationHelpers';
@@ -54,6 +61,7 @@ export const PrizeOrders = () => {
   const [isCounterDialogOpen, setIsCounterDialogOpen] = useState(false);
   const [counterAmount, setCounterAmount] = useState('');
   const [counterNotes, setCounterNotes] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | string>('all');
 
   // Fetch orders
   const {
@@ -61,10 +69,14 @@ export const PrizeOrders = () => {
     isLoading,
     error,
   } = useQuery<PrizeOrder[]>({
-    queryKey: ['adminPrizeOrders'],
+    queryKey: ['adminPrizeOrders', filterStatus],
     queryFn: async () => {
       try {
-        const response = await adminAPI.getPrizeOrders();
+        const params: { status?: string } = {};
+        if (filterStatus !== 'all') {
+          params.status = filterStatus;
+        }
+        const response = await adminAPI.getPrizeOrders(params);
         console.log('Full response:', response);
 
         // Handle different response formats
@@ -202,12 +214,17 @@ export const PrizeOrders = () => {
         return 'bg-green-500/10 text-green-500 border-green-500/20';
       case 'pending':
         return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'buy_attempted':
+        return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
       default:
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     }
   };
 
   const getStatusLabel = (status: string) => {
+    if (status === 'buy_attempted') {
+      return 'Buy Attempted';
+    }
     return status.replace(/_/g, ' ').toUpperCase();
   };
 
@@ -226,18 +243,52 @@ export const PrizeOrders = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold">Prize Offers</h2>
-        <Badge variant="outline" className="text-lg px-4 py-2">
-          {offerOrders.length} {offerOrders.length === 1 ? 'Offer' : 'Offers'}
-        </Badge>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold">Prize Orders</h2>
+          <Badge variant="outline" className="text-lg px-4 py-2">
+            {orders?.length || 0} {orders?.length === 1 ? 'Order' : 'Orders'}
+          </Badge>
+        </div>
+        
+        {/* Status Filter */}
+        <div className="flex items-center gap-4">
+          <Label htmlFor="status-filter" className="font-semibold">
+            Filter by Status:
+          </Label>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger id="status-filter" className="w-48">
+              <SelectValue placeholder="Select status..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="buy_attempted">Buy Attempted</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="offer_made">Offer Made</SelectItem>
+              <SelectItem value="countered">Countered</SelectItem>
+              <SelectItem value="offer_accepted">Offer Accepted</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {offerOrders.length === 0 ? (
+      {!orders || orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <DollarSign className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-2xl font-semibold mb-2">No Offers Yet</h3>
-          <p className="text-muted-foreground">Prize offers from users will appear here</p>
+          <h3 className="text-2xl font-semibold mb-2">
+            {filterStatus === 'all' ? 'No Orders Yet' : 'No Orders Found'}
+          </h3>
+          <p className="text-muted-foreground">
+            {filterStatus === 'all'
+              ? 'Prize orders will appear here'
+              : `No orders found with status: ${filterStatus}`}
+          </p>
         </div>
       ) : (
         <div className="rounded-md border">
@@ -246,15 +297,15 @@ export const PrizeOrders = () => {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Prize</TableHead>
-                <TableHead>Offer Amount</TableHead>
-                <TableHead>Counter Offer</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Offer Amount</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {offerOrders.map(order => (
+              {orders.map(order => (
                 <TableRow key={order.id}>
                   <TableCell>
                     <div className="flex flex-col">
@@ -271,37 +322,36 @@ export const PrizeOrders = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold text-green-400">
-                      ${order.offerAmount?.toFixed(2) || '-'}
+                    <Badge className={cn('border', getStatusColor(order.status))}>
+                      {getStatusLabel(order.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-semibold">
+                      ${order.totalPrice?.toFixed(2) || '-'}
                     </span>
                   </TableCell>
                   <TableCell>
-                    {order.counterOfferAmount ? (
-                      <span className="font-semibold text-yellow-400">
-                        ${order.counterOfferAmount.toFixed(2)}
+                    {order.offerAmount ? (
+                      <span className="font-semibold text-green-400">
+                        ${order.offerAmount.toFixed(2)}
                       </span>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={cn('border', getStatusColor(order.status))}>
-                      {getStatusLabel(order.status)}
-                    </Badge>
                   </TableCell>
                   <TableCell className="text-sm">
                     {format(new Date(order.createdAt), 'MMM dd, yyyy')}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col sm:flex-row gap-2">
-                      {order.status === 'offer_made' && (
+                      {['offer_made'].includes(order.status) && (
                         <>
                           <Button
                             size="sm"
                             variant="default"
                             className="gap-1"
-                            onClick={() => acceptOfferMutation.mutate(order.id)}
-                            disabled={acceptOfferMutation.isPending}
+                            onClick={() => {} /* acceptOfferMutation.mutate(order.id) */}
                           >
                             <Check className="h-3 w-3" />
                             Accept
@@ -317,24 +367,25 @@ export const PrizeOrders = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => rejectOfferMutation.mutate(order.id)}
-                            disabled={rejectOfferMutation.isPending}
+                            onClick={() => {} /* rejectOfferMutation.mutate(order.id) */}
                           >
                             <X className="h-3 w-3" />
                             Reject
                           </Button>
                         </>
                       )}
-                      {order.status === 'countered' && (
-                        <span className="text-sm text-muted-foreground">
-                          Awaiting user response
+                      {order.status === 'started' && (
+                        <span className="text-sm text-yellow-500 font-medium">
+                          Awaiting Payment
                         </span>
                       )}
-                      {order.status === 'offer_accepted' && (
-                        <span className="text-sm text-green-500">Pending payment</span>
+                      {order.status === 'paid' && (
+                        <span className="text-sm text-green-500 font-medium">
+                          Payment Complete
+                        </span>
                       )}
-                      {order.status === 'rejected' && (
-                        <span className="text-sm text-red-500">Rejected</span>
+                      {order.status === 'cancelled' && (
+                        <span className="text-sm text-red-500 font-medium">Cancelled</span>
                       )}
                     </div>
                   </TableCell>
