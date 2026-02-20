@@ -19,11 +19,12 @@ import { getThumbnailUrl } from '@/utils/helper';
 interface Prize {
   id: string;
   name: string;
-  description: string;
-  amount: number;
-  imageUrl: string;
+  description?: string;
+  amount?: number;
+  imageUrl?: string;
   category?: string;
   stock?: number;
+  purchaseOption?: 'offers_only' | 'buy_only' | 'both';
 }
 
 interface ShippingAddress {
@@ -139,10 +140,12 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
               <div className="flex-1">
                 <p className="font-semibold">{prize.name}</p>
                 <div className="text-sm text-muted-foreground space-y-1 mt-1">
-                  <div className="flex justify-between">
-                    <span>Price:</span>
-                    <span>${(prize.amount / 50).toFixed(2)}</span>
-                  </div>
+                  {prize.purchaseOption !== 'offers_only' && prize.amount && (
+                    <div className="flex justify-between">
+                      <span>Price:</span>
+                      <span>${(prize.amount / 50).toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>Shipping:</span>
                     <span>$5.00</span>

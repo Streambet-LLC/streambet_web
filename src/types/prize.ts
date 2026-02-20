@@ -27,7 +27,7 @@ export interface PrizeConfiguration {
  * DTO for creating a new prize tier
  */
 export interface CreatePrizeTierRequest {
-  amount: number;
+  amount?: number;
   name: string;
   description?: string;
   imageUrl?: string;
@@ -40,7 +40,7 @@ export interface CreatePrizeTierRequest {
  * DTO for updating an existing prize tier
  */
 export interface UpdatePrizeTierRequest {
-  amount: number;
+  amount?: number;
   name: string;
   description?: string;
   imageUrl?: string;
