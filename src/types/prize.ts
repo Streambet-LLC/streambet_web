@@ -2,6 +2,8 @@
  * Prize system types matching backend DTOs
  */
 
+export type PrizeBrand = 'pokemon' | 'one_piece' | 'sports';
+
 /**
  * Prize tier configuration
  * Each tier is stored as a separate row in the database
@@ -16,6 +18,7 @@ export interface PrizeConfiguration {
   category: 'slab' | 'sealed';
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
+  brand: PrizeBrand;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -34,6 +37,7 @@ export interface CreatePrizeTierRequest {
   category: 'slab' | 'sealed';
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
+  brand?: PrizeBrand;
 }
 
 /**
@@ -47,6 +51,7 @@ export interface UpdatePrizeTierRequest {
   category: 'slab' | 'sealed';
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
+  brand?: PrizeBrand;
 }
 
 /**
