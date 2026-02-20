@@ -192,6 +192,12 @@ export const PrizeConfiguration = () => {
       return;
     }
 
+    // Validate amount for non-offers_only prizes
+    if (formData.purchaseOption !== 'offers_only' && (!formData.amount || formData.amount <= 0)) {
+      setValidationError('Coin amount is required for Buy Only and Both purchase options');
+      return;
+    }
+
     // Check for image errors
     if (imageError) {
       toast({
@@ -225,6 +231,12 @@ export const PrizeConfiguration = () => {
     if (!editingTier) return;
     if (!formData.name.trim()) {
       setValidationError('Item name is required');
+      return;
+    }
+
+    // Validate amount for non-offers_only prizes
+    if (formData.purchaseOption !== 'offers_only' && (!formData.amount || formData.amount <= 0)) {
+      setValidationError('Coin amount is required for Buy Only and Both purchase options');
       return;
     }
 
@@ -474,7 +486,15 @@ export const PrizeConfiguration = () => {
           <div className="space-y-5 py-4">
             <div className="space-y-2.5">
               <Label htmlFor="amount" className="text-base font-medium">
-                Coin Amount <span className="text-destructive">*</span>
+                Coin Amount{' '}
+                {formData.purchaseOption !== 'offers_only' && (
+                  <span className="text-destructive">*</span>
+                )}
+                {formData.purchaseOption === 'offers_only' && (
+                  <span className="text-xs text-muted-foreground font-normal">
+                    (optional - defaults to $0.02)
+                  </span>
+                )}
               </Label>
               <Input
                 id="amount"
@@ -486,8 +506,14 @@ export const PrizeConfiguration = () => {
                   setValidationError('');
                 }}
                 className="h-12 text-base"
-                placeholder="0"
+                placeholder={formData.purchaseOption === 'offers_only' ? 'Optional' : '0'}
+                disabled={formData.purchaseOption === 'offers_only'}
               />
+              {formData.purchaseOption === 'offers_only' && (
+                <p className="text-xs text-muted-foreground">
+                  Price is not shown to users for offer-only items. They submit their own offer.
+                </p>
+              )}
             </div>
             <div className="space-y-2.5">
               <Label htmlFor="name" className="text-base font-medium">
