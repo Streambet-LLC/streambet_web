@@ -2,7 +2,7 @@
  * Prize system types matching backend DTOs
  */
 
-export type PrizeBrand = 'pokemon' | 'one_piece' | 'sports';
+export type PrizeBrand = 'pokemon' | 'one_piece' | 'sports' | 'other';
 
 /**
  * Prize tier configuration

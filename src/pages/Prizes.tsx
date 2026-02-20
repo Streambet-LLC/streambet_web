@@ -201,6 +201,13 @@ export default function Prizes() {
               >
                 Sports
               </Button>
+              <Button
+                variant={selectedBrand === 'other' ? 'default' : 'outline'}
+                onClick={() => setSelectedBrand('other')}
+                className="rounded-full"
+              >
+                Other
+              </Button>
             </div>
           </div>
           {displayPrizes.length === 0 ? (
