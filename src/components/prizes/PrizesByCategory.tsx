@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart, DollarSign } from 'lucide-react';
 import { getThumbnailUrl } from '@/utils/helper';
 import { MakeOfferModal } from './MakeOfferModal';
+import { PrizeBrand } from '@/types/prize';
 
 export type PrizeCategoryType = 'slab' | 'sealed';
 
@@ -16,6 +17,7 @@ export interface Prize {
   amount?: number;
   stock?: number;
   purchaseOption?: 'offers_only' | 'buy_only' | 'both';
+  brand?: PrizeBrand;
 }
 
 interface PrizesByCategoryProps {

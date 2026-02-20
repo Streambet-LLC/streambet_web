@@ -21,6 +21,7 @@ import {
   PrizeConfiguration as PrizeTier,
   CreatePrizeTierRequest,
   UpdatePrizeTierRequest,
+  PrizeBrand,
 } from '@/types/prize';
 import PhotoCropper from '../PhotoCropper';
 import { useImageCropper } from '@/hooks/useImageCropper';
@@ -80,6 +81,7 @@ export const PrizeConfiguration = () => {
     category: 'slab',
     stock: 0,
     purchaseOption: 'both',
+    brand: 'pokemon',
   });
 
   const resetForm = () => {
@@ -91,6 +93,7 @@ export const PrizeConfiguration = () => {
       category: 'slab',
       stock: 0,
       purchaseOption: 'both',
+      brand: 'pokemon',
     });
     setValidationError('');
     imageUpload.clearImage();
@@ -135,8 +138,6 @@ export const PrizeConfiguration = () => {
     }
     return { isValid: true };
   };
-
-
 
   // Create mutation
   const createMutation = useMutation({
@@ -281,6 +282,7 @@ export const PrizeConfiguration = () => {
       category: tier.category,
       stock: tier.stock,
       purchaseOption: tier.purchaseOption || 'both',
+      brand: tier.brand || 'pokemon',
     });
     imageUpload.clearImage();
     setEditingTier(tier);
@@ -571,6 +573,30 @@ export const PrizeConfiguration = () => {
                   <SelectItem value="offers_only">Offers Only</SelectItem>
                   <SelectItem value="buy_only">Buy Only</SelectItem>
                   <SelectItem value="both">Both</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2.5">
+              <Label htmlFor="brand" className="text-base font-medium">
+                Brand <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.brand || 'pokemon'}
+                onValueChange={value => {
+                  setFormData({
+                    ...formData,
+                    brand: value as PrizeBrand,
+                  });
+                  setValidationError('');
+                }}
+              >
+                <SelectTrigger id="brand" className="h-12 text-base">
+                  <SelectValue placeholder="Select brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pokemon">Pokémon</SelectItem>
+                  <SelectItem value="one_piece">One Piece</SelectItem>
+                  <SelectItem value="sports">Sports</SelectItem>
                 </SelectContent>
               </Select>
             </div>

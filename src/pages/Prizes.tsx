@@ -14,6 +14,8 @@ import {
 import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
 import { title } from 'process';
 import { deserialize } from 'v8';
+import { Button } from '@/components/ui/button';
+import { PrizeBrand } from '@/types/prize';
 
 export default function Prizes() {
   const { data: tiers, isLoading } = usePrizeTiers();
@@ -23,6 +25,7 @@ export default function Prizes() {
     name: string;
     amount: number;
   } | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<PrizeBrand | null>(null);
 
   const digitalRipsPartners = [
     {
@@ -136,7 +139,7 @@ export default function Prizes() {
     return 'slab';
   };
 
-  const displayPrizes: PrizeDisplay[] = (tiers || [])
+  const allPrizes: PrizeDisplay[] = (tiers || [])
     .filter(prize => prize.stock > 0)
     .map(prize => ({
       id: prize.id,
@@ -147,7 +150,11 @@ export default function Prizes() {
       amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
       stock: prize.stock,
       purchaseOption: prize.purchaseOption,
+      brand: prize.brand,
     }));
+  const displayPrizes = selectedBrand
+    ? allPrizes.filter(prize => prize.brand === selectedBrand)
+    : allPrizes;
 
   return (
     <MainLayout>
@@ -161,23 +168,58 @@ export default function Prizes() {
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </CardContent>
         </Card>
-      ) : displayPrizes.length === 0 ? (
-        <div className="text-center py-12">
-          <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Coming soon!</p>
-        </div>
       ) : (
         <>
-          <PrizesByCategory
-            prizes={displayPrizes}
-            onPrizeClick={prize =>
-              setSelectedPrizeForCheckout({
-                id: prize.id,
-                name: prize.name,
-                amount: prize.amount ?? 0,
-              })
-            }
-          />
+          <div className="mb-6 space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground">Filter by Brand:</h3>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedBrand === null ? 'default' : 'outline'}
+                onClick={() => setSelectedBrand(null)}
+                className="rounded-full"
+              >
+                All Items
+              </Button>
+              <Button
+                variant={selectedBrand === 'pokemon' ? 'default' : 'outline'}
+                onClick={() => setSelectedBrand('pokemon')}
+                className="rounded-full"
+              >
+                Pokémon
+              </Button>
+              <Button
+                variant={selectedBrand === 'one_piece' ? 'default' : 'outline'}
+                onClick={() => setSelectedBrand('one_piece')}
+                className="rounded-full"
+              >
+                One Piece
+              </Button>
+              <Button
+                variant={selectedBrand === 'sports' ? 'default' : 'outline'}
+                onClick={() => setSelectedBrand('sports')}
+                className="rounded-full"
+              >
+                Sports
+              </Button>
+            </div>
+          </div>
+          {displayPrizes.length === 0 ? (
+            <div className="text-center py-12">
+              <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Coming soon!</p>
+            </div>
+          ) : (
+            <PrizesByCategory
+              prizes={displayPrizes}
+              onPrizeClick={prize =>
+                setSelectedPrizeForCheckout({
+                  id: prize.id,
+                  name: prize.name,
+                  amount: prize.amount ?? 0,
+                })
+              }
+            />
+          )}
 
           {/* <section className="mt-10 space-y-4">
             <div>
