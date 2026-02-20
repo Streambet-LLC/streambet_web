@@ -597,6 +597,7 @@ export const PrizeConfiguration = () => {
                   <SelectItem value="pokemon">Pokémon</SelectItem>
                   <SelectItem value="one_piece">One Piece</SelectItem>
                   <SelectItem value="sports">Sports</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
