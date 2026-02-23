@@ -130,6 +130,40 @@ export default function LockTokens({
     setShowCancelConfirmation(false);
   };
 
+  const getSentimentPercentage = (option: any) => {
+    const parsed = Number(option?.percentage);
+
+    const activeVariable = activeRound?.bettingVariables?.find(
+      (variable: any) => variable?.id === option?.id || variable?.name === option?.name
+    );
+
+    const getCount = (variable: any) =>
+      Number(
+        (variable?.betCountCadeCoin ?? 0) +
+          (variable?.betCountGoldCoin ?? 0) +
+          (variable?.betCountSweepCoin ?? 0)
+      );
+
+    const sourceVariables =
+      activeRound?.bettingVariables ?? bettingData?.bettingRounds?.[0]?.bettingVariables ?? [];
+
+    const totalCount = sourceVariables.reduce(
+      (sum: number, variable: any) => sum + getCount(variable),
+      0
+    );
+
+    const count = getCount(activeVariable ?? option);
+    if (!totalCount) return 0;
+
+    if (!Number.isNaN(parsed) && option?.percentage !== undefined && option?.percentage !== null) {
+      return parsed === 0 && count > 0
+        ? Math.round((count / totalCount) * 100)
+        : Math.round(parsed);
+    }
+
+    return Math.round((count / totalCount) * 100);
+  };
+
   // Sentiment pick layout
   if (activeRound?.mechanism === PickMechanism.SENTIMENT) {
     return (
@@ -188,7 +222,7 @@ export default function LockTokens({
                       </span>
                       <div className="flex flex-col items-end">
                         <span className="text-sm font-semibold text-white">
-                          {option.percentage || 0}%
+                          {getSentimentPercentage(option)}%
                         </span>
                         {activeRound?.mechanism === PickMechanism.SENTIMENT &&
                           option.betCountCadeCoin > 0 && (
