@@ -134,7 +134,7 @@ export default function LockTokens({
   if (activeRound?.mechanism === PickMechanism.SENTIMENT) {
     return (
       <div
-        className="relative mx-auto rounded-[16px] shadow-lg border-b border-[#2C2C2C]"
+        className="relative mx-auto w-full max-w-[380px] min-w-[280px] rounded-[16px] shadow-lg border-b border-[#2C2C2C]"
         style={{ border: '0.62px solid #181818' }}
       >
         <div className="relative z-10 h-full flex flex-col justify-between">
