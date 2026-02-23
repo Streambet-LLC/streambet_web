@@ -3,6 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card'
 import FeaturedBetCard from './FeaturedBetCard';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { getImageLink } from '@/utils/helper';
+import { roundDownCoinAmount } from '@/utils/format';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { Video, Users, Expand } from 'lucide-react';
@@ -389,7 +390,7 @@ export default function BetCard(props: BetCardType) {
                   <div className="text-xs py-1 text-electric-lime">
                     {props.mechanism?.toLowerCase?.() === 'sentiment'
                       ? 'Your pick'
-                      : `Your pick for ${option.userBet.amount} Cade Coins`}
+                      : `Your pick for ${roundDownCoinAmount(option.userBet.amount)} CadeCoins`}
                   </div>
                 )}
               </div>
@@ -440,17 +441,19 @@ export default function BetCard(props: BetCardType) {
                   {/* Hide CadeCoin pool for sentiment picks */}
                   {props.mechanism?.toLowerCase?.() !== 'sentiment' && (
                     <>
-                      <Tooltip delayDuration={0}>
-                        <TooltipTrigger asChild>
-                          <div className="flex gap-1 text-sm items-center cursor-pointer">
-                            <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
-                            <span className="text-[#B4FF39] font-semibold">
-                              {cardData.totalPot.cadeCoins || 0}
-                            </span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">Total Pot</TooltipContent>
-                      </Tooltip>
+                      {roundDownCoinAmount(cardData.totalPot.cadeCoins) > 0 && (
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <div className="flex gap-1 text-sm items-center cursor-pointer">
+                              <img src="/icons/cade-coins.png" alt="gold-coins" className="h-4 w-4" />
+                              <span className="text-[#B4FF39] font-semibold">
+                                {roundDownCoinAmount(cardData.totalPot.cadeCoins)}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Total Pot</TooltipContent>
+                        </Tooltip>
+                      )}
                       {cardData.cadeCoinUsersCount !== undefined &&
                         cardData.cadeCoinUsersCount > 0 && (
                           <Tooltip delayDuration={0}>

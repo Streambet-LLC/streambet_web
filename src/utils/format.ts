@@ -87,3 +87,10 @@ export const formatViewCount = (count: number): string => {
 export const formatUrl = (url: string): string => {
   return !url.startsWith("https://") && !url.startsWith("http://") ? "https://".concat(url) : url;
 };
+
+/**
+ * Round down coin amount to nearest whole number
+ */
+export const roundDownCoinAmount = (amount: number | undefined | null): number => {
+  return Math.floor(amount ?? 0);
+};

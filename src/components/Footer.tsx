@@ -10,9 +10,9 @@ export const Footer = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <img src="/machine-wordmark.svg" alt="CardCade Logo" className="mb-8" />
-            <p className="text-sm text-muted-foreground">
+            {/* <p className="text-sm text-muted-foreground">
               Live picks for games created on the Internet.
-            </p>
+            </p> */}
           </div>
 
           {/* Legal Links */}
