@@ -100,9 +100,9 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
             </div>
           </DropdownMenuItem>
         }
-        <DropdownMenuItem asChild className="cursor-pointer">
+        {/* <DropdownMenuItem asChild className="cursor-pointer">
           <Link to={`/${profile?.username}`}>My Profile</Link>
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
 
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/daily-spin">Daily Spin</Link>
