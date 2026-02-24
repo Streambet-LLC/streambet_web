@@ -6,6 +6,7 @@ import { formatDateTimeForISO } from './helper';
 import { BetRoundType, BettingCategory, PickMechanism } from '@/enums';
 
 export interface BettingOption {
+  id?: string;
   optionId?: string;
   option: string;
 }
@@ -112,6 +113,7 @@ export const cleanTemporaryIds = (roundsData: BettingRound[]): BettingRoundPaylo
     options: round.options.map(option => {
       // Create a clean option with only id and option properties
       const cleanOption: BettingOption = {
+        id: option.id,
         option: option.option,
       };
 
