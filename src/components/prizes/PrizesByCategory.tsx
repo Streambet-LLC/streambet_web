@@ -53,7 +53,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({ prizes, onPr
         Object.entries(categories).map(([key, items]) =>
           items.length > 0 ? (
             <div key={key}>
-              <h2 className="text-2xl font-bold mb-4">
+              <h2 className="text-4xl font-bold mb-8 py-6">
                 {CATEGORY_LABELS[key as PrizeCategoryType]}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -75,11 +75,11 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({ prizes, onPr
                       )}
                       {typeof prize.amount === 'number' &&
                         prize.purchaseOption !== 'offers_only' && (
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {prize.amount.toLocaleString('en-US')} coins • $
-                          {(prize.amount / 50).toFixed(2)} USD
-                        </p>
-                      )}
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {prize.amount.toLocaleString('en-US')} coins • $
+                            {(prize.amount / 50).toFixed(2)} USD
+                          </p>
+                        )}
                       {typeof prize.stock === 'number' && (
                         <p className="text-xs text-muted-foreground mb-4">
                           Stock: {prize.stock} {prize.stock === 1 ? 'item' : 'items'}
