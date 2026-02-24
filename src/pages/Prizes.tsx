@@ -158,10 +158,14 @@ export default function Prizes() {
 
   return (
     <MainLayout>
-      <h2 className="text-xl font-semibold">Redemption</h2>
-      <h2 className="text-sm text-gray-500 mb-4">
-        Redeem items with CadeCoins or USD, or a combination of both!
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-semibold">Redemption</h2>
+          <h2 className="text-sm text-gray-500">
+            Redeem items with CadeCoins or USD, or a combination of both!
+          </h2>
+        </div>
+      </div>
       {isLoading ? (
         <Card>
           <CardContent className="flex items-center justify-center py-12">
@@ -170,47 +174,7 @@ export default function Prizes() {
         </Card>
       ) : (
         <>
-          <div className="mb-6 space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground">Filter by Brand:</h3>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedBrand === null ? 'default' : 'outline'}
-                onClick={() => setSelectedBrand(null)}
-                className="rounded-full"
-              >
-                All Items
-              </Button>
-              <Button
-                variant={selectedBrand === 'pokemon' ? 'default' : 'outline'}
-                onClick={() => setSelectedBrand('pokemon')}
-                className="rounded-full"
-              >
-                Pokémon
-              </Button>
-              <Button
-                variant={selectedBrand === 'one_piece' ? 'default' : 'outline'}
-                onClick={() => setSelectedBrand('one_piece')}
-                className="rounded-full"
-              >
-                One Piece
-              </Button>
-              <Button
-                variant={selectedBrand === 'sports' ? 'default' : 'outline'}
-                onClick={() => setSelectedBrand('sports')}
-                className="rounded-full"
-              >
-                Sports
-              </Button>
-              <Button
-                variant={selectedBrand === 'other' ? 'default' : 'outline'}
-                onClick={() => setSelectedBrand('other')}
-                className="rounded-full"
-              >
-                Other
-              </Button>
-            </div>
-          </div>
-          {displayPrizes.length === 0 ? (
+          {displayPrizes.length === 0 && selectedBrand === null ? (
             <div className="text-center py-12">
               <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Coming soon!</p>
@@ -218,6 +182,8 @@ export default function Prizes() {
           ) : (
             <PrizesByCategory
               prizes={displayPrizes}
+              selectedBrand={selectedBrand}
+              onBrandChange={setSelectedBrand}
               onPrizeClick={prize =>
                 setSelectedPrizeForCheckout({
                   id: prize.id,
