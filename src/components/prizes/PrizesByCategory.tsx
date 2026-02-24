@@ -47,6 +47,21 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({ prizes, onPr
 
   const hasPrizes = Object.values(categories).some(items => items.length > 0);
 
+  // Sort prizes by purchaseOption: 'both' first, then 'buy_only', then 'offers_only'
+  const sortPrizesByPurchaseOption = (prizeList: Prize[]) => {
+    const purchaseOptionOrder: Record<string, number> = {
+      both: 0,
+      buy_only: 1,
+      offers_only: 2,
+    };
+
+    return [...prizeList].sort((a, b) => {
+      const aOrder = purchaseOptionOrder[a.purchaseOption || 'both'] ?? 3;
+      const bOrder = purchaseOptionOrder[b.purchaseOption || 'both'] ?? 3;
+      return aOrder - bOrder;
+    });
+  };
+
   return (
     <div className="space-y-8">
       {hasPrizes ? (
@@ -57,7 +72,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({ prizes, onPr
                 {CATEGORY_LABELS[key as PrizeCategoryType]}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {items.map(prize => (
+                {sortPrizesByPurchaseOption(items).map(prize => (
                   <FeaturedBetCard key={prize.id}>
                     <div className="p-6 flex flex-col h-full">
                       {prize.imageUrl && (
