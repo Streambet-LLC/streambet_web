@@ -5,6 +5,7 @@ export const getCategoryLabel = (category: BettingCategory): string => {
     // [BettingCategory.TRADING_CARDS]: 'Trading Cards',
     // [BettingCategory.NEOSPORTS_ALTERNATIVE]: 'Alternative Sports',
     [BettingCategory.POKEMON_CARDS]: 'Pokemon Cards',
+    [BettingCategory.ONE_PIECE]: 'One Piece',
     [BettingCategory.SPORTS_CARDS]: 'Sports Cards',
     // [BettingCategory.SPORTS]: 'Sports',
     // [BettingCategory.STREAMING_COMPETITIONS]: 'Streaming Competitions',
