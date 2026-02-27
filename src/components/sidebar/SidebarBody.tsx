@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   GemIcon,
   Flame,
+  Swords,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
@@ -41,6 +42,7 @@ interface SidebarBodyProps {
 // Mapping between BettingCategory (used in sidebar UI) and PrizeBrand (used in database)
 const CATEGORY_TO_BRAND_MAP: Record<BettingCategory, PrizeBrand> = {
   [BettingCategory.POKEMON_CARDS]: 'pokemon',
+  [BettingCategory.ONE_PIECE]: 'one_piece',
   [BettingCategory.SPORTS_CARDS]: 'sports',
   [BettingCategory.OTHER]: 'other',
 };
@@ -48,9 +50,9 @@ const CATEGORY_TO_BRAND_MAP: Record<BettingCategory, PrizeBrand> = {
 // Reverse mapping for highlighting selected category from URL brand param
 const BRAND_TO_CATEGORY_MAP: Record<string, BettingCategory> = {
   'pokemon': BettingCategory.POKEMON_CARDS,
+  'one_piece': BettingCategory.ONE_PIECE,
   'sports': BettingCategory.SPORTS_CARDS,
   'other': BettingCategory.OTHER,
-  'one_piece': BettingCategory.OTHER, // fallback
 };
 
 const CategoryIconContainer = ({
@@ -233,6 +235,7 @@ export default function SidebarBody({
   const getCategoryIcon = (category: BettingCategory) => {
     const iconMap = {
       [BettingCategory.POKEMON_CARDS]: LayoutGrid,
+      [BettingCategory.ONE_PIECE]: Swords,
       [BettingCategory.SPORTS_CARDS]: Goal,
       // HOTFIX: Temporarily removed from UI - backend still supports this
       // [BettingCategory.EMERGING_SPORTS]: SwordsIcon,
