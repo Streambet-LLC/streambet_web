@@ -44,7 +44,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
 
   const { session, refetchSession } = useAuthContext();
   const { handleLogout } = useLogout();
-  const isHomePage = location.pathname === '/';
+  const isPredictionsPage = location.pathname === '/predictions';
 
   // Handle scroll behavior for hiding/showing navbar
   useEffect(() => {
@@ -112,9 +112,9 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
   };
 
   const menuItems = [
-    { label: 'Picks', icon: undefined, path: '/' },
+    { label: 'Redemptions', icon: undefined, path: '/' },
     { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
-    { label: 'Shop', icon: undefined, path: '/shop' },
+    { label: 'Predictions', icon: undefined, path: '/predictions' },
     { label: 'How To Play', icon: undefined, path: '/how-to-play' },
     (session?.role === 'admin' || session?.role === 'creator') && {
       label: session?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard',
@@ -278,9 +278,9 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
             </div>
           </div>
 
-          {/* Center Column: Search Bar - Only on Homepage */}
+          {/* Center Column: Search Bar - Only on Predictions Page */}
           <div className="hidden md:flex flex-1 justify-center mx-4">
-            {isHomePage && searchValue !== undefined && onSearchChange && (
+            {isPredictionsPage && searchValue !== undefined && onSearchChange && (
               <div className="max-w-[280px] md:max-w-lg w-full">
                 <SearchInput
                   id="nav-search"

@@ -41,6 +41,7 @@ import StreamPayoutReport from './StreamPayoutReport';
 import { PrizeConfiguration } from './PrizeConfiguration';
 import { PrizeRedemptions } from './PrizeRedemptions';
 import { PrizeOrders } from './PrizeOrders';
+import { ApplicationsTable } from './ApplicationsTable';
 
 export const AdminManagement = ({
   session,
@@ -105,6 +106,7 @@ export const AdminManagement = ({
     { key: 'ended-non-video', label: 'Ended Non Video' },
     { key: 'promo-cards', label: 'Promo Cards' },
     { key: 'users', label: 'Users' },
+    { key: 'applications', label: 'Applications' },
     { key: 'stream-payout', label: 'Stream Payout' },
     { key: 'prize-settings', label: 'Prize Settings' },
     { key: 'prize-redemptions', label: 'Prize Redemptions' },
@@ -1689,6 +1691,12 @@ export const AdminManagement = ({
           {activeTab === 'users' && (
             <div className="space-y-4">
               <UserTable searchUserQuery={searchUserQuery} />
+            </div>
+          )}
+
+          {activeTab === 'applications' && (
+            <div className="space-y-4">
+              <ApplicationsTable />
             </div>
           )}
 

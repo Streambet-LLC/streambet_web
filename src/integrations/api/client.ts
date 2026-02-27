@@ -1042,6 +1042,27 @@ export const adminAPI = {
     const response = await apiClient.patch(`/admin/prizes/redemptions/${id}/status`, payload);
     return response;
   },
+
+  // Application Management
+  getAllApplications: async (params?: {
+    applicationType?: 'creator' | 'seller';
+    status?: 'pending' | 'approved' | 'rejected';
+    page?: number;
+    limit?: number;
+  }) => {
+    const response = await apiClient.get('/admin/applications', { params });
+    return response.data;
+  },
+
+  approveApplication: async (id: string) => {
+    const response = await apiClient.patch(`/admin/applications/${id}/approve`);
+    return response.data;
+  },
+
+  rejectApplication: async (id: string) => {
+    const response = await apiClient.patch(`/admin/applications/${id}/reject`);
+    return response.data;
+  },
 };
 
 // Creator API
@@ -1203,7 +1224,7 @@ export const prizeAPI = {
     category?: 'slab' | 'sealed';
     stock?: number;
     purchaseOption?: 'offers_only' | 'buy_only' | 'both';
-    brand?: 'pokemon' | 'one_piece' | 'sports';
+    brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/admin/prizes', payload);
     return response.data;
@@ -1221,7 +1242,7 @@ export const prizeAPI = {
       category?: 'slab' | 'sealed';
       stock?: number;
       purchaseOption?: 'offers_only' | 'buy_only' | 'both';
-      brand?: 'pokemon' | 'one_piece' | 'sports';
+      brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/admin/prizes/${id}`, payload);

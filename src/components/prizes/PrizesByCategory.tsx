@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import FeaturedBetCard from '@/components/FeaturedBetCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ShoppingCart, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
-import { getThumbnailUrl } from '@/utils/helper';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { MakeOfferModal } from './MakeOfferModal';
 import { PrizeBrand } from '@/types/prize';
+import PrizeCard from './PrizeCard';
 
 export type PrizeCategoryType = 'slab' | 'sealed';
 
@@ -26,6 +25,9 @@ interface PrizesByCategoryProps {
   onPrizeClick?: (prize: Prize) => void;
   selectedBrand?: PrizeBrand | null;
   onBrandChange?: (brand: PrizeBrand | null) => void;
+  showFilters?: boolean; // Optional: if false, hide all filters
+  showCategoryHeaders?: boolean; // Optional: if false, hide category headers
+  showBrandFilter?: boolean; // Optional: if false, hide brand filter but keep price filter
 }
 
 const CATEGORY_LABELS: Record<PrizeCategoryType, string> = {
@@ -38,6 +40,9 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   onPrizeClick,
   selectedBrand,
   onBrandChange,
+  showFilters = true, // Default to true to maintain existing behavior
+  showCategoryHeaders = true, // Default to true to maintain existing behavior
+  showBrandFilter = true, // Default to true to maintain existing behavior
 }) => {
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
@@ -93,80 +98,85 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
 
   return (
     <div className="space-y-8">
-      {/* Filters Toggle Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => {
-          if (hasPrizes) {
-            setShowPriceFilter(!showPriceFilter);
-          } else {
-            setShowPriceFilter(true);
-          }
-        }}
-        disabled={hasPrizes === false}
-        className="flex items-center gap-2"
-      >
-        {showPriceFilter || hasPrizes === false ? (
-          <>
-            <ChevronUp className="w-4 h-4" />
-            Hide Filters
-          </>
-        ) : (
-          <>
-            <ChevronDown className="w-4 h-4" />
-            Show Filters
-          </>
-        )}
-      </Button>
+      {/* Filters - Only show if showFilters is true */}
+      {showFilters && (
+        <>
+          {/* Filters Toggle Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (hasPrizes) {
+                setShowPriceFilter(!showPriceFilter);
+              } else {
+                setShowPriceFilter(true);
+              }
+            }}
+            disabled={hasPrizes === false}
+            className="flex items-center gap-2"
+          >
+            {showPriceFilter || hasPrizes === false ? (
+              <>
+                <ChevronUp className="w-4 h-4" />
+                Hide Filters
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-4 h-4" />
+                Show Filters
+              </>
+            )}
+          </Button>
 
-      {(showPriceFilter || hasPrizes === false) && (
+          {(showPriceFilter || hasPrizes === false) && (
         <div className="bg-secondary/50 p-4 rounded-lg space-y-4">
-          <div>
-            <h3 className="text-sm font-semibold mb-3">Filter by Brand:</h3>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedBrand === null ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onBrandChange?.(null)}
-                className="rounded-full"
-              >
-                All Items
-              </Button>
-              <Button
-                variant={selectedBrand === 'pokemon' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onBrandChange?.('pokemon')}
-                className="rounded-full"
-              >
-                Pokémon
-              </Button>
-              <Button
-                variant={selectedBrand === 'one_piece' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onBrandChange?.('one_piece')}
-                className="rounded-full"
-              >
-                One Piece
-              </Button>
-              <Button
-                variant={selectedBrand === 'sports' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onBrandChange?.('sports')}
-                className="rounded-full"
-              >
-                Sports
-              </Button>
-              <Button
-                variant={selectedBrand === 'other' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onBrandChange?.('other')}
-                className="rounded-full"
-              >
-                Other
-              </Button>
+          {showBrandFilter && (
+            <div>
+              <h3 className="text-sm font-semibold mb-3">Filter by Brand:</h3>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedBrand === null ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => onBrandChange?.(null)}
+                  className="rounded-full"
+                >
+                  All Items
+                </Button>
+                <Button
+                  variant={selectedBrand === 'pokemon' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => onBrandChange?.('pokemon')}
+                  className="rounded-full"
+                >
+                  Pokémon
+                </Button>
+                <Button
+                  variant={selectedBrand === 'one_piece' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => onBrandChange?.('one_piece')}
+                  className="rounded-full"
+                >
+                  One Piece
+                </Button>
+                <Button
+                  variant={selectedBrand === 'sports' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => onBrandChange?.('sports')}
+                  className="rounded-full"
+                >
+                  Sports
+                </Button>
+                <Button
+                  variant={selectedBrand === 'other' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => onBrandChange?.('other')}
+                  className="rounded-full"
+                >
+                  Other
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Price Range Filter */}
           <div>
@@ -225,6 +235,8 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
           </div>
         </div>
       )}
+        </>
+      )}
 
       {hasPrizes ? (
         (() => {
@@ -237,74 +249,22 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
             Object.entries(categories).map(([key, items]) =>
               items.length > 0 ? (
                 <div key={key}>
-                  <h2 className="text-4xl font-bold mb-8 py-6">
-                    {CATEGORY_LABELS[key as PrizeCategoryType]}
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {showCategoryHeaders && (
+                    <h2 className="text-4xl font-bold mb-8 py-6">
+                      {CATEGORY_LABELS[key as PrizeCategoryType]}
+                    </h2>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filterByPriceRange(sortPrizesByPurchaseOption(items)).map(prize => (
-                      <FeaturedBetCard key={prize.id}>
-                        <div className="p-6 flex flex-col h-full">
-                          {prize.imageUrl && (
-                            <div className="w-full aspect-[16/9] border-t pt-2 md:pt-4">
-                              <img
-                                src={getThumbnailUrl(prize.imageUrl)}
-                                alt={prize.name}
-                                className="w-full h-full rounded object-cover"
-                              />
-                            </div>
-                          )}
-                          <h3 className="font-semibold text-lg mb-1 mt-2">{prize.name}</h3>
-                          {prize.description && (
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {prize.description}
-                            </p>
-                          )}
-                          {typeof prize.amount === 'number' &&
-                            prize.purchaseOption !== 'offers_only' && (
-                              <p className="text-sm text-muted-foreground mb-2">
-                                {prize.amount.toLocaleString('en-US')} coins • $
-                                {(prize.amount / 50).toFixed(2)} USD
-                              </p>
-                            )}
-                          {typeof prize.stock === 'number' && (
-                            <p className="text-xs text-muted-foreground mb-4">
-                              Stock: {prize.stock} {prize.stock === 1 ? 'item' : 'items'}
-                            </p>
-                          )}
-                          <div className="flex flex-col sm:flex-row gap-2 mt-auto">
-                            {prize.purchaseOption !== 'offers_only' && (
-                              <Button
-                                className="flex-1 gap-2"
-                                type="button"
-                                tabIndex={0}
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  if (onPrizeClick) onPrizeClick(prize);
-                                }}
-                              >
-                                <ShoppingCart className="w-4 h-4" />
-                                Buy Now
-                              </Button>
-                            )}
-                            {prize.purchaseOption !== 'buy_only' && (
-                              <Button
-                                variant="outline"
-                                className="flex-1 gap-2 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00]"
-                                type="button"
-                                tabIndex={0}
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  setSelectedPrize(prize);
-                                  setIsOfferModalOpen(true);
-                                }}
-                              >
-                                <DollarSign className="w-4 h-4" />
-                                Make Offer
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </FeaturedBetCard>
+                      <PrizeCard
+                        key={prize.id}
+                        prize={prize}
+                        onClick={onPrizeClick ? () => onPrizeClick(prize) : () => {}}
+                        onOfferClick={(prize) => {
+                          setSelectedPrize(prize);
+                          setIsOfferModalOpen(true);
+                        }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -313,7 +273,6 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-3xl text-muted-foreground">
               <span role="img" aria-label="cry smile sad" className="text-6xl mb-4">
-                😢
               </span>
               No items match your filters
             </div>
@@ -322,7 +281,6 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-3xl text-muted-foreground">
           <span role="img" aria-label="cry smile sad" className="text-6xl mb-4">
-            😢
           </span>
           None Available
         </div>

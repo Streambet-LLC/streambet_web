@@ -45,9 +45,11 @@ import Deposit from './components/deposit/Deposit';
 import Leaderboard from './pages/Leaderboard';
 import { CookiesProvider } from 'react-cookie';
 import CreatorApplication from './pages/CreatorApplication';
+import SellerApplication from './pages/SellerApplication';
 import Prizes from './pages/Prizes';
 import HowToPlay from './pages/HowToPlay';
 import { DailySpin } from './pages/DailySpin';
+import ShopDetail from './pages/ShopDetail';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -114,6 +116,7 @@ const App = () => {
                               />
                               <Route path="/settings" element={<Settings />} />
                               <Route path="/creator-application" element={<CreatorApplication />} />
+                              <Route path="/seller-application" element={<SellerApplication />} />
                               <Route path="/daily-spin" element={<DailySpin />} />
                             </Route>
 
@@ -126,7 +129,8 @@ const App = () => {
                             <Route path="/compliance" element={<Compliance />} />
                             <Route path="/creators" element={<Creators />} />
                             <Route path="/prizes" element={<Prizes />} />
-                            <Route path="/shop" element={<Prizes />} />
+                            <Route path="/shop/:username" element={<ShopDetail />} />
+                            <Route path="/predictions" element={<Home />} />
                             <Route path="/how-to-play" element={<HowToPlay />} />
                             <Route path="/leaderboard" element={<Leaderboard />} />
                             <Route path="/faq" element={<FAQ />} />
@@ -135,7 +139,8 @@ const App = () => {
                             <Route path="/reset-password" element={<ResetPassword />} />
                             <Route path="/auth/google-callback" element={<GoogleCallback />} />
                             <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
-                            <Route path="/" element={<Home />} />
+                            <Route path="/shop" element={<Prizes />} />
+                            <Route path="/" element={<Prizes />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </TooltipProvider>
