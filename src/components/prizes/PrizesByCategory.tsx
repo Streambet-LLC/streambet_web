@@ -18,6 +18,7 @@ export interface Prize {
   stock?: number;
   purchaseOption?: 'offers_only' | 'buy_only' | 'both';
   brand?: PrizeBrand;
+  displayOrder?: number;
 }
 
 interface PrizesByCategoryProps {

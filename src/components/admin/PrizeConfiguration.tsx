@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -84,6 +85,9 @@ export const PrizeConfiguration = () => {
     stock: 0,
     purchaseOption: 'both',
     brand: 'pokemon',
+    displayOrder: 0,
+    showOnRedemptions: true,
+    showOnNicksNiceties: true,
   });
 
   const resetForm = () => {
@@ -96,6 +100,9 @@ export const PrizeConfiguration = () => {
       stock: 0,
       purchaseOption: 'both',
       brand: 'pokemon',
+      displayOrder: 0,
+      showOnRedemptions: true,
+      showOnNicksNiceties: true,
     });
     setValidationError('');
     imageUpload.clearImage();
@@ -286,6 +293,9 @@ export const PrizeConfiguration = () => {
       stock: tier.stock,
       purchaseOption: tier.purchaseOption || 'both',
       brand: tier.brand || 'pokemon',
+      displayOrder: tier.displayOrder ?? 0,
+      showOnRedemptions: tier.showOnRedemptions ?? true,
+      showOnNicksNiceties: tier.showOnNicksNiceties ?? true,
     });
     imageUpload.clearImage();
     setEditingTier(tier);
@@ -654,6 +664,56 @@ export const PrizeConfiguration = () => {
                 className="text-base resize-none"
               />
             </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2.5">
+                <Label htmlFor="displayOrder" className="text-base font-medium">
+                  Display Order
+                </Label>
+                <Input
+                  id="displayOrder"
+                  type="number"
+                  value={formData.displayOrder ?? 0}
+                  onChange={e => {
+                    setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 });
+                    setValidationError('');
+                  }}
+                  className="h-12 text-base"
+                  placeholder="0"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Lower numbers show first (e.g. 1 shows before 2).
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-4 justify-center">
+                <div className="flex items-center space-x-2 mt-4 sm:mt-8">
+                  <Switch
+                    id="showOnRedemptions"
+                    checked={formData.showOnRedemptions ?? true}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, showOnRedemptions: checked })
+                    }
+                  />
+                  <Label htmlFor="showOnRedemptions" className="font-medium cursor-pointer">
+                    Show on Redemptions Page
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="showOnNicksNiceties"
+                    checked={formData.showOnNicksNiceties ?? true}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, showOnNicksNiceties: checked })
+                    }
+                  />
+                  <Label htmlFor="showOnNicksNiceties" className="font-medium cursor-pointer">
+                    Show on Nick's Niceties
+                  </Label>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2.5">
               <Label className="text-base font-medium">Prize Image</Label>
               {imageUpload.previewUrl ||

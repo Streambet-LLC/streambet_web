@@ -143,10 +143,10 @@ export default function Prizes() {
     return 'slab';
   };
 
-  // Get all prizes with stock
+  // Get all prizes with stock and filter for redemptions page
   const allPrizes: PrizeDisplay[] = useMemo(() => {
     return (tiers || [])
-      .filter(prize => prize.stock > 0)
+      .filter(prize => prize.stock > 0 && prize.showOnRedemptions !== false)
       .map(prize => ({
         id: prize.id,
         name: prize.name,
@@ -157,13 +157,14 @@ export default function Prizes() {
         stock: prize.stock,
         purchaseOption: prize.purchaseOption,
         brand: prize.brand,
-      }));
+        displayOrder: prize.displayOrder ?? 0,
+      }))
+      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
   }, [tiers]);
 
-  // Featured prizes (top 8 by price)
+  // Featured prizes (top 8 by display order)
   const featuredPrizes = useMemo(() => {
     return [...allPrizes]
-      .sort((a, b) => (b.amount || 0) - (a.amount || 0))
       .slice(0, 8);
   }, [allPrizes]);
 

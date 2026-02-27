@@ -51,7 +51,7 @@ export default function ShopDetail() {
 
   // Filter to only show slabs with stock
   let slabPrizes: PrizeDisplay[] = (tiers || [])
-    .filter(prize => prize.category === 'slab' && prize.stock > 0)
+    .filter(prize => prize.category === 'slab' && prize.stock > 0 && prize.showOnNicksNiceties !== false)
     .map(prize => ({
       id: prize.id,
       name: prize.name,
@@ -62,7 +62,9 @@ export default function ShopDetail() {
       stock: prize.stock,
       purchaseOption: prize.purchaseOption,
       brand: prize.brand,
-    }));
+      displayOrder: prize.displayOrder ?? 0,
+    }))
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
 
   // Apply brand filter if any brands are selected
   if (selectedBrands.length > 0) {
