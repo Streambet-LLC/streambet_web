@@ -34,7 +34,7 @@ export const MainLayout = ({
   onSearchChange,
 }: MainLayoutProps) => {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
+  const isPredictionsPage = location.pathname === '/predictions';
 
   if (isWithdraw) {
     return (
@@ -98,7 +98,7 @@ export const MainLayout = ({
           )}
         >
           {children}
-          {(showFooter || isHomePage) && <Footer />}
+          {(showFooter || isPredictionsPage) && <Footer />}
         </main>
       </div>
     </div>

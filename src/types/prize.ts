@@ -19,6 +19,9 @@ export interface PrizeConfiguration {
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
   brand: PrizeBrand;
+  displayOrder: number;
+  showOnRedemptions: boolean;
+  showOnNicksNiceties: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -38,6 +41,9 @@ export interface CreatePrizeTierRequest {
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
   brand?: PrizeBrand;
+  displayOrder?: number;
+  showOnRedemptions?: boolean;
+  showOnNicksNiceties?: boolean;
 }
 
 /**
@@ -52,6 +58,9 @@ export interface UpdatePrizeTierRequest {
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
   brand?: PrizeBrand;
+  displayOrder?: number;
+  showOnRedemptions?: boolean;
+  showOnNicksNiceties?: boolean;
 }
 
 /**
