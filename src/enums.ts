@@ -26,6 +26,7 @@ export enum BettingCategory {
   // TRADING_CARDS = 'trading_cards',
   // NEOSPORTS_ALTERNATIVE = 'neosports_alternative',
   POKEMON_CARDS = 'pokemon_cards',
+  ONE_PIECE = 'one_piece',
   SPORTS_CARDS = 'sports_cards',
   // SPORTS = 'sports',
   // HOTFIX: Temporarily removed from UI - backend still supports this

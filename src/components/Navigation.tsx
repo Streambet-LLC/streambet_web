@@ -44,7 +44,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
 
   const { session, refetchSession } = useAuthContext();
   const { handleLogout } = useLogout();
-  const isHomePage = location.pathname === '/';
+  const isPredictionsPage = location.pathname === '/predictions';
 
   // Handle scroll behavior for hiding/showing navbar
   useEffect(() => {
@@ -112,9 +112,10 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
   };
 
   const menuItems = [
-    { label: 'Picks', icon: undefined, path: '/' },
+    { label: 'Shop', icon: undefined, path: '/' },
+    { label: 'Redemptions', icon: undefined, path: '/redemptions' },
     { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
-    { label: 'Shop', icon: undefined, path: '/shop' },
+    { label: 'Predictions', icon: undefined, path: '/predictions' },
     { label: 'How To Play', icon: undefined, path: '/how-to-play' },
     (session?.role === 'admin' || session?.role === 'creator') && {
       label: session?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard',
@@ -150,88 +151,94 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
 
         <div className="px-4 w-full flex h-16 items-center">
           {/* Mobile Menu Toggle */}
-          <div className="md:hidden mr-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="p-2"
-              onClick={() => setIsDrawerOpen(true)}
-              style={{
-                position: 'relative',
-                zIndex: 1,
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <CustomDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
-              <div className="flex-1 overflow-y-auto p-4 pt-12">
-                {/* Logo for mobile */}
-                <div className="md:hidden mb-4 pl-4">
-                  <Link to="/" className="flex items-center" onClick={() => setIsDrawerOpen(false)}>
-                    <img
-                      src="/wordmark.svg"
-                      alt="Streambet Logo"
-                      className="h-8 w-[165px] object-contain"
-                    />
-                  </Link>
-                </div>
-                <div className="flex flex-col space-y-2">
-                  {menuItems.map((item, index) => {
-                    const isActive = location.pathname === item.path;
-                    return (
-                      <Button
-                        key={item.label}
-                        variant="ghost"
-                        className={`justify-start text-left h-12 ${
-                          isActive
-                            ? 'text-white bg-primary/10'
-                            : 'text-[#FFFFFF80] hover:text-white hover:bg-primary/5'
-                        }`}
-                        onClick={() => handleMenuItemClick(item.path)}
-                      >
-                        {item.icon}
-                        <span className="ml-2">{item.label}</span>
-                      </Button>
-                    );
-                  })}
-                </div>
-
-                {/* Add user actions at the bottom if logged in */}
-                {session && (
-                  <div className="mt-8 pt-4 border-t">
-                    <div className="flex flex-col space-y-2">
-                      <Button
-                        variant="ghost"
-                        className="justify-start text-left h-12 text-[#FFFFFF80] hover:text-white hover:bg-primary/5"
-                        onClick={() => {
-                          setTimeout(() => {
-                            navigate('/settings');
-                          }, 100);
-                          setIsDrawerOpen(false);
-                        }}
-                      >
-                        <span>Settings</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className="justify-start text-left h-12 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                        onClick={() => {
-                          setTimeout(() => {
-                            handleLogoutWithRefetch();
-                          }, 100);
-                          setIsDrawerOpen(false);
-                        }}
-                      >
-                        <span>Logout</span>
-                      </Button>
-                    </div>
+          {session && (
+            <div className="md:hidden mr-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-2"
+                onClick={() => setIsDrawerOpen(true)}
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              <CustomDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
+                <div className="flex-1 overflow-y-auto p-4 pt-12">
+                  {/* Logo for mobile */}
+                  <div className="md:hidden mb-4 pl-4">
+                    <Link
+                      to="/"
+                      className="flex items-center"
+                      onClick={() => setIsDrawerOpen(false)}
+                    >
+                      <img
+                        src="/wordmark.svg"
+                        alt="Streambet Logo"
+                        className="h-8 w-[165px] object-contain"
+                      />
+                    </Link>
                   </div>
-                )}
-              </div>
-            </CustomDrawer>
-          </div>
+                  <div className="flex flex-col space-y-2">
+                    {menuItems.map((item, index) => {
+                      const isActive = location.pathname === item.path;
+                      return (
+                        <Button
+                          key={item.label}
+                          variant="ghost"
+                          className={`justify-start text-left h-12 ${
+                            isActive
+                              ? 'text-white bg-primary/10'
+                              : 'text-[#FFFFFF80] hover:text-white hover:bg-primary/5'
+                          }`}
+                          onClick={() => handleMenuItemClick(item.path)}
+                        >
+                          {item.icon}
+                          <span className="ml-2">{item.label}</span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Add user actions at the bottom if logged in */}
+                  {session && (
+                    <div className="mt-8 pt-4 border-t">
+                      <div className="flex flex-col space-y-2">
+                        <Button
+                          variant="ghost"
+                          className="justify-start text-left h-12 text-[#FFFFFF80] hover:text-white hover:bg-primary/5"
+                          onClick={() => {
+                            setTimeout(() => {
+                              navigate('/settings');
+                            }, 100);
+                            setIsDrawerOpen(false);
+                          }}
+                        >
+                          <span>Settings</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="justify-start text-left h-12 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          onClick={() => {
+                            setTimeout(() => {
+                              handleLogoutWithRefetch();
+                            }, 100);
+                            setIsDrawerOpen(false);
+                          }}
+                        >
+                          <span>Logout</span>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CustomDrawer>
+            </div>
+          )}
 
           {/* Left Column: Logo + Menu */}
           <div className="hidden md:flex items-center">
@@ -246,41 +253,45 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
             </motion.div>
 
             {/* Desktop Menu */}
-            <div className="hidden md:flex items-center ml-8 space-x-1">
-              {menuItems.map((item, index) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <>
-                    {(item.path === '/admin' || item.path === '/creator') && (
-                      <span className="text-primary/60">|</span>
-                    )}
-                    <motion.div
-                      key={item.label}
-                      // initial={{ opacity: 0, y: -10 }}
-                      // animate={{ opacity: 1, y: 0 }}
-                      // transition={{ delay: index * 0.05 + 0.2, duration: 0.3 }}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`flex items-center gap-2 font-light transition-colors px-3 py-2 ${
-                          isActive ? 'text-white' : 'text-[#FFFFFF80] hover:text-primary-foreground'
-                        }`}
-                        onClick={() => handleMenuItemClick(item.path)}
+            {session && (
+              <div className="hidden md:flex items-center ml-8 space-x-1">
+                {menuItems.map((item, index) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <>
+                      {(item.path === '/admin' || item.path === '/creator') && (
+                        <span className="text-primary/60">|</span>
+                      )}
+                      <motion.div
+                        key={item.label}
+                        // initial={{ opacity: 0, y: -10 }}
+                        // animate={{ opacity: 1, y: 0 }}
+                        // transition={{ delay: index * 0.05 + 0.2, duration: 0.3 }}
                       >
-                        {item.icon}
-                        <span>{item.label}</span>
-                      </Button>
-                    </motion.div>
-                  </>
-                );
-              })}
-            </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`flex items-center gap-2 font-light transition-colors px-3 py-2 ${
+                            isActive
+                              ? 'text-white'
+                              : 'text-[#FFFFFF80] hover:text-primary-foreground'
+                          }`}
+                          onClick={() => handleMenuItemClick(item.path)}
+                        >
+                          {item.icon}
+                          <span>{item.label}</span>
+                        </Button>
+                      </motion.div>
+                    </>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Center Column: Search Bar - Only on Homepage */}
+          {/* Center Column: Search Bar - Only on Predictions Page */}
           <div className="hidden md:flex flex-1 justify-center mx-4">
-            {isHomePage && searchValue !== undefined && onSearchChange && (
+            {session && isPredictionsPage && searchValue !== undefined && onSearchChange && (
               <div className="max-w-[280px] md:max-w-lg w-full">
                 <SearchInput
                   id="nav-search"

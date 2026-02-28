@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 import Sidebar from '../sidebar/Sidebar';
 import { cn } from '@/lib/utils';
 import { BetRoundType, BettingCategory } from '@/enums';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -34,7 +35,8 @@ export const MainLayout = ({
   onSearchChange,
 }: MainLayoutProps) => {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
+  const isPredictionsPage = location.pathname === '/predictions';
+  const { session } = useAuthContext();
 
   if (isWithdraw) {
     return (
@@ -56,12 +58,14 @@ export const MainLayout = ({
           }}></div>
         </div> */}
 
-          <Sidebar
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            selectedBetType={selectedBetType}
-            setSelectedBetType={setSelectedBetType}
-          />
+          {session && (
+            <Sidebar
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedBetType={selectedBetType}
+              setSelectedBetType={setSelectedBetType}
+            />
+          )}
 
           {/* Main Content */}
           <main
@@ -82,14 +86,14 @@ export const MainLayout = ({
         onSearchChange={onSearchChange}
       />
       <div className="w-full flex gap-2">
-        <div className="max-h-[calc(100dvh)] overflow-y-auto">
+        {session && (
           <Sidebar
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
             selectedBetType={selectedBetType}
             setSelectedBetType={setSelectedBetType}
           />
-        </div>
+        )}
 
         <main
           className={cn(
@@ -98,7 +102,7 @@ export const MainLayout = ({
           )}
         >
           {children}
-          {(showFooter || isHomePage) && <Footer />}
+          {(showFooter || isPredictionsPage) && <Footer />}
         </main>
       </div>
     </div>

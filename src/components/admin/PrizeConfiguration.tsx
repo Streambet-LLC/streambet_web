@@ -11,12 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
 import { handleMutationError } from '@/lib/mutationHelpers';
-import { Loader2, Plus, Trash2, X, Edit, AlertCircle } from 'lucide-react';
+import { Loader2, Plus, Trash2, X, Edit, AlertCircle, Expand } from 'lucide-react';
 import {
   PrizeConfiguration as PrizeTier,
   CreatePrizeTierRequest,
@@ -71,6 +72,8 @@ export const PrizeConfiguration = () => {
 
   // Validation state
   const [validationError, setValidationError] = useState<string>('');
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageLayout, setImageLayout] = useState<'single' | 'double'>('single');
 
   // Form state
   const [formData, setFormData] = useState<CreatePrizeTierRequest>({
@@ -82,6 +85,10 @@ export const PrizeConfiguration = () => {
     stock: 0,
     purchaseOption: 'both',
     brand: 'pokemon',
+    displayOrder: 0,
+    showOnRedemptions: true,
+    showOnNicksNiceties: true,
+    showOnShop: true,
   });
 
   const resetForm = () => {
@@ -94,10 +101,15 @@ export const PrizeConfiguration = () => {
       stock: 0,
       purchaseOption: 'both',
       brand: 'pokemon',
+      displayOrder: 0,
+      showOnRedemptions: true,
+      showOnNicksNiceties: true,
+      showOnShop: true,
     });
     setValidationError('');
     imageUpload.clearImage();
     setImageError(null);
+    setImageLayout('single');
   };
 
   // Drag and drop handlers
@@ -283,6 +295,10 @@ export const PrizeConfiguration = () => {
       stock: tier.stock,
       purchaseOption: tier.purchaseOption || 'both',
       brand: tier.brand || 'pokemon',
+      displayOrder: tier.displayOrder ?? 0,
+      showOnRedemptions: tier.showOnRedemptions ?? true,
+      showOnNicksNiceties: tier.showOnNicksNiceties ?? true,
+      showOnShop: tier.showOnShop ?? true,
     });
     imageUpload.clearImage();
     setEditingTier(tier);
@@ -602,6 +618,26 @@ export const PrizeConfiguration = () => {
               </Select>
             </div>
             <div className="space-y-2.5">
+              <Label htmlFor="imageLayout" className="text-base font-medium">
+                Image Layout
+              </Label>
+              <Select
+                value={imageLayout}
+                onValueChange={value => setImageLayout(value as 'single' | 'double')}
+              >
+                <SelectTrigger id="imageLayout" className="h-12 text-base">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="single">Single Slab (4" × 6.5")</SelectItem>
+                  <SelectItem value="double">Double Slab - Front & Back (8" × 6.5")</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Choose single for one side, or double for front & back side-by-side
+              </p>
+            </div>
+            <div className="space-y-2.5">
               <Label htmlFor="stock" className="text-base font-medium">
                 Stock Quantity
               </Label>
@@ -631,6 +667,68 @@ export const PrizeConfiguration = () => {
                 className="text-base resize-none"
               />
             </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2.5">
+                <Label htmlFor="displayOrder" className="text-base font-medium">
+                  Display Order
+                </Label>
+                <Input
+                  id="displayOrder"
+                  type="number"
+                  value={formData.displayOrder ?? 0}
+                  onChange={e => {
+                    setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 });
+                    setValidationError('');
+                  }}
+                  className="h-12 text-base"
+                  placeholder="0"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Lower numbers show first (e.g. 1 shows before 2).
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-4 justify-center">
+                <div className="flex items-center space-x-2 mt-4 sm:mt-8">
+                  <Switch
+                    id="showOnRedemptions"
+                    checked={formData.showOnRedemptions ?? true}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, showOnRedemptions: checked })
+                    }
+                  />
+                  <Label htmlFor="showOnRedemptions" className="font-medium cursor-pointer">
+                    Show on Redemptions Page
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="showOnNicksNiceties"
+                    checked={formData.showOnNicksNiceties ?? true}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, showOnNicksNiceties: checked })
+                    }
+                  />
+                  <Label htmlFor="showOnNicksNiceties" className="font-medium cursor-pointer">
+                    Show on Nick's Niceties
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="showOnShop"
+                    checked={formData.showOnShop ?? true}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, showOnShop: checked })
+                    }
+                  />
+                  <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
+                    Show on Shop Page
+                  </Label>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2.5">
               <Label className="text-base font-medium">Prize Image</Label>
               {imageUpload.previewUrl ||
@@ -639,8 +737,17 @@ export const PrizeConfiguration = () => {
                   <img
                     src={imageUpload.previewUrl || getThumbnailUrl(formData.imageUrl)}
                     alt="Preview"
-                    className="w-full aspect-[16/9] object-cover"
+                    className={`w-full object-cover cursor-pointer hover:opacity-90 transition-opacity ${
+                      imageLayout === 'single' ? 'aspect-[8/13]' : 'aspect-[16/13]'
+                    }`}
+                    onClick={() => setShowImageModal(true)}
                   />
+                  <div 
+                    className="absolute top-2 left-2 z-20 bg-black/60 rounded-md p-1.5 hover:bg-black/80 transition-colors cursor-pointer"
+                    onClick={() => setShowImageModal(true)}
+                  >
+                    <Expand className="h-4 w-4 text-white" aria-hidden="true" />
+                  </div>
                   <Button
                     size="icon"
                     variant="destructive"
@@ -682,7 +789,9 @@ export const PrizeConfiguration = () => {
                       <p className="text-xs text-muted-foreground mt-0.5">or drag and drop</p>
                       <p className="text-xs text-muted-foreground mt-2">JPEG, PNG, or WebP</p>
                       <p className="text-xs text-muted-foreground">
-                        Aspect ratio 16:9 • 1920x1080px
+                        {imageLayout === 'single'
+                          ? 'Aspect ratio 8:13 • 1200×1950px'
+                          : 'Aspect ratio 16:13 • 2400×1950px'}
                       </p>
                     </div>
                   </div>
@@ -697,11 +806,20 @@ export const PrizeConfiguration = () => {
               onClose={imageUpload.cancelCrop}
               onCrop={imageUpload.handleCropComplete}
               cropperProps={{
-                aspect: IMAGE_UPLOAD_CONFIG.ASPECT_RATIO,
+                aspect:
+                  imageLayout === 'single'
+                    ? IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_ASPECT_RATIO
+                    : IMAGE_UPLOAD_CONFIG.PRIZE_DOUBLE_SLAB_ASPECT_RATIO,
               }}
               resizerProps={{
-                maxWidth: IMAGE_UPLOAD_CONFIG.MAX_WIDTH,
-                maxHeight: IMAGE_UPLOAD_CONFIG.MAX_HEIGHT,
+                maxWidth:
+                  imageLayout === 'single'
+                    ? IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_MAX_WIDTH
+                    : IMAGE_UPLOAD_CONFIG.PRIZE_DOUBLE_SLAB_MAX_WIDTH,
+                maxHeight:
+                  imageLayout === 'single'
+                    ? IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_MAX_HEIGHT
+                    : IMAGE_UPLOAD_CONFIG.PRIZE_DOUBLE_SLAB_MAX_HEIGHT,
                 compressFormat: 'JPEG',
                 quality: IMAGE_UPLOAD_CONFIG.QUALITY,
               }}
@@ -712,6 +830,21 @@ export const PrizeConfiguration = () => {
               <AlertCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
               <p className="text-sm text-destructive">{validationError}</p>
             </div>
+          )}
+          {showImageModal && (imageUpload.previewUrl || formData.imageUrl) && (
+            <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+              <DialogTitle className="sr-only">Prize Image Preview</DialogTitle>
+              <DialogContent
+                className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent"
+                aria-describedby={undefined}
+              >
+                <img
+                  src={imageUpload.previewUrl || getThumbnailUrl(formData.imageUrl)}
+                  alt="Full size preview"
+                  className="w-full h-full object-contain rounded-lg"
+                />
+              </DialogContent>
+            </Dialog>
           )}
           <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-2 pt-4">
             <Button

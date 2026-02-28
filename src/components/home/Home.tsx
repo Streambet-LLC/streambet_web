@@ -1,5 +1,5 @@
 import { MainLayout } from '@/components/layout';
-import HomePromotedBets from './HomePromotedBets';
+// import HomePromotedBets from './HomePromotedBets';
 import HomeBets from './HomeBets';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { useState, useEffect, useRef } from 'react';
@@ -72,10 +72,10 @@ export default function Home() {
             </motion.div>
           </h1>
           <div className="space-y-2">
-            <p className="text-[#FFFFFFBF]">
+            {/* <p className="text-[#FFFFFFBF]">
               Make FREE picks on cards / collectibles futures & happenings, and accrue CadeCoins for
               prizes!
-            </p>
+            </p> */}
             {/* <p className="text-xs text-[#FFFFFF80]">
               Check out{' '}
               <a
@@ -89,7 +89,7 @@ export default function Home() {
           </div>
         </div>
         {/* <LiveFeedUpdate /> */}
-        <HomePromotedBets />
+        {/* <HomePromotedBets /> */}
         {/* Search filter moved to navigation bar for better UX. HomeBetsFilters preserved for potential future sorting/filtering features. */}
         {/* <HomeBetsFilters onChange={setFilters} /> */}
         <HomeBets
