@@ -160,6 +160,15 @@ apiClient.interceptors.response.use(
   }
 );
 
+// Public API (no authentication required)
+export const publicAPI = {
+  // Get public platform statistics
+  getPlatformStats: async () => {
+    const response = await apiClient.get('/stats');
+    return response.data;
+  },
+};
+
 // Auth API
 export const authAPI = {
   // Register a new user
@@ -288,6 +297,12 @@ export const authAPI = {
 
 // User API
 export const userAPI = {
+  // Get platform stats (public endpoint)
+  getPlatformStats: async () => {
+    const response = await apiClient.get('/users/stats');
+    return response.data;
+  },
+
   // Get user profile of logged in user
   getProfile: async () => {
     const response = await apiClient.get('/users/me');

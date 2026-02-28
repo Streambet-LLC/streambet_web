@@ -736,7 +736,7 @@ export default function LandingFeatures() {
                     className="relative"
                   >
                     <div className="text-7xl md:text-8xl font-black bg-gradient-to-br from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent leading-none">
-                      50%
+                      25%
                     </div>
                     <div className="text-sm text-[#FFFFFF60] mt-3 font-medium tracking-wide">
                       OFF YOUR FEES
@@ -846,7 +846,7 @@ export default function LandingFeatures() {
               onClick={() => navigate('/signup')}
               className="bg-gradient-to-r from-electric-lime to-creator-green hover:opacity-90 hover:from-electric-lime/90 hover:to-creator-green/90 text-black font-semibold py-7 text-lg shadow-lg shadow-electric-lime/30 hover:shadow-electric-lime/50 transition-all duration-300 group w-full sm:w-[240px] justify-center"
             >
-              Get Started Free
+              Get Started For Free
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button
