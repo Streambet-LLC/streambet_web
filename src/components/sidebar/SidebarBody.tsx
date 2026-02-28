@@ -1,5 +1,5 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sidebar, SidebarContent, SidebarGroup, SidebarTrigger, useSidebar } from '../ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarTrigger, useSidebar } from '../ui/sidebar';
 import SidebarStreamCard from './SidebarStreamCard';
 import { Button } from '../ui/button';
 import { motion } from 'framer-motion';
@@ -85,7 +85,7 @@ export default function SidebarBody({
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const isPredictionsPage = location.pathname === '/predictions';
-  const isShopPage = location.pathname === '/' || location.pathname.startsWith('/shop');
+  const isShopPage = location.pathname === '/' || location.pathname.startsWith('/shop') || location.pathname === '/redemptions';
   const showMarkets = isPredictionsPage || isShopPage;
   const { session } = useAuthContext();
 
@@ -253,8 +253,8 @@ export default function SidebarBody({
         controls.isMobile && 'max-w-[50px]'
       )}
     >
-      <SidebarContent className="flex flex-col h-full">
-        <SidebarGroup className="flex flex-col gap-2 overflow-auto flex-1 pb-20">
+      <SidebarContent>
+        <SidebarGroup className="flex flex-col gap-2 overflow-auto flex-1">
           <div className="flex justify-between items-center md:mb-2">
             {controls.open && !controls.isMobile && (
               <div className="flex items-center gap-1.5 pl-2">
@@ -386,68 +386,70 @@ export default function SidebarBody({
             </>
           )}
 
-          {/* Shops Section - Always Show */}
-          <div className="border-t border-border my-2" />
-          {controls.open && !controls.isMobile && (
-            <div
-              className="flex items-center justify-between pl-2 mb-2"
-              id="sidebar-shops-label"
-            >
-              <div className="text-sm font-semibold">Shops</div>
-              <Link
-                to="/creators"
-                className="text-xs text-primary hover:text-primary/80 transition-colors pr-2 font-medium"
-              >
-                See All
-              </Link>
-            </div>
-          )}
-          <div
-            className="flex flex-col gap-2"
-            role="navigation"
-            aria-label="Featured shops"
-            aria-labelledby={
-              controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined
-            }
-          >
-            {shops.map(shop => {
-              const commonClassName = cn(
-                'h-auto overflow-visible transition-all cursor-pointer no-underline',
-                controls.open && !controls.isMobile
-                  ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
-                  : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
-              );
-
-              const shopContent = (
-                <>
-                  <div className={cn(controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7', 'rounded-full overflow-hidden flex-shrink-0')}>
-                    <img
-                      src={shop.isRealProfile ? getImageLink(shop.profileImageUrl) : shop.profileImageUrl}
-                      alt={shop.name}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  {controls.open && !controls.isMobile && (
-                    <span className="text-[13px] font-semibold text-primary truncate">
-                      {shop.name}
-                    </span>
-                  )}
-                </>
-              );
-
-              return shop.isClickable ? (
-                <Link key={shop.id} to={`/shop/${shop.username}`} className={commonClassName}>
-                  {shopContent}
-                </Link>
-              ) : (
-                <div key={shop.id} className={commonClassName}>
-                  {shopContent}
-                </div>
-              );
-            })}
-          </div>
         </SidebarGroup>
       </SidebarContent>
+
+      {/* Shops Section - Pinned to bottom */}
+      <SidebarFooter className="border-t border-border">
+        {controls.open && !controls.isMobile && (
+          <div
+            className="flex items-center justify-between"
+            id="sidebar-shops-label"
+          >
+            <div className="text-sm font-semibold">Shops</div>
+            <Link
+              to="/creators"
+              className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+            >
+              See All
+            </Link>
+          </div>
+        )}
+        <div
+          className="flex flex-col gap-2"
+          role="navigation"
+          aria-label="Featured shops"
+          aria-labelledby={
+            controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined
+          }
+        >
+          {shops.map(shop => {
+            const commonClassName = cn(
+              'h-auto overflow-visible transition-all cursor-pointer no-underline',
+              controls.open && !controls.isMobile
+                ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
+                : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
+            );
+
+            const shopContent = (
+              <>
+                <div className={cn(controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7', 'rounded-full overflow-hidden flex-shrink-0')}>
+                  <img
+                    src={shop.isRealProfile ? getImageLink(shop.profileImageUrl) : shop.profileImageUrl}
+                    alt={shop.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                {controls.open && !controls.isMobile && (
+                  <span className="text-[13px] font-semibold text-primary truncate">
+                    {shop.name}
+                  </span>
+                )}
+              </>
+            );
+
+            return shop.isClickable ? (
+              <Link key={shop.id} to={`/shop/${shop.username}`} className={commonClassName}>
+                {shopContent}
+              </Link>
+            ) : (
+              <div key={shop.id} className={commonClassName}>
+                {shopContent}
+              </div>
+            );
+          })}
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

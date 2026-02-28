@@ -29,6 +29,8 @@ interface PrizesByCategoryProps {
   showFilters?: boolean; // Optional: if false, hide all filters
   showCategoryHeaders?: boolean; // Optional: if false, hide category headers
   showBrandFilter?: boolean; // Optional: if false, hide brand filter but keep price filter
+  /** 'shop' = stag-style 4-col portrait cards (default); 'redemption' = prod-style 3-col landscape cards */
+  cardVariant?: 'shop' | 'redemption';
 }
 
 const CATEGORY_LABELS: Record<PrizeCategoryType, string> = {
@@ -44,6 +46,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   showFilters = true, // Default to true to maintain existing behavior
   showCategoryHeaders = true, // Default to true to maintain existing behavior
   showBrandFilter = true, // Default to true to maintain existing behavior
+  cardVariant = 'shop',
 }) => {
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
@@ -255,11 +258,12 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                       {CATEGORY_LABELS[key as PrizeCategoryType]}
                     </h2>
                   )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className={cardVariant === 'redemption' ? 'grid grid-cols-1 md:grid-cols-3 gap-4' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}>
                     {filterByPriceRange(sortPrizesByPurchaseOption(items)).map(prize => (
                       <PrizeCard
                         key={prize.id}
                         prize={prize}
+                        variant={cardVariant}
                         onClick={onPrizeClick ? () => onPrizeClick(prize) : () => {}}
                         onOfferClick={(prize) => {
                           setSelectedPrize(prize);

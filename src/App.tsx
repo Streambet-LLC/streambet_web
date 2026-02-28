@@ -47,6 +47,7 @@ import { CookiesProvider } from 'react-cookie';
 import CreatorApplication from './pages/CreatorApplication';
 import SellerApplication from './pages/SellerApplication';
 import Prizes from './pages/Prizes';
+import Redemptions from './pages/Redemptions';
 import HowToPlay from './pages/HowToPlay';
 import { DailySpin } from './pages/DailySpin';
 import ShopDetail from './pages/ShopDetail';
@@ -140,6 +141,7 @@ const App = () => {
                             <Route path="/auth/google-callback" element={<GoogleCallback />} />
                             <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
                             <Route path="/shop" element={<Prizes />} />
+                            <Route path="/redemptions" element={<Redemptions />} />
                             <Route path="/" element={<Prizes />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>

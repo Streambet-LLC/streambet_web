@@ -23,9 +23,9 @@ export default function Sidebar({
   });
 
   return (
-    <div>
+    <div className="sticky top-16 h-[calc(100dvh-64px)]">
       <SidebarProvider
-        className="!transition-none bg-background border-r"
+        className="!min-h-0 h-full !transition-none bg-background border-r"
         defaultOpen={defaultOpen}
       >
         <SidebarBody
