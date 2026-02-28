@@ -22,6 +22,7 @@ export interface PrizeConfiguration {
   displayOrder: number;
   showOnRedemptions: boolean;
   showOnNicksNiceties: boolean;
+  showOnShop: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -44,6 +45,7 @@ export interface CreatePrizeTierRequest {
   displayOrder?: number;
   showOnRedemptions?: boolean;
   showOnNicksNiceties?: boolean;
+  showOnShop?: boolean;
 }
 
 /**
@@ -61,6 +63,7 @@ export interface UpdatePrizeTierRequest {
   displayOrder?: number;
   showOnRedemptions?: boolean;
   showOnNicksNiceties?: boolean;
+  showOnShop?: boolean;
 }
 
 /**

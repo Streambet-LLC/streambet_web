@@ -146,7 +146,7 @@ export default function Prizes() {
   // Get all prizes with stock and filter for redemptions page
   const allPrizes: PrizeDisplay[] = useMemo(() => {
     return (tiers || [])
-      .filter(prize => prize.stock > 0 && prize.showOnRedemptions !== false)
+      .filter(prize => prize.stock > 0 && prize.showOnShop !== false)
       .map(prize => ({
         id: prize.id,
         name: prize.name,
@@ -228,9 +228,9 @@ export default function Prizes() {
             </motion.div>
           </h1>
           <div className="space-y-2">
-            <p className="text-[#FFFFFFBF]">
+            {/* <p className="text-[#FFFFFFBF]">
               Redeem items with CadeCoins or USD, or a combination of both!
-            </p>
+            </p> */}
           </div>
         </div>
 

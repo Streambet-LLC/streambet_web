@@ -82,14 +82,12 @@ export const MainLayout = ({
         onSearchChange={onSearchChange}
       />
       <div className="w-full flex gap-2">
-        <div className="max-h-[calc(100dvh)] overflow-y-auto">
-          <Sidebar
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            selectedBetType={selectedBetType}
-            setSelectedBetType={setSelectedBetType}
-          />
-        </div>
+        <Sidebar
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          selectedBetType={selectedBetType}
+          setSelectedBetType={setSelectedBetType}
+        />
 
         <main
           className={cn(

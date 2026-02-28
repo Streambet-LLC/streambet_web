@@ -88,6 +88,7 @@ export const PrizeConfiguration = () => {
     displayOrder: 0,
     showOnRedemptions: true,
     showOnNicksNiceties: true,
+    showOnShop: true,
   });
 
   const resetForm = () => {
@@ -103,6 +104,7 @@ export const PrizeConfiguration = () => {
       displayOrder: 0,
       showOnRedemptions: true,
       showOnNicksNiceties: true,
+      showOnShop: true,
     });
     setValidationError('');
     imageUpload.clearImage();
@@ -296,6 +298,7 @@ export const PrizeConfiguration = () => {
       displayOrder: tier.displayOrder ?? 0,
       showOnRedemptions: tier.showOnRedemptions ?? true,
       showOnNicksNiceties: tier.showOnNicksNiceties ?? true,
+      showOnShop: tier.showOnShop ?? true,
     });
     imageUpload.clearImage();
     setEditingTier(tier);
@@ -709,6 +712,18 @@ export const PrizeConfiguration = () => {
                   />
                   <Label htmlFor="showOnNicksNiceties" className="font-medium cursor-pointer">
                     Show on Nick's Niceties
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="showOnShop"
+                    checked={formData.showOnShop ?? true}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, showOnShop: checked })
+                    }
+                  />
+                  <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
+                    Show on Shop Page
                   </Label>
                 </div>
               </div>

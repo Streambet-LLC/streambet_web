@@ -8,15 +8,18 @@ import { Badge } from '../ui/badge';
 import { Prize } from './PrizesByCategory';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
+import FeaturedBetCard from '../FeaturedBetCard';
 
 interface PrizeCardProps {
   prize: Prize;
   onClick: (prize: Prize) => void;
   onOfferClick?: (prize: Prize) => void;
   isFeatured?: boolean;
+  /** 'shop' = stag-style portrait card (default); 'redemption' = prod-style landscape card */
+  variant?: 'shop' | 'redemption';
 }
 
-export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = false }: PrizeCardProps) {
+export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = false, variant = 'shop' }: PrizeCardProps) {
   const [showImageModal, setShowImageModal] = useState(false);
   
   const priceInUSD = prize.amount 
@@ -33,6 +36,76 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
     ? getThumbnailUrl(prize.imageUrl) 
     : '/placeholder.svg';
 
+  // ── Redemption variant (prod-style landscape card) ───────────────────────
+  if (variant === 'redemption') {
+    return (
+      <FeaturedBetCard>
+        <div className="p-6 flex flex-col h-full">
+          {prize.imageUrl && (
+            <div className="w-full border-t pt-2 md:pt-4">
+              <img
+                src={imageUrl}
+                alt={prize.name}
+                className="w-full rounded object-contain max-h-64"
+                loading="lazy"
+              />
+            </div>
+          )}
+          <h3 className="font-semibold text-lg mb-1 mt-2">{prize.name}</h3>
+          {prize.description && (
+            <p className="text-sm text-muted-foreground mb-2">
+              {prize.description}
+            </p>
+          )}
+          {typeof prize.amount === 'number' && canBuy && (
+            <p className="text-sm text-muted-foreground mb-2">
+              {prize.amount.toLocaleString('en-US')} coins • ${(prize.amount / 50).toFixed(2)} USD
+            </p>
+          )}
+          {typeof prize.stock === 'number' && (
+            <p className="text-xs text-muted-foreground mb-4">
+              Stock: {prize.stock} {prize.stock === 1 ? 'item' : 'items'}
+            </p>
+          )}
+          <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+            {canBuy && (
+              <Button
+                className="flex-1 gap-2"
+                type="button"
+                tabIndex={0}
+                disabled={isOutOfStock}
+                onClick={e => {
+                  e.stopPropagation();
+                  onClick(prize);
+                }}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                Buy Now
+              </Button>
+            )}
+            {canOffer && onOfferClick && (
+              <Button
+                variant="outline"
+                className="flex-1 gap-2 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00]"
+                type="button"
+                tabIndex={0}
+                disabled={isOutOfStock}
+                onClick={e => {
+                  e.stopPropagation();
+                  onOfferClick(prize);
+                }}
+              >
+                <DollarSign className="w-4 h-4" />
+                Make Offer
+              </Button>
+            )}
+          </div>
+        </div>
+      </FeaturedBetCard>
+    );
+  }
+
+  // ── Shop variant (default stag-style portrait card) ──────────────────────
   return (
     <motion.div
       whileHover={{ y: -2 }}
