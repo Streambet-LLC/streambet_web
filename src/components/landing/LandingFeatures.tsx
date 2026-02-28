@@ -699,7 +699,7 @@ export default function LandingFeatures() {
                     transition={{ duration: 0.5, delay: 0.2 }}
                   >
                     <div className="text-7xl md:text-8xl font-black bg-gradient-to-br from-electric-lime to-creator-green bg-clip-text text-transparent leading-none">
-                      5%
+                      7%
                     </div>
                     <div className="text-sm text-[#FFFFFF60] mt-3 font-medium tracking-wide">
                       OR LESS
@@ -844,7 +844,7 @@ export default function LandingFeatures() {
             <Button
               size="lg"
               onClick={() => navigate('/signup')}
-              className="bg-gradient-to-r from-electric-lime to-creator-green hover:opacity-90 hover:from-electric-lime/90 hover:to-creator-green/90 text-black font-semibold px-10 py-7 text-lg shadow-lg shadow-electric-lime/30 hover:shadow-electric-lime/50 transition-all duration-300 group"
+              className="bg-gradient-to-r from-electric-lime to-creator-green hover:opacity-90 hover:from-electric-lime/90 hover:to-creator-green/90 text-black font-semibold py-7 text-lg shadow-lg shadow-electric-lime/30 hover:shadow-electric-lime/50 transition-all duration-300 group w-full sm:w-[240px] justify-center"
             >
               Get Started Free
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -853,7 +853,7 @@ export default function LandingFeatures() {
               size="lg"
               variant="outline"
               onClick={() => navigate('/login')}
-              className="border-2 border-electric-lime text-electric-lime hover:bg-electric-lime hover:text-black hover:border-electric-lime px-10 py-7 text-lg transition-all duration-300 shadow-lg"
+              className="border-2 border-electric-lime text-electric-lime hover:bg-electric-lime hover:text-black hover:border-electric-lime py-7 text-lg transition-all duration-300 shadow-lg w-full sm:w-[240px] justify-center"
             >
               Sign In
             </Button>
