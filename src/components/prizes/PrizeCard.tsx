@@ -17,24 +17,30 @@ interface PrizeCardProps {
   isFeatured?: boolean;
   /** 'shop' = stag-style portrait card (default); 'redemption' = prod-style landscape card */
   variant?: 'shop' | 'redemption';
+  hideButtons?: boolean;
 }
 
-export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = false, variant = 'shop' }: PrizeCardProps) {
+export default function PrizeCard({
+  prize,
+  onClick,
+  onOfferClick,
+  isFeatured = false,
+  variant = 'shop',
+  hideButtons = false,
+}: PrizeCardProps) {
   const [showImageModal, setShowImageModal] = useState(false);
-  
-  const priceInUSD = prize.amount 
-    ? (prize.amount / 50).toLocaleString('en-US', { 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
-      }) 
+
+  const priceInUSD = prize.amount
+    ? (prize.amount / 50).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
     : '0.00';
   const canBuy = prize.purchaseOption === 'buy_only' || prize.purchaseOption === 'both';
   const canOffer = prize.purchaseOption === 'offers_only' || prize.purchaseOption === 'both';
   const isOutOfStock = !prize.stock || prize.stock === 0;
 
-  const imageUrl = prize.imageUrl 
-    ? getThumbnailUrl(prize.imageUrl) 
-    : '/placeholder.svg';
+  const imageUrl = prize.imageUrl ? getThumbnailUrl(prize.imageUrl) : '/placeholder.svg';
 
   // ── Redemption variant (prod-style landscape card) ───────────────────────
   if (variant === 'redemption') {
@@ -53,9 +59,7 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
           )}
           <h3 className="font-semibold text-lg mb-1 mt-2">{prize.name}</h3>
           {prize.description && (
-            <p className="text-sm text-muted-foreground mb-2">
-              {prize.description}
-            </p>
+            <p className="text-sm text-muted-foreground mb-2">{prize.description}</p>
           )}
           {typeof prize.amount === 'number' && canBuy && (
             <p className="text-sm text-muted-foreground mb-2">
@@ -68,7 +72,7 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
             </p>
           )}
           <div className="flex flex-col sm:flex-row gap-2 mt-auto">
-            {canBuy && (
+            {!hideButtons && canBuy && (
               <Button
                 className="flex-1 gap-2"
                 type="button"
@@ -83,7 +87,7 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
                 Buy Now
               </Button>
             )}
-            {canOffer && onOfferClick && (
+            {!hideButtons && canOffer && onOfferClick && (
               <Button
                 variant="outline"
                 className="flex-1 gap-2 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00]"
@@ -122,7 +126,7 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
       >
         <CardHeader className="p-0 relative">
           {/* Prize Image */}
-          <div 
+          <div
             className="relative w-full aspect-[4/5] overflow-hidden bg-muted group/image cursor-pointer flex items-center justify-center p-2"
             onClick={() => setShowImageModal(true)}
           >
@@ -132,20 +136,15 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
               className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
               loading="lazy"
             />
-            
+
             {/* Expand to Fullscreen Button */}
-            <div 
-              className="absolute top-2 left-2 z-10 bg-black/60 rounded-md p-1.5 hover:bg-black/80 transition-colors pointer-events-none opacity-0 group-hover/image:opacity-100"
-            >
+            <div className="absolute top-2 left-2 z-10 bg-black/60 rounded-md p-1.5 hover:bg-black/80 transition-colors pointer-events-none opacity-0 group-hover/image:opacity-100">
               <Expand className="h-4 w-4 text-white" aria-hidden="true" />
             </div>
-            
+
             {/* Stock Badge */}
             {isOutOfStock && (
-              <Badge 
-                variant="destructive" 
-                className="absolute top-2 right-2 font-semibold"
-              >
+              <Badge variant="destructive" className="absolute top-2 right-2 font-semibold">
                 Out of Stock
               </Badge>
             )}
@@ -154,32 +153,24 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
 
         <CardContent className="p-3 flex-1 flex flex-col gap-1.5">
           {/* Prize Name */}
-          <h3 className="font-semibold text-sm line-clamp-2 leading-tight">
-            {prize.name}
-          </h3>
+          <h3 className="font-semibold text-sm line-clamp-2 leading-tight">{prize.name}</h3>
 
           {/* Description */}
           {prize.description && (
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              {prize.description}
-            </p>
+            <p className="text-xs text-muted-foreground line-clamp-1">{prize.description}</p>
           )}
 
           {/* Price */}
           <div className="mt-auto pt-1">
             {canBuy ? (
               <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold text-primary">
-                  ${priceInUSD}
-                </span>
+                <span className="text-xl font-bold text-primary">${priceInUSD}</span>
                 <span className="text-[10px] text-muted-foreground">
                   ({prize.amount?.toLocaleString()} coins)
                 </span>
               </div>
             ) : (
-              <div className="text-sm font-semibold text-muted-foreground">
-                Offers Only
-              </div>
+              <div className="text-sm font-semibold text-muted-foreground">Offers Only</div>
             )}
           </div>
 
@@ -192,12 +183,12 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
         </CardContent>
 
         <CardFooter className="p-3 pt-0 flex gap-2">
-          {canBuy && (
+          {!hideButtons && canBuy && (
             <Button
               variant="default"
               size="sm"
               className="flex-1 bg-primary text-black hover:bg-primary/90 h-8 text-xs"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onClick(prize);
               }}
@@ -207,12 +198,12 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
               Buy Now
             </Button>
           )}
-          {canOffer && onOfferClick && (
+          {!hideButtons && canOffer && onOfferClick && (
             <Button
               variant="outline"
               size="sm"
               className="flex-1 gap-1.5 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00] h-8 text-xs"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onOfferClick(prize);
               }}
@@ -224,7 +215,7 @@ export default function PrizeCard({ prize, onClick, onOfferClick, isFeatured = f
           )}
         </CardFooter>
       </Card>
-      
+
       {/* Fullscreen Image Modal */}
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
         <DialogTitle className="sr-only">Prize Image</DialogTitle>
