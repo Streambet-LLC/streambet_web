@@ -763,6 +763,10 @@ export default function LandingFeatures() {
             className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-r from-electric-lime/5 via-purple-500/5 to-pink-500/5"
           >
             <AnimatedTextCycler />
+            <p className="text-base md:text-lg text-[#FFFFFFBF] max-w-2xl mx-auto mt-6">
+              Oh yeah, and we start at <span className="text-electric-lime font-semibold">50%</span>{' '}
+              less than the average eBay and Goldin fees.
+            </p>
           </motion.div>
         </div>
       </motion.section>
@@ -828,7 +832,7 @@ export default function LandingFeatures() {
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-electric-lime to-white bg-clip-text text-transparent pb-2">
               Ready to Start Trading?
             </h2>
-            <p className="text-lg md:text-xl text-[#FFFFFFBF] max-w-2xl mx-auto">
+            <p className="text-xs text-[#FFFFFF80] max-w-2xl mx-auto">
               Join CardCade today and experience the future of card collecting. Start earning
               CadeCoins with your first trade.
             </p>
