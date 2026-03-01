@@ -763,6 +763,10 @@ export default function LandingFeatures() {
             className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-r from-electric-lime/5 via-purple-500/5 to-pink-500/5"
           >
             <AnimatedTextCycler />
+            <p className="text-sm text-[#FFFFFF80] max-w-2xl mx-auto mt-6">
+              Oh yeah, and we start at <span className="text-electric-lime font-semibold">50%</span>{' '}
+              less than the average eBay and Goldin fees.
+            </p>
           </motion.div>
         </div>
       </motion.section>
