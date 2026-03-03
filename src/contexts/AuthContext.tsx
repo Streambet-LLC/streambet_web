@@ -9,6 +9,7 @@ interface Session {
   maxSweepCoinsBet?: number;
   maxGoldCoinsBet?: number;
   maxCadeCoinsBet?: number;
+  isSeller?: boolean;
   user?: {
     id: string;
     email: string;

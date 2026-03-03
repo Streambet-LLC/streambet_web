@@ -8,11 +8,11 @@ export interface InfoCard {
 
 export const infoCards: InfoCard[] = [
   {
-    title: 'Buy Cards',
+    title: 'Buy Slabs',
     trailWord: 'BUY',
     description: (
       <>
-        Buy slabbed cards at CardCade in an easier, friendlier, more transparent, and more fun manner than anywhere else on the internet!
+        Buy cards at CardCade in an easier, friendlier, more transparent, and more fun manner than anywhere else on the internet!
       </>
     ),
   },
@@ -21,7 +21,7 @@ export const infoCards: InfoCard[] = [
     trailWord: 'SELL',
     description: (
       <>
-        List/sell cards at CardCade with substantially lower fees, full security provisioning, and full support of our team
+        List/sell cards at CardCade with lower fees, full security provisioning, and full support of our team.
       </>
     ),
   },
@@ -30,7 +30,7 @@ export const infoCards: InfoCard[] = [
     trailWord: 'FUN',
     description: (
       <>
-        Win prizes along the way by accumulating CadeCoins from buying, selling, and participating in predictions & games on our site
+        Win prizes along the way by accumulating CadeCoins from buying, selling, and participating in predictions & games.
       </>
     ),
   },
