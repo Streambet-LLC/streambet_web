@@ -255,7 +255,7 @@ export default function Prizes() {
                     ease: 'linear',
                   }}
                 >
-                  <span className="text-2xl md:text-4xl font-black text-black tracking-wider">
+                  <span className="text-2xl md:text-4xl font-black text-black tracking-wider" style={{ wordSpacing: '0.5em' }}>
                     LOWER FEES • EASY-TO-USE • TOP SELLERS • LOWER FEES • EASY-TO-USE • TOP SELLERS
                     • LOWER FEES • EASY-TO-USE • TOP SELLERS • LOWER FEES • EASY-TO-USE • TOP
                     SELLERS • LOWER FEES • EASY-TO-USE • TOP SELLERS • LOWER FEES • EASY-TO-USE •

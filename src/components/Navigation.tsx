@@ -113,7 +113,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
 
   const menuItems = [
     { label: 'Shop', icon: undefined, path: '/' },
-    { label: 'Redemptions', icon: undefined, path: '/redemptions' },
+    { label: 'Redeem', icon: undefined, path: '/redemptions' },
     { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
     { label: 'Predictions', icon: undefined, path: '/predictions' },
     { label: 'How To Play', icon: undefined, path: '/how-to-play' },
