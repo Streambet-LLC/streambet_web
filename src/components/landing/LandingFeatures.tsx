@@ -708,6 +708,10 @@ export default function LandingFeatures() {
                 </div>
               </div>
             </motion.div>
+            <p className="text-sm md:hidden text-[#FFFFFF80] max-w-2xl mx-auto mt-6">
+              We start <span className="text-electric-lime font-semibold">50%</span> less than the
+              average eBay and Goldin fees.
+            </p>
 
             {/* Right side - CadeCoin Discount */}
             <motion.div
@@ -725,7 +729,8 @@ export default function LandingFeatures() {
                 </div>
                 <h3 className="text-2xl md:text-3xl font-bold">Rewards That Pay Off</h3>
                 <p className="text-[#FFFFFFBF] text-base md:text-lg">
-                  Trade more, earn more coins, pay less. Your activity directly reduces your fees.
+                  Trade more, earn more coins, pay less. Your activity directly reduces your seller
+                  fees.
                 </p>
                 <div className="pt-6">
                   <motion.div
@@ -736,7 +741,7 @@ export default function LandingFeatures() {
                     className="relative"
                   >
                     <div className="text-7xl md:text-8xl font-black bg-gradient-to-br from-purple-400 via-pink-400 to-purple-500 bg-clip-text text-transparent leading-none">
-                      25%
+                      15%
                     </div>
                     <div className="text-sm text-[#FFFFFF60] mt-3 font-medium tracking-wide">
                       OFF YOUR FEES
@@ -763,9 +768,9 @@ export default function LandingFeatures() {
             className="mt-12 text-center p-8 rounded-2xl bg-gradient-to-r from-electric-lime/5 via-purple-500/5 to-pink-500/5"
           >
             <AnimatedTextCycler />
-            <p className="text-sm text-[#FFFFFF80] max-w-2xl mx-auto mt-6">
-              Oh yeah, and we start at <span className="text-electric-lime font-semibold">50%</span>{' '}
-              less than the average eBay and Goldin fees.
+            <p className="text-sm hidden md:block text-[#FFFFFF80] max-w-2xl mx-auto mt-6">
+              We start <span className="text-electric-lime font-semibold">50%</span> less than the
+              average eBay and Goldin fees.
             </p>
           </motion.div>
         </div>
