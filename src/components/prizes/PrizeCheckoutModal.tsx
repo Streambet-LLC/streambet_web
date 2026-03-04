@@ -24,6 +24,8 @@ interface PrizeCheckoutModalProps {
   prizeName: string;
   prizeAmount: number;
   userCadeCoins: number;
+  allowCadeCoins?: boolean;
+  isShopItem?: boolean; // If true, prizeAmount is in USD; if false/undefined, prizeAmount is in coins
 }
 
 const COINS_TO_USD = 50; // 50 coins = $1
@@ -37,9 +39,16 @@ export default function PrizeCheckoutModal({
   prizeName,
   prizeAmount,
   userCadeCoins,
+  allowCadeCoins = true,
+  isShopItem = false,
 }: PrizeCheckoutModalProps) {
   const queryClient = useQueryClient();
-  const totalAmount = prizeAmount + SHIPPING_FEE_COINS;
+
+  // For shop items, prizeAmount is in USD; for redemption, it's in coins
+  const prizeAmountInCoins = isShopItem ? prizeAmount * COINS_TO_USD : prizeAmount;
+  const totalAmount = prizeAmountInCoins + SHIPPING_FEE_COINS;
+  const itemLabel = isShopItem ? 'Item:' : 'Prize:';
+  const displayItemPriceUsd = isShopItem ? prizeAmount : prizeAmount / COINS_TO_USD;
 
   const { data: userAddress, isLoading: isLoadingAddress } = useQuery({
     queryKey: ['userAddress'],
@@ -50,8 +59,12 @@ export default function PrizeCheckoutModal({
     enabled: isOpen,
   });
 
-  const [paymentMethod, setPaymentMethod] = useState<'coins' | 'usd' | 'combined'>('coins');
-  const [coinsAmount, setCoinsAmount] = useState(userCadeCoins >= totalAmount ? totalAmount : 0);
+  const [paymentMethod, setPaymentMethod] = useState<'coins' | 'usd' | 'combined'>(
+    allowCadeCoins ? 'coins' : 'usd'
+  );
+  const [coinsAmount, setCoinsAmount] = useState(
+    allowCadeCoins && userCadeCoins >= totalAmount ? totalAmount : 0
+  );
   const [combinedCoinsAmount, setCombinedCoinsAmount] = useState(
     userCadeCoins >= totalAmount ? totalAmount : 0
   );
@@ -80,10 +93,25 @@ export default function PrizeCheckoutModal({
   }, [userAddress]);
 
   useEffect(() => {
-    setCoinsAmount(totalAmount);
-  }, [totalAmount]);
+    if (allowCadeCoins) {
+      setCoinsAmount(totalAmount);
+      return;
+    }
+
+    setCoinsAmount(0);
+    setCombinedCoinsAmount(0);
+    setPaymentMethod('usd');
+    setUsdAmount(parseFloat((totalAmount / COINS_TO_USD).toFixed(2)));
+  }, [allowCadeCoins, totalAmount]);
 
   useEffect(() => {
+    if (!allowCadeCoins) {
+      setPaymentMethod('usd');
+      setCombinedCoinsAmount(0);
+      setUsdAmount(parseFloat((totalAmount / COINS_TO_USD).toFixed(2)));
+      return;
+    }
+
     const method = paymentMethod as string;
     if (method === 'coins') {
       setUsdAmount(0);
@@ -94,7 +122,7 @@ export default function PrizeCheckoutModal({
       setCombinedCoinsAmount(maxCoins);
       setUsdAmount(parseFloat(((totalAmount - maxCoins) / COINS_TO_USD).toFixed(2)));
     }
-  }, [paymentMethod, totalAmount, userCadeCoins]);
+  }, [allowCadeCoins, paymentMethod, totalAmount, userCadeCoins]);
 
   const displayCoinsAmount =
     paymentMethod === 'combined'
@@ -193,7 +221,9 @@ export default function PrizeCheckoutModal({
         <DialogHeader>
           <DialogTitle className="text-2xl">{prizeName} - Checkout</DialogTitle>
           <DialogDescription>
-            Complete your purchase with flexible payment options
+            {allowCadeCoins
+              ? 'Complete your purchase with flexible payment options'
+              : 'This seller accepts card payments only'}
           </DialogDescription>
         </DialogHeader>
 
@@ -201,10 +231,8 @@ export default function PrizeCheckoutModal({
           <div className="bg-muted p-4 rounded-lg">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Prize:</span>
-                <span className="text-muted-foreground">
-                  ${(prizeAmount / COINS_TO_USD).toFixed(2)}
-                </span>
+                <span className="text-muted-foreground">{itemLabel}</span>
+                <span className="text-muted-foreground">${displayItemPriceUsd.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping:</span>
@@ -215,38 +243,42 @@ export default function PrizeCheckoutModal({
                 <span>${(totalAmount / COINS_TO_USD).toFixed(2)}</span>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-3">
-              Your Balance: {userCadeCoins.toLocaleString('en-US')} CadeCoins
-            </p>
+            {allowCadeCoins && (
+              <p className="text-sm text-muted-foreground mt-3">
+                Your Balance: {userCadeCoins.toLocaleString('en-US')} CadeCoins
+              </p>
+            )}
           </div>
 
           <div className="space-y-3">
             <Label className="text-base font-semibold">Payment Method</Label>
             <div className="grid grid-cols-1 gap-3">
-              <label
-                className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
-                style={{
-                  borderColor:
-                    paymentMethod === 'coins' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                }}
-              >
-                <input
-                  type="radio"
-                  value="coins"
-                  checked={paymentMethod === 'coins'}
-                  onChange={e => setPaymentMethod(e.target.value as 'coins' | 'usd' | 'combined')}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="font-medium">CadeCoins Only</div>
-                  <div className="text-sm text-muted-foreground">
-                    {coinsAmount.toLocaleString('en-US')} CadeCoins
-                    {!hasEnoughCoins && (
-                      <span className="text-red-500 ml-2">(Insufficient balance)</span>
-                    )}
+              {allowCadeCoins && (
+                <label
+                  className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                  style={{
+                    borderColor:
+                      paymentMethod === 'coins' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    value="coins"
+                    checked={paymentMethod === 'coins'}
+                    onChange={e => setPaymentMethod(e.target.value as 'coins' | 'usd' | 'combined')}
+                    className="mr-3"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">CadeCoins Only</div>
+                    <div className="text-sm text-muted-foreground">
+                      {coinsAmount.toLocaleString('en-US')} CadeCoins
+                      {!hasEnoughCoins && (
+                        <span className="text-red-500 ml-2">(Insufficient balance)</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </label>
+                </label>
+              )}
 
               <label
                 className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
@@ -268,27 +300,29 @@ export default function PrizeCheckoutModal({
                 </div>
               </label>
 
-              <label
-                className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
-                style={{
-                  borderColor:
-                    paymentMethod === 'combined' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                }}
-              >
-                <input
-                  type="radio"
-                  value="combined"
-                  checked={paymentMethod === 'combined'}
-                  onChange={e => setPaymentMethod(e.target.value as 'coins' | 'usd' | 'combined')}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="font-medium">CadeCoins + Card</div>
-                  <div className="text-sm text-muted-foreground">
-                    Split payment between coins and USD
+              {allowCadeCoins && (
+                <label
+                  className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                  style={{
+                    borderColor:
+                      paymentMethod === 'combined' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    value="combined"
+                    checked={paymentMethod === 'combined'}
+                    onChange={e => setPaymentMethod(e.target.value as 'coins' | 'usd' | 'combined')}
+                    className="mr-3"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">CadeCoins + Card</div>
+                    <div className="text-sm text-muted-foreground">
+                      Split payment between coins and USD
+                    </div>
                   </div>
-                </div>
-              </label>
+                </label>
+              )}
             </div>
           </div>
 

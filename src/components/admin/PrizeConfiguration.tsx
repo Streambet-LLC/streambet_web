@@ -87,7 +87,6 @@ export const PrizeConfiguration = () => {
     brand: 'pokemon',
     displayOrder: 0,
     showOnRedemptions: true,
-    showOnNicksNiceties: true,
     showOnShop: true,
   });
 
@@ -103,7 +102,6 @@ export const PrizeConfiguration = () => {
       brand: 'pokemon',
       displayOrder: 0,
       showOnRedemptions: true,
-      showOnNicksNiceties: true,
       showOnShop: true,
     });
     setValidationError('');
@@ -297,7 +295,6 @@ export const PrizeConfiguration = () => {
       brand: tier.brand || 'pokemon',
       displayOrder: tier.displayOrder ?? 0,
       showOnRedemptions: tier.showOnRedemptions ?? true,
-      showOnNicksNiceties: tier.showOnNicksNiceties ?? true,
       showOnShop: tier.showOnShop ?? true,
     });
     imageUpload.clearImage();
@@ -700,18 +697,6 @@ export const PrizeConfiguration = () => {
                   />
                   <Label htmlFor="showOnRedemptions" className="font-medium cursor-pointer">
                     Show on Redemptions Page
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="showOnNicksNiceties"
-                    checked={formData.showOnNicksNiceties ?? true}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, showOnNicksNiceties: checked })
-                    }
-                  />
-                  <Label htmlFor="showOnNicksNiceties" className="font-medium cursor-pointer">
-                    Show on Nick's Niceties
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
