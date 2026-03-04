@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { api } from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Upload, ShoppingCart, DollarSign, Pencil, X } from 'lucide-react';
@@ -71,6 +71,8 @@ export default function SellerShopManage() {
   const [isCounterDialogOpen, setIsCounterDialogOpen] = useState(false);
   const [counterAmount, setCounterAmount] = useState('');
   const [counterNotes, setCounterNotes] = useState('');
+  const [shopName, setShopName] = useState('');
+  const [isEditingShopName, setIsEditingShopName] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -99,6 +101,13 @@ export default function SellerShopManage() {
   });
 
   const offers = offersResponse?.data || [];
+
+  // Sync shop name when session updates
+  useEffect(() => {
+    if (session?.user && !isEditingShopName) {
+      setShopName(session.user.shopName || '');
+    }
+  }, [session?.user?.id, isEditingShopName]);
 
   const handleImageUpload = async (): Promise<string> => {
     if (!imageUpload.selectedFile) {
@@ -236,6 +245,23 @@ export default function SellerShopManage() {
       toast({
         title: 'Error',
         description: 'Failed to reject offer.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateShopNameMutation = useMutation({
+    mutationFn: (newShopName: string) => api.user.updateProfile({ shopName: newShopName }),
+    onSuccess: () => {
+      toast({ title: 'Success', description: 'Shop name updated successfully.' });
+      setIsEditingShopName(false);
+      queryClient.invalidateQueries({ queryKey: ['session'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-shops'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to update shop name.',
         variant: 'destructive',
       });
     },
@@ -381,6 +407,68 @@ export default function SellerShopManage() {
   return (
     <MainLayout>
       <div className="space-y-6">
+        {/* Shop Settings Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Shop Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!isEditingShopName ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Shop Name</p>
+                  <p className="text-lg font-semibold mt-1">
+                    {shopName || session?.user?.shopName || (session?.user?.username ? `${session.user.username}'s Shop` : 'Your Shop')}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Customize
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label>Shop Name</Label>
+                  <Input
+                    placeholder={`${session?.user?.username}'s Shop`}
+                    value={shopName}
+                    onChange={e => setShopName(e.target.value)}
+                    maxLength={255}
+                  />
+                  <p className="text-xs text-muted-foreground">Leave empty to use your username</p>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsEditingShopName(false);
+                      setShopName(session?.user?.shopName || '');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => updateShopNameMutation.mutate(shopName)}
+                    disabled={updateShopNameMutation.isPending}
+                  >
+                    {updateShopNameMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Mobile: Preview at top, Desktop: Side-by-side layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-6">
           {/* Form Section */}
