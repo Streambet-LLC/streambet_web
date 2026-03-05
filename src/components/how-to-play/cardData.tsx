@@ -12,7 +12,7 @@ export const infoCards: InfoCard[] = [
     trailWord: 'BUY',
     description: (
       <>
-        Buy cards at CardCade in an easier, friendlier, more transparent, and more fun manner than anywhere else on the internet!
+        Buy cards on CardCade in an easier, friendlier, more transparent, more fun manner than anywhere else on the internet!
       </>
     ),
   },
@@ -21,7 +21,7 @@ export const infoCards: InfoCard[] = [
     trailWord: 'SELL',
     description: (
       <>
-        List/sell cards at CardCade with lower fees, full security provisioning, and full support of our team.
+        List/sell cards on CardCade with lower fees, full security provisioning, and full support of our team.
       </>
     ),
   },

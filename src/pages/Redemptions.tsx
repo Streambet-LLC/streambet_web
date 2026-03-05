@@ -123,9 +123,9 @@ export default function Redemptions() {
         stock: prize.stock,
         purchaseOption: prize.purchaseOption,
         brand: prize.brand,
-        displayOrder: prize.displayOrder ?? 0,
+        displayOrder: prize.displayOrderRedemptions ?? 999,
       }))
-      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+      .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
   }, [tiers]);
 
   const displayPrizes = selectedBrand

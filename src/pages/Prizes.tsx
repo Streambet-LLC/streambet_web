@@ -53,7 +53,7 @@ export default function Prizes() {
   const [selectedPrizeForOffer, setSelectedPrizeForOffer] = useState<PrizeDisplay | null>(null);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(24);
-  const [showPriceFilter, setShowPriceFilter] = useState(false);
+  const [showPriceFilter, setShowPriceFilter] = useState(true);
   const [minPrice, setMinPrice] = useState<number | ''>('');
   const [maxPrice, setMaxPrice] = useState<number | ''>('');
 
@@ -159,14 +159,26 @@ export default function Prizes() {
         stock: prize.stock,
         purchaseOption: prize.purchaseOption,
         brand: prize.brand,
-        displayOrder: prize.displayOrder ?? 0,
+        displayOrder: prize.displayOrderShop ?? 999,
+        featuredDisplayOrder: prize.featuredDisplayOrder ?? null,
       }))
-      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+      .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
   }, [tiers]);
 
-  // Featured prizes (top 8 by display order)
+  // Featured prizes (filtered by featuredDisplayOrder, sorted by position)
   const featuredPrizes = useMemo(() => {
-    return [...allPrizes].slice(0, 8);
+    return allPrizes
+      .filter(prize => prize.featuredDisplayOrder !== null && prize.featuredDisplayOrder !== undefined)
+      .sort((a, b) => {
+        // Primary sort: featured display order
+        const orderA = a.featuredDisplayOrder ?? 0;
+        const orderB = b.featuredDisplayOrder ?? 0;
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        // Tiebreaker: use id for stable sort
+        return a.id.localeCompare(b.id);
+      });
   }, [allPrizes]);
 
   // Filter by brand and price
@@ -232,6 +244,11 @@ export default function Prizes() {
                 />
               </motion.div>
             </h1>
+            <div className="space-y-2">
+              <p className="text-[#FFFFFFBF]">
+                Your friendly neighborhood trading cards marketplace
+              </p>
+            </div>
           </div>
         )}
 
@@ -427,12 +444,7 @@ export default function Prizes() {
                               value={maxPrice}
                               onChange={e => {
                                 const val = e.target.value === '' ? '' : Number(e.target.value);
-                                if (
-                                  val === '' ||
-                                  (typeof val === 'number' && (minPrice === '' || val >= minPrice))
-                                ) {
-                                  setMaxPrice(val);
-                                }
+                                setMaxPrice(val);
                               }}
                               className="w-24"
                               min="0"
@@ -449,6 +461,9 @@ export default function Prizes() {
                             Clear
                           </Button>
                         </div>
+                        {minPrice !== '' && maxPrice !== '' && typeof maxPrice === 'number' && typeof minPrice === 'number' && maxPrice < minPrice && (
+                          <p className="text-xs text-red-500 mt-2">Max should be greater than min</p>
+                        )}
                       </div>
                     </div>
                   )}

@@ -62,9 +62,9 @@ export default function ShopDetail() {
       stock: prize.stock,
       purchaseOption: prize.purchaseOption,
       brand: prize.brand,
-      displayOrder: prize.displayOrder ?? 0,
+      displayOrder: prize.displayOrderNicksNiceties ?? 999,
     }))
-    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
 
   // Apply brand filter if any brands are selected
   if (selectedBrands.length > 0) {

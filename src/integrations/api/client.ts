@@ -1270,6 +1270,20 @@ export const prizeAPI = {
     return response.data;
   },
 
+  // Bulk update display orders (admin only)
+  bulkUpdateDisplayOrder: async (payload: {
+    updates: Array<{
+      id: string;
+      displayOrderShop: number;
+      displayOrderRedemptions: number;
+      displayOrderNicksNiceties: number;
+      featuredDisplayOrder: number | null;
+    }>;
+  }): Promise<PrizeConfiguration[]> => {
+    const response = await apiClient.patch('/admin/prizes/bulk-display-order', payload);
+    return response.data;
+  },
+
   // Get all prize tiers including inactive (admin only, for history/audit)
   getPrizeHistory: async (): Promise<PrizeConfiguration[]> => {
     const response = await apiClient.get('/admin/prizes/history');
