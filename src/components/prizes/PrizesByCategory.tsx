@@ -244,7 +244,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
       {hasPrizes ? (
         (() => {
           const filteredItems = Object.values(categories).flatMap(items =>
-            filterByPriceRange(sortPrizesByPurchaseOption(items))
+            filterByPriceRange(items)
           );
           const hasFilteredResults = filteredItems.length > 0;
 
@@ -258,7 +258,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                     </h2>
                   )}
                   <div className={cardVariant === 'redemption' ? 'grid grid-cols-1 md:grid-cols-3 gap-4' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}>
-                    {filterByPriceRange(sortPrizesByPurchaseOption(items)).map(prize => (
+                    {filterByPriceRange(items).map(prize => (
                       <PrizeCard
                         key={prize.id}
                         prize={prize}

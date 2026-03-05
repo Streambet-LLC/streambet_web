@@ -145,9 +145,9 @@ export default function Prizes() {
     return 'slab';
   };
 
-  // Get all prizes with stock and filter for redemptions page
+  // Get all prizes with stock and filter for shop page
   const allPrizes: PrizeDisplay[] = useMemo(() => {
-    return (tiers || [])
+    const filtered = (tiers || [])
       .filter(prize => prize.stock > 0 && prize.showOnShop !== false)
       .map(prize => ({
         id: prize.id,
@@ -161,8 +161,24 @@ export default function Prizes() {
         brand: prize.brand,
         displayOrder: prize.displayOrderShop ?? 999,
         featuredDisplayOrder: prize.featuredDisplayOrder ?? null,
-      }))
-      .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+      }));
+    
+    // Check if purchase option sorting is enabled (use first prize's setting)
+    const usePurchaseSort = tiers?.[0]?.sortByPurchaseOptionShop ?? false;
+    
+    if (usePurchaseSort) {
+      // Sort by purchaseOption first, then displayOrder
+      return filtered.sort((a, b) => {
+        const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
+        const aPurchase = purchaseOrder[a.purchaseOption] ?? 3;
+        const bPurchase = purchaseOrder[b.purchaseOption] ?? 3;
+        if (aPurchase !== bPurchase) return aPurchase - bPurchase;
+        return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
+      });
+    } else {
+      // Sort by displayOrder only
+      return filtered.sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+    }
   }, [tiers]);
 
   // Featured prizes (filtered by featuredDisplayOrder, sorted by position)

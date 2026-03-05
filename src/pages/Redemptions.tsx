@@ -111,7 +111,7 @@ export default function Redemptions() {
   };
 
   const allPrizes: PrizeDisplay[] = useMemo(() => {
-    return (tiers || [])
+    const filtered = (tiers || [])
       .filter(prize => prize.stock > 0 && prize.showOnRedemptions !== false)
       .map(prize => ({
         id: prize.id,
@@ -124,8 +124,25 @@ export default function Redemptions() {
         purchaseOption: prize.purchaseOption,
         brand: prize.brand,
         displayOrder: prize.displayOrderRedemptions ?? 999,
-      }))
-      .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+      }));
+    
+    // Check if purchase option sorting is enabled (use first prize's setting)
+    const usePurchaseSort = tiers?.[0]?.sortByPurchaseOptionRedemptions ?? false;
+    
+    if (usePurchaseSort) {
+      // Sort by purchaseOption first, then displayOrder
+      const sorted = filtered.sort((a, b) => {
+        const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
+        const aPurchase = purchaseOrder[a.purchaseOption] ?? 3;
+        const bPurchase = purchaseOrder[b.purchaseOption] ?? 3;
+        if (aPurchase !== bPurchase) return aPurchase - bPurchase;
+        return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
+      });
+      return sorted;
+    } else {
+      // Sort by displayOrder only
+      return filtered.sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+    }
   }, [tiers]);
 
   const displayPrizes = selectedBrand

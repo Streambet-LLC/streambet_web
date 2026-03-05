@@ -50,7 +50,7 @@ export default function ShopDetail() {
   const shopName = username ? SHOP_NAMES[username] || username : 'Shop';
 
   // Filter to only show slabs with stock
-  let slabPrizes: PrizeDisplay[] = (tiers || [])
+  const filtered = (tiers || [])
     .filter(prize => prize.category === 'slab' && prize.stock > 0 && prize.showOnNicksNiceties !== false)
     .map(prize => ({
       id: prize.id,
@@ -63,8 +63,26 @@ export default function ShopDetail() {
       purchaseOption: prize.purchaseOption,
       brand: prize.brand,
       displayOrder: prize.displayOrderNicksNiceties ?? 999,
-    }))
-    .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+    }));
+
+  // Check if purchase option sorting is enabled
+  const usePurchaseSort = tiers?.[0]?.sortByPurchaseOptionNicksNiceties ?? false;
+
+  // Sort prizes
+  let slabPrizes: PrizeDisplay[];
+  if (usePurchaseSort) {
+    // Sort by purchaseOption first, then displayOrder
+    slabPrizes = filtered.sort((a, b) => {
+      const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
+      const aPurchase = purchaseOrder[a.purchaseOption] ?? 3;
+      const bPurchase = purchaseOrder[b.purchaseOption] ?? 3;
+      if (aPurchase !== bPurchase) return aPurchase - bPurchase;
+      return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
+    });
+  } else {
+    // Sort by displayOrder only
+    slabPrizes = filtered.sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+  }
 
   // Apply brand filter if any brands are selected
   if (selectedBrands.length > 0) {

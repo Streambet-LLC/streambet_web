@@ -26,6 +26,9 @@ export interface PrizeConfiguration {
   showOnRedemptions: boolean;
   showOnNicksNiceties: boolean;
   showOnShop: boolean;
+  sortByPurchaseOptionShop: boolean;
+  sortByPurchaseOptionRedemptions: boolean;
+  sortByPurchaseOptionNicksNiceties: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
