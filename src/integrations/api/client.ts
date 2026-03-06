@@ -1270,7 +1270,7 @@ export const prizeAPI = {
     stock?: number;
     purchaseOption?: 'offers_only' | 'buy_only' | 'both';
     brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
-    displayOrder?: number;
+    displayOrderShop?: number;
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/seller/prizes/items', payload);
     return response.data;
@@ -1288,7 +1288,7 @@ export const prizeAPI = {
       stock?: number;
       purchaseOption?: 'offers_only' | 'buy_only' | 'both';
       brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
-      displayOrder?: number;
+      displayOrderShop?: number;
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/seller/prizes/items/${id}`, payload);

@@ -106,7 +106,7 @@ export default function SellerShopManage() {
     stock: 1,
     purchaseOption: 'buy_only' as 'buy_only' | 'offers_only' | 'both',
     brand: 'other' as PrizeBrand,
-    displayOrder: 0,
+    displayOrderShop: 1,
   });
 
   const [selectedPurchasedOrder, setSelectedPurchasedOrder] = useState<SellerPurchasedOrder | null>(
@@ -200,7 +200,7 @@ export default function SellerShopManage() {
         stock: 1,
         purchaseOption: 'buy_only',
         brand: 'other',
-        displayOrder: 0,
+        displayOrderShop: 1,
       });
       imageUpload.clearImage();
       setImageError(null);
@@ -392,7 +392,7 @@ export default function SellerShopManage() {
       stock: item.stock || 0,
       purchaseOption: item.purchaseOption || 'buy_only',
       brand: item.brand || 'other',
-      displayOrder: item.displayOrder || 0,
+      displayOrderShop: item.displayOrderShop || 1,
     });
     imageUpload.clearImage();
     setImageError(null);
@@ -410,7 +410,7 @@ export default function SellerShopManage() {
       stock: 1,
       purchaseOption: 'buy_only',
       brand: 'other',
-      displayOrder: 0,
+      displayOrderShop: 1,
     });
     imageUpload.clearImage();
     setImageError(null);
@@ -693,10 +693,10 @@ export default function SellerShopManage() {
                 <Label>Display Order</Label>
                 <Input
                   type="number"
-                  placeholder="0"
-                  value={form.displayOrder}
+                  placeholder="1"
+                  value={form.displayOrderShop}
                   onChange={e =>
-                    setForm(p => ({ ...p, displayOrder: Number(e.target.value) || 0 }))
+                    setForm(p => ({ ...p, displayOrderShop: Number(e.target.value) || 0 }))
                   }
                 />
                 <p className="text-xs text-muted-foreground">
