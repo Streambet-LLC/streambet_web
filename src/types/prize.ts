@@ -21,13 +21,11 @@ export interface PrizeConfiguration {
   brand: PrizeBrand;
   displayOrderShop: number | null;
   displayOrderRedemptions: number | null;
-  displayOrderNicksNiceties: number | null;
   featuredDisplayOrder: number | null;
   showOnRedemptions: boolean;
   showOnShop: boolean;
   sortByPurchaseOptionShop: boolean;
   sortByPurchaseOptionRedemptions: boolean;
-  sortByPurchaseOptionNicksNiceties: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -67,7 +65,6 @@ export interface CreatePrizeTierRequest {
   brand?: PrizeBrand;
   displayOrderShop?: number;
   displayOrderRedemptions?: number;
-  displayOrderNicksNiceties?: number;
   featuredDisplayOrder?: number | null;
   showOnRedemptions?: boolean;
   showOnShop?: boolean;
@@ -87,7 +84,6 @@ export interface UpdatePrizeTierRequest {
   brand?: PrizeBrand;
   displayOrderShop?: number;
   displayOrderRedemptions?: number;
-  displayOrderNicksNiceties?: number;
   featuredDisplayOrder?: number | null;
   showOnRedemptions?: boolean;
   showOnShop?: boolean;

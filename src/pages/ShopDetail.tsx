@@ -51,17 +51,16 @@ export default function ShopDetail() {
       stock: prize.stock,
       purchaseOption: prize.purchaseOption,
       brand: prize.brand,
-      displayOrder: prize.displayOrderNicksNiceties ?? 999,
+      displayOrder: prize.displayOrderShop ?? 999,
     }));
 
   // Check if purchase option sorting is enabled
-  const usePurchaseSort = tiers?.[0]?.sortByPurchaseOptionNicksNiceties ?? false;
+  const usePurchaseSort = shopData?.items?.[0]?.sortByPurchaseOptionShop ?? false;
 
   // Sort prizes
-  let slabPrizes: PrizeDisplay[];
   if (usePurchaseSort) {
     // Sort by purchaseOption first, then displayOrder
-    slabPrizes = filtered.sort((a, b) => {
+    slabPrizes = slabPrizes.sort((a, b) => {
       const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
       const aPurchase = purchaseOrder[a.purchaseOption] ?? 3;
       const bPurchase = purchaseOrder[b.purchaseOption] ?? 3;
@@ -70,7 +69,7 @@ export default function ShopDetail() {
     });
   } else {
     // Sort by displayOrder only
-    slabPrizes = filtered.sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+    slabPrizes = slabPrizes.sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
   }
 
   // Apply brand filter if any brands are selected

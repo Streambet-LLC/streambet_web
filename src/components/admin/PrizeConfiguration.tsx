@@ -117,14 +117,13 @@ interface SortablePrizeItemProps {
   changes: {
     displayOrderShop: number;
     displayOrderRedemptions: number;
-    displayOrderNicksNiceties: number;
     featuredDisplayOrder: number | null;
     isFeatured: boolean;
   };
   onToggleFeatured: (id: string, featured: boolean) => void;
   onFeaturedOrderChange: (id: string, order: number) => void;
   hasDuplicateFeaturedOrder: boolean;
-  selectedPage: 'shop' | 'redemptions' | 'nicks_niceties';
+  selectedPage: 'shop' | 'redemptions';
 }
 
 const SortablePrizeItem = ({ tier, position, changes, onToggleFeatured, onFeaturedOrderChange, hasDuplicateFeaturedOrder, selectedPage }: SortablePrizeItemProps) => {
@@ -268,15 +267,14 @@ export const PrizeConfiguration = () => {
 
   // Display order editing state
   const [isEditingOrder, setIsEditingOrder] = useState(false);
-  const [selectedPage, setSelectedPage] = useState<'shop' | 'redemptions' | 'nicks_niceties'>('shop');
-  const [orderChanges, setOrderChanges] = useState<Map<string, { displayOrderShop: number; displayOrderRedemptions: number; displayOrderNicksNiceties: number; featuredDisplayOrder: number | null; isFeatured: boolean }>>(new Map());
+  const [selectedPage, setSelectedPage] = useState<'shop' | 'redemptions'>('shop');
+  const [orderChanges, setOrderChanges] = useState<Map<string, { displayOrderShop: number; displayOrderRedemptions: number; featuredDisplayOrder: number | null; isFeatured: boolean }>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
   
   // Sorting preference state (initialized from first prize in data)
   const [sortByPurchaseOption, setSortByPurchaseOption] = useState({
     shop: tiers?.[0]?.sortByPurchaseOptionShop ?? false,
     redemptions: tiers?.[0]?.sortByPurchaseOptionRedemptions ?? false,
-    nicksNiceties: tiers?.[0]?.sortByPurchaseOptionNicksNiceties ?? false,
   });
 
   // Validation state
@@ -295,7 +293,6 @@ export const PrizeConfiguration = () => {
     stock: 1,
     purchaseOption: 'both',
     brand: 'pokemon',
-    displayOrder: 0,
     showOnRedemptions: true,
     showOnShop: true,
   });
@@ -310,7 +307,6 @@ export const PrizeConfiguration = () => {
       stock: 1,
       purchaseOption: 'both',
       brand: 'pokemon',
-      displayOrder: 0,
       showOnRedemptions: true,
       showOnShop: true,
     });
@@ -440,11 +436,9 @@ export const PrizeConfiguration = () => {
       id: string; 
       displayOrderShop: number | null; 
       displayOrderRedemptions: number | null; 
-      displayOrderNicksNiceties: number | null; 
       featuredDisplayOrder: number | null;
       sortByPurchaseOptionShop?: boolean;
       sortByPurchaseOptionRedemptions?: boolean;
-      sortByPurchaseOptionNicksNiceties?: boolean;
     }>) =>
       api.prize.bulkUpdateDisplayOrder({ updates } as any),
     onSuccess: () => {
@@ -469,7 +463,6 @@ export const PrizeConfiguration = () => {
       initialChanges.set(tier.id, {
         displayOrderShop: tier.displayOrderShop ?? null,
         displayOrderRedemptions: tier.displayOrderRedemptions ?? null,
-        displayOrderNicksNiceties: tier.displayOrderNicksNiceties ?? null,
         featuredDisplayOrder: tier.featuredDisplayOrder ?? null,
         isFeatured: tier.featuredDisplayOrder !== null,
       });
@@ -487,7 +480,6 @@ export const PrizeConfiguration = () => {
       id,
       displayOrderShop: values.displayOrderShop,
       displayOrderRedemptions: values.displayOrderRedemptions,
-      displayOrderNicksNiceties: values.displayOrderNicksNiceties,
       featuredDisplayOrder: values.isFeatured ? values.featuredDisplayOrder : null,
     }));
 
@@ -496,16 +488,13 @@ export const PrizeConfiguration = () => {
 
   // Handle toggle change for purchase option sorting
   const handleToggleSortChange = async (checked: boolean) => {
-    const page = selectedPage === 'nicks_niceties' ? 'nicksNiceties' : selectedPage;
-    
     // Update local state immediately for instant UI feedback
-    setSortByPurchaseOption(prev => ({ ...prev, [page]: checked }));
+    setSortByPurchaseOption(prev => ({ ...prev, [selectedPage]: checked }));
     
     // Prepare field name for API
     const fieldMap = {
       shop: 'sortByPurchaseOptionShop',
       redemptions: 'sortByPurchaseOptionRedemptions',
-      nicksNiceties: 'sortByPurchaseOptionNicksNiceties',
     };
     
     // Update all prize configs with the new sorting preference
@@ -513,19 +502,17 @@ export const PrizeConfiguration = () => {
       id: tier.id,
       displayOrderShop: tier.displayOrderShop,
       displayOrderRedemptions: tier.displayOrderRedemptions,
-      displayOrderNicksNiceties: tier.displayOrderNicksNiceties,
       featuredDisplayOrder: tier.featuredDisplayOrder,
       // Include all sorting preferences, updating only the current page
-      sortByPurchaseOptionShop: page === 'shop' ? checked : tier.sortByPurchaseOptionShop,
-      sortByPurchaseOptionRedemptions: page === 'redemptions' ? checked : tier.sortByPurchaseOptionRedemptions,
-      sortByPurchaseOptionNicksNiceties: page === 'nicksNiceties' ? checked : tier.sortByPurchaseOptionNicksNiceties,
+      sortByPurchaseOptionShop: selectedPage === 'shop' ? checked : tier.sortByPurchaseOptionShop,
+      sortByPurchaseOptionRedemptions: selectedPage === 'redemptions' ? checked : tier.sortByPurchaseOptionRedemptions,
     }));
     
     try {
       await bulkUpdateOrderMutation.mutateAsync(updates);
     } catch (error) {
       // Revert state on error
-      setSortByPurchaseOption(prev => ({ ...prev, [page]: !checked }));
+      setSortByPurchaseOption(prev => ({ ...prev, [selectedPage]: !checked }));
       toast({
         title: 'Error',
         description: 'Failed to update sorting preference',
@@ -555,7 +542,6 @@ export const PrizeConfiguration = () => {
     prizes = prizes.filter(t => {
       if (selectedPage === 'shop') return t.showOnShop;
       if (selectedPage === 'redemptions') return t.showOnRedemptions;
-      if (selectedPage === 'nicks_niceties') return t.showOnNicksNiceties;
       return true;
     });
     
@@ -580,30 +566,23 @@ export const PrizeConfiguration = () => {
         if (selectedPage === 'shop') {
           aOrder = aChanges?.displayOrderShop ?? a.displayOrderShop ?? 999;
           bOrder = bChanges?.displayOrderShop ?? b.displayOrderShop ?? 999;
-        } else if (selectedPage === 'redemptions') {
+        } else {
           aOrder = aChanges?.displayOrderRedemptions ?? a.displayOrderRedemptions ?? 999;
           bOrder = bChanges?.displayOrderRedemptions ?? b.displayOrderRedemptions ?? 999;
-        } else {
-          aOrder = aChanges?.displayOrderNicksNiceties ?? a.displayOrderNicksNiceties ?? 999;
-          bOrder = bChanges?.displayOrderNicksNiceties ?? b.displayOrderNicksNiceties ?? 999;
         }
       } else {
         // In view mode: use DB values (same field as edit mode for consistency)
         if (selectedPage === 'shop') {
           aOrder = a.displayOrderShop ?? 999;
           bOrder = b.displayOrderShop ?? 999;
-        } else if (selectedPage === 'redemptions') {
+        } else {
           aOrder = a.displayOrderRedemptions ?? 999;
           bOrder = b.displayOrderRedemptions ?? 999;
-        } else {
-          aOrder = a.displayOrderNicksNiceties ?? 999;
-          bOrder = b.displayOrderNicksNiceties ?? 999;
         }
       }
       
       // Apply purchase option sorting if enabled for current page
-      const pageKey = selectedPage === 'nicks_niceties' ? 'nicksNiceties' : selectedPage;
-      if (sortByPurchaseOption[pageKey]) {
+      if (sortByPurchaseOption[selectedPage]) {
         // Primary sort: purchaseOption (both=0, buy_only=1, offers_only=2)
         const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
         const aPurchase = purchaseOrder[a.purchaseOption] ?? 3;
@@ -622,7 +601,6 @@ export const PrizeConfiguration = () => {
       setSortByPurchaseOption({
         shop: tiers[0].sortByPurchaseOptionShop ?? false,
         redemptions: tiers[0].sortByPurchaseOptionRedemptions ?? false,
-        nicksNiceties: tiers[0].sortByPurchaseOptionNicksNiceties ?? false,
       });
     }
   }, [tiers]);
@@ -644,8 +622,7 @@ export const PrizeConfiguration = () => {
     const fullSortedList = getSortedPrizes(category, false);
 
     // Validate drag if purchase option sorting is enabled
-    const pageKey = selectedPage === 'nicks_niceties' ? 'nicksNiceties' : selectedPage;
-    if (sortByPurchaseOption[pageKey]) {
+    if (sortByPurchaseOption[selectedPage]) {
       const draggedPrize = fullSortedList.find(p => p.id === active.id);
       const targetPrize = fullSortedList.find(p => p.id === over.id);
       
@@ -692,10 +669,8 @@ export const PrizeConfiguration = () => {
         const displayOrder = index + 1; // Position in the full list
         if (selectedPage === 'shop') {
           newChanges.set(prize.id, { ...current, displayOrderShop: displayOrder });
-        } else if (selectedPage === 'redemptions') {
-          newChanges.set(prize.id, { ...current, displayOrderRedemptions: displayOrder });
         } else {
-          newChanges.set(prize.id, { ...current, displayOrderNicksNiceties: displayOrder });
+          newChanges.set(prize.id, { ...current, displayOrderRedemptions: displayOrder });
         }
       }
     });
@@ -844,7 +819,6 @@ export const PrizeConfiguration = () => {
       brand: tier.brand || 'pokemon',
       displayOrderShop: tier.displayOrderShop,
       displayOrderRedemptions: tier.displayOrderRedemptions,
-      displayOrderNicksNiceties: tier.displayOrderNicksNiceties,
       featuredDisplayOrder: tier.featuredDisplayOrder,
       showOnRedemptions: tier.showOnRedemptions ?? true,
       showOnShop: tier.showOnShop ?? true,
@@ -951,13 +925,6 @@ export const PrizeConfiguration = () => {
               >
                 Redeem Page
               </Button>
-              <Button
-                variant={selectedPage === 'nicks_niceties' ? 'default' : 'ghost'}
-                onClick={() => setSelectedPage('nicks_niceties')}
-                className="rounded-b-none"
-              >
-                Nick's Niceties
-              </Button>
             </div>
           )}
           
@@ -979,7 +946,7 @@ export const PrizeConfiguration = () => {
               {isEditingOrder && (
                 <div className="flex items-center gap-2 whitespace-nowrap">
                   <Switch
-                    checked={sortByPurchaseOption[selectedPage === 'nicks_niceties' ? 'nicksNiceties' : selectedPage]}
+                    checked={sortByPurchaseOption[selectedPage]}
                     onCheckedChange={handleToggleSortChange}
                     id="sort-toggle"
                   />
@@ -1116,7 +1083,7 @@ export const PrizeConfiguration = () => {
                 </div>
               )}
 
-              {/* Redemptions/Nick's Niceties - Separate Category Sections */}
+              {/* Redemptions - Separate Category Sections */}
               {selectedPage !== 'shop' && (
                 <>
                   {/* Slab Category Section */}

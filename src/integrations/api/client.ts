@@ -1391,7 +1391,6 @@ export const prizeAPI = {
       id: string;
       displayOrderShop: number;
       displayOrderRedemptions: number;
-      displayOrderNicksNiceties: number;
       featuredDisplayOrder: number | null;
     }>;
   }): Promise<PrizeConfiguration[]> => {
