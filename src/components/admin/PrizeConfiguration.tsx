@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,12 +12,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
 import { handleMutationError } from '@/lib/mutationHelpers';
-import { Loader2, Plus, Trash2, X, Edit, AlertCircle, Expand } from 'lucide-react';
+import { Loader2, Plus, Trash2, X, Edit, AlertCircle, Expand, GripVertical } from 'lucide-react';
 import {
   PrizeConfiguration as PrizeTier,
   CreatePrizeTierRequest,
@@ -47,6 +55,194 @@ import {
 } from '@/components/ui/alert-dialog';
 import Bugsnag from '@bugsnag/js';
 import { getMessage, getThumbnailUrl } from '@/utils/helper';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Helper function to get purchase option badge styling
+const getPurchaseOptionBadge = (purchaseOption: 'both' | 'buy_only' | 'offers_only') => {
+  switch (purchaseOption) {
+    case 'both':
+      return {
+        label: 'Both Options',
+        className: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-100 border-blue-200',
+      };
+    case 'buy_only':
+      return {
+        label: 'Buy Only',
+        className: 'bg-red-300 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 border-indigo-200',
+      };
+    case 'offers_only':
+      return {
+        label: 'Make Offer Only',
+        className: 'bg-orange-300 text-orange-900 dark:bg-orange-900 dark:text-orange-100 border-orange-200',
+      };
+  }
+};
+
+// Helper function to get category badge styling
+const getCategoryBadge = (category: 'slab' | 'sealed') => {
+  switch (category) {
+    case 'slab':
+      return {
+        label: 'Slab',
+        className: 'bg-purple-300 text-purple-900 dark:bg-purple-900 dark:text-purple-100',
+      };
+    case 'sealed':
+      return {
+        label: 'Sealed',
+        className: 'bg-yellow-200 text-yellow-900 dark:bg-emerald-900 dark:text-emerald-100',
+      };
+  }
+};
+
+// Sortable Prize Item Component
+interface SortablePrizeItemProps {
+  tier: PrizeTier;
+  position: number;
+  changes: {
+    displayOrderShop: number;
+    displayOrderRedemptions: number;
+    displayOrderNicksNiceties: number;
+    featuredDisplayOrder: number | null;
+    isFeatured: boolean;
+  };
+  onToggleFeatured: (id: string, featured: boolean) => void;
+  onFeaturedOrderChange: (id: string, order: number) => void;
+  hasDuplicateFeaturedOrder: boolean;
+  selectedPage: 'shop' | 'redemptions' | 'nicks_niceties';
+}
+
+const SortablePrizeItem = ({ tier, position, changes, onToggleFeatured, onFeaturedOrderChange, hasDuplicateFeaturedOrder, selectedPage }: SortablePrizeItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: tier.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
+    >
+      {/* Drag handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing flex-shrink-0"
+      >
+        <GripVertical className="w-5 h-5 text-muted-foreground" />
+      </div>
+
+      {/* Position indicator */}
+      <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-primary/10 rounded-full">
+        <span className="text-sm font-bold">{position}</span>
+      </div>
+
+      {/* Prize info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <h3 className="font-semibold text-base">{tier.name}</h3>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <p className="text-sm text-muted-foreground">
+            {tier.amount.toLocaleString('en-US')} coins
+          </p>
+          <span
+            className={`text-xs px-2 py-1 rounded font-medium ${
+              tier.stock > 0
+                ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100'
+                : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100'
+            }`}
+          >
+            Stock: {tier.stock}
+          </span>
+          <Badge variant="outline" className={`text-xs ${getCategoryBadge(tier.category).className}`}>
+            {getCategoryBadge(tier.category).label}
+          </Badge>
+          <Badge variant="outline" className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}>
+            {getPurchaseOptionBadge(tier.purchaseOption).label}
+          </Badge>
+        </div>
+        {tier.description && (
+          <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
+            {tier.description}
+          </p>
+        )}
+      </div>
+
+      {/* Featured toggle and order input - Shop page only */}
+      {selectedPage === 'shop' && (
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Label className="text-xs">Featured</Label>
+            <Switch
+              checked={changes.isFeatured}
+              onCheckedChange={(checked) => onToggleFeatured(tier.id, checked)}
+            />
+          </div>
+          
+          {changes.isFeatured && (
+            <div className="flex items-center gap-1">
+              <Label className="text-xs whitespace-nowrap">Order:</Label>
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={changes.featuredDisplayOrder ?? 1}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (!isNaN(value) && value >= 1) {
+                      onFeaturedOrderChange(tier.id, value);
+                    }
+                  }}
+                  className="w-16 h-8 text-sm"
+                />
+                {hasDuplicateFeaturedOrder && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertCircle className="w-4 h-4 text-amber-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Duplicate order - items will be sorted by ID</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const PrizeConfiguration = () => {
   const { toast } = useToast();
@@ -70,10 +266,24 @@ export const PrizeConfiguration = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
 
+  // Display order editing state
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+  const [selectedPage, setSelectedPage] = useState<'shop' | 'redemptions' | 'nicks_niceties'>('shop');
+  const [orderChanges, setOrderChanges] = useState<Map<string, { displayOrderShop: number; displayOrderRedemptions: number; displayOrderNicksNiceties: number; featuredDisplayOrder: number | null; isFeatured: boolean }>>(new Map());
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Sorting preference state (initialized from first prize in data)
+  const [sortByPurchaseOption, setSortByPurchaseOption] = useState({
+    shop: tiers?.[0]?.sortByPurchaseOptionShop ?? false,
+    redemptions: tiers?.[0]?.sortByPurchaseOptionRedemptions ?? false,
+    nicksNiceties: tiers?.[0]?.sortByPurchaseOptionNicksNiceties ?? false,
+  });
+
   // Validation state
   const [validationError, setValidationError] = useState<string>('');
   const [showImageModal, setShowImageModal] = useState(false);
   const [imageLayout, setImageLayout] = useState<'single' | 'double'>('single');
+  const [usdAmount, setUsdAmount] = useState<string>('');
 
   // Form state
   const [formData, setFormData] = useState<CreatePrizeTierRequest>({
@@ -82,12 +292,11 @@ export const PrizeConfiguration = () => {
     description: '',
     imageUrl: '',
     category: 'slab',
-    stock: 0,
+    stock: 1,
     purchaseOption: 'both',
     brand: 'pokemon',
-    displayOrder: 0,
-    showOnRedemptions: true,
-    showOnNicksNiceties: true,
+    showOnRedemptions: false,
+    showOnNicksNiceties: false,
     showOnShop: true,
   });
 
@@ -98,18 +307,44 @@ export const PrizeConfiguration = () => {
       description: '',
       imageUrl: '',
       category: 'slab',
-      stock: 0,
+      stock: 1,
       purchaseOption: 'both',
       brand: 'pokemon',
-      displayOrder: 0,
-      showOnRedemptions: true,
-      showOnNicksNiceties: true,
+      showOnRedemptions: false,
+      showOnNicksNiceties: false,
       showOnShop: true,
     });
     setValidationError('');
     imageUpload.clearImage();
     setImageError(null);
     setImageLayout('single');
+    setUsdAmount('');
+  };
+
+  // USD to Cadecoins conversion handlers (1 USD = 50 cadecoins)
+  const handleUsdChange = (value: string) => {
+    setUsdAmount(value);
+    const usdValue = parseFloat(value);
+    if (!isNaN(usdValue) && usdValue > 0) {
+      const cadecoins = parseFloat((usdValue * 50).toFixed(2));
+      setFormData({ ...formData, amount: cadecoins });
+    } else if (value === '') {
+      setFormData({ ...formData, amount: 0 });
+    }
+  };
+
+  const handleCoinAmountChange = (value: string) => {
+    const coinValue = parseFloat(value);
+    setFormData({ ...formData, amount: isNaN(coinValue) ? 0 : coinValue });
+    
+    // Calculate and display equivalent USD
+    if (!isNaN(coinValue) && coinValue > 0) {
+      const usdEquivalent = (coinValue / 50).toFixed(2);
+      setUsdAmount(usdEquivalent);
+    } else {
+      setUsdAmount('');
+    }
+    setValidationError('');
   };
 
   // Drag and drop handlers
@@ -199,6 +434,318 @@ export const PrizeConfiguration = () => {
     onError: error => handleMutationError(error, 'Failed to delete item'),
   });
 
+  // Bulk update display order mutation
+  const bulkUpdateOrderMutation = useMutation({
+    mutationFn: (updates: Array<{ 
+      id: string; 
+      displayOrderShop: number | null; 
+      displayOrderRedemptions: number | null; 
+      displayOrderNicksNiceties: number | null; 
+      featuredDisplayOrder: number | null;
+      sortByPurchaseOptionShop?: boolean;
+      sortByPurchaseOptionRedemptions?: boolean;
+      sortByPurchaseOptionNicksNiceties?: boolean;
+    }>) =>
+      api.prize.bulkUpdateDisplayOrder({ updates } as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminPrizeTiers'] });
+      queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
+      toast({
+        title: 'Success!',
+        description: 'Display orders updated successfully',
+      });
+      setIsEditingOrder(false);
+      setOrderChanges(new Map());
+    },
+    onError: error => handleMutationError(error, 'Failed to update display orders'),
+  });
+
+  // Helper functions for display order editing
+  const enterEditMode = () => {
+    setIsEditingOrder(true);
+    // Initialize orderChanges with current values (keep NULL for pages where prize isn't shown)
+    const initialChanges = new Map();
+    activeTiers.forEach(tier => {
+      initialChanges.set(tier.id, {
+        displayOrderShop: tier.displayOrderShop ?? null,
+        displayOrderRedemptions: tier.displayOrderRedemptions ?? null,
+        displayOrderNicksNiceties: tier.displayOrderNicksNiceties ?? null,
+        featuredDisplayOrder: tier.featuredDisplayOrder ?? null,
+        isFeatured: tier.featuredDisplayOrder !== null,
+      });
+    });
+    setOrderChanges(initialChanges);
+  };
+
+  const cancelEditMode = () => {
+    setIsEditingOrder(false);
+    setOrderChanges(new Map());
+  };
+
+  const saveDisplayOrders = () => {
+    const updates = Array.from(orderChanges.entries()).map(([id, values]) => ({
+      id,
+      displayOrderShop: values.displayOrderShop,
+      displayOrderRedemptions: values.displayOrderRedemptions,
+      displayOrderNicksNiceties: values.displayOrderNicksNiceties,
+      featuredDisplayOrder: values.isFeatured ? values.featuredDisplayOrder : null,
+    }));
+
+    bulkUpdateOrderMutation.mutate(updates);
+  };
+
+  // Handle toggle change for purchase option sorting
+  const handleToggleSortChange = async (checked: boolean) => {
+    const page = selectedPage === 'nicks_niceties' ? 'nicksNiceties' : selectedPage;
+    
+    // Update local state immediately for instant UI feedback
+    setSortByPurchaseOption(prev => ({ ...prev, [page]: checked }));
+    
+    // Prepare field name for API
+    const fieldMap = {
+      shop: 'sortByPurchaseOptionShop',
+      redemptions: 'sortByPurchaseOptionRedemptions',
+      nicksNiceties: 'sortByPurchaseOptionNicksNiceties',
+    };
+    
+    // Update all prize configs with the new sorting preference
+    const updates = activeTiers.map(tier => ({
+      id: tier.id,
+      displayOrderShop: tier.displayOrderShop,
+      displayOrderRedemptions: tier.displayOrderRedemptions,
+      displayOrderNicksNiceties: tier.displayOrderNicksNiceties,
+      featuredDisplayOrder: tier.featuredDisplayOrder,
+      // Include all sorting preferences, updating only the current page
+      sortByPurchaseOptionShop: page === 'shop' ? checked : tier.sortByPurchaseOptionShop,
+      sortByPurchaseOptionRedemptions: page === 'redemptions' ? checked : tier.sortByPurchaseOptionRedemptions,
+      sortByPurchaseOptionNicksNiceties: page === 'nicksNiceties' ? checked : tier.sortByPurchaseOptionNicksNiceties,
+    }));
+    
+    try {
+      await bulkUpdateOrderMutation.mutateAsync(updates);
+    } catch (error) {
+      // Revert state on error
+      setSortByPurchaseOption(prev => ({ ...prev, [page]: !checked }));
+      toast({
+        title: 'Error',
+        description: 'Failed to update sorting preference',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Setup sensors for drag-and-drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Helper function to get sorted prizes based on current state
+  const getSortedPrizes = (category?: 'slab' | 'sealed', includeSearchFilter = true) => {
+    let prizes = activeTiers;
+    
+    // Filter by category if specified
+    if (category) {
+      prizes = prizes.filter(t => t.category === category);
+    }
+    
+    // Filter by selected page (only show prizes that should appear on this page)
+    prizes = prizes.filter(t => {
+      if (selectedPage === 'shop') return t.showOnShop;
+      if (selectedPage === 'redemptions') return t.showOnRedemptions;
+      if (selectedPage === 'nicks_niceties') return t.showOnNicksNiceties;
+      return true;
+    });
+    
+    // Apply search filter (optional - can be disabled to get full list for position calculation)
+    if (includeSearchFilter && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      prizes = prizes.filter(p => 
+        p.name.toLowerCase().includes(query) ||
+        (p.description?.toLowerCase() || '').includes(query)
+      );
+    }
+    
+    // Sort by current order (use orderChanges in edit mode, DB values in view mode)
+    return prizes.sort((a, b) => {
+      let aOrder: number, bOrder: number;
+      
+      if (isEditingOrder) {
+        // In edit mode: use live state from orderChanges (so drag updates are immediately visible)
+        const aChanges = orderChanges.get(a.id);
+        const bChanges = orderChanges.get(b.id);
+        
+        if (selectedPage === 'shop') {
+          aOrder = aChanges?.displayOrderShop ?? a.displayOrderShop ?? 999;
+          bOrder = bChanges?.displayOrderShop ?? b.displayOrderShop ?? 999;
+        } else if (selectedPage === 'redemptions') {
+          aOrder = aChanges?.displayOrderRedemptions ?? a.displayOrderRedemptions ?? 999;
+          bOrder = bChanges?.displayOrderRedemptions ?? b.displayOrderRedemptions ?? 999;
+        } else {
+          aOrder = aChanges?.displayOrderNicksNiceties ?? a.displayOrderNicksNiceties ?? 999;
+          bOrder = bChanges?.displayOrderNicksNiceties ?? b.displayOrderNicksNiceties ?? 999;
+        }
+      } else {
+        // In view mode: use DB values (same field as edit mode for consistency)
+        if (selectedPage === 'shop') {
+          aOrder = a.displayOrderShop ?? 999;
+          bOrder = b.displayOrderShop ?? 999;
+        } else if (selectedPage === 'redemptions') {
+          aOrder = a.displayOrderRedemptions ?? 999;
+          bOrder = b.displayOrderRedemptions ?? 999;
+        } else {
+          aOrder = a.displayOrderNicksNiceties ?? 999;
+          bOrder = b.displayOrderNicksNiceties ?? 999;
+        }
+      }
+      
+      // Apply purchase option sorting if enabled for current page
+      const pageKey = selectedPage === 'nicks_niceties' ? 'nicksNiceties' : selectedPage;
+      if (sortByPurchaseOption[pageKey]) {
+        // Primary sort: purchaseOption (both=0, buy_only=1, offers_only=2)
+        const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
+        const aPurchase = purchaseOrder[a.purchaseOption] ?? 3;
+        const bPurchase = purchaseOrder[b.purchaseOption] ?? 3;
+        if (aPurchase !== bPurchase) return aPurchase - bPurchase;
+      }
+      
+      // Secondary sort (or primary if purchase sorting disabled): displayOrder
+      return aOrder - bOrder;
+    });
+  };
+
+  // Sync sorting state from tiers data when it loads/changes
+  useEffect(() => {
+    if (tiers && tiers.length > 0) {
+      setSortByPurchaseOption({
+        shop: tiers[0].sortByPurchaseOptionShop ?? false,
+        redemptions: tiers[0].sortByPurchaseOptionRedemptions ?? false,
+        nicksNiceties: tiers[0].sortByPurchaseOptionNicksNiceties ?? false,
+      });
+    }
+  }, [tiers]);
+
+  // Helper function to get the actual position of a prize in the full (unfiltered) sorted list
+  const getRealPosition = (tierId: string, category?: 'slab' | 'sealed'): number => {
+    const fullList = getSortedPrizes(category, false); // Get list without search filter
+    const index = fullList.findIndex(t => t.id === tierId);
+    return index !== -1 ? index + 1 : 0;
+  };
+
+  // Drag handler for reordering prizes
+  const handleDragEnd = (event: DragEndEvent, category?: 'slab' | 'sealed') => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+
+    // IMPORTANT: Get the FULL sorted list (without search filter) to calculate real positions
+    const fullSortedList = getSortedPrizes(category, false);
+
+    // Validate drag if purchase option sorting is enabled
+    const pageKey = selectedPage === 'nicks_niceties' ? 'nicksNiceties' : selectedPage;
+    if (sortByPurchaseOption[pageKey]) {
+      const draggedPrize = fullSortedList.find(p => p.id === active.id);
+      const targetPrize = fullSortedList.find(p => p.id === over.id);
+      
+      if (draggedPrize && targetPrize) {
+        const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
+        const draggedPriority = purchaseOrder[draggedPrize.purchaseOption];
+        const targetPriority = purchaseOrder[targetPrize.purchaseOption];
+        
+        // Prevent dragging lower priority items before higher priority items
+        if (draggedPriority > targetPriority) {
+          let message = '';
+          if (draggedPrize.purchaseOption === 'offers_only' && targetPrize.purchaseOption === 'both') {
+            message = 'Cards with "Make Offer Only" cannot be placed before cards with "Both Options". Disable grouping to reorder freely.';
+          } else if (draggedPrize.purchaseOption === 'offers_only' && targetPrize.purchaseOption === 'buy_only') {
+            message = 'Cards with "Make Offer Only" cannot be placed before cards with "Buy Only". Disable grouping to reorder freely.';
+          } else if (draggedPrize.purchaseOption === 'buy_only' && targetPrize.purchaseOption === 'both') {
+            message = 'Cards with "Buy Only" cannot be placed before cards with "Both Options". Disable grouping to reorder freely.';
+          }
+          
+          toast({
+            title: 'Invalid card placement',
+            description: message,
+            variant: 'destructive',
+          });
+          return; // Exit without updating order
+        }
+      }
+    }
+
+    // Find the indices in the FULL list (not the filtered list)
+    const oldIndex = fullSortedList.findIndex(p => p.id === active.id);
+    const newIndex = fullSortedList.findIndex(p => p.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder the FULL array based on actual positions
+    const reorderedFullList = arrayMove(fullSortedList, oldIndex, newIndex);
+
+    // Update orderChanges with new positions based on the FULL list
+    const newChanges = new Map(orderChanges);
+    reorderedFullList.forEach((prize, index) => {
+      const current = newChanges.get(prize.id);
+      if (current) {
+        const displayOrder = index + 1; // Position in the full list
+        if (selectedPage === 'shop') {
+          newChanges.set(prize.id, { ...current, displayOrderShop: displayOrder });
+        } else if (selectedPage === 'redemptions') {
+          newChanges.set(prize.id, { ...current, displayOrderRedemptions: displayOrder });
+        } else {
+          newChanges.set(prize.id, { ...current, displayOrderNicksNiceties: displayOrder });
+        }
+      }
+    });
+
+    setOrderChanges(newChanges);
+  };
+
+  // Helper to get next available featured order
+  const getNextFeaturedOrder = (): number => {
+    const featuredOrders = Array.from(orderChanges.values())
+      .filter(change => change.isFeatured && change.featuredDisplayOrder !== null)
+      .map(change => change.featuredDisplayOrder as number);
+    
+    return featuredOrders.length > 0 ? Math.max(...featuredOrders) + 1 : 1;
+  };
+
+  // Check if a featured order number is duplicated
+  const checkDuplicateFeaturedOrder = (prizeId: string, order: number): boolean => {
+    return Array.from(orderChanges.entries()).some(
+      ([id, change]) => id !== prizeId && change.isFeatured && change.featuredDisplayOrder === order
+    );
+  };
+
+  const toggleFeatured = (prizeId: string, isFeatured: boolean) => {
+    const currentChanges = orderChanges.get(prizeId);
+    if (currentChanges) {
+      const newChanges = new Map(orderChanges);
+      newChanges.set(prizeId, {
+        ...currentChanges,
+        isFeatured,
+        featuredDisplayOrder: isFeatured ? (currentChanges.featuredDisplayOrder || getNextFeaturedOrder()) : null,
+      });
+      setOrderChanges(newChanges);
+    }
+  };
+
+  const handleFeaturedOrderChange = (prizeId: string, order: number) => {
+    const currentChanges = orderChanges.get(prizeId);
+    if (currentChanges) {
+      const newChanges = new Map(orderChanges);
+      newChanges.set(prizeId, {
+        ...currentChanges,
+        featuredDisplayOrder: order,
+      });
+      setOrderChanges(newChanges);
+    }
+  };
+
+
+
   const handleCreate = async () => {
     if (!formData.name.trim()) {
       setValidationError('Item name is required');
@@ -207,7 +754,7 @@ export const PrizeConfiguration = () => {
 
     // Validate amount for non-offers_only prizes
     if (formData.purchaseOption !== 'offers_only' && (!formData.amount || formData.amount <= 0)) {
-      setValidationError('Coin amount is required for Buy Only and Both purchase options');
+      setValidationError('Cadecoin amount is required for Buy Only and Both purchase options');
       return;
     }
 
@@ -249,7 +796,7 @@ export const PrizeConfiguration = () => {
 
     // Validate amount for non-offers_only prizes
     if (formData.purchaseOption !== 'offers_only' && (!formData.amount || formData.amount <= 0)) {
-      setValidationError('Coin amount is required for Buy Only and Both purchase options');
+      setValidationError('Cadecoin amount is required for Buy Only and Both purchase options');
       return;
     }
 
@@ -295,11 +842,21 @@ export const PrizeConfiguration = () => {
       stock: tier.stock,
       purchaseOption: tier.purchaseOption || 'both',
       brand: tier.brand || 'pokemon',
-      displayOrder: tier.displayOrder ?? 0,
+      displayOrderShop: tier.displayOrderShop,
+      displayOrderRedemptions: tier.displayOrderRedemptions,
+      displayOrderNicksNiceties: tier.displayOrderNicksNiceties,
+      featuredDisplayOrder: tier.featuredDisplayOrder,
       showOnRedemptions: tier.showOnRedemptions ?? true,
       showOnNicksNiceties: tier.showOnNicksNiceties ?? true,
       showOnShop: tier.showOnShop ?? true,
     });
+    // Calculate and display USD equivalent when editing
+    if (tier.amount && tier.amount > 0) {
+      const usdEquivalent = (tier.amount / 50).toFixed(2);
+      setUsdAmount(usdEquivalent);
+    } else {
+      setUsdAmount('');
+    }
     imageUpload.clearImage();
     setEditingTier(tier);
   };
@@ -348,13 +905,103 @@ export const PrizeConfiguration = () => {
               <CardTitle>Shop Configuration</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">Manage items in the shop</p>
             </div>
-            <Button onClick={() => setIsCreateOpen(true)}>
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline ml-2">Add Item</span>
-            </Button>
+            <div className="flex gap-2">
+              {isEditingOrder ? (
+                <>
+                  <Button variant="outline" onClick={cancelEditMode}>
+                    Cancel
+                  </Button>
+                  <Button onClick={saveDisplayOrders} disabled={bulkUpdateOrderMutation.isPending}>
+                    {bulkUpdateOrderMutation.isPending ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={enterEditMode}>
+                    <Edit className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-2">Edit Display Order</span>
+                  </Button>
+                  <Button onClick={() => setIsCreateOpen(true)}>
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-2">Add Item</span>
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
+          {/* Page filter tabs in edit mode */}
+          {isEditingOrder && (
+            <div className="mb-6 flex gap-2 border-b border-border">
+              <Button
+                variant={selectedPage === 'shop' ? 'default' : 'ghost'}
+                onClick={() => setSelectedPage('shop')}
+                className="rounded-b-none"
+              >
+                Shop Page
+              </Button>
+              <Button
+                variant={selectedPage === 'redemptions' ? 'default' : 'ghost'}
+                onClick={() => setSelectedPage('redemptions')}
+                className="rounded-b-none"
+              >
+                Redeem Page
+              </Button>
+              <Button
+                variant={selectedPage === 'nicks_niceties' ? 'default' : 'ghost'}
+                onClick={() => setSelectedPage('nicks_niceties')}
+                className="rounded-b-none"
+              >
+                Nick's Niceties
+              </Button>
+            </div>
+          )}
+          
+          {/* Search bar and sorting toggle */}
+          {activeTiers.length > 0 && (
+            <div className="mb-6 flex items-center justify-between gap-4">
+              {/* Left side: Search */}
+              <div className="flex-1">
+                <SearchInput
+                  id="prize-search"
+                  placeholder="Search prizes by name or description..."
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  width="lg"
+                />
+              </div>
+              
+              {/* Right side: Sorting toggle (only in edit mode) */}
+              {isEditingOrder && (
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                  <Switch
+                    checked={sortByPurchaseOption[selectedPage === 'nicks_niceties' ? 'nicksNiceties' : selectedPage]}
+                    onCheckedChange={handleToggleSortChange}
+                    id="sort-toggle"
+                  />
+                  <Label htmlFor="sort-toggle" className="text-sm cursor-pointer">
+                    Group "Both Options" first
+                  </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>When enabled, prizes with both purchase options appear before buy-only or offers-only prizes</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              )}
+            </div>
+          )}
+          
           {activeTiers.length === 0 ? (
             <div className="text-center py-12">
               <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -365,22 +1012,58 @@ export const PrizeConfiguration = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Slab Category Section */}
-              {activeTiers.some(t => t.category === 'slab') && (
+              {/* Shop Page - Combined List (No Category Separation) */}
+              {selectedPage === 'shop' && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 text-primary">Slab Prizes</h3>
-                  <div className="space-y-3">
-                    {activeTiers
-                      .filter(t => t.category === 'slab')
-                      .sort((a, b) => a.prizeTier - b.prizeTier)
-                      .map(tier => (
+                  <h3 className="text-lg font-semibold mb-4 text-primary">All Prizes</h3>
+                  {isEditingOrder ? (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(e) => handleDragEnd(e)}
+                    >
+                      <SortableContext
+                        items={getSortedPrizes().map(t => t.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-3">
+                          {getSortedPrizes().map((tier, index) => {
+                            const changes = orderChanges.get(tier.id);
+                            return changes ? (
+                              <SortablePrizeItem
+                                key={tier.id}
+                                tier={tier}
+                                position={getRealPosition(tier.id)}
+                                changes={changes}
+                                onToggleFeatured={toggleFeatured}
+                                onFeaturedOrderChange={handleFeaturedOrderChange}
+                                hasDuplicateFeaturedOrder={changes.isFeatured && changes.featuredDisplayOrder !== null ? checkDuplicateFeaturedOrder(tier.id, changes.featuredDisplayOrder) : false}
+                                selectedPage={selectedPage}
+                              />
+                            ) : null;
+                          })}
+                          {getSortedPrizes().length === 0 && searchQuery.trim() && (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <p>No prizes found matching "{searchQuery}"</p>
+                              <Button variant="link" onClick={() => setSearchQuery('')} className="mt-2">
+                                Clear search
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  ) : (
+                    <div className="space-y-3">
+                      {getSortedPrizes().map(tier => (
                         <div
                           key={tier.id}
                           className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
                         >
-                          {/* Left side - prize info */}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base mb-1">{tier.name}</h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-base">{tier.name}</h3>
+                            </div>
                             <div className="flex items-center gap-3 flex-wrap">
                               <p className="text-sm text-muted-foreground">
                                 {tier.amount.toLocaleString('en-US')} coins
@@ -394,6 +1077,12 @@ export const PrizeConfiguration = () => {
                               >
                                 Stock: {tier.stock}
                               </span>
+                              <Badge variant="outline" className={`text-xs ${getCategoryBadge(tier.category).className}`}>
+                                {getCategoryBadge(tier.category).label}
+                              </Badge>
+                              <Badge variant="outline" className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}>
+                                {getPurchaseOptionBadge(tier.purchaseOption).label}
+                              </Badge>
                             </div>
                             {tier.description && (
                               <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
@@ -401,8 +1090,6 @@ export const PrizeConfiguration = () => {
                               </p>
                             )}
                           </div>
-
-                          {/* Right side - actions */}
                           <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                             <Button size="sm" variant="outline" onClick={() => handleEdit(tier)}>
                               <Edit className="w-4 h-4" />
@@ -417,64 +1104,220 @@ export const PrizeConfiguration = () => {
                           </div>
                         </div>
                       ))}
-                  </div>
+                      {getSortedPrizes().length === 0 && searchQuery.trim() && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p>No prizes found matching "{searchQuery}"</p>
+                          <Button variant="link" onClick={() => setSearchQuery('')} className="mt-2">
+                            Clear search
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Sealed Category Section */}
-              {activeTiers.some(t => t.category === 'sealed') && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 text-primary">Sealed Prizes</h3>
-                  <div className="space-y-3">
-                    {activeTiers
-                      .filter(t => t.category === 'sealed')
-                      .sort((a, b) => a.prizeTier - b.prizeTier)
-                      .map(tier => (
-                        <div
-                          key={tier.id}
-                          className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
+              {/* Redemptions/Nick's Niceties - Separate Category Sections */}
+              {selectedPage !== 'shop' && (
+                <>
+                  {/* Slab Category Section */}
+                  {getSortedPrizes('slab').length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-primary">Slab Prizes</h3>
+                      {isEditingOrder ? (
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(e) => handleDragEnd(e, 'slab')}
                         >
-                          {/* Left side - prize info */}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base mb-1">{tier.name}</h3>
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <p className="text-sm text-muted-foreground">
-                                {tier.amount.toLocaleString('en-US')} coins
-                              </p>
-                              <span
-                                className={`text-xs px-2 py-1 rounded font-medium ${
-                                  tier.stock > 0
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100'
-                                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100'
-                                }`}
-                              >
-                                Stock: {tier.stock}
-                              </span>
+                          <SortableContext
+                            items={getSortedPrizes('slab').map(t => t.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <div className="space-y-3">
+                              {getSortedPrizes('slab').map((tier, index) => {
+                                const changes = orderChanges.get(tier.id);
+                                return changes ? (
+                                  <SortablePrizeItem
+                                    key={tier.id}
+                                    tier={tier}
+                                    position={getRealPosition(tier.id, 'slab')}
+                                    changes={changes}
+                                    onToggleFeatured={toggleFeatured}
+                                    onFeaturedOrderChange={handleFeaturedOrderChange}
+                                    hasDuplicateFeaturedOrder={changes.isFeatured && changes.featuredDisplayOrder !== null ? checkDuplicateFeaturedOrder(tier.id, changes.featuredDisplayOrder) : false}
+                                    selectedPage={selectedPage}
+                                  />
+                                ) : null;
+                              })}
+                              {getSortedPrizes('slab').length === 0 && searchQuery.trim() && (
+                                <div className="text-center py-8 text-muted-foreground">
+                                  <p>No slab prizes found matching "{searchQuery}"</p>
+                                </div>
+                              )}
                             </div>
-                            {tier.description && (
-                              <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
-                                {tier.description}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Right side - actions */}
-                          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(tier)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setDeletingTier(tier)}
+                          </SortableContext>
+                        </DndContext>
+                      ) : (
+                        <div className="space-y-3">
+                          {getSortedPrizes('slab').map(tier => (
+                            <div
+                              key={tier.id}
+                              className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold text-base">{tier.name}</h3>
+                                </div>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <p className="text-sm text-muted-foreground">
+                                    {tier.amount.toLocaleString('en-US')} coins
+                                  </p>
+                                  <span
+                                    className={`text-xs px-2 py-1 rounded font-medium ${
+                                      tier.stock > 0
+                                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100'
+                                        : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100'
+                                    }`}
+                                  >
+                                    Stock: {tier.stock}
+                                  </span>
+                                  <Badge variant="outline" className={`text-xs ${getCategoryBadge(tier.category).className}`}>
+                                    {getCategoryBadge(tier.category).label}
+                                  </Badge>
+                                  <Badge variant="outline" className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}>
+                                    {getPurchaseOptionBadge(tier.purchaseOption).label}
+                                  </Badge>
+                                </div>
+                                {tier.description && (
+                                  <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
+                                    {tier.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                                <Button size="sm" variant="outline" onClick={() => handleEdit(tier)}>
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setDeletingTier(tier)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                          {getSortedPrizes('slab').length === 0 && searchQuery.trim() && (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <p>No slab prizes found matching "{searchQuery}"</p>
+                            </div>
+                          )}
                         </div>
-                      ))}
-                  </div>
-                </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sealed Category Section */}
+                  {getSortedPrizes('sealed').length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-primary">Sealed Prizes</h3>
+                      {isEditingOrder ? (
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(e) => handleDragEnd(e, 'sealed')}
+                        >
+                          <SortableContext
+                            items={getSortedPrizes('sealed').map(t => t.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <div className="space-y-3">
+                              {getSortedPrizes('sealed').map((tier, index) => {
+                                const changes = orderChanges.get(tier.id);
+                                return changes ? (
+                                  <SortablePrizeItem
+                                    key={tier.id}
+                                    tier={tier}
+                                    position={getRealPosition(tier.id, 'sealed')}
+                                    changes={changes}
+                                    onToggleFeatured={toggleFeatured}
+                                    onFeaturedOrderChange={handleFeaturedOrderChange}
+                                    hasDuplicateFeaturedOrder={changes.isFeatured && changes.featuredDisplayOrder !== null ? checkDuplicateFeaturedOrder(tier.id, changes.featuredDisplayOrder) : false}
+                                    selectedPage={selectedPage}
+                                  />
+                                ) : null;
+                              })}
+                              {getSortedPrizes('sealed').length === 0 && searchQuery.trim() && (
+                                <div className="text-center py-8 text-muted-foreground">
+                                  <p>No sealed prizes found matching "{searchQuery}"</p>
+                                </div>
+                              )}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      ) : (
+                        <div className="space-y-3">
+                          {getSortedPrizes('sealed').map(tier => (
+                            <div
+                              key={tier.id}
+                              className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold text-base">{tier.name}</h3>
+                                </div>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <p className="text-sm text-muted-foreground">
+                                    {tier.amount.toLocaleString('en-US')} coins
+                                  </p>
+                                  <span
+                                    className={`text-xs px-2 py-1 rounded font-medium ${
+                                      tier.stock > 0
+                                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100'
+                                        : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-100'
+                                    }`}
+                                  >
+                                    Stock: {tier.stock}
+                                  </span>
+                                  <Badge variant="outline" className={`text-xs ${getCategoryBadge(tier.category).className}`}>
+                                    {getCategoryBadge(tier.category).label}
+                                  </Badge>
+                                  <Badge variant="outline" className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}>
+                                    {getPurchaseOptionBadge(tier.purchaseOption).label}
+                                  </Badge>
+                                </div>
+                                {tier.description && (
+                                  <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
+                                    {tier.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                                <Button size="sm" variant="outline" onClick={() => handleEdit(tier)}>
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setDeletingTier(tier)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                          {getSortedPrizes('sealed').length === 0 && searchQuery.trim() && (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <p>No sealed prizes found matching "{searchQuery}"</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -503,8 +1346,30 @@ export const PrizeConfiguration = () => {
           </DialogHeader>
           <div className="space-y-5 py-4">
             <div className="space-y-2.5">
+              <Label htmlFor="usdAmount" className="text-base font-medium">
+                USD Amount
+                <span className="text-xs text-muted-foreground font-normal ml-2">
+                  ($1 = 50 cadecoins)
+                </span>
+              </Label>
+              <Input
+                id="usdAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={usdAmount}
+                onChange={e => handleUsdChange(e.target.value)}
+                className="h-12 text-base"
+                placeholder="Enter USD amount..."
+                disabled={formData.purchaseOption === 'offers_only'}
+              />
+              <p className="text-xs text-muted-foreground">
+                This will auto-calculate the cadecoin amount below
+              </p>
+            </div>
+            <div className="space-y-2.5">
               <Label htmlFor="amount" className="text-base font-medium">
-                Coin Amount{' '}
+                Cadecoin Amount{' '}
                 {formData.purchaseOption !== 'offers_only' && (
                   <span className="text-destructive">*</span>
                 )}
@@ -517,12 +1382,10 @@ export const PrizeConfiguration = () => {
               <Input
                 id="amount"
                 type="number"
-                min="1"
+                min="0"
+                step="0.01"
                 value={formData.amount}
-                onChange={e => {
-                  setFormData({ ...formData, amount: parseInt(e.target.value) || 0 });
-                  setValidationError('');
-                }}
+                onChange={e => handleCoinAmountChange(e.target.value)}
                 className="h-12 text-base"
                 placeholder={formData.purchaseOption === 'offers_only' ? 'Optional' : '0'}
                 disabled={formData.purchaseOption === 'offers_only'}
@@ -545,7 +1408,7 @@ export const PrizeConfiguration = () => {
                   setValidationError('');
                 }}
                 className="h-12 text-base"
-                placeholder="e.g., Collector"
+                placeholder="e.g., PSA 10 Charizard Slab"
               />
             </div>
             <div className="space-y-2.5">
@@ -667,33 +1530,26 @@ export const PrizeConfiguration = () => {
                 className="text-base resize-none"
               />
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2.5">
-                <Label htmlFor="displayOrder" className="text-base font-medium">
-                  Display Order
-                </Label>
-                <Input
-                  id="displayOrder"
-                  type="number"
-                  value={formData.displayOrder ?? 0}
-                  onChange={e => {
-                    setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 });
-                    setValidationError('');
-                  }}
-                  className="h-12 text-base"
-                  placeholder="0"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Lower numbers show first (e.g. 1 shows before 2).
-                </p>
-              </div>
 
-              <div className="flex flex-col gap-4 justify-center">
-                <div className="flex items-center space-x-2 mt-4 sm:mt-8">
+            <div className="space-y-2.5">
+              <Label className="text-base font-medium">Page Visibility</Label>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="showOnShop"
+                    checked={formData.showOnShop ?? true}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, showOnShop: checked })
+                    }
+                  />
+                  <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
+                    Show on Shop Page
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
                   <Switch
                     id="showOnRedemptions"
-                    checked={formData.showOnRedemptions ?? true}
+                    checked={formData.showOnRedemptions ?? false}
                     onCheckedChange={(checked) => 
                       setFormData({ ...formData, showOnRedemptions: checked })
                     }
@@ -705,25 +1561,13 @@ export const PrizeConfiguration = () => {
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="showOnNicksNiceties"
-                    checked={formData.showOnNicksNiceties ?? true}
+                    checked={formData.showOnNicksNiceties ?? false}
                     onCheckedChange={(checked) => 
                       setFormData({ ...formData, showOnNicksNiceties: checked })
                     }
                   />
                   <Label htmlFor="showOnNicksNiceties" className="font-medium cursor-pointer">
                     Show on Nick's Niceties
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="showOnShop"
-                    checked={formData.showOnShop ?? true}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, showOnShop: checked })
-                    }
-                  />
-                  <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
-                    Show on Shop Page
                   </Label>
                 </div>
               </div>
