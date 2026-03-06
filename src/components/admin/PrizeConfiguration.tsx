@@ -1524,18 +1524,6 @@ export const PrizeConfiguration = () => {
                     Show on Redemptions Page
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="showOnShop"
-                    checked={formData.showOnShop ?? true}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, showOnShop: checked })
-                    }
-                  />
-                  <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
-                    Show on Shop Page
-                  </Label>
-                </div>
               </div>
             </div>
 
