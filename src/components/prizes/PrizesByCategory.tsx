@@ -19,6 +19,7 @@ export interface Prize {
   purchaseOption?: 'offers_only' | 'buy_only' | 'both';
   brand?: PrizeBrand;
   displayOrder?: number;
+  featuredDisplayOrder?: number | null;
 }
 
 interface PrizesByCategoryProps {
@@ -52,7 +53,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [minPrice, setMinPrice] = useState<number | ''>('');
   const [maxPrice, setMaxPrice] = useState<number | ''>('');
-  const [showPriceFilter, setShowPriceFilter] = useState(false);
+  const [showPriceFilter, setShowPriceFilter] = useState(true);
 
   const categories: Record<PrizeCategoryType, Prize[]> = {
     slab: [],
@@ -214,12 +215,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                   value={maxPrice}
                   onChange={e => {
                     const val = e.target.value === '' ? '' : Number(e.target.value);
-                    if (
-                      val === '' ||
-                      (typeof val === 'number' && (minPrice === '' || val >= minPrice))
-                    ) {
-                      setMaxPrice(val);
-                    }
+                    setMaxPrice(val);
                   }}
                   className="w-24"
                   min="0"
@@ -236,6 +232,9 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                 Clear
               </Button>
             </div>
+            {minPrice !== '' && maxPrice !== '' && typeof maxPrice === 'number' && typeof minPrice === 'number' && maxPrice < minPrice && (
+              <p className="text-xs text-red-500 mt-2">Max should be greater than min</p>
+            )}
           </div>
         </div>
       )}
@@ -245,7 +244,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
       {hasPrizes ? (
         (() => {
           const filteredItems = Object.values(categories).flatMap(items =>
-            filterByPriceRange(sortPrizesByPurchaseOption(items))
+            filterByPriceRange(items)
           );
           const hasFilteredResults = filteredItems.length > 0;
 
@@ -259,7 +258,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                     </h2>
                   )}
                   <div className={cardVariant === 'redemption' ? 'grid grid-cols-1 md:grid-cols-3 gap-4' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}>
-                    {filterByPriceRange(sortPrizesByPurchaseOption(items)).map(prize => (
+                    {filterByPriceRange(items).map(prize => (
                       <PrizeCard
                         key={prize.id}
                         prize={prize}
