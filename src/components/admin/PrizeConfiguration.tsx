@@ -295,8 +295,8 @@ export const PrizeConfiguration = () => {
     stock: 1,
     purchaseOption: 'both',
     brand: 'pokemon',
-    showOnRedemptions: false,
-    showOnNicksNiceties: false,
+    displayOrder: 0,
+    showOnRedemptions: true,
     showOnShop: true,
   });
 
@@ -310,8 +310,8 @@ export const PrizeConfiguration = () => {
       stock: 1,
       purchaseOption: 'both',
       brand: 'pokemon',
-      showOnRedemptions: false,
-      showOnNicksNiceties: false,
+      displayOrder: 0,
+      showOnRedemptions: true,
       showOnShop: true,
     });
     setValidationError('');
@@ -847,7 +847,6 @@ export const PrizeConfiguration = () => {
       displayOrderNicksNiceties: tier.displayOrderNicksNiceties,
       featuredDisplayOrder: tier.featuredDisplayOrder,
       showOnRedemptions: tier.showOnRedemptions ?? true,
-      showOnNicksNiceties: tier.showOnNicksNiceties ?? true,
       showOnShop: tier.showOnShop ?? true,
     });
     // Calculate and display USD equivalent when editing
@@ -1560,14 +1559,14 @@ export const PrizeConfiguration = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch
-                    id="showOnNicksNiceties"
-                    checked={formData.showOnNicksNiceties ?? false}
+                    id="showOnShop"
+                    checked={formData.showOnShop ?? true}
                     onCheckedChange={(checked) => 
-                      setFormData({ ...formData, showOnNicksNiceties: checked })
+                      setFormData({ ...formData, showOnShop: checked })
                     }
                   />
-                  <Label htmlFor="showOnNicksNiceties" className="font-medium cursor-pointer">
-                    Show on Nick's Niceties
+                  <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
+                    Show on Shop Page
                   </Label>
                 </div>
               </div>

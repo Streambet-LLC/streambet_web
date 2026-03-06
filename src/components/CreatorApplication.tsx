@@ -14,21 +14,28 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import api from "@/integrations/api/client";
 import { useToast } from "@/hooks/use-toast";
 import { getMessage } from "@/utils/helper";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { Alert, AlertTitle } from "./ui/alert";
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
-import { DialogDescription } from "@radix-ui/react-dialog";
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Alert, AlertTitle } from './ui/alert';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
+import { DialogDescription } from '@radix-ui/react-dialog';
 
 const formSchema = z.object({
-  firstName: z.string().min(1, { message: "First name is required" }),
-  lastName: z.string().min(1, { message: "Last name is required" }),
+  firstName: z.string().min(1, { message: 'First name is required' }),
+  lastName: z.string().min(1, { message: 'Last name is required' }),
   email: z.string().email(),
-  socials: z.string().min(1, { message: "Socials are required" }),
-  message: z.string().min(1, { message: "Please fill out a message for your application" }),
-  agree: z.boolean().refine((val) => val === true, {
-    message: "You have to agree to Streambet terms and conditions",
-  })
+  socials: z.string().min(1, { message: 'Socials are required' }),
+  message: z.string().min(1, { message: 'Please fill out a message for your application' }),
+  agree: z.boolean().refine(val => val === true, {
+    message: 'You have to agree to CardCade terms and conditions',
+  }),
 });
 
 type CreatorApplicationFormData = z.infer<typeof formSchema>;

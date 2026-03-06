@@ -5,7 +5,12 @@ import { toast } from '@/hooks/use-toast';
 import Bugsnag from '@bugsnag/js';
 import { WithdrawKycPayload, WithdrawKycUsPayload, WithdrawPayload } from '@/types/withdraw';
 import { BetCard } from '@/types/bet';
-import { PrizeConfiguration, SubmitPrizeRedemptionRequest } from '@/types/prize';
+import {
+  PrizeConfiguration,
+  SellerShopResponse,
+  SellerShopSummary,
+  SubmitPrizeRedemptionRequest,
+} from '@/types/prize';
 import { PromotedBetsResponse } from '@/types/promo';
 import { CurrencyType } from '@/utils/currency';
 import { SpinStatusResponse, SpinResultResponse } from '@/types/daily-spin';
@@ -18,7 +23,7 @@ const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true'
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 
@@ -88,7 +93,7 @@ apiClient.interceptors.response.use(
         id: 'session-expired',
         title: 'Session Expired',
         description: 'Session has been expired! Please relogin',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       await authAPI.signOut();
       // Dispatch custom event for navigation without page refresh
@@ -115,12 +120,17 @@ apiClient.interceptors.response.use(
       if (refreshToken && !(originalRequest as any)[RETRY_401]) {
         (originalRequest as any)[RETRY_401] = true;
         try {
-          const refreshResponse = await apiClient.post('/auth/refresh', { refreshToken }, {
-            headers: {
-              'Authorization': `Bearer ${refreshToken}`,
-            },
-          });
-          const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshResponse?.data?.data || {};
+          const refreshResponse = await apiClient.post(
+            '/auth/refresh',
+            { refreshToken },
+            {
+              headers: {
+                Authorization: `Bearer ${refreshToken}`,
+              },
+            }
+          );
+          const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+            refreshResponse?.data?.data || {};
           if (newAccessToken) {
             localStorage.setItem('accessToken', newAccessToken);
             if (newRefreshToken) {
@@ -135,7 +145,7 @@ apiClient.interceptors.response.use(
             id: 'session-expired',
             title: 'Session Expired',
             description: 'Session has been expired! Please relogin',
-            variant: 'destructive'
+            variant: 'destructive',
           });
           await authAPI.signOut();
           // Dispatch custom event for navigation without page refresh
@@ -148,7 +158,7 @@ apiClient.interceptors.response.use(
           id: 'session-expired',
           title: 'Session Expired',
           description: 'Session has been expired! Please relogin',
-          variant: 'destructive'
+          variant: 'destructive',
         });
         await authAPI.signOut();
         // Dispatch custom event for navigation without page refresh
@@ -188,7 +198,12 @@ export const authAPI = {
   },
 
   // Login user
-  login: async (credentials: { identifier: string; password: string, remember_me?: boolean, redirect?: string }) => {
+  login: async (credentials: {
+    identifier: string;
+    password: string;
+    remember_me?: boolean;
+    redirect?: string;
+  }) => {
     const response = await apiClient.post('/auth/login', credentials);
     // Store the tokens
     if (response?.data?.data?.accessToken) {
@@ -223,11 +238,15 @@ export const authAPI = {
   uploadImage: async (filePayload: File, type?: string) => {
     const formData = new FormData();
     formData.append('file', filePayload);
-    const response = await apiClient.post(`/assets/file/upload/image/${type || 'avatar'}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await apiClient.post(
+      `/assets/file/upload/image/${type || 'avatar'}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
     return response.data;
   },
 
@@ -245,11 +264,15 @@ export const authAPI = {
   refreshToken: async () => {
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) throw new Error('No refresh token');
-    const response = await apiClient.post('/auth/refresh', { refreshToken }, {
-      headers: {
-        'refresh-token': refreshToken,
-      },
-    });
+    const response = await apiClient.post(
+      '/auth/refresh',
+      { refreshToken },
+      {
+        headers: {
+          'refresh-token': refreshToken,
+        },
+      }
+    );
     const { accessToken, refreshToken: newRefreshToken } = response.data.data || {};
     if (accessToken) {
       localStorage.setItem('accessToken', accessToken);
@@ -339,7 +362,7 @@ export const userAPI = {
 
   createNewReferralLink: async (code: string) => {
     const response = await apiClient.post('/users/referral-link', {
-      code
+      code,
     });
     return response.data;
   },
@@ -384,7 +407,7 @@ export const walletAPI = {
   },
 
   // Get transaction history
-  getTransactions: async (params) => {
+  getTransactions: async params => {
     const response = await apiClient.get(`/wallets/transactions`, {
       params,
     });
@@ -469,7 +492,7 @@ export const bettingAPI = {
   // Get all streams
   getStreams: async (includeEnded = false, params?: any) => {
     const response = await apiClient.get(`/betting/streams?includeEnded=${includeEnded}`, {
-      params
+      params,
     });
     return response.data;
   },
@@ -496,7 +519,9 @@ export const bettingAPI = {
       params.append('roundId', roundId);
     }
     const queryString = params.toString();
-    const response = await apiClient.get(`/stream/bet-round/${streamId}${queryString ? `?${queryString}` : ''}`);
+    const response = await apiClient.get(
+      `/stream/bet-round/${streamId}${queryString ? `?${queryString}` : ''}`
+    );
     return response.data;
   },
 
@@ -532,10 +557,7 @@ export const bettingAPI = {
     return response.data;
   },
 
-  cancelUserBet: async (betData: {
-    betId: string;
-    currencyType: string;
-  }) => {
+  cancelUserBet: async (betData: { betId: string; currencyType: string }) => {
     const response = await apiClient.delete('/betting/bets/cancel', { data: betData });
     return response.data;
   },
@@ -576,14 +598,14 @@ export const userStreamAPI = {
   // Get all streams
   getStreams: async (params?: any) => {
     const response = await apiClient.get(`/stream`, {
-      params
+      params,
     });
     return response.data;
   },
 
   getHomepageLiveStreams: async (params?: any) => {
     const response = await apiClient.get(`/stream/home`, {
-      params
+      params,
     });
     return response.data;
   },
@@ -615,47 +637,43 @@ interface RoundPickTimelineResponse {
 export const betsAPI = {
   getLatestLiveFeed: async () => {
     const response = await apiClient.get(`/stream/last-live-feeds`);
-    return response.data
+    return response.data;
   },
 
   // Get all promoted bets
   getPromotedBets: async (params?: any): Promise<{ data: PromotedBetsResponse }> => {
-
     const response = await apiClient.get(`/stream/promoted-bets`, {
-      params
+      params,
     });
 
-    return response.data
+    return response.data;
   },
 
   getBets: async (params?: any) => {
-
     const { page } = params;
     const { data: response } = await apiClient.get(`/stream/displayed-bets`, {
-      params
+      params,
     });
 
-    return response.data
+    return response.data;
   },
 
   getCreatorProfileNonVideoBets: async (params?: any) => {
-
     const { page } = params;
     const { data: response } = await apiClient.get(`/stream/creator-non-video-bets`, {
-      params
+      params,
     });
 
-    return response.data
+    return response.data;
   },
 
   getUpcomingBets: async (params?: any) => {
-
     const { page } = params;
     const { data: response } = await apiClient.get(`/stream/displayed-upcoming-bets`, {
-      params
+      params,
     });
 
-    return response.data
+    return response.data;
   },
 
   // Get pick timeline for a round
@@ -679,9 +697,7 @@ export const betsAPI = {
 
       // Re-throw with more context
       throw new Error(
-        error.response?.data?.message ||
-        error.message ||
-        'Failed to fetch pick timeline data'
+        error.response?.data?.message || error.message || 'Failed to fetch pick timeline data'
       );
     }
   },
@@ -692,29 +708,27 @@ export const socketAPI = {
   // Connect to WebSocket
   connect: (withAuth = true) => {
     const token = localStorage.getItem('refreshToken');
-    console.log("socket connection iniiated")
+    console.log('socket connection iniiated');
     if (!token && withAuth) return null;
-    console.log("socket connected confirmed")
+    console.log('socket connected confirmed');
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
-
       socket = io(API_URL.replace(/\/api(?!.*\/api)/, ''), {
-        transports: ["websocket"],
+        transports: ['websocket'],
         //  reconnection: false,   // reconnection default true
-        auth: { token }
+        auth: { token },
       });
-
 
       socket.on('connect', () => {
         console.log('WebSocket connected');
       });
 
-      socket.on('disconnect', (reason) => {
+      socket.on('disconnect', reason => {
         console.log('WebSocket disconnected', reason);
       });
 
-      socket.on("connect_error", (err) => {
-        console.log("Connection error:", err);
+      socket.on('connect_error', err => {
+        console.log('Connection error:', err);
       });
     }
     return socket;
@@ -723,7 +737,7 @@ export const socketAPI = {
   // Disconnect WebSocket
   disconnect: () => {
     if (socket) {
-      console.log("socket disconnection called")
+      console.log('socket disconnection called');
       socket.disconnect();
       socket = null;
     }
@@ -731,18 +745,17 @@ export const socketAPI = {
 
   // Join a stream room
   joinStream: (streamId: string, socket: any) => {
-
     if (socket) {
-      console.log(socket, 'client socket in joinStream')
+      console.log(socket, 'client socket in joinStream');
       socket.emit('joinStream', streamId);
     }
   },
 
   // Leave a stream room
   leaveStream: (streamId: string, socket: any) => {
-    console.log(streamId, "leave stream with id", socket)
+    console.log(streamId, 'leave stream with id', socket);
     if (socket) {
-      console.log("leave stream initiated")
+      console.log('leave stream initiated');
       socket.emit('leaveStream', streamId);
     }
   },
@@ -756,14 +769,14 @@ export const socketAPI = {
 
   // To get all betting updates
   joinCommonStream: (socket: any) => {
-    console.log(socket, 'joinCommonStream joined')
+    console.log(socket, 'joinCommonStream joined');
     if (socket) {
       socket.emit('joinCardCade', 'streambet');
     }
   },
 
   joinLiveFeed: (socket: any) => {
-    console.log(socket, 'joinLiveFeed joined')
+    console.log(socket, 'joinLiveFeed joined');
     if (socket) {
       socket.emit('joinLiveFeed');
     }
@@ -793,13 +806,13 @@ export const socketAPI = {
   // Get the socket instance
   getSocket: () => socket,
 
-
   // Get all messages for a stream
   getChatMessages: async (streamId?: any, page?: any) => {
-    const response = await apiClient.get(`/chat/messages?streamId=${streamId}&range=${page}&sort=["createdAt","DESC"]`);
+    const response = await apiClient.get(
+      `/chat/messages?streamId=${streamId}&range=${page}&sort=["createdAt","DESC"]`
+    );
     return response.data;
   },
-
 };
 
 // Admin API
@@ -1088,6 +1101,12 @@ export const creatorAPI = {
     return response.data;
   },
 
+  generateAccountLink: async () => {
+    const response = await apiClient.post("/creator/create-connect-link");
+
+    return response.data;
+  },
+
   // Create stream
   createStream: async (streamData: any) => {
     const response = await apiClient.post('/creator/streams', streamData);
@@ -1220,6 +1239,102 @@ export const prizeAPI = {
   // Get all active prize tiers (public endpoint)
   getActivePrizeTiers: async (): Promise<PrizeConfiguration[]> => {
     const response = await apiClient.get('/prizes/config');
+    return response.data;
+  },
+
+  // Get all public seller shops with active inventory
+  getSellerShops: async (): Promise<SellerShopSummary[]> => {
+    const response = await apiClient.get('/prizes/shops');
+    return response.data;
+  },
+
+  // Get one seller's public shop items
+  getShopItemsByUsername: async (username: string): Promise<SellerShopResponse> => {
+    const response = await apiClient.get(`/prizes/shops/${username}/items`);
+    return response.data;
+  },
+
+  // Seller: manage own shop inventory
+  getMyShopItems: async (): Promise<PrizeConfiguration[]> => {
+    const response = await apiClient.get('/seller/prizes/items');
+    return response.data;
+  },
+
+  createMyShopItem: async (payload: {
+    prizeTier?: number;
+    amount?: number;
+    name: string;
+    description?: string;
+    imageUrl?: string;
+    category?: 'slab' | 'sealed';
+    stock?: number;
+    purchaseOption?: 'offers_only' | 'buy_only' | 'both';
+    brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
+    displayOrder?: number;
+  }): Promise<PrizeConfiguration> => {
+    const response = await apiClient.post('/seller/prizes/items', payload);
+    return response.data;
+  },
+
+  updateMyShopItem: async (
+    id: string,
+    payload: {
+      prizeTier?: number;
+      amount?: number;
+      name: string;
+      description?: string;
+      imageUrl?: string;
+      category?: 'slab' | 'sealed';
+      stock?: number;
+      purchaseOption?: 'offers_only' | 'buy_only' | 'both';
+      brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
+      displayOrder?: number;
+    }
+  ): Promise<PrizeConfiguration> => {
+    const response = await apiClient.put(`/seller/prizes/items/${id}`, payload);
+    return response.data;
+  },
+
+  deleteMyShopItem: async (id: string): Promise<{ message: string }> => {
+    const response = await apiClient.delete(`/seller/prizes/items/${id}`);
+    return response.data;
+  },
+
+  getMyShopOffers: async (params?: { status?: string; range?: string }) => {
+    const response = await apiClient.get('/seller/prizes/offers', { params });
+    return response.data;
+  },
+
+  counterMyShopOffer: async (
+    orderId: string,
+    data: { counterOfferAmount: number; offerNotes?: string }
+  ) => {
+    const response = await apiClient.patch(`/seller/prizes/offers/${orderId}/counter`, data);
+    return response.data;
+  },
+
+  acceptMyShopOffer: async (orderId: string) => {
+    const response = await apiClient.patch(`/seller/prizes/offers/${orderId}/accept-offer`);
+    return response.data;
+  },
+
+  rejectMyShopOffer: async (orderId: string) => {
+    const response = await apiClient.patch(`/seller/prizes/offers/${orderId}/reject-offer`);
+    return response.data;
+  },
+
+  // Get seller's purchased orders
+  getMyShopOrders: async (params?: { status?: string; range?: string }) => {
+    const response = await apiClient.get('/seller/prizes/orders', { params });
+    return response.data;
+  },
+
+  // Mark seller order as shipped
+  markMyOrderAsShipped: async (
+    orderId: string,
+    data: { trackingNumber?: string; shippingCarrier?: string }
+  ) => {
+    const response = await apiClient.patch(`/seller/prizes/orders/${orderId}/mark-shipped`, data);
     return response.data;
   },
 

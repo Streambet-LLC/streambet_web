@@ -16,6 +16,7 @@ interface Session {
     username: string;
     role?: string;
     is_new_user?: boolean;
+    shopName?: string;
   };
   [key: string]: any;
 }
