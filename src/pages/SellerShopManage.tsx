@@ -470,6 +470,11 @@ export default function SellerShopManage() {
     }
   };
 
+  const handleGenerateAccountLink = async () => {
+    const data = await api.creator.generateAccountLink();
+    window.location.replace(data.data);
+  };
+
   if (!session?.isSeller) {
     return (
       <MainLayout>
@@ -549,6 +554,15 @@ export default function SellerShopManage() {
                 </div>
               </div>
             )}
+            <div className="mt-10">
+              <Button
+                onClick={() => {
+                  handleGenerateAccountLink();
+                }}
+              >
+                Stripe Connect Settings
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

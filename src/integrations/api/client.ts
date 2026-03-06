@@ -1101,6 +1101,12 @@ export const creatorAPI = {
     return response.data;
   },
 
+  generateAccountLink: async () => {
+    const response = await apiClient.post("/creator/create-connect-link");
+
+    return response.data;
+  },
+
   // Create stream
   createStream: async (streamData: any) => {
     const response = await apiClient.post('/creator/streams', streamData);
