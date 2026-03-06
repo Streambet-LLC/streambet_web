@@ -50,6 +50,30 @@ interface SellerOfferOrder {
   };
 }
 
+interface SellerPurchasedOrder {
+  id: string;
+  status: 'paid' | 'shipped' | 'delivered';
+  totalPrice: number;
+  usdCharged: number;
+  coinsDeducted: number;
+  trackingNumber?: string;
+  shippingCarrier?: string;
+  shippedAt?: string;
+  createdAt: string;
+  user?: {
+    username: string;
+    email: string;
+    address?: string;
+    city?: string;
+    state?: string;
+  };
+  prizeConfiguration?: {
+    name: string;
+    imageUrl?: string;
+    category: string;
+  };
+}
+
 export default function SellerShopManage() {
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
@@ -85,9 +109,24 @@ export default function SellerShopManage() {
     displayOrder: 0,
   });
 
+  const [selectedPurchasedOrder, setSelectedPurchasedOrder] = useState<SellerPurchasedOrder | null>(
+    null
+  );
+  const [isShipDialogOpen, setIsShipDialogOpen] = useState(false);
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [shippingCarrier, setShippingCarrier] = useState('');
+
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['seller-shop-items-manage'],
     queryFn: () => api.prize.getMyShopItems(),
+    enabled: !!session?.isSeller,
+  });
+
+  const { data: purchasedOrders = [], isLoading: isPurchasedOrdersLoading } = useQuery<
+    SellerPurchasedOrder[]
+  >({
+    queryKey: ['seller-shop-orders-manage'],
+    queryFn: () => api.prize.getMyShopOrders(),
     enabled: !!session?.isSeller,
   });
 
@@ -267,6 +306,32 @@ export default function SellerShopManage() {
     },
   });
 
+  const markAsShippedMutation = useMutation({
+    mutationFn: (data: { orderId: string; trackingNumber?: string; shippingCarrier?: string }) =>
+      api.prize.markMyOrderAsShipped(data.orderId, {
+        trackingNumber: data.trackingNumber,
+        shippingCarrier: data.shippingCarrier,
+      }),
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Order marked as shipped. Buyer has been notified.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['seller-shop-orders-manage'] });
+      setIsShipDialogOpen(false);
+      setSelectedPurchasedOrder(null);
+      setTrackingNumber('');
+      setShippingCarrier('');
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to mark order as shipped.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Drag and drop handlers
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -279,6 +344,22 @@ export default function SellerShopManage() {
       setForm(p => ({ ...p, imageUrl: '' })); // Clear URL when file is uploaded
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleOpenShipDialog = (order: SellerPurchasedOrder) => {
+    setSelectedPurchasedOrder(order);
+    setTrackingNumber(order.trackingNumber || '');
+    setShippingCarrier(order.shippingCarrier || '');
+    setIsShipDialogOpen(true);
+  };
+
+  const handleSubmitShip = () => {
+    if (!selectedPurchasedOrder) return;
+    markAsShippedMutation.mutate({
+      orderId: selectedPurchasedOrder.id,
+      trackingNumber: trackingNumber || undefined,
+      shippingCarrier: shippingCarrier || undefined,
+    });
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -418,7 +499,9 @@ export default function SellerShopManage() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Shop Name</p>
                   <p className="text-lg font-semibold mt-1">
-                    {shopName || session?.user?.shopName || (session?.user?.username ? `${session.user.username}'s Shop` : 'Your Shop')}
+                    {shopName ||
+                      session?.user?.shopName ||
+                      (session?.user?.username ? `${session.user.username}'s Shop` : 'Your Shop')}
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
@@ -942,6 +1025,92 @@ export default function SellerShopManage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Purchased Items</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Items that have been purchased by buyers. Mark them as shipped once sent.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {isPurchasedOrdersLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading purchases...
+              </div>
+            ) : purchasedOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No purchases yet.</p>
+            ) : (
+              purchasedOrders.map(order => (
+                <div key={order.id} className="border rounded-md p-3 space-y-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="font-medium">
+                        {order.prizeConfiguration?.name || 'Shop Item'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Buyer: {order.user?.username || 'Unknown'} • Ordered:{' '}
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {order.user?.address && (
+                          <>
+                            {order.user.address}
+                            {order.user.city && `, ${order.user.city}`}
+                            {order.user.state && ` ${order.user.state}`}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <Badge className={cn('border', getOfferStatusClass(order.status))}>
+                      {order.status === 'paid'
+                        ? 'Pending Shipment'
+                        : order.status === 'shipped'
+                          ? 'Shipped'
+                          : 'Delivered'}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Total: </span>
+                      <span className="font-medium">${order.totalPrice?.toFixed(2) || '0.00'}</span>
+                    </div>
+                    {order.trackingNumber && (
+                      <div>
+                        <span className="text-muted-foreground">Tracking: </span>
+                        <span className="font-medium">{order.trackingNumber}</span>
+                      </div>
+                    )}
+                    {order.shippingCarrier && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Carrier: </span>
+                        <span className="font-medium">{order.shippingCarrier}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {order.status === 'paid' ? (
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenShipDialog(order)}
+                      className="w-full"
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Mark as Shipped
+                    </Button>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">
+                      {order.shippedAt && (
+                        <>Shipped on: {new Date(order.shippedAt).toLocaleDateString()}</>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
         <Dialog open={isCounterDialogOpen} onOpenChange={setIsCounterDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
@@ -994,6 +1163,68 @@ export default function SellerShopManage() {
                   </>
                 ) : (
                   'Send Counter Offer'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isShipDialogOpen} onOpenChange={setIsShipDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Mark as Shipped</DialogTitle>
+              <DialogDescription>
+                {selectedPurchasedOrder ? (
+                  <span>
+                    Update shipping information for{' '}
+                    {selectedPurchasedOrder.prizeConfiguration?.name || 'this item'}
+                  </span>
+                ) : (
+                  'Add tracking information for this shipment.'
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="trackingNumber">Tracking Number (Optional)</Label>
+                <Input
+                  id="trackingNumber"
+                  type="text"
+                  value={trackingNumber}
+                  onChange={e => setTrackingNumber(e.target.value)}
+                  placeholder="e.g., 1Z999AA10123456784"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="shippingCarrier">Shipping Carrier (Optional)</Label>
+                <Select value={shippingCarrier} onValueChange={setShippingCarrier}>
+                  <SelectTrigger id="shippingCarrier">
+                    <SelectValue placeholder="Select carrier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="FedEx">FedEx</SelectItem>
+                    <SelectItem value="UPS">UPS</SelectItem>
+                    <SelectItem value="USPS">USPS</SelectItem>
+                    <SelectItem value="DHL">DHL</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsShipDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmitShip} disabled={markAsShippedMutation.isPending}>
+                {markAsShippedMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Marking...
+                  </>
+                ) : (
+                  'Mark as Shipped'
                 )}
               </Button>
             </DialogFooter>

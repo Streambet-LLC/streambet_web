@@ -1317,6 +1317,21 @@ export const prizeAPI = {
     return response.data;
   },
 
+  // Get seller's purchased orders
+  getMyShopOrders: async (params?: { status?: string; range?: string }) => {
+    const response = await apiClient.get('/seller/prizes/orders', { params });
+    return response.data;
+  },
+
+  // Mark seller order as shipped
+  markMyOrderAsShipped: async (
+    orderId: string,
+    data: { trackingNumber?: string; shippingCarrier?: string }
+  ) => {
+    const response = await apiClient.patch(`/seller/prizes/orders/${orderId}/mark-shipped`, data);
+    return response.data;
+  },
+
   // Get all active prize tiers (admin only)
   getAdminPrizeTiers: async (): Promise<PrizeConfiguration[]> => {
     const response = await apiClient.get('/admin/prizes');
