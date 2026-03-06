@@ -1242,6 +1242,12 @@ export const prizeAPI = {
     return response.data;
   },
 
+  // Get all shop items across all sellers (for main Shop page)
+  getAllShopItems: async (): Promise<PrizeConfiguration[]> => {
+    const response = await apiClient.get('/prizes/shop-items');
+    return response.data;
+  },
+
   // Get all public seller shops with active inventory
   getSellerShops: async (): Promise<SellerShopSummary[]> => {
     const response = await apiClient.get('/prizes/shops');
