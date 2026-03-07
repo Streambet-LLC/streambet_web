@@ -125,17 +125,24 @@ interface SortablePrizeItemProps {
   onFeaturedOrderChange: (id: string, order: number) => void;
   hasDuplicateFeaturedOrder: boolean;
   selectedPage: 'shop' | 'redemptions';
+  isSelected?: boolean;
+  onSelectChange?: (id: string, selected: boolean) => void;
 }
 
-const SortablePrizeItem = ({ tier, position, changes, onToggleFeatured, onFeaturedOrderChange, hasDuplicateFeaturedOrder, selectedPage }: SortablePrizeItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: tier.id });
+const SortablePrizeItem = ({
+  tier,
+  position,
+  changes,
+  onToggleFeatured,
+  onFeaturedOrderChange,
+  hasDuplicateFeaturedOrder,
+  selectedPage,
+  isSelected = false,
+  onSelectChange,
+}: SortablePrizeItemProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: tier.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -147,7 +154,7 @@ const SortablePrizeItem = ({ tier, position, changes, onToggleFeatured, onFeatur
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
+      className={`flex items-center gap-4 p-4 border-2 rounded-lg transition-colors ${isSelected ? 'border-blue-500 bg-blue-950 dark:bg-blue-900' : 'border-border hover:bg-secondary/50'}`}
     >
       {/* Drag handle */}
       <div
@@ -181,22 +188,29 @@ const SortablePrizeItem = ({ tier, position, changes, onToggleFeatured, onFeatur
           >
             Stock: {tier.stock}
           </span>
-          <Badge variant="outline" className={`text-xs ${getCategoryBadge(tier.category).className}`}>
+          <Badge
+            variant="outline"
+            className={`text-xs ${getCategoryBadge(tier.category).className}`}
+          >
             {getCategoryBadge(tier.category).label}
           </Badge>
-          <Badge variant="outline" className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}>
+          <Badge
+            variant="outline"
+            className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}
+          >
             {getPurchaseOptionBadge(tier.purchaseOption).label}
           </Badge>
           {tier.createdBy && (
-            <Badge variant="outline" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-100 border-purple-200">
+            <Badge
+              variant="outline"
+              className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-100 border-purple-200"
+            >
               Seller Item
             </Badge>
           )}
         </div>
         {tier.description && (
-          <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
-            {tier.description}
-          </p>
+          <p className="text-sm text-muted-foreground mt-2 line-clamp-1">{tier.description}</p>
         )}
       </div>
 
@@ -207,10 +221,10 @@ const SortablePrizeItem = ({ tier, position, changes, onToggleFeatured, onFeatur
             <Label className="text-xs">Featured</Label>
             <Switch
               checked={changes.isFeatured}
-              onCheckedChange={(checked) => onToggleFeatured(tier.id, checked)}
+              onCheckedChange={checked => onToggleFeatured(tier.id, checked)}
             />
           </div>
-          
+
           {changes.isFeatured && (
             <div className="flex items-center gap-1">
               <Label className="text-xs whitespace-nowrap">Order:</Label>
@@ -220,7 +234,7 @@ const SortablePrizeItem = ({ tier, position, changes, onToggleFeatured, onFeatur
                   min={1}
                   step={1}
                   value={changes.featuredDisplayOrder ?? 1}
-                  onChange={(e) => {
+                  onChange={e => {
                     const value = parseInt(e.target.value);
                     if (!isNaN(value) && value >= 1) {
                       onFeaturedOrderChange(tier.id, value);
@@ -253,7 +267,7 @@ export const PrizeConfiguration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: tiers, isLoading } = useAdminPrizeTiers();
-  
+
   // Fetch sellers for dropdown
   const { data: sellers = [] } = useQuery<Seller[]>({
     queryKey: ['admin-sellers'],
@@ -280,14 +294,29 @@ export const PrizeConfiguration = () => {
   // Display order editing state
   const [isEditingOrder, setIsEditingOrder] = useState(false);
   const [selectedPage, setSelectedPage] = useState<'shop' | 'redemptions'>('shop');
-  const [orderChanges, setOrderChanges] = useState<Map<string, { displayOrderShop: number; displayOrderRedemptions: number; featuredDisplayOrder: number | null; isFeatured: boolean }>>(new Map());
+  const [orderChanges, setOrderChanges] = useState<
+    Map<
+      string,
+      {
+        displayOrderShop: number;
+        displayOrderRedemptions: number;
+        featuredDisplayOrder: number | null;
+        isFeatured: boolean;
+      }
+    >
+  >(new Map());
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Sorting preference state (initialized from first prize in data)
   const [sortByPurchaseOption, setSortByPurchaseOption] = useState({
     shop: tiers?.[0]?.sortByPurchaseOptionShop ?? false,
     redemptions: tiers?.[0]?.sortByPurchaseOptionRedemptions ?? false,
   });
+
+  // Bulk selection state
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
+  const [bulkAssignSeller, setBulkAssignSeller] = useState<string | null>(null);
 
   // Validation state
   const [validationError, setValidationError] = useState<string>('');
@@ -336,7 +365,7 @@ export const PrizeConfiguration = () => {
     setUsdAmount(value);
     const usdValue = parseFloat(value);
     if (!isNaN(usdValue) && usdValue > 0) {
-      const cadecoins = parseFloat((usdValue * 50).toFixed(2));
+      const cadecoins = Math.round(usdValue * 50);
       setFormData({ ...formData, amount: cadecoins });
     } else if (value === '') {
       setFormData({ ...formData, amount: 0 });
@@ -346,8 +375,8 @@ export const PrizeConfiguration = () => {
   const handleCoinAmountChange = (value: string) => {
     const coinValue = parseFloat(value);
     setFormData({ ...formData, amount: isNaN(coinValue) ? 0 : coinValue });
-    
-    // Calculate and display equivalent USD
+
+    // Just show the USD equivalent for reference (divide by 50)
     if (!isNaN(coinValue) && coinValue > 0) {
       const usdEquivalent = (coinValue / 50).toFixed(2);
       setUsdAmount(usdEquivalent);
@@ -446,15 +475,16 @@ export const PrizeConfiguration = () => {
 
   // Bulk update display order mutation
   const bulkUpdateOrderMutation = useMutation({
-    mutationFn: (updates: Array<{ 
-      id: string; 
-      displayOrderShop: number | null; 
-      displayOrderRedemptions: number | null; 
-      featuredDisplayOrder: number | null;
-      sortByPurchaseOptionShop?: boolean;
-      sortByPurchaseOptionRedemptions?: boolean;
-    }>) =>
-      api.prize.bulkUpdateDisplayOrder({ updates } as any),
+    mutationFn: (
+      updates: Array<{
+        id: string;
+        displayOrderShop: number | null;
+        displayOrderRedemptions: number | null;
+        featuredDisplayOrder: number | null;
+        sortByPurchaseOptionShop?: boolean;
+        sortByPurchaseOptionRedemptions?: boolean;
+      }>
+    ) => api.prize.bulkUpdateDisplayOrder({ updates } as any),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminPrizeTiers'] });
       queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
@@ -466,6 +496,50 @@ export const PrizeConfiguration = () => {
       setOrderChanges(new Map());
     },
     onError: error => handleMutationError(error, 'Failed to update display orders'),
+  });
+
+  // Bulk assignment mutation (for assigning to sellers or making items shop/redemption)
+  const bulkAssignMutation = useMutation({
+    mutationFn: (
+      updates: Array<{
+        id: string;
+        createdBy: string | null;
+        showOnShop: boolean;
+        showOnRedemptions: boolean;
+        amount?: number;
+      }>
+    ) =>
+      Promise.all(
+        updates.map(update => {
+          const tier = tiers?.find(t => t.id === update.id);
+          if (!tier) throw new Error('Item not found');
+          return api.prize.updatePrizeTier(update.id, {
+            name: tier.name,
+            description: tier.description,
+            amount: update.amount ?? tier.amount,
+            stock: tier.stock,
+            category: tier.category,
+            brand: tier.brand,
+            purchaseOption: tier.purchaseOption,
+            imageUrl: tier.imageUrl || undefined,
+            createdBy: update.createdBy,
+            showOnShop: update.showOnShop,
+            showOnRedemptions: update.showOnRedemptions,
+          });
+        })
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminPrizeTiers'] });
+      queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
+      toast({
+        title: 'Success!',
+        description: 'Items updated successfully',
+      });
+      setSelectedItems(new Set());
+      setBulkAssignDialogOpen(false);
+      setBulkAssignSeller(null);
+    },
+    onError: error => handleMutationError(error, 'Failed to update items'),
   });
 
   // Helper functions for display order editing
@@ -504,13 +578,13 @@ export const PrizeConfiguration = () => {
   const handleToggleSortChange = async (checked: boolean) => {
     // Update local state immediately for instant UI feedback
     setSortByPurchaseOption(prev => ({ ...prev, [selectedPage]: checked }));
-    
+
     // Prepare field name for API
     const fieldMap = {
       shop: 'sortByPurchaseOptionShop',
       redemptions: 'sortByPurchaseOptionRedemptions',
     };
-    
+
     // Update all prize configs with the new sorting preference
     const updates = activeTiers.map(tier => ({
       id: tier.id,
@@ -519,9 +593,10 @@ export const PrizeConfiguration = () => {
       featuredDisplayOrder: tier.featuredDisplayOrder,
       // Include all sorting preferences, updating only the current page
       sortByPurchaseOptionShop: selectedPage === 'shop' ? checked : tier.sortByPurchaseOptionShop,
-      sortByPurchaseOptionRedemptions: selectedPage === 'redemptions' ? checked : tier.sortByPurchaseOptionRedemptions,
+      sortByPurchaseOptionRedemptions:
+        selectedPage === 'redemptions' ? checked : tier.sortByPurchaseOptionRedemptions,
     }));
-    
+
     try {
       await bulkUpdateOrderMutation.mutateAsync(updates);
     } catch (error) {
@@ -846,7 +921,7 @@ export const PrizeConfiguration = () => {
       showOnShop: tier.showOnShop ?? true,
       createdBy: tier.createdBy,
     });
-    // Calculate and display USD equivalent when editing
+    // Calculate and display USD equivalent (amount is always in cadecoins)
     if (tier.amount && tier.amount > 0) {
       const usdEquivalent = (tier.amount / 50).toFixed(2);
       setUsdAmount(usdEquivalent);
@@ -898,8 +973,10 @@ export const PrizeConfiguration = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Shop Configuration</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">Manage items in the shop</p>
+              <CardTitle>Item Settings</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage items in the shop and redemptions
+              </p>
             </div>
             <div className="flex gap-2">
               {isEditingOrder ? (
@@ -940,14 +1017,14 @@ export const PrizeConfiguration = () => {
               onClick={() => setSelectedPage('shop')}
               className="rounded-b-none"
             >
-              Shop Page
+              Shops
             </Button>
             <Button
               variant={selectedPage === 'redemptions' ? 'default' : 'ghost'}
               onClick={() => setSelectedPage('redemptions')}
               className="rounded-b-none"
             >
-              Redeem Page
+              Redemptions
             </Button>
           </div>
 
@@ -991,6 +1068,57 @@ export const PrizeConfiguration = () => {
                   </TooltipProvider>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Bulk action toolbar */}
+          {selectedItems.size > 0 && (
+            <div className="mb-6 p-4 bg-slate-900 dark:bg-slate-800 border border-blue-500 dark:border-blue-600 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="font-semibold text-sm text-white">
+                  {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedPage === 'redemptions' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setBulkAssignDialogOpen(true);
+                      setBulkAssignSeller(null);
+                    }}
+                  >
+                    Assign to Seller
+                  </Button>
+                )}
+                {selectedPage === 'shop' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const updates = Array.from(selectedItems).map(id => {
+                        const item = tiers?.find(t => t.id === id);
+                        return {
+                          id,
+                          createdBy: item?.createdBy ?? null,
+                          showOnShop: false,
+                          showOnRedemptions: true,
+                          amount: (item?.amount ?? 0) * 50,
+                        };
+                      });
+                      bulkAssignMutation.mutate(updates);
+                    }}
+                    disabled={bulkAssignMutation.isPending}
+                  >
+                    {bulkAssignMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Move to Redemptions
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => setSelectedItems(new Set())}>
+                  Clear Selection
+                </Button>
+              </div>
             </div>
           )}
 
@@ -1038,6 +1166,13 @@ export const PrizeConfiguration = () => {
                                     : false
                                 }
                                 selectedPage={selectedPage}
+                                isSelected={selectedItems.has(tier.id)}
+                                onSelectChange={(id, selected) => {
+                                  const newSelected = new Set(selectedItems);
+                                  if (selected) newSelected.add(id);
+                                  else newSelected.delete(id);
+                                  setSelectedItems(newSelected);
+                                }}
                               />
                             ) : null;
                           })}
@@ -1061,8 +1196,23 @@ export const PrizeConfiguration = () => {
                       {getSortedPrizes().map(tier => (
                         <div
                           key={tier.id}
-                          className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
+                          className={`flex items-center gap-4 p-4 border-2 rounded-lg transition-colors ${
+                            selectedItems.has(tier.id)
+                              ? 'border-blue-500 bg-blue-950 dark:bg-blue-900'
+                              : 'border-border hover:bg-secondary/50'
+                          }`}
                         >
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.has(tier.id)}
+                            onChange={e => {
+                              const newSelected = new Set(selectedItems);
+                              if (e.target.checked) newSelected.add(tier.id);
+                              else newSelected.delete(tier.id);
+                              setSelectedItems(newSelected);
+                            }}
+                            className="w-5 h-5 rounded cursor-pointer flex-shrink-0"
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-semibold text-base">{tier.name}</h3>
@@ -1167,6 +1317,13 @@ export const PrizeConfiguration = () => {
                                         : false
                                     }
                                     selectedPage={selectedPage}
+                                    isSelected={selectedItems.has(tier.id)}
+                                    onSelectChange={(id, selected) => {
+                                      const newSelected = new Set(selectedItems);
+                                      if (selected) newSelected.add(id);
+                                      else newSelected.delete(id);
+                                      setSelectedItems(newSelected);
+                                    }}
                                   />
                                 ) : null;
                               })}
@@ -1183,8 +1340,23 @@ export const PrizeConfiguration = () => {
                           {getSortedPrizes('slab').map(tier => (
                             <div
                               key={tier.id}
-                              className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
+                              className={`flex items-center gap-4 p-4 border-2 rounded-lg transition-colors ${
+                                selectedItems.has(tier.id)
+                                  ? 'border-blue-500 bg-blue-950 dark:bg-blue-900'
+                                  : 'border-border hover:bg-secondary/50'
+                              }`}
                             >
+                              <input
+                                type="checkbox"
+                                checked={selectedItems.has(tier.id)}
+                                onChange={e => {
+                                  const newSelected = new Set(selectedItems);
+                                  if (e.target.checked) newSelected.add(tier.id);
+                                  else newSelected.delete(tier.id);
+                                  setSelectedItems(newSelected);
+                                }}
+                                className="w-5 h-5 rounded cursor-pointer flex-shrink-0"
+                              />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <h3 className="font-semibold text-base">{tier.name}</h3>
@@ -1283,6 +1455,13 @@ export const PrizeConfiguration = () => {
                                         : false
                                     }
                                     selectedPage={selectedPage}
+                                    isSelected={selectedItems.has(tier.id)}
+                                    onSelectChange={(id, selected) => {
+                                      const newSelected = new Set(selectedItems);
+                                      if (selected) newSelected.add(id);
+                                      else newSelected.delete(id);
+                                      setSelectedItems(newSelected);
+                                    }}
                                   />
                                 ) : null;
                               })}
@@ -1299,8 +1478,23 @@ export const PrizeConfiguration = () => {
                           {getSortedPrizes('sealed').map(tier => (
                             <div
                               key={tier.id}
-                              className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg hover:bg-secondary/50 transition-colors"
+                              className={`flex items-center gap-4 p-4 border-2 rounded-lg transition-colors ${
+                                selectedItems.has(tier.id)
+                                  ? 'border-blue-500 bg-blue-950 dark:bg-blue-900'
+                                  : 'border-border hover:bg-secondary/50'
+                              }`}
                             >
+                              <input
+                                type="checkbox"
+                                checked={selectedItems.has(tier.id)}
+                                onChange={e => {
+                                  const newSelected = new Set(selectedItems);
+                                  if (e.target.checked) newSelected.add(tier.id);
+                                  else newSelected.delete(tier.id);
+                                  setSelectedItems(newSelected);
+                                }}
+                                className="w-5 h-5 rounded cursor-pointer flex-shrink-0"
+                              />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <h3 className="font-semibold text-base">{tier.name}</h3>
@@ -1620,7 +1814,7 @@ export const PrizeConfiguration = () => {
                     onCheckedChange={checked => setFormData({ ...formData, showOnShop: checked })}
                   />
                   <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
-                    Show on Shop Page
+                    Show in Shops
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -1807,6 +2001,78 @@ export const PrizeConfiguration = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Assign to Seller Dialog */}
+      <Dialog open={bulkAssignDialogOpen} onOpenChange={setBulkAssignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign to Seller</DialogTitle>
+            <DialogDescription>
+              Select a seller to assign {selectedItems.size} selected item
+              {selectedItems.size !== 1 ? 's' : ''} to them, or remove seller assignment.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="bulk-seller">Seller</Label>
+              <Select value={bulkAssignSeller ?? ''} onValueChange={setBulkAssignSeller}>
+                <SelectTrigger id="bulk-seller">
+                  <SelectValue placeholder="Select a seller or admin item" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No seller (Admin item)</SelectItem>
+                  {sellers.map(seller => (
+                    <SelectItem key={seller.id} value={seller.id}>
+                      {seller.name || seller.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkAssignDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!bulkAssignSeller) {
+                  toast({
+                    title: 'Error',
+                    description: 'Please select a seller',
+                    variant: 'destructive',
+                  });
+                  return;
+                }
+                const createdBy = bulkAssignSeller === '__none__' ? null : bulkAssignSeller;
+                const updates = Array.from(selectedItems).map(id => {
+                  const item = tiers?.find(t => t.id === id);
+                  let amount = item?.amount ?? 0;
+                  
+                  // If assigning to seller (moving to shop) and item is currently in redemptions, divide by 50
+                  if (createdBy && item?.showOnRedemptions && !item?.showOnShop) {
+                    amount = Math.round(item.amount / 50);
+                  }
+                  
+                  return {
+                    id,
+                    createdBy,
+                    showOnShop: createdBy ? true : (item?.showOnShop ?? true),
+                    showOnRedemptions: createdBy ? false : (item?.showOnRedemptions ?? true),
+                    amount,
+                  };
+                });
+                bulkAssignMutation.mutate(updates);
+              }}
+              disabled={bulkAssignSeller === null || bulkAssignMutation.isPending}
+            >
+              {bulkAssignMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Assign
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
+

@@ -1384,6 +1384,9 @@ export const prizeAPI = {
       stock?: number;
       purchaseOption?: 'offers_only' | 'buy_only' | 'both';
       brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
+      createdBy?: string | null;
+      showOnShop?: boolean;
+      showOnRedemptions?: boolean;
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/admin/prizes/${id}`, payload);
