@@ -49,6 +49,7 @@ export default function Prizes() {
     id: string;
     name: string;
     amount: number;
+    createdBy: string | null;
   } | null>(null);
   const [selectedPrizeForOffer, setSelectedPrizeForOffer] = useState<PrizeDisplay | null>(null);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
@@ -161,6 +162,7 @@ export default function Prizes() {
         brand: prize.brand,
         displayOrder: prize.displayOrderShop ?? 999,
         featuredDisplayOrder: prize.featuredDisplayOrder ?? null,
+        createdBy: prize.createdBy ?? null,
       }));
     
     // Check if purchase option sorting is enabled (use first prize's setting)
@@ -325,6 +327,7 @@ export default function Prizes() {
                                 id: prize.id,
                                 name: prize.name,
                                 amount: prize.amount ?? 0,
+                                createdBy: prize.createdBy ?? null,
                               })
                             }
                             onOfferClick={handleOfferClick}
@@ -500,13 +503,15 @@ export default function Prizes() {
                           <PrizeCard
                             key={prize.id}
                             prize={prize}
-                            onClick={prize =>
+                            onClick={prize => {
+                              const fullPrize = allPrizes.find(p => p.id === prize.id);
                               setSelectedPrizeForCheckout({
                                 id: prize.id,
                                 name: prize.name,
                                 amount: prize.amount ?? 0,
-                              })
-                            }
+                                createdBy: (fullPrize as any)?.createdBy ?? null,
+                              });
+                            }}
                             onOfferClick={handleOfferClick}
                           />
                         ))}
@@ -546,6 +551,8 @@ export default function Prizes() {
           prizeName={selectedPrizeForCheckout.name}
           prizeAmount={selectedPrizeForCheckout.amount}
           userCadeCoins={userCadeCoins}
+          allowCadeCoins={!selectedPrizeForCheckout.createdBy}
+          isShopItem={!!selectedPrizeForCheckout.createdBy}
         />
       )}
 
