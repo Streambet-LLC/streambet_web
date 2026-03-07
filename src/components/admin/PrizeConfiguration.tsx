@@ -546,41 +546,39 @@ export const PrizeConfiguration = () => {
   // Helper function to get sorted prizes based on current state
   const getSortedPrizes = (category?: 'slab' | 'sealed', includeSearchFilter = true) => {
     let prizes = activeTiers;
-    
+
     // Filter by category if specified
     if (category) {
       prizes = prizes.filter(t => t.category === category);
     }
-    
-    // Filter by selected page ONLY when in edit mode
-    // In view mode, show ALL prizes regardless of page
-    if (isEditingOrder) {
-      prizes = prizes.filter(t => {
-        if (selectedPage === 'shop') return t.showOnShop;
-        if (selectedPage === 'redemptions') return t.showOnRedemptions;
-        return true;
-      });
-    }
-    
+
+    // Filter by selected page (both in edit and view mode)
+    prizes = prizes.filter(t => {
+      if (selectedPage === 'shop') return t.showOnShop;
+      if (selectedPage === 'redemptions') return t.showOnRedemptions;
+      return true;
+    });
+
     // Apply search filter (optional - can be disabled to get full list for position calculation)
     if (includeSearchFilter && searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      prizes = prizes.filter(p => 
-        p.name.toLowerCase().includes(query) ||
-        (p.description?.toLowerCase() || '').includes(query)
+      prizes = prizes.filter(
+        p =>
+          p.name.toLowerCase().includes(query) ||
+          (p.description?.toLowerCase() || '').includes(query)
       );
     }
-    
+
     // Sort based on mode
     return prizes.sort((a, b) => {
       if (isEditingOrder) {
         // Edit mode: Sort by display order and purchase option (existing logic)
         let aOrder: number, bOrder: number;
-        
+
         // In edit mode: use live state from orderChanges (so drag updates are immediately visible)
         const aChanges = orderChanges.get(a.id);
         const bChanges = orderChanges.get(b.id);
-        
+
         if (selectedPage === 'shop') {
           aOrder = aChanges?.displayOrderShop ?? a.displayOrderShop ?? 999;
           bOrder = bChanges?.displayOrderShop ?? b.displayOrderShop ?? 999;
@@ -588,7 +586,7 @@ export const PrizeConfiguration = () => {
           aOrder = aChanges?.displayOrderRedemptions ?? a.displayOrderRedemptions ?? 999;
           bOrder = bChanges?.displayOrderRedemptions ?? b.displayOrderRedemptions ?? 999;
         }
-        
+
         // Apply purchase option sorting if enabled for current page
         if (sortByPurchaseOption[selectedPage]) {
           // Primary sort: purchaseOption (both=0, buy_only=1, offers_only=2)
@@ -597,7 +595,7 @@ export const PrizeConfiguration = () => {
           const bPurchase = purchaseOrder[b.purchaseOption] ?? 3;
           if (aPurchase !== bPurchase) return aPurchase - bPurchase;
         }
-        
+
         // Secondary sort (or primary if purchase sorting disabled): displayOrder
         return aOrder - bOrder;
       } else {
@@ -627,7 +625,7 @@ export const PrizeConfiguration = () => {
   // Drag handler for reordering prizes
   const handleDragEnd = (event: DragEndEvent, category?: 'slab' | 'sealed') => {
     const { active, over } = event;
-    
+
     if (!over || active.id === over.id) return;
 
     // IMPORTANT: Get the FULL sorted list (without search filter) to calculate real positions
@@ -637,23 +635,35 @@ export const PrizeConfiguration = () => {
     if (sortByPurchaseOption[selectedPage]) {
       const draggedPrize = fullSortedList.find(p => p.id === active.id);
       const targetPrize = fullSortedList.find(p => p.id === over.id);
-      
+
       if (draggedPrize && targetPrize) {
         const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
         const draggedPriority = purchaseOrder[draggedPrize.purchaseOption];
         const targetPriority = purchaseOrder[targetPrize.purchaseOption];
-        
+
         // Prevent dragging lower priority items before higher priority items
         if (draggedPriority > targetPriority) {
           let message = '';
-          if (draggedPrize.purchaseOption === 'offers_only' && targetPrize.purchaseOption === 'both') {
-            message = 'Cards with "Make Offer Only" cannot be placed before cards with "Both Options". Disable grouping to reorder freely.';
-          } else if (draggedPrize.purchaseOption === 'offers_only' && targetPrize.purchaseOption === 'buy_only') {
-            message = 'Cards with "Make Offer Only" cannot be placed before cards with "Buy Only". Disable grouping to reorder freely.';
-          } else if (draggedPrize.purchaseOption === 'buy_only' && targetPrize.purchaseOption === 'both') {
-            message = 'Cards with "Buy Only" cannot be placed before cards with "Both Options". Disable grouping to reorder freely.';
+          if (
+            draggedPrize.purchaseOption === 'offers_only' &&
+            targetPrize.purchaseOption === 'both'
+          ) {
+            message =
+              'Cards with "Make Offer Only" cannot be placed before cards with "Both Options". Disable grouping to reorder freely.';
+          } else if (
+            draggedPrize.purchaseOption === 'offers_only' &&
+            targetPrize.purchaseOption === 'buy_only'
+          ) {
+            message =
+              'Cards with "Make Offer Only" cannot be placed before cards with "Buy Only". Disable grouping to reorder freely.';
+          } else if (
+            draggedPrize.purchaseOption === 'buy_only' &&
+            targetPrize.purchaseOption === 'both'
+          ) {
+            message =
+              'Cards with "Buy Only" cannot be placed before cards with "Both Options". Disable grouping to reorder freely.';
           }
-          
+
           toast({
             title: 'Invalid card placement',
             description: message,
@@ -695,7 +705,7 @@ export const PrizeConfiguration = () => {
     const featuredOrders = Array.from(orderChanges.values())
       .filter(change => change.isFeatured && change.featuredDisplayOrder !== null)
       .map(change => change.featuredDisplayOrder as number);
-    
+
     return featuredOrders.length > 0 ? Math.max(...featuredOrders) + 1 : 1;
   };
 
@@ -713,7 +723,9 @@ export const PrizeConfiguration = () => {
       newChanges.set(prizeId, {
         ...currentChanges,
         isFeatured,
-        featuredDisplayOrder: isFeatured ? (currentChanges.featuredDisplayOrder || getNextFeaturedOrder()) : null,
+        featuredDisplayOrder: isFeatured
+          ? currentChanges.featuredDisplayOrder || getNextFeaturedOrder()
+          : null,
       });
       setOrderChanges(newChanges);
     }
@@ -730,8 +742,6 @@ export const PrizeConfiguration = () => {
       setOrderChanges(newChanges);
     }
   };
-
-
 
   const handleCreate = async () => {
     if (!formData.name.trim()) {
@@ -899,7 +909,9 @@ export const PrizeConfiguration = () => {
                   </Button>
                   <Button onClick={saveDisplayOrders} disabled={bulkUpdateOrderMutation.isPending}>
                     {bulkUpdateOrderMutation.isPending ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
+                      </>
                     ) : (
                       'Save Changes'
                     )}
@@ -921,26 +933,24 @@ export const PrizeConfiguration = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Page filter tabs in edit mode */}
-          {isEditingOrder && (
-            <div className="mb-6 flex gap-2 border-b border-border">
-              <Button
-                variant={selectedPage === 'shop' ? 'default' : 'ghost'}
-                onClick={() => setSelectedPage('shop')}
-                className="rounded-b-none"
-              >
-                Shop Page
-              </Button>
-              <Button
-                variant={selectedPage === 'redemptions' ? 'default' : 'ghost'}
-                onClick={() => setSelectedPage('redemptions')}
-                className="rounded-b-none"
-              >
-                Redeem Page
-              </Button>
-            </div>
-          )}
-          
+          {/* Page filter tabs - always visible */}
+          <div className="mb-6 flex gap-2 border-b border-border">
+            <Button
+              variant={selectedPage === 'shop' ? 'default' : 'ghost'}
+              onClick={() => setSelectedPage('shop')}
+              className="rounded-b-none"
+            >
+              Shop Page
+            </Button>
+            <Button
+              variant={selectedPage === 'redemptions' ? 'default' : 'ghost'}
+              onClick={() => setSelectedPage('redemptions')}
+              className="rounded-b-none"
+            >
+              Redeem Page
+            </Button>
+          </div>
+
           {/* Search bar and sorting toggle */}
           {activeTiers.length > 0 && (
             <div className="mb-6 flex items-center justify-between gap-4">
@@ -954,7 +964,7 @@ export const PrizeConfiguration = () => {
                   width="lg"
                 />
               </div>
-              
+
               {/* Right side: Sorting toggle (only in edit mode) */}
               {isEditingOrder && (
                 <div className="flex items-center gap-2 whitespace-nowrap">
@@ -972,7 +982,10 @@ export const PrizeConfiguration = () => {
                         <AlertCircle className="w-4 h-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>When enabled, prizes with both purchase options appear before buy-only or offers-only prizes</p>
+                        <p>
+                          When enabled, prizes with both purchase options appear before buy-only or
+                          offers-only prizes
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -980,7 +993,7 @@ export const PrizeConfiguration = () => {
               )}
             </div>
           )}
-          
+
           {activeTiers.length === 0 ? (
             <div className="text-center py-12">
               <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -999,7 +1012,7 @@ export const PrizeConfiguration = () => {
                     <DndContext
                       sensors={sensors}
                       collisionDetection={closestCenter}
-                      onDragEnd={(e) => handleDragEnd(e)}
+                      onDragEnd={e => handleDragEnd(e)}
                     >
                       <SortableContext
                         items={getSortedPrizes().map(t => t.id)}
@@ -1016,7 +1029,14 @@ export const PrizeConfiguration = () => {
                                 changes={changes}
                                 onToggleFeatured={toggleFeatured}
                                 onFeaturedOrderChange={handleFeaturedOrderChange}
-                                hasDuplicateFeaturedOrder={changes.isFeatured && changes.featuredDisplayOrder !== null ? checkDuplicateFeaturedOrder(tier.id, changes.featuredDisplayOrder) : false}
+                                hasDuplicateFeaturedOrder={
+                                  changes.isFeatured && changes.featuredDisplayOrder !== null
+                                    ? checkDuplicateFeaturedOrder(
+                                        tier.id,
+                                        changes.featuredDisplayOrder
+                                      )
+                                    : false
+                                }
                                 selectedPage={selectedPage}
                               />
                             ) : null;
@@ -1024,7 +1044,11 @@ export const PrizeConfiguration = () => {
                           {getSortedPrizes().length === 0 && searchQuery.trim() && (
                             <div className="text-center py-8 text-muted-foreground">
                               <p>No prizes found matching "{searchQuery}"</p>
-                              <Button variant="link" onClick={() => setSearchQuery('')} className="mt-2">
+                              <Button
+                                variant="link"
+                                onClick={() => setSearchQuery('')}
+                                className="mt-2"
+                              >
                                 Clear search
                               </Button>
                             </div>
@@ -1056,10 +1080,16 @@ export const PrizeConfiguration = () => {
                               >
                                 Stock: {tier.stock}
                               </span>
-                              <Badge variant="outline" className={`text-xs ${getCategoryBadge(tier.category).className}`}>
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${getCategoryBadge(tier.category).className}`}
+                              >
                                 {getCategoryBadge(tier.category).label}
                               </Badge>
-                              <Badge variant="outline" className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}>
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}
+                              >
                                 {getPurchaseOptionBadge(tier.purchaseOption).label}
                               </Badge>
                             </div>
@@ -1086,7 +1116,11 @@ export const PrizeConfiguration = () => {
                       {getSortedPrizes().length === 0 && searchQuery.trim() && (
                         <div className="text-center py-8 text-muted-foreground">
                           <p>No prizes found matching "{searchQuery}"</p>
-                          <Button variant="link" onClick={() => setSearchQuery('')} className="mt-2">
+                          <Button
+                            variant="link"
+                            onClick={() => setSearchQuery('')}
+                            className="mt-2"
+                          >
                             Clear search
                           </Button>
                         </div>
@@ -1107,7 +1141,7 @@ export const PrizeConfiguration = () => {
                         <DndContext
                           sensors={sensors}
                           collisionDetection={closestCenter}
-                          onDragEnd={(e) => handleDragEnd(e, 'slab')}
+                          onDragEnd={e => handleDragEnd(e, 'slab')}
                         >
                           <SortableContext
                             items={getSortedPrizes('slab').map(t => t.id)}
@@ -1124,7 +1158,14 @@ export const PrizeConfiguration = () => {
                                     changes={changes}
                                     onToggleFeatured={toggleFeatured}
                                     onFeaturedOrderChange={handleFeaturedOrderChange}
-                                    hasDuplicateFeaturedOrder={changes.isFeatured && changes.featuredDisplayOrder !== null ? checkDuplicateFeaturedOrder(tier.id, changes.featuredDisplayOrder) : false}
+                                    hasDuplicateFeaturedOrder={
+                                      changes.isFeatured && changes.featuredDisplayOrder !== null
+                                        ? checkDuplicateFeaturedOrder(
+                                            tier.id,
+                                            changes.featuredDisplayOrder
+                                          )
+                                        : false
+                                    }
                                     selectedPage={selectedPage}
                                   />
                                 ) : null;
@@ -1161,10 +1202,16 @@ export const PrizeConfiguration = () => {
                                   >
                                     Stock: {tier.stock}
                                   </span>
-                                  <Badge variant="outline" className={`text-xs ${getCategoryBadge(tier.category).className}`}>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs ${getCategoryBadge(tier.category).className}`}
+                                  >
                                     {getCategoryBadge(tier.category).label}
                                   </Badge>
-                                  <Badge variant="outline" className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}
+                                  >
                                     {getPurchaseOptionBadge(tier.purchaseOption).label}
                                   </Badge>
                                 </div>
@@ -1175,7 +1222,11 @@ export const PrizeConfiguration = () => {
                                 )}
                               </div>
                               <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                                <Button size="sm" variant="outline" onClick={() => handleEdit(tier)}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEdit(tier)}
+                                >
                                   <Edit className="w-4 h-4" />
                                 </Button>
                                 <Button
@@ -1206,7 +1257,7 @@ export const PrizeConfiguration = () => {
                         <DndContext
                           sensors={sensors}
                           collisionDetection={closestCenter}
-                          onDragEnd={(e) => handleDragEnd(e, 'sealed')}
+                          onDragEnd={e => handleDragEnd(e, 'sealed')}
                         >
                           <SortableContext
                             items={getSortedPrizes('sealed').map(t => t.id)}
@@ -1223,7 +1274,14 @@ export const PrizeConfiguration = () => {
                                     changes={changes}
                                     onToggleFeatured={toggleFeatured}
                                     onFeaturedOrderChange={handleFeaturedOrderChange}
-                                    hasDuplicateFeaturedOrder={changes.isFeatured && changes.featuredDisplayOrder !== null ? checkDuplicateFeaturedOrder(tier.id, changes.featuredDisplayOrder) : false}
+                                    hasDuplicateFeaturedOrder={
+                                      changes.isFeatured && changes.featuredDisplayOrder !== null
+                                        ? checkDuplicateFeaturedOrder(
+                                            tier.id,
+                                            changes.featuredDisplayOrder
+                                          )
+                                        : false
+                                    }
                                     selectedPage={selectedPage}
                                   />
                                 ) : null;
@@ -1260,10 +1318,16 @@ export const PrizeConfiguration = () => {
                                   >
                                     Stock: {tier.stock}
                                   </span>
-                                  <Badge variant="outline" className={`text-xs ${getCategoryBadge(tier.category).className}`}>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs ${getCategoryBadge(tier.category).className}`}
+                                  >
                                     {getCategoryBadge(tier.category).label}
                                   </Badge>
-                                  <Badge variant="outline" className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}
+                                  >
                                     {getPurchaseOptionBadge(tier.purchaseOption).label}
                                   </Badge>
                                 </div>
@@ -1274,7 +1338,11 @@ export const PrizeConfiguration = () => {
                                 )}
                               </div>
                               <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                                <Button size="sm" variant="outline" onClick={() => handleEdit(tier)}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEdit(tier)}
+                                >
                                   <Edit className="w-4 h-4" />
                                 </Button>
                                 <Button
@@ -1462,9 +1530,7 @@ export const PrizeConfiguration = () => {
             <div className="space-y-2.5">
               <Label htmlFor="seller" className="text-base font-medium">
                 Assign to Seller
-                <span className="text-xs text-muted-foreground font-normal ml-2">
-                  (optional)
-                </span>
+                <span className="text-xs text-muted-foreground font-normal ml-2">(optional)</span>
               </Label>
               <Select
                 value={formData.createdBy || '__none__'}
@@ -1551,9 +1617,7 @@ export const PrizeConfiguration = () => {
                   <Switch
                     id="showOnShop"
                     checked={formData.showOnShop ?? true}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, showOnShop: checked })
-                    }
+                    onCheckedChange={checked => setFormData({ ...formData, showOnShop: checked })}
                   />
                   <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
                     Show on Shop Page
@@ -1563,7 +1627,7 @@ export const PrizeConfiguration = () => {
                   <Switch
                     id="showOnRedemptions"
                     checked={formData.showOnRedemptions ?? false}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={checked =>
                       setFormData({ ...formData, showOnRedemptions: checked })
                     }
                   />
@@ -1587,7 +1651,7 @@ export const PrizeConfiguration = () => {
                     }`}
                     onClick={() => setShowImageModal(true)}
                   />
-                  <div 
+                  <div
                     className="absolute top-2 left-2 z-20 bg-black/60 rounded-md p-1.5 hover:bg-black/80 transition-colors cursor-pointer"
                     onClick={() => setShowImageModal(true)}
                   >
