@@ -20,6 +20,7 @@ export interface Prize {
   brand?: PrizeBrand;
   displayOrder?: number;
   featuredDisplayOrder?: number | null;
+  createdBy?: string | null;
 }
 
 interface PrizesByCategoryProps {
