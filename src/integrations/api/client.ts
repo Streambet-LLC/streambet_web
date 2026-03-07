@@ -830,6 +830,11 @@ export const adminAPI = {
     return response.data.data;
   },
 
+  getSellers: async () => {
+    const response = await apiClient.get(`/admin/sellers`);
+    return response.data.data;
+  },
+
   updateUsersStatus: async (userId?: any, userStatus?: any) => {
     const response = await apiClient.patch(`/admin/users`, userId, userStatus);
     return response.data;

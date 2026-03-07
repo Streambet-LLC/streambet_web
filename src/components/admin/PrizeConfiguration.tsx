@@ -22,7 +22,7 @@ import {
 import { SearchInput } from '@/components/ui/SearchInput';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
 import { handleMutationError } from '@/lib/mutationHelpers';
 import { Loader2, Plus, Trash2, X, Edit, AlertCircle, Expand, GripVertical } from 'lucide-react';
@@ -31,6 +31,7 @@ import {
   CreatePrizeTierRequest,
   UpdatePrizeTierRequest,
   PrizeBrand,
+  Seller,
 } from '@/types/prize';
 import PhotoCropper from '../PhotoCropper';
 import { useImageCropper } from '@/hooks/useImageCropper';
@@ -186,6 +187,11 @@ const SortablePrizeItem = ({ tier, position, changes, onToggleFeatured, onFeatur
           <Badge variant="outline" className={`text-xs ${getPurchaseOptionBadge(tier.purchaseOption).className}`}>
             {getPurchaseOptionBadge(tier.purchaseOption).label}
           </Badge>
+          {tier.createdBy && (
+            <Badge variant="outline" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-100 border-purple-200">
+              Seller Item
+            </Badge>
+          )}
         </div>
         {tier.description && (
           <p className="text-sm text-muted-foreground mt-2 line-clamp-1">
@@ -247,6 +253,12 @@ export const PrizeConfiguration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: tiers, isLoading } = useAdminPrizeTiers();
+  
+  // Fetch sellers for dropdown
+  const { data: sellers = [] } = useQuery<Seller[]>({
+    queryKey: ['admin-sellers'],
+    queryFn: () => api.admin.getSellers(),
+  });
 
   // Image upload hook
   const imageUpload = useImageCropper({
@@ -295,6 +307,7 @@ export const PrizeConfiguration = () => {
     brand: 'pokemon',
     showOnRedemptions: true,
     showOnShop: true,
+    createdBy: null,
   });
 
   const resetForm = () => {
@@ -309,6 +322,7 @@ export const PrizeConfiguration = () => {
       brand: 'pokemon',
       showOnRedemptions: true,
       showOnShop: true,
+      createdBy: null,
     });
     setValidationError('');
     imageUpload.clearImage();
@@ -538,12 +552,15 @@ export const PrizeConfiguration = () => {
       prizes = prizes.filter(t => t.category === category);
     }
     
-    // Filter by selected page (only show prizes that should appear on this page)
-    prizes = prizes.filter(t => {
-      if (selectedPage === 'shop') return t.showOnShop;
-      if (selectedPage === 'redemptions') return t.showOnRedemptions;
-      return true;
-    });
+    // Filter by selected page ONLY when in edit mode
+    // In view mode, show ALL prizes regardless of page
+    if (isEditingOrder) {
+      prizes = prizes.filter(t => {
+        if (selectedPage === 'shop') return t.showOnShop;
+        if (selectedPage === 'redemptions') return t.showOnRedemptions;
+        return true;
+      });
+    }
     
     // Apply search filter (optional - can be disabled to get full list for position calculation)
     if (includeSearchFilter && searchQuery.trim()) {
@@ -554,11 +571,12 @@ export const PrizeConfiguration = () => {
       );
     }
     
-    // Sort by current order (use orderChanges in edit mode, DB values in view mode)
+    // Sort based on mode
     return prizes.sort((a, b) => {
-      let aOrder: number, bOrder: number;
-      
       if (isEditingOrder) {
+        // Edit mode: Sort by display order and purchase option (existing logic)
+        let aOrder: number, bOrder: number;
+        
         // In edit mode: use live state from orderChanges (so drag updates are immediately visible)
         const aChanges = orderChanges.get(a.id);
         const bChanges = orderChanges.get(b.id);
@@ -570,28 +588,22 @@ export const PrizeConfiguration = () => {
           aOrder = aChanges?.displayOrderRedemptions ?? a.displayOrderRedemptions ?? 999;
           bOrder = bChanges?.displayOrderRedemptions ?? b.displayOrderRedemptions ?? 999;
         }
-      } else {
-        // In view mode: use DB values (same field as edit mode for consistency)
-        if (selectedPage === 'shop') {
-          aOrder = a.displayOrderShop ?? 999;
-          bOrder = b.displayOrderShop ?? 999;
-        } else {
-          aOrder = a.displayOrderRedemptions ?? 999;
-          bOrder = b.displayOrderRedemptions ?? 999;
+        
+        // Apply purchase option sorting if enabled for current page
+        if (sortByPurchaseOption[selectedPage]) {
+          // Primary sort: purchaseOption (both=0, buy_only=1, offers_only=2)
+          const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
+          const aPurchase = purchaseOrder[a.purchaseOption] ?? 3;
+          const bPurchase = purchaseOrder[b.purchaseOption] ?? 3;
+          if (aPurchase !== bPurchase) return aPurchase - bPurchase;
         }
+        
+        // Secondary sort (or primary if purchase sorting disabled): displayOrder
+        return aOrder - bOrder;
+      } else {
+        // View mode: Sort alphabetically by name
+        return a.name.localeCompare(b.name);
       }
-      
-      // Apply purchase option sorting if enabled for current page
-      if (sortByPurchaseOption[selectedPage]) {
-        // Primary sort: purchaseOption (both=0, buy_only=1, offers_only=2)
-        const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
-        const aPurchase = purchaseOrder[a.purchaseOption] ?? 3;
-        const bPurchase = purchaseOrder[b.purchaseOption] ?? 3;
-        if (aPurchase !== bPurchase) return aPurchase - bPurchase;
-      }
-      
-      // Secondary sort (or primary if purchase sorting disabled): displayOrder
-      return aOrder - bOrder;
     });
   };
 
@@ -822,6 +834,7 @@ export const PrizeConfiguration = () => {
       featuredDisplayOrder: tier.featuredDisplayOrder,
       showOnRedemptions: tier.showOnRedemptions ?? true,
       showOnShop: tier.showOnShop ?? true,
+      createdBy: tier.createdBy,
     });
     // Calculate and display USD equivalent when editing
     if (tier.amount && tier.amount > 0) {
@@ -1445,6 +1458,40 @@ export const PrizeConfiguration = () => {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2.5">
+              <Label htmlFor="seller" className="text-base font-medium">
+                Assign to Seller
+                <span className="text-xs text-muted-foreground font-normal ml-2">
+                  (optional)
+                </span>
+              </Label>
+              <Select
+                value={formData.createdBy || '__none__'}
+                onValueChange={value => {
+                  setFormData({
+                    ...formData,
+                    createdBy: value === '__none__' ? null : value,
+                  });
+                  setValidationError('');
+                }}
+              >
+                <SelectTrigger id="seller" className="h-12 text-base">
+                  <SelectValue placeholder="No seller (admin item)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No seller (admin item)</SelectItem>
+                  {sellers.map(seller => (
+                    <SelectItem key={seller.id} value={seller.id}>
+                      {seller.shopName || seller.username}
+                      {seller.name && ` (${seller.name})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Assign this prize to a seller's shop. Leave unassigned for admin-only items.
+              </p>
             </div>
             <div className="space-y-2.5">
               <Label htmlFor="imageLayout" className="text-base font-medium">

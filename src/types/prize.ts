@@ -52,6 +52,16 @@ export interface SellerShopResponse {
 }
 
 /**
+ * Seller info for admin prize assignment
+ */
+export interface Seller {
+  id: string;
+  username: string;
+  name: string | null;
+  shopName: string | null;
+}
+
+/**
  * DTO for creating a new prize tier
  */
 export interface CreatePrizeTierRequest {
@@ -68,6 +78,7 @@ export interface CreatePrizeTierRequest {
   featuredDisplayOrder?: number | null;
   showOnRedemptions?: boolean;
   showOnShop?: boolean;
+  createdBy?: string | null;
 }
 
 /**
@@ -87,6 +98,7 @@ export interface UpdatePrizeTierRequest {
   featuredDisplayOrder?: number | null;
   showOnRedemptions?: boolean;
   showOnShop?: boolean;
+  createdBy?: string | null;
 }
 
 /**
