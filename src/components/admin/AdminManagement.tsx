@@ -108,7 +108,7 @@ export const AdminManagement = ({
     { key: 'users', label: 'Users' },
     { key: 'applications', label: 'Applications' },
     { key: 'stream-payout', label: 'Stream Payout' },
-    { key: 'prize-settings', label: 'Prize Settings' },
+    { key: 'prize-settings', label: 'Item Settings' },
     { key: 'prize-redemptions', label: 'Prize Redemptions' },
     { key: 'prize-offers', label: 'Prize Offers' },
   ];
