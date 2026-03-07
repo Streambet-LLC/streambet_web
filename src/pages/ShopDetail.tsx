@@ -52,6 +52,7 @@ export default function ShopDetail() {
       purchaseOption: prize.purchaseOption,
       brand: prize.brand,
       displayOrder: prize.displayOrderShop ?? 999,
+      createdBy: prize.createdBy ?? null,
     }));
 
   // Check if purchase option sorting is enabled
