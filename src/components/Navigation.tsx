@@ -121,6 +121,10 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
       label: session?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard',
       path: session?.role === 'admin' ? '/admin' : '/creator',
     },
+    session?.isSeller && {
+      label: 'Manage Shop',
+      path: '/seller/shop/manage',
+    },
     // { label: 'Streams', icon: undefined, path: '/stream' },
     // { label: 'Rewards', icon: undefined, path: '/rewards' },
     // { label: 'Community', icon: undefined, path: '/community' },
@@ -259,7 +263,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                   const isActive = location.pathname === item.path;
                   return (
                     <>
-                      {(item.path === '/admin' || item.path === '/creator') && (
+                      {(item.path === '/admin' || item.path === '/creator' || item.path === '/seller/shop/manage') && (
                         <span className="text-primary/60">|</span>
                       )}
                       <motion.div

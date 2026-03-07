@@ -30,11 +30,17 @@ export default function PrizeCard({
 }: PrizeCardProps) {
   const [showImageModal, setShowImageModal] = useState(false);
 
+  // For shop variant, amount is already in USD. For redemption, amount is in coins.
   const priceInUSD = prize.amount
-    ? (prize.amount / 50).toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
+    ? variant === 'shop'
+      ? prize.amount.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : (prize.amount / 50).toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
     : '0.00';
   const canBuy = prize.purchaseOption === 'buy_only' || prize.purchaseOption === 'both';
   const canOffer = prize.purchaseOption === 'offers_only' || prize.purchaseOption === 'both';
@@ -163,12 +169,7 @@ export default function PrizeCard({
           {/* Price */}
           <div className="mt-auto pt-1">
             {canBuy ? (
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold text-primary">${priceInUSD}</span>
-                <span className="text-[10px] text-muted-foreground">
-                  ({prize.amount?.toLocaleString()} coins)
-                </span>
-              </div>
+              <span className="text-xl font-bold text-primary">${priceInUSD}</span>
             ) : (
               <div className="text-sm font-semibold text-muted-foreground">Offers Only</div>
             )}

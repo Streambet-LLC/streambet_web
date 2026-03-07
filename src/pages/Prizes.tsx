@@ -1,5 +1,5 @@
 import { MainLayout } from "@/components/layout";
-import { usePrizeTiers } from '@/hooks/usePrizeConfig';
+import { useShopItems } from '@/hooks/usePrizeConfig';
 import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -39,7 +39,7 @@ const getBrandLabel = (brand: PrizeBrand): string => {
 };
 
 export default function Prizes() {
-  const { data: tiers, isLoading } = usePrizeTiers();
+  const { data: tiers, isLoading } = useShopItems();
   const { session } = useAuthContext();
   const isMobile = useIsMobile();
   const shouldReduceMotion = useReducedMotion();
@@ -145,7 +145,7 @@ export default function Prizes() {
     return 'slab';
   };
 
-  // Get all prizes with stock and filter for shop page
+  // Get all shop items with stock from all sellers
   const allPrizes: PrizeDisplay[] = useMemo(() => {
     const filtered = (tiers || [])
       .filter(prize => prize.stock > 0 && prize.showOnShop !== false)

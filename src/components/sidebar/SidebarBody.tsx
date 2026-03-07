@@ -18,8 +18,8 @@ import api from '@/integrations/api/client';
 import { BetRoundType, BettingCategory } from '@/enums';
 import { useLocation, Link, useSearchParams } from 'react-router-dom';
 import { getCategoryLabel } from '@/utils/categoryHelpers';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Checkbox } from '../ui/checkbox';
 import { getImageLink } from '@/utils/helper';
 import { PrizeBrand } from '@/types/prize';
@@ -49,10 +49,10 @@ const CATEGORY_TO_BRAND_MAP: Record<BettingCategory, PrizeBrand> = {
 
 // Reverse mapping for highlighting selected category from URL brand param
 const BRAND_TO_CATEGORY_MAP: Record<string, BettingCategory> = {
-  'pokemon': BettingCategory.POKEMON_CARDS,
-  'one_piece': BettingCategory.ONE_PIECE,
-  'sports': BettingCategory.SPORTS_CARDS,
-  'other': BettingCategory.OTHER,
+  pokemon: BettingCategory.POKEMON_CARDS,
+  one_piece: BettingCategory.ONE_PIECE,
+  sports: BettingCategory.SPORTS_CARDS,
+  other: BettingCategory.OTHER,
 };
 
 const CategoryIconContainer = ({
@@ -75,17 +75,15 @@ const CategoryIconContainer = ({
   </div>
 );
 
-export default function SidebarBody({
-  selectedCategory,
-  setSelectedCategory,
-  selectedBetType,
-  setSelectedBetType,
-}: SidebarBodyProps) {
+export default function SidebarBody({ selectedCategory, setSelectedCategory }: SidebarBodyProps) {
   const controls = useSidebar();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const isPredictionsPage = location.pathname === '/predictions';
-  const isShopPage = location.pathname === '/' || location.pathname.startsWith('/shop') || location.pathname === '/redemptions';
+  const isShopPage =
+    location.pathname === '/' ||
+    location.pathname.startsWith('/shop') ||
+    location.pathname === '/redemptions';
   const showMarkets = isPredictionsPage || isShopPage;
   const { session } = useAuthContext();
 
@@ -104,11 +102,11 @@ export default function SidebarBody({
       } else {
         // Map BettingCategory to PrizeBrand for database filtering
         const brandValue = CATEGORY_TO_BRAND_MAP[category];
-        
+
         // Toggle brand in/out of selection
         const brandIndex = selectedBrands.indexOf(brandValue);
         let updatedBrands: string[];
-        
+
         if (brandIndex > -1) {
           // Brand is selected, remove it
           updatedBrands = selectedBrands.filter(b => b !== brandValue);
@@ -116,7 +114,7 @@ export default function SidebarBody({
           // Brand is not selected, add it
           updatedBrands = [...selectedBrands, brandValue];
         }
-        
+
         // Update URL param
         if (updatedBrands.length > 0) {
           newParams.set('brand', updatedBrands.join(','));
@@ -155,81 +153,21 @@ export default function SidebarBody({
     },
   });
 
-  // Fetch Nick's profile for real avatar
-  const { data: nickProfile } = useQuery({
-    queryKey: ['user-profile', 'nvantzos'],
+  const { data: sellerShops = [] } = useQuery({
+    queryKey: ['seller-shops'],
     queryFn: async () => {
-      const response = await api.user.getUserProfile('nvantzos');
-      return response;
-    },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
-
-  // Fetch Pil's profile (shin)
-  const { data: shinProfile } = useQuery({
-    queryKey: ['user-profile', 'shin'],
-    queryFn: async () => {
-      const response = await api.user.getUserProfile('shin');
-      return response;
+      return api.prize.getSellerShops();
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch Aaron's profile (Aaron5630)
-  const { data: aaronProfile } = useQuery({
-    queryKey: ['user-profile', 'Aaron5630'],
-    queryFn: async () => {
-      const response = await api.user.getUserProfile('Aaron5630');
-      return response;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Fetch Bobby's profile (ass)
-  const { data: bobbyProfile } = useQuery({
-    queryKey: ['user-profile', 'ass'],
-    queryFn: async () => {
-      const response = await api.user.getUserProfile('ass');
-      return response;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Hardcoded shops
-  const shops = [
-    {
-      id: '1',
-      name: "Nick's Niceties",
-      username: 'nvantzos',
-      profileImageUrl: nickProfile?.data?.profileImageUrl || 'https://randomuser.me/api/portraits/men/50.jpg',
-      isClickable: true,
-      isRealProfile: !!nickProfile?.data?.profileImageUrl,
-    },
-    {
-      id: '2',
-      name: "Pil's Pillages",
-      username: 'shin',
-      profileImageUrl: shinProfile?.data?.profileImageUrl || 'https://randomuser.me/api/portraits/men/32.jpg',
-      isClickable: false,
-      isRealProfile: !!shinProfile?.data?.profileImageUrl,
-    },
-    {
-      id: '3',
-      name: "Aaron's Arcade",
-      username: 'Aaron5630',
-      profileImageUrl: aaronProfile?.data?.profileImageUrl || 'https://randomuser.me/api/portraits/men/45.jpg',
-      isClickable: false,
-      isRealProfile: !!aaronProfile?.data?.profileImageUrl,
-    },
-    {
-      id: '4',
-      name: "Bobby's Barn",
-      username: 'ass',
-      profileImageUrl: bobbyProfile?.data?.profileImageUrl || 'https://randomuser.me/api/portraits/men/67.jpg',
-      isClickable: false,
-      isRealProfile: !!bobbyProfile?.data?.profileImageUrl,
-    },
-  ];
+  const shops = sellerShops.map(shop => ({
+    id: shop.id,
+    name: shop.displayName,
+    username: shop.username,
+    profileImageUrl: shop.profileImageUrl,
+    isClickable: true,
+  }));
 
   // Icon options for each category
   const getCategoryIcon = (category: BettingCategory) => {
@@ -316,7 +254,10 @@ export default function SidebarBody({
                   aria-pressed={isCategorySelected(null)}
                   aria-label={isShopPage ? 'Show all brands' : 'Show all markets'}
                 >
-                  <motion.div className="w-full" whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}>
+                  <motion.div
+                    className="w-full"
+                    whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}
+                  >
                     {controls.open && !controls.isMobile ? (
                       <div className="flex items-center gap-2.5 w-full">
                         <CategoryIconContainer
@@ -353,13 +294,13 @@ export default function SidebarBody({
                       aria-pressed={isSelected}
                       aria-label={`Filter by ${getCategoryLabel(category)}`}
                     >
-                      <motion.div className="w-full" whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}>
+                      <motion.div
+                        className="w-full"
+                        whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}
+                      >
                         {controls.open && !controls.isMobile ? (
                           <div className="flex items-center gap-2.5 w-full">
-                            <CategoryIconContainer
-                              icon={IconComponent}
-                              isSelected={isSelected}
-                            />
+                            <CategoryIconContainer icon={IconComponent} isSelected={isSelected} />
                             <span className="text-[13px] font-semibold">
                               {getCategoryLabel(category)}
                             </span>
@@ -367,7 +308,7 @@ export default function SidebarBody({
                               <Checkbox
                                 checked={isSelected}
                                 onCheckedChange={() => handleCategoryClick(category)}
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={e => e.stopPropagation()}
                                 className="ml-auto"
                               />
                             )}
@@ -382,20 +323,17 @@ export default function SidebarBody({
                       </motion.div>
                     </Button>
                   );
-                })}              </div>
+                })}{' '}
+              </div>
             </>
           )}
-
         </SidebarGroup>
       </SidebarContent>
 
       {/* Shops Section - Pinned to bottom */}
       <SidebarFooter className="border-t border-border">
         {controls.open && !controls.isMobile && (
-          <div
-            className="flex items-center justify-between"
-            id="sidebar-shops-label"
-          >
+          <div className="flex items-center justify-between" id="sidebar-shops-label">
             <div className="text-sm font-semibold">Shops</div>
             <Link
               to="/creators"
@@ -409,9 +347,7 @@ export default function SidebarBody({
           className="flex flex-col gap-2"
           role="navigation"
           aria-label="Featured shops"
-          aria-labelledby={
-            controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined
-          }
+          aria-labelledby={controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined}
         >
           {shops.map(shop => {
             const commonClassName = cn(
@@ -423,13 +359,20 @@ export default function SidebarBody({
 
             const shopContent = (
               <>
-                <div className={cn(controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7', 'rounded-full overflow-hidden flex-shrink-0')}>
-                  <img
-                    src={shop.isRealProfile ? getImageLink(shop.profileImageUrl) : shop.profileImageUrl}
+                <Avatar
+                  className={cn(
+                    controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
+                    'flex-shrink-0'
+                  )}
+                >
+                  <AvatarImage
+                    src={shop.profileImageUrl ? getImageLink(shop.profileImageUrl) : undefined}
                     alt={shop.name}
-                    className="h-full w-full object-cover"
                   />
-                </div>
+                  <AvatarFallback className="bg-primary text-black font-semibold text-xs">
+                    {shop.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 {controls.open && !controls.isMobile && (
                   <span className="text-[13px] font-semibold text-primary truncate">
                     {shop.name}

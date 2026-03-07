@@ -51,6 +51,7 @@ import Redemptions from './pages/Redemptions';
 import HowToPlay from './pages/HowToPlay';
 import { DailySpin } from './pages/DailySpin';
 import ShopDetail from './pages/ShopDetail';
+import SellerShopManage from './pages/SellerShopManage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -118,6 +119,7 @@ const App = () => {
                               <Route path="/settings" element={<Settings />} />
                               <Route path="/creator-application" element={<CreatorApplication />} />
                               <Route path="/seller-application" element={<SellerApplication />} />
+                              <Route path="/seller/shop/manage" element={<SellerShopManage />} />
                               <Route path="/daily-spin" element={<DailySpin />} />
                             </Route>
 

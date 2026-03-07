@@ -21,19 +21,44 @@ export interface PrizeConfiguration {
   brand: PrizeBrand;
   displayOrderShop: number | null;
   displayOrderRedemptions: number | null;
-  displayOrderNicksNiceties: number | null;
   featuredDisplayOrder: number | null;
   showOnRedemptions: boolean;
-  showOnNicksNiceties: boolean;
   showOnShop: boolean;
   sortByPurchaseOptionShop: boolean;
   sortByPurchaseOptionRedemptions: boolean;
-  sortByPurchaseOptionNicksNiceties: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   createdBy: string | null;
   updatedBy: string | null;
+}
+
+export interface SellerShopSummary {
+  id: string;
+  username: string;
+  displayName: string;
+  profileImageUrl: string | null;
+  itemCount: number;
+}
+
+export interface SellerShopResponse {
+  shop: {
+    id: string;
+    username: string;
+    displayName: string;
+    profileImageUrl: string | null;
+  };
+  items: PrizeConfiguration[];
+}
+
+/**
+ * Seller info for admin prize assignment
+ */
+export interface Seller {
+  id: string;
+  username: string;
+  name: string | null;
+  shopName: string | null;
 }
 
 /**
@@ -50,11 +75,10 @@ export interface CreatePrizeTierRequest {
   brand?: PrizeBrand;
   displayOrderShop?: number;
   displayOrderRedemptions?: number;
-  displayOrderNicksNiceties?: number;
   featuredDisplayOrder?: number | null;
   showOnRedemptions?: boolean;
-  showOnNicksNiceties?: boolean;
   showOnShop?: boolean;
+  createdBy?: string | null;
 }
 
 /**
@@ -71,11 +95,10 @@ export interface UpdatePrizeTierRequest {
   brand?: PrizeBrand;
   displayOrderShop?: number;
   displayOrderRedemptions?: number;
-  displayOrderNicksNiceties?: number;
   featuredDisplayOrder?: number | null;
   showOnRedemptions?: boolean;
-  showOnNicksNiceties?: boolean;
   showOnShop?: boolean;
+  createdBy?: string | null;
 }
 
 /**

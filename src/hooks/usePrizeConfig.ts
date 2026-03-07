@@ -4,13 +4,29 @@ import { PrizeConfiguration } from '@/types/prize';
 
 /**
  * Hook to fetch active prize tiers (public endpoint)
- * Used by regular users to view prize progress
+ * Used by regular users to view prize progress on the Redemptions page
  */
 export const usePrizeTiers = () => {
   return useQuery<PrizeConfiguration[]>({
     queryKey: ['prizeTiers'],
     queryFn: async () => {
       const data = await api.prize.getActivePrizeTiers();
+      return data;
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: 1,
+  });
+};
+
+/**
+ * Hook to fetch all shop items across all sellers (public endpoint)
+ * Used for the main Shop page in the navbar
+ */
+export const useShopItems = () => {
+  return useQuery<PrizeConfiguration[]>({
+    queryKey: ['shopItems'],
+    queryFn: async () => {
+      const data = await api.prize.getAllShopItems();
       return data;
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
