@@ -2,7 +2,17 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { roundDownCoinAmount } from '@/utils/format';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -50,10 +60,10 @@ const ODDS_DECIMAL_PLACES = 2;
 // Reusable header component
 const ChartHeader = ({ isMobile }: { isMobile: boolean }) => (
   <div className="mb-4">
-    <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`}>
-      Pool History
-    </h3>
-    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>Cumulative CadeCoin amounts over time</p>
+    <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold`}>Pool History</h3>
+    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
+      Cumulative CadeCoin amounts over time
+    </p>
   </div>
 );
 
@@ -94,15 +104,15 @@ interface CustomTooltipProps {
 // Sample data if too many points for performance
 const sampleData = <T,>(data: T[], maxPoints: number): T[] => {
   if (data.length <= maxPoints) return data;
-  
+
   const step = Math.ceil(data.length / maxPoints);
   const sampled = data.filter((_, index) => index % step === 0);
-  
+
   // Always include the last point to show final state
   if (sampled[sampled.length - 1] !== data[data.length - 1]) {
     sampled.push(data[data.length - 1]);
   }
-  
+
   return sampled;
 };
 
@@ -111,14 +121,14 @@ const calculateRatio = (optionValue: number, totalPool: number): string | null =
   if (optionValue === 0 || totalPool === 0) {
     return null; // Can't calculate odds with no stake or no pool
   }
-  
+
   const odds = (totalPool - optionValue) / optionValue;
   return odds.toFixed(ODDS_DECIMAL_PLACES).replace(/\.?0+$/, '') + ':1'; // Format as X:1
 };
 
 export const UserBetsChart = ({ roundId }: UserBetsChartProps) => {
   const isMobile = useIsMobile();
-  
+
   // Fetch timeline data
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['pick-timeline', roundId],
@@ -128,7 +138,9 @@ export const UserBetsChart = ({ roundId }: UserBetsChartProps) => {
 
   // Handle states
   if (!roundId) {
-    return <ChartStateCard message="Chart will be available once a round opens" isMobile={isMobile} />;
+    return (
+      <ChartStateCard message="Chart will be available once a round opens" isMobile={isMobile} />
+    );
   }
 
   if (isLoading) {
@@ -147,12 +159,12 @@ export const UserBetsChart = ({ roundId }: UserBetsChartProps) => {
   const { options, timeline } = data.data;
 
   // Sort options alphabetically with natural numeric ordering
-  const sortedOptions: TimelineOption[] = [...options].sort((a, b) => 
+  const sortedOptions: TimelineOption[] = [...options].sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { numeric: true })
   );
 
   // Filter out options with no bets in the timeline
-  const optionsWithBets = sortedOptions.filter((option: TimelineOption) => 
+  const optionsWithBets = sortedOptions.filter((option: TimelineOption) =>
     timeline.some((point: TimelinePoint) => (point[option.id] as number) > 0)
   );
 
@@ -161,13 +173,13 @@ export const UserBetsChart = ({ roundId }: UserBetsChartProps) => {
       time: format(new Date(point.timestamp), 'h:mm a'),
       fullTime: format(new Date(point.timestamp), 'MMM d, h:mm a'),
     };
-    
+
     // Dynamically add each option's data
     sortedOptions.forEach((option: TimelineOption) => {
       dataPoint[option.name] = point[option.id];
       dataPoint[`${option.id}_userCount`] = point[`userCount_${option.id}`] || 0;
     });
-    
+
     return dataPoint;
   });
 
@@ -178,7 +190,10 @@ export const UserBetsChart = ({ roundId }: UserBetsChartProps) => {
     if (!active || !payload?.length) return null;
 
     // Calculate total pool from all options
-    const total = payload.reduce((sum: number, item: TooltipPayloadItem) => sum + (item.value || 0), 0);
+    const total = payload.reduce(
+      (sum: number, item: TooltipPayloadItem) => sum + (item.value || 0),
+      0
+    );
 
     return (
       <div className="bg-card-grid-bg border border-card-grid-border rounded-lg p-3 shadow-lg">
@@ -194,19 +209,16 @@ export const UserBetsChart = ({ roundId }: UserBetsChartProps) => {
             return (
               <div key={option.id} className="space-y-0.5">
                 <p className="text-sm font-medium" style={{ color: item.color }}>
-                  {option.name}: {optionValue.toLocaleString()} CadeCoins ({userCount} users)
+                  {option.name}: {roundDownCoinAmount(optionValue).toLocaleString()} CadeCoins (
+                  {userCount} users)
                 </p>
-                {ratio && (
-                  <p className="text-xs text-muted-foreground pl-4">
-                    Odds: {ratio}
-                  </p>
-                )}
+                {ratio && <p className="text-xs text-muted-foreground pl-4">Odds: {ratio}</p>}
               </div>
             );
           })}
           <div className="border-t border-border pt-2 mt-2">
             <p className="text-sm text-muted-foreground">
-              Total Pool: {total.toLocaleString()} CadeCoins
+              Total Pool: {roundDownCoinAmount(total).toLocaleString()} CadeCoins
             </p>
           </div>
         </div>
@@ -217,29 +229,36 @@ export const UserBetsChart = ({ roundId }: UserBetsChartProps) => {
   return (
     <Card className={`${isMobile ? 'p-2' : 'p-6'} bg-card-grid-bg border-card-grid-border`}>
       <ChartHeader isMobile={isMobile} />
-      <ResponsiveContainer width="100%" height={isMobile ? CHART_HEIGHT_MOBILE : CHART_HEIGHT_DESKTOP}>
+      <ResponsiveContainer
+        width="100%"
+        height={isMobile ? CHART_HEIGHT_MOBILE : CHART_HEIGHT_DESKTOP}
+      >
         <LineChart data={displayData}>
           <CartesianGrid strokeDasharray={GRID_STROKE_PATTERN} stroke={GRID_STROKE_COLOR} />
-          <XAxis 
-            dataKey="time" 
+          <XAxis
+            dataKey="time"
             stroke={AXIS_STROKE_COLOR}
             style={{ fontSize: isMobile ? FONT_SIZE_MOBILE : FONT_SIZE_DESKTOP }}
             minTickGap={isMobile ? X_AXIS_MIN_TICK_GAP_MOBILE : X_AXIS_MIN_TICK_GAP_DESKTOP}
             interval="preserveStartEnd"
           />
-          <YAxis 
+          <YAxis
             stroke={AXIS_STROKE_COLOR}
             style={{ fontSize: isMobile ? FONT_SIZE_MOBILE : FONT_SIZE_DESKTOP }}
             width={isMobile ? Y_AXIS_WIDTH_MOBILE : Y_AXIS_WIDTH_DESKTOP}
-            label={isMobile ? undefined : { value: 'CadeCoins', angle: Y_AXIS_LABEL_ANGLE, position: 'insideLeft' }}
+            label={
+              isMobile
+                ? undefined
+                : { value: 'CadeCoins', angle: Y_AXIS_LABEL_ANGLE, position: 'insideLeft' }
+            }
           />
           <Tooltip content={<CustomTooltip />} />
           {!isMobile && <Legend />}
           {optionsWithBets.map((option: TimelineOption, index: number) => (
-            <Line 
+            <Line
               key={option.id}
-              type="monotone" 
-              dataKey={option.name} 
+              type="monotone"
+              dataKey={option.name}
               stroke={CHART_COLORS[index % CHART_COLORS.length]}
               strokeWidth={LINE_STROKE_WIDTH}
               dot={displayData.length > MAX_POINTS_FOR_DOTS ? false : { r: DOT_RADIUS }}

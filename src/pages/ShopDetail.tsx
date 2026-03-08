@@ -9,6 +9,32 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { getImageLink } from '@/utils/helper';
+import { formatUrl } from '@/utils/format';
+import { FaInstagram, FaTiktok, FaTwitch, FaYoutube } from 'react-icons/fa';
+import { PublicUserProfile } from '@/types/profile';
+
+const shopSocialsMapping = {
+  instagram: {
+    icon: <FaInstagram className="w-4 h-4" />,
+    label: 'Instagram',
+  },
+  twitch: {
+    icon: <FaTwitch className="w-4 h-4" />,
+    label: 'Twitch',
+  },
+  kick: {
+    icon: <img src="/icons/kick-icon.png" alt="kick" className="w-4 h-4 mr-[2px]" />,
+    label: 'Kick',
+  },
+  youtube: {
+    icon: <FaYoutube className="w-4 h-4" />,
+    label: 'Youtube',
+  },
+  tiktok: {
+    icon: <FaTiktok className="w-4 h-4" />,
+    label: 'TikTok',
+  },
+} as const;
 
 export default function ShopDetail() {
   const { username } = useParams<{ username: string }>();
@@ -29,7 +55,18 @@ export default function ShopDetail() {
     queryKey: ['seller-shop-items', username],
     queryFn: async () => {
       if (!username) return null;
-      return api.prize.getShopItemsByUsername(username);
+      return await api.prize.getShopItemsByUsername(username);
+    },
+    enabled: !!username,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: profileData } = useQuery<PublicUserProfile | null>({
+    queryKey: ['shop-profile', username],
+    queryFn: async () => {
+      if (!username) return null;
+      const response = await api.user.getUserProfile(username);
+      return (response?.data ?? response ?? null) as PublicUserProfile | null;
     },
     enabled: !!username,
     staleTime: 5 * 60 * 1000,
@@ -37,6 +74,14 @@ export default function ShopDetail() {
 
   const userCadeCoins = session?.walletBalanceCadeCoin || 0;
   const shopName = shopData?.shop?.displayName || username || 'Shop';
+  const isOwnShop =
+    !!username &&
+    !!session?.user?.username &&
+    session.user.username.toLowerCase() === username.toLowerCase();
+  const shopSocials =
+    shopData?.shop?.socials ??
+    profileData?.socials ??
+    (isOwnShop ? (session?.socials ?? null) : null);
 
   // Filter to only show slabs with stock
   let slabPrizes: PrizeDisplay[] = (shopData?.items || [])
@@ -104,6 +149,50 @@ export default function ShopDetail() {
           <div>
             <h1 className="text-3xl font-bold">{shopName}</h1>
             <p className="text-muted-foreground">@{username}</p>
+
+            {/* Social Links - Only show Instagram, Twitch, TikTok if they have values */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(['instagram', 'twitch', 'tiktok'] as const).map((social) => {
+                const mapped = shopSocialsMapping[social];
+                const socialValue = shopSocials?.[social];
+                const hasLink = !!socialValue && String(socialValue).trim().length > 0;
+                const socialUrl = hasLink ? String(socialValue) : undefined;
+
+                // Only render if they have a link
+                if (!hasLink) return null;
+
+                return (
+                  <div key={social} className="relative group">
+                    <a
+                      href={formatUrl(socialUrl!)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                      title={mapped.label}
+                    >
+                      {mapped.icon}
+                      <span className="text-sm font-medium">{mapped.label}</span>
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Trading Experience */}
+            {shopData?.shop?.sellerTradingExperience && (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
+                <p className="text-sm mt-1">{shopData.shop.sellerTradingExperience}</p>
+              </div>
+            )}
+
+            {/* Location */}
+            {shopData?.shop?.country && (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-muted-foreground">Location</p>
+                <p className="text-sm mt-1">{shopData.shop.country}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

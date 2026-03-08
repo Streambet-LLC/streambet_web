@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { SellerOnboardingModal } from '@/components/seller/SellerOnboardingModal';
 
 interface SellerOfferOrder {
   id: string;
@@ -96,7 +97,19 @@ export default function SellerShopManage() {
   const [counterAmount, setCounterAmount] = useState('');
   const [counterNotes, setCounterNotes] = useState('');
   const [shopName, setShopName] = useState('');
+  const [shopSocials, setShopSocials] = useState({
+    instagram: '',
+    twitch: '',
+    kick: '',
+    youtube: '',
+    tiktok: '',
+  });
+  const [sellerTradingExperience, setSellerTradingExperience] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [country, setCountry] = useState('');
   const [isEditingShopName, setIsEditingShopName] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -146,7 +159,31 @@ export default function SellerShopManage() {
     if (session?.user && !isEditingShopName) {
       setShopName(session.user.shopName || '');
     }
-  }, [session?.user?.id, isEditingShopName]);
+  }, [session?.user?.shopName, isEditingShopName]);
+
+  // Load socials separately - run whenever session changes
+  useEffect(() => {
+    if (session?.user) {
+      setShopSocials({
+        instagram: session?.socials?.instagram ?? '',
+        twitch: session?.socials?.twitch ?? '',
+        kick: session?.socials?.kick ?? '',
+        youtube: session?.socials?.youtube ?? '',
+        tiktok: session?.socials?.tiktok ?? '',
+      });
+      setSellerTradingExperience(session?.sellerTradingExperience ?? '');
+      setCity(session?.city ?? '');
+      setState(session?.state ?? '');
+      setCountry(session?.country ?? '');
+    }
+  }, [session]);
+
+  // Show onboarding modal if seller hasn't completed onboarding
+  useEffect(() => {
+    if (session?.isSeller && !session?.sellerOnboardingCompleted) {
+      setShowOnboardingModal(true);
+    }
+  }, [session?.isSeller, session?.sellerOnboardingCompleted]);
 
   const handleImageUpload = async (): Promise<string> => {
     if (!imageUpload.selectedFile) {
@@ -289,18 +326,30 @@ export default function SellerShopManage() {
     },
   });
 
-  const updateShopNameMutation = useMutation({
-    mutationFn: (newShopName: string) => api.user.updateProfile({ shopName: newShopName }),
-    onSuccess: () => {
-      toast({ title: 'Success', description: 'Shop name updated successfully.' });
+  const updateShopSettingsMutation = useMutation({
+    mutationFn: (payload: {
+      shopName: string;
+      socials: {
+        instagram: string;
+        twitch: string;
+        kick: string;
+        youtube: string;
+        tiktok: string;
+      };
+    }) => {
+      return api.user.updateProfile(payload);
+    },
+    onSuccess: data => {
+      toast({ title: 'Success', description: 'Shop settings updated successfully.' });
       setIsEditingShopName(false);
       queryClient.invalidateQueries({ queryKey: ['session'] });
       queryClient.invalidateQueries({ queryKey: ['seller-shops'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-shop-items', session?.user?.username] });
     },
-    onError: () => {
+    onError: error => {
       toast({
         title: 'Error',
-        description: 'Failed to update shop name.',
+        description: 'Failed to update shop settings.',
         variant: 'destructive',
       });
     },
@@ -500,7 +549,7 @@ export default function SellerShopManage() {
           </CardHeader>
           <CardContent>
             {!isEditingShopName ? (
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Shop Name</p>
                   <p className="text-lg font-semibold mt-1">
@@ -508,6 +557,39 @@ export default function SellerShopManage() {
                       session?.user?.shopName ||
                       (session?.user?.username ? `${session.user.username}'s Shop` : 'Your Shop')}
                   </p>
+
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Social Links</p>
+                    {Object.values(session?.socials || {}).some(Boolean) ? (
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {session?.socials?.instagram && (
+                          <p>Instagram: {session.socials.instagram}</p>
+                        )}
+                        {session?.socials?.twitch && <p>Twitch: {session.socials.twitch}</p>}
+                        {session?.socials?.kick && <p>Kick: {session.socials.kick}</p>}
+                        {session?.socials?.youtube && <p>YouTube: {session.socials.youtube}</p>}
+                        {session?.socials?.tiktok && <p>TikTok: {session.socials.tiktok}</p>}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No social links set yet.</p>
+                    )}
+                  </div>
+
+                  {session?.sellerTradingExperience && (
+                    <div className="mt-3 space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
+                      <p className="text-sm text-muted-foreground">{session.sellerTradingExperience}</p>
+                    </div>
+                  )}
+
+                  {(session?.city || session?.state || session?.country) && (
+                    <div className="mt-3 space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Location</p>
+                      <p className="text-sm text-muted-foreground">
+                        {session?.country || [session?.city, session?.state].filter(Boolean).join(', ')}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
                   <Pencil className="w-4 h-4 mr-2" />
@@ -526,6 +608,90 @@ export default function SellerShopManage() {
                   />
                   <p className="text-xs text-muted-foreground">Leave empty to use your username</p>
                 </div>
+
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="grid gap-2">
+                    <Label>Instagram</Label>
+                    <Input
+                      placeholder="https://instagram.com/username"
+                      value={shopSocials.instagram}
+                      onChange={e =>
+                        setShopSocials(prev => ({ ...prev, instagram: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Twitch</Label>
+                    <Input
+                      placeholder="https://twitch.tv/username"
+                      value={shopSocials.twitch}
+                      onChange={e => setShopSocials(prev => ({ ...prev, twitch: e.target.value }))}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Kick</Label>
+                    <Input
+                      placeholder="https://kick.com/username"
+                      value={shopSocials.kick}
+                      onChange={e => setShopSocials(prev => ({ ...prev, kick: e.target.value }))}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>YouTube</Label>
+                    <Input
+                      placeholder="https://youtube.com/@username"
+                      value={shopSocials.youtube}
+                      onChange={e => setShopSocials(prev => ({ ...prev, youtube: e.target.value }))}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>TikTok</Label>
+                    <Input
+                      placeholder="https://tiktok.com/@username"
+                      value={shopSocials.tiktok}
+                      onChange={e => setShopSocials(prev => ({ ...prev, tiktok: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Trading Experience</Label>
+                  <Textarea
+                    placeholder="e.g., 5 years, selling locally and online, focus on vintage cards..."
+                    value={sellerTradingExperience}
+                    onChange={e => setSellerTradingExperience(e.target.value)}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">Share your experience trading or selling cards</p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div className="grid gap-2">
+                    <Label>City</Label>
+                    <Input
+                      placeholder="e.g., New York"
+                      value={city}
+                      onChange={e => setCity(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>State</Label>
+                    <Input
+                      placeholder="e.g., NY"
+                      value={state}
+                      onChange={e => setState(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Country</Label>
+                    <Input
+                      placeholder="e.g., USA"
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div className="flex gap-2 justify-end">
                   <Button
                     variant="outline"
@@ -533,16 +699,36 @@ export default function SellerShopManage() {
                     onClick={() => {
                       setIsEditingShopName(false);
                       setShopName(session?.user?.shopName || '');
+                      setShopSocials({
+                        instagram: session?.socials?.instagram ?? '',
+                        twitch: session?.socials?.twitch ?? '',
+                        kick: session?.socials?.kick ?? '',
+                        youtube: session?.socials?.youtube ?? '',
+                        tiktok: session?.socials?.tiktok ?? '',
+                      });
+                      setSellerTradingExperience(session?.sellerTradingExperience ?? '');
+                      setCity(session?.city ?? '');
+                      setState(session?.state ?? '');
+                      setCountry(session?.country ?? '');
                     }}
                   >
                     Cancel
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => updateShopNameMutation.mutate(shopName)}
-                    disabled={updateShopNameMutation.isPending}
+                    onClick={() =>
+                      updateShopSettingsMutation.mutate({
+                        shopName,
+                        socials: shopSocials,
+                        sellerTradingExperience,
+                        city,
+                        state,
+                        country,
+                      })
+                    }
+                    disabled={updateShopSettingsMutation.isPending}
                   >
-                    {updateShopNameMutation.isPending ? (
+                    {updateShopSettingsMutation.isPending ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Saving...
@@ -1124,6 +1310,15 @@ export default function SellerShopManage() {
             )}
           </CardContent>
         </Card>
+
+        <SellerOnboardingModal
+          open={showOnboardingModal}
+          onOpenChange={setShowOnboardingModal}
+          onComplete={() => {
+            setShowOnboardingModal(false);
+            queryClient.invalidateQueries({ queryKey: ['auth-context'] });
+          }}
+        />
 
         <Dialog open={isCounterDialogOpen} onOpenChange={setIsCounterDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">

@@ -47,6 +47,7 @@ export interface SellerShopResponse {
     username: string;
     displayName: string;
     profileImageUrl: string | null;
+    socials: { [social: string]: string } | null;
   };
   items: PrizeConfiguration[];
 }

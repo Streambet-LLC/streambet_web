@@ -15,6 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import { prizeAPI } from '@/integrations/api/client';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { handleMutationError } from '@/lib/mutationHelpers';
+import { roundDownCoinAmount } from '@/utils/format';
 import type { PrizePurchaseRequest } from '@/types/prize';
 
 interface PrizeCheckoutModalProps {
@@ -245,7 +246,7 @@ export default function PrizeCheckoutModal({
             </div>
             {allowCadeCoins && (
               <p className="text-sm text-muted-foreground mt-3">
-                Your Balance: {userCadeCoins.toLocaleString('en-US')} CadeCoins
+                Your Balance: {roundDownCoinAmount(userCadeCoins).toLocaleString('en-US')} CadeCoins
               </p>
             )}
           </div>
@@ -271,7 +272,7 @@ export default function PrizeCheckoutModal({
                   <div className="flex-1">
                     <div className="font-medium">CadeCoins Only</div>
                     <div className="text-sm text-muted-foreground">
-                      {coinsAmount.toLocaleString('en-US')} CadeCoins
+                      {roundDownCoinAmount(coinsAmount).toLocaleString('en-US')} CadeCoins
                       {!hasEnoughCoins && (
                         <span className="text-red-500 ml-2">(Insufficient balance)</span>
                       )}
@@ -464,11 +465,11 @@ export default function PrizeCheckoutModal({
                   <Info className="h-4 w-4" />
                   <AlertDescription>
                     {paymentMethod === 'coins'
-                      ? `Total: ${coinsAmount.toLocaleString()} CadeCoins`
+                      ? `Total: ${roundDownCoinAmount(coinsAmount).toLocaleString()} CadeCoins`
                       : paymentMethod === 'usd'
                         ? `Total: $${totalPrice.toFixed(2)} • Paid by card`
                         : paymentMethod === 'combined'
-                          ? `Total: ${combinedCoinsAmount.toLocaleString()} coins + $${usdAmount.toFixed(2)} card`
+                          ? `Total: ${roundDownCoinAmount(combinedCoinsAmount).toLocaleString()} coins + $${usdAmount.toFixed(2)} card`
                           : ''}
                   </AlertDescription>
                 </Alert>
@@ -492,9 +493,9 @@ export default function PrizeCheckoutModal({
                       Processing...
                     </>
                   ) : paymentMethod === 'coins' && !hasEnoughCoins ? (
-                    `Need ${coinsAmount - userCadeCoins} more CadeCoins!`
+                    `Need ${roundDownCoinAmount(coinsAmount - userCadeCoins)} more CadeCoins!`
                   ) : paymentMethod === 'coins' ? (
-                    `Complete Purchase - ${coinsAmount.toLocaleString()} CadeCoins`
+                    `Complete Purchase - ${roundDownCoinAmount(coinsAmount).toLocaleString()} CadeCoins`
                   ) : paymentMethod === 'usd' ? (
                     `Complete Purchase - $${usdAmount.toFixed(2)}`
                   ) : (

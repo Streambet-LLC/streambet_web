@@ -153,7 +153,7 @@ export default function Redemptions() {
     <MainLayout>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-semibold">Redemption</h2>
+          <h2 className="text-xl font-semibold">Redemptions</h2>
           <h2 className="text-sm text-gray-500">
             Redeem items with CadeCoins or USD, or a combination of both!
           </h2>
@@ -177,7 +177,7 @@ export default function Redemptions() {
               prizes={displayPrizes}
               cardVariant="redemption"
               selectedBrand={selectedBrand}
-              onBrandChange={(brand) => {
+              onBrandChange={brand => {
                 const p = new URLSearchParams(searchParams);
                 brand ? p.set('brand', brand) : p.delete('brand');
                 setSearchParams(p);

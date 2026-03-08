@@ -7,6 +7,7 @@ import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { CurrencyType } from '@/enums';
 import { useEffect } from 'react';
 import { useDepositContext } from '@/contexts/DepositContext';
+import { roundDownCoinAmount } from '@/utils/format';
 
 interface WalletDropdownProps {
   walletBalance: number;
@@ -28,58 +29,56 @@ export const WalletDropdown = ({ walletBalance }: WalletDropdownProps) => {
   return (
     <div className="relative">
       <div className="flex items-center gap-2">
-        {currency === CurrencyType.GOLD_COINS && 
+        {currency === CurrencyType.GOLD_COINS && (
           <div className="flex items-center">
             <Button variant="ghost" className="gap-2 group" onClick={() => setDepositOpen(true)}>
-              <img
-                src="/icons/cade-coins.png"
-                alt="gold-coins"
-                className="h-6 w-6"
-              />
+              <img src="/icons/cade-coins.png" alt="gold-coins" className="h-6 w-6" />
               {/* <Coins className="h-4 w-4 text-[#ffd700] group-hover:text-black transition-colors" /> */}
-              <span className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Gold Coins</span>
+              <span className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">
+                {roundDownCoinAmount(walletBalance).toLocaleString('en-US')} Gold Coins
+              </span>
             </Button>
           </div>
-        } 
-        {currency === CurrencyType.STREAM_COINS &&
+        )}
+        {currency === CurrencyType.STREAM_COINS && (
           <div className="flex items-center">
             <div className="flex items-center">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" className="gap-2 group items-center" onClick={() => setDepositOpen(true)}>
-                      <img
-                        src="/icons/sweep-coins.png"
-                        alt="Stream Coins"
-                        className="h-4 w-6"
-                      />
+                    <Button
+                      variant="ghost"
+                      className="gap-2 group items-center"
+                      onClick={() => setDepositOpen(true)}
+                    >
+                      <img src="/icons/sweep-coins.png" alt="Stream Coins" className="h-4 w-6" />
                       {/* <BanknoteArrowUp className="h-4 w-4 text-[#BDFF00] group-hover:text-black transition-colors" /> */}
-                      <span className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} Stream Coins</span>
+                      <span className="text-sm text-green-500 group-hover:text-black transition-colors text-nowrap hover:text-green-400">
+                        {roundDownCoinAmount(walletBalance).toLocaleString('en-US')} Stream Coins
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent hidden side="bottom" className="max-w-[250px]">
                     <p>
-                      Stream Coins will be used for cash picks and is not a part of the private
-                      beta yet.
+                      Stream Coins will be used for cash picks and is not a part of the private beta
+                      yet.
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
           </div>
-        }
-        {currency === CurrencyType.CADE_COINS && 
+        )}
+        {currency === CurrencyType.CADE_COINS && (
           <div className="flex items-center">
             <Button variant="ghost" className="gap-2 group">
-              <img
-                src="/icons/cade-coins.png"
-                alt="gold-coins"
-                className="h-6 w-6"
-              />
-              <span className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">{Number(walletBalance)?.toLocaleString('en-US')} CadeCoins</span>
+              <img src="/icons/cade-coins.png" alt="gold-coins" className="h-6 w-6" />
+              <span className="text-sm text-[#B4FF39] group-hover:text-black transition-colors hover:text-green-400">
+                {roundDownCoinAmount(walletBalance).toLocaleString('en-US')} CadeCoins
+              </span>
             </Button>
           </div>
-        } 
+        )}
 
         {/* <Switch
           checked={currency === CurrencyType.SWEEP_COINS}

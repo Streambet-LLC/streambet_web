@@ -171,38 +171,52 @@ export default function PhotoCropper({
 
   return (
     <>
-      <Dialog open={!!file} onOpenChange={(state) => { !state && onClose() }}>
-        <DialogContent hideCloseButton className='border-2 border-[#7AFF14] max-w-[40vw] max-h-[80vh] w-fit h-fit overflow-auto' style={{ background: '#0D0D0D' }}>
-          <DialogHeader className="flex flex-row items-center justify-between">
-            <DialogTitle>Set Avatar</DialogTitle>
-            <DialogClose asChild>
-              <Button variant="link" size="icon"><X /></Button>
+      <Dialog
+        open={!!file}
+        onOpenChange={state => {
+          !state && onClose();
+        }}
+      >
+        <DialogContent
+          hideCloseButton
+          className="border-2 border-[#7AFF14] max-w-[95vw] sm:max-w-[50vw] max-h-[90vh] w-fit h-fit overflow-hidden p-0"
+          style={{ background: '#0D0D0D' }}
+        >
+          <div className="relative">
+            <DialogClose asChild className="absolute -top-2 -right-2 z-50">
+              <Button variant="link" size="icon" className="rounded-full hover:bg-[#7AFF14]/20">
+                <X className="text-[#7AFF14]" />
+              </Button>
             </DialogClose>
-          </DialogHeader>
-          <ReactCrop 
-            crop={crop} 
-            onChange={setCrop}
-            aspect={cropperProps?.aspect || 1}
-            minWidth={64}
-            minHeight={64}
-            keepSelection
-            onComplete={setCompletedCrop}
-            {...cropperProps}
-          >
-            <img ref={imageRef} src={imageUrl} onLoad={handleImageLoad} />
-          </ReactCrop>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button disabled={processing} onClick={() => onCrop(croppedImageFile)}>
-              {processing && <Loader2 className="w-4 h-4 animate-spin" />}
-              Done
-            </Button>
-          </DialogFooter>
+            <DialogHeader className="flex flex-row items-center justify-center p-4">
+              <DialogTitle className="text-white">Set Avatar</DialogTitle>
+            </DialogHeader>
+          </div>
+          <div className="p-4">
+            <ReactCrop
+              crop={crop}
+              onChange={setCrop}
+              aspect={cropperProps?.aspect || 1}
+              minWidth={64}
+              minHeight={64}
+              keepSelection
+              onComplete={setCompletedCrop}
+              {...cropperProps}
+            >
+              <img ref={imageRef} src={imageUrl} onLoad={handleImageLoad} />
+            </ReactCrop>
+            <DialogFooter className="p-4">
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button disabled={processing} onClick={() => onCrop(croppedImageFile)}>
+                {processing && <Loader2 className="w-4 h-4 animate-spin" />}
+                Done
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </>
-    
-  )
+  );
 };
