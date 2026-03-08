@@ -150,36 +150,49 @@ export default function ShopDetail() {
             <h1 className="text-3xl font-bold">{shopName}</h1>
             <p className="text-muted-foreground">@{username}</p>
 
-            {/* Social Links - Always show all buttons, grayed out if no link */}
+            {/* Social Links - Only show Instagram, Twitch, TikTok if they have values */}
             <div className="mt-3 flex flex-wrap gap-2">
-              {Object.entries(shopSocialsMapping).map(([social, mapped]) => {
+              {(['instagram', 'twitch', 'tiktok'] as const).map((social) => {
+                const mapped = shopSocialsMapping[social];
                 const socialValue = shopSocials?.[social];
                 const hasLink = !!socialValue && String(socialValue).trim().length > 0;
                 const socialUrl = hasLink ? String(socialValue) : undefined;
 
+                // Only render if they have a link
+                if (!hasLink) return null;
+
                 return (
                   <div key={social} className="relative group">
-                    {hasLink ? (
-                      <a
-                        href={formatUrl(socialUrl!)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
-                        title={mapped.label}
-                      >
-                        {mapped.icon}
-                        <span className="text-sm font-medium">{mapped.label}</span>
-                      </a>
-                    ) : (
-                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-muted-foreground cursor-not-allowed opacity-50">
-                        {mapped.icon}
-                        <span className="text-sm font-medium">{mapped.label}</span>
-                      </div>
-                    )}
+                    <a
+                      href={formatUrl(socialUrl!)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                      title={mapped.label}
+                    >
+                      {mapped.icon}
+                      <span className="text-sm font-medium">{mapped.label}</span>
+                    </a>
                   </div>
                 );
               })}
             </div>
+
+            {/* Trading Experience */}
+            {shopData?.shop?.sellerTradingExperience && (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
+                <p className="text-sm mt-1">{shopData.shop.sellerTradingExperience}</p>
+              </div>
+            )}
+
+            {/* Location */}
+            {shopData?.shop?.country && (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-muted-foreground">Location</p>
+                <p className="text-sm mt-1">{shopData.shop.country}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

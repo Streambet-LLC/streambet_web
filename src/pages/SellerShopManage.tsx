@@ -104,6 +104,10 @@ export default function SellerShopManage() {
     youtube: '',
     tiktok: '',
   });
+  const [sellerTradingExperience, setSellerTradingExperience] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [country, setCountry] = useState('');
   const [isEditingShopName, setIsEditingShopName] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
@@ -167,6 +171,10 @@ export default function SellerShopManage() {
         youtube: session?.socials?.youtube ?? '',
         tiktok: session?.socials?.tiktok ?? '',
       });
+      setSellerTradingExperience(session?.sellerTradingExperience ?? '');
+      setCity(session?.city ?? '');
+      setState(session?.state ?? '');
+      setCountry(session?.country ?? '');
     }
   }, [session]);
 
@@ -566,6 +574,22 @@ export default function SellerShopManage() {
                       <p className="text-sm text-muted-foreground">No social links set yet.</p>
                     )}
                   </div>
+
+                  {session?.sellerTradingExperience && (
+                    <div className="mt-3 space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
+                      <p className="text-sm text-muted-foreground">{session.sellerTradingExperience}</p>
+                    </div>
+                  )}
+
+                  {(session?.city || session?.state || session?.country) && (
+                    <div className="mt-3 space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Location</p>
+                      <p className="text-sm text-muted-foreground">
+                        {session?.country || [session?.city, session?.state].filter(Boolean).join(', ')}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
                   <Pencil className="w-4 h-4 mr-2" />
@@ -630,6 +654,44 @@ export default function SellerShopManage() {
                   </div>
                 </div>
 
+                <div className="grid gap-2">
+                  <Label>Trading Experience</Label>
+                  <Textarea
+                    placeholder="e.g., 5 years, selling locally and online, focus on vintage cards..."
+                    value={sellerTradingExperience}
+                    onChange={e => setSellerTradingExperience(e.target.value)}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">Share your experience trading or selling cards</p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div className="grid gap-2">
+                    <Label>City</Label>
+                    <Input
+                      placeholder="e.g., New York"
+                      value={city}
+                      onChange={e => setCity(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>State</Label>
+                    <Input
+                      placeholder="e.g., NY"
+                      value={state}
+                      onChange={e => setState(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Country</Label>
+                    <Input
+                      placeholder="e.g., USA"
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div className="flex gap-2 justify-end">
                   <Button
                     variant="outline"
@@ -644,6 +706,10 @@ export default function SellerShopManage() {
                         youtube: session?.socials?.youtube ?? '',
                         tiktok: session?.socials?.tiktok ?? '',
                       });
+                      setSellerTradingExperience(session?.sellerTradingExperience ?? '');
+                      setCity(session?.city ?? '');
+                      setState(session?.state ?? '');
+                      setCountry(session?.country ?? '');
                     }}
                   >
                     Cancel
@@ -654,6 +720,10 @@ export default function SellerShopManage() {
                       updateShopSettingsMutation.mutate({
                         shopName,
                         socials: shopSocials,
+                        sellerTradingExperience,
+                        city,
+                        state,
+                        country,
                       })
                     }
                     disabled={updateShopSettingsMutation.isPending}
