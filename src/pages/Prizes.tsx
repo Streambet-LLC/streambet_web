@@ -398,7 +398,24 @@ export default function Prizes() {
                         }`}
                         onClick={() => {
                           const newParams = new URLSearchParams(searchParams);
-                          newParams.set('brand', brand);
+                          const brandIndex = selectedBrands.indexOf(brand);
+                          let updatedBrands: string[];
+
+                          if (brandIndex > -1) {
+                            // Brand is selected, remove it
+                            updatedBrands = selectedBrands.filter(b => b !== brand);
+                          } else {
+                            // Brand is not selected, add it
+                            updatedBrands = [...selectedBrands, brand];
+                          }
+
+                          // Update URL param
+                          if (updatedBrands.length > 0) {
+                            newParams.set('brand', updatedBrands.join(','));
+                          } else {
+                            // If no brands selected, remove param
+                            newParams.delete('brand');
+                          }
                           setSearchParams(newParams);
                         }}
                       >
