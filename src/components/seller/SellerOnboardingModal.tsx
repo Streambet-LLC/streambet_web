@@ -111,7 +111,7 @@ export function SellerOnboardingModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Welcome to Your Shop!</DialogTitle>
           <DialogDescription>
@@ -119,7 +119,7 @@ export function SellerOnboardingModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4 overflow-y-auto flex-1">
+        <div className="space-y-6 py-4 overflow-y-auto flex-1 px-2">
           {/* Step 1: Location */}
           {step === 1 && (
             <div className="space-y-4">
