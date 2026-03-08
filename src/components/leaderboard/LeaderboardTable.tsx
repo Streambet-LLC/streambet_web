@@ -88,7 +88,7 @@ export const LeaderboardTable = () => {
 
             {/* Title */}
             <div
-              className="text-xl md:text-4xl font-black uppercase tracking-tight whitespace-nowrap crt-text-ghost"
+              className="text-xl md:text-4xl font-black uppercase tracking-tight whitespace-nowrap"
               style={{ fontFamily: '"Press Start 2P", monospace', color: 'var(--electric-lime)' }}
             >
               LEADERBOARD
@@ -109,19 +109,19 @@ export const LeaderboardTable = () => {
             style={{ borderColor: 'var(--card-grid-border)' }}
           >
             <div
-              className="flex items-center justify-center text-xs md:text-sm font-bold uppercase tracking-wider crt-glow-subtle"
+              className="flex items-center justify-center text-xs md:text-sm font-bold uppercase tracking-wider"
               style={{ color: 'var(--electric-lime)' }}
             >
               RANK
             </div>
             <div
-              className="flex items-center justify-center text-xs md:text-sm font-bold uppercase tracking-wider crt-glow-subtle"
+              className="flex items-center justify-center text-xs md:text-sm font-bold uppercase tracking-wider"
               style={{ color: 'var(--electric-lime)' }}
             >
               PLAYER
             </div>
             <div
-              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider crt-glow-subtle"
+              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider"
               style={{ color: 'var(--electric-lime)' }}
             >
               <img src="/icons/cade-coins.png" alt="CadeCoin" className="w-3 h-3 md:w-4 md:h-4" />
@@ -132,7 +132,7 @@ export const LeaderboardTable = () => {
               </span>
             </div>
             <div
-              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider crt-glow-subtle"
+              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider"
               style={{ color: 'var(--electric-lime)' }}
             >
               <img src="/icons/cade-coins.png" alt="CadeCoin" className="w-3 h-3 md:w-4 md:h-4" />
@@ -143,7 +143,7 @@ export const LeaderboardTable = () => {
               </span>
             </div>
             <div
-              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider crt-glow-subtle"
+              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider"
               style={{ color: 'var(--electric-lime)' }}
             >
               <img src="/icons/cade-coins.png" alt="CadeCoin" className="w-3 h-3 md:w-4 md:h-4" />
@@ -166,7 +166,7 @@ export const LeaderboardTable = () => {
                 {/* Rank */}
                 <div className="flex items-center justify-center">
                   <span
-                    className={`text-lg md:text-2xl font-black font-mono crt-glow-medium ${index < 3 ? '' : 'text-white/50'}`}
+                    className={`text-sm md:text-base font-black font-mono ${index < 3 ? '' : 'text-white/50'}`}
                     style={{ color: index < 3 ? 'var(--electric-lime)' : undefined }}
                   >
                     {index + 1}
@@ -177,15 +177,12 @@ export const LeaderboardTable = () => {
                 <div className="flex items-center justify-center gap-2 md:gap-3">
                   <ProfileImage imageUrl={entry.profileImageUrl} username={entry.username} />
                   <div
-                    className={`text-sm md:text-lg font-mono whitespace-nowrap ${
-                      index === 0
-                        ? 'username-rank-1'
-                        : index === 1
-                          ? 'username-rank-2'
-                          : index === 2
-                            ? 'username-rank-3'
-                            : 'crt-glow-strong text-white username-default'
+                    className={`text-sm md:text-base font-mono whitespace-nowrap ${
+                      index < 3
+                        ? 'username-default'
+                        : 'text-white username-default'
                     }`}
+                    style={{ color: index < 3 ? 'var(--electric-lime)' : undefined }}
                   >
                     {entry.username}
                   </div>
@@ -194,7 +191,7 @@ export const LeaderboardTable = () => {
                 {/* Monthly */}
                 <div className="flex items-center justify-center">
                   <div
-                    className={`text-xs md:text-base font-mono font-bold crt-glow-medium ${index < 3 ? '' : 'text-white/75'}`}
+                    className={`text-sm md:text-base font-mono font-bold ${index < 3 ? '' : 'text-white/75'}`}
                     style={{ color: index < 3 ? 'var(--electric-lime)' : undefined }}
                   >
                     {roundDownCoinAmount(entry.monthToDateCoins).toLocaleString()}
@@ -204,7 +201,7 @@ export const LeaderboardTable = () => {
                 {/* Balance */}
                 <div className="flex items-center justify-center">
                   <div
-                    className={`text-xs md:text-xl font-mono font-bold crt-glow-medium ${index < 3 ? '' : 'text-white/75'}`}
+                    className={`text-sm md:text-base font-mono font-bold ${index < 3 ? '' : 'text-white/75'}`}
                     style={{ color: index < 3 ? 'var(--electric-lime)' : undefined }}
                   >
                     {roundDownCoinAmount(entry.cadeCoins).toLocaleString()}
@@ -214,7 +211,7 @@ export const LeaderboardTable = () => {
                 {/* All-Time */}
                 <div className="flex items-center justify-center">
                   <div
-                    className={`text-xs md:text-base font-mono font-bold crt-glow-medium ${index < 3 ? '' : 'text-white/75'}`}
+                    className={`text-sm md:text-base font-mono font-bold ${index < 3 ? '' : 'text-white/75'}`}
                     style={{ color: index < 3 ? 'var(--electric-lime)' : undefined }}
                   >
                     {roundDownCoinAmount(entry.lifetimeCadeCoins).toLocaleString()}
