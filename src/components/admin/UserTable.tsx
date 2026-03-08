@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { EditUserDialog } from './EditUserDialog';
+import { roundDownCoinAmount } from '@/utils/format';
 import { CurrencyType } from '@/utils/currency';
 
 interface Props {
@@ -71,10 +72,14 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
   });
 
   const mutationCurrency = useMutation({
-    mutationFn: async ({ userId, amount, currencyType }: { 
-      userId: string; 
-      amount: number; 
-      currencyType: CurrencyType 
+    mutationFn: async ({
+      userId,
+      amount,
+      currencyType,
+    }: {
+      userId: string;
+      amount: number;
+      currencyType: CurrencyType;
     }) => {
       return await api.admin.updateUserCurrency({ userId, amount, currencyType });
     },
@@ -182,7 +187,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     <span className="text-sm text-muted-foreground">Gold Balance:</span>
                     <span className="font-medium">
                       {user?.wallet?.goldCoins
-                        ? user?.wallet?.goldCoins?.toLocaleString('en-US')
+                        ? roundDownCoinAmount(user?.wallet?.goldCoins).toLocaleString('en-US')
                         : '-'}
                     </span>
                   </div>
@@ -192,7 +197,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     <span className="text-sm text-muted-foreground">CadeCoins:</span>
                     <span className="font-medium">
                       {user?.wallet?.cadeCoins
-                        ? user?.wallet?.cadeCoins?.toLocaleString('en-US')
+                        ? roundDownCoinAmount(user?.wallet?.cadeCoins).toLocaleString('en-US')
                         : '-'}
                     </span>
                   </div>
@@ -261,17 +266,17 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       cadeCoinsBalance={user?.wallet?.cadeCoins}
                       username={user.username}
                       onSaveGold={newBalance => {
-                        mutationCurrency.mutate({ 
-                          userId: user.id, 
-                          amount: newBalance, 
-                          currencyType: 'gold_coins' 
+                        mutationCurrency.mutate({
+                          userId: user.id,
+                          amount: newBalance,
+                          currencyType: 'gold_coins',
                         });
                       }}
                       onSaveCade={newBalance => {
-                        mutationCurrency.mutate({ 
-                          userId: user.id, 
-                          amount: newBalance, 
-                          currencyType: 'cade_coins' 
+                        mutationCurrency.mutate({
+                          userId: user.id,
+                          amount: newBalance,
+                          currencyType: 'cade_coins',
                         });
                       }}
                     />
@@ -336,17 +341,17 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     </TableCell>
                     <TableCell>
                       {user?.wallet?.goldCoins
-                        ? Number(user?.wallet?.goldCoins)?.toLocaleString('en-US')
+                        ? roundDownCoinAmount(user?.wallet?.goldCoins).toLocaleString('en-US')
                         : '-'}
                     </TableCell>
                     <TableCell>
                       {user?.wallet?.sweepCoins
-                        ? Number(user?.wallet?.sweepCoins)?.toLocaleString('en-US')
+                        ? roundDownCoinAmount(user?.wallet?.sweepCoins).toLocaleString('en-US')
                         : '-'}
                     </TableCell>
                     <TableCell>
                       {user?.wallet?.cadeCoins
-                        ? Number(user?.wallet?.cadeCoins)?.toLocaleString('en-US')
+                        ? roundDownCoinAmount(user?.wallet?.cadeCoins).toLocaleString('en-US')
                         : '-'}
                     </TableCell>
                     <TableCell>
@@ -391,17 +396,17 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                         cadeCoinsBalance={user?.wallet?.cadeCoins}
                         username={user.username}
                         onSaveGold={newBalance => {
-                          mutationCurrency.mutate({ 
-                            userId: user.id, 
-                            amount: newBalance, 
-                            currencyType: 'gold_coins' 
+                          mutationCurrency.mutate({
+                            userId: user.id,
+                            amount: newBalance,
+                            currencyType: 'gold_coins',
                           });
                         }}
                         onSaveCade={newBalance => {
-                          mutationCurrency.mutate({ 
-                            userId: user.id, 
-                            amount: newBalance, 
-                            currencyType: 'cade_coins' 
+                          mutationCurrency.mutate({
+                            userId: user.id,
+                            amount: newBalance,
+                            currencyType: 'cade_coins',
                           });
                         }}
                       />

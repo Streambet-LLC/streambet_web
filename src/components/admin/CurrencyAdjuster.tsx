@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { roundDownCoinAmount } from '@/utils/format';
 
 interface CurrencyAdjusterProps {
   currencyName: string;
@@ -41,7 +42,7 @@ export const CurrencyAdjuster: React.FC<CurrencyAdjusterProps> = ({
           -10
         </Button>
         <input
-          placeholder='0'
+          placeholder="0"
           value={adjustAmount}
           onChange={e => onAdjustChange(e.target.value)}
           className="w-[100%] bg-secondary px-3 py-2 rounded-lg text-white text-sm font-normal"
@@ -65,7 +66,7 @@ export const CurrencyAdjuster: React.FC<CurrencyAdjusterProps> = ({
           <p className="text-sm text-white font-medium mb-2">Current Balance</p>
           <div className="bg-secondary w-[200px] px-3 py-2 rounded h-[35px] text-white text-sm font-light">
             <p className="text-sm font-light">
-              {currentBalance.toLocaleString('en-US')}
+              {roundDownCoinAmount(currentBalance).toLocaleString('en-US')}
             </p>
           </div>
         </div>
@@ -73,7 +74,9 @@ export const CurrencyAdjuster: React.FC<CurrencyAdjusterProps> = ({
           <p className="text-sm text-white font-medium mb-2">New Balance</p>
           <div className="bg-secondary w-[200px] px-3 py-2 rounded h-[35px] text-white text-sm font-light">
             <p className="text-sm font-light">
-              {newBalance === currentBalance ? '' : newBalance.toLocaleString('en-US')}
+              {newBalance === currentBalance
+                ? ''
+                : roundDownCoinAmount(newBalance).toLocaleString('en-US')}
             </p>
           </div>
         </div>

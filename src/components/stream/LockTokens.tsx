@@ -1,4 +1,5 @@
 import { CurrencyType, BettingRoundStatus, PickMechanism } from '@/enums';
+import { roundDownCoinAmount } from '@/utils/format';
 import { useState, useEffect } from 'react';
 
 interface BettingVariable {
@@ -309,7 +310,7 @@ export default function LockTokens({
               <p className="font-medium text-sm sm:text-[16px] text-[#D7DFEF]">
                 {activeRound?.mechanism === PickMechanism.SENTIMENT
                   ? localOption
-                  : `${Number(localBetAmount)?.toLocaleString('en-US')} CadeCoins`}
+                  : `${roundDownCoinAmount(localBetAmount).toLocaleString('en-US')} CadeCoins`}
               </p>
             </div>
             {activeRound?.mechanism !== PickMechanism.SENTIMENT && (

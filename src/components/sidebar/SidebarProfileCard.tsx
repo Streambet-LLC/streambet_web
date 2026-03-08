@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageLink } from '@/utils/helper';
+import { roundDownCoinAmount } from '@/utils/format';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useDepositContext } from '@/contexts/DepositContext';
 
@@ -13,7 +14,7 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
   const navigate = useNavigate();
   const { session } = useAuthContext();
   const { setOpen: setDepositOpen } = useDepositContext();
-  
+
   const username = session?.username;
   const email = session?.email;
   const profileImageUrl = (session as any)?.profileImageUrl;
@@ -75,7 +76,7 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
           className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100"
           transition={{ duration: 0.3 }}
         />
-        
+
         <div className="relative z-10 flex items-center gap-3">
           {/* Avatar with glow ring */}
           <div className="relative">
@@ -102,12 +103,12 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
             <p className="text-sm font-bold text-white group-hover:text-primary transition-colors mb-2">
               {username || 'User'}
             </p>
-            
+
             {/* Separator line */}
             <div className="border-t border-border my-2" />
-            
+
             {/* Coins Display - Single Row */}
-            <div 
+            <div
               className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
               // onClick={handleCoinsClick}
             >
@@ -122,7 +123,7 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
                   {Number(streamCoins).toLocaleString('en-US')}
                 </span>
               </div> */}
-              
+
               {/* Gold Coins */}
               {/* <div className="flex items-center gap-1.5">
                 <img
@@ -136,13 +137,9 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
               </div> */}
 
               <div className="flex items-center gap-1.5">
-                <img
-                  src="/icons/cade-coins.png"
-                  alt="Gold Coins"
-                  className="h-4 w-4"
-                />
+                <img src="/icons/cade-coins.png" alt="Gold Coins" className="h-4 w-4" />
                 <span className="text-xs font-medium text-[#B4FF39]">
-                  {Number(cadeCoins).toLocaleString('en-US')}
+                  {roundDownCoinAmount(cadeCoins).toLocaleString('en-US')}
                 </span>
               </div>
             </div>
