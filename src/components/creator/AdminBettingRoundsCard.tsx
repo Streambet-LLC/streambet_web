@@ -12,6 +12,7 @@ import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink, getMessage } from '@/utils/helper';
+import { roundDownCoinAmount } from '@/utils/format';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import api from '@/integrations/api/client';
 import { BettingRounds, ValidationError } from './BettingRounds';
@@ -31,7 +32,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { FabioBoldStyle } from '@/utils/font';
 import Bugsnag from '@bugsnag/js';
-import { cleanTemporaryIds, appendCountersToDuplicates, deserializeRounds } from '@/utils/bettingRoundsUtils';
+import {
+  cleanTemporaryIds,
+  appendCountersToDuplicates,
+  deserializeRounds,
+} from '@/utils/bettingRoundsUtils';
 import { validateRounds } from '../admin/BettingRounds';
 
 // Helper for status priority
@@ -641,13 +646,13 @@ export const AdminBettingRoundsCard = ({
                                       className="text-white ml-1 truncate max-w-[120px]"
                                       title={
                                         isSweepCoins
-                                          ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins`
-                                          : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`
+                                          ? `${roundDownCoinAmount(round?.winnerAmount?.sweepCoins || 0).toLocaleString('en-US')} Stream Coins`
+                                          : `${roundDownCoinAmount(round?.winnerAmount?.goldCoins || 0).toLocaleString('en-US')} gold coins`
                                       }
                                     >
                                       {isSweepCoins
-                                        ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins`
-                                        : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`}
+                                        ? `${roundDownCoinAmount(round?.winnerAmount?.sweepCoins || 0).toLocaleString('en-US')} Stream Coins`
+                                        : `${roundDownCoinAmount(round?.winnerAmount?.goldCoins || 0).toLocaleString('en-US')} gold coins`}
                                     </span>
                                   </div>
                                 </div>

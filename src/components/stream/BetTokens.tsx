@@ -4,6 +4,7 @@ import { BettingRoundStatus, PickMechanism } from '@/enums';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { roundDownCoinAmount } from '@/utils/format';
 import {
   calculatePresetAmounts,
   validateBetAmount,
@@ -134,15 +135,7 @@ export default function BetTokens({
 
     setBetAmount(updatedCurrency === currency ? selectedAmount : 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    selectedAmount,
-    selectedWinner,
-    currency,
-    updatedCurrency,
-    bettingData,
-    session,
-    isEditing,
-  ]);
+  }, [selectedAmount, selectedWinner, currency, updatedCurrency, bettingData, session, isEditing]);
 
   // Reset slider and option when resetKey changes
   useEffect(() => {
@@ -234,10 +227,8 @@ export default function BetTokens({
             ) : (
               <div className="text-white text-base font-bold sm:text-xl md:text-2xl">
                 Pick{' '}
-                <span
-                  className="text-electric-lime text-base font-bold sm:text-xl md:text-2xl"
-                >
-                  {betAmount?.toLocaleString('en-US')}
+                <span className="text-electric-lime text-base font-bold sm:text-xl md:text-2xl">
+                  {roundDownCoinAmount(betAmount).toLocaleString('en-US')}
                 </span>{' '}
                 CadeCoins
                 <span
@@ -245,7 +236,7 @@ export default function BetTokens({
                   title={bettingData?.bettingRounds?.[0]?.roundName}
                 >
                   Available CadeCoins:{' '}
-                  {Number(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
+                  {roundDownCoinAmount(session?.walletBalanceCadeCoin || 0).toLocaleString('en-US')}
                 </span>
               </div>
             )}
@@ -253,7 +244,7 @@ export default function BetTokens({
             {!isSentimentPick && (
               <div className="flex flex-col xs:flex-col sm:flex-row gap-2 sm:w-auto">
                 <span className="bg-dark-surface rounded-[28px] px-4 py-2 text-white text-[10px] font-normal sm:text-xs">
-                  Total Pot: {`${totalPot} CadeCoins`}
+                  Total Pot: {`${roundDownCoinAmount(totalPot)} CadeCoins`}
                 </span>
               </div>
             )}
@@ -280,10 +271,12 @@ export default function BetTokens({
                     }
                   }}
                   className="w-[90px] bg-input-bg px-3 py-2 rounded-lg text-white text-sm font-normal border border-input-border"
-                  style={{
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'textfield',
-                  } as React.CSSProperties}
+                  style={
+                    {
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'textfield',
+                    } as React.CSSProperties
+                  }
                 />
 
                 <input
@@ -313,12 +306,14 @@ export default function BetTokens({
                     }
                   }}
                   className="flex-1 h-[25px] rounded-full"
-                  style={{
-                    appearance: 'none',
-                    WebkitAppearance: 'none',
-                    background: getSliderBackground(betAmount, sliderMax || 0),
-                    border: '0.56px solid var(--slider-border)',
-                  } as React.CSSProperties}
+                  style={
+                    {
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      background: getSliderBackground(betAmount, sliderMax || 0),
+                      border: '0.56px solid var(--slider-border)',
+                    } as React.CSSProperties
+                  }
                 />
               </div>
 
@@ -365,8 +360,8 @@ export default function BetTokens({
                 <p className="text-sm text-blue-300 font-semibold">Sentiment Pick Rewards</p>
                 <ul className="text-xs text-blue-200 mt-2 space-y-1">
                   <li>
-                    • <span className="font-semibold text-electric-lime">10 CadeCoins</span> - if you
-                    vote within 2 hours of the 1500 UTC cycle
+                    • <span className="font-semibold text-electric-lime">10 CadeCoins</span> - if
+                    you vote within 2 hours of the 1500 UTC cycle
                   </li>
                   <li>
                     • <span className="font-semibold text-electric-lime">5 CadeCoins</span> - if you

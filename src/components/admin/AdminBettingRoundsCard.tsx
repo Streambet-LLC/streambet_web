@@ -12,6 +12,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader } from '@/components
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { BetRoundType, BettingRoundStatus, CurrencyType } from '@/enums';
 import { getImageLink, getMessage } from '@/utils/helper';
+import { roundDownCoinAmount } from '@/utils/format';
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import api from '@/integrations/api/client';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
@@ -651,13 +652,13 @@ export const AdminBettingRoundsCard = ({
                                       className="text-white ml-1 truncate max-w-[120px]"
                                       title={
                                         isSweepCoins
-                                          ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins`
-                                          : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`
+                                          ? `${roundDownCoinAmount(round?.winnerAmount?.sweepCoins || 0).toLocaleString('en-US')} Stream Coins`
+                                          : `${roundDownCoinAmount(round?.winnerAmount?.goldCoins || 0).toLocaleString('en-US')} gold coins`
                                       }
                                     >
                                       {isSweepCoins
-                                        ? `${Number(round?.winnerAmount?.sweepCoins || 0)?.toLocaleString('en-US')} Stream Coins`
-                                        : `${Number(round?.winnerAmount?.goldCoins || 0)?.toLocaleString('en-US')} gold coins`}
+                                        ? `${roundDownCoinAmount(round?.winnerAmount?.sweepCoins || 0).toLocaleString('en-US')} Stream Coins`
+                                        : `${roundDownCoinAmount(round?.winnerAmount?.goldCoins || 0).toLocaleString('en-US')} gold coins`}
                                     </span>
                                   </div>
                                 </div>
