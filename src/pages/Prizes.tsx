@@ -54,7 +54,7 @@ export default function Prizes() {
   const [selectedPrizeForOffer, setSelectedPrizeForOffer] = useState<PrizeDisplay | null>(null);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(24);
-  const [showPriceFilter, setShowPriceFilter] = useState(true);
+  const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [minPrice, setMinPrice] = useState<number | ''>('');
   const [maxPrice, setMaxPrice] = useState<number | ''>('');
 

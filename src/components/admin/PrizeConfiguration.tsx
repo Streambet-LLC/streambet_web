@@ -1111,7 +1111,9 @@ export const PrizeConfiguration = () => {
                     }}
                     disabled={bulkAssignMutation.isPending}
                   >
-                    {bulkAssignMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    {bulkAssignMutation.isPending && (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    )}
                     Move to Redemptions
                   </Button>
                 )}
@@ -1698,7 +1700,7 @@ export const PrizeConfiguration = () => {
             </div>
             <div className="space-y-2.5">
               <Label htmlFor="brand" className="text-base font-medium">
-                Brand <span className="text-destructive">*</span>
+                Card Type <span className="text-destructive">*</span>
               </Label>
               <Select
                 value={formData.brand || 'pokemon'}
@@ -2048,12 +2050,12 @@ export const PrizeConfiguration = () => {
                 const updates = Array.from(selectedItems).map(id => {
                   const item = tiers?.find(t => t.id === id);
                   let amount = item?.amount ?? 0;
-                  
+
                   // If assigning to seller (moving to shop) and item is currently in redemptions, divide by 50
                   if (createdBy && item?.showOnRedemptions && !item?.showOnShop) {
                     amount = Math.round(item.amount / 50);
                   }
-                  
+
                   return {
                     id,
                     createdBy,
