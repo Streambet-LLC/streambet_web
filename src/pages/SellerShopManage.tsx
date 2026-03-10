@@ -242,6 +242,8 @@ export default function SellerShopManage() {
       const payload = {
         ...form,
         imageUrl,
+        // For offers_only, backend requires amount >= 1, so default to 1
+        amount: form.purchaseOption === 'offers_only' ? Math.max(1, form.amount) : form.amount,
         category: 'slab' as const, // All shop items are slabs
       };
 
@@ -606,9 +608,7 @@ export default function SellerShopManage() {
 
                   {session?.sellerTradingExperience && (
                     <div className="mt-3 space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Trading Experience
-                      </p>
+                      <p className="text-sm font-medium text-muted-foreground">Cards Experience</p>
                       <p className="text-sm text-muted-foreground">
                         {session.sellerTradingExperience}
                       </p>
@@ -681,7 +681,7 @@ export default function SellerShopManage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label>Trading Experience</Label>
+                  <Label>Cards Experience</Label>
                   <Textarea
                     placeholder="e.g., 5 years, selling locally and online, focus on vintage cards..."
                     value={sellerTradingExperience}
@@ -730,17 +730,13 @@ export default function SellerShopManage() {
                       let displayNameValue = '';
                       if (session?.shopName) {
                         displayNameValue = session.shopName;
-                      }
-                      else if (session?.user?.displayName) {
+                      } else if (session?.user?.displayName) {
                         displayNameValue = session.user.displayName;
-                      }
-                      else if (items?.length > 0 && items[0]?.shop?.displayName) {
+                      } else if (items?.length > 0 && items[0]?.shop?.displayName) {
                         displayNameValue = items[0].shop.displayName;
-                      }
-                      else if (shopData?.shop?.displayName) {
+                      } else if (shopData?.shop?.displayName) {
                         displayNameValue = shopData.shop.displayName;
-                      }
-                      else {
+                      } else {
                         displayNameValue = session?.user?.username || '';
                       }
                       setShopName(displayNameValue);
@@ -831,7 +827,7 @@ export default function SellerShopManage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label>Price (USD) *</Label>
+                  <Label>Price (USD) {form.purchaseOption !== 'offers_only' ? '*' : ''}</Label>
                   <Input
                     type="number"
                     min={1}
@@ -872,7 +868,7 @@ export default function SellerShopManage() {
               </div>
 
               <div className="grid gap-2">
-                <Label>Brand *</Label>
+                <Label>Card Type *</Label>
                 <Select
                   value={form.brand}
                   onValueChange={(value: PrizeBrand) => setForm(p => ({ ...p, brand: value }))}
@@ -934,7 +930,7 @@ export default function SellerShopManage() {
               </div>
 
               <div className="space-y-2.5">
-                <Label className="text-base font-medium">Prize Image</Label>
+                <Label className="text-base font-medium">Item Image</Label>
                 <div className="grid gap-3">
                   {/* Image Upload Area */}
                   <div
@@ -1018,7 +1014,12 @@ export default function SellerShopManage() {
 
               <Button
                 onClick={() => createItem.mutate()}
-                disabled={createItem.isPending || !form.name || form.amount <= 0 || isUploading}
+                disabled={
+                  createItem.isPending ||
+                  !form.name ||
+                  (form.purchaseOption !== 'offers_only' && form.amount <= 0) ||
+                  isUploading
+                }
                 className="w-full"
               >
                 {createItem.isPending || isUploading ? (
@@ -1143,7 +1144,7 @@ export default function SellerShopManage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Current Shop Items</CardTitle>
+            <CardTitle>Live Listings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {isLoading ? (

@@ -202,7 +202,7 @@ export default function ShopDetail() {
             {/* Trading Experience */}
             {shopData?.shop?.sellerTradingExperience && (
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
+                <p className="text-sm font-medium text-muted-foreground">Cards Experience</p>
                 <p className="text-sm mt-1">{shopData.shop.sellerTradingExperience}</p>
               </div>
             )}

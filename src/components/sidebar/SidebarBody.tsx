@@ -229,7 +229,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
               <div className="border-t border-border my-2" />
               {controls.open && !controls.isMobile && (
                 <div className="text-sm font-semibold pl-2 mb-2" id="sidebar-categories-label">
-                  {isShopPage ? 'Brands' : 'Markets'}
+                  {isShopPage ? 'Card Type' : 'Markets'}
                 </div>
               )}
               <div
