@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { getImageLink } from '@/utils/helper';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Coins, Loader2, Plus } from 'lucide-react';
+import { Coins, Loader2, Plus, ShoppingCart } from 'lucide-react';
 import React, { useState } from 'react';
 import { useDepositContext } from '@/contexts/DepositContext';
 
@@ -34,9 +34,9 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
             <AvatarImage
               src={profile?.profileImageUrl ? getImageLink(profile?.profileImageUrl) : undefined}
               alt={profile?.username}
-              onLoadingStatusChange={(status) => setIsImageLoading(status === 'loading')}
+              onLoadingStatusChange={status => setIsImageLoading(status === 'loading')}
             />
-            <AvatarFallback className='bg-[#BDFF00] text-[#000000]'>
+            <AvatarFallback className="bg-[#BDFF00] text-[#000000]">
               {profile?.username?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || ''}
             </AvatarFallback>
           </Avatar>
@@ -53,20 +53,20 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  {profile?.isCreator ?
-                    <p className='truncate'>
-                      <Link 
-                        to={`/${profile?.username}`} 
+                  {profile?.isCreator ? (
+                    <p className="truncate">
+                      <Link
+                        to={`/${profile?.username}`}
                         className="text-sm text-[#7AFF14] font-medium"
                       >
                         {profile?.username || 'User'}
                       </Link>
-                    </p> :
+                    </p>
+                  ) : (
                     <p className="text-sm font-medium leading-none truncate max-w-[180px] cursor-help">
                       {profile?.username || 'User'}
                     </p>
-                  }
-                  
+                  )}
                 </TooltipTrigger>
               </Tooltip>
             </TooltipProvider>
@@ -77,9 +77,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
                     {profile?.email}
                   </p>
                 </TooltipTrigger>
-                <TooltipContent>
-                  {profile?.email}
-                </TooltipContent>
+                <TooltipContent>{profile?.email}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
@@ -92,14 +90,32 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           </div>
         </DropdownMenuItem> */}
         {/* <DropdownMenuSeparator /> */}
-        {profile?.isCreator &&
+        {profile?.isCreator && (
           <DropdownMenuItem asChild className="cursor-pointer">
             <div className="flex gap-1 group">
               <Plus className="h-4 w-4 text-[#B4FF39] group-hover:text-black transition-colors" />
-              <Link to="/creator?createStream=true" className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors">Create Pick</Link>
+              <Link
+                to="/creator?createStream=true"
+                className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors"
+              >
+                Create Pick
+              </Link>
             </div>
           </DropdownMenuItem>
-        }
+        )}
+        {profile?.isSeller && (
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <div className="flex gap-1 group">
+              <ShoppingCart className="h-4 w-4 text-[#B4FF39] group-hover:text-black transition-colors" />
+              <Link
+                to={`/shop/${profile?.username}`}
+                className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors"
+              >
+                My Shop
+              </Link>
+            </div>
+          </DropdownMenuItem>
+        )}
         {/* <DropdownMenuItem asChild className="cursor-pointer">
           <Link to={`/${profile?.username}`}>My Profile</Link>
         </DropdownMenuItem> */}
@@ -114,7 +130,9 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
 
         {!profile?.isSeller && (
           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link to={`/seller-application`} rel="noopener noreferrer">Become a Seller</Link>
+            <Link to={`/seller-application`} rel="noopener noreferrer">
+              Become a Seller
+            </Link>
           </DropdownMenuItem>
         )}
 
@@ -140,7 +158,9 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           <Link to="/settings">Settings</Link>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => onLogout()} className="cursor-pointer">Log Out</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onLogout()} className="cursor-pointer">
+          Log Out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

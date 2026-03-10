@@ -135,110 +135,115 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
           </Button>
 
           {(showPriceFilter || hasPrizes === false) && (
-        <div className="bg-secondary/50 p-4 rounded-lg space-y-4">
-          {showBrandFilter && (
-            <div>
-              <h3 className="text-sm font-semibold mb-3">Filter by Brand:</h3>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={selectedBrand === null ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onBrandChange?.(null)}
-                  className="rounded-full"
-                >
-                  All Items
-                </Button>
-                <Button
-                  variant={selectedBrand === 'pokemon' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onBrandChange?.('pokemon')}
-                  className="rounded-full"
-                >
-                  Pokémon
-                </Button>
-                <Button
-                  variant={selectedBrand === 'one_piece' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onBrandChange?.('one_piece')}
-                  className="rounded-full"
-                >
-                  One Piece
-                </Button>
-                <Button
-                  variant={selectedBrand === 'sports' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onBrandChange?.('sports')}
-                  className="rounded-full"
-                >
-                  Sports
-                </Button>
-                <Button
-                  variant={selectedBrand === 'other' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onBrandChange?.('other')}
-                  className="rounded-full"
-                >
-                  Other
-                </Button>
+            <div className="bg-secondary/50 p-4 rounded-lg space-y-4">
+              {showBrandFilter && (
+                <div>
+                  <h3 className="text-sm font-semibold mb-3">Filter by Card Type:</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={selectedBrand === null ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => onBrandChange?.(null)}
+                      className="rounded-full"
+                    >
+                      All Items
+                    </Button>
+                    <Button
+                      variant={selectedBrand === 'pokemon' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => onBrandChange?.('pokemon')}
+                      className="rounded-full"
+                    >
+                      Pokémon
+                    </Button>
+                    <Button
+                      variant={selectedBrand === 'one_piece' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => onBrandChange?.('one_piece')}
+                      className="rounded-full"
+                    >
+                      One Piece
+                    </Button>
+                    <Button
+                      variant={selectedBrand === 'sports' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => onBrandChange?.('sports')}
+                      className="rounded-full"
+                    >
+                      Sports
+                    </Button>
+                    <Button
+                      variant={selectedBrand === 'other' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => onBrandChange?.('other')}
+                      className="rounded-full"
+                    >
+                      Other
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Price Range Filter */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3">Filter by Price (USD):</h3>
+                <div className="flex gap-3 items-end">
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="minPrice" className="text-xs text-muted-foreground">
+                      Min
+                    </label>
+                    <Input
+                      id="minPrice"
+                      type="number"
+                      placeholder="$0"
+                      value={minPrice}
+                      onChange={e => {
+                        const val =
+                          e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
+                        setMinPrice(val);
+                      }}
+                      className="w-24"
+                      min="0"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="maxPrice" className="text-xs text-muted-foreground">
+                      Max
+                    </label>
+                    <Input
+                      id="maxPrice"
+                      type="number"
+                      placeholder="∞"
+                      value={maxPrice}
+                      onChange={e => {
+                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        setMaxPrice(val);
+                      }}
+                      className="w-24"
+                      min="0"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMinPrice('');
+                      setMaxPrice('');
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+                {minPrice !== '' &&
+                  maxPrice !== '' &&
+                  typeof maxPrice === 'number' &&
+                  typeof minPrice === 'number' &&
+                  maxPrice < minPrice && (
+                    <p className="text-xs text-red-500 mt-2">Max should be greater than min</p>
+                  )}
               </div>
             </div>
           )}
-
-          {/* Price Range Filter */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3">Filter by Price (USD):</h3>
-            <div className="flex gap-3 items-end">
-              <div className="flex flex-col gap-1">
-                <label htmlFor="minPrice" className="text-xs text-muted-foreground">
-                  Min
-                </label>
-                <Input
-                  id="minPrice"
-                  type="number"
-                  placeholder="$0"
-                  value={minPrice}
-                  onChange={e => {
-                    const val = e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
-                    setMinPrice(val);
-                  }}
-                  className="w-24"
-                  min="0"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label htmlFor="maxPrice" className="text-xs text-muted-foreground">
-                  Max
-                </label>
-                <Input
-                  id="maxPrice"
-                  type="number"
-                  placeholder="∞"
-                  value={maxPrice}
-                  onChange={e => {
-                    const val = e.target.value === '' ? '' : Number(e.target.value);
-                    setMaxPrice(val);
-                  }}
-                  className="w-24"
-                  min="0"
-                />
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setMinPrice('');
-                  setMaxPrice('');
-                }}
-              >
-                Clear
-              </Button>
-            </div>
-            {minPrice !== '' && maxPrice !== '' && typeof maxPrice === 'number' && typeof minPrice === 'number' && maxPrice < minPrice && (
-              <p className="text-xs text-red-500 mt-2">Max should be greater than min</p>
-            )}
-          </div>
-        </div>
-      )}
         </>
       )}
 
@@ -258,14 +263,20 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                       {CATEGORY_LABELS[key as PrizeCategoryType]}
                     </h2>
                   )}
-                  <div className={cardVariant === 'redemption' ? 'grid grid-cols-1 md:grid-cols-3 gap-4' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}>
+                  <div
+                    className={
+                      cardVariant === 'redemption'
+                        ? 'grid grid-cols-1 md:grid-cols-3 gap-4'
+                        : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+                    }
+                  >
                     {filterByPriceRange(items).map(prize => (
                       <PrizeCard
                         key={prize.id}
                         prize={prize}
                         variant={cardVariant}
                         onClick={onPrizeClick ? () => onPrizeClick(prize) : () => {}}
-                        onOfferClick={(prize) => {
+                        onOfferClick={prize => {
                           setSelectedPrize(prize);
                           setIsOfferModalOpen(true);
                         }}
@@ -277,16 +288,14 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
             )
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-3xl text-muted-foreground">
-              <span role="img" aria-label="cry smile sad" className="text-6xl mb-4">
-              </span>
+              <span role="img" aria-label="cry smile sad" className="text-6xl mb-4"></span>
               No items match your filters
             </div>
           );
         })()
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-3xl text-muted-foreground">
-          <span role="img" aria-label="cry smile sad" className="text-6xl mb-4">
-          </span>
+          <span role="img" aria-label="cry smile sad" className="text-6xl mb-4"></span>
           None Available
         </div>
       )}
