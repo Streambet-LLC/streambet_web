@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { getImageLink } from '@/utils/helper';
 import { formatUrl } from '@/utils/format';
-import { FaInstagram, FaTiktok, FaTwitch, FaYoutube } from 'react-icons/fa';
+import { FaInstagram, FaTiktok, FaTwitter, FaYoutube } from 'react-icons/fa';
 import { PublicUserProfile } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 
@@ -19,13 +19,9 @@ const shopSocialsMapping = {
     icon: <FaInstagram className="w-4 h-4" />,
     label: 'Instagram',
   },
-  twitch: {
-    icon: <FaTwitch className="w-4 h-4" />,
-    label: 'Twitch',
-  },
-  kick: {
-    icon: <img src="/icons/kick-icon.png" alt="kick" className="w-4 h-4 mr-[2px]" />,
-    label: 'Kick',
+  twitter: {
+    icon: <FaTwitter className="w-4 h-4" />,
+    label: 'Twitter',
   },
   youtube: {
     icon: <FaYoutube className="w-4 h-4" />,
@@ -173,9 +169,9 @@ export default function ShopDetail() {
 
         {/* Social Links, Trading Experience, Location - Below the name section */}
         <div>
-          {/* Social Links - Only show Instagram, Twitch, TikTok if they have values */}
+          {/* Social Links - Show Instagram, Twitter, YouTube, TikTok if they have values */}
           <div className="flex flex-wrap gap-2">
-            {(['instagram', 'twitch', 'tiktok'] as const).map(social => {
+            {(['instagram', 'twitter', 'youtube', 'tiktok'] as const).map(social => {
               const mapped = shopSocialsMapping[social];
               const socialValue = shopSocials?.[social];
               const hasLink = !!socialValue && String(socialValue).trim().length > 0;

@@ -96,18 +96,19 @@ export default function SellerShopManage() {
   const [isCounterDialogOpen, setIsCounterDialogOpen] = useState(false);
   const [counterAmount, setCounterAmount] = useState('');
   const [counterNotes, setCounterNotes] = useState('');
-  const [shopName, setShopName] = useState('');
+  const [shopName, setShopName] = useState(() => session?.shopName || session?.user?.username || '');
   const [shopSocials, setShopSocials] = useState({
-    instagram: '',
-    twitch: '',
-    kick: '',
-    youtube: '',
-    tiktok: '',
+    instagram: session?.socials?.instagram || '',
+    twitter: session?.socials?.twitter || '',
+    youtube: session?.socials?.youtube || '',
+    tiktok: session?.socials?.tiktok || '',
   });
-  const [sellerTradingExperience, setSellerTradingExperience] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [country, setCountry] = useState('');
+  const [sellerTradingExperience, setSellerTradingExperience] = useState(
+    () => session?.sellerTradingExperience || ''
+  );
+  const [city, setCity] = useState(() => session?.city || '');
+  const [state, setState] = useState(() => session?.state || '');
+  const [country, setCountry] = useState(() => session?.country || '');
   const [isEditingShopName, setIsEditingShopName] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
@@ -135,6 +136,16 @@ export default function SellerShopManage() {
     enabled: !!session?.isSeller,
   });
 
+  const { data: shopData } = useQuery({
+    queryKey: ['seller-shop-manage', session?.user?.username],
+    queryFn: async () => {
+      if (!session?.user?.username) return null;
+      return await api.prize.getShopItemsByUsername(session.user.username);
+    },
+    enabled: !!session?.user?.username,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: purchasedOrders = [], isLoading: isPurchasedOrdersLoading } = useQuery<
     SellerPurchasedOrder[]
   >({
@@ -154,29 +165,47 @@ export default function SellerShopManage() {
 
   const offers = offersResponse?.data || [];
 
-  // Sync shop name when session updates
-  useEffect(() => {
-    if (session?.user && !isEditingShopName) {
-      setShopName(session.user.shopName || '');
-    }
-  }, [session?.user?.shopName, isEditingShopName]);
-
-  // Load socials separately - run whenever session changes
+  // Sync shop settings when session updates or editing mode changes
   useEffect(() => {
     if (session?.user) {
+      // Try to get shop name from multiple sources
+      let displayNameValue = '';
+      
+      // First check session.shopName
+      if (session?.shopName) {
+        displayNameValue = session.shopName;
+      }
+      // Then try session.user.displayName
+      else if (session?.user?.displayName) {
+        displayNameValue = session.user.displayName;
+      }
+      // Then try items[0]?.shop?.displayName
+      else if (items?.length > 0 && items[0]?.shop?.displayName) {
+        displayNameValue = items[0].shop.displayName;
+      }
+      // Then try shopData
+      else if (shopData?.shop?.displayName) {
+        displayNameValue = shopData.shop.displayName;
+      }
+      // Fall back to username
+      else {
+        displayNameValue = session?.user?.username || '';
+      }
+      
+      setShopName(displayNameValue);
+
       setShopSocials({
-        instagram: session?.socials?.instagram ?? '',
-        twitch: session?.socials?.twitch ?? '',
-        kick: session?.socials?.kick ?? '',
-        youtube: session?.socials?.youtube ?? '',
-        tiktok: session?.socials?.tiktok ?? '',
+        instagram: session?.socials?.instagram || '',
+        twitter: session?.socials?.twitter || '',
+        youtube: session?.socials?.youtube || '',
+        tiktok: session?.socials?.tiktok || '',
       });
-      setSellerTradingExperience(session?.sellerTradingExperience ?? '');
-      setCity(session?.city ?? '');
-      setState(session?.state ?? '');
-      setCountry(session?.country ?? '');
+      setSellerTradingExperience(session?.sellerTradingExperience || '');
+      setCity(session?.city || '');
+      setState(session?.state || '');
+      setCountry(session?.country || '');
     }
-  }, [session]);
+  }, [session, shopData, items, isEditingShopName]);
 
   // Show onboarding modal if seller hasn't completed onboarding
   useEffect(() => {
@@ -577,8 +606,12 @@ export default function SellerShopManage() {
 
                   {session?.sellerTradingExperience && (
                     <div className="mt-3 space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
-                      <p className="text-sm text-muted-foreground">{session.sellerTradingExperience}</p>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Trading Experience
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {session.sellerTradingExperience}
+                      </p>
                     </div>
                   )}
 
@@ -586,7 +619,8 @@ export default function SellerShopManage() {
                     <div className="mt-3 space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">Location</p>
                       <p className="text-sm text-muted-foreground">
-                        {session?.country || [session?.city, session?.state].filter(Boolean).join(', ')}
+                        {session?.country ||
+                          [session?.city, session?.state].filter(Boolean).join(', ')}
                       </p>
                     </div>
                   )}
@@ -621,19 +655,11 @@ export default function SellerShopManage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Twitch</Label>
+                    <Label>Twitter</Label>
                     <Input
-                      placeholder="https://twitch.tv/username"
-                      value={shopSocials.twitch}
-                      onChange={e => setShopSocials(prev => ({ ...prev, twitch: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Kick</Label>
-                    <Input
-                      placeholder="https://kick.com/username"
-                      value={shopSocials.kick}
-                      onChange={e => setShopSocials(prev => ({ ...prev, kick: e.target.value }))}
+                      placeholder="https://twitter.com/username"
+                      value={shopSocials.twitter}
+                      onChange={e => setShopSocials(prev => ({ ...prev, twitter: e.target.value }))}
                     />
                   </div>
                   <div className="grid gap-2">
@@ -662,7 +688,9 @@ export default function SellerShopManage() {
                     onChange={e => setSellerTradingExperience(e.target.value)}
                     rows={3}
                   />
-                  <p className="text-xs text-muted-foreground">Share your experience trading or selling cards</p>
+                  <p className="text-xs text-muted-foreground">
+                    Share your experience trading or selling cards
+                  </p>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-3">
@@ -698,11 +726,28 @@ export default function SellerShopManage() {
                     size="sm"
                     onClick={() => {
                       setIsEditingShopName(false);
-                      setShopName(session?.user?.shopName || '');
+                      // Try to get shop name from multiple sources
+                      let displayNameValue = '';
+                      if (session?.shopName) {
+                        displayNameValue = session.shopName;
+                      }
+                      else if (session?.user?.displayName) {
+                        displayNameValue = session.user.displayName;
+                      }
+                      else if (items?.length > 0 && items[0]?.shop?.displayName) {
+                        displayNameValue = items[0].shop.displayName;
+                      }
+                      else if (shopData?.shop?.displayName) {
+                        displayNameValue = shopData.shop.displayName;
+                      }
+                      else {
+                        displayNameValue = session?.user?.username || '';
+                      }
+                      setShopName(displayNameValue);
+
                       setShopSocials({
                         instagram: session?.socials?.instagram ?? '',
-                        twitch: session?.socials?.twitch ?? '',
-                        kick: session?.socials?.kick ?? '',
+                        twitter: session?.socials?.twitter ?? '',
                         youtube: session?.socials?.youtube ?? '',
                         tiktok: session?.socials?.tiktok ?? '',
                       });
@@ -759,9 +804,7 @@ export default function SellerShopManage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>
-                    {editingItemId ? 'Edit Shop Item' : 'Manage Shop Inventory'}
-                  </CardTitle>
+                  <CardTitle>{editingItemId ? 'Edit Shop Item' : 'Add Item'}</CardTitle>
                   {editingItemId && (
                     <p className="text-sm text-muted-foreground mt-1">
                       Update the details for your shop item
@@ -1035,7 +1078,7 @@ export default function SellerShopManage() {
                     <CardContent className="p-3 flex-1 flex flex-col gap-1.5">
                       {/* Prize Name */}
                       <h3 className="font-semibold text-sm line-clamp-2 leading-tight">
-                        {form.name || 'Prize Name'}
+                        {form.name || 'Item Name'}
                       </h3>
 
                       {/* Description */}
