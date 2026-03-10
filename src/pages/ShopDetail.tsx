@@ -131,8 +131,8 @@ export default function ShopDetail() {
     <MainLayout>
       {/* Shop Header */}
       <div className="mb-8">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-start gap-4">
             {/* Shop Owner Avatar */}
             <div className="h-16 w-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary">
               {shopData?.shop?.profileImageUrl ? (
@@ -150,54 +150,10 @@ export default function ShopDetail() {
               )}
             </div>
 
-            {/* Shop Info */}
+            {/* Shop Name and Username */}
             <div>
               <h1 className="text-3xl font-bold">{shopName}</h1>
               <p className="text-muted-foreground">@{username}</p>
-
-              {/* Social Links - Only show Instagram, Twitch, TikTok if they have values */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(['instagram', 'twitch', 'tiktok'] as const).map(social => {
-                  const mapped = shopSocialsMapping[social];
-                  const socialValue = shopSocials?.[social];
-                  const hasLink = !!socialValue && String(socialValue).trim().length > 0;
-                  const socialUrl = hasLink ? String(socialValue) : undefined;
-
-                  // Only render if they have a link
-                  if (!hasLink) return null;
-
-                  return (
-                    <div key={social} className="relative group">
-                      <a
-                        href={formatUrl(socialUrl!)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
-                        title={mapped.label}
-                      >
-                        {mapped.icon}
-                        <span className="text-sm font-medium">{mapped.label}</span>
-                      </a>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Trading Experience */}
-              {shopData?.shop?.sellerTradingExperience && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
-                  <p className="text-sm mt-1">{shopData.shop.sellerTradingExperience}</p>
-                </div>
-              )}
-
-              {/* Location */}
-              {shopData?.shop?.country && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-muted-foreground">Location</p>
-                  <p className="text-sm mt-1">{shopData.shop.country}</p>
-                </div>
-              )}
             </div>
           </div>
 
@@ -213,6 +169,56 @@ export default function ShopDetail() {
               <span className="hidden md:inline">Manage Shop</span>
             </Button>
           )}
+        </div>
+
+        {/* Social Links, Trading Experience, Location - Below the name section */}
+        <div>
+          {/* Social Links - Only show Instagram, Twitch, TikTok if they have values */}
+          <div className="flex flex-wrap gap-2">
+            {(['instagram', 'twitch', 'tiktok'] as const).map(social => {
+              const mapped = shopSocialsMapping[social];
+              const socialValue = shopSocials?.[social];
+              const hasLink = !!socialValue && String(socialValue).trim().length > 0;
+              const socialUrl = hasLink ? String(socialValue) : undefined;
+
+              // Only render if they have a link
+              if (!hasLink) return null;
+
+              return (
+                <div key={social} className="relative group">
+                  <a
+                    href={formatUrl(socialUrl!)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                    title={mapped.label}
+                  >
+                    {mapped.icon}
+                    <span className="text-sm font-medium">{mapped.label}</span>
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Trading Experience and Location */}
+          <div className="mt-4 space-y-4">
+            {/* Trading Experience */}
+            {shopData?.shop?.sellerTradingExperience && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
+                <p className="text-sm mt-1">{shopData.shop.sellerTradingExperience}</p>
+              </div>
+            )}
+
+            {/* Location */}
+            {shopData?.shop?.country && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Location</p>
+                <p className="text-sm mt-1">{shopData.shop.country}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
