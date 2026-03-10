@@ -1,17 +1,18 @@
 import { MainLayout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PrizesByCategory, Prize as PrizeDisplay } from '@/components/prizes/PrizesByCategory';
 import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { getImageLink } from '@/utils/helper';
 import { formatUrl } from '@/utils/format';
 import { FaInstagram, FaTiktok, FaTwitch, FaYoutube } from 'react-icons/fa';
 import { PublicUserProfile } from '@/types/profile';
+import { Button } from '@/components/ui/button';
 
 const shopSocialsMapping = {
   instagram: {
@@ -39,6 +40,7 @@ const shopSocialsMapping = {
 export default function ShopDetail() {
   const { username } = useParams<{ username: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { session } = useAuthContext();
   const [selectedPrizeForCheckout, setSelectedPrizeForCheckout] = useState<{
     id: string;
@@ -76,8 +78,8 @@ export default function ShopDetail() {
   const shopName = shopData?.shop?.displayName || username || 'Shop';
   const isOwnShop =
     !!username &&
-    !!session?.user?.username &&
-    session.user.username.toLowerCase() === username.toLowerCase();
+    !!(session?.username || session?.user?.username) &&
+    (session?.username || session?.user?.username)?.toLowerCase() === username.toLowerCase();
   const shopSocials =
     shopData?.shop?.socials ??
     profileData?.socials ??
@@ -129,71 +131,88 @@ export default function ShopDetail() {
     <MainLayout>
       {/* Shop Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-4">
-          {/* Shop Owner Avatar */}
-          <div className="h-16 w-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary">
-            {shopData?.shop?.profileImageUrl ? (
-              <img
-                src={getImageLink(shopData.shop.profileImageUrl)}
-                alt={shopName}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="h-full w-full bg-primary/20 flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary">{shopName[0].toUpperCase()}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Shop Info */}
-          <div>
-            <h1 className="text-3xl font-bold">{shopName}</h1>
-            <p className="text-muted-foreground">@{username}</p>
-
-            {/* Social Links - Only show Instagram, Twitch, TikTok if they have values */}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(['instagram', 'twitch', 'tiktok'] as const).map((social) => {
-                const mapped = shopSocialsMapping[social];
-                const socialValue = shopSocials?.[social];
-                const hasLink = !!socialValue && String(socialValue).trim().length > 0;
-                const socialUrl = hasLink ? String(socialValue) : undefined;
-
-                // Only render if they have a link
-                if (!hasLink) return null;
-
-                return (
-                  <div key={social} className="relative group">
-                    <a
-                      href={formatUrl(socialUrl!)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
-                      title={mapped.label}
-                    >
-                      {mapped.icon}
-                      <span className="text-sm font-medium">{mapped.label}</span>
-                    </a>
-                  </div>
-                );
-              })}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {/* Shop Owner Avatar */}
+            <div className="h-16 w-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary">
+              {shopData?.shop?.profileImageUrl ? (
+                <img
+                  src={getImageLink(shopData.shop.profileImageUrl)}
+                  alt={shopName}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-primary">
+                    {shopName[0].toUpperCase()}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Trading Experience */}
-            {shopData?.shop?.sellerTradingExperience && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
-                <p className="text-sm mt-1">{shopData.shop.sellerTradingExperience}</p>
-              </div>
-            )}
+            {/* Shop Info */}
+            <div>
+              <h1 className="text-3xl font-bold">{shopName}</h1>
+              <p className="text-muted-foreground">@{username}</p>
 
-            {/* Location */}
-            {shopData?.shop?.country && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-muted-foreground">Location</p>
-                <p className="text-sm mt-1">{shopData.shop.country}</p>
+              {/* Social Links - Only show Instagram, Twitch, TikTok if they have values */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(['instagram', 'twitch', 'tiktok'] as const).map(social => {
+                  const mapped = shopSocialsMapping[social];
+                  const socialValue = shopSocials?.[social];
+                  const hasLink = !!socialValue && String(socialValue).trim().length > 0;
+                  const socialUrl = hasLink ? String(socialValue) : undefined;
+
+                  // Only render if they have a link
+                  if (!hasLink) return null;
+
+                  return (
+                    <div key={social} className="relative group">
+                      <a
+                        href={formatUrl(socialUrl!)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                        title={mapped.label}
+                      >
+                        {mapped.icon}
+                        <span className="text-sm font-medium">{mapped.label}</span>
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
-            )}
+
+              {/* Trading Experience */}
+              {shopData?.shop?.sellerTradingExperience && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-muted-foreground">Trading Experience</p>
+                  <p className="text-sm mt-1">{shopData.shop.sellerTradingExperience}</p>
+                </div>
+              )}
+
+              {/* Location */}
+              {shopData?.shop?.country && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-muted-foreground">Location</p>
+                  <p className="text-sm mt-1">{shopData.shop.country}</p>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Manage Shop Button - Only show for shop owner */}
+          {isOwnShop && (
+            <Button
+              onClick={() => navigate('/seller/shop/manage')}
+              variant="default"
+              size="sm"
+              className="flex items-center gap-2 whitespace-nowrap md:px-4"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="hidden md:inline">Manage Shop</span>
+            </Button>
+          )}
         </div>
       </div>
 
