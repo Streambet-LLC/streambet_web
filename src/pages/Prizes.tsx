@@ -163,6 +163,8 @@ export default function Prizes() {
         displayOrder: prize.displayOrderShop ?? 999,
         featuredDisplayOrder: prize.featuredDisplayOrder ?? null,
         createdBy: prize.createdBy ?? null,
+        createdByUsername: prize.createdByUsername ?? null,
+        sellerDisplayName: prize.createdByShopName || prize.createdByUsername || null,
       }));
     
     // Check if purchase option sorting is enabled (use first prize's setting)
