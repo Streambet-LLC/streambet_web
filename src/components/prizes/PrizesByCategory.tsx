@@ -36,6 +36,7 @@ interface PrizesByCategoryProps {
   showBrandFilter?: boolean; // Optional: if false, hide brand filter but keep price filter
   /** 'shop' = stag-style 4-col portrait cards (default); 'redemption' = prod-style 3-col landscape cards */
   cardVariant?: 'shop' | 'redemption';
+  searchNode?: React.ReactNode; // Optional: custom search or filter component to render after filters
 }
 
 const CATEGORY_LABELS: Record<PrizeCategoryType, string> = {
@@ -52,6 +53,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   showCategoryHeaders = true, // Default to true to maintain existing behavior
   showBrandFilter = true, // Default to true to maintain existing behavior
   cardVariant = 'shop',
+  searchNode,
 }) => {
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
@@ -249,6 +251,9 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
           )}
         </>
       )}
+
+      {/* Custom search or filter node */}
+      {searchNode && <div className="mb-6">{searchNode}</div>}
 
       {hasPrizes ? (
         (() => {
