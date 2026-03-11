@@ -1,7 +1,7 @@
 import { MainLayout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Settings } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PrizesByCategory, Prize as PrizeDisplay } from '@/components/prizes/PrizesByCategory';
 import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
@@ -72,6 +72,10 @@ export default function ShopDetail() {
 
   const userCadeCoins = session?.walletBalanceCadeCoin || 0;
   const shopName = shopData?.shop?.displayName || username || 'Shop';
+
+  // Build guaranteed shop display name with fallbacks
+  const sellerDisplayName = shopData?.shop?.displayName || username || 'Shop';
+
   const isOwnShop =
     !!username &&
     !!(session?.username || session?.user?.username) &&
@@ -96,6 +100,7 @@ export default function ShopDetail() {
       brand: prize.brand,
       displayOrder: prize.displayOrderShop ?? 999,
       createdBy: prize.createdBy ?? null,
+      // Don't show shop link in shop detail - user is already in the shop
     }));
 
   // Check if purchase option sorting is enabled

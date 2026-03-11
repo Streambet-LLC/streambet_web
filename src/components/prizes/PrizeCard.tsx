@@ -9,6 +9,7 @@ import { Prize } from './PrizesByCategory';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import FeaturedBetCard from '../FeaturedBetCard';
+import { Link } from 'react-router-dom';
 
 interface PrizeCardProps {
   prize: Prize;
@@ -124,7 +125,7 @@ export default function PrizeCard({
     >
       <Card
         className={cn(
-          'h-full flex flex-col overflow-hidden transition-all duration-200 rounded-xl cursor-pointer',
+          'h-full flex flex-col overflow-hidden transition-all duration-200 rounded-xl',
           'relative bg-card-grid-bg border border-card-grid-border shadow-[0px_2px_8px_0px_rgba(0,0,0,0.5)]',
           'hover:border-card-grid-border-hover hover:shadow-[0px_4px_16px_0px_rgba(189,255,0,0.1)]',
           isOutOfStock && 'opacity-60'
@@ -164,6 +165,17 @@ export default function PrizeCard({
           {/* Description */}
           {prize.description && (
             <p className="text-xs text-muted-foreground line-clamp-1">{prize.description}</p>
+          )}
+
+          {/* Shop Name Link */}
+          {prize.createdByUsername && prize.sellerDisplayName && (
+            <Link
+              to={`/shop/${prize.createdByUsername}`}
+              className="text-xs text-primary hover:underline transition-colors"
+              onClick={e => e.stopPropagation()}
+            >
+              {prize.sellerDisplayName}
+            </Link>
           )}
 
           {/* Price */}
