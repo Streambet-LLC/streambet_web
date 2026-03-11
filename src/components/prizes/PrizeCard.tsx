@@ -3,7 +3,7 @@ import { Button } from '../ui/button';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { ShoppingCart, DollarSign, Expand } from 'lucide-react';
+import { ShoppingCart, DollarSign, Expand, X } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Prize } from './PrizesByCategory';
 import { useState } from 'react';
@@ -233,14 +233,48 @@ export default function PrizeCard({
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
         <DialogTitle className="sr-only">Prize Image</DialogTitle>
         <DialogContent
-          className="max-w-[95vw] max-h-[95vh] p-4 border-0 bg-transparent flex items-center justify-center"
+          className="max-w-[95vw] max-h-[95vh] p-4 border-0 bg-transparent flex items-center justify-center pointer-events-none"
           aria-describedby={undefined}
+          hideCloseButton={true}
         >
-          <img
-            src={imageUrl}
-            alt={prize.name}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg"
-          />
+          <motion.div
+            className="relative pointer-events-auto"
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            whileTap={{ cursor: 'grabbing' }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onDragEnd={(e, info) => {
+              // Close modal if dragged down more than 100px
+              if (info.offset.y > 100) {
+                setShowImageModal(false);
+              }
+            }}
+          >
+            {/* Drag Indicator - subtle hint for mobile users */}
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-60 md:hidden">
+              <div className="w-12 h-1 bg-white rounded-full" />
+              <span className="text-xs text-white">Swipe down to close</span>
+            </div>
+
+            {/* Custom Close Button - positioned on image */}
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute -top-3 -right-3 z-50 bg-black/80 hover:bg-black rounded-full p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+              aria-label="Close image"
+            >
+              <X className="h-6 w-6 text-white" />
+            </button>
+
+            <img
+              src={imageUrl}
+              alt={prize.name}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg select-none"
+            />
+          </motion.div>
         </DialogContent>
       </Dialog>
     </motion.div>

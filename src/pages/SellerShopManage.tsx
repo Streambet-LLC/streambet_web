@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { SellerOnboardingModal } from '@/components/seller/SellerOnboardingModal';
+import { SearchInput } from '@/components/ui/SearchInput';
 
 interface SellerOfferOrder {
   id: string;
@@ -111,6 +112,7 @@ export default function SellerShopManage() {
   const [country, setCountry] = useState(() => session?.country || '');
   const [isEditingShopName, setIsEditingShopName] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [form, setForm] = useState({
     name: '',
@@ -554,6 +556,19 @@ export default function SellerShopManage() {
     const data = await api.creator.generateAccountLink();
     window.location.replace(data.data);
   };
+
+  // Filter shop items based on search query
+  const filteredItems = items.filter(item => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const matchesName = item.name?.toLowerCase().includes(query);
+    const matchesDescription = item.description?.toLowerCase().includes(query);
+    const matchesBrand = item.brand?.toLowerCase().includes(query);
+    const matchesAmount = item.amount?.toString().includes(query);
+    
+    return matchesName || matchesDescription || matchesBrand || matchesAmount;
+  });
 
   if (!session?.isSeller) {
     return (
@@ -1144,7 +1159,16 @@ export default function SellerShopManage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Live Listings</CardTitle>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
+              <CardTitle>Live Listings</CardTitle>
+              <SearchInput
+                id="shop-items-search"
+                placeholder="Search items..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+                width="md"
+              />
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {isLoading ? (
@@ -1153,8 +1177,10 @@ export default function SellerShopManage() {
               </div>
             ) : items.length === 0 ? (
               <p className="text-sm text-muted-foreground">No items yet.</p>
+            ) : filteredItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No items match your search.</p>
             ) : (
-              items.map(item => (
+              filteredItems.map(item => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between border rounded-md p-3"
