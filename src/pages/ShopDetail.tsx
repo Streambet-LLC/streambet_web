@@ -1,5 +1,6 @@
 import { MainLayout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { Loader2, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -43,6 +44,7 @@ export default function ShopDetail() {
     name: string;
     amount: number;
   } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Get brand filter from URL params (supports comma-separated values)
   const brandFilterParam = searchParams.get('brand');
@@ -124,6 +126,18 @@ export default function ShopDetail() {
   // Apply brand filter if any brands are selected
   if (selectedBrands.length > 0) {
     slabPrizes = slabPrizes.filter(prize => prize.brand && selectedBrands.includes(prize.brand));
+  }
+
+  // Apply search filter
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase();
+    slabPrizes = slabPrizes.filter(prize => {
+      const matchesName = prize.name?.toLowerCase().includes(query);
+      const matchesDescription = prize.description?.toLowerCase().includes(query);
+      const matchesBrand = prize.brand?.toLowerCase().includes(query);
+      
+      return matchesName || matchesDescription || matchesBrand;
+    });
   }
 
   const isLoading = isLoadingShop;
@@ -243,6 +257,15 @@ export default function ShopDetail() {
           showFilters={true}
           showCategoryHeaders={false}
           showBrandFilter={false}
+          searchNode={
+            <SearchInput
+              id="shop-detail-search"
+              placeholder="Search items..."
+              value={searchQuery}
+              onChange={setSearchQuery}
+              width="lg"
+            />
+          }
         />
       )}
 
