@@ -21,6 +21,9 @@ export interface Prize {
   displayOrder?: number;
   featuredDisplayOrder?: number | null;
   createdBy?: string | null;
+  createdByUsername?: string | null;
+  createdByShopName?: string | null;
+  sellerDisplayName?: string | null;
 }
 
 interface PrizesByCategoryProps {

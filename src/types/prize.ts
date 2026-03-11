@@ -30,6 +30,8 @@ export interface PrizeConfiguration {
   createdAt: string;
   updatedAt: string;
   createdBy: string | null;
+  createdByUsername: string | null;
+  createdByShopName: string | null;
   updatedBy: string | null;
 }
 

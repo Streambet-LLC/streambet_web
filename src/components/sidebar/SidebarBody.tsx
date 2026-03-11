@@ -154,9 +154,9 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
   });
 
   const { data: sellerShops = [] } = useQuery({
-    queryKey: ['seller-shops'],
+    queryKey: ['seller-shops-sidebar'],
     queryFn: async () => {
-      return api.prize.getSellerShops();
+      return api.prize.getSellerShops(5);
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -330,68 +330,131 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Shops Section - Pinned to bottom */}
+      {/* Footer Section - Shops on shop pages, Creators on predictions page */}
       <SidebarFooter className="border-t border-border">
-        {controls.open && !controls.isMobile && (
-          <div className="flex items-center justify-between" id="sidebar-shops-label">
-            <div className="text-sm font-semibold">Shops</div>
-            <Link
-              to="/creators"
-              className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
-            >
-              See All
-            </Link>
-          </div>
-        )}
-        <div
-          className="flex flex-col gap-2"
-          role="navigation"
-          aria-label="Featured shops"
-          aria-labelledby={controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined}
-        >
-          {shops.map(shop => {
-            const commonClassName = cn(
-              'h-auto overflow-visible transition-all cursor-pointer no-underline',
-              controls.open && !controls.isMobile
-                ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
-                : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
-            );
-
-            const shopContent = (
-              <>
-                <Avatar
-                  className={cn(
-                    controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
-                    'flex-shrink-0'
-                  )}
+        {isPredictionsPage ? (
+          // Creators section for predictions page
+          <>
+            {controls.open && !controls.isMobile && (
+              <div className="flex items-center justify-between" id="sidebar-creators-label">
+                <div className="text-sm font-semibold">Creators</div>
+                <Link
+                  to="/creators"
+                  className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
                 >
-                  <AvatarImage
-                    src={shop.profileImageUrl ? getImageLink(shop.profileImageUrl) : undefined}
-                    alt={shop.name}
-                  />
-                  <AvatarFallback className="bg-primary text-black font-semibold text-xs">
-                    {shop.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                {controls.open && !controls.isMobile && (
-                  <span className="text-[13px] font-semibold text-primary truncate">
-                    {shop.name}
-                  </span>
-                )}
-              </>
-            );
-
-            return shop.isClickable ? (
-              <Link key={shop.id} to={`/shop/${shop.username}`} className={commonClassName}>
-                {shopContent}
-              </Link>
-            ) : (
-              <div key={shop.id} className={commonClassName}>
-                {shopContent}
+                  See All
+                </Link>
               </div>
-            );
-          })}
-        </div>
+            )}
+            <div
+              className="flex flex-col gap-2"
+              role="navigation"
+              aria-label="Live creators"
+              aria-labelledby={
+                controls.open && !controls.isMobile ? 'sidebar-creators-label' : undefined
+              }
+            >
+              {data?.slice(0, 5).map(stream => {
+                const commonClassName = cn(
+                  'h-auto overflow-visible transition-all cursor-pointer no-underline',
+                  controls.open && !controls.isMobile
+                    ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
+                    : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
+                );
+
+                return (
+                  <Link key={stream.id} to={`/${stream.creator}`} className={commonClassName}>
+                    <Avatar
+                      className={cn(
+                        controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
+                        'flex-shrink-0'
+                      )}
+                    >
+                      <AvatarImage
+                        src={stream.pfp ? getImageLink(stream.pfp) : undefined}
+                        alt={stream.creator}
+                      />
+                      <AvatarFallback className="bg-primary text-black font-semibold text-xs">
+                        {stream.creator?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {controls.open && !controls.isMobile && (
+                      <span className="text-[13px] font-semibold text-primary truncate">
+                        {stream.creator}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          // Shops section for shop/home pages
+          <>
+            {controls.open && !controls.isMobile && (
+              <div className="flex items-center justify-between" id="sidebar-shops-label">
+                <div className="text-sm font-semibold">Shops</div>
+                <Link
+                  to="/shops"
+                  className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  See All
+                </Link>
+              </div>
+            )}
+            <div
+              className="flex flex-col gap-2"
+              role="navigation"
+              aria-label="Featured shops"
+              aria-labelledby={
+                controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined
+              }
+            >
+              {shops.map(shop => {
+                const commonClassName = cn(
+                  'h-auto overflow-visible transition-all cursor-pointer no-underline',
+                  controls.open && !controls.isMobile
+                    ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
+                    : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
+                );
+
+                const shopContent = (
+                  <>
+                    <Avatar
+                      className={cn(
+                        controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
+                        'flex-shrink-0'
+                      )}
+                    >
+                      <AvatarImage
+                        src={shop.profileImageUrl ? getImageLink(shop.profileImageUrl) : undefined}
+                        alt={shop.name}
+                      />
+                      <AvatarFallback className="bg-primary text-black font-semibold text-xs">
+                        {shop.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {controls.open && !controls.isMobile && (
+                      <span className="text-[13px] font-semibold text-primary truncate">
+                        {shop.name}
+                      </span>
+                    )}
+                  </>
+                );
+
+                return shop.isClickable ? (
+                  <Link key={shop.id} to={`/shop/${shop.username}`} className={commonClassName}>
+                    {shopContent}
+                  </Link>
+                ) : (
+                  <div key={shop.id} className={commonClassName}>
+                    {shopContent}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
