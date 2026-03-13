@@ -97,9 +97,7 @@ export default function SellerShopManage() {
   const [isCounterDialogOpen, setIsCounterDialogOpen] = useState(false);
   const [counterAmount, setCounterAmount] = useState('');
   const [counterNotes, setCounterNotes] = useState('');
-  const [shopName, setShopName] = useState(
-    () => session?.shopName || session?.user?.username || ''
-  );
+  const [shopName, setShopName] = useState(() => session?.shopName || session?.user?.username || '');
   const [shopSocials, setShopSocials] = useState({
     instagram: session?.socials?.instagram || '',
     twitter: session?.socials?.twitter || '',
@@ -174,7 +172,7 @@ export default function SellerShopManage() {
     if (session?.user) {
       // Try to get shop name from multiple sources
       let displayNameValue = '';
-
+      
       // First check session.shopName
       if (session?.shopName) {
         displayNameValue = session.shopName;
@@ -195,7 +193,7 @@ export default function SellerShopManage() {
       else {
         displayNameValue = session?.user?.username || '';
       }
-
+      
       setShopName(displayNameValue);
 
       setShopSocials({
@@ -562,13 +560,13 @@ export default function SellerShopManage() {
   // Filter shop items based on search query
   const filteredItems = items.filter(item => {
     if (!searchQuery.trim()) return true;
-
+    
     const query = searchQuery.toLowerCase();
     const matchesName = item.name?.toLowerCase().includes(query);
     const matchesDescription = item.description?.toLowerCase().includes(query);
     const matchesBrand = item.brand?.toLowerCase().includes(query);
     const matchesAmount = item.amount?.toString().includes(query);
-
+    
     return matchesName || matchesDescription || matchesBrand || matchesAmount;
   });
 
@@ -810,598 +808,578 @@ export default function SellerShopManage() {
           </CardContent>
         </Card>
 
-        {session.stripeAccountConnected ? (
-          <>
-            {' '}
-            {/* Mobile: Preview at top, Desktop: Side-by-side layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-6">
-              {/* Form Section */}
-              <Card className="order-2 lg:order-1">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{editingItemId ? 'Edit Shop Item' : 'Add Item'}</CardTitle>
-                      {editingItemId && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Update the details for your shop item
-                        </p>
-                      )}
-                    </div>
-                    {editingItemId && (
-                      <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
-                        <X className="w-4 h-4 mr-2" />
-                        Cancel
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-2">
-                    <Label>Name *</Label>
-                    <Input
-                      placeholder="e.g., Charizard PSA 10"
-                      value={form.name}
-                      onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Price (USD) {form.purchaseOption !== 'offers_only' ? '*' : ''}</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        placeholder="0"
-                        value={form.amount}
-                        onChange={e =>
-                          setForm(p => ({ ...p, amount: Number(e.target.value) || 0 }))
-                        }
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Quantity</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="0 = unlimited"
-                        value={form.stock}
-                        onChange={e => setForm(p => ({ ...p, stock: Number(e.target.value) || 0 }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>Purchase Option *</Label>
-                    <Select
-                      value={form.purchaseOption}
-                      onValueChange={(value: 'buy_only' | 'offers_only' | 'both') =>
-                        setForm(p => ({ ...p, purchaseOption: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select purchase option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="buy_only">Buy Only</SelectItem>
-                        <SelectItem value="offers_only">Offers Only</SelectItem>
-                        <SelectItem value="both">Both</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>Card Type *</Label>
-                    <Select
-                      value={form.brand}
-                      onValueChange={(value: PrizeBrand) => setForm(p => ({ ...p, brand: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select brand" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pokemon">Pokémon</SelectItem>
-                        <SelectItem value="one_piece">One Piece</SelectItem>
-                        <SelectItem value="sports">Sports Cards</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>Image Layout</Label>
-                    <Select
-                      value={imageLayout}
-                      onValueChange={(value: 'single' | 'double') => setImageLayout(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select image layout" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="single">Single Slab (4" × 6.5")</SelectItem>
-                        <SelectItem value="double">Double Slab (8" × 6.5")</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Choose single for one side, or double for front & back side-by-side
+        {/* Mobile: Preview at top, Desktop: Side-by-side layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-6">
+          {/* Form Section */}
+          <Card className="order-2 lg:order-1">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{editingItemId ? 'Edit Shop Item' : 'Add Item'}</CardTitle>
+                  {editingItemId && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Update the details for your shop item
                     </p>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>Description</Label>
-                    <Textarea
-                      placeholder="Item description..."
-                      value={form.description}
-                      onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>Display Order</Label>
-                    <Input
-                      type="number"
-                      placeholder="1"
-                      value={form.displayOrderShop}
-                      onChange={e =>
-                        setForm(p => ({ ...p, displayOrderShop: Number(e.target.value) || 0 }))
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Lower numbers show first (e.g. 1 shows before 2).
-                    </p>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <Label className="text-base font-medium">Item Image</Label>
-                    <div className="grid gap-3">
-                      {/* Image Upload Area */}
-                      <div
-                        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                          isDragging
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onClick={handleUploadClick}
-                      >
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileInputChange}
-                          className="hidden"
-                        />
-                        <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                        <p className="text-sm font-medium mb-1 text-primary">Click to upload</p>
-                        <p className="text-xs text-muted-foreground mb-1">or drag and drop</p>
-                        <p className="text-xs text-muted-foreground">
-                          JPEG, PNG, or WebP
-                          <br />
-                          Aspect ratio 8:13 • 1200×1950px
-                        </p>
-                      </div>
-
-                      {/* Image Cropper */}
-                      {imageUpload.fileToCrop && (
-                        <PhotoCropper
-                          file={imageUpload.fileToCrop}
-                          onClose={imageUpload.cancelCrop}
-                          onCrop={imageUpload.handleCropComplete}
-                          cropperProps={{
-                            aspect: imageLayout === 'double' ? 2 / 1 : 8 / 13,
-                          }}
-                          resizerProps={{
-                            maxWidth: imageLayout === 'double' ? 1600 : 1200,
-                            maxHeight: imageLayout === 'double' ? 800 : 1950,
-                            compressFormat: 'JPEG',
-                            quality: 90,
-                          }}
-                        />
-                      )}
-
-                      {/* Image Error */}
-                      {imageError && (
-                        <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
-                          <p className="text-sm text-destructive">{imageError}</p>
-                        </div>
-                      )}
-
-                      {/* Image URL Input (Alternative) */}
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-background px-2 text-muted-foreground">
-                            Or use URL
-                          </span>
-                        </div>
-                      </div>
-
-                      <Input
-                        placeholder="https://example.com/image.jpg"
-                        value={form.imageUrl}
-                        onChange={e => {
-                          const url = e.target.value;
-                          setForm(p => ({ ...p, imageUrl: url }));
-                          // Clear uploaded file when URL is entered
-                          if (url && imageUpload.selectedFile) {
-                            imageUpload.clearImage();
-                          }
-                        }}
-                        disabled={!!imageUpload.selectedFile || !!imageUpload.previewUrl}
-                      />
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => createItem.mutate()}
-                    disabled={
-                      createItem.isPending ||
-                      !form.name ||
-                      (form.purchaseOption !== 'offers_only' && form.amount <= 0) ||
-                      isUploading
-                    }
-                    className="w-full"
-                  >
-                    {createItem.isPending || isUploading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : null}
-                    {isUploading ? 'Uploading...' : editingItemId ? 'Update Item' : 'Add Item'}
+                  )}
+                </div>
+                {editingItemId && (
+                  <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
                   </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Seller shop purchases are USD-only. CadeCoins are disabled for these items.
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Live Preview Section */}
-              <div className="order-1 lg:order-2 lg:sticky lg:top-6 lg:h-fit">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Live Preview</CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      This is how your item will appear in the shop
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Prize Card Preview */}
-                    <div className="max-w-[280px] mx-auto">
-                      <Card
-                        className={cn(
-                          'flex flex-col overflow-hidden rounded-xl',
-                          'relative bg-card-grid-bg border border-card-grid-border shadow-[0px_2px_8px_0px_rgba(0,0,0,0.5)]'
-                        )}
-                      >
-                        <CardHeader className="p-0 relative">
-                          {/* Prize Image */}
-                          <div className="relative w-full aspect-[4/5] overflow-hidden bg-muted flex items-center justify-center p-2">
-                            {imageUpload.previewUrl || form.imageUrl ? (
-                              <img
-                                src={imageUpload.previewUrl || form.imageUrl}
-                                alt="Prize preview"
-                                className="w-full h-full object-contain"
-                                onError={e => {
-                                  e.currentTarget.src = '/placeholder.svg';
-                                }}
-                              />
-                            ) : (
-                              <div className="text-muted-foreground text-sm text-center">
-                                No image
-                              </div>
-                            )}
-
-                            {/* Stock Badge */}
-                            {form.stock === 0 && (
-                              <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground px-2 py-1 rounded text-xs font-semibold">
-                                Out of Stock
-                              </div>
-                            )}
-                          </div>
-                        </CardHeader>
-
-                        <CardContent className="p-3 flex-1 flex flex-col gap-1.5">
-                          {/* Prize Name */}
-                          <h3 className="font-semibold text-sm line-clamp-2 leading-tight">
-                            {form.name || 'Item Name'}
-                          </h3>
-
-                          {/* Description */}
-                          {form.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-1">
-                              {form.description}
-                            </p>
-                          )}
-
-                          {/* Price */}
-                          <div className="mt-auto pt-1">
-                            {form.purchaseOption !== 'offers_only' ? (
-                              <span className="text-xl font-bold text-primary">
-                                ${form.amount ? form.amount.toFixed(2) : '0.00'}
-                              </span>
-                            ) : (
-                              <div className="text-sm font-semibold text-muted-foreground">
-                                Offers Only
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Stock Count */}
-                          {typeof form.stock === 'number' && (
-                            <p className="text-[10px] text-muted-foreground">
-                              Stock: {form.stock} {form.stock === 1 ? 'item' : 'items'}
-                            </p>
-                          )}
-                        </CardContent>
-
-                        <CardFooter className="p-3 pt-0 flex gap-2">
-                          {(form.purchaseOption === 'buy_only' ||
-                            form.purchaseOption === 'both') && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="flex-1 bg-primary text-black hover:bg-primary/90 h-8 text-xs pointer-events-none"
-                              disabled
-                            >
-                              <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
-                              Buy Now
-                            </Button>
-                          )}
-                          {(form.purchaseOption === 'offers_only' ||
-                            form.purchaseOption === 'both') && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1 gap-1.5 bg-transparent border-[#D4FF00] text-[#D4FF00] h-8 text-xs pointer-events-none"
-                              disabled
-                            >
-                              <DollarSign className="w-3.5 h-3.5" />
-                              Make Offer
-                            </Button>
-                          )}
-                        </CardFooter>
-                      </Card>
-                    </div>
-                  </CardContent>
-                </Card>
+                )}
               </div>
-            </div>
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
-                  <CardTitle>Live Listings</CardTitle>
-                  <SearchInput
-                    id="shop-items-search"
-                    placeholder="Search items..."
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    width="md"
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label>Name *</Label>
+                <Input
+                  placeholder="e.g., Charizard PSA 10"
+                  value={form.name}
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Price (USD) {form.purchaseOption !== 'offers_only' ? '*' : ''}</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="0"
+                    value={form.amount}
+                    onChange={e => setForm(p => ({ ...p, amount: Number(e.target.value) || 0 }))}
                   />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {isLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading items...
+                <div className="grid gap-2">
+                  <Label>Quantity</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="0 = unlimited"
+                    value={form.stock}
+                    onChange={e => setForm(p => ({ ...p, stock: Number(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Purchase Option *</Label>
+                <Select
+                  value={form.purchaseOption}
+                  onValueChange={(value: 'buy_only' | 'offers_only' | 'both') =>
+                    setForm(p => ({ ...p, purchaseOption: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select purchase option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="buy_only">Buy Only</SelectItem>
+                    <SelectItem value="offers_only">Offers Only</SelectItem>
+                    <SelectItem value="both">Both</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Card Type *</Label>
+                <Select
+                  value={form.brand}
+                  onValueChange={(value: PrizeBrand) => setForm(p => ({ ...p, brand: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pokemon">Pokémon</SelectItem>
+                    <SelectItem value="one_piece">One Piece</SelectItem>
+                    <SelectItem value="sports">Sports Cards</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Image Layout</Label>
+                <Select
+                  value={imageLayout}
+                  onValueChange={(value: 'single' | 'double') => setImageLayout(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select image layout" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single Slab (4" × 6.5")</SelectItem>
+                    <SelectItem value="double">Double Slab (8" × 6.5")</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose single for one side, or double for front & back side-by-side
+                </p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Description</Label>
+                <Textarea
+                  placeholder="Item description..."
+                  value={form.description}
+                  onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Display Order</Label>
+                <Input
+                  type="number"
+                  placeholder="1"
+                  value={form.displayOrderShop}
+                  onChange={e =>
+                    setForm(p => ({ ...p, displayOrderShop: Number(e.target.value) || 0 }))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Lower numbers show first (e.g. 1 shows before 2).
+                </p>
+              </div>
+
+              <div className="space-y-2.5">
+                <Label className="text-base font-medium">Item Image</Label>
+                <div className="grid gap-3">
+                  {/* Image Upload Area */}
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                      isDragging
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={handleUploadClick}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileInputChange}
+                      className="hidden"
+                    />
+                    <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-sm font-medium mb-1 text-primary">Click to upload</p>
+                    <p className="text-xs text-muted-foreground mb-1">or drag and drop</p>
+                    <p className="text-xs text-muted-foreground">
+                      JPEG, PNG, or WebP
+                      <br />
+                      Aspect ratio 8:13 • 1200×1950px
+                    </p>
                   </div>
-                ) : items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No items yet.</p>
-                ) : filteredItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No items match your search.</p>
-                ) : (
-                  filteredItems.map(item => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between border rounded-md p-3"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          ${item.amount} USD • Stock {item.stock}
-                        </div>
+
+                  {/* Image Cropper */}
+                  {imageUpload.fileToCrop && (
+                    <PhotoCropper
+                      file={imageUpload.fileToCrop}
+                      onClose={imageUpload.cancelCrop}
+                      onCrop={imageUpload.handleCropComplete}
+                      cropperProps={{
+                        aspect: imageLayout === 'double' ? 2 / 1 : 8 / 13,
+                      }}
+                      resizerProps={{
+                        maxWidth: imageLayout === 'double' ? 1600 : 1200,
+                        maxHeight: imageLayout === 'double' ? 800 : 1950,
+                        compressFormat: 'JPEG',
+                        quality: 90,
+                      }}
+                    />
+                  )}
+
+                  {/* Image Error */}
+                  {imageError && (
+                    <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
+                      <p className="text-sm text-destructive">{imageError}</p>
+                    </div>
+                  )}
+
+                  {/* Image URL Input (Alternative) */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or use URL</span>
+                    </div>
+                  </div>
+
+                  <Input
+                    placeholder="https://example.com/image.jpg"
+                    value={form.imageUrl}
+                    onChange={e => {
+                      const url = e.target.value;
+                      setForm(p => ({ ...p, imageUrl: url }));
+                      // Clear uploaded file when URL is entered
+                      if (url && imageUpload.selectedFile) {
+                        imageUpload.clearImage();
+                      }
+                    }}
+                    disabled={!!imageUpload.selectedFile || !!imageUpload.previewUrl}
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={() => createItem.mutate()}
+                disabled={
+                  createItem.isPending ||
+                  !form.name ||
+                  (form.purchaseOption !== 'offers_only' && form.amount <= 0) ||
+                  isUploading
+                }
+                className="w-full"
+              >
+                {createItem.isPending || isUploading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : null}
+                {isUploading ? 'Uploading...' : editingItemId ? 'Update Item' : 'Add Item'}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Seller shop purchases are USD-only. CadeCoins are disabled for these items.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Live Preview Section */}
+          <div className="order-1 lg:order-2 lg:sticky lg:top-6 lg:h-fit">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Live Preview</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  This is how your item will appear in the shop
+                </p>
+              </CardHeader>
+              <CardContent>
+                {/* Prize Card Preview */}
+                <div className="max-w-[280px] mx-auto">
+                  <Card
+                    className={cn(
+                      'flex flex-col overflow-hidden rounded-xl',
+                      'relative bg-card-grid-bg border border-card-grid-border shadow-[0px_2px_8px_0px_rgba(0,0,0,0.5)]'
+                    )}
+                  >
+                    <CardHeader className="p-0 relative">
+                      {/* Prize Image */}
+                      <div className="relative w-full aspect-[4/5] overflow-hidden bg-muted flex items-center justify-center p-2">
+                        {imageUpload.previewUrl || form.imageUrl ? (
+                          <img
+                            src={imageUpload.previewUrl || form.imageUrl}
+                            alt="Prize preview"
+                            className="w-full h-full object-contain"
+                            onError={e => {
+                              e.currentTarget.src = '/placeholder.svg';
+                            }}
+                          />
+                        ) : (
+                          <div className="text-muted-foreground text-sm text-center">No image</div>
+                        )}
+
+                        {/* Stock Badge */}
+                        {form.stock === 0 && (
+                          <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground px-2 py-1 rounded text-xs font-semibold">
+                            Out of Stock
+                          </div>
+                        )}
                       </div>
-                      <div className="flex gap-2">
+                    </CardHeader>
+
+                    <CardContent className="p-3 flex-1 flex flex-col gap-1.5">
+                      {/* Prize Name */}
+                      <h3 className="font-semibold text-sm line-clamp-2 leading-tight">
+                        {form.name || 'Item Name'}
+                      </h3>
+
+                      {/* Description */}
+                      {form.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {form.description}
+                        </p>
+                      )}
+
+                      {/* Price */}
+                      <div className="mt-auto pt-1">
+                        {form.purchaseOption !== 'offers_only' ? (
+                          <span className="text-xl font-bold text-primary">
+                            ${form.amount ? form.amount.toFixed(2) : '0.00'}
+                          </span>
+                        ) : (
+                          <div className="text-sm font-semibold text-muted-foreground">
+                            Offers Only
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Stock Count */}
+                      {typeof form.stock === 'number' && (
+                        <p className="text-[10px] text-muted-foreground">
+                          Stock: {form.stock} {form.stock === 1 ? 'item' : 'items'}
+                        </p>
+                      )}
+                    </CardContent>
+
+                    <CardFooter className="p-3 pt-0 flex gap-2">
+                      {(form.purchaseOption === 'buy_only' || form.purchaseOption === 'both') && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="flex-1 bg-primary text-black hover:bg-primary/90 h-8 text-xs pointer-events-none"
+                          disabled
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                          Buy Now
+                        </Button>
+                      )}
+                      {(form.purchaseOption === 'offers_only' ||
+                        form.purchaseOption === 'both') && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleEditItem(item)}
-                          disabled={deleteItem.isPending}
+                          className="flex-1 gap-1.5 bg-transparent border-[#D4FF00] text-[#D4FF00] h-8 text-xs pointer-events-none"
+                          disabled
                         >
-                          <Pencil className="w-4 h-4" />
+                          <DollarSign className="w-3.5 h-3.5" />
+                          Make Offer
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteItem.mutate(item.id)}
-                          disabled={deleteItem.isPending}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
+                      )}
+                    </CardFooter>
+                  </Card>
+                </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Offer Management</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Review, counter, accept, or reject offers on your shop items.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {isOffersLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading offers...
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
+              <CardTitle>Live Listings</CardTitle>
+              <SearchInput
+                id="shop-items-search"
+                placeholder="Search items..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+                width="md"
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading items...
+              </div>
+            ) : items.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No items yet.</p>
+            ) : filteredItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No items match your search.</p>
+            ) : (
+              filteredItems.map(item => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between border rounded-md p-3"
+                >
+                  <div className="flex-1">
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      ${item.amount} USD • Stock {item.stock}
+                    </div>
                   </div>
-                ) : offers.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No offers yet.</p>
-                ) : (
-                  offers.map(order => (
-                    <div key={order.id} className="border rounded-md p-3 space-y-3">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
-                          <div className="font-medium">
-                            {order.prizeConfig?.name || 'Shop Item'}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Buyer: {order.user?.username || 'Unknown'} • Offer: $
-                            {order.offerAmount?.toFixed(2) || '0.00'}
-                          </div>
-                          {order.counterOfferAmount ? (
-                            <div className="text-xs text-muted-foreground">
-                              Countered at: ${order.counterOfferAmount.toFixed(2)}
-                            </div>
-                          ) : null}
-                        </div>
-                        <Badge className={cn('border', getOfferStatusClass(order.status))}>
-                          {order.status.replace(/_/g, ' ').toUpperCase()}
-                        </Badge>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditItem(item)}
+                      disabled={deleteItem.isPending}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteItem.mutate(item.id)}
+                      disabled={deleteItem.isPending}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Offer Management</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Review, counter, accept, or reject offers on your shop items.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {isOffersLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading offers...
+              </div>
+            ) : offers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No offers yet.</p>
+            ) : (
+              offers.map(order => (
+                <div key={order.id} className="border rounded-md p-3 space-y-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <div className="font-medium">{order.prizeConfig?.name || 'Shop Item'}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Buyer: {order.user?.username || 'Unknown'} • Offer: $
+                        {order.offerAmount?.toFixed(2) || '0.00'}
                       </div>
-
-                      {order.offerNotes ? (
-                        <p className="text-xs italic text-muted-foreground">"{order.offerNotes}"</p>
-                      ) : null}
-
-                      {order.status === 'offer_made' ? (
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => acceptOfferMutation.mutate(order.id)}
-                            disabled={acceptOfferMutation.isPending}
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleOpenCounterDialog(order)}
-                            disabled={counterOfferMutation.isPending}
-                          >
-                            Counter
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => rejectOfferMutation.mutate(order.id)}
-                            disabled={rejectOfferMutation.isPending}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      ) : order.status === 'countered' ? (
+                      {order.counterOfferAmount ? (
                         <div className="text-xs text-muted-foreground">
-                          Waiting for buyer response to counter offer.
-                        </div>
-                      ) : order.status === 'offer_accepted' ? (
-                        <div className="text-xs text-muted-foreground">
-                          Accepted. Buyer has been emailed a checkout link.
+                          Countered at: ${order.counterOfferAmount.toFixed(2)}
                         </div>
                       ) : null}
                     </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Purchased Items</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Items that have been purchased by buyers. Mark them as shipped once sent.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {isPurchasedOrdersLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading purchases...
+                    <Badge className={cn('border', getOfferStatusClass(order.status))}>
+                      {order.status.replace(/_/g, ' ').toUpperCase()}
+                    </Badge>
                   </div>
-                ) : purchasedOrders.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No purchases yet.</p>
-                ) : (
-                  purchasedOrders.map(order => (
-                    <div key={order.id} className="border rounded-md p-3 space-y-3">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="font-medium">
-                            {order.prizeConfiguration?.name || 'Shop Item'}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Buyer: {order.user?.username || 'Unknown'} • Ordered:{' '}
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {order.user?.address && (
-                              <>
-                                {order.user.address}
-                                {order.user.city && `, ${order.user.city}`}
-                                {order.user.state && ` ${order.user.state}`}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <Badge className={cn('border', getOfferStatusClass(order.status))}>
-                          {order.status === 'paid'
-                            ? 'Pending Shipment'
-                            : order.status === 'shipped'
-                              ? 'Shipped'
-                              : 'Delivered'}
-                        </Badge>
-                      </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Total: </span>
-                          <span className="font-medium">
-                            ${order.totalPrice?.toFixed(2) || '0.00'}
-                          </span>
-                        </div>
-                        {order.trackingNumber && (
-                          <div>
-                            <span className="text-muted-foreground">Tracking: </span>
-                            <span className="font-medium">{order.trackingNumber}</span>
-                          </div>
-                        )}
-                        {order.shippingCarrier && (
-                          <div className="col-span-2">
-                            <span className="text-muted-foreground">Carrier: </span>
-                            <span className="font-medium">{order.shippingCarrier}</span>
-                          </div>
+                  {order.offerNotes ? (
+                    <p className="text-xs italic text-muted-foreground">"{order.offerNotes}"</p>
+                  ) : null}
+
+                  {order.status === 'offer_made' ? (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => acceptOfferMutation.mutate(order.id)}
+                        disabled={acceptOfferMutation.isPending}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenCounterDialog(order)}
+                        disabled={counterOfferMutation.isPending}
+                      >
+                        Counter
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => rejectOfferMutation.mutate(order.id)}
+                        disabled={rejectOfferMutation.isPending}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  ) : order.status === 'countered' ? (
+                    <div className="text-xs text-muted-foreground">
+                      Waiting for buyer response to counter offer.
+                    </div>
+                  ) : order.status === 'offer_accepted' ? (
+                    <div className="text-xs text-muted-foreground">
+                      Accepted. Buyer has been emailed a checkout link.
+                    </div>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Purchased Items</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Items that have been purchased by buyers. Mark them as shipped once sent.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {isPurchasedOrdersLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading purchases...
+              </div>
+            ) : purchasedOrders.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No purchases yet.</p>
+            ) : (
+              purchasedOrders.map(order => (
+                <div key={order.id} className="border rounded-md p-3 space-y-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="font-medium">
+                        {order.prizeConfiguration?.name || 'Shop Item'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Buyer: {order.user?.username || 'Unknown'} • Ordered:{' '}
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {order.user?.address && (
+                          <>
+                            {order.user.address}
+                            {order.user.city && `, ${order.user.city}`}
+                            {order.user.state && ` ${order.user.state}`}
+                          </>
                         )}
                       </div>
+                    </div>
+                    <Badge className={cn('border', getOfferStatusClass(order.status))}>
+                      {order.status === 'paid'
+                        ? 'Pending Shipment'
+                        : order.status === 'shipped'
+                          ? 'Shipped'
+                          : 'Delivered'}
+                    </Badge>
+                  </div>
 
-                      {order.status === 'paid' ? (
-                        <Button
-                          size="sm"
-                          onClick={() => handleOpenShipDialog(order)}
-                          className="w-full"
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          Mark as Shipped
-                        </Button>
-                      ) : (
-                        <div className="text-xs text-muted-foreground">
-                          {order.shippedAt && (
-                            <>Shipped on: {new Date(order.shippedAt).toLocaleDateString()}</>
-                          )}
-                        </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Total: </span>
+                      <span className="font-medium">${order.totalPrice?.toFixed(2) || '0.00'}</span>
+                    </div>
+                    {order.trackingNumber && (
+                      <div>
+                        <span className="text-muted-foreground">Tracking: </span>
+                        <span className="font-medium">{order.trackingNumber}</span>
+                      </div>
+                    )}
+                    {order.shippingCarrier && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Carrier: </span>
+                        <span className="font-medium">{order.shippingCarrier}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {order.status === 'paid' ? (
+                    <Button
+                      size="sm"
+                      onClick={() => handleOpenShipDialog(order)}
+                      className="w-full"
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Mark as Shipped
+                    </Button>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">
+                      {order.shippedAt && (
+                        <>Shipped on: {new Date(order.shippedAt).toLocaleDateString()}</>
                       )}
                     </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </>
-        ) : (
-          <>
-            <p className=" text-red-500">
-              Please complete Stripe Connection and wait for your account to be verified before you
-              can add products
-            </p>
-          </>
-        )}
+                  )}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
 
         <SellerOnboardingModal
           open={showOnboardingModal}
