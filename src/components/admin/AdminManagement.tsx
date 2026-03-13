@@ -42,6 +42,7 @@ import { PrizeConfiguration } from './PrizeConfiguration';
 import { PrizeRedemptions } from './PrizeRedemptions';
 import { PrizeOrders } from './PrizeOrders';
 import { ApplicationsTable } from './ApplicationsTable';
+import PendingOnboardingTable from './PendingOnboardingTable';
 
 export const AdminManagement = ({
   session,
@@ -107,6 +108,7 @@ export const AdminManagement = ({
     { key: 'promo-cards', label: 'Promo Cards' },
     { key: 'users', label: 'Users' },
     { key: 'applications', label: 'Applications' },
+    { key: 'pending-onboarding', label: 'Pending Onboarding' },
     { key: 'stream-payout', label: 'Stream Payout' },
     { key: 'prize-settings', label: 'Item Settings' },
     { key: 'prize-redemptions', label: 'Prize Redemptions' },
@@ -1697,6 +1699,12 @@ export const AdminManagement = ({
           {activeTab === 'applications' && (
             <div className="space-y-4">
               <ApplicationsTable />
+            </div>
+          )}
+
+          {activeTab === 'pending-onboarding' && (
+            <div className="space-y-4">
+              <PendingOnboardingTable />
             </div>
           )}
 
