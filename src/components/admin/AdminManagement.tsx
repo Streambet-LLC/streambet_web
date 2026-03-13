@@ -50,6 +50,8 @@ export const AdminManagement = ({
   refetchStreams,
   searchStreamQuery,
   setSearchStreamQuery,
+  pickStatusFiltersLiveStream,
+  setPickStatusFiltersLiveStream,
   onStreamContentChange,
   endedStreams,
   refetchEndedStreams,
@@ -60,6 +62,8 @@ export const AdminManagement = ({
   refetchNonVideoStreams,
   searchNonVideoQuery,
   setSearchNonVideoQuery,
+  pickStatusFiltersNonVideo,
+  setPickStatusFiltersNonVideo,
 
   endedNonVideoStreams,
   refetchEndedNonVideoStreams,
@@ -756,6 +760,14 @@ export const AdminManagement = ({
   useEffect(() => {
     setNonVideoPage(1);
   }, [searchNonVideoQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [pickStatusFiltersLiveStream]);
+
+  useEffect(() => {
+    setNonVideoPage(1);
+  }, [pickStatusFiltersNonVideo]);
 
   useEffect(() => {
     setEndedNonVideoCurrentPage(1);
@@ -1623,6 +1635,8 @@ export const AdminManagement = ({
                 setEditStreamId={setEditStreamId}
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}
+                pickStatusFilters={pickStatusFiltersLiveStream}
+                setPickStatusFilters={setPickStatusFiltersLiveStream}
               />
             </div>
           )}
@@ -1651,6 +1665,8 @@ export const AdminManagement = ({
                 setEditStreamId={setEditStreamId}
                 currentPage={nonVideoPage}
                 setCurrentPage={setNonVideoPage}
+                pickStatusFilters={pickStatusFiltersNonVideo}
+                setPickStatusFilters={setPickStatusFiltersNonVideo}
               />
             </div>
           )}

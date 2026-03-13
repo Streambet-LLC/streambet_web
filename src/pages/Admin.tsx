@@ -15,6 +15,8 @@ const Admin = () => {
     searchStreamQuery,
     handleRefetchStreams,
     setSearchStreamQuery,
+    pickStatusFiltersLiveStream,
+    setPickStatusFiltersLiveStream,
     endedStreams,
     handleRefetchEndedStreams,
     searchEndedStreamQuery,
@@ -25,6 +27,8 @@ const Admin = () => {
     nonVideoStreams,
     endedNonVideoStreams,
     searchNonVideoQuery,
+    pickStatusFiltersNonVideo,
+    setPickStatusFiltersNonVideo,
     searchEndedNonVideoQuery,
     setSearchEndedNonVideQuery,
     setSearchNonVideoQuery,
@@ -123,6 +127,8 @@ const Admin = () => {
         refetchStreams={range => handleRefetchStreams(range)}
         searchStreamQuery={searchStreamQuery}
         setSearchStreamQuery={setSearchStreamQuery}
+        pickStatusFiltersLiveStream={pickStatusFiltersLiveStream}
+        setPickStatusFiltersLiveStream={setPickStatusFiltersLiveStream}
         onStreamContentChange={setIsStreamContent}
         endedStreams={endedStreams}
         refetchEndedStreams={range => handleRefetchEndedStreams(range)}
@@ -132,6 +138,8 @@ const Admin = () => {
         refetchNonVideoStreams={range => handleNonVideoRefetchStreams(range)}
         searchNonVideoQuery={searchNonVideoQuery}
         setSearchNonVideoQuery={setSearchNonVideoQuery}
+        pickStatusFiltersNonVideo={pickStatusFiltersNonVideo}
+        setPickStatusFiltersNonVideo={setPickStatusFiltersNonVideo}
         endedNonVideoStreams={endedNonVideoStreams}
         refetchEndedNonVideoStreams={range => handleEndedNonVideoRefetchStreams(range)}
         searchEndedNonVideoQuery={searchEndedNonVideoQuery}
