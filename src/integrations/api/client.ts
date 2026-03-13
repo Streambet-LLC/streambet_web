@@ -1096,16 +1096,6 @@ export const adminAPI = {
     const response = await apiClient.patch(`/admin/applications/${id}/reject`);
     return response.data;
   },
-
-  getPendingOnboardingSellers: async () => {
-    const response = await apiClient.get(`/admin/sellers/pending-onboarding`);
-    return response.data;
-  },
-
-  markSellerAsOnboarded: async (id) => {
-    const response = await apiClient.patch(`/admin/sellers/${id}/complete-onboarding`);
-    return response.data;
-  },
 };
 
 // Creator API
