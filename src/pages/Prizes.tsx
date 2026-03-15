@@ -11,6 +11,7 @@ import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
 import { MakeOfferModal } from '@/components/prizes/MakeOfferModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { PrizeBrand } from '@/types/prize';
 import PrizeCard from '@/components/prizes/PrizeCard';
 import {
@@ -54,9 +55,10 @@ export default function Prizes() {
   const [selectedPrizeForOffer, setSelectedPrizeForOffer] = useState<PrizeDisplay | null>(null);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(24);
-  const [showPriceFilter, setShowPriceFilter] = useState(false);
+  const [showPriceFilter, setShowPriceFilter] = useState(true);
   const [minPrice, setMinPrice] = useState<number | ''>('');
   const [maxPrice, setMaxPrice] = useState<number | ''>('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Get brand filter from URL params (supports comma-separated values)
   const brandFilterParam = searchParams.get('brand');
@@ -223,8 +225,19 @@ export default function Prizes() {
       });
     }
 
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(prize => {
+        const matchesName = prize.name?.toLowerCase().includes(query);
+        const matchesDescription = prize.description?.toLowerCase().includes(query);
+        const matchesSeller = prize.sellerDisplayName?.toLowerCase().includes(query);
+        return matchesName || matchesDescription || matchesSeller;
+      });
+    }
+
     return filtered;
-  }, [allPrizes, selectedBrands, minPrice, maxPrice]);
+  }, [allPrizes, selectedBrands, minPrice, maxPrice, searchQuery]);
 
   // Display only first N items (client-side pagination)
   const displayedPrizes = filteredPrizes.slice(0, displayCount);
@@ -428,7 +441,7 @@ export default function Prizes() {
                 </div>
 
                 {/* Price Filter Toggle & Section */}
-                <div className="px-2">
+                <div className="px-2 space-y-4">
                   <Button
                     variant="outline"
                     size="sm"
@@ -505,6 +518,15 @@ export default function Prizes() {
                       </div>
                     </div>
                   )}
+
+                  {/* Search Input */}
+                  <SearchInput
+                    id="prizes-search"
+                    placeholder="Search items..."
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    width="md"
+                  />
                 </div>
 
                 {/* Items Grid */}

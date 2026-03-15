@@ -28,6 +28,7 @@ import api from '@/integrations/api/client';
 import { DeleteStreamDialog } from './DeleteStreamDialog';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useStreamPromotionListener } from '@/hooks/useStreamPromotionListener';
+import { PickStatusFilter } from './PickStatusFilter';
 
 interface Props {
   streams: any;
@@ -38,6 +39,8 @@ interface Props {
   setCurrentPage: (page: number) => void;
   setStreamAnalyticsId: (id: string) => void;
   isPromoTab?: boolean;
+  pickStatusFilters?: string[];
+  setPickStatusFilters?: (statuses: string[]) => void;
 }
 
 const BettingStatusBadge = ({ status }: { status?: string }) => {
@@ -137,6 +140,8 @@ export const StreamTable: React.FC<Props> = ({
   setCurrentPage,
   setStreamAnalyticsId,
   isPromoTab = false,
+  pickStatusFilters = [],
+  setPickStatusFilters,
 }) => {
   const isMobile = useIsMobile();
   const itemsPerPage = 7;
@@ -161,9 +166,17 @@ export const StreamTable: React.FC<Props> = ({
   useStreamPromotionListener(refetchCurrentPage);
 
   const totalPages = Math.ceil((streams?.total || 0) / itemsPerPage);
+  const fallbackPage = totalPages > 0 ? totalPages : 1;
+  const shouldShowPagination = (streams?.total || 0) > 0 || currentPage > 1;
+
+  useEffect(() => {
+    if (currentPage > fallbackPage) {
+      setCurrentPage(fallbackPage);
+    }
+  }, [currentPage, fallbackPage, setCurrentPage]);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= fallbackPage && page !== currentPage) {
       setCurrentPage(page);
     }
   };
@@ -237,6 +250,15 @@ export const StreamTable: React.FC<Props> = ({
 
   return (
     <div>
+      {/* Pick Status Filters - only show on livestreams and non-video tabs, not on promo tab */}
+      {!isPromoTab && setPickStatusFilters && (
+        <PickStatusFilter
+          selectedStatuses={pickStatusFilters}
+          onStatusChange={setPickStatusFilters}
+          setCurrentPage={setCurrentPage}
+        />
+      )}
+
       {/* Table and Card View below, update ChartNoAxesColumnIncreasing triggers */}
       {isMobile ? (
         // Mobile Card View
@@ -474,10 +496,10 @@ export const StreamTable: React.FC<Props> = ({
         </div>
       )}
 
-      {streams?.data?.length > 0 && (
+      {shouldShowPagination && (
         <div className="flex w-full justify-between bg-black rounded-md mt-4">
           <div className="text-sm w-full ml-4" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
-            Page {currentPage} of {totalPages}
+            Page {currentPage} of {fallbackPage}
           </div>
           <Pagination>
             <PaginationContent>
@@ -495,7 +517,7 @@ export const StreamTable: React.FC<Props> = ({
                   onClick={() => handlePageChange(currentPage + 1)}
                   className={cn(
                     'text-white border-white hover:bg-white/10',
-                    currentPage === totalPages && 'pointer-events-none opacity-50'
+                    currentPage >= fallbackPage && 'pointer-events-none opacity-50'
                   )}
                 />
               </PaginationItem>
