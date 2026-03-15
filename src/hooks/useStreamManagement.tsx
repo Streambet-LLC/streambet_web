@@ -11,19 +11,30 @@ export const useStreamManagement = () => {
   const [searchEndedStreamQuery, setSearchEndedStreamQuery] = useState('');
   const [searchEndedNonVideoQuery, setSearchEndedNonVideQuery] = useState('');
   const [searchPromoQuery, setSearchPromoQuery] = useState('');
+  
+  // Pick status filters for livestreams and non-video tabs
+  const [pickStatusFiltersLiveStream, setPickStatusFiltersLiveStream] = useState<string[]>([]);
+  const [pickStatusFiltersNonVideo, setPickStatusFiltersNonVideo] = useState<string[]>([]);
 
-  const rangeRef = useRef('[0,7]');
-  const endedStreamsRangeRef = useRef('[0,7]');
-  const promoStreamsRangeRef = useRef('[0,7]');
+  const defaultRange = '[0,7]';
+
+  const rangeRef = useRef(defaultRange);
+  const endedStreamsRangeRef = useRef(defaultRange);
+  const promoStreamsRangeRef = useRef(defaultRange);
   const { isLoading, isFetching, session } = useAuthContext();
 
   const { data: streams, refetch: refetchStreams } = useQuery({
     queryKey: ['streams'],
     queryFn: async () => {
+      const filterObj: any = { q: searchStreamQuery };
+      if (pickStatusFiltersLiveStream.length > 0) {
+        filterObj.pickStatus = pickStatusFiltersLiveStream;
+      }
+      
       const response = await adminAPI.getStreams({
         range: rangeRef.current,
         sort: '["createdAt","DESC"]',
-        filter: JSON.stringify({ q: searchStreamQuery }),
+        filter: JSON.stringify(filterObj),
         type: 'stream',
       });
 
@@ -57,10 +68,15 @@ export const useStreamManagement = () => {
   const { data: nonVideoStreams, refetch: refetchNonVideoStreams } = useQuery({
     queryKey: ['non-video'],
     queryFn: async () => {
+      const filterObj: any = { q: searchNonVideoQuery };
+      if (pickStatusFiltersNonVideo.length > 0) {
+        filterObj.pickStatus = pickStatusFiltersNonVideo;
+      }
+      
       const response = await adminAPI.getStreams({
         range: rangeRef.current,
         sort: '["createdAt","DESC"]',
-        filter: JSON.stringify({ q: searchNonVideoQuery }),
+        filter: JSON.stringify(filterObj),
         type: 'non-video',
       });
 
@@ -130,6 +146,17 @@ export const useStreamManagement = () => {
   useEffect(() => {
     refetchEndedStreams();
   }, [searchEndedStreamQuery, refetchEndedStreams]);
+  
+  // Refetch when pick status filters change
+  useEffect(() => {
+    rangeRef.current = defaultRange;
+    refetchStreams();
+  }, [defaultRange, pickStatusFiltersLiveStream, refetchStreams]);
+  
+  useEffect(() => {
+    rangeRef.current = defaultRange;
+    refetchNonVideoStreams();
+  }, [defaultRange, pickStatusFiltersNonVideo, refetchNonVideoStreams]);
 
   const { data: promoStreams, refetch: refetchPromoStreams } = useQuery({
     queryKey: ['promo-cards'],
@@ -164,6 +191,8 @@ export const useStreamManagement = () => {
     streams,
     searchStreamQuery,
     setSearchStreamQuery,
+    pickStatusFiltersLiveStream,
+    setPickStatusFiltersLiveStream,
     deleteStream,
     handleRefetchStreams,
     endedStreams,
@@ -176,6 +205,8 @@ export const useStreamManagement = () => {
     nonVideoStreams,
     endedNonVideoStreams,
     searchNonVideoQuery,
+    pickStatusFiltersNonVideo,
+    setPickStatusFiltersNonVideo,
     searchEndedNonVideoQuery,
     setSearchEndedNonVideQuery,
     setSearchNonVideoQuery,
