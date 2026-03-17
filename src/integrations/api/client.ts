@@ -1102,8 +1102,13 @@ export const adminAPI = {
     return response.data;
   },
 
-  markSellerAsOnboarded: async (id) => {
+  markSellerAsOnboarded: async id => {
     const response = await apiClient.patch(`/admin/sellers/${id}/complete-onboarding`);
+    return response.data;
+  },
+
+  getSellerStripeStatus: async () => {
+    const response = await apiClient.get(`/admin/sellers/stripe-status`);
     return response.data;
   },
 };
@@ -1117,7 +1122,7 @@ export const creatorAPI = {
   },
 
   generateAccountLink: async () => {
-    const response = await apiClient.post("/creator/create-connect-link");
+    const response = await apiClient.post('/creator/create-connect-link');
 
     return response.data;
   },
@@ -1481,6 +1486,12 @@ export const prizeAPI = {
     offerNotes?: string;
   }) => {
     const response = await apiClient.post('/prizes/make-offer', offerData);
+    return response.data;
+  },
+
+  // Get order success details for purchase confirmation page
+  getOrderSuccessDetails: async (orderId: string) => {
+    const response = await apiClient.get(`/prizes/orders/${orderId}/success-details`);
     return response.data;
   },
 };

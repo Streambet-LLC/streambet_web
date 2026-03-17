@@ -112,7 +112,7 @@ export const AdminManagement = ({
     { key: 'promo-cards', label: 'Promo Cards' },
     { key: 'users', label: 'Users' },
     { key: 'applications', label: 'Applications' },
-    { key: 'pending-onboarding', label: 'Pending Onboarding' },
+    { key: 'pending-onboarding', label: 'Seller Stripe Status' },
     { key: 'stream-payout', label: 'Stream Payout' },
     { key: 'prize-settings', label: 'Item Settings' },
     { key: 'prize-redemptions', label: 'Prize Redemptions' },
