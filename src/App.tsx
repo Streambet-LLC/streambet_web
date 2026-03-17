@@ -53,6 +53,7 @@ import { DailySpin } from './pages/DailySpin';
 import ShopDetail from './pages/ShopDetail';
 import Shops from './pages/Shops';
 import SellerShopManage from './pages/SellerShopManage';
+import Inbox from './pages/Inbox';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -122,6 +123,7 @@ const App = () => {
                               <Route path="/seller-application" element={<SellerApplication />} />
                               <Route path="/seller/shop/manage" element={<SellerShopManage />} />
                               <Route path="/daily-spin" element={<DailySpin />} />
+                              <Route path="/inbox" element={<Inbox />} />
                             </Route>
 
                             {/* Public Routes */}

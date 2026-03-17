@@ -1,9 +1,9 @@
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from './ui/button';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WalletDropdown } from './navigation/WalletDropdown';
 import { UserDropdown } from './navigation/UserDropdown';
-import { Menu } from 'lucide-react';
+import { Menu, Mail } from 'lucide-react';
 import { SearchInput } from './ui/SearchInput';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -17,6 +17,7 @@ import { useLogout } from '@/hooks/useLogout';
 import { useCookies } from 'react-cookie';
 import moment from 'moment';
 import { Separator } from './ui/separator';
+import { api } from '@/integrations/api/client';
 
 interface NavigationProps {
   onDashboardClick?: () => void;
@@ -45,6 +46,15 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
   const { session, refetchSession } = useAuthContext();
   const { handleLogout } = useLogout();
   const isPredictionsPage = location.pathname === '/predictions';
+
+  // Inbox unread count polling (only when logged in)
+  const { data: unreadData } = useQuery({
+    queryKey: ['inbox-unread-count'],
+    queryFn: () => api.inbox.getUnreadCount(),
+    refetchInterval: 30000,
+    enabled: !!session,
+  });
+  const unreadCount = unreadData?.unreadCount ?? 0;
 
   // Handle scroll behavior for hiding/showing navbar
   useEffect(() => {
@@ -213,6 +223,24 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                           className="justify-start text-left h-12 text-[#FFFFFF80] hover:text-white hover:bg-primary/5"
                           onClick={() => {
                             setTimeout(() => {
+                              navigate('/inbox');
+                            }, 100);
+                            setIsDrawerOpen(false);
+                          }}
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          <span>Inbox</span>
+                          {unreadCount > 0 && (
+                            <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white px-1.5">
+                              {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="justify-start text-left h-12 text-[#FFFFFF80] hover:text-white hover:bg-primary/5"
+                          onClick={() => {
+                            setTimeout(() => {
                               navigate('/settings');
                             }, 100);
                             setIsDrawerOpen(false);
@@ -316,6 +344,20 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
               {session ? (
                 <>
                   <WalletDropdown walletBalance={session?.walletBalanceCadeCoin || 0} />
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-9 w-9"
+                    onClick={() => navigate('/inbox')}
+                  >
+                    <Mail className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white px-1">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </Button>
 
                   <UserDropdown profile={session} onLogout={handleLogoutWithRefetch} />
                 </>

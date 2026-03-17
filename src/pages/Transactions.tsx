@@ -19,7 +19,7 @@ const Transactions = ({historyType}: {historyType?: HistoryType}) => {
 
   return (
     <MainLayout>
-      {session && <WalletHistory searchUserQuery={''} historyType={historyType} />}
+      {session && <WalletHistory historyType={historyType} />}
     </MainLayout>
   );
 };

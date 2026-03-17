@@ -43,6 +43,7 @@ import { PrizeRedemptions } from './PrizeRedemptions';
 import { PrizeOrders } from './PrizeOrders';
 import { ApplicationsTable } from './ApplicationsTable';
 import PendingOnboardingTable from './PendingOnboardingTable';
+import { AdminInboxPanel } from './AdminInboxPanel';
 
 export const AdminManagement = ({
   session,
@@ -117,6 +118,8 @@ export const AdminManagement = ({
     { key: 'prize-settings', label: 'Item Settings' },
     { key: 'prize-redemptions', label: 'Prize Redemptions' },
     { key: 'prize-offers', label: 'Prize Offers' },
+    { key: 'support-inbox', label: 'Support Inbox' },
+    { key: 'user-messages', label: 'User Messages' },
   ];
 
   const createStreamMutation = useMutation({
@@ -1739,6 +1742,18 @@ export const AdminManagement = ({
           {activeTab === 'prize-offers' && (
             <div className="space-y-4">
               <PrizeOrders />
+            </div>
+          )}
+
+          {activeTab === 'support-inbox' && (
+            <div className="space-y-4">
+              <AdminInboxPanel tab="support" />
+            </div>
+          )}
+
+          {activeTab === 'user-messages' && (
+            <div className="space-y-4">
+              <AdminInboxPanel tab="user_messages" />
             </div>
           )}
         </>
