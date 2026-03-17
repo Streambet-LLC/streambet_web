@@ -144,7 +144,7 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                   {prize.purchaseOption !== 'offers_only' && prize.amount && (
                     <div className="flex justify-between">
                       <span>Price:</span>
-                      <span>${prize.createdBy ? prize.amount.toFixed(2) : (prize.amount / 50).toFixed(2)}</span>
+                      <span>${(prize.amount / 50).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">

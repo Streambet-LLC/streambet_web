@@ -45,11 +45,11 @@ export default function PrizeCheckoutModal({
 }: PrizeCheckoutModalProps) {
   const queryClient = useQueryClient();
 
-  // For shop items, prizeAmount is in USD; for redemption, it's in coins
-  const prizeAmountInCoins = isShopItem ? prizeAmount * COINS_TO_USD : prizeAmount;
+  // Amount is always in CadeCoins (50 coins = $1 USD)
+  const prizeAmountInCoins = prizeAmount;
   const totalAmount = prizeAmountInCoins + SHIPPING_FEE_COINS;
   const itemLabel = isShopItem ? 'Item:' : 'Prize:';
-  const displayItemPriceUsd = isShopItem ? prizeAmount : prizeAmount / COINS_TO_USD;
+  const displayItemPriceUsd = prizeAmount / COINS_TO_USD;
 
   const { data: userAddress, isLoading: isLoadingAddress } = useQuery({
     queryKey: ['userAddress'],

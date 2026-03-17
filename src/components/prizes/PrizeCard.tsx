@@ -31,17 +31,12 @@ export default function PrizeCard({
 }: PrizeCardProps) {
   const [showImageModal, setShowImageModal] = useState(false);
 
-  // For shop variant, amount is already in USD. For redemption, amount is in coins.
+  // Amount is always stored in CadeCoins (50 coins = $1 USD)
   const priceInUSD = prize.amount
-    ? variant === 'shop'
-      ? prize.amount.toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
-      : (prize.amount / 50).toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
+    ? (prize.amount / 50).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
     : '0.00';
   const canBuy = prize.purchaseOption === 'buy_only' || prize.purchaseOption === 'both';
   const canOffer = prize.purchaseOption === 'offers_only' || prize.purchaseOption === 'both';
