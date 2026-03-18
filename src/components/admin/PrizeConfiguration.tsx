@@ -1104,7 +1104,7 @@ export const PrizeConfiguration = () => {
                           createdBy: item?.createdBy ?? null,
                           showOnShop: false,
                           showOnRedemptions: true,
-                          amount: (item?.amount ?? 0) * 50,
+                          // Amount is already stored in cadecoins, no conversion needed
                         };
                       });
                       bulkAssignMutation.mutate(updates);
