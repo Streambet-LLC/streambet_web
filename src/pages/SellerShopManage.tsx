@@ -243,11 +243,14 @@ export default function SellerShopManage() {
   const createItem = useMutation({
     mutationFn: async () => {
       const imageUrl = await handleImageUpload();
+      // Convert USD to CadeCoins (50 coins = $1) before sending to API
+      const amountInCoins = form.purchaseOption === 'offers_only'
+        ? Math.max(1, form.amount)
+        : Math.round(form.amount * 50);
       const payload = {
         ...form,
         imageUrl,
-        // For offers_only, backend requires amount >= 1, so default to 1
-        amount: form.purchaseOption === 'offers_only' ? Math.max(1, form.amount) : form.amount,
+        amount: amountInCoins,
         category: 'slab' as const, // All shop items are slabs
       };
 
@@ -472,7 +475,8 @@ export default function SellerShopManage() {
       name: item.name || '',
       description: item.description || '',
       imageUrl: item.imageUrl || '',
-      amount: item.amount || 0,
+      // Convert CadeCoins back to USD for display (50 coins = $1)
+      amount: item.amount ? Math.round(item.amount / 50) : 0,
       stock: item.stock || 0,
       purchaseOption: item.purchaseOption || 'buy_only',
       brand: item.brand || 'other',
