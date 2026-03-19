@@ -1,10 +1,12 @@
 import api from '@/integrations/api/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 import { Card, CardContent } from '../ui/card';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface StripeStatus {
   detailsSubmitted: boolean;
@@ -78,7 +80,10 @@ const OverallStatus = ({ seller }: { seller: SellerWithStatus }) => {
 };
 
 const PendingOnboardingTable = () => {
-  const { data, isLoading } = useQuery<SellerWithStatus[]>({
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data, isLoading, refetch, isFetching } = useQuery<SellerWithStatus[]>({
     queryKey: ['seller-stripe-status'],
     queryFn: async () => {
       const response = await api.admin.getSellerStripeStatus();
@@ -86,9 +91,33 @@ const PendingOnboardingTable = () => {
     },
   });
 
+  const markOnboardedMutation = useMutation({
+    mutationFn: (userId: string) => api.admin.markSellerAsOnboarded(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['seller-stripe-status'] });
+      toast({ title: 'Success', description: 'Seller marked as onboarded' });
+    },
+    onError: () => {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to mark seller as onboarded',
+      });
+    },
+  });
+
   return (
     <Card className="bg-[rgba(22,22,22,1)] border-none">
       <CardContent className="p-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#2D343E]">
+          <p className="text-sm text-gray-400">
+            {data?.length ?? 0} seller{data?.length !== 1 ? 's' : ''} found
+          </p>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching ? 'Syncing with Stripe...' : 'Refresh from Stripe'}
+          </Button>
+        </div>
         {isLoading ? (
           <div className="flex justify-center items-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-white" />
@@ -107,6 +136,7 @@ const PendingOnboardingTable = () => {
                 <TableHead className="text-[#9CA3AF]">Charges</TableHead>
                 <TableHead className="text-[#9CA3AF]">Payouts</TableHead>
                 <TableHead className="text-[#9CA3AF]">Fee %</TableHead>
+                <TableHead className="text-[#9CA3AF]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -138,6 +168,32 @@ const PendingOnboardingTable = () => {
                   </TableCell>
                   <TableCell className="text-white">
                     {seller.applicationFeePercent ?? '—'}%
+                  </TableCell>
+                  <TableCell>
+                    {!seller.stripeAccountConnected && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => markOnboardedMutation.mutate(seller.id)}
+                        disabled={markOnboardedMutation.isPending}
+                      >
+                        {markOnboardedMutation.isPending ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                        )}
+                        Mark Onboarded
+                      </Button>
+                    )}
+                    {seller.stripeAccountConnected && (
+                      <Badge
+                        variant="outline"
+                        className="border-green-500/40 bg-green-500/10 text-green-400"
+                      >
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Onboarded
+                      </Badge>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
