@@ -31,7 +31,7 @@ const BuyCoins = ({
   };
 
   return (
-   <div className="text-white ">
+    <div className="text-white ">
       {isCoinPackagesLoading && (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
@@ -44,7 +44,8 @@ const BuyCoins = ({
         <div className="mx-auto">
           <h2 className="text-lg font-medium mb-2">Buy Gold Coins</h2>
           <p className="text-sm text-gray-400">
-            Streambet employs a 2-token Sweepstakes model, where you can purchase gold coins packs that include Stream Coins, alongside.{' '}
+            CardCade employs a 2-token Sweepstakes model, where you can purchase gold coins packs
+            that include Stream Coins, alongside.{' '}
             <Dialog>
               <DialogTrigger asChild>
                 <span className="text-white cursor-pointer">How it Works</span>
@@ -55,27 +56,26 @@ const BuyCoins = ({
                 </DialogHeader>
                 <DialogDescription>
                   <p>
-                    Streambet employs a 2-token Sweepstakes model, where you can purchase gold coins packs that include Stream Coins, alongside.
+                    CardCade employs a 2-token Sweepstakes model, where you can purchase gold coins
+                    packs that include Stream Coins, alongside.
                   </p>
                   <p className="mt-2">
-                    Gold coins (aka free coins) can be used to make free Picks on participation streams / contents, where creators may offer prizes for engagement.
+                    Gold coins (aka free coins) can be used to make free Picks on participation
+                    streams / contents, where creators may offer prizes for engagement.
                   </p>
                   <p className="mt-2">
-                    Stream coins can be used for real-$ Picks, where creators host real-$ contests. This is where things get realllly interesting.
+                    Stream coins can be used for real-$ Picks, where creators host real-$ contests.
+                    This is where things get realllly interesting.
                   </p>
                   <p className="mt-2">
                     Contact us with any questions via Discord, email, or Instagram.
                   </p>
-                  <p className="mt-2">
-                    Good luck, have fun, and may the Picks be with you!
-                  </p>
+                  <p className="mt-2">Good luck, have fun, and may the Picks be with you!</p>
                 </DialogDescription>
                 <DialogFooter>
-                <DialogClose asChild>
-                  <Button className="mx-auto">
-                    Got it!
-                  </Button>
-                </DialogClose>
+                  <DialogClose asChild>
+                    <Button className="mx-auto">Got it!</Button>
+                  </DialogClose>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -88,64 +88,70 @@ const BuyCoins = ({
           </div>
           <Separator className="my-4 bg-[#232323]" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6 mt-10">
-            {coinPackages?.sort((a, b) => a.totalAmount - b.totalAmount).map((option, idx) => {
-              // Initialize loading state for this image
-              if (imageLoadingStates[idx] === undefined) {
-                setImageLoadingStates(prev => ({ ...prev, [idx]: true }));
-              }
-              
-              return (
-                <div
-                  key={idx}
-                  className="bg-[#1C1C1C] rounded-lg p-4"
-                >
-                  <div className="flex gap-4">
-                  <div className="relative w-[70px] h-[84px] mb-4 flex items-center justify-center">
-                    {imageLoadingStates[idx] && (
-                      <div className="absolute inset-0 bg-gray-700 rounded-lg animate-pulse"></div>
-                    )}
-                    <img
-                      src={getImageLink(option?.imageUrl)}
-                      alt={`coin-${idx}`}
-                      className={`w-[70px] h-[84px] object-contain transition-opacity duration-300 ${
-                        imageLoadingStates[idx] ? 'opacity-0' : 'opacity-100'
-                      }`}
-                      onLoad={() => handleImageLoad(idx)}
-                    />
-                  </div>
-                  <div className="flex flex-col my-auto leading-none">
-                  <div className="text-[24px] font-semibold text-[#BDFF00]">
-                    {Number(option.goldCoinCount || 0)?.toLocaleString('en-US')} 
-                  </div>
-                  <span className="text-lg text-[#FFFFFF] mb-4">gold coins</span>
-                  </div>
-                  </div>
+            {coinPackages
+              ?.sort((a, b) => a.totalAmount - b.totalAmount)
+              .map((option, idx) => {
+                // Initialize loading state for this image
+                if (imageLoadingStates[idx] === undefined) {
+                  setImageLoadingStates(prev => ({ ...prev, [idx]: true }));
+                }
 
-                  <div className="flex items-center bg-[#3B3E2B] rounded-md w-full mb-4 h-[70px]">
-                    <div className="flex items-center justify-center text-sm font-bold w-[60px] h-[60px]">
-                     <img src="/icons/promo.svg" alt="coin-icon" />
+                return (
+                  <div key={idx} className="bg-[#1C1C1C] rounded-lg p-4">
+                    <div className="flex gap-4">
+                      <div className="relative w-[70px] h-[84px] mb-4 flex items-center justify-center">
+                        {imageLoadingStates[idx] && (
+                          <div className="absolute inset-0 bg-gray-700 rounded-lg animate-pulse"></div>
+                        )}
+                        <img
+                          src={getImageLink(option?.imageUrl)}
+                          alt={`coin-${idx}`}
+                          className={`w-[70px] h-[84px] object-contain transition-opacity duration-300 ${
+                            imageLoadingStates[idx] ? 'opacity-0' : 'opacity-100'
+                          }`}
+                          onLoad={() => handleImageLoad(idx)}
+                        />
+                      </div>
+                      <div className="flex flex-col my-auto leading-none">
+                        <div className="text-[24px] font-semibold text-[#BDFF00]">
+                          {Number(option.goldCoinCount || 0)?.toLocaleString('en-US')}
+                        </div>
+                        <span className="text-lg text-[#FFFFFF] mb-4">gold coins</span>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-bold text-[#0D0D0D] uppercase bg-[#BDFF00] text-center w-14 rounded-sm">Promo</span>
-                      <span className="text-xs text-[#BDFF00]">Get {Number(option.sweepCoinCount || 0)?.toLocaleString('en-US')} free Stream Coins</span>
-                    </div>
-                  </div>
 
-                  <button className="mt-2 bg-[#BDFF00] text-black font-semibold py-2 px-4 rounded-full w-full text-sm" 
-                    onClick={() => {
-                      setPackageId(option.id || '');
-                      setDepositAmount(parseFloat(option.totalAmount || 0));
-                    }}>
+                    <div className="flex items-center bg-[#3B3E2B] rounded-md w-full mb-4 h-[70px]">
+                      <div className="flex items-center justify-center text-sm font-bold w-[60px] h-[60px]">
+                        <img src="/icons/promo.svg" alt="coin-icon" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-bold text-[#0D0D0D] uppercase bg-[#BDFF00] text-center w-14 rounded-sm">
+                          Promo
+                        </span>
+                        <span className="text-xs text-[#BDFF00]">
+                          Get {Number(option.sweepCoinCount || 0)?.toLocaleString('en-US')} free
+                          Stream Coins
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      className="mt-2 bg-[#BDFF00] text-black font-semibold py-2 px-4 rounded-full w-full text-sm"
+                      onClick={() => {
+                        setPackageId(option.id || '');
+                        setDepositAmount(parseFloat(option.totalAmount || 0));
+                      }}
+                    >
                       ${option.totalAmount || 0}
-                  </button>
-                </div>
-              );
-            })}
+                    </button>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default BuyCoins;
