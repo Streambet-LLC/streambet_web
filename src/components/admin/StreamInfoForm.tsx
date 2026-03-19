@@ -153,7 +153,7 @@ export const StreamInfoForm = ({
                 <div className="space-y-2 text-sm">
                   <p>
                     <span className="font-semibold">Livestream:</span> Select if you're casting live
-                    video to Streambet from platforms like Twitch, Kick, or YouTube. Requires Embed
+                    video to CardCade from platforms like Twitch, Kick, or YouTube. Requires Embed
                     URL and Start date/time.
                   </p>
                   <p>

@@ -101,9 +101,7 @@ export default function LandingHero() {
           {userCount !== null && (
             <p>
               Join{' '}
-              <span className="text-electric-lime font-semibold">
-                {userCount.toLocaleString()}+
-              </span>{' '}
+              <span className="text-electric-lime font-semibold">{userCount.toLocaleString()}</span>{' '}
               collectors already trading on CardCade
             </p>
           )}
