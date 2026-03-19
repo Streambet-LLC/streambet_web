@@ -178,7 +178,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                     >
                       <img
                         src="/wordmark.svg"
-                        alt="Streambet Logo"
+                        alt="CardCade Logo"
                         className="h-8 w-[165px] object-contain"
                       />
                     </Link>
@@ -246,7 +246,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
               <Link to="/" className="flex items-center">
                 <img
                   src="/wordmark.svg"
-                  alt="Streambet Logo"
+                  alt="CardCade Logo"
                   className="h-8 w-[165px] object-contain"
                 />
               </Link>

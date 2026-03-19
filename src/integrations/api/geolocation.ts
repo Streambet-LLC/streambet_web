@@ -45,7 +45,7 @@ export async function verifyUserLocation(): Promise<GeolocationResult> {
     //     country,
     //     state: region,
     //     ip_address: ip,
-    //     error: `Sorry, Streambet is not available in ${region} due to local regulations.`,
+    //     error: `Sorry, CardCade is not available in ${region} due to local regulations.`,
     //   };
     // }
 
