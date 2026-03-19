@@ -13,7 +13,13 @@ import api from '@/integrations/api/client';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from './ui/pagination';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from './ui/pagination';
 import { Input } from './ui/input';
 import { Search } from 'lucide-react';
 import { CurrencyType, HistoryType } from '@/enums';
