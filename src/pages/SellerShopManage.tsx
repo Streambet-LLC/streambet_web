@@ -244,9 +244,10 @@ export default function SellerShopManage() {
     mutationFn: async () => {
       const imageUrl = await handleImageUpload();
       // Convert USD to CadeCoins (50 coins = $1) before sending to API
-      const amountInCoins = form.purchaseOption === 'offers_only'
-        ? Math.max(1, form.amount)
-        : Math.round(form.amount * 50);
+      const amountInCoins =
+        form.purchaseOption === 'offers_only'
+          ? Math.max(1, form.amount)
+          : Math.round(form.amount * 50);
       const payload = {
         ...form,
         imageUrl,
@@ -559,8 +560,12 @@ export default function SellerShopManage() {
   };
 
   const handleGenerateAccountLink = async () => {
-    const data = await api.creator.generateAccountLink();
-    window.location.replace(data.data);
+    if (session.stripeAccountConnected) {
+      window.open('https://dashboard.stripe.com', '_blank');
+    } else {
+      const data = await api.creator.generateAccountLink();
+      window.location.replace(data.data);
+    }
   };
 
   // Filter shop items based on search query
@@ -808,7 +813,7 @@ export default function SellerShopManage() {
                   handleGenerateAccountLink();
                 }}
               >
-                Stripe Connect Settings
+                {session.stripeAccountConnected ? 'Stripe Dashboard' : 'Stripe Connect Settings'}
               </Button>
             </div>
           </CardContent>
