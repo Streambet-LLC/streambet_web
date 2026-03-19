@@ -1499,12 +1499,12 @@ export default function SellerShopManage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="shippingCarrier">Shipping Carrier (Optional)</Label>
-                <Select value={shippingCarrier} onValueChange={setShippingCarrier}>
+                <Select value={shippingCarrier || 'none'} onValueChange={(val) => setShippingCarrier(val === 'none' ? '' : val)}>
                   <SelectTrigger id="shippingCarrier">
                     <SelectValue placeholder="Select carrier" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     <SelectItem value="FedEx">FedEx</SelectItem>
                     <SelectItem value="UPS">UPS</SelectItem>
                     <SelectItem value="USPS">USPS</SelectItem>
