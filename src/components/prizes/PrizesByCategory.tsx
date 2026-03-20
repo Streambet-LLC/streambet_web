@@ -13,6 +13,8 @@ export interface Prize {
   name: string;
   description?: string;
   imageUrl?: string;
+  imageUrls?: string[];
+  coverImageIndex?: number;
   category: PrizeCategoryType;
   amount?: number;
   stock?: number;

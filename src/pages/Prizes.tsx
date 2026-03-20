@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { PrizeBrand } from '@/types/prize';
 import PrizeCard from '@/components/prizes/PrizeCard';
+import { resolvePrizeImages } from '@/components/prizes/prizeImageUtils';
 import {
   Carousel,
   CarouselContent,
@@ -152,22 +153,28 @@ export default function Prizes() {
   const allPrizes: PrizeDisplay[] = useMemo(() => {
     const filtered = (tiers || [])
       .filter(prize => prize.stock > 0 && prize.showOnShop !== false)
-      .map(prize => ({
-        id: prize.id,
-        name: prize.name,
-        description: prize.description || undefined,
-        imageUrl: prize.imageUrl || undefined,
-        category: mapCategory(prize),
-        amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
-        stock: prize.stock,
-        purchaseOption: prize.purchaseOption,
-        brand: prize.brand,
-        displayOrder: prize.displayOrderShop ?? 999,
-        featuredDisplayOrder: prize.featuredDisplayOrder ?? null,
-        createdBy: prize.createdBy ?? null,
-        createdByUsername: prize.createdByUsername ?? null,
-        sellerDisplayName: prize.createdByShopName || prize.createdByUsername || null,
-      }));
+      .map(prize => {
+        const { imageUrls, coverImageIndex, coverImageUrl } = resolvePrizeImages(prize);
+
+        return {
+          id: prize.id,
+          name: prize.name,
+          description: prize.description || undefined,
+          imageUrl: coverImageUrl,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+          coverImageIndex,
+          category: mapCategory(prize),
+          amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
+          stock: prize.stock,
+          purchaseOption: prize.purchaseOption,
+          brand: prize.brand,
+          displayOrder: prize.displayOrderShop ?? 999,
+          featuredDisplayOrder: prize.featuredDisplayOrder ?? null,
+          createdBy: prize.createdBy ?? null,
+          createdByUsername: prize.createdByUsername ?? null,
+          sellerDisplayName: prize.createdByShopName || prize.createdByUsername || null,
+        };
+      });
     
     // Check if purchase option sorting is enabled (use first prize's setting)
     const usePurchaseSort = tiers?.[0]?.sortByPurchaseOptionShop ?? false;

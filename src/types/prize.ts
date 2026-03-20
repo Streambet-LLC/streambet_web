@@ -4,6 +4,13 @@
 
 export type PrizeBrand = 'pokemon' | 'one_piece' | 'sports' | 'other';
 
+export interface ItemImage {
+  id: string;
+  imageUrl: string;
+  displayOrder: number;
+  isCover: boolean;
+}
+
 /**
  * Prize tier configuration
  * Each tier is stored as a separate row in the database
@@ -15,11 +22,15 @@ export interface PrizeConfiguration {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  imageUrls?: string[];
+  itemImages?: ItemImage[];
+  coverImageId?: string | null;
   category: 'slab' | 'sealed';
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
   brand: PrizeBrand;
   displayOrderShop: number | null;
+  sellerDisplayOrderShop: number | null;
   displayOrderRedemptions: number | null;
   featuredDisplayOrder: number | null;
   showOnRedemptions: boolean;
@@ -50,6 +61,10 @@ export interface SellerShopResponse {
     displayName: string;
     profileImageUrl: string | null;
     socials: { [social: string]: string } | null;
+    sellerTradingExperience?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
   };
   items: PrizeConfiguration[];
 }
@@ -72,11 +87,14 @@ export interface CreatePrizeTierRequest {
   name: string;
   description?: string;
   imageUrl?: string;
+  imageUrls?: string[];
+  coverImageIndex?: number;
   category: 'slab' | 'sealed';
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
   brand?: PrizeBrand;
   displayOrderShop?: number;
+  sellerDisplayOrderShop?: number;
   displayOrderRedemptions?: number;
   featuredDisplayOrder?: number | null;
   showOnRedemptions?: boolean;
@@ -92,11 +110,14 @@ export interface UpdatePrizeTierRequest {
   name: string;
   description?: string;
   imageUrl?: string;
+  imageUrls?: string[];
+  coverImageIndex?: number;
   category: 'slab' | 'sealed';
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
   brand?: PrizeBrand;
   displayOrderShop?: number;
+  sellerDisplayOrderShop?: number;
   displayOrderRedemptions?: number;
   featuredDisplayOrder?: number | null;
   showOnRedemptions?: boolean;
