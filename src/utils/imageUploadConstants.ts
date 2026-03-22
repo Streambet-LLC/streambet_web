@@ -23,6 +23,9 @@ export const IMAGE_UPLOAD_CONFIG = {
   
   /** Double slab - front & back side-by-side (8" × 6.5" = 16:13 ratio) */
   PRIZE_DOUBLE_SLAB_ASPECT_RATIO: 16 / 13,
+
+  /** Max number of item photos allowed for a single listing */
+  ITEM_MAX_IMAGES: 7,
   
   /** Maximum width in pixels after resize */
   MAX_WIDTH: 1920,

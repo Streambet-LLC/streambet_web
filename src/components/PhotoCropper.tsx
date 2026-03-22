@@ -34,87 +34,105 @@ export default function PhotoCropper({
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const imageUrl = useMemo(() => URL.createObjectURL(file), [file]);
-  const imageRef = useRef<HTMLImageElement>();
-  const [croppedImageFile, setCroppedImageFile] = useState<File | null>();
+  const fileToken = useMemo(() => `${file.name}-${file.size}-${file.lastModified}`, [file]);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const activeCropJobRef = useRef(0);
+  const [croppedImageFile, setCroppedImageFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
 
   const generateCroppedImageUrl = async (
+    nextCrop: PixelCrop,
+    image: HTMLImageElement,
+    sourceFile: File,
     scale?: number,
     rotate?: number,
   ) => {
+    const cropJobId = ++activeCropJobRef.current;
     setProcessing(true);
     scale = scale || 1;
     rotate = rotate || 0;
 
-    const image = imageRef.current;
+    try {
+      const scaleX = image.naturalWidth / image.width;
+      const scaleY = image.naturalHeight / image.height;
 
-    const scaleX = image.naturalWidth / image.width
-    const scaleY = image.naturalHeight / image.height
+      const canvas = new OffscreenCanvas(
+        nextCrop.width * scaleX,
+        nextCrop.height * scaleY,
+      );
 
-    const canvas = new OffscreenCanvas(
-      completedCrop.width * scaleX,
-      completedCrop.height * scaleY,
-    );
+      const ctx = canvas.getContext('2d');
 
-    const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('No 2d context');
+      }
 
-    if (!ctx) {
-      throw new Error('No 2d context');
-    }
+      const pixelRatio = window.devicePixelRatio;
 
-    const pixelRatio = window.devicePixelRatio;
+      canvas.width = Math.floor(nextCrop.width * scaleX * pixelRatio);
+      canvas.height = Math.floor(nextCrop.height * scaleY * pixelRatio);
 
-    canvas.width = Math.floor(crop.width * scaleX * pixelRatio);
-    canvas.height = Math.floor(crop.height * scaleY * pixelRatio);
+      ctx.scale(pixelRatio, pixelRatio);
+      ctx.imageSmoothingQuality = 'high';
 
-    ctx.scale(pixelRatio, pixelRatio);
-    ctx.imageSmoothingQuality = 'high';
+      const cropX = nextCrop.x * scaleX;
+      const cropY = nextCrop.y * scaleY;
 
-    const cropX = crop.x * scaleX;
-    const cropY = crop.y * scaleY;
+      const rotateRads = rotate * TO_RADIANS;
+      const centerX = image.naturalWidth / 2;
+      const centerY = image.naturalHeight / 2;
 
-    const rotateRads = rotate * TO_RADIANS;
-    const centerX = image.naturalWidth / 2;
-    const centerY = image.naturalHeight / 2;
+      ctx.save();
 
-    ctx.save();
+      ctx.translate(-cropX, -cropY);
+      ctx.translate(centerX, centerY);
+      ctx.rotate(rotateRads);
+      ctx.scale(scale, scale);
+      ctx.translate(-centerX, -centerY);
+      ctx.drawImage(
+        image,
+        0,
+        0,
+        image.naturalWidth,
+        image.naturalHeight,
+        0,
+        0,
+        image.naturalWidth,
+        image.naturalHeight,
+      );
 
-    ctx.translate(-cropX, -cropY);
-    ctx.translate(centerX, centerY);
-    ctx.rotate(rotateRads);
-    ctx.scale(scale, scale);
-    ctx.translate(-centerX, -centerY);
-    ctx.drawImage(
-      image,
-      0,
-      0,
-      image.naturalWidth,
-      image.naturalHeight,
-      0,
-      0,
-      image.naturalWidth,
-      image.naturalHeight,
-    );
+      const blob = await canvas.convertToBlob({
+        type: 'image/png',
+      });
 
-    const blob = await canvas.convertToBlob({
-      type: 'image/png',
-    });
+      if (cropJobId !== activeCropJobRef.current) {
+        return;
+      }
 
-    const croppedFile = new File([blob], file.name, { type: "image/png" });
+      const croppedFile = new File([blob], sourceFile.name, { type: "image/png" });
 
-    Resizer.imageFileResizer(
-      croppedFile,
-      isNaN(resizerProps?.maxWidth) ? 140 : resizerProps?.maxWidth,
-      isNaN(resizerProps?.maxHeight) ? 140 : resizerProps?.maxHeight,
-      resizerProps?.compressFormat || "PNG",
-      isNaN(resizerProps?.quality) ? 100 : resizerProps?.quality,
-      0,
-      (file) => {
-        setCroppedImageFile(file as File);
+      Resizer.imageFileResizer(
+        croppedFile,
+        isNaN(resizerProps?.maxWidth) ? 140 : resizerProps?.maxWidth,
+        isNaN(resizerProps?.maxHeight) ? 140 : resizerProps?.maxHeight,
+        resizerProps?.compressFormat || "PNG",
+        isNaN(resizerProps?.quality) ? 100 : resizerProps?.quality,
+        0,
+        (nextFile) => {
+          if (cropJobId !== activeCropJobRef.current) {
+            return;
+          }
+
+          setCroppedImageFile(nextFile as File);
+          setProcessing(false);
+        },
+        "file",
+      );
+    } catch {
+      if (cropJobId === activeCropJobRef.current) {
         setProcessing(false);
-      },
-      "file",
-    );
+      }
+    }
   };
 
   const handleImageLoad = () => {
@@ -162,10 +180,26 @@ export default function PhotoCropper({
   };
 
   useEffect(() => {
-    if (!completedCrop || !imageRef.current) return;
+    // Reset state between queued files so a previous crop cannot be reused.
+    activeCropJobRef.current += 1;
+    setCrop(undefined);
+    setCompletedCrop(undefined);
+    setCroppedImageFile(null);
+    setProcessing(false);
+  }, [fileToken]);
 
-    generateCroppedImageUrl();
-  }, [completedCrop])
+  useEffect(() => {
+    if (!completedCrop || !imageRef.current) return;
+    if (completedCrop.width <= 0 || completedCrop.height <= 0) return;
+
+    void generateCroppedImageUrl(completedCrop, imageRef.current, file);
+  }, [completedCrop, fileToken]);
+
+  useEffect(() => {
+    return () => {
+      URL.revokeObjectURL(imageUrl);
+    };
+  }, [imageUrl]);
 
   if (!imageUrl) return null;
 
@@ -179,10 +213,10 @@ export default function PhotoCropper({
       >
         <DialogContent
           hideCloseButton
-          className="border-2 border-[#7AFF14] max-w-[95vw] sm:max-w-[50vw] max-h-[90vh] w-fit h-fit overflow-hidden p-0"
+          className="border-2 border-[#7AFF14] w-[95vw] sm:max-w-[50vw] max-h-[90vh] p-0 overflow-hidden flex flex-col"
           style={{ background: '#0D0D0D' }}
         >
-          <div className="relative">
+          <div className="relative shrink-0">
             <DialogClose asChild className="absolute -top-2 -right-2 z-50">
               <Button variant="link" size="icon" className="rounded-full hover:bg-[#7AFF14]/20">
                 <X className="text-[#7AFF14]" />
@@ -192,29 +226,48 @@ export default function PhotoCropper({
               <DialogTitle className="text-white">Set Avatar</DialogTitle>
             </DialogHeader>
           </div>
-          <div className="p-4">
-            <ReactCrop
-              crop={crop}
-              onChange={setCrop}
-              aspect={cropperProps?.aspect || 1}
-              minWidth={64}
-              minHeight={64}
-              keepSelection
-              onComplete={setCompletedCrop}
-              {...cropperProps}
-            >
-              <img ref={imageRef} src={imageUrl} onLoad={handleImageLoad} />
-            </ReactCrop>
-            <DialogFooter className="p-4">
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button disabled={processing} onClick={() => onCrop(croppedImageFile)}>
-                {processing && <Loader2 className="w-4 h-4 animate-spin" />}
-                Done
-              </Button>
-            </DialogFooter>
+
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <div className="mx-auto w-fit">
+              <ReactCrop
+                crop={crop}
+                onChange={nextCrop => {
+                  setCrop(nextCrop);
+                  setCroppedImageFile(null);
+                }}
+                aspect={cropperProps?.aspect || 1}
+                minWidth={64}
+                minHeight={64}
+                keepSelection
+                onComplete={setCompletedCrop}
+                {...cropperProps}
+              >
+                <img
+                  ref={imageRef}
+                  src={imageUrl}
+                  onLoad={handleImageLoad}
+                  className="max-h-[62vh] w-auto"
+                />
+              </ReactCrop>
+            </div>
           </div>
+
+          <DialogFooter className="shrink-0 border-t border-[#7AFF14]/20 bg-[#0D0D0D] p-4">
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              disabled={processing || !croppedImageFile}
+              onClick={() => {
+                if (croppedImageFile) {
+                  onCrop(croppedImageFile);
+                }
+              }}
+            >
+              {processing && <Loader2 className="w-4 h-4 animate-spin" />}
+              Done
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

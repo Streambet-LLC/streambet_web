@@ -5,6 +5,7 @@ import { Loader2, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PrizesByCategory, Prize as PrizeDisplay } from '@/components/prizes/PrizesByCategory';
+import { resolvePrizeImages } from '@/components/prizes/prizeImageUtils';
 import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -90,20 +91,27 @@ export default function ShopDetail() {
   // Filter to only show slabs with stock
   let slabPrizes: PrizeDisplay[] = (shopData?.items || [])
     .filter(prize => prize.category === 'slab' && prize.stock > 0 && prize.showOnShop !== false)
-    .map(prize => ({
-      id: prize.id,
-      name: prize.name,
-      description: prize.description || undefined,
-      imageUrl: prize.imageUrl || undefined,
-      category: 'slab' as const,
-      amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
-      stock: prize.stock,
-      purchaseOption: prize.purchaseOption,
-      brand: prize.brand,
-      displayOrder: prize.displayOrderShop ?? 999,
-      createdBy: prize.createdBy ?? null,
-      // Don't show shop link in shop detail - user is already in the shop
-    }));
+    .map(prize => {
+      const { imageUrls, coverImageIndex, coverImageUrl } = resolvePrizeImages(prize);
+
+      return {
+        id: prize.id,
+        name: prize.name,
+        description: prize.description || undefined,
+        imageUrl: coverImageUrl,
+        imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+        coverImageIndex,
+        category: 'slab' as const,
+        amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
+        stock: prize.stock,
+        purchaseOption: prize.purchaseOption,
+        brand: prize.brand,
+        displayOrder:
+          prize.sellerDisplayOrderShop ?? prize.displayOrderShop ?? 999,
+        createdBy: prize.createdBy ?? null,
+        // Don't show shop link in shop detail - user is already in the shop
+      };
+    });
 
   // Check if purchase option sorting is enabled
   const usePurchaseSort = shopData?.items?.[0]?.sortByPurchaseOptionShop ?? false;

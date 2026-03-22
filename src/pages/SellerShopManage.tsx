@@ -12,14 +12,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Upload, ShoppingCart, DollarSign, Pencil, X } from 'lucide-react';
+import { Loader2, Trash2, ShoppingCart, DollarSign, Pencil, X } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useImageCropper } from '@/hooks/useImageCropper';
-import PhotoCropper from '@/components/PhotoCropper';
-import { PrizeBrand } from '@/types/prize';
+import { PrizeBrand, PrizeConfiguration } from '@/types/prize';
 import { CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
@@ -33,6 +31,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { SellerOnboardingModal } from '@/components/seller/SellerOnboardingModal';
 import { SearchInput } from '@/components/ui/SearchInput';
+import { ItemImageGallery, type ItemImageInput } from '@/components/items/ItemImageGallery';
+import { getThumbnailUrl } from '@/utils/helper';
 
 interface SellerOfferOrder {
   id: string;
@@ -80,18 +80,10 @@ export default function SellerShopManage() {
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Image upload hook
-  const imageUpload = useImageCropper({
-    checkNSFW: false,
-    onError: error => setImageError(error),
-  });
-
-  const [isDragging, setIsDragging] = useState(false);
-  const [imageError, setImageError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [imageLayout, setImageLayout] = useState<'single' | 'double'>('single');
+  const [itemImages, setItemImages] = useState<ItemImageInput[]>([]);
+  const [coverImageIndex, setCoverImageIndex] = useState(0);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [selectedOffer, setSelectedOffer] = useState<SellerOfferOrder | null>(null);
   const [isCounterDialogOpen, setIsCounterDialogOpen] = useState(false);
@@ -124,7 +116,7 @@ export default function SellerShopManage() {
     stock: 1,
     purchaseOption: 'buy_only' as 'buy_only' | 'offers_only' | 'both',
     brand: 'other' as PrizeBrand,
-    displayOrderShop: 1,
+    sellerDisplayOrderShop: 1,
   });
 
   const [selectedPurchasedOrder, setSelectedPurchasedOrder] = useState<SellerPurchasedOrder | null>(
@@ -179,21 +171,13 @@ export default function SellerShopManage() {
       if (session?.shopName) {
         displayNameValue = session.shopName;
       }
-      // Then try session.user.displayName
-      else if (session?.user?.displayName) {
-        displayNameValue = session.user.displayName;
-      }
-      // Then try items[0]?.shop?.displayName
-      else if (items?.length > 0 && items[0]?.shop?.displayName) {
-        displayNameValue = items[0].shop.displayName;
-      }
       // Then try shopData
       else if (shopData?.shop?.displayName) {
         displayNameValue = shopData.shop.displayName;
       }
       // Fall back to username
       else {
-        displayNameValue = session?.user?.username || '';
+        displayNameValue = session?.user?.shopName || session?.user?.username || '';
       }
 
       setShopName(displayNameValue);
@@ -218,23 +202,45 @@ export default function SellerShopManage() {
     }
   }, [session?.isSeller, session?.sellerOnboardingCompleted]);
 
-  const handleImageUpload = async (): Promise<string> => {
-    if (!imageUpload.selectedFile) {
-      return form.imageUrl; // Return existing URL if no new file
+  const resolveImagePayload = async (): Promise<{
+    imageUrls: string[];
+    coverImageIndex: number;
+    coverImageUrl?: string;
+  }> => {
+    if (!itemImages.length) {
+      throw new Error('Please upload at least one item image.');
     }
 
     try {
       setIsUploading(true);
-      const response = await api.auth.uploadImage(imageUpload.selectedFile, 'thumbnail');
-      const url = response?.data?.Key;
 
-      if (!url || typeof url !== 'string') {
-        throw new Error('Invalid upload response: missing image URL');
-      }
+      const imageUrls = await Promise.all(
+        itemImages.map(async image => {
+          if (image.isNew && image.file) {
+            const response = await api.auth.uploadImage(image.file, 'thumbnail');
+            const uploadedUrl = response?.data?.Key;
 
-      return url;
-    } catch (error) {
-      throw error; // Re-throw to be caught by createItem mutation
+            if (!uploadedUrl || typeof uploadedUrl !== 'string') {
+              throw new Error('Invalid upload response: missing image URL');
+            }
+
+            return uploadedUrl;
+          }
+
+          return image.imageUrl;
+        })
+      );
+
+      const normalizedCoverIndex = Math.min(
+        Math.max(coverImageIndex, 0),
+        Math.max(imageUrls.length - 1, 0)
+      );
+
+      return {
+        imageUrls,
+        coverImageIndex: normalizedCoverIndex,
+        coverImageUrl: imageUrls[normalizedCoverIndex],
+      };
     } finally {
       setIsUploading(false);
     }
@@ -242,15 +248,19 @@ export default function SellerShopManage() {
 
   const createItem = useMutation({
     mutationFn: async () => {
-      const imageUrl = await handleImageUpload();
+      const imagePayload = await resolveImagePayload();
+
       // Convert USD to CadeCoins (50 coins = $1) before sending to API
       const amountInCoins =
         form.purchaseOption === 'offers_only'
           ? Math.max(1, form.amount)
           : Math.round(form.amount * 50);
+
       const payload = {
         ...form,
-        imageUrl,
+        imageUrl: imagePayload.coverImageUrl,
+        imageUrls: imagePayload.imageUrls,
+        coverImageIndex: imagePayload.coverImageIndex,
         amount: amountInCoins,
         category: 'slab' as const, // All shop items are slabs
       };
@@ -276,20 +286,21 @@ export default function SellerShopManage() {
         stock: 1,
         purchaseOption: 'buy_only',
         brand: 'other',
-        displayOrderShop: 1,
+        sellerDisplayOrderShop: 1,
       });
-      imageUpload.clearImage();
-      setImageError(null);
-      setImageLayout('single');
+      setItemImages([]);
+      setCoverImageIndex(0);
       setEditingItemId(null);
       queryClient.invalidateQueries({ queryKey: ['seller-shop-items-manage'] });
       queryClient.invalidateQueries({ queryKey: ['seller-shop-items', session?.user?.username] });
       queryClient.invalidateQueries({ queryKey: ['seller-shops'] });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: 'Error',
-        description: editingItemId ? 'Failed to update item.' : 'Failed to add item to shop.',
+        description:
+          error?.message ||
+          (editingItemId ? 'Failed to update item.' : 'Failed to add item to shop.'),
         variant: 'destructive',
       });
     },
@@ -370,11 +381,16 @@ export default function SellerShopManage() {
       shopName: string;
       socials: {
         instagram: string;
-        twitch: string;
-        kick: string;
+        twitter: string;
         youtube: string;
         tiktok: string;
+        twitch?: string;
+        kick?: string;
       };
+      sellerTradingExperience?: string;
+      city?: string;
+      state?: string;
+      country?: string;
     }) => {
       return api.user.updateProfile(payload);
     },
@@ -420,20 +436,6 @@ export default function SellerShopManage() {
     },
   });
 
-  // Drag and drop handlers
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      imageUpload.handleFileSelect(file);
-      setForm(p => ({ ...p, imageUrl: '' })); // Clear URL when file is uploaded
-    }
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
   const handleOpenShipDialog = (order: SellerPurchasedOrder) => {
     setSelectedPurchasedOrder(order);
     setTrackingNumber(order.trackingNumber || '');
@@ -450,27 +452,24 @@ export default function SellerShopManage() {
     });
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      imageUpload.handleFileSelect(file);
-      setForm(p => ({ ...p, imageUrl: '' })); // Clear URL when file is dropped
-    }
-  };
+  const handleEditItem = (item: PrizeConfiguration) => {
+    const existingImageUrls =
+      item.imageUrls && item.imageUrls.length > 0
+        ? item.imageUrls
+        : item.imageUrl
+          ? [item.imageUrl]
+          : [];
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+    const existingCoverIndex =
+      item.itemImages?.findIndex(image => image.isCover) ??
+      (existingImageUrls.length > 0 ? 0 : -1);
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
+    const mappedImages: ItemImageInput[] = existingImageUrls.map((imageUrl, index) => ({
+      id: `existing-${item.id}-${index}`,
+      imageUrl,
+      isNew: false,
+    }));
 
-  const handleEditItem = (item: any) => {
     setEditingItemId(item.id);
     setForm({
       name: item.name || '',
@@ -481,10 +480,11 @@ export default function SellerShopManage() {
       stock: item.stock || 0,
       purchaseOption: item.purchaseOption || 'buy_only',
       brand: item.brand || 'other',
-      displayOrderShop: item.displayOrderShop || 1,
+      sellerDisplayOrderShop:
+        item.sellerDisplayOrderShop ?? item.displayOrderShop ?? 1,
     });
-    imageUpload.clearImage();
-    setImageError(null);
+    setItemImages(mappedImages);
+    setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
     // Scroll to top on mobile, form is already visible on desktop
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -499,11 +499,10 @@ export default function SellerShopManage() {
       stock: 1,
       purchaseOption: 'buy_only',
       brand: 'other',
-      displayOrderShop: 1,
+      sellerDisplayOrderShop: 1,
     });
-    imageUpload.clearImage();
-    setImageError(null);
-    setImageLayout('single');
+    setItemImages([]);
+    setCoverImageIndex(0);
   };
 
   const handleOpenCounterDialog = (order: SellerOfferOrder) => {
@@ -580,6 +579,15 @@ export default function SellerShopManage() {
 
     return matchesName || matchesDescription || matchesBrand || matchesAmount;
   });
+
+  const coverPreviewImage = itemImages[coverImageIndex];
+  const livePreviewImageSrc = coverPreviewImage
+    ? coverPreviewImage.imageUrl.startsWith('blob:')
+      ? coverPreviewImage.imageUrl
+      : getThumbnailUrl(coverPreviewImage.imageUrl)
+    : form.imageUrl
+      ? getThumbnailUrl(form.imageUrl)
+      : '';
 
   if (!session?.isSeller) {
     return (
@@ -756,14 +764,10 @@ export default function SellerShopManage() {
                       let displayNameValue = '';
                       if (session?.shopName) {
                         displayNameValue = session.shopName;
-                      } else if (session?.user?.displayName) {
-                        displayNameValue = session.user.displayName;
-                      } else if (items?.length > 0 && items[0]?.shop?.displayName) {
-                        displayNameValue = items[0].shop.displayName;
                       } else if (shopData?.shop?.displayName) {
                         displayNameValue = shopData.shop.displayName;
                       } else {
-                        displayNameValue = session?.user?.username || '';
+                        displayNameValue = session?.user?.shopName || session?.user?.username || '';
                       }
                       setShopName(displayNameValue);
 
@@ -917,25 +921,6 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Image Layout</Label>
-                    <Select
-                      value={imageLayout}
-                      onValueChange={(value: 'single' | 'double') => setImageLayout(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select image layout" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="single">Single Slab (4" × 6.5")</SelectItem>
-                        <SelectItem value="double">Double Slab (8" × 6.5")</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Choose single for one side, or double for front & back side-by-side
-                    </p>
-                  </div>
-
-                  <div className="grid gap-2">
                     <Label>Description</Label>
                     <Textarea
                       placeholder="Item description..."
@@ -950,9 +935,12 @@ export default function SellerShopManage() {
                     <Input
                       type="number"
                       placeholder="1"
-                      value={form.displayOrderShop}
+                      value={form.sellerDisplayOrderShop}
                       onChange={e =>
-                        setForm(p => ({ ...p, displayOrderShop: Number(e.target.value) || 0 }))
+                        setForm(p => ({
+                          ...p,
+                          sellerDisplayOrderShop: Number(e.target.value) || 0,
+                        }))
                       }
                     />
                     <p className="text-xs text-muted-foreground">
@@ -961,88 +949,22 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="space-y-2.5">
-                    <Label className="text-base font-medium">Item Image</Label>
-                    <div className="grid gap-3">
-                      {/* Image Upload Area */}
-                      <div
-                        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                          isDragging
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onClick={handleUploadClick}
-                      >
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileInputChange}
-                          className="hidden"
-                        />
-                        <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                        <p className="text-sm font-medium mb-1 text-primary">Click to upload</p>
-                        <p className="text-xs text-muted-foreground mb-1">or drag and drop</p>
-                        <p className="text-xs text-muted-foreground">
-                          JPEG, PNG, or WebP
-                          <br />
-                          Aspect ratio 8:13 • 1200×1950px
-                        </p>
-                      </div>
-
-                      {/* Image Cropper */}
-                      {imageUpload.fileToCrop && (
-                        <PhotoCropper
-                          file={imageUpload.fileToCrop}
-                          onClose={imageUpload.cancelCrop}
-                          onCrop={imageUpload.handleCropComplete}
-                          cropperProps={{
-                            aspect: imageLayout === 'double' ? 2 / 1 : 8 / 13,
-                          }}
-                          resizerProps={{
-                            maxWidth: imageLayout === 'double' ? 1600 : 1200,
-                            maxHeight: imageLayout === 'double' ? 800 : 1950,
-                            compressFormat: 'JPEG',
-                            quality: 90,
-                          }}
-                        />
-                      )}
-
-                      {/* Image Error */}
-                      {imageError && (
-                        <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
-                          <p className="text-sm text-destructive">{imageError}</p>
-                        </div>
-                      )}
-
-                      {/* Image URL Input (Alternative) */}
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-background px-2 text-muted-foreground">
-                            Or use URL
-                          </span>
-                        </div>
-                      </div>
-
-                      <Input
-                        placeholder="https://example.com/image.jpg"
-                        value={form.imageUrl}
-                        onChange={e => {
-                          const url = e.target.value;
-                          setForm(p => ({ ...p, imageUrl: url }));
-                          // Clear uploaded file when URL is entered
-                          if (url && imageUpload.selectedFile) {
-                            imageUpload.clearImage();
-                          }
-                        }}
-                        disabled={!!imageUpload.selectedFile || !!imageUpload.previewUrl}
-                      />
-                    </div>
+                    <ItemImageGallery
+                      images={itemImages}
+                      coverIndex={coverImageIndex}
+                      onImagesChange={setItemImages}
+                      onCoverIndexChange={setCoverImageIndex}
+                      maxImages={7}
+                      disabled={isUploading || createItem.isPending}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Drag to reorder photos. Use the star button to choose cover photo.
+                    </p>
+                    <p className="rounded-md border border-[#D4FF00]/40 bg-[#D4FF00]/10 px-3 py-2 text-xs font-semibold text-[#D4FF00]">
+                      Please lookup the cert number for your slab to see if there are high
+                      resolution photos of it. If so, right click images, save to downloads, and upload
+                      those photos here.
+                    </p>
                   </div>
 
                   <Button
@@ -1051,6 +973,7 @@ export default function SellerShopManage() {
                       createItem.isPending ||
                       !form.name ||
                       (form.purchaseOption !== 'offers_only' && form.amount <= 0) ||
+                      itemImages.length === 0 ||
                       isUploading
                     }
                     className="w-full"
@@ -1087,9 +1010,9 @@ export default function SellerShopManage() {
                         <CardHeader className="p-0 relative">
                           {/* Prize Image */}
                           <div className="relative w-full aspect-[4/5] overflow-hidden bg-muted flex items-center justify-center p-2">
-                            {imageUpload.previewUrl || form.imageUrl ? (
+                            {livePreviewImageSrc ? (
                               <img
-                                src={imageUpload.previewUrl || form.imageUrl}
+                                src={livePreviewImageSrc}
                                 alt="Prize preview"
                                 className="w-full h-full object-contain"
                                 onError={e => {
