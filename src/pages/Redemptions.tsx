@@ -14,6 +14,7 @@ import {
 } from '@/components/prizes/PrizesByCategory';
 import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
 import { PrizeBrand } from '@/types/prize';
+import { resolvePrizeImages } from '@/components/prizes/prizeImageUtils';
 
 export default function Redemptions() {
   const { data: tiers, isLoading } = usePrizeTiers();
@@ -113,18 +114,24 @@ export default function Redemptions() {
   const allPrizes: PrizeDisplay[] = useMemo(() => {
     const filtered = (tiers || [])
       .filter(prize => prize.stock > 0 && prize.showOnRedemptions !== false)
-      .map(prize => ({
-        id: prize.id,
-        name: prize.name,
-        description: prize.description || undefined,
-        imageUrl: prize.imageUrl || undefined,
-        category: mapCategory(prize),
-        amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
-        stock: prize.stock,
-        purchaseOption: prize.purchaseOption,
-        brand: prize.brand,
-        displayOrder: prize.displayOrderRedemptions ?? 999,
-      }));
+      .map(prize => {
+        const { imageUrls, coverImageIndex, coverImageUrl } = resolvePrizeImages(prize);
+
+        return {
+          id: prize.id,
+          name: prize.name,
+          description: prize.description || undefined,
+          imageUrl: coverImageUrl,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+          coverImageIndex,
+          category: mapCategory(prize),
+          amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
+          stock: prize.stock,
+          purchaseOption: prize.purchaseOption,
+          brand: prize.brand,
+          displayOrder: prize.displayOrderRedemptions ?? 999,
+        };
+      });
     
     // Check if purchase option sorting is enabled (use first prize's setting)
     const usePurchaseSort = tiers?.[0]?.sortByPurchaseOptionRedemptions ?? false;

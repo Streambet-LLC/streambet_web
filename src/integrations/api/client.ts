@@ -1293,11 +1293,13 @@ export const prizeAPI = {
     name: string;
     description?: string;
     imageUrl?: string;
+    imageUrls?: string[];
+    coverImageIndex?: number;
     category?: 'slab' | 'sealed';
     stock?: number;
     purchaseOption?: 'offers_only' | 'buy_only' | 'both';
     brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
-    displayOrderShop?: number;
+    sellerDisplayOrderShop?: number;
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/seller/prizes/items', payload);
     return response.data;
@@ -1311,11 +1313,13 @@ export const prizeAPI = {
       name: string;
       description?: string;
       imageUrl?: string;
+      imageUrls?: string[];
+      coverImageIndex?: number;
       category?: 'slab' | 'sealed';
       stock?: number;
       purchaseOption?: 'offers_only' | 'buy_only' | 'both';
       brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
-      displayOrderShop?: number;
+      sellerDisplayOrderShop?: number;
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/seller/prizes/items/${id}`, payload);
@@ -1378,6 +1382,8 @@ export const prizeAPI = {
     name: string;
     description?: string;
     imageUrl?: string;
+    imageUrls?: string[];
+    coverImageIndex?: number;
     category?: 'slab' | 'sealed';
     stock?: number;
     purchaseOption?: 'offers_only' | 'buy_only' | 'both';
@@ -1396,6 +1402,8 @@ export const prizeAPI = {
       name: string;
       description?: string;
       imageUrl?: string;
+      imageUrls?: string[];
+      coverImageIndex?: number;
       category?: 'slab' | 'sealed';
       stock?: number;
       purchaseOption?: 'offers_only' | 'buy_only' | 'both';

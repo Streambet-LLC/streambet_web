@@ -3,10 +3,10 @@ import { Button } from '../ui/button';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { ShoppingCart, DollarSign, Expand, X } from 'lucide-react';
+import { ShoppingCart, DollarSign, Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Prize } from './PrizesByCategory';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import FeaturedBetCard from '../FeaturedBetCard';
 import { Link } from 'react-router-dom';
@@ -21,6 +21,52 @@ interface PrizeCardProps {
   hideButtons?: boolean;
 }
 
+const SWIPE_THRESHOLD_PX = 40;
+const SWIPE_SUPPRESS_CLICK_MS = 350;
+
+const normalizePrizeImageUrls = (prize: Prize): string[] => {
+  const uniqueUrls: string[] = [];
+  const imageUrls = prize.imageUrls || [];
+
+  imageUrls.forEach((imageUrl) => {
+    const trimmedUrl = typeof imageUrl === 'string' ? imageUrl.trim() : '';
+    if (!trimmedUrl) {
+      return;
+    }
+
+    const normalizedUrl = getThumbnailUrl(trimmedUrl);
+    if (!uniqueUrls.includes(normalizedUrl)) {
+      uniqueUrls.push(normalizedUrl);
+    }
+  });
+
+  if (!uniqueUrls.length && prize.imageUrl) {
+    uniqueUrls.push(getThumbnailUrl(prize.imageUrl));
+  }
+
+  return uniqueUrls;
+};
+
+const getSafeImageIndex = (index: number, imageCount: number): number => {
+  if (imageCount <= 0) {
+    return 0;
+  }
+
+  if (!Number.isInteger(index)) {
+    return 0;
+  }
+
+  if (index < 0) {
+    return 0;
+  }
+
+  if (index >= imageCount) {
+    return imageCount - 1;
+  }
+
+  return index;
+};
+
 export default function PrizeCard({
   prize,
   onClick,
@@ -30,6 +76,192 @@ export default function PrizeCard({
   hideButtons = false,
 }: PrizeCardProps) {
   const [showImageModal, setShowImageModal] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
+  const inlineTouchStartXRef = useRef<number | null>(null);
+  const modalTouchStartXRef = useRef<number | null>(null);
+  const suppressNextInlineOpenRef = useRef(false);
+
+  const galleryImageUrls = useMemo(() => normalizePrizeImageUrls(prize), [prize]);
+  const hasRealImages = galleryImageUrls.length > 0;
+  const displayImageUrls = hasRealImages ? galleryImageUrls : ['/placeholder.svg'];
+  const hasMultipleImages = hasRealImages && displayImageUrls.length > 1;
+
+  const coverImageIndex = getSafeImageIndex(prize.coverImageIndex ?? 0, displayImageUrls.length);
+  const activeImageUrl = displayImageUrls[activeImageIndex] || displayImageUrls[0];
+  const currentModalImageUrl = displayImageUrls[modalImageIndex] || displayImageUrls[0];
+
+  useEffect(() => {
+    setActiveImageIndex(coverImageIndex);
+    setModalImageIndex(coverImageIndex);
+  }, [prize.id, coverImageIndex]);
+
+  useEffect(() => {
+    if (!showImageModal || !hasMultipleImages) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        setModalImageIndex(prev => {
+          const next = (prev - 1 + displayImageUrls.length) % displayImageUrls.length;
+          setActiveImageIndex(next);
+          return next;
+        });
+      }
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        setModalImageIndex(prev => {
+          const next = (prev + 1) % displayImageUrls.length;
+          setActiveImageIndex(next);
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showImageModal, hasMultipleImages, displayImageUrls.length]);
+
+  const setSelectedImage = (index: number) => {
+    const safeIndex = getSafeImageIndex(index, displayImageUrls.length);
+    setActiveImageIndex(safeIndex);
+    setModalImageIndex(safeIndex);
+  };
+
+  const goToPreviousImage = (event?: { stopPropagation: () => void }) => {
+    event?.stopPropagation();
+    if (!hasMultipleImages) {
+      return;
+    }
+
+    setSelectedImage((activeImageIndex - 1 + displayImageUrls.length) % displayImageUrls.length);
+  };
+
+  const goToNextImage = (event?: { stopPropagation: () => void }) => {
+    event?.stopPropagation();
+    if (!hasMultipleImages) {
+      return;
+    }
+
+    setSelectedImage((activeImageIndex + 1) % displayImageUrls.length);
+  };
+
+  const goToPreviousModalImage = () => {
+    if (!hasMultipleImages) {
+      return;
+    }
+
+    setModalImageIndex(prev => {
+      const next = (prev - 1 + displayImageUrls.length) % displayImageUrls.length;
+      setActiveImageIndex(next);
+      return next;
+    });
+  };
+
+  const goToNextModalImage = () => {
+    if (!hasMultipleImages) {
+      return;
+    }
+
+    setModalImageIndex(prev => {
+      const next = (prev + 1) % displayImageUrls.length;
+      setActiveImageIndex(next);
+      return next;
+    });
+  };
+
+  const handleInlineTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    inlineTouchStartXRef.current = event.changedTouches[0]?.clientX ?? null;
+  };
+
+  const handleInlineTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    if (!hasMultipleImages) {
+      inlineTouchStartXRef.current = null;
+      return;
+    }
+
+    const startX = inlineTouchStartXRef.current;
+    const endX = event.changedTouches[0]?.clientX;
+    inlineTouchStartXRef.current = null;
+
+    if (startX === null || typeof endX !== 'number') {
+      return;
+    }
+
+    const deltaX = endX - startX;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) {
+      return;
+    }
+
+    suppressNextInlineOpenRef.current = true;
+    window.setTimeout(() => {
+      suppressNextInlineOpenRef.current = false;
+    }, SWIPE_SUPPRESS_CLICK_MS);
+
+    if (deltaX > 0) {
+      goToPreviousImage();
+    } else {
+      goToNextImage();
+    }
+  };
+
+  const handleInlineTouchCancel = () => {
+    inlineTouchStartXRef.current = null;
+  };
+
+  const handleModalTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    modalTouchStartXRef.current = event.changedTouches[0]?.clientX ?? null;
+  };
+
+  const handleModalTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    if (!hasMultipleImages) {
+      modalTouchStartXRef.current = null;
+      return;
+    }
+
+    const startX = modalTouchStartXRef.current;
+    const endX = event.changedTouches[0]?.clientX;
+    modalTouchStartXRef.current = null;
+
+    if (startX === null || typeof endX !== 'number') {
+      return;
+    }
+
+    const deltaX = endX - startX;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) {
+      return;
+    }
+
+    if (deltaX > 0) {
+      goToPreviousModalImage();
+    } else {
+      goToNextModalImage();
+    }
+  };
+
+  const handleModalTouchCancel = () => {
+    modalTouchStartXRef.current = null;
+  };
+
+  const handleOpenImageModal = () => {
+    if (suppressNextInlineOpenRef.current) {
+      suppressNextInlineOpenRef.current = false;
+      return;
+    }
+
+    if (!hasRealImages) {
+      return;
+    }
+
+    setModalImageIndex(activeImageIndex);
+    setShowImageModal(true);
+  };
 
   // Amount is always stored in CadeCoins (50 coins = $1 USD)
   const priceInUSD = prize.amount
@@ -42,23 +274,76 @@ export default function PrizeCard({
   const canOffer = prize.purchaseOption === 'offers_only' || prize.purchaseOption === 'both';
   const isOutOfStock = !prize.stock || prize.stock === 0;
 
-  const imageUrl = prize.imageUrl ? getThumbnailUrl(prize.imageUrl) : '/placeholder.svg';
-
   // ── Redemption variant (prod-style landscape card) ───────────────────────
   if (variant === 'redemption') {
     return (
       <FeaturedBetCard>
         <div className="p-6 flex flex-col h-full">
-          {prize.imageUrl && (
+          {hasRealImages && (
             <div className="w-full border-t pt-2 md:pt-4">
-              <img
-                src={imageUrl}
-                alt={prize.name}
-                className="w-full rounded object-contain max-h-64"
-                loading="lazy"
-              />
+              <div
+                className="relative w-full rounded bg-black flex items-center justify-center cursor-pointer"
+                onClick={handleOpenImageModal}
+                onTouchStart={handleInlineTouchStart}
+                onTouchEnd={handleInlineTouchEnd}
+                onTouchCancel={handleInlineTouchCancel}
+              >
+                <img
+                  src={activeImageUrl}
+                  alt={prize.name}
+                  className="w-full rounded object-contain max-h-64"
+                  loading="lazy"
+                />
+
+                {hasMultipleImages && (
+                  <>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      className="absolute left-2 top-1/2 hidden h-6 w-6 -translate-y-1/2 border border-[#7AFF14] md:inline-flex"
+                      onClick={goToPreviousImage}
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      className="absolute right-2 top-1/2 hidden h-6 w-6 -translate-y-1/2 border border-[#7AFF14] md:inline-flex"
+                      onClick={goToNextImage}
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </Button>
+                    <div className="absolute top-2 left-2 rounded bg-black/65 px-2 py-0.5 text-[10px] font-semibold text-white">
+                      {activeImageIndex + 1}/{displayImageUrls.length}
+                    </div>
+
+                    <div className="absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/65 px-2 py-1">
+                      {displayImageUrls.map((_, index) => (
+                        <button
+                          key={`${prize.id}-redemption-dot-${index}`}
+                          type="button"
+                          onClick={event => {
+                            event.stopPropagation();
+                            setSelectedImage(index);
+                          }}
+                          className={cn(
+                            'h-1.5 w-1.5 rounded-full border border-[#7AFF14] transition-all',
+                            index === activeImageIndex ? 'bg-white' : 'bg-transparent'
+                          )}
+                          aria-label={`View image ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
+
           <h3 className="font-semibold text-lg mb-1 mt-2">{prize.name}</h3>
           {prize.description && (
             <p className="text-sm text-muted-foreground mb-2">{prize.description}</p>
@@ -129,15 +414,64 @@ export default function PrizeCard({
         <CardHeader className="p-0 relative">
           {/* Prize Image */}
           <div
-            className="relative w-full aspect-[4/5] overflow-hidden bg-muted group/image cursor-pointer flex items-center justify-center p-2"
-            onClick={() => setShowImageModal(true)}
+            className="relative w-full aspect-[4/5] overflow-hidden bg-black group/image flex items-center justify-center cursor-pointer"
+            onClick={handleOpenImageModal}
+            onTouchStart={handleInlineTouchStart}
+            onTouchEnd={handleInlineTouchEnd}
+            onTouchCancel={handleInlineTouchCancel}
           >
             <img
-              src={imageUrl}
+              src={activeImageUrl}
               alt={prize.name}
-              className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
+              className="w-full h-full object-contain"
               loading="lazy"
             />
+
+            {hasMultipleImages && (
+              <>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="absolute left-2 top-1/2 z-20 hidden h-6 w-6 -translate-y-1/2 border border-[#7AFF14] md:inline-flex"
+                  onClick={goToPreviousImage}
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="absolute right-2 top-1/2 z-20 hidden h-6 w-6 -translate-y-1/2 border border-[#7AFF14] md:inline-flex"
+                  onClick={goToNextImage}
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+                <div className="absolute top-2 left-2 z-20 rounded bg-black/65 px-2 py-0.5 text-[10px] font-semibold text-white">
+                  {activeImageIndex + 1}/{displayImageUrls.length}
+                </div>
+
+                <div className="absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/65 px-2 py-1">
+                  {displayImageUrls.map((_, index) => (
+                    <button
+                      key={`${prize.id}-shop-dot-${index}`}
+                      type="button"
+                      onClick={event => {
+                        event.stopPropagation();
+                        setSelectedImage(index);
+                      }}
+                      className={cn(
+                        'h-1.5 w-1.5 rounded-full border border-[#7AFF14] transition-all',
+                        index === activeImageIndex ? 'bg-white' : 'bg-transparent'
+                      )}
+                      aria-label={`View image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* Expand to Fullscreen Button */}
             <div className="absolute top-2 left-2 z-10 bg-black/60 rounded-md p-1.5 hover:bg-black/80 transition-colors pointer-events-none opacity-0 group-hover/image:opacity-100">
@@ -258,17 +592,72 @@ export default function PrizeCard({
             {/* Custom Close Button - positioned on image */}
             <button
               onClick={() => setShowImageModal(false)}
-              className="absolute -top-3 -right-3 z-50 bg-black/80 hover:bg-black rounded-full p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+              className="absolute -top-3 -right-3 z-50 hidden rounded-full border border-[#7AFF14] bg-black/80 p-2 transition-colors hover:bg-black focus:outline-none focus:ring-2 focus:ring-white md:block"
               aria-label="Close image"
             >
               <X className="h-6 w-6 text-white" />
             </button>
 
-            <img
-              src={imageUrl}
-              alt={prize.name}
-              className="max-w-full max-h-[90vh] object-contain rounded-lg select-none"
-            />
+            <div
+              className="flex items-center justify-center gap-2 sm:gap-3"
+              onTouchStart={handleModalTouchStart}
+              onTouchEnd={handleModalTouchEnd}
+              onTouchCancel={handleModalTouchCancel}
+            >
+              {hasMultipleImages && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="hidden h-9 w-9 shrink-0 border border-[#7AFF14] md:inline-flex md:h-10 md:w-10"
+                  onClick={goToPreviousModalImage}
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+              )}
+
+              <img
+                src={currentModalImageUrl}
+                alt={prize.name}
+                className={cn(
+                  'block max-h-[90vh] object-contain rounded-lg select-none',
+                  hasMultipleImages
+                    ? 'max-w-[calc(95vw-6rem)] sm:max-w-[calc(95vw-7rem)]'
+                    : 'max-w-full'
+                )}
+              />
+
+              {hasMultipleImages && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="hidden h-9 w-9 shrink-0 border border-[#7AFF14] md:inline-flex md:h-10 md:w-10"
+                  onClick={goToNextModalImage}
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+
+            {hasMultipleImages && (
+              <div className="absolute -bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/70 px-3 py-1">
+                {displayImageUrls.map((_, index) => (
+                  <button
+                    key={`${prize.id}-modal-dot-${index}`}
+                    type="button"
+                    onClick={() => setSelectedImage(index)}
+                    className={cn(
+                      'h-2 w-2 rounded-full border border-[#7AFF14] transition-all',
+                      index === modalImageIndex ? 'bg-white' : 'bg-transparent'
+                    )}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </motion.div>
         </DialogContent>
       </Dialog>
