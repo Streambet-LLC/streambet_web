@@ -135,7 +135,7 @@ const PendingOnboardingTable = () => {
                 <TableHead className="text-[#9CA3AF]">Details Submitted</TableHead>
                 <TableHead className="text-[#9CA3AF]">Charges</TableHead>
                 <TableHead className="text-[#9CA3AF]">Payouts</TableHead>
-                <TableHead className="text-[#9CA3AF]">Fee %</TableHead>
+                <TableHead className="text-[#9CA3AF]">Seller Fee %</TableHead>
                 <TableHead className="text-[#9CA3AF]">Actions</TableHead>
               </TableRow>
             </TableHeader>
