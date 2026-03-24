@@ -630,6 +630,7 @@ export default function SellerShopManage() {
                         {session?.socials?.instagram && (
                           <p>Instagram: {session.socials.instagram}</p>
                         )}
+                        {session?.socials?.twitter && <p>Twitter: {session.socials.twitter}</p>}
                         {session?.socials?.twitch && <p>Twitch: {session.socials.twitch}</p>}
                         {session?.socials?.kick && <p>Kick: {session.socials.kick}</p>}
                         {session?.socials?.youtube && <p>YouTube: {session.socials.youtube}</p>}
