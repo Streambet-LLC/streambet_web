@@ -6,6 +6,7 @@ import Sidebar from '../sidebar/Sidebar';
 import { cn } from '@/lib/utils';
 import { BetRoundType, BettingCategory } from '@/enums';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { SellerOnboardingBanner } from '@/components/SellerOnboardingBanner';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -46,6 +47,7 @@ export const MainLayout = ({
           searchValue={searchValue}
           onSearchChange={onSearchChange}
         />
+        <SellerOnboardingBanner />
         <div className="w-full flex gap-2">
           {/* Background gradient overlay */}
           {/* <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900"></div> */}
@@ -85,6 +87,7 @@ export const MainLayout = ({
         searchValue={searchValue}
         onSearchChange={onSearchChange}
       />
+      <SellerOnboardingBanner />
       <div className="w-full flex gap-2">
         {session && (
           <Sidebar
