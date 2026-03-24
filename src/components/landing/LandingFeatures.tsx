@@ -699,7 +699,7 @@ export default function LandingFeatures() {
                     transition={{ duration: 0.5, delay: 0.2 }}
                   >
                     <div className="text-7xl md:text-8xl font-black bg-gradient-to-br from-electric-lime to-creator-green bg-clip-text text-transparent leading-none">
-                      7%
+                      4%
                     </div>
                     <div className="text-sm text-[#FFFFFF60] mt-3 font-medium tracking-wide">
                       OR LESS

@@ -630,6 +630,7 @@ export default function SellerShopManage() {
                         {session?.socials?.instagram && (
                           <p>Instagram: {session.socials.instagram}</p>
                         )}
+                        {session?.socials?.twitter && <p>Twitter: {session.socials.twitter}</p>}
                         {session?.socials?.twitch && <p>Twitch: {session.socials.twitch}</p>}
                         {session?.socials?.kick && <p>Kick: {session.socials.kick}</p>}
                         {session?.socials?.youtube && <p>YouTube: {session.socials.youtube}</p>}
@@ -817,7 +818,7 @@ export default function SellerShopManage() {
                   handleGenerateAccountLink();
                 }}
               >
-                {session.stripeAccountConnected ? 'Stripe Dashboard' : 'Stripe Connect Settings'}
+                {session.stripeAccountConnected ? 'Stripe Dashboard' : 'Set Up Stripe'}
               </Button>
             </div>
           </CardContent>
@@ -962,8 +963,8 @@ export default function SellerShopManage() {
                     </p>
                     <p className="rounded-md border border-[#D4FF00]/40 bg-[#D4FF00]/10 px-3 py-2 text-xs font-semibold text-[#D4FF00]">
                       Please lookup the cert number for your slab to see if there are high
-                      resolution photos of it. If so, right click images, save to downloads, and upload
-                      those photos here.
+                      resolution photos of it. If so, right click images, save to downloads, and
+                      upload those photos here.
                     </p>
                   </div>
 
@@ -1329,8 +1330,8 @@ export default function SellerShopManage() {
         ) : (
           <>
             <p className=" text-red-500">
-              Please complete Stripe Connection and wait for your account to be verified before you
-              can add products
+              Please complete Stripe Onboarding and wait for your account to be verified before you
+              can add products. This usually occurs within 1 hour after onboarding.
             </p>
           </>
         )}
@@ -1431,7 +1432,10 @@ export default function SellerShopManage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="shippingCarrier">Shipping Carrier (Optional)</Label>
-                <Select value={shippingCarrier || 'none'} onValueChange={(val) => setShippingCarrier(val === 'none' ? '' : val)}>
+                <Select
+                  value={shippingCarrier || 'none'}
+                  onValueChange={val => setShippingCarrier(val === 'none' ? '' : val)}
+                >
                   <SelectTrigger id="shippingCarrier">
                     <SelectValue placeholder="Select carrier" />
                   </SelectTrigger>
