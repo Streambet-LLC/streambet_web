@@ -1329,8 +1329,8 @@ export default function SellerShopManage() {
         ) : (
           <>
             <p className=" text-red-500">
-              Please complete Stripe Connection and wait for your account to be verified before you
-              can add products
+              Please complete Stripe Onboarding and wait for your account to be verified before you
+              can add products. This usually occurs within 1 hour after onboarding.
             </p>
           </>
         )}
