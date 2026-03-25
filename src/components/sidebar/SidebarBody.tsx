@@ -87,6 +87,10 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
   const showMarkets = isPredictionsPage || isShopPage;
   const { session } = useAuthContext();
 
+  // Extract the current shop username from /shop/:username
+  const shopMatch = location.pathname.match(/^\/shop\/([^/]+)$/);
+  const currentShopUsername = shopMatch ? shopMatch[1].toLowerCase() : null;
+
   // Get current brands from URL params (for shop pages) - supports comma-separated values
   const currentBrandParam = searchParams.get('brand');
   const selectedBrands = currentBrandParam ? currentBrandParam.split(',') : [];
@@ -168,6 +172,15 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
     profileImageUrl: shop.profileImageUrl,
     isClickable: true,
   }));
+
+  // Sort shops so the currently-viewed shop appears first
+  const sortedShops = currentShopUsername
+    ? [...shops].sort((a, b) => {
+        const aIsCurrent = a.username.toLowerCase() === currentShopUsername ? -1 : 0;
+        const bIsCurrent = b.username.toLowerCase() === currentShopUsername ? -1 : 0;
+        return aIsCurrent - bIsCurrent;
+      })
+    : shops;
 
   // Icon options for each category
   const getCategoryIcon = (category: BettingCategory) => {
@@ -410,12 +423,23 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                 controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined
               }
             >
-              {shops.map(shop => {
+              {sortedShops.map(shop => {
+                const isActiveShop = currentShopUsername === shop.username.toLowerCase();
                 const commonClassName = cn(
                   'h-auto overflow-visible transition-all cursor-pointer no-underline',
                   controls.open && !controls.isMobile
-                    ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
-                    : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
+                    ? cn(
+                        'p-2.5 rounded-[8px] flex items-center gap-2.5',
+                        isActiveShop
+                          ? 'bg-primary/15 border border-primary hover:bg-primary/20'
+                          : 'bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary'
+                      )
+                    : cn(
+                        'px-1 py-1 rounded-md flex justify-center',
+                        isActiveShop
+                          ? 'bg-primary/15 ring-1 ring-primary'
+                          : 'hover:bg-sidebar-compact-hover'
+                      )
                 );
 
                 const shopContent = (
