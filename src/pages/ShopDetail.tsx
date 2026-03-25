@@ -88,9 +88,12 @@ export default function ShopDetail() {
     profileData?.socials ??
     (isOwnShop ? (session?.socials ?? null) : null);
 
+  const isCardCadeShop = username?.toLowerCase() === 'cardcade';
+
   // Filter to only show slabs with stock
+  // CardCade shop items come from redemptions, so don't filter by showOnShop
   let slabPrizes: PrizeDisplay[] = (shopData?.items || [])
-    .filter(prize => prize.category === 'slab' && prize.stock > 0 && prize.showOnShop !== false)
+    .filter(prize => prize.category === 'slab' && prize.stock > 0 && (isCardCadeShop || prize.showOnShop !== false))
     .map(prize => {
       const { imageUrls, coverImageIndex, coverImageUrl } = resolvePrizeImages(prize);
 
@@ -181,8 +184,8 @@ export default function ShopDetail() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Message Seller Button - Only show when logged in and not own shop */}
-            {session && !isOwnShop && shopData?.shop?.id && (
+            {/* Message Seller Button - Only show when logged in, not own shop, and not CardCade shop */}
+            {session && !isOwnShop && !isCardCadeShop && shopData?.shop?.id && (
               <Button
                 onClick={() => navigate(`/inbox?seller=${shopData.shop.id}&sellerName=${encodeURIComponent(shopData.shop.displayName || username || '')}`)}
                 variant="outline"
@@ -194,10 +197,10 @@ export default function ShopDetail() {
               </Button>
             )}
 
-            {/* Manage Shop Button - Only show for shop owner */}
-            {isOwnShop && (
+            {/* Manage Shop Button - Show for shop owner or admins on CardCade shop */}
+            {(isOwnShop || (isCardCadeShop && session?.role === 'admin')) && (
               <Button
-                onClick={() => navigate('/seller/shop/manage')}
+                onClick={() => navigate(isCardCadeShop ? '/admin' : '/seller/shop/manage')}
                 variant="default"
                 size="sm"
                 className="flex items-center gap-2 whitespace-nowrap md:px-4"
