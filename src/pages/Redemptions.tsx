@@ -1,5 +1,5 @@
-import { MainLayout } from "@/components/layout";
-import { Card, CardContent } from "@/components/ui/card";
+import { MainLayout } from '@/components/layout';
+import { Card, CardContent } from '@/components/ui/card';
 import { usePrizeTiers } from '@/hooks/usePrizeConfig';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
@@ -132,10 +132,10 @@ export default function Redemptions() {
           displayOrder: prize.displayOrderRedemptions ?? 999,
         };
       });
-    
+
     // Check if purchase option sorting is enabled (use first prize's setting)
     const usePurchaseSort = tiers?.[0]?.sortByPurchaseOptionRedemptions ?? false;
-    
+
     if (usePurchaseSort) {
       // Sort by purchaseOption first, then displayOrder
       const sorted = filtered.sort((a, b) => {
@@ -162,7 +162,7 @@ export default function Redemptions() {
         <div>
           <h2 className="text-xl font-semibold">Redemptions</h2>
           <h2 className="text-sm text-gray-500">
-            Redeem items with CadeCoins or USD, or a combination of both!
+            Redeem your cadecoins for sealed wax! Use coins, USD, or a mix of both!
           </h2>
         </div>
       </div>
