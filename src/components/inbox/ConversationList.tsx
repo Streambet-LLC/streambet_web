@@ -89,16 +89,22 @@ const ConversationItem = ({
   onClick,
   currentUserId,
 }: ConversationItemProps) => {
-  const otherParticipant = conversation.participants.find(
-    (p) => p.userId !== currentUserId
-  );
   const isSupport = conversation.type === 'support';
-  const displayName = isSupport
-    ? 'Support'
-    : otherParticipant?.user?.username || 'Unknown';
-  const displayImage = isSupport
-    ? undefined
-    : otherParticipant?.user?.profileImageUrl;
+
+  // For support: find the non-admin requester to show their name
+  // For direct: find the other participant (not the current user)
+  const otherParticipant = isSupport
+    ? conversation.participants.find(
+        (p) => p.user?.role !== 'admin' && String(p.userId ?? p.user?.id) !== String(currentUserId)
+      ) || conversation.participants.find((p) => p.user?.role !== 'admin')
+    : conversation.participants.find(
+        (p) => String(p.userId ?? p.user?.id ?? p.id) !== String(currentUserId)
+      );
+
+  const displayName = otherParticipant?.user?.username
+    || otherParticipant?.user?.name
+    || (isSupport ? (conversation.subject || 'Support') : 'Unknown');
+  const displayImage = otherParticipant?.user?.profileImageUrl;
   const isSeller = otherParticipant?.user?.isSeller;
 
   return (

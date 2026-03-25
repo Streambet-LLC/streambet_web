@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { MainLayout } from '@/components/layout';
 import { ConversationList } from '@/components/inbox/ConversationList';
 import { ThreadView } from '@/components/inbox/ThreadView';
@@ -12,13 +12,15 @@ import { Plus, Settings, MessageSquare } from 'lucide-react';
 import type { ConversationTab } from '@/types/inbox';
 
 const Inbox = () => {
-  const { session } = useAuth();
+  const { session } = useAuthContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<ConversationTab>('all');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
     searchParams.get('conversation')
   );
-  const [showNewConversation, setShowNewConversation] = useState(false);
+  const preselectedSellerId = searchParams.get('seller') || undefined;
+  const preselectedSellerName = searchParams.get('sellerName') || undefined;
+  const [showNewConversation, setShowNewConversation] = useState(!!preselectedSellerId);
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
@@ -27,6 +29,13 @@ const Inbox = () => {
       setSelectedConversationId(conversationParam);
     }
   }, [searchParams]);
+
+  // Auto-open new conversation dialog when navigating with ?seller= param
+  useEffect(() => {
+    if (preselectedSellerId) {
+      setShowNewConversation(true);
+    }
+  }, [preselectedSellerId]);
 
   const handleSelectConversation = (conversationId: string) => {
     setSelectedConversationId(conversationId);
@@ -56,11 +65,7 @@ const Inbox = () => {
             >
               <Settings className="h-4 w-4" />
             </Button>
-            <Button
-              size="sm"
-              onClick={() => setShowNewConversation(true)}
-              className="gap-1"
-            >
+            <Button size="sm" onClick={() => setShowNewConversation(true)} className="gap-1">
               <Plus className="h-4 w-4" />
               New Message
             </Button>
@@ -77,10 +82,7 @@ const Inbox = () => {
           >
             {/* Tabs */}
             <div className="px-3 pt-3">
-              <Tabs
-                value={activeTab}
-                onValueChange={(v) => setActiveTab(v as ConversationTab)}
-              >
+              <Tabs value={activeTab} onValueChange={v => setActiveTab(v as ConversationTab)}>
                 <TabsList className="w-full">
                   <TabsTrigger value="all" className="flex-1">
                     All
@@ -100,20 +102,18 @@ const Inbox = () => {
               tab={activeTab}
               selectedId={selectedConversationId}
               onSelect={handleSelectConversation}
-              currentUserId={session?.id}
+              currentUserId={session?.user?.id || session?.id}
             />
           </div>
 
           {/* Thread View */}
           <div
-            className={`flex-1 flex flex-col ${
-              selectedConversationId ? 'flex' : 'hidden md:flex'
-            }`}
+            className={`flex-1 flex flex-col ${selectedConversationId ? 'flex' : 'hidden md:flex'}`}
           >
             {selectedConversationId ? (
               <ThreadView
                 conversationId={selectedConversationId}
-                currentUserId={session?.id}
+                currentUserId={session?.user?.id || session?.id}
                 onBack={handleBackToList}
               />
             ) : (
@@ -131,13 +131,19 @@ const Inbox = () => {
       {/* Dialogs */}
       <NewConversationDialog
         open={showNewConversation}
-        onOpenChange={setShowNewConversation}
+        onOpenChange={(open) => {
+          setShowNewConversation(open);
+          if (!open && preselectedSellerId) {
+            searchParams.delete('seller');
+            searchParams.delete('sellerName');
+            setSearchParams(searchParams);
+          }
+        }}
         onConversationCreated={handleSelectConversation}
+        preselectedSellerId={preselectedSellerId}
+        preselectedSellerName={preselectedSellerName}
       />
-      <InboxSettingsDialog
-        open={showSettings}
-        onOpenChange={setShowSettings}
-      />
+      <InboxSettingsDialog open={showSettings} onOpenChange={setShowSettings} />
     </MainLayout>
   );
 };

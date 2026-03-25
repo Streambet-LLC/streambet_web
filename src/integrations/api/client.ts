@@ -402,6 +402,11 @@ export const userAPI = {
     return response.data;
   },
 
+  getSellers: async (): Promise<{ id: string; username: string; displayName: string; profileImageUrl: string | null }[]> => {
+    const response = await apiClient.get('/users/sellers');
+    return response.data?.data ?? [];
+  },
+
   getLeaderboard: async () => {
     const response = await apiClient.get('/users/leaderboard');
     return response.data;

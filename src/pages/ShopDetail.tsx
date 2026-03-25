@@ -1,7 +1,7 @@
 import { MainLayout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { SearchInput } from '@/components/ui/SearchInput';
-import { Loader2, Settings } from 'lucide-react';
+import { Loader2, Mail, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PrizesByCategory, Prize as PrizeDisplay } from '@/components/prizes/PrizesByCategory';
@@ -172,18 +172,33 @@ export default function ShopDetail() {
             </div>
           </div>
 
-          {/* Manage Shop Button - Only show for shop owner */}
-          {isOwnShop && (
-            <Button
-              onClick={() => navigate('/seller/shop/manage')}
-              variant="default"
-              size="sm"
-              className="flex items-center gap-2 whitespace-nowrap md:px-4"
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden md:inline">Manage Shop</span>
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Message Seller Button - Only show when logged in and not own shop */}
+            {session && !isOwnShop && shopData?.shop?.id && (
+              <Button
+                onClick={() => navigate(`/inbox?seller=${shopData.shop.id}&sellerName=${encodeURIComponent(shopData.shop.displayName || username || '')}`)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 whitespace-nowrap md:px-4"
+              >
+                <Mail className="h-4 w-4" />
+                <span className="hidden md:inline">Message</span>
+              </Button>
+            )}
+
+            {/* Manage Shop Button - Only show for shop owner */}
+            {isOwnShop && (
+              <Button
+                onClick={() => navigate('/seller/shop/manage')}
+                variant="default"
+                size="sm"
+                className="flex items-center gap-2 whitespace-nowrap md:px-4"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden md:inline">Manage Shop</span>
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Social Links, Trading Experience, Location - Below the name section */}

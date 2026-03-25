@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
   ArrowLeft,
   Shield,
@@ -42,6 +43,7 @@ export const ThreadView = ({
   const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['inbox-messages', conversationId],
@@ -49,11 +51,8 @@ export const ThreadView = ({
     refetchInterval: 15000, // Poll every 15 seconds
   });
 
-  // Get conversation details from the conversation list cache
-  const conversationsData = queryClient.getQueryData<any>(['inbox-conversations', 'all']);
-  const conversation: Conversation | undefined = conversationsData?.data?.find(
-    (c: Conversation) => c.id === conversationId
-  );
+  // Get conversation details from the API response directly
+  const conversation: Conversation | undefined = (data as any)?.conversation ?? undefined;
 
   // Mark as read when opening
   const markReadMutation = useMutation({
@@ -101,14 +100,29 @@ export const ThreadView = ({
   };
 
   const messages = data?.data ?? [];
-  const otherParticipant = conversation?.participants.find(
-    (p) => p.userId !== currentUserId
-  );
   const isSupport = conversation?.type === 'support';
   const isBlocked = conversation?.isBlocked;
-  const displayName = isSupport
+
+  // For support: if we're the requester, show "Support"; if we're the admin, show the requester's name
+  // For direct: find the other participant (not the current user)
+  const otherParticipant = isSupport
+    ? conversation?.participants.find(
+        (p) => p.user?.role !== 'admin' && String(p.userId ?? p.user?.id) !== String(currentUserId)
+      ) || conversation?.participants.find((p) => p.user?.role !== 'admin')
+    : conversation?.participants.find(
+        (p) => String(p.userId ?? p.user?.id ?? p.id) !== String(currentUserId)
+      );
+
+  // For support: check if we are the requester (non-admin) — if so, show "Support" as the display name
+  const iAmRequester = isSupport && conversation?.participants.some(
+    (p) => p.user?.role !== 'admin' && String(p.userId ?? p.user?.id) === String(currentUserId)
+  );
+
+  const displayName = isSupport && iAmRequester
     ? 'Support'
-    : otherParticipant?.user?.username || 'User';
+    : otherParticipant?.user?.username
+      || otherParticipant?.user?.name
+      || (isSupport ? 'Support' : 'User');
 
   if (isLoading) {
     return (
@@ -245,6 +259,7 @@ export const ThreadView = ({
                   message={message}
                   isOwn={isOwn}
                   currentUserId={currentUserId}
+                  onImageClick={setLightboxImage}
                 />
               </div>
             );
@@ -259,6 +274,23 @@ export const ThreadView = ({
           onMessageSent={handleMessageSent}
         />
       )}
+
+      {/* Image Lightbox */}
+      <Dialog open={!!lightboxImage} onOpenChange={() => setLightboxImage(null)}>
+        <DialogTitle className="sr-only">Image Preview</DialogTitle>
+        <DialogContent
+          className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent"
+          aria-describedby={undefined}
+        >
+          {lightboxImage && (
+            <img
+              src={lightboxImage}
+              alt="Full size"
+              className="w-full h-full object-contain rounded-lg"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -269,9 +301,10 @@ interface MessageBubbleProps {
   message: Message;
   isOwn: boolean;
   currentUserId?: string;
+  onImageClick?: (url: string) => void;
 }
 
-const MessageBubble = ({ message, isOwn, currentUserId }: MessageBubbleProps) => {
+const MessageBubble = ({ message, isOwn, currentUserId, onImageClick }: MessageBubbleProps) => {
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -299,20 +332,21 @@ const MessageBubble = ({ message, isOwn, currentUserId }: MessageBubbleProps) =>
         )}
 
         {/* Content */}
-        <p className="text-sm whitespace-pre-wrap break-words">
-          {message.content}
-        </p>
+        {message.content && (
+          <p className="text-sm whitespace-pre-wrap break-words">
+            {message.content}
+          </p>
+        )}
 
         {/* Attachments */}
         {message.attachments && message.attachments.length > 0 && (
           <div className="mt-2 space-y-2">
             {message.attachments.map((att) => (
-              <a
+              <button
                 key={att.id}
-                href={att.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
+                type="button"
+                onClick={() => onImageClick?.(att.fileUrl)}
+                className="block cursor-zoom-in"
               >
                 <img
                   src={att.fileUrl}
@@ -320,7 +354,7 @@ const MessageBubble = ({ message, isOwn, currentUserId }: MessageBubbleProps) =>
                   className="max-w-full rounded-lg max-h-[300px] object-cover"
                   loading="lazy"
                 />
-              </a>
+              </button>
             ))}
           </div>
         )}
