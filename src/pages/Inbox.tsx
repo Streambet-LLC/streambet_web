@@ -48,8 +48,8 @@ const Inbox = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="flex flex-col h-[calc(100dvh-64px)]">
+    <MainLayout showFooter={false} className="!p-0 !pb-0 overflow-hidden">
+      <div className="flex flex-col h-[calc(100dvh-64px)] min-h-0">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
           <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ const Inbox = () => {
 
           {/* Thread View */}
           <div
-            className={`flex-1 flex flex-col ${selectedConversationId ? 'flex' : 'hidden md:flex'}`}
+            className={`flex-1 flex flex-col min-h-0 ${selectedConversationId ? 'flex' : 'hidden md:flex'}`}
           >
             {selectedConversationId ? (
               <ThreadView

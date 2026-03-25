@@ -126,8 +126,8 @@ export const ThreadView = ({
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col">
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40">
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 shrink-0">
           <Skeleton className="h-8 w-8 rounded-full" />
           <Skeleton className="h-5 w-32" />
         </div>
@@ -146,9 +146,9 @@ export const ThreadView = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Thread header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 shrink-0">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -228,7 +228,7 @@ export const ThreadView = ({
 
       {/* Blocked notice */}
       {isBlocked && (
-        <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2 text-center">
+        <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2 text-center shrink-0">
           <p className="text-sm text-destructive flex items-center justify-center gap-1.5">
             <Ban className="h-3.5 w-3.5" />
             This conversation is blocked
@@ -237,7 +237,7 @@ export const ThreadView = ({
       )}
 
       {/* Messages */}
-      <ScrollArea className="flex-1" ref={scrollRef}>
+      <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
         <div className="p-4 space-y-4">
           {messages.map((message, index) => {
             const isOwn = message.senderId === currentUserId;
@@ -269,10 +269,12 @@ export const ThreadView = ({
 
       {/* Compose */}
       {!isBlocked && (
-        <ComposeMessage
-          conversationId={conversationId}
-          onMessageSent={handleMessageSent}
-        />
+        <div className="shrink-0">
+          <ComposeMessage
+            conversationId={conversationId}
+            onMessageSent={handleMessageSent}
+          />
+        </div>
       )}
 
       {/* Image Lightbox */}
