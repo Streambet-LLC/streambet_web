@@ -1117,8 +1117,13 @@ export const adminAPI = {
     return response.data;
   },
 
-  markSellerAsOnboarded: async (id) => {
+  markSellerAsOnboarded: async id => {
     const response = await apiClient.patch(`/admin/sellers/${id}/complete-onboarding`);
+    return response.data;
+  },
+
+  getSellerStripeStatus: async () => {
+    const response = await apiClient.get(`/admin/sellers/stripe-status`);
     return response.data;
   },
 };
@@ -1132,7 +1137,7 @@ export const creatorAPI = {
   },
 
   generateAccountLink: async () => {
-    const response = await apiClient.post("/creator/create-connect-link");
+    const response = await apiClient.post('/creator/create-connect-link');
 
     return response.data;
   },
@@ -1303,11 +1308,13 @@ export const prizeAPI = {
     name: string;
     description?: string;
     imageUrl?: string;
+    imageUrls?: string[];
+    coverImageIndex?: number;
     category?: 'slab' | 'sealed';
     stock?: number;
     purchaseOption?: 'offers_only' | 'buy_only' | 'both';
     brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
-    displayOrderShop?: number;
+    sellerDisplayOrderShop?: number;
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/seller/prizes/items', payload);
     return response.data;
@@ -1321,11 +1328,13 @@ export const prizeAPI = {
       name: string;
       description?: string;
       imageUrl?: string;
+      imageUrls?: string[];
+      coverImageIndex?: number;
       category?: 'slab' | 'sealed';
       stock?: number;
       purchaseOption?: 'offers_only' | 'buy_only' | 'both';
       brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
-      displayOrderShop?: number;
+      sellerDisplayOrderShop?: number;
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/seller/prizes/items/${id}`, payload);
@@ -1388,6 +1397,8 @@ export const prizeAPI = {
     name: string;
     description?: string;
     imageUrl?: string;
+    imageUrls?: string[];
+    coverImageIndex?: number;
     category?: 'slab' | 'sealed';
     stock?: number;
     purchaseOption?: 'offers_only' | 'buy_only' | 'both';
@@ -1406,6 +1417,8 @@ export const prizeAPI = {
       name: string;
       description?: string;
       imageUrl?: string;
+      imageUrls?: string[];
+      coverImageIndex?: number;
       category?: 'slab' | 'sealed';
       stock?: number;
       purchaseOption?: 'offers_only' | 'buy_only' | 'both';
@@ -1474,6 +1487,11 @@ export const prizeAPI = {
     return response.data;
   },
 
+  getShopOrders: async () => {
+    const response = await apiClient.get('/prizes/my-shop-orders');
+    return response.data;
+  },
+
   // Get user's address (secure endpoint)
   // Note: Lives in users API since address is user data, but primarily used
   // by prize redemption feature for shipping address pre-population
@@ -1496,6 +1514,12 @@ export const prizeAPI = {
     offerNotes?: string;
   }) => {
     const response = await apiClient.post('/prizes/make-offer', offerData);
+    return response.data;
+  },
+
+  // Get order success details for purchase confirmation page
+  getOrderSuccessDetails: async (orderId: string) => {
+    const response = await apiClient.get(`/prizes/orders/${orderId}/success-details`);
     return response.data;
   },
 };

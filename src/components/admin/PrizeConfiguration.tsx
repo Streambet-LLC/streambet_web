@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,7 @@ import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
 import { handleMutationError } from '@/lib/mutationHelpers';
-import { Loader2, Plus, Trash2, X, Edit, AlertCircle, Expand, GripVertical } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit, AlertCircle, GripVertical } from 'lucide-react';
 import {
   PrizeConfiguration as PrizeTier,
   CreatePrizeTierRequest,
@@ -33,9 +33,7 @@ import {
   PrizeBrand,
   Seller,
 } from '@/types/prize';
-import PhotoCropper from '../PhotoCropper';
-import { useImageCropper } from '@/hooks/useImageCropper';
-import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
+import { ItemImageGallery, type ItemImageInput } from '@/components/items/ItemImageGallery';
 import {
   Dialog,
   DialogContent,
@@ -54,8 +52,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import Bugsnag from '@bugsnag/js';
-import { getMessage, getThumbnailUrl } from '@/utils/helper';
+import { getMessage } from '@/utils/helper';
 import {
   DndContext,
   closestCenter,
@@ -274,22 +271,14 @@ export const PrizeConfiguration = () => {
     queryFn: () => api.admin.getSellers(),
   });
 
-  // Image upload hook
-  const imageUpload = useImageCropper({
-    checkNSFW: false,
-    onError: error => setImageError(error),
-  });
-
-  // Drag and drop state
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   // Dialog state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<PrizeTier | null>(null);
   const [deletingTier, setDeletingTier] = useState<PrizeTier | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [itemImages, setItemImages] = useState<ItemImageInput[]>([]);
+  const [coverImageIndex, setCoverImageIndex] = useState(0);
 
   // Display order editing state
   const [isEditingOrder, setIsEditingOrder] = useState(false);
@@ -320,8 +309,6 @@ export const PrizeConfiguration = () => {
 
   // Validation state
   const [validationError, setValidationError] = useState<string>('');
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [imageLayout, setImageLayout] = useState<'single' | 'double'>('single');
   const [usdAmount, setUsdAmount] = useState<string>('');
 
   // Form state
@@ -354,9 +341,9 @@ export const PrizeConfiguration = () => {
       createdBy: null,
     });
     setValidationError('');
-    imageUpload.clearImage();
+    setItemImages([]);
+    setCoverImageIndex(0);
     setImageError(null);
-    setImageLayout('single');
     setUsdAmount('');
   };
 
@@ -384,34 +371,6 @@ export const PrizeConfiguration = () => {
       setUsdAmount('');
     }
     setValidationError('');
-  };
-
-  // Drag and drop handlers
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) imageUpload.handleFileSelect(file);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) imageUpload.handleFileSelect(file);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
   };
 
   // Validate tier number uniqueness
@@ -513,6 +472,17 @@ export const PrizeConfiguration = () => {
         updates.map(update => {
           const tier = tiers?.find(t => t.id === update.id);
           if (!tier) throw new Error('Item not found');
+
+          const imageUrls =
+            tier.imageUrls && tier.imageUrls.length > 0
+              ? tier.imageUrls
+              : tier.imageUrl
+                ? [tier.imageUrl]
+                : [];
+
+          const resolvedCoverIndex = tier.itemImages?.findIndex(image => image.isCover) ?? -1;
+          const coverImageIndex = resolvedCoverIndex >= 0 ? resolvedCoverIndex : 0;
+
           return api.prize.updatePrizeTier(update.id, {
             name: tier.name,
             description: tier.description,
@@ -521,7 +491,9 @@ export const PrizeConfiguration = () => {
             category: tier.category,
             brand: tier.brand,
             purchaseOption: tier.purchaseOption,
-            imageUrl: tier.imageUrl || undefined,
+            imageUrl: imageUrls[coverImageIndex] || tier.imageUrl || undefined,
+            imageUrls,
+            coverImageIndex,
             createdBy: update.createdBy,
             showOnShop: update.showOnShop,
             showOnRedemptions: update.showOnRedemptions,
@@ -818,6 +790,50 @@ export const PrizeConfiguration = () => {
     }
   };
 
+  const resolveImagePayload = async (): Promise<{
+    imageUrls: string[];
+    coverImageIndex: number;
+    coverImageUrl?: string;
+  }> => {
+    if (!itemImages.length) {
+      throw new Error('Please upload at least one item image.');
+    }
+
+    try {
+      setIsUploading(true);
+
+      const imageUrls = await Promise.all(
+        itemImages.map(async image => {
+          if (image.isNew && image.file) {
+            const response = await api.auth.uploadImage(image.file, 'thumbnail');
+            const uploadedUrl = response?.data?.Key;
+
+            if (!uploadedUrl || typeof uploadedUrl !== 'string') {
+              throw new Error('Invalid upload response: missing image URL');
+            }
+
+            return uploadedUrl;
+          }
+
+          return image.imageUrl;
+        })
+      );
+
+      const normalizedCoverIndex = Math.min(
+        Math.max(coverImageIndex, 0),
+        Math.max(imageUrls.length - 1, 0)
+      );
+
+      return {
+        imageUrls,
+        coverImageIndex: normalizedCoverIndex,
+        coverImageUrl: imageUrls[normalizedCoverIndex],
+      };
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleCreate = async () => {
     if (!formData.name.trim()) {
       setValidationError('Item name is required');
@@ -840,15 +856,21 @@ export const PrizeConfiguration = () => {
       return;
     }
 
+    if (!itemImages.length) {
+      setValidationError('At least one item image is required');
+      return;
+    }
+
     setValidationError('');
 
     try {
-      // Upload image if new file selected
-      const imageUrl = await handleImageUpload();
+      const imagePayload = await resolveImagePayload();
 
       createMutation.mutate({
         ...formData,
-        imageUrl,
+        imageUrl: imagePayload.coverImageUrl,
+        imageUrls: imagePayload.imageUrls,
+        coverImageIndex: imagePayload.coverImageIndex,
       });
     } catch (error) {
       toast({
@@ -882,17 +904,23 @@ export const PrizeConfiguration = () => {
       return;
     }
 
+    if (!itemImages.length) {
+      setValidationError('At least one item image is required');
+      return;
+    }
+
     setValidationError('');
 
     try {
-      // Upload image if new file selected
-      const imageUrl = await handleImageUpload();
+      const imagePayload = await resolveImagePayload();
 
       updateMutation.mutate({
         id: editingTier.id,
         payload: {
           ...formData,
-          imageUrl,
+          imageUrl: imagePayload.coverImageUrl,
+          imageUrls: imagePayload.imageUrls,
+          coverImageIndex: imagePayload.coverImageIndex,
         },
       });
     } catch (error) {
@@ -905,6 +933,23 @@ export const PrizeConfiguration = () => {
   };
 
   const handleEdit = (tier: PrizeTier) => {
+    const existingImageUrls =
+      tier.imageUrls && tier.imageUrls.length > 0
+        ? tier.imageUrls
+        : tier.imageUrl
+          ? [tier.imageUrl]
+          : [];
+
+    const existingCoverIndex =
+      tier.itemImages?.findIndex(image => image.isCover) ??
+      (existingImageUrls.length > 0 ? 0 : -1);
+
+    const mappedImages: ItemImageInput[] = existingImageUrls.map((imageUrl, index) => ({
+      id: `existing-${tier.id}-${index}`,
+      imageUrl,
+      isNew: false,
+    }));
+
     setFormData({
       amount: tier.amount,
       name: tier.name,
@@ -928,31 +973,10 @@ export const PrizeConfiguration = () => {
     } else {
       setUsdAmount('');
     }
-    imageUpload.clearImage();
+    setItemImages(mappedImages);
+    setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
+    setImageError(null);
     setEditingTier(tier);
-  };
-
-  const handleImageUpload = async (): Promise<string> => {
-    if (!imageUpload.selectedFile) {
-      return formData.imageUrl; // Return existing URL if no new file
-    }
-
-    try {
-      setIsUploading(true);
-      const response = await api.auth.uploadImage(imageUpload.selectedFile, 'thumbnail');
-      const url = response?.data?.Key;
-
-      if (!url || typeof url !== 'string') {
-        throw new Error('Invalid upload response: missing image URL');
-      }
-
-      return url;
-    } catch (error) {
-      Bugsnag.notify(error);
-      throw error; // Re-throw to be caught by handleCreate/handleUpdate
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   if (isLoading) {
@@ -1104,7 +1128,7 @@ export const PrizeConfiguration = () => {
                           createdBy: item?.createdBy ?? null,
                           showOnShop: false,
                           showOnRedemptions: true,
-                          amount: (item?.amount ?? 0) * 50,
+                          // Amount is already stored in cadecoins, no conversion needed
                         };
                       });
                       bulkAssignMutation.mutate(updates);
@@ -1756,26 +1780,6 @@ export const PrizeConfiguration = () => {
               </p>
             </div>
             <div className="space-y-2.5">
-              <Label htmlFor="imageLayout" className="text-base font-medium">
-                Image Layout
-              </Label>
-              <Select
-                value={imageLayout}
-                onValueChange={value => setImageLayout(value as 'single' | 'double')}
-              >
-                <SelectTrigger id="imageLayout" className="h-12 text-base">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="single">Single Slab (4" × 6.5")</SelectItem>
-                  <SelectItem value="double">Double Slab - Front & Back (8" × 6.5")</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Choose single for one side, or double for front & back side-by-side
-              </p>
-            </div>
-            <div className="space-y-2.5">
               <Label htmlFor="stock" className="text-base font-medium">
                 Stock Quantity
               </Label>
@@ -1836,120 +1840,30 @@ export const PrizeConfiguration = () => {
 
             <div className="space-y-2.5">
               <Label className="text-base font-medium">Prize Image</Label>
-              {imageUpload.previewUrl ||
-              (editingTier && formData.imageUrl && !imageUpload.selectedFile) ? (
-                <div className="relative rounded-lg overflow-hidden">
-                  <img
-                    src={imageUpload.previewUrl || getThumbnailUrl(formData.imageUrl)}
-                    alt="Preview"
-                    className={`w-full object-cover cursor-pointer hover:opacity-90 transition-opacity ${
-                      imageLayout === 'single' ? 'aspect-[8/13]' : 'aspect-[16/13]'
-                    }`}
-                    onClick={() => setShowImageModal(true)}
-                  />
-                  <div
-                    className="absolute top-2 left-2 z-20 bg-black/60 rounded-md p-1.5 hover:bg-black/80 transition-colors cursor-pointer"
-                    onClick={() => setShowImageModal(true)}
-                  >
-                    <Expand className="h-4 w-4 text-white" aria-hidden="true" />
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    className="absolute top-2 right-2 h-10 w-10 shadow-lg"
-                    onClick={() => {
-                      imageUpload.clearImage();
-                      setFormData({ ...formData, imageUrl: '' });
-                    }}
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-              ) : (
-                <div
-                  className={`w-full flex flex-col items-center justify-center bg-secondary rounded-lg py-8 px-4 cursor-pointer border-2 border-dashed transition-colors ${isDragging ? 'ring-2 ring-primary border-primary' : 'border-border'} ${imageError ? 'border-destructive' : ''}`}
-                  onClick={imageUpload.isValidating ? undefined : handleUploadClick}
-                  onDrop={imageUpload.isValidating ? undefined : handleDrop}
-                  onDragOver={imageUpload.isValidating ? undefined : handleDragOver}
-                  onDragLeave={imageUpload.isValidating ? undefined : handleDragLeave}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileInputChange}
-                    disabled={imageUpload.isValidating}
-                  />
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="rounded-full bg-background border-4 border-border flex items-center justify-center p-3">
-                      {imageUpload.isValidating ? (
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      ) : (
-                        <img src="/icons/cloud_upload.png" alt="Upload" className="w-8 h-8" />
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-primary">Click to upload</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">or drag and drop</p>
-                      <p className="text-xs text-muted-foreground mt-2">JPEG, PNG, or WebP</p>
-                      <p className="text-xs text-muted-foreground">
-                        {imageLayout === 'single'
-                          ? 'Aspect ratio 8:13 • 1200×1950px'
-                          : 'Aspect ratio 16:13 • 2400×1950px'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <ItemImageGallery
+                images={itemImages}
+                coverIndex={coverImageIndex}
+                onImagesChange={setItemImages}
+                onCoverIndexChange={setCoverImageIndex}
+                onError={setImageError}
+                maxImages={7}
+                disabled={isUploading || createMutation.isPending || updateMutation.isPending}
+              />
+              <p className="text-xs text-muted-foreground">
+                Drag to reorder photos. Use the star button to choose cover photo.
+              </p>
+              <p className="rounded-md border border-[#D4FF00]/40 bg-[#D4FF00]/10 px-3 py-2 text-xs font-semibold text-[#D4FF00]">
+                Please lookup the cert number for your slab to see if there are high resolution
+                photos of it. If so, right click, save to downloads, and upload those photos here.
+              </p>
               {imageError && <p className="text-sm text-red-500 mt-2">{imageError}</p>}
             </div>
           </div>
-          {imageUpload.fileToCrop && (
-            <PhotoCropper
-              file={imageUpload.fileToCrop}
-              onClose={imageUpload.cancelCrop}
-              onCrop={imageUpload.handleCropComplete}
-              cropperProps={{
-                aspect:
-                  imageLayout === 'single'
-                    ? IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_ASPECT_RATIO
-                    : IMAGE_UPLOAD_CONFIG.PRIZE_DOUBLE_SLAB_ASPECT_RATIO,
-              }}
-              resizerProps={{
-                maxWidth:
-                  imageLayout === 'single'
-                    ? IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_MAX_WIDTH
-                    : IMAGE_UPLOAD_CONFIG.PRIZE_DOUBLE_SLAB_MAX_WIDTH,
-                maxHeight:
-                  imageLayout === 'single'
-                    ? IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_MAX_HEIGHT
-                    : IMAGE_UPLOAD_CONFIG.PRIZE_DOUBLE_SLAB_MAX_HEIGHT,
-                compressFormat: 'JPEG',
-                quality: IMAGE_UPLOAD_CONFIG.QUALITY,
-              }}
-            />
-          )}
           {validationError && (
             <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive rounded-md">
               <AlertCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
               <p className="text-sm text-destructive">{validationError}</p>
             </div>
-          )}
-          {showImageModal && (imageUpload.previewUrl || formData.imageUrl) && (
-            <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-              <DialogTitle className="sr-only">Prize Image Preview</DialogTitle>
-              <DialogContent
-                className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent"
-                aria-describedby={undefined}
-              >
-                <img
-                  src={imageUpload.previewUrl || getThumbnailUrl(formData.imageUrl)}
-                  alt="Full size preview"
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              </DialogContent>
-            </Dialog>
           )}
           <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-2 pt-4">
             <Button
@@ -1965,7 +1879,12 @@ export const PrizeConfiguration = () => {
             </Button>
             <Button
               onClick={editingTier ? handleUpdate : handleCreate}
-              disabled={isUploading || createMutation.isPending || updateMutation.isPending}
+              disabled={
+                isUploading ||
+                createMutation.isPending ||
+                updateMutation.isPending ||
+                itemImages.length === 0
+              }
               className="h-12 sm:h-10 text-base sm:text-sm"
             >
               {(isUploading || createMutation.isPending || updateMutation.isPending) && (

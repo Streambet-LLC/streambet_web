@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -18,9 +18,6 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useDebounce } from '@/lib/utils';
 import { getMessage } from '@/utils/helper';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { AuthLayout } from '@/components/layout';
 import Bugsnag from '@bugsnag/js';
@@ -39,16 +36,11 @@ export default function SignUp() {
   const [refLink, setRefLink] = useState(cookies['referral-link'] ? cookies['referral-link'] : '');
   const [name, setName] = useState('');
   const [tosAccepted, setTosAccepted] = useState(false);
-  const [isOlder, setIsOlder] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isGoogleLogin, setIsGoogleLogin] = useState(false);
   const [userNameCheck, setUserNameCheck] = useState('');
-  const [dob, setDob] = useState<Date | undefined>(undefined);
-  const [currentMonth, setCurrentMonth] = useState<Date | undefined>(undefined);
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const lastClickTimeRef = useRef<number>(0);
   const [avatarInputKey, setAvatarInputKey] = useState(0);
   const { locationResult, isCheckingLocation } = useLocationRestriction();
 
@@ -68,21 +60,8 @@ export default function SignUp() {
           .regex(/[a-z]/, 'Password must contain at least 1 lowercase letter')
           .regex(/[0-9]/, 'Password must contain at least 1 number')
           .regex(/[^A-Za-z0-9]/, 'Password must contain at least 1 special character'),
-    dob: z.date({ required_error: 'Date of Birth is required' }).refine(
-      date => {
-        if (!date) return false;
-        const now = new Date();
-        const minAge = 18;
-        const minDate = new Date(now.getFullYear() - minAge, now.getMonth(), now.getDate());
-        return date <= minDate;
-      },
-      { message: 'You must be at least 18 years old' }
-    ),
     tosAccepted: z.boolean().refine(val => val === true, {
       message: 'You must accept the Terms of Service',
-    }),
-    isOlder: z.boolean().refine(val => val === true, {
-      message: 'You must be atleast 18 years old',
     }),
     promoCode: z.string().optional(),
     refLink: z.string().optional(),
@@ -97,17 +76,10 @@ export default function SignUp() {
       password: '',
       promoCode: '',
       refLink: '',
-      dob: undefined,
       tosAccepted: false,
-      isOlder: false,
       avatar: null,
     },
   });
-
-  // Initialize currentMonth when component mounts
-  useEffect(() => {
-    setCurrentMonth(new Date());
-  }, []);
 
   const signupMutation = useMutation({
     mutationFn: async (userData: {
@@ -115,7 +87,6 @@ export default function SignUp() {
       email: string;
       password: string;
       username: string;
-      dateOfBirth: string;
       lastKnownIp: string;
       redirect?: string;
       promoCode?: string;
@@ -203,10 +174,8 @@ export default function SignUp() {
     if (promoCode) validateField('promoCode', promoCode);
     if (refLink) validateField('refLink', refLink);
     if (tosAccepted) validateField('tosAccepted', tosAccepted);
-    if (isOlder) validateField('isOlder', isOlder);
-    if (dob) validateField('dob', dob);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasSubmitted, username, email, password, promoCode, tosAccepted, isOlder, dob, refLink]);
+  }, [hasSubmitted, username, email, password, promoCode, tosAccepted, refLink]);
 
   const validateForm = () => {
     setHasSubmitted(true);
@@ -216,9 +185,7 @@ export default function SignUp() {
         email,
         password,
         promoCode,
-        dob,
         tosAccepted,
-        isOlder,
         refLink,
       });
       setErrors({});
@@ -305,17 +272,12 @@ export default function SignUp() {
       }
     }
 
-    // Format dob as YYYY-MM-DD string for payload
-    const dobFormatted = dob ? formatDateForAPI(dob) : undefined;
-
     signupMutation.mutate({
       name,
       username,
       email,
       password,
-      dob: dobFormatted,
       tosAccepted,
-      isOlder,
       profileImageUrl: profileImageUrl || undefined,
       lastKnownIp: locationResult?.ip_address,
       redirect: redirectParam || undefined,
@@ -398,71 +360,6 @@ export default function SignUp() {
 
     return null;
   };
-
-  // Helper function to format date as YYYY-MM-DD without timezone issues
-  const formatDateForAPI = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  // Helper function to format date for display
-  const formatDateForDisplay = (date: Date): string => {
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-  };
-
-  // Debounced date selection handler to prevent double-click issues
-  const handleDateSelect = useCallback(
-    (date: Date | undefined) => {
-      const now = Date.now();
-      const timeSinceLastClick = now - lastClickTimeRef.current;
-
-      // Prevent rapid successive clicks (less than 300ms apart)
-      if (timeSinceLastClick < 300) {
-        return;
-      }
-
-      lastClickTimeRef.current = now;
-
-      if (date) {
-        // Add a small delay to ensure proper processing
-        setTimeout(() => {
-          setDob(date);
-          form.setValue('dob', date, { shouldValidate: true });
-          // setIsDatePickerOpen(false);
-        }, 50);
-      }
-    },
-    [form]
-  );
-
-  const handleMonthOrYearChange = (date: Date) => {
-    // If a day is already selected, keep it; otherwise, set to the first day of the month
-    const newDate = dob
-      ? new Date(date.getFullYear(), date.getMonth(), dob.getDate())
-      : new Date(date.getFullYear(), date.getMonth(), 1);
-    setDob(newDate);
-    form.setValue('dob', newDate, { shouldValidate: true });
-  };
-
-  // Debounced click handler for opening the date picker
-  const handleInputClick = useCallback(() => {
-    const now = Date.now();
-    const timeSinceLastClick = now - lastClickTimeRef.current;
-
-    // Prevent rapid successive clicks (less than 300ms apart)
-    if (timeSinceLastClick < 300) {
-      return;
-    }
-
-    lastClickTimeRef.current = now;
-    setIsDatePickerOpen(true);
-  }, []);
 
   return (
     <AuthLayout title="Create an account" subtitle="Enter your details below to create an account">
@@ -621,80 +518,6 @@ export default function SignUp() {
                   />
                   {errors.refLink && <p className="text-destructive text-sm">{errors.refLink}</p>}
                 </motion.div> */}
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="dob">Date of Birth</Label>
-                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <PopoverTrigger asChild>
-                      <div className="relative">
-                        <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-                        <Input
-                          id="dob"
-                          type="text"
-                          value={dob ? formatDateForDisplay(dob) : ''}
-                          placeholder="Select your date of birth"
-                          readOnly
-                          className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) pl-10 ${errors.dob ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
-                          disabled={false}
-                          onClick={handleInputClick}
-                        />
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 select-none" align="start">
-                      <Calendar
-                        key="dob-calendar"
-                        mode="single"
-                        selected={dob}
-                        month={currentMonth}
-                        onMonthChange={date => {
-                          setCurrentMonth(date);
-                          handleMonthOrYearChange(date);
-                        }}
-                        // onMonthChange={setCurrentMonth}
-                        onSelect={handleDateSelect}
-                        captionLayout="dropdown"
-                        toDate={new Date()}
-                        components={{
-                          CaptionLabel: () => null,
-                          Dropdown: ({
-                            children,
-                            value,
-                            onChange,
-                            className = '',
-                            style,
-                            ...rest
-                          }) => (
-                            <select
-                              value={value}
-                              onChange={onChange}
-                              className={`bg-black text-white rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary border border-gray-700 ${className}`}
-                              style={{ minWidth: 80, ...style }}
-                              {...rest}
-                            >
-                              {children}
-                            </select>
-                          ),
-                        }}
-                        classNames={{
-                          caption_dropdowns: 'flex gap-[5px] justify-center',
-                          day: 'h-9 w-9 p-0 font-light aria-selected:opacity-100',
-                          day_selected:
-                            'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
-                          day_today: 'bg-accent text-accent-foreground',
-                          day_outside:
-                            'day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30',
-                          day_disabled: 'text-muted-foreground opacity-50',
-                          day_range_middle:
-                            'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                          day_hidden: 'select-none',
-                        }}
-                        fromYear={1900}
-                        toYear={new Date().getFullYear()}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {errors.dob && <p className="text-destructive text-sm">{errors.dob}</p>}
-                </motion.div>
                 <motion.div variants={itemVariants} className="flex items-center space-x-2">
                   <Checkbox
                     id="tosAccepted"
@@ -716,21 +539,6 @@ export default function SignUp() {
                   {errors.tosAccepted && (
                     <p className="text-destructive text-sm">{errors.tosAccepted}</p>
                   )}
-                </motion.div>
-                <motion.div
-                  variants={itemVariants}
-                  className="flex items-center space-x-2 w-full pb-2"
-                >
-                  <Checkbox
-                    id="isOlder"
-                    checked={isOlder}
-                    onCheckedChange={checked => setIsOlder(checked as boolean)}
-                    disabled={false}
-                  />
-                  <Label htmlFor="isOlder" className="text-sm">
-                    I confirm that I am 18 years of age or older
-                  </Label>
-                  {errors.isOlder && <p className="text-destructive text-sm">{errors.isOlder}</p>}
                 </motion.div>
                 {/* Sign Up button */}
                 <div className="relative">
