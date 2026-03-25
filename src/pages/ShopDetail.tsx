@@ -187,7 +187,11 @@ export default function ShopDetail() {
             {/* Message Seller Button - Only show when logged in, not own shop, and not CardCade shop */}
             {session && !isOwnShop && !isCardCadeShop && shopData?.shop?.id && (
               <Button
-                onClick={() => navigate(`/inbox?seller=${shopData.shop.id}&sellerName=${encodeURIComponent(shopData.shop.displayName || username || '')}`)}
+                onClick={() =>
+                  navigate(
+                    `/inbox?seller=${shopData.shop.id}&sellerName=${encodeURIComponent(shopData.shop.displayName || username || '')}`
+                  )
+                }
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2 whitespace-nowrap md:px-4"
@@ -200,7 +204,11 @@ export default function ShopDetail() {
             {/* Manage Shop Button - Show for shop owner or admins on CardCade shop */}
             {(isOwnShop || (isCardCadeShop && session?.role === 'admin')) && (
               <Button
-                onClick={() => navigate(isCardCadeShop ? '/admin' : '/seller/shop/manage')}
+                onClick={() =>
+                  navigate(
+                    isCardCadeShop ? '/seller/shop/manage?shop=cardcade' : '/seller/shop/manage'
+                  )
+                }
                 variant="default"
                 size="sm"
                 className="flex items-center gap-2 whitespace-nowrap md:px-4"

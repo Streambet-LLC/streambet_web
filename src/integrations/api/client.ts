@@ -1457,6 +1457,29 @@ export const prizeAPI = {
     return response.data;
   },
 
+  // Get shop settings for a virtual shop (admin only)
+  getShopSettings: async (shopKey: string) => {
+    const response = await apiClient.get(`/admin/prizes/shop-settings/${shopKey}`);
+    return response.data;
+  },
+
+  // Update shop settings for a virtual shop (admin only)
+  updateShopSettings: async (
+    shopKey: string,
+    payload: {
+      shopName?: string;
+      profileImageUrl?: string | null;
+      socials?: Record<string, string>;
+      sellerTradingExperience?: string;
+      city?: string;
+      state?: string;
+      country?: string;
+    }
+  ) => {
+    const response = await apiClient.patch(`/admin/prizes/shop-settings/${shopKey}`, payload);
+    return response.data;
+  },
+
   // Submit prize redemption request
   submitRedemption: async (redemptionData: SubmitPrizeRedemptionRequest) => {
     const response = await apiClient.post('/prizes/redeem', redemptionData);
