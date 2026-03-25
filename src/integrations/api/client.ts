@@ -14,6 +14,16 @@ import {
 import { PromotedBetsResponse } from '@/types/promo';
 import { CurrencyType } from '@/utils/currency';
 import { SpinStatusResponse, SpinResultResponse } from '@/types/daily-spin';
+import {
+  Conversation,
+  ConversationListResponse,
+  MessageListResponse,
+  UnreadCountResponse,
+  InboxSettings,
+  UploadedAttachment,
+  ConversationTab,
+  AdminConversationTab,
+} from '@/types/inbox';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -390,6 +400,11 @@ export const userAPI = {
   getCreators: async () => {
     const response = await apiClient.get('/users/creators');
     return response.data;
+  },
+
+  getSellers: async (): Promise<{ id: string; username: string; displayName: string; profileImageUrl: string | null }[]> => {
+    const response = await apiClient.get('/users/sellers');
+    return response.data?.data ?? [];
   },
 
   getLeaderboard: async () => {
@@ -1509,6 +1524,139 @@ export const prizeAPI = {
   },
 };
 
+// Inbox API
+export const inboxAPI = {
+  // Create a new conversation
+  createConversation: async (data: {
+    recipientId?: string;
+    type: 'direct' | 'support';
+    subject?: string;
+    initialMessage: string;
+  }): Promise<Conversation> => {
+    const response = await apiClient.post('/inbox/conversations', data);
+    return response.data;
+  },
+
+  // List conversations
+  listConversations: async (params?: {
+    tab?: ConversationTab;
+    page?: number;
+    limit?: number;
+  }): Promise<ConversationListResponse> => {
+    const response = await apiClient.get('/inbox/conversations', { params });
+    return response.data;
+  },
+
+  // Get conversation messages
+  getConversationMessages: async (
+    conversationId: string,
+    params?: { page?: number; limit?: number }
+  ): Promise<MessageListResponse> => {
+    const response = await apiClient.get(
+      `/inbox/conversations/${conversationId}`,
+      { params }
+    );
+    return response.data;
+  },
+
+  // Send a message
+  sendMessage: async (
+    conversationId: string,
+    data: {
+      content: string;
+      attachments?: UploadedAttachment[];
+    }
+  ) => {
+    const response = await apiClient.post(
+      `/inbox/conversations/${conversationId}/messages`,
+      data
+    );
+    return response.data;
+  },
+
+  // Mark conversation as read
+  markAsRead: async (conversationId: string) => {
+    const response = await apiClient.post(
+      `/inbox/conversations/${conversationId}/read`
+    );
+    return response.data;
+  },
+
+  // Get unread count
+  getUnreadCount: async (): Promise<UnreadCountResponse> => {
+    const response = await apiClient.get('/inbox/unread-count');
+    return response.data;
+  },
+
+  // Block a user
+  blockUser: async (userId: string) => {
+    const response = await apiClient.post(`/inbox/block/${userId}`);
+    return response.data;
+  },
+
+  // Unblock a user
+  unblockUser: async (userId: string) => {
+    const response = await apiClient.delete(`/inbox/block/${userId}`);
+    return response.data;
+  },
+
+  // Get inbox settings
+  getSettings: async (): Promise<InboxSettings> => {
+    const response = await apiClient.get('/inbox/settings');
+    return response.data;
+  },
+
+  // Update inbox settings
+  updateSettings: async (data: InboxSettings): Promise<InboxSettings> => {
+    const response = await apiClient.patch('/inbox/settings', data);
+    return response.data;
+  },
+
+  // Upload a photo attachment
+  uploadPhoto: async (file: File): Promise<UploadedAttachment> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/inbox/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // Admin: list conversations
+  adminListConversations: async (params?: {
+    tab?: AdminConversationTab;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ConversationListResponse> => {
+    const response = await apiClient.get('/admin/inbox/conversations', {
+      params,
+    });
+    return response.data;
+  },
+
+  // Admin: get conversation messages
+  adminGetConversationMessages: async (
+    conversationId: string,
+    params?: { page?: number; limit?: number }
+  ): Promise<MessageListResponse> => {
+    const response = await apiClient.get(
+      `/admin/inbox/conversations/${conversationId}`,
+      { params }
+    );
+    return response.data;
+  },
+
+  // Admin: send message
+  adminSendMessage: async (conversationId: string, content: string) => {
+    const response = await apiClient.post(
+      `/admin/inbox/conversations/${conversationId}/messages`,
+      { content }
+    );
+    return response.data;
+  },
+};
+
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,
@@ -1523,6 +1671,7 @@ export const api = {
   creator: creatorAPI,
   prize: prizeAPI,
   dailySpin: dailySpinAPI,
+  inbox: inboxAPI,
 };
 
 export default api;

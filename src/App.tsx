@@ -53,6 +53,7 @@ import { DailySpin } from './pages/DailySpin';
 import ShopDetail from './pages/ShopDetail';
 import Shops from './pages/Shops';
 import SellerShopManage from './pages/SellerShopManage';
+import Inbox from './pages/Inbox';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 
 // Create a client
@@ -123,6 +124,7 @@ const App = () => {
                               <Route path="/seller-application" element={<SellerApplication />} />
                               <Route path="/seller/shop/manage" element={<SellerShopManage />} />
                               <Route path="/daily-spin" element={<DailySpin />} />
+                              <Route path="/inbox" element={<Inbox />} />
                               <Route path="/purchase-success" element={<PurchaseSuccess />} />
                             </Route>
 
