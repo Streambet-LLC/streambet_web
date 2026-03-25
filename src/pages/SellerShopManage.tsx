@@ -12,10 +12,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, ShoppingCart, DollarSign, Pencil, X } from 'lucide-react';
+import { Loader2, Trash2, ShoppingCart, DollarSign, Pencil, X, Camera } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PrizeBrand, PrizeConfiguration } from '@/types/prize';
 import { CardFooter } from '@/components/ui/card';
@@ -33,6 +34,7 @@ import { SellerOnboardingModal } from '@/components/seller/SellerOnboardingModal
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ItemImageGallery, type ItemImageInput } from '@/components/items/ItemImageGallery';
 import { getThumbnailUrl } from '@/utils/helper';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface SellerOfferOrder {
   id: string;
@@ -80,6 +82,10 @@ export default function SellerShopManage() {
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // CardCade mode: admins managing the CardCade virtual shop
+  const isCardCadeMode = searchParams.get('shop') === 'cardcade' && session?.role === 'admin';
 
   const [isUploading, setIsUploading] = useState(false);
   const [itemImages, setItemImages] = useState<ItemImageInput[]>([]);
@@ -107,6 +113,9 @@ export default function SellerShopManage() {
   const [isEditingShopName, setIsEditingShopName] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [shopProfileImageUrl, setShopProfileImageUrl] = useState<string | null>(null);
+  const [shopProfileImageFile, setShopProfileImageFile] = useState<File | null>(null);
+  const shopProfileImageInputRef = React.useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -129,16 +138,27 @@ export default function SellerShopManage() {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['seller-shop-items-manage'],
     queryFn: () => api.prize.getMyShopItems(),
-    enabled: !!session?.isSeller,
+    enabled: !!session?.isSeller && !isCardCadeMode,
   });
 
   const { data: shopData } = useQuery({
-    queryKey: ['seller-shop-manage', session?.user?.username],
+    queryKey: ['seller-shop-manage', isCardCadeMode ? 'cardcade' : session?.user?.username],
     queryFn: async () => {
+      if (isCardCadeMode) {
+        return await api.prize.getShopItemsByUsername('cardcade');
+      }
       if (!session?.user?.username) return null;
       return await api.prize.getShopItemsByUsername(session.user.username);
     },
-    enabled: !!session?.user?.username,
+    enabled: isCardCadeMode || !!session?.user?.username,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Load CardCade shop settings from admin API
+  const { data: cardcadeSettings } = useQuery({
+    queryKey: ['cardcade-shop-settings'],
+    queryFn: () => api.prize.getShopSettings('cardcade'),
+    enabled: isCardCadeMode,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -147,7 +167,7 @@ export default function SellerShopManage() {
   >({
     queryKey: ['seller-shop-orders-manage'],
     queryFn: () => api.prize.getMyShopOrders(),
-    enabled: !!session?.isSeller,
+    enabled: !!session?.isSeller && !isCardCadeMode,
   });
 
   const { data: offersResponse, isLoading: isOffersLoading } = useQuery<{
@@ -156,14 +176,35 @@ export default function SellerShopManage() {
   }>({
     queryKey: ['seller-shop-offers-manage'],
     queryFn: () => api.prize.getMyShopOffers({ status: 'all' }),
-    enabled: !!session?.isSeller,
+    enabled: !!session?.isSeller && !isCardCadeMode,
   });
 
   const offers = offersResponse?.data || [];
 
   // Sync shop settings when session updates or editing mode changes
   useEffect(() => {
+    if (isCardCadeMode) {
+      // Don't overwrite state while the user is actively editing
+      if (isEditingShopName) return;
+      // In CardCade mode, load from the shop settings API (or show defaults while loading)
+      setShopName(cardcadeSettings?.displayName || "CardCade's Shop");
+      setShopSocials({
+        instagram: cardcadeSettings?.socials?.instagram || '',
+        twitter: cardcadeSettings?.socials?.twitter || '',
+        youtube: cardcadeSettings?.socials?.youtube || '',
+        tiktok: cardcadeSettings?.socials?.tiktok || '',
+      });
+      setSellerTradingExperience(cardcadeSettings?.sellerTradingExperience || '');
+      setCity(cardcadeSettings?.city || '');
+      setState(cardcadeSettings?.state || '');
+      setCountry(cardcadeSettings?.country || '');
+      setShopProfileImageUrl(cardcadeSettings?.profileImageUrl || null);
+      setShopProfileImageFile(null);
+      return; // Never fall through to session data in CardCade mode
+    }
     if (session?.user) {
+      // Don't overwrite state while the user is actively editing
+      if (isEditingShopName) return;
       // Try to get shop name from multiple sources
       let displayNameValue = '';
 
@@ -193,7 +234,7 @@ export default function SellerShopManage() {
       setState(session?.state || '');
       setCountry(session?.country || '');
     }
-  }, [session, shopData, items, isEditingShopName]);
+  }, [session, shopData, items, isEditingShopName, isCardCadeMode, cardcadeSettings]);
 
   // Show onboarding modal if seller hasn't completed onboarding
   useEffect(() => {
@@ -377,7 +418,7 @@ export default function SellerShopManage() {
   });
 
   const updateShopSettingsMutation = useMutation({
-    mutationFn: (payload: {
+    mutationFn: async (payload: {
       shopName: string;
       socials: {
         instagram: string;
@@ -391,15 +432,32 @@ export default function SellerShopManage() {
       city?: string;
       state?: string;
       country?: string;
+      profileImageUrl?: string | null;
     }) => {
+      if (isCardCadeMode) {
+        // Upload profile image first if a new file was selected
+        let profileImageUrl = payload.profileImageUrl;
+        if (shopProfileImageFile) {
+          const response = await api.auth.uploadImage(shopProfileImageFile, 'avatar');
+          profileImageUrl = response?.data?.Key;
+        }
+        return api.prize.updateShopSettings('cardcade', { ...payload, profileImageUrl });
+      }
       return api.user.updateProfile(payload);
     },
     onSuccess: data => {
       toast({ title: 'Success', description: 'Shop settings updated successfully.' });
       setIsEditingShopName(false);
-      queryClient.invalidateQueries({ queryKey: ['session'] });
-      queryClient.invalidateQueries({ queryKey: ['seller-shops'] });
-      queryClient.invalidateQueries({ queryKey: ['seller-shop-items', session?.user?.username] });
+      setShopProfileImageFile(null);
+      if (isCardCadeMode) {
+        queryClient.invalidateQueries({ queryKey: ['cardcade-shop-settings'] });
+        queryClient.invalidateQueries({ queryKey: ['seller-shop-manage', 'cardcade'] });
+        queryClient.invalidateQueries({ queryKey: ['seller-shops'] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['session'] });
+        queryClient.invalidateQueries({ queryKey: ['seller-shops'] });
+        queryClient.invalidateQueries({ queryKey: ['seller-shop-items', session?.user?.username] });
+      }
     },
     onError: error => {
       toast({
@@ -461,8 +519,7 @@ export default function SellerShopManage() {
           : [];
 
     const existingCoverIndex =
-      item.itemImages?.findIndex(image => image.isCover) ??
-      (existingImageUrls.length > 0 ? 0 : -1);
+      item.itemImages?.findIndex(image => image.isCover) ?? (existingImageUrls.length > 0 ? 0 : -1);
 
     const mappedImages: ItemImageInput[] = existingImageUrls.map((imageUrl, index) => ({
       id: `existing-${item.id}-${index}`,
@@ -480,8 +537,7 @@ export default function SellerShopManage() {
       stock: item.stock || 0,
       purchaseOption: item.purchaseOption || 'buy_only',
       brand: item.brand || 'other',
-      sellerDisplayOrderShop:
-        item.sellerDisplayOrderShop ?? item.displayOrderShop ?? 1,
+      sellerDisplayOrderShop: item.sellerDisplayOrderShop ?? item.displayOrderShop ?? 1,
     });
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
@@ -589,7 +645,7 @@ export default function SellerShopManage() {
       ? getThumbnailUrl(form.imageUrl)
       : '';
 
-  if (!session?.isSeller) {
+  if (!session?.isSeller && !isCardCadeMode) {
     return (
       <MainLayout>
         <Card>
@@ -610,55 +666,98 @@ export default function SellerShopManage() {
         {/* Shop Settings Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Shop Settings</CardTitle>
+            <CardTitle>{isCardCadeMode ? 'CardCade Shop Settings' : 'Shop Settings'}</CardTitle>
           </CardHeader>
           <CardContent>
             {!isEditingShopName ? (
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="flex items-start gap-4">
+                  {isCardCadeMode && (
+                    <Avatar className="h-16 w-16 shrink-0">
+                      <AvatarImage src={shopProfileImageUrl ? getThumbnailUrl(shopProfileImageUrl) : undefined} />
+                      <AvatarFallback className="text-xl font-bold">C</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div>
                   <p className="text-sm font-medium text-muted-foreground">Shop Name</p>
                   <p className="text-lg font-semibold mt-1">
                     {shopName ||
-                      session?.user?.shopName ||
-                      (session?.user?.username ? `${session.user.username}'s Shop` : 'Your Shop')}
+                      (isCardCadeMode
+                        ? "CardCade's Shop"
+                        : session?.user?.shopName ||
+                          (session?.user?.username
+                            ? `${session.user.username}'s Shop`
+                            : 'Your Shop'))}
                   </p>
 
                   <div className="mt-3 space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">Social Links</p>
-                    {Object.values(session?.socials || {}).some(Boolean) ? (
+                    {Object.values(isCardCadeMode ? shopSocials : session?.socials || {}).some(
+                      Boolean
+                    ) ? (
                       <div className="text-sm text-muted-foreground space-y-1">
-                        {session?.socials?.instagram && (
-                          <p>Instagram: {session.socials.instagram}</p>
+                        {(isCardCadeMode ? shopSocials.instagram : session?.socials?.instagram) && (
+                          <p>
+                            Instagram:{' '}
+                            {isCardCadeMode ? shopSocials.instagram : session?.socials?.instagram}
+                          </p>
                         )}
-                        {session?.socials?.twitter && <p>Twitter: {session.socials.twitter}</p>}
-                        {session?.socials?.twitch && <p>Twitch: {session.socials.twitch}</p>}
-                        {session?.socials?.kick && <p>Kick: {session.socials.kick}</p>}
-                        {session?.socials?.youtube && <p>YouTube: {session.socials.youtube}</p>}
-                        {session?.socials?.tiktok && <p>TikTok: {session.socials.tiktok}</p>}
+                        {(isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter) && (
+                          <p>
+                            Twitter:{' '}
+                            {isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter}
+                          </p>
+                        )}
+                        {!isCardCadeMode && session?.socials?.twitch && (
+                          <p>Twitch: {session.socials.twitch}</p>
+                        )}
+                        {!isCardCadeMode && session?.socials?.kick && (
+                          <p>Kick: {session.socials.kick}</p>
+                        )}
+                        {(isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube) && (
+                          <p>
+                            YouTube:{' '}
+                            {isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube}
+                          </p>
+                        )}
+                        {(isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok) && (
+                          <p>
+                            TikTok: {isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok}
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground">No social links set yet.</p>
                     )}
                   </div>
 
-                  {session?.sellerTradingExperience && (
+                  {(isCardCadeMode
+                    ? sellerTradingExperience
+                    : session?.sellerTradingExperience) && (
                     <div className="mt-3 space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">Cards Experience</p>
                       <p className="text-sm text-muted-foreground">
-                        {session.sellerTradingExperience}
+                        {isCardCadeMode
+                          ? sellerTradingExperience
+                          : session?.sellerTradingExperience}
                       </p>
                     </div>
                   )}
 
-                  {(session?.city || session?.state || session?.country) && (
+                  {(isCardCadeMode
+                    ? city || state || country
+                    : session?.city || session?.state || session?.country) && (
                     <div className="mt-3 space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">Location</p>
                       <p className="text-sm text-muted-foreground">
-                        {session?.country ||
-                          [session?.city, session?.state].filter(Boolean).join(', ')}
+                        {isCardCadeMode
+                          ? country || [city, state].filter(Boolean).join(', ')
+                          : session?.country ||
+                            [session?.city, session?.state].filter(Boolean).join(', ')}
                       </p>
                     </div>
                   )}
+                </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
                   <Pencil className="w-4 h-4 mr-2" />
@@ -667,6 +766,71 @@ export default function SellerShopManage() {
               </div>
             ) : (
               <div className="space-y-4">
+                {isCardCadeMode && (
+                  <div className="grid gap-2">
+                    <Label>Shop Profile Image</Label>
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="relative cursor-pointer group"
+                        onClick={() => shopProfileImageInputRef.current?.click()}
+                      >
+                        <Avatar className="h-20 w-20">
+                          <AvatarImage
+                            src={
+                              shopProfileImageFile
+                                ? URL.createObjectURL(shopProfileImageFile)
+                                : shopProfileImageUrl
+                                  ? getThumbnailUrl(shopProfileImageUrl)
+                                  : undefined
+                            }
+                          />
+                          <AvatarFallback className="text-2xl font-bold">C</AvatarFallback>
+                        </Avatar>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Camera className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => shopProfileImageInputRef.current?.click()}
+                        >
+                          {shopProfileImageUrl || shopProfileImageFile ? 'Change Image' : 'Upload Image'}
+                        </Button>
+                        {(shopProfileImageUrl || shopProfileImageFile) && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => {
+                              setShopProfileImageUrl(null);
+                              setShopProfileImageFile(null);
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                      <input
+                        ref={shopProfileImageInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setShopProfileImageFile(file);
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Recommended: Square image, at least 200x200px</p>
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <Label>Shop Name</Label>
                   <Input
@@ -761,27 +925,44 @@ export default function SellerShopManage() {
                     size="sm"
                     onClick={() => {
                       setIsEditingShopName(false);
-                      // Try to get shop name from multiple sources
-                      let displayNameValue = '';
-                      if (session?.shopName) {
-                        displayNameValue = session.shopName;
-                      } else if (shopData?.shop?.displayName) {
-                        displayNameValue = shopData.shop.displayName;
+                      setShopProfileImageFile(null);
+                      if (isCardCadeMode && cardcadeSettings) {
+                        setShopProfileImageUrl(cardcadeSettings.profileImageUrl || null);
+                        setShopName(cardcadeSettings.displayName || "CardCade's Shop");
+                        setShopSocials({
+                          instagram: cardcadeSettings.socials?.instagram || '',
+                          twitter: cardcadeSettings.socials?.twitter || '',
+                          youtube: cardcadeSettings.socials?.youtube || '',
+                          tiktok: cardcadeSettings.socials?.tiktok || '',
+                        });
+                        setSellerTradingExperience(cardcadeSettings.sellerTradingExperience || '');
+                        setCity(cardcadeSettings.city || '');
+                        setState(cardcadeSettings.state || '');
+                        setCountry(cardcadeSettings.country || '');
                       } else {
-                        displayNameValue = session?.user?.shopName || session?.user?.username || '';
-                      }
-                      setShopName(displayNameValue);
+                        // Try to get shop name from multiple sources
+                        let displayNameValue = '';
+                        if (session?.shopName) {
+                          displayNameValue = session.shopName;
+                        } else if (shopData?.shop?.displayName) {
+                          displayNameValue = shopData.shop.displayName;
+                        } else {
+                          displayNameValue =
+                            session?.user?.shopName || session?.user?.username || '';
+                        }
+                        setShopName(displayNameValue);
 
-                      setShopSocials({
-                        instagram: session?.socials?.instagram ?? '',
-                        twitter: session?.socials?.twitter ?? '',
-                        youtube: session?.socials?.youtube ?? '',
-                        tiktok: session?.socials?.tiktok ?? '',
-                      });
-                      setSellerTradingExperience(session?.sellerTradingExperience ?? '');
-                      setCity(session?.city ?? '');
-                      setState(session?.state ?? '');
-                      setCountry(session?.country ?? '');
+                        setShopSocials({
+                          instagram: session?.socials?.instagram ?? '',
+                          twitter: session?.socials?.twitter ?? '',
+                          youtube: session?.socials?.youtube ?? '',
+                          tiktok: session?.socials?.tiktok ?? '',
+                        });
+                        setSellerTradingExperience(session?.sellerTradingExperience ?? '');
+                        setCity(session?.city ?? '');
+                        setState(session?.state ?? '');
+                        setCountry(session?.country ?? '');
+                      }
                     }}
                   >
                     Cancel
@@ -796,6 +977,7 @@ export default function SellerShopManage() {
                         city,
                         state,
                         country,
+                        ...(isCardCadeMode ? { profileImageUrl: shopProfileImageUrl ?? undefined } : {}),
                       })
                     }
                     disabled={updateShopSettingsMutation.isPending}
@@ -812,19 +994,21 @@ export default function SellerShopManage() {
                 </div>
               </div>
             )}
-            <div className="mt-10">
-              <Button
-                onClick={() => {
-                  handleGenerateAccountLink();
-                }}
-              >
-                {session.stripeAccountConnected ? 'Stripe Dashboard' : 'Set Up Stripe'}
-              </Button>
-            </div>
+            {!isCardCadeMode && (
+              <div className="mt-10">
+                <Button
+                  onClick={() => {
+                    handleGenerateAccountLink();
+                  }}
+                >
+                  {session.stripeAccountConnected ? 'Stripe Dashboard' : 'Set Up Stripe'}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {session.stripeAccountConnected ? (
+        {!isCardCadeMode && session.stripeAccountConnected ? (
           <>
             {' '}
             {/* Mobile: Preview at top, Desktop: Side-by-side layout */}
@@ -1327,146 +1511,148 @@ export default function SellerShopManage() {
               </CardContent>
             </Card>
           </>
-        ) : (
+        ) : !isCardCadeMode ? (
+          <p className="text-red-500">
+            Please complete Stripe Onboarding and wait for your account to be verified before you
+            can add products. This usually occurs within 1 hour after onboarding.
+          </p>
+        ) : null}
+
+        {!isCardCadeMode && (
           <>
-            <p className=" text-red-500">
-              Please complete Stripe Onboarding and wait for your account to be verified before you
-              can add products. This usually occurs within 1 hour after onboarding.
-            </p>
+            <SellerOnboardingModal
+              open={showOnboardingModal}
+              onOpenChange={setShowOnboardingModal}
+              onComplete={() => {
+                setShowOnboardingModal(false);
+                queryClient.invalidateQueries({ queryKey: ['auth-context'] });
+              }}
+            />
+
+            <Dialog open={isCounterDialogOpen} onOpenChange={setIsCounterDialogOpen}>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Counter Offer</DialogTitle>
+                  <DialogDescription>
+                    {selectedOffer ? (
+                      <span>
+                        Buyer offered ${selectedOffer.offerAmount?.toFixed(2) || '0.00'} for{' '}
+                        {selectedOffer.prizeConfig?.name || 'this item'}.
+                      </span>
+                    ) : (
+                      'Make a counter offer for this item.'
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="counterAmount">Counter Amount (USD)</Label>
+                    <Input
+                      id="counterAmount"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={counterAmount}
+                      onChange={e => setCounterAmount(e.target.value)}
+                      placeholder="Enter counter amount"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="counterNotes">Notes (Optional)</Label>
+                    <Textarea
+                      id="counterNotes"
+                      value={counterNotes}
+                      onChange={e => setCounterNotes(e.target.value)}
+                      placeholder="Optional note for buyer"
+                      maxLength={500}
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCounterDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSubmitCounter} disabled={counterOfferMutation.isPending}>
+                    {counterOfferMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...
+                      </>
+                    ) : (
+                      'Send Counter Offer'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isShipDialogOpen} onOpenChange={setIsShipDialogOpen}>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Mark as Shipped</DialogTitle>
+                  <DialogDescription>
+                    {selectedPurchasedOrder ? (
+                      <span>
+                        Update shipping information for{' '}
+                        {selectedPurchasedOrder.prizeConfiguration?.name || 'this item'}
+                      </span>
+                    ) : (
+                      'Add tracking information for this shipment.'
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="trackingNumber">Tracking Number (Optional)</Label>
+                    <Input
+                      id="trackingNumber"
+                      type="text"
+                      value={trackingNumber}
+                      onChange={e => setTrackingNumber(e.target.value)}
+                      placeholder="e.g., 1Z999AA10123456784"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="shippingCarrier">Shipping Carrier (Optional)</Label>
+                    <Select
+                      value={shippingCarrier || 'none'}
+                      onValueChange={val => setShippingCarrier(val === 'none' ? '' : val)}
+                    >
+                      <SelectTrigger id="shippingCarrier">
+                        <SelectValue placeholder="Select carrier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="FedEx">FedEx</SelectItem>
+                        <SelectItem value="UPS">UPS</SelectItem>
+                        <SelectItem value="USPS">USPS</SelectItem>
+                        <SelectItem value="DHL">DHL</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsShipDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSubmitShip} disabled={markAsShippedMutation.isPending}>
+                    {markAsShippedMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Marking...
+                      </>
+                    ) : (
+                      'Mark as Shipped'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         )}
-
-        <SellerOnboardingModal
-          open={showOnboardingModal}
-          onOpenChange={setShowOnboardingModal}
-          onComplete={() => {
-            setShowOnboardingModal(false);
-            queryClient.invalidateQueries({ queryKey: ['auth-context'] });
-          }}
-        />
-
-        <Dialog open={isCounterDialogOpen} onOpenChange={setIsCounterDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Counter Offer</DialogTitle>
-              <DialogDescription>
-                {selectedOffer ? (
-                  <span>
-                    Buyer offered ${selectedOffer.offerAmount?.toFixed(2) || '0.00'} for{' '}
-                    {selectedOffer.prizeConfig?.name || 'this item'}.
-                  </span>
-                ) : (
-                  'Make a counter offer for this item.'
-                )}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="counterAmount">Counter Amount (USD)</Label>
-                <Input
-                  id="counterAmount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={counterAmount}
-                  onChange={e => setCounterAmount(e.target.value)}
-                  placeholder="Enter counter amount"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="counterNotes">Notes (Optional)</Label>
-                <Textarea
-                  id="counterNotes"
-                  value={counterNotes}
-                  onChange={e => setCounterNotes(e.target.value)}
-                  placeholder="Optional note for buyer"
-                  maxLength={500}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCounterDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSubmitCounter} disabled={counterOfferMutation.isPending}>
-                {counterOfferMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...
-                  </>
-                ) : (
-                  'Send Counter Offer'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isShipDialogOpen} onOpenChange={setIsShipDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Mark as Shipped</DialogTitle>
-              <DialogDescription>
-                {selectedPurchasedOrder ? (
-                  <span>
-                    Update shipping information for{' '}
-                    {selectedPurchasedOrder.prizeConfiguration?.name || 'this item'}
-                  </span>
-                ) : (
-                  'Add tracking information for this shipment.'
-                )}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="trackingNumber">Tracking Number (Optional)</Label>
-                <Input
-                  id="trackingNumber"
-                  type="text"
-                  value={trackingNumber}
-                  onChange={e => setTrackingNumber(e.target.value)}
-                  placeholder="e.g., 1Z999AA10123456784"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="shippingCarrier">Shipping Carrier (Optional)</Label>
-                <Select
-                  value={shippingCarrier || 'none'}
-                  onValueChange={val => setShippingCarrier(val === 'none' ? '' : val)}
-                >
-                  <SelectTrigger id="shippingCarrier">
-                    <SelectValue placeholder="Select carrier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="FedEx">FedEx</SelectItem>
-                    <SelectItem value="UPS">UPS</SelectItem>
-                    <SelectItem value="USPS">USPS</SelectItem>
-                    <SelectItem value="DHL">DHL</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsShipDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSubmitShip} disabled={markAsShippedMutation.isPending}>
-                {markAsShippedMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Marking...
-                  </>
-                ) : (
-                  'Mark as Shipped'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </MainLayout>
   );

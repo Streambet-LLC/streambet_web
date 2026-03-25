@@ -22,28 +22,110 @@ import {
 } from './ui/pagination';
 import { Input } from './ui/input';
 import { Search } from 'lucide-react';
-import { CurrencyType, HistoryType } from '@/enums';
+import { HistoryType } from '@/enums';
 import { getCurrencyLabel } from '@/utils/currency';
 import { roundDownCoinAmount } from '@/utils/format';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface Props {
   historyType?: HistoryType;
 }
 
+type TransactionTab = 'card' | 'wallet';
+
+const EXCLUDED_CARD_ORDER_STATUSES = new Set([
+  'pending',
+  'buy_attempted',
+  'offer_made',
+  'countered',
+  'rejected',
+]);
+
 export const WalletHistory: React.FC<Props> = ({ historyType }) => {
   const isTransaction = historyType === HistoryType.Transaction;
-  const { toast } = useToast();
+  useToast();
+  const { session } = useAuthContext();
   const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchUserQuery, setSearchUserQuery] = useState('');
+  const [transactionTab, setTransactionTab] = useState<TransactionTab>('card');
   const itemsPerPage = 7;
+  const isCardTransactionTab = isTransaction && transactionTab === 'card';
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
   const rangeEnd = itemsPerPage;
 
-  const { data: transactions, refetch: refetchTransactions } = useQuery({
-    queryKey: isTransaction ? ['getTransactions'] : ['getUserBets'],
+  const { data: transactions } = useQuery({
+    queryKey: [
+      'wallet-history',
+      historyType,
+      transactionTab,
+      currentPage,
+      searchUserQuery,
+      rangeStart,
+      rangeEnd,
+    ],
     queryFn: async () => {
+      if (isCardTransactionTab) {
+        const [buyerOrders, sellerOrders] = await Promise.all([
+          api.prize.getMyOrders(),
+          session?.isSeller ? api.prize.getMyShopOrders() : Promise.resolve([]),
+        ]);
+
+        const toStatusLabel = (status?: string) =>
+          status
+            ? status
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ')
+            : '';
+
+        const buyerRows = (buyerOrders || [])
+          .filter(order => !EXCLUDED_CARD_ORDER_STATUSES.has(order?.status))
+          .map(order => {
+            const amount = Number(order?.totalPrice || 0);
+            const cardName = order?.prizeConfig?.name || 'Card';
+            const statusLabel = toStatusLabel(order?.status);
+            return {
+              id: `buyer-${order.id}`,
+              createdat: order?.createdAt,
+              type: `Buyer • ${cardName}${statusLabel ? ` (${statusLabel})` : ''}`,
+              amount,
+              currencytype: null,
+            };
+          });
+
+        const sellerRows = (sellerOrders || []).map(order => {
+          const amount = Number(order?.totalPrice || 0);
+          const cardName = order?.prizeConfig?.name || 'Card';
+          const statusLabel = toStatusLabel(order?.status);
+          return {
+            id: `seller-${order.id}`,
+            createdat: order?.createdAt,
+            type: `Seller • ${cardName}${statusLabel ? ` (${statusLabel})` : ''}`,
+            amount,
+            currencytype: null,
+          };
+        });
+
+        const mergedRows = [...buyerRows, ...sellerRows]
+          .filter(row => {
+            if (!searchUserQuery) return true;
+            const q = searchUserQuery.toLowerCase();
+            return row.type.toLowerCase().includes(q);
+          })
+          .sort((a, b) => {
+            const dateA = a.createdat ? new Date(a.createdat).getTime() : 0;
+            const dateB = b.createdat ? new Date(b.createdat).getTime() : 0;
+            return dateB - dateA;
+          });
+
+        return {
+          data: mergedRows.slice(rangeStart, rangeStart + rangeEnd),
+          total: mergedRows.length,
+        };
+      }
+
       const data = isTransaction
         ? await api.wallet.getTransactions({
             range: `[${rangeStart},${rangeEnd}]`,
@@ -60,14 +142,14 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
           });
       return data;
     },
-    enabled: false,
+    enabled: true,
   });
 
   useEffect(() => {
-    refetchTransactions();
-  }, [currentPage, searchUserQuery, historyType, refetchTransactions]);
+    setCurrentPage(1);
+  }, [searchUserQuery, transactionTab, historyType]);
 
-  const totalPages = Math.ceil((transactions?.total || 0) / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil((transactions?.total || 0) / itemsPerPage));
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -85,6 +167,34 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
         <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>
           {historyType === HistoryType.Transaction ? 'Transaction history' : 'Pick history'}
         </h1>
+        {isTransaction && (
+          <div className={`flex gap-2 ${isMobile ? 'pb-2' : ''}`}>
+            <button
+              type="button"
+              className={cn(
+                'px-3 py-1.5 rounded-md text-sm border transition-colors',
+                transactionTab === 'card'
+                  ? 'bg-white text-black border-white'
+                  : 'bg-transparent text-white border-[#2D343E] hover:bg-white/10'
+              )}
+              onClick={() => setTransactionTab('card')}
+            >
+              Card Transactions
+            </button>
+            <button
+              type="button"
+              className={cn(
+                'px-3 py-1.5 rounded-md text-sm border transition-colors',
+                transactionTab === 'wallet'
+                  ? 'bg-white text-black border-white'
+                  : 'bg-transparent text-white border-[#2D343E] hover:bg-white/10'
+              )}
+              onClick={() => setTransactionTab('wallet')}
+            >
+              Coin Transactions
+            </button>
+          </div>
+        )}
         <div
           className={`relative rounded-md bg-[#0D0D0D] ${isMobile ? 'w-full' : 'ml-4'}`}
           style={{ border: '1px solid #2D343E', minWidth: isMobile ? undefined : 300 }}
@@ -138,17 +248,21 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                         <span
                           className="text-xs font-semibold"
                           style={{
-                            color:
-                              user?.amount > 0
+                            color: isCardTransactionTab
+                              ? undefined
+                              : user?.amount > 0
                                 ? '#7AFF14'
                                 : user?.amount < 0
                                   ? '#FF5656'
                                   : undefined,
                           }}
                         >
-                          {user?.amount < 0 ? '-' : ''}
-                          {Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')}{' '}
-                          {getCurrencyLabel(user?.currencytype)}
+                          {isCardTransactionTab
+                            ? `$${Math.abs(user?.amount ?? 0).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}`
+                            : `${user?.amount < 0 ? '-' : ''}${Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')} ${getCurrencyLabel(user?.currencytype)}`}
                         </span>
                       </div>
                     </div>
@@ -277,17 +391,21 @@ export const WalletHistory: React.FC<Props> = ({ historyType }) => {
                       <TableCell className="text-right">
                         <span
                           style={{
-                            color:
-                              user?.amount > 0
+                            color: isCardTransactionTab
+                              ? undefined
+                              : user?.amount > 0
                                 ? '#7AFF14'
                                 : user?.amount < 0
                                   ? '#FF5656'
                                   : undefined,
                           }}
                         >
-                          {user?.amount < 0 ? '-' : ''}
-                          {Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')}{' '}
-                          {getCurrencyLabel(user?.currencytype)}
+                          {isCardTransactionTab
+                            ? `$${Math.abs(user?.amount ?? 0).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}`
+                            : `${user?.amount < 0 ? '-' : ''}${Math.abs(user?.amount ?? 0)?.toLocaleString('en-US')} ${getCurrencyLabel(user?.currencytype)}`}
                         </span>
                       </TableCell>
                     </TableRow>
