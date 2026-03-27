@@ -321,7 +321,7 @@ export const PrizeConfiguration = () => {
     stock: 1,
     purchaseOption: 'both',
     brand: 'pokemon',
-    showOnRedemptions: true,
+    showOnRedemptions: false,
     showOnShop: true,
     createdBy: null,
   });
@@ -336,7 +336,7 @@ export const PrizeConfiguration = () => {
       stock: 1,
       purchaseOption: 'both',
       brand: 'pokemon',
-      showOnRedemptions: true,
+      showOnRedemptions: false,
       showOnShop: true,
       createdBy: null,
     });
