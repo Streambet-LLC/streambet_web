@@ -1,15 +1,3 @@
-export interface PrizeProgress {
-  lifetimeCoinsEarned: number;
-  nextPrize: number | null;
-  nextPrizeName: string | null;
-  progressPercent: number;
-  allPrizes: Array<{
-    amount: number;
-    name: string;
-    achieved: boolean;
-  }>;
-}
-
 export interface PublicUserProfile {
   id: string;
   username: string;
@@ -24,6 +12,5 @@ export interface PublicUserProfile {
   lifetimeCadeCoins: number;
   title: string;
   badgeLevel: string;
-  prizeProgress: PrizeProgress;
   isCreator?: boolean;
 }

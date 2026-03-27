@@ -860,6 +860,19 @@ export const adminAPI = {
     return response.data;
   },
 
+  updateSellerFeeOverride: async (payload: { userId: string; feePercent: number }) => {
+    const response = await apiClient.patch(
+      `/admin/users/${payload.userId}/fee-override`,
+      { feePercent: payload.feePercent }
+    );
+    return response.data;
+  },
+
+  clearSellerFeeOverride: async (userId: string) => {
+    const response = await apiClient.delete(`/admin/users/${userId}/fee-override`);
+    return response.data;
+  },
+
   updateUserCoins: async (payload: { userId: string; amount: number }) => {
     const response = await apiClient.patch(`/admin/gold-coins`, payload);
     return response.data;
