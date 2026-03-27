@@ -152,8 +152,10 @@ export default function Prizes() {
   // Get all shop items with stock from all sellers
   const allPrizes: PrizeDisplay[] = useMemo(() => {
     const filtered = (tiers || [])
-      // CardCade items come from redemptions (showOnRedemptions slabs) and may not have showOnShop=true
-      .filter(prize => prize.stock > 0 && (prize.showOnShop !== false || (prize.showOnRedemptions && prize.category === 'slab')))
+      // Shop list is controlled by showOnShop only.
+      // We intentionally do not use showOnRedemptions so redeem-only items
+      // no longer leak into the shop page.
+      .filter(prize => prize.stock > 0 && prize.showOnShop !== false)
       .map(prize => {
         const { imageUrls, coverImageIndex, coverImageUrl } = resolvePrizeImages(prize);
 
@@ -171,10 +173,9 @@ export default function Prizes() {
           brand: prize.brand,
           displayOrder: prize.displayOrderShop ?? 999,
           featuredDisplayOrder: prize.featuredDisplayOrder ?? null,
-          // CardCade items (redemption slabs) get attributed to the CardCade shop for display and checkout
-          createdBy: (prize.showOnRedemptions && prize.category === 'slab' && !prize.createdByUsername) ? 'cardcade' : (prize.createdBy || 'cardcade'),
-          createdByUsername: (prize.showOnRedemptions && prize.category === 'slab' && !prize.createdByUsername) ? 'cardcade' : (prize.createdByUsername || 'cardcade'),
-          sellerDisplayName: (prize.showOnRedemptions && prize.category === 'slab' && !prize.createdByUsername) ? 'CardCade Shop' : (prize.createdByShopName || prize.createdByUsername || "CardCade Shop"),
+          createdBy: prize.createdBy || 'cardcade',
+          createdByUsername: prize.createdByUsername || 'cardcade',
+          sellerDisplayName: prize.createdByShopName || prize.createdByUsername || 'CardCade Shop',
         };
       });
     
