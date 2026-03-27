@@ -117,6 +117,56 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     },
   });
 
+  const updateSellerFeeOverrideMutation = useMutation({
+    mutationFn: async ({ userId, feePercent }: { userId: string; feePercent: number }) => {
+      return await api.admin.updateSellerFeeOverride({ userId, feePercent });
+    },
+    onSuccess: () => {
+      refetchProfiles();
+      toast({
+        description: 'Seller fee updated successfully',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to update seller fee',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const clearSellerFeeOverrideMutation = useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      return await api.admin.clearSellerFeeOverride(userId);
+    },
+    onSuccess: () => {
+      refetchProfiles();
+      toast({
+        description: 'Seller fee override cleared successfully',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to clear seller fee override',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const getDisplayedFee = (user: any) => {
+    if (user?.effectiveSellerFeePercent !== null && user?.effectiveSellerFeePercent !== undefined) {
+      return Number(user.effectiveSellerFeePercent);
+    }
+    if (user?.adminFeeOverridePercent !== null && user?.adminFeeOverridePercent !== undefined) {
+      return Number(user.adminFeeOverridePercent);
+    }
+    return Number(user?.applicationFeePercent ?? 4);
+  };
+
   const totalPages = Math.ceil((profiles?.total || 0) / itemsPerPage);
 
   const handlePageChange = (page: number) => {
@@ -236,6 +286,53 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     )}
                   </div>
 
+                  {/* Seller Fee */}
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Seller Fee:</span>
+                    {user?.isSeller ? (
+                      <div className="flex items-center gap-2">
+                        <select
+                          className="bg-black border border-gray-700 rounded px-2 py-1 text-sm"
+                          value={getDisplayedFee(user)}
+                          onChange={e => {
+                            updateSellerFeeOverrideMutation.mutate({
+                              userId: user.id,
+                              feePercent: Number(e.target.value),
+                            });
+                          }}
+                          disabled={
+                            updateSellerFeeOverrideMutation.isPending ||
+                            clearSellerFeeOverrideMutation.isPending
+                          }
+                        >
+                          <option value={4}>4.0%</option>
+                          <option value={3.5}>3.5%</option>
+                          <option value={3}>3.0%</option>
+                          <option value={2.5}>2.5%</option>
+                          <option value={2}>2.0%</option>
+                        </select>
+                        {user?.sellerFeeSource === 'override' ? (
+                          <button
+                            type="button"
+                            className="text-xs text-red-300 hover:text-red-200 underline"
+                            onClick={() => {
+                              clearSellerFeeOverrideMutation.mutate({ userId: user.id });
+                            }}
+                            disabled={clearSellerFeeOverrideMutation.isPending}
+                          >
+                            Clear
+                          </button>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] uppercase">
+                            Milestone
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm">-</span>
+                    )}
+                  </div>
+
                   {/* Created Date */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Created:</span>
@@ -307,6 +404,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 <TableHead>Email</TableHead>
                 <TableHead>Verification</TableHead>
                 <TableHead>Promo Code</TableHead>
+                <TableHead>Seller Fee</TableHead>
                 <TableHead>Active</TableHead>
                 <TableHead>Wallet</TableHead>
                 <TableHead>Profile</TableHead>
@@ -317,7 +415,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
             <TableBody>
               {paginatedUsers?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={14} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={15} className="text-center py-6 text-muted-foreground">
                     No users found matching
                   </TableCell>
                 </TableRow>
@@ -381,6 +479,50 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                       )}
                     </TableCell>
                     <TableCell className="max-w-[180px]">{user.promoCode}</TableCell>
+                    <TableCell className="min-w-[120px]">
+                      {user?.isSeller ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="bg-black border border-gray-700 rounded px-2 py-1 text-sm"
+                            value={getDisplayedFee(user)}
+                            onChange={e => {
+                              updateSellerFeeOverrideMutation.mutate({
+                                userId: user.id,
+                                feePercent: Number(e.target.value),
+                              });
+                            }}
+                            disabled={
+                              updateSellerFeeOverrideMutation.isPending ||
+                              clearSellerFeeOverrideMutation.isPending
+                            }
+                          >
+                            <option value={4}>4.0%</option>
+                            <option value={3.5}>3.5%</option>
+                            <option value={3}>3.0%</option>
+                            <option value={2.5}>2.5%</option>
+                            <option value={2}>2.0%</option>
+                          </select>
+                          {user?.sellerFeeSource === 'override' ? (
+                            <button
+                              type="button"
+                              className="text-xs text-red-300 hover:text-red-200 underline"
+                              onClick={() => {
+                                clearSellerFeeOverrideMutation.mutate({ userId: user.id });
+                              }}
+                              disabled={clearSellerFeeOverrideMutation.isPending}
+                            >
+                              Clear
+                            </button>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] uppercase">
+                              Milestone
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span>-</span>
+                      )}
+                    </TableCell>
                     <TableCell className="cursor-pointer" title="Set User Account Active/Inactive">
                       <Switch
                         checked={user.isActive}
