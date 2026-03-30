@@ -125,7 +125,6 @@ const App = () => {
                               <Route path="/seller/shop/manage" element={<SellerShopManage />} />
                               <Route path="/daily-spin" element={<DailySpin />} />
                               <Route path="/inbox" element={<Inbox />} />
-                              <Route path="/purchase-success" element={<PurchaseSuccess />} />
                             </Route>
 
                             {/* Public Routes */}
@@ -148,6 +147,7 @@ const App = () => {
                             <Route path="/reset-password" element={<ResetPassword />} />
                             <Route path="/auth/google-callback" element={<GoogleCallback />} />
                             <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
+                            <Route path="/purchase-success" element={<PurchaseSuccess />} />
                             <Route path="/shop" element={<Prizes />} />
                             <Route path="/redemptions" element={<Redemptions />} />
                             <Route path="/" element={<Prizes />} />

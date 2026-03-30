@@ -208,8 +208,6 @@ export default function Profile() {
                   <ProfilePrizeProgress
                     currentCadeCoins={profile.currentCadeCoins}
                     lifetimeCadeCoins={profile.lifetimeCadeCoins} 
-                    prizeProgress={profile.prizeProgress}
-                    isOwnProfile={profile.username === session?.username}
                   />
                 </div>
               </div>

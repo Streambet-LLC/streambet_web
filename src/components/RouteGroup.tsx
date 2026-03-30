@@ -1,8 +1,14 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from "lucide-react";
 
-export default function RouteGroup({ auth, guard }: { auth?: boolean; guard?: boolean }) {
+export default function RouteGroup({
+  auth,
+  guard,
+} : {
+  auth?: boolean;
+  guard?: boolean;
+}) {
   const { session, isLoading, isFetching } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
