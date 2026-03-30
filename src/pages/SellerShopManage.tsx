@@ -1316,7 +1316,7 @@ export default function SellerShopManage() {
                       <div className="flex-1">
                         <div className="font-medium">{item.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          ${item.amount} USD • Stock {item.stock}
+                          ${item.amount ? Math.round(item.amount / 50) : 0} USD • Stock {item.stock}
                         </div>
                       </div>
                       <div className="flex gap-2">
