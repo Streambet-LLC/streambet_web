@@ -32,6 +32,7 @@ interface PrizeCheckoutModalProps {
 const COINS_TO_USD = 50; // 50 coins = $1
 const SHIPPING_FEE_USD = 5; // $5 shipping fee
 const SHIPPING_FEE_COINS = SHIPPING_FEE_USD * COINS_TO_USD; // 250 coins
+const SHIPPING_FEE_CENTS = SHIPPING_FEE_USD * 100;
 const BUYER_FEE_PERCENT = 3; // 3% buyer service fee on USD payments
 
 export default function PrizeCheckoutModal({
@@ -54,8 +55,10 @@ export default function PrizeCheckoutModal({
 
   // Calculate buyer fee (3%) on the item price only (excludes shipping)
   const getBuyerFeeUsd = (usdPortion: number) => {
-    const itemUsdPortion = Math.max(0, usdPortion - SHIPPING_FEE_USD);
-    return parseFloat((itemUsdPortion * (BUYER_FEE_PERCENT / 100)).toFixed(2));
+    const transactionSubtotalCents = Math.round(usdPortion * 100);
+    const itemSubtotalCents = Math.max(0, transactionSubtotalCents - SHIPPING_FEE_CENTS);
+    const buyerFeeCents = Math.round(itemSubtotalCents * (BUYER_FEE_PERCENT / 100));
+    return buyerFeeCents / 100;
   };
 
   const { data: userAddress, isLoading: isLoadingAddress } = useQuery({
