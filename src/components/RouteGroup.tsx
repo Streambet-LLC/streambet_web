@@ -23,16 +23,16 @@ export default function RouteGroup({
   }
 
   if (guard && !session) {
-    navigate(`/login?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+    navigate(
+      `/login?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`
+    );
     return;
   }
 
   if (auth && session) {
-    navigate("/");
+    navigate('/');
     return;
   }
 
-  return (
-    <Outlet />
-  )
+  return <Outlet />;
 };
