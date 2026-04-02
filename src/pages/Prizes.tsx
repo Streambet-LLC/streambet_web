@@ -41,8 +41,8 @@ const getBrandLabel = (brand: PrizeBrand): string => {
 };
 
 export default function Prizes() {
-  const { data: tiers, isLoading } = useShopItems();
   const { session } = useAuthContext();
+  const { data: tiers, isLoading } = useShopItems(!!session?.isProSubscriber);
   const isMobile = useIsMobile();
   const shouldReduceMotion = useReducedMotion();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -178,10 +178,10 @@ export default function Prizes() {
           sellerDisplayName: prize.createdByShopName || prize.createdByUsername || 'CardCade Shop',
         };
       });
-    
+
     // Check if purchase option sorting is enabled (use first prize's setting)
     const usePurchaseSort = tiers?.[0]?.sortByPurchaseOptionShop ?? false;
-    
+
     if (usePurchaseSort) {
       // Sort by purchaseOption first, then displayOrder
       return filtered.sort((a, b) => {
@@ -200,7 +200,9 @@ export default function Prizes() {
   // Featured prizes (filtered by featuredDisplayOrder, sorted by position)
   const featuredPrizes = useMemo(() => {
     return allPrizes
-      .filter(prize => prize.featuredDisplayOrder !== null && prize.featuredDisplayOrder !== undefined)
+      .filter(
+        prize => prize.featuredDisplayOrder !== null && prize.featuredDisplayOrder !== undefined
+      )
       .sort((a, b) => {
         // Primary sort: featured display order
         const orderA = a.featuredDisplayOrder ?? 0;
@@ -315,7 +317,10 @@ export default function Prizes() {
                     ease: 'linear',
                   }}
                 >
-                  <span className="text-2xl md:text-4xl font-black text-black tracking-wider" style={{ wordSpacing: '0.5em' }}>
+                  <span
+                    className="text-2xl md:text-4xl font-black text-black tracking-wider"
+                    style={{ wordSpacing: '0.5em' }}
+                  >
                     LOWER FEES • EASY-TO-USE • TOP SELLERS • LOWER FEES • EASY-TO-USE • TOP SELLERS
                     • LOWER FEES • EASY-TO-USE • TOP SELLERS • LOWER FEES • EASY-TO-USE • TOP
                     SELLERS • LOWER FEES • EASY-TO-USE • TOP SELLERS • LOWER FEES • EASY-TO-USE •
@@ -522,9 +527,15 @@ export default function Prizes() {
                             Clear
                           </Button>
                         </div>
-                        {minPrice !== '' && maxPrice !== '' && typeof maxPrice === 'number' && typeof minPrice === 'number' && maxPrice < minPrice && (
-                          <p className="text-xs text-red-500 mt-2">Max should be greater than min</p>
-                        )}
+                        {minPrice !== '' &&
+                          maxPrice !== '' &&
+                          typeof maxPrice === 'number' &&
+                          typeof minPrice === 'number' &&
+                          maxPrice < minPrice && (
+                            <p className="text-xs text-red-500 mt-2">
+                              Max should be greater than min
+                            </p>
+                          )}
                       </div>
                     </div>
                   )}

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { getImageLink } from '@/utils/helper';
 import { TabSwitch } from '@/components/navigation/TabSwitch';
 import { NotificationSettings } from './NotificationSettings';
+import { SubscriptionSettings } from './SubscriptionSettings';
 import { useAuthContext } from '@/contexts/AuthContext';
 import ReferralSettings from './ReferralSettings';
 
@@ -35,6 +36,7 @@ export const ProfileSettings = () => {
 
   const tabs = [
     { key: 'profile', label: 'Profile' },
+    { key: 'subscription', label: 'CardCade Pro' },
     { key: 'referrals', label: 'Referrals' },
     { key: 'notifications', label: 'Notifications' },
   ];
@@ -53,6 +55,7 @@ export const ProfileSettings = () => {
 
       {activeTab === 'notifications' && <NotificationSettings />}
       {activeTab === 'referrals' && <ReferralSettings />}
+      {activeTab === 'subscription' && <SubscriptionSettings />}
     </div>
   );
 };

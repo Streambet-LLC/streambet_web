@@ -15,6 +15,7 @@ import { formatUrl } from '@/utils/format';
 import { FaInstagram, FaTiktok, FaTwitter, FaYoutube } from 'react-icons/fa';
 import { PublicUserProfile } from '@/types/profile';
 import { Button } from '@/components/ui/button';
+import { ProBadge } from '@/components/pro/ProBadge';
 
 const shopSocialsMapping = {
   instagram: {
@@ -53,10 +54,10 @@ export default function ShopDetail() {
 
   // Fetch seller shop and seller-specific inventory
   const { data: shopData, isLoading: isLoadingShop } = useQuery({
-    queryKey: ['seller-shop-items', username],
+    queryKey: ['seller-shop-items', username, session?.isProSubscriber],
     queryFn: async () => {
       if (!username) return null;
-      return await api.prize.getShopItemsByUsername(username);
+      return await api.prize.getShopItemsByUsername(username, !!session?.isProSubscriber);
     },
     enabled: !!username,
     staleTime: 5 * 60 * 1000,
@@ -178,7 +179,10 @@ export default function ShopDetail() {
 
             {/* Shop Name and Username */}
             <div>
-              <h1 className="text-3xl font-bold">{shopName}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold">{shopName}</h1>
+                {profileData?.isProSubscriber && <ProBadge size="lg" />}
+              </div>
               <p className="text-muted-foreground">@{username}</p>
             </div>
           </div>
