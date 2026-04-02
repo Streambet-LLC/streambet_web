@@ -1,7 +1,7 @@
 import { MainLayout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { SearchInput } from '@/components/ui/SearchInput';
-import { Loader2, Mail, Settings } from 'lucide-react';
+import { ExternalLink, Loader2, Mail, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PrizesByCategory, Prize as PrizeDisplay } from '@/components/prizes/PrizesByCategory';
@@ -54,10 +54,10 @@ export default function ShopDetail() {
 
   // Fetch seller shop and seller-specific inventory
   const { data: shopData, isLoading: isLoadingShop } = useQuery({
-    queryKey: ['seller-shop-items', username, session?.isProSubscriber],
+    queryKey: ['seller-shop-items', username],
     queryFn: async () => {
       if (!username) return null;
-      return await api.prize.getShopItemsByUsername(username, !!session?.isProSubscriber);
+      return await api.prize.getShopItemsByUsername(username);
     },
     enabled: !!username,
     staleTime: 5 * 60 * 1000,
@@ -110,9 +110,10 @@ export default function ShopDetail() {
         stock: prize.stock,
         purchaseOption: prize.purchaseOption,
         brand: prize.brand,
-        displayOrder:
-          prize.sellerDisplayOrderShop ?? prize.displayOrderShop ?? 999,
+        displayOrder: prize.sellerDisplayOrderShop ?? prize.displayOrderShop ?? 999,
         createdBy: prize.createdBy ?? null,
+        isProOnly: prize.isProOnly ?? false,
+        proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
         // Don't show shop link in shop detail - user is already in the shop
       };
     });
@@ -219,6 +220,17 @@ export default function ShopDetail() {
               >
                 <Settings className="h-4 w-4" />
                 <span className="hidden md:inline">Manage Shop</span>
+              </Button>
+            )}
+            {isOwnShop && !isCardCadeShop && session?.stripeAccountConnected && (
+              <Button
+                onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 whitespace-nowrap md:px-4 border-[#BDFF00]/40 text-[#BDFF00] hover:bg-[#BDFF00]/10 hover:text-[#BDFF00]"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span className="hidden md:inline">Stripe Dashboard</span>
               </Button>
             )}
           </div>

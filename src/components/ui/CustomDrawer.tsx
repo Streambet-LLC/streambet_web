@@ -81,7 +81,7 @@ export const CustomDrawer: React.FC<CustomDrawerProps> = ({
           <motion.div
             ref={drawerRef}
             className={cn(
-              'fixed left-0 top-0 z-[100] h-screen w-1/2 flex-col border-r bg-background',
+              'fixed left-0 top-0 z-[100] h-screen w-1/2 flex flex-col overflow-hidden border-r bg-background',
               className
             )}
             initial="hidden"

@@ -148,6 +148,26 @@ const ConciergeRequestCard = ({ request, onClaim, isClaiming }: ConciergeRequest
                     ` · ${format(new Date(request.claimedAt), 'MMM d, yyyy h:mm a')}`}
                 </p>
               )}
+              {isClaimed && request.user && (
+                <div className="mt-2 text-sm text-gray-400 space-y-0.5">
+                  {request.user.name && (
+                    <p>
+                      <span className="text-gray-500">Name:</span> {request.user.name}
+                    </p>
+                  )}
+                  {request.user.email && (
+                    <p>
+                      <span className="text-gray-500">Email:</span>{' '}
+                      <a
+                        href={`mailto:${request.user.email}`}
+                        className="text-blue-400 hover:underline"
+                      >
+                        {request.user.email}
+                      </a>
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

@@ -130,6 +130,8 @@ export default function Redemptions() {
           purchaseOption: prize.purchaseOption,
           brand: prize.brand,
           displayOrder: prize.displayOrderRedemptions ?? 999,
+          isProOnly: prize.isProOnly ?? false,
+          proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
         };
       });
 

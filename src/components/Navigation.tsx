@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WalletDropdown } from './navigation/WalletDropdown';
 import { UserDropdown } from './navigation/UserDropdown';
-import { Menu, Mail } from 'lucide-react';
+import { Menu, Mail, Crown } from 'lucide-react';
 import { SearchInput } from './ui/SearchInput';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -220,6 +220,19 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                       <div className="flex flex-col space-y-2">
                         <Button
                           variant="ghost"
+                          className="justify-start text-left h-12 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10"
+                          onClick={() => {
+                            setTimeout(() => {
+                              navigate('/settings?tab=pro');
+                            }, 100);
+                            setIsDrawerOpen(false);
+                          }}
+                        >
+                          <Crown className="h-4 w-4 mr-2 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]" />
+                          <span>{session?.isProSubscriber ? 'Pro' : 'CardCade Pro'}</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
                           className="justify-start text-left h-12 text-[#FFFFFF80] hover:text-white hover:bg-primary/5"
                           onClick={() => {
                             setTimeout(() => {
@@ -343,6 +356,27 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
             >
               {session ? (
                 <>
+                  {session?.isProSubscriber ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="hidden md:inline-flex h-9 w-9 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10"
+                      onClick={() => navigate('/settings?tab=pro')}
+                    >
+                      <Crown className="h-4.5 w-4.5 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="hidden md:inline-flex items-center gap-1.5 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10 px-3 py-2 font-medium"
+                      onClick={() => navigate('/settings?tab=pro')}
+                    >
+                      <Crown className="h-4 w-4 fill-yellow-400" />
+                      <span className="text-sm">CardCade Pro</span>
+                    </Button>
+                  )}
+
                   <WalletDropdown walletBalance={session?.walletBalanceCadeCoin || 0} />
 
                   <Button

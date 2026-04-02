@@ -42,7 +42,7 @@ const getBrandLabel = (brand: PrizeBrand): string => {
 
 export default function Prizes() {
   const { session } = useAuthContext();
-  const { data: tiers, isLoading } = useShopItems(!!session?.isProSubscriber);
+  const { data: tiers, isLoading } = useShopItems();
   const isMobile = useIsMobile();
   const shouldReduceMotion = useReducedMotion();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -176,6 +176,8 @@ export default function Prizes() {
           createdBy: prize.createdBy || 'cardcade',
           createdByUsername: prize.createdByUsername || 'cardcade',
           sellerDisplayName: prize.createdByShopName || prize.createdByUsername || 'CardCade Shop',
+          isProOnly: prize.isProOnly ?? false,
+          proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
         };
       });
 

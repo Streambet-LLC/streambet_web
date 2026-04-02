@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ProfileSection } from './ProfileSection';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +16,9 @@ const formSchema = z.object({
 });
 
 export const ProfileSettings = () => {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam === 'pro' ? 'subscription' : 'profile');
   const { session } = useAuthContext();
 
   const form = useForm({
