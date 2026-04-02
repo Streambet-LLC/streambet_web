@@ -21,13 +21,13 @@ export const usePrizeTiers = () => {
 /**
  * Hook to fetch all shop items across all sellers (public endpoint)
  * Used for the main Shop page in the navbar
- * Pass isPro=true to include pro-only and early-access items
+ * Items include isProOnly and proEarlyAccessUntil flags for UI rendering
  */
-export const useShopItems = (isPro?: boolean) => {
+export const useShopItems = () => {
   return useQuery<PrizeConfiguration[]>({
-    queryKey: ['shopItems', isPro],
+    queryKey: ['shopItems'],
     queryFn: async () => {
-      const data = await api.prize.getAllShopItems(isPro);
+      const data = await api.prize.getAllShopItems();
       return data;
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes

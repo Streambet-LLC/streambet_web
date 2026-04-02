@@ -200,45 +200,41 @@ export const SubscriptionSettings = () => {
   return (
     <div className="space-y-4">
       {/* Active status card */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#0f0f0f] border border-electric-lime/20 p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-[#0f0f0f] border border-electric-lime/20 p-5 sm:p-8">
         {/* Lime accent line at top */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-electric-lime to-transparent" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40%] h-16 bg-electric-lime/5 blur-3xl" />
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-electric-lime/10 border border-electric-lime/20">
-              <ProBadge size="md" showTooltip={false} />
+        <div className="relative flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-electric-lime/10 border border-electric-lime/20 shrink-0">
+            <ProBadge size="md" showTooltip={false} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-bold text-white font-fabio tracking-wide">
+                CardCade Pro
+              </h2>
+              <span className="inline-flex items-center rounded-full bg-electric-lime/10 border border-electric-lime/20 text-electric-lime text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">
+                Active
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white font-fabio tracking-wide">
-                  CardCade Pro
-                </h2>
-                <span className="inline-flex items-center rounded-full bg-electric-lime/10 border border-electric-lime/20 text-electric-lime text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">
-                  Active
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                You're enjoying all Pro benefits
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">You're enjoying all Pro benefits</p>
           </div>
         </div>
 
         {/* Plan details */}
-        <div className="relative mt-6 rounded-xl bg-[#141414] border border-[rgba(255,255,255,0.06)] p-4 space-y-3">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Plan</span>
-            <span className="text-white font-medium capitalize">
+        <div className="relative mt-5 rounded-xl bg-[#141414] border border-[rgba(255,255,255,0.06)] p-4 space-y-3">
+          <div className="flex justify-between items-center text-sm gap-2">
+            <span className="text-muted-foreground shrink-0">Plan</span>
+            <span className="text-white font-medium capitalize text-right">
               {subscriptionData.plan}
               {isMonthly ? ' — $20/mo' : ' — $199/yr'}
             </span>
           </div>
           {subscriptionData.currentPeriodEnd && (
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Next billing date</span>
-              <span className="text-white font-medium">
+            <div className="flex justify-between items-center text-sm gap-2">
+              <span className="text-muted-foreground shrink-0">Next billing</span>
+              <span className="text-white font-medium text-right">
                 {format(new Date(subscriptionData.currentPeriodEnd), 'MMM d, yyyy')}
               </span>
             </div>
@@ -246,25 +242,33 @@ export const SubscriptionSettings = () => {
         </div>
 
         {/* Actions */}
-        <div className="relative flex flex-col sm:flex-row gap-2 mt-4">
+        <div className="relative flex flex-col gap-3 mt-5">
           {isMonthly && (
-            <button
-              onClick={() => upgradeMutation.mutate()}
-              disabled={upgradeMutation.isPending}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-electric-lime/30 text-electric-lime font-semibold py-2.5 px-5 text-sm transition-all hover:bg-electric-lime/10 hover:border-electric-lime/50 disabled:opacity-50"
-            >
-              {upgradeMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <ArrowUpCircle className="w-4 h-4" />
-              )}
-              Upgrade to Yearly — Save 17%
-            </button>
+            <div className="relative">
+              <div className="absolute -top-2.5 right-4 z-10">
+                <span className="inline-flex items-center gap-1 rounded-full bg-white text-black text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 shadow-md">
+                  <Sparkles className="w-3 h-3" />
+                  Save 17%
+                </span>
+              </div>
+              <button
+                onClick={() => upgradeMutation.mutate()}
+                disabled={upgradeMutation.isPending}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#BDFF00] text-black font-semibold py-3 px-5 text-sm transition-all hover:brightness-110 hover:shadow-[0_0_15px_rgba(189,255,0,0.3)] disabled:opacity-50"
+              >
+                {upgradeMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ArrowUpCircle className="w-4 h-4" />
+                )}
+                Upgrade to Yearly
+              </button>
+            </div>
           )}
 
           <a
             href="mailto:info@streambet.tv?subject=Cancel CardCade Pro Subscription"
-            className="inline-flex items-center justify-center gap-2 rounded-full text-muted-foreground hover:text-white/70 text-sm py-2.5 px-4 transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-white/10 text-muted-foreground hover:text-white/70 hover:border-white/20 text-sm py-2.5 px-4 transition-colors"
           >
             <Mail className="w-4 h-4" />
             Cancel Subscription

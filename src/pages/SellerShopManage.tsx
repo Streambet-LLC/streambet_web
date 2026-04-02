@@ -678,366 +678,374 @@ export default function SellerShopManage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Shop Settings Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{isCardCadeMode ? 'CardCade Shop Settings' : 'Shop Settings'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!isEditingShopName ? (
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  {isCardCadeMode && (
-                    <Avatar className="h-16 w-16 shrink-0">
-                      <AvatarImage
-                        src={shopProfileImageUrl ? getThumbnailUrl(shopProfileImageUrl) : undefined}
-                      />
-                      <AvatarFallback className="text-xl font-bold">C</AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Shop Name</p>
-                    <p className="text-lg font-semibold mt-1">
-                      {shopName ||
-                        (isCardCadeMode
-                          ? "CardCade's Shop"
-                          : session?.user?.shopName ||
-                            (session?.user?.username
-                              ? `${session.user.username}'s Shop`
-                              : 'Your Shop'))}
-                    </p>
-
-                    <div className="mt-3 space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Social Links</p>
-                      {Object.values(isCardCadeMode ? shopSocials : session?.socials || {}).some(
-                        Boolean
-                      ) ? (
-                        <div className="text-sm text-muted-foreground space-y-1">
-                          {(isCardCadeMode
-                            ? shopSocials.instagram
-                            : session?.socials?.instagram) && (
-                            <p>
-                              Instagram:{' '}
-                              {isCardCadeMode ? shopSocials.instagram : session?.socials?.instagram}
-                            </p>
-                          )}
-                          {(isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter) && (
-                            <p>
-                              Twitter:{' '}
-                              {isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter}
-                            </p>
-                          )}
-                          {!isCardCadeMode && session?.socials?.twitch && (
-                            <p>Twitch: {session.socials.twitch}</p>
-                          )}
-                          {!isCardCadeMode && session?.socials?.kick && (
-                            <p>Kick: {session.socials.kick}</p>
-                          )}
-                          {(isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube) && (
-                            <p>
-                              YouTube:{' '}
-                              {isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube}
-                            </p>
-                          )}
-                          {(isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok) && (
-                            <p>
-                              TikTok:{' '}
-                              {isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No social links set yet.</p>
-                      )}
-                    </div>
-
-                    {(isCardCadeMode
-                      ? sellerTradingExperience
-                      : session?.sellerTradingExperience) && (
-                      <div className="mt-3 space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Cards Experience
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {isCardCadeMode
-                            ? sellerTradingExperience
-                            : session?.sellerTradingExperience}
-                        </p>
-                      </div>
+        {/* Shop Settings + Concierge Row */}
+        <div
+          className={`grid gap-6 ${session?.isProSubscriber && !isCardCadeMode ? 'grid-cols-1 lg:grid-cols-[1fr,320px]' : 'grid-cols-1'}`}
+        >
+          {/* Shop Settings Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{isCardCadeMode ? 'CardCade Shop Settings' : 'Shop Settings'}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!isEditingShopName ? (
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    {isCardCadeMode && (
+                      <Avatar className="h-16 w-16 shrink-0">
+                        <AvatarImage
+                          src={
+                            shopProfileImageUrl ? getThumbnailUrl(shopProfileImageUrl) : undefined
+                          }
+                        />
+                        <AvatarFallback className="text-xl font-bold">C</AvatarFallback>
+                      </Avatar>
                     )}
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Shop Name</p>
+                      <p className="text-lg font-semibold mt-1">
+                        {shopName ||
+                          (isCardCadeMode
+                            ? "CardCade's Shop"
+                            : session?.user?.shopName ||
+                              (session?.user?.username
+                                ? `${session.user.username}'s Shop`
+                                : 'Your Shop'))}
+                      </p>
 
-                    {(isCardCadeMode
-                      ? city || state || country
-                      : session?.city || session?.state || session?.country) && (
                       <div className="mt-3 space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground">Location</p>
-                        <p className="text-sm text-muted-foreground">
-                          {isCardCadeMode
-                            ? country || [city, state].filter(Boolean).join(', ')
-                            : session?.country ||
-                              [session?.city, session?.state].filter(Boolean).join(', ')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Customize
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {isCardCadeMode && (
-                  <div className="grid gap-2">
-                    <Label>Shop Profile Image</Label>
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="relative cursor-pointer group"
-                        onClick={() => shopProfileImageInputRef.current?.click()}
-                      >
-                        <Avatar className="h-20 w-20">
-                          <AvatarImage
-                            src={
-                              shopProfileImageFile
-                                ? URL.createObjectURL(shopProfileImageFile)
-                                : shopProfileImageUrl
-                                  ? getThumbnailUrl(shopProfileImageUrl)
-                                  : undefined
-                            }
-                          />
-                          <AvatarFallback className="text-2xl font-bold">C</AvatarFallback>
-                        </Avatar>
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Camera className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => shopProfileImageInputRef.current?.click()}
-                        >
-                          {shopProfileImageUrl || shopProfileImageFile
-                            ? 'Change Image'
-                            : 'Upload Image'}
-                        </Button>
-                        {(shopProfileImageUrl || shopProfileImageFile) && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={() => {
-                              setShopProfileImageUrl(null);
-                              setShopProfileImageFile(null);
-                            }}
-                          >
-                            Remove
-                          </Button>
+                        <p className="text-sm font-medium text-muted-foreground">Social Links</p>
+                        {Object.values(isCardCadeMode ? shopSocials : session?.socials || {}).some(
+                          Boolean
+                        ) ? (
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            {(isCardCadeMode
+                              ? shopSocials.instagram
+                              : session?.socials?.instagram) && (
+                              <p>
+                                Instagram:{' '}
+                                {isCardCadeMode
+                                  ? shopSocials.instagram
+                                  : session?.socials?.instagram}
+                              </p>
+                            )}
+                            {(isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter) && (
+                              <p>
+                                Twitter:{' '}
+                                {isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter}
+                              </p>
+                            )}
+                            {!isCardCadeMode && session?.socials?.twitch && (
+                              <p>Twitch: {session.socials.twitch}</p>
+                            )}
+                            {!isCardCadeMode && session?.socials?.kick && (
+                              <p>Kick: {session.socials.kick}</p>
+                            )}
+                            {(isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube) && (
+                              <p>
+                                YouTube:{' '}
+                                {isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube}
+                              </p>
+                            )}
+                            {(isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok) && (
+                              <p>
+                                TikTok:{' '}
+                                {isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No social links set yet.</p>
                         )}
                       </div>
-                      <input
-                        ref={shopProfileImageInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                        onChange={e => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setShopProfileImageFile(file);
-                          }
-                          e.target.value = '';
-                        }}
-                      />
+
+                      {(isCardCadeMode
+                        ? sellerTradingExperience
+                        : session?.sellerTradingExperience) && (
+                        <div className="mt-3 space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Cards Experience
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {isCardCadeMode
+                              ? sellerTradingExperience
+                              : session?.sellerTradingExperience}
+                          </p>
+                        </div>
+                      )}
+
+                      {(isCardCadeMode
+                        ? city || state || country
+                        : session?.city || session?.state || session?.country) && (
+                        <div className="mt-3 space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Location</p>
+                          <p className="text-sm text-muted-foreground">
+                            {isCardCadeMode
+                              ? country || [city, state].filter(Boolean).join(', ')
+                              : session?.country ||
+                                [session?.city, session?.state].filter(Boolean).join(', ')}
+                          </p>
+                        </div>
+                      )}
                     </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Customize
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {isCardCadeMode && (
+                    <div className="grid gap-2">
+                      <Label>Shop Profile Image</Label>
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="relative cursor-pointer group"
+                          onClick={() => shopProfileImageInputRef.current?.click()}
+                        >
+                          <Avatar className="h-20 w-20">
+                            <AvatarImage
+                              src={
+                                shopProfileImageFile
+                                  ? URL.createObjectURL(shopProfileImageFile)
+                                  : shopProfileImageUrl
+                                    ? getThumbnailUrl(shopProfileImageUrl)
+                                    : undefined
+                              }
+                            />
+                            <AvatarFallback className="text-2xl font-bold">C</AvatarFallback>
+                          </Avatar>
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Camera className="h-6 w-6 text-white" />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => shopProfileImageInputRef.current?.click()}
+                          >
+                            {shopProfileImageUrl || shopProfileImageFile
+                              ? 'Change Image'
+                              : 'Upload Image'}
+                          </Button>
+                          {(shopProfileImageUrl || shopProfileImageFile) && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive"
+                              onClick={() => {
+                                setShopProfileImageUrl(null);
+                                setShopProfileImageFile(null);
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                        <input
+                          ref={shopProfileImageInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setShopProfileImageFile(file);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Recommended: Square image, at least 200x200px
+                      </p>
+                    </div>
+                  )}
+                  <div className="grid gap-2">
+                    <Label>Shop Name</Label>
+                    <Input
+                      placeholder={`${session?.user?.username}'s Shop`}
+                      value={shopName}
+                      onChange={e => setShopName(e.target.value)}
+                      maxLength={255}
+                    />
                     <p className="text-xs text-muted-foreground">
-                      Recommended: Square image, at least 200x200px
+                      Leave empty to use your username
                     </p>
                   </div>
-                )}
-                <div className="grid gap-2">
-                  <Label>Shop Name</Label>
-                  <Input
-                    placeholder={`${session?.user?.username}'s Shop`}
-                    value={shopName}
-                    onChange={e => setShopName(e.target.value)}
-                    maxLength={255}
-                  />
-                  <p className="text-xs text-muted-foreground">Leave empty to use your username</p>
-                </div>
 
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="grid gap-2">
-                    <Label>Instagram</Label>
-                    <Input
-                      placeholder="https://instagram.com/username"
-                      value={shopSocials.instagram}
-                      onChange={e =>
-                        setShopSocials(prev => ({ ...prev, instagram: e.target.value }))
-                      }
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Twitter</Label>
-                    <Input
-                      placeholder="https://twitter.com/username"
-                      value={shopSocials.twitter}
-                      onChange={e => setShopSocials(prev => ({ ...prev, twitter: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>YouTube</Label>
-                    <Input
-                      placeholder="https://youtube.com/@username"
-                      value={shopSocials.youtube}
-                      onChange={e => setShopSocials(prev => ({ ...prev, youtube: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>TikTok</Label>
-                    <Input
-                      placeholder="https://tiktok.com/@username"
-                      value={shopSocials.tiktok}
-                      onChange={e => setShopSocials(prev => ({ ...prev, tiktok: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Cards Experience</Label>
-                  <Textarea
-                    placeholder="e.g., 5 years, selling locally and online, focus on vintage cards..."
-                    value={sellerTradingExperience}
-                    onChange={e => setSellerTradingExperience(e.target.value)}
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Share your experience trading or selling cards
-                  </p>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-3">
-                  <div className="grid gap-2">
-                    <Label>City</Label>
-                    <Input
-                      placeholder="e.g., New York"
-                      value={city}
-                      onChange={e => setCity(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>State</Label>
-                    <Input
-                      placeholder="e.g., NY"
-                      value={state}
-                      onChange={e => setState(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Country</Label>
-                    <Input
-                      placeholder="e.g., USA"
-                      value={country}
-                      onChange={e => setCountry(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setIsEditingShopName(false);
-                      setShopProfileImageFile(null);
-                      if (isCardCadeMode && cardcadeSettings) {
-                        setShopProfileImageUrl(cardcadeSettings.profileImageUrl || null);
-                        setShopName(cardcadeSettings.displayName || "CardCade's Shop");
-                        setShopSocials({
-                          instagram: cardcadeSettings.socials?.instagram || '',
-                          twitter: cardcadeSettings.socials?.twitter || '',
-                          youtube: cardcadeSettings.socials?.youtube || '',
-                          tiktok: cardcadeSettings.socials?.tiktok || '',
-                        });
-                        setSellerTradingExperience(cardcadeSettings.sellerTradingExperience || '');
-                        setCity(cardcadeSettings.city || '');
-                        setState(cardcadeSettings.state || '');
-                        setCountry(cardcadeSettings.country || '');
-                      } else {
-                        // Try to get shop name from multiple sources
-                        let displayNameValue = '';
-                        if (session?.shopName) {
-                          displayNameValue = session.shopName;
-                        } else if (shopData?.shop?.displayName) {
-                          displayNameValue = shopData.shop.displayName;
-                        } else {
-                          displayNameValue =
-                            session?.user?.shopName || session?.user?.username || '';
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div className="grid gap-2">
+                      <Label>Instagram</Label>
+                      <Input
+                        placeholder="https://instagram.com/username"
+                        value={shopSocials.instagram}
+                        onChange={e =>
+                          setShopSocials(prev => ({ ...prev, instagram: e.target.value }))
                         }
-                        setShopName(displayNameValue);
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Twitter</Label>
+                      <Input
+                        placeholder="https://twitter.com/username"
+                        value={shopSocials.twitter}
+                        onChange={e =>
+                          setShopSocials(prev => ({ ...prev, twitter: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>YouTube</Label>
+                      <Input
+                        placeholder="https://youtube.com/@username"
+                        value={shopSocials.youtube}
+                        onChange={e =>
+                          setShopSocials(prev => ({ ...prev, youtube: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>TikTok</Label>
+                      <Input
+                        placeholder="https://tiktok.com/@username"
+                        value={shopSocials.tiktok}
+                        onChange={e =>
+                          setShopSocials(prev => ({ ...prev, tiktok: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
 
-                        setShopSocials({
-                          instagram: session?.socials?.instagram ?? '',
-                          twitter: session?.socials?.twitter ?? '',
-                          youtube: session?.socials?.youtube ?? '',
-                          tiktok: session?.socials?.tiktok ?? '',
-                        });
-                        setSellerTradingExperience(session?.sellerTradingExperience ?? '');
-                        setCity(session?.city ?? '');
-                        setState(session?.state ?? '');
-                        setCountry(session?.country ?? '');
+                  <div className="grid gap-2">
+                    <Label>Cards Experience</Label>
+                    <Textarea
+                      placeholder="e.g., 5 years, selling locally and online, focus on vintage cards..."
+                      value={sellerTradingExperience}
+                      onChange={e => setSellerTradingExperience(e.target.value)}
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Share your experience trading or selling cards
+                    </p>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-3">
+                    <div className="grid gap-2">
+                      <Label>City</Label>
+                      <Input
+                        placeholder="e.g., New York"
+                        value={city}
+                        onChange={e => setCity(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>State</Label>
+                      <Input
+                        placeholder="e.g., NY"
+                        value={state}
+                        onChange={e => setState(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Country</Label>
+                      <Input
+                        placeholder="e.g., USA"
+                        value={country}
+                        onChange={e => setCountry(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditingShopName(false);
+                        setShopProfileImageFile(null);
+                        if (isCardCadeMode && cardcadeSettings) {
+                          setShopProfileImageUrl(cardcadeSettings.profileImageUrl || null);
+                          setShopName(cardcadeSettings.displayName || "CardCade's Shop");
+                          setShopSocials({
+                            instagram: cardcadeSettings.socials?.instagram || '',
+                            twitter: cardcadeSettings.socials?.twitter || '',
+                            youtube: cardcadeSettings.socials?.youtube || '',
+                            tiktok: cardcadeSettings.socials?.tiktok || '',
+                          });
+                          setSellerTradingExperience(
+                            cardcadeSettings.sellerTradingExperience || ''
+                          );
+                          setCity(cardcadeSettings.city || '');
+                          setState(cardcadeSettings.state || '');
+                          setCountry(cardcadeSettings.country || '');
+                        } else {
+                          // Try to get shop name from multiple sources
+                          let displayNameValue = '';
+                          if (session?.shopName) {
+                            displayNameValue = session.shopName;
+                          } else if (shopData?.shop?.displayName) {
+                            displayNameValue = shopData.shop.displayName;
+                          } else {
+                            displayNameValue =
+                              session?.user?.shopName || session?.user?.username || '';
+                          }
+                          setShopName(displayNameValue);
+
+                          setShopSocials({
+                            instagram: session?.socials?.instagram ?? '',
+                            twitter: session?.socials?.twitter ?? '',
+                            youtube: session?.socials?.youtube ?? '',
+                            tiktok: session?.socials?.tiktok ?? '',
+                          });
+                          setSellerTradingExperience(session?.sellerTradingExperience ?? '');
+                          setCity(session?.city ?? '');
+                          setState(session?.state ?? '');
+                          setCountry(session?.country ?? '');
+                        }
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        updateShopSettingsMutation.mutate({
+                          shopName,
+                          socials: shopSocials,
+                          sellerTradingExperience,
+                          city,
+                          state,
+                          country,
+                          ...(isCardCadeMode
+                            ? { profileImageUrl: shopProfileImageUrl ?? undefined }
+                            : {}),
+                        })
                       }
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      updateShopSettingsMutation.mutate({
-                        shopName,
-                        socials: shopSocials,
-                        sellerTradingExperience,
-                        city,
-                        state,
-                        country,
-                        ...(isCardCadeMode
-                          ? { profileImageUrl: shopProfileImageUrl ?? undefined }
-                          : {}),
-                      })
-                    }
-                    disabled={updateShopSettingsMutation.isPending}
-                  >
-                    {updateShopSettingsMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      'Save'
-                    )}
-                  </Button>
+                      disabled={updateShopSettingsMutation.isPending}
+                    >
+                      {updateShopSettingsMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save'
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
-            {!isCardCadeMode && (
-              <div className="mt-10">
-                <Button
-                  onClick={() => {
-                    handleGenerateAccountLink();
-                  }}
-                >
-                  {session.stripeAccountConnected ? 'Stripe Dashboard' : 'Set Up Stripe'}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* CardCade Pro Concierge */}
-        {session?.isProSubscriber && !isCardCadeMode && <ConciergeCard />}
+          {/* CardCade Pro Concierge - side panel */}
+          {session?.isProSubscriber && !isCardCadeMode && <ConciergeCard />}
+        </div>
 
         {!isCardCadeMode && session.stripeAccountConnected ? (
           <>
@@ -1390,174 +1398,178 @@ export default function SellerShopManage() {
                 )}
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Offer Management</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Review, counter, accept, or reject offers on your shop items.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {isOffersLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading offers...
-                  </div>
-                ) : offers.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No offers yet.</p>
-                ) : (
-                  offers.map(order => (
-                    <div key={order.id} className="border rounded-md p-3 space-y-3">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
-                          <div className="font-medium">
-                            {order.prizeConfig?.name || 'Shop Item'}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Buyer: {order.user?.username || 'Unknown'} • Offer: $
-                            {order.offerAmount?.toFixed(2) || '0.00'}
-                          </div>
-                          {order.counterOfferAmount ? (
-                            <div className="text-xs text-muted-foreground">
-                              Countered at: ${order.counterOfferAmount.toFixed(2)}
-                            </div>
-                          ) : null}
-                        </div>
-                        <Badge className={cn('border', getOfferStatusClass(order.status))}>
-                          {order.status.replace(/_/g, ' ').toUpperCase()}
-                        </Badge>
-                      </div>
-
-                      {order.offerNotes ? (
-                        <p className="text-xs italic text-muted-foreground">"{order.offerNotes}"</p>
-                      ) : null}
-
-                      {order.status === 'offer_made' ? (
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => acceptOfferMutation.mutate(order.id)}
-                            disabled={acceptOfferMutation.isPending}
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleOpenCounterDialog(order)}
-                            disabled={counterOfferMutation.isPending}
-                          >
-                            Counter
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => rejectOfferMutation.mutate(order.id)}
-                            disabled={rejectOfferMutation.isPending}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      ) : order.status === 'countered' ? (
-                        <div className="text-xs text-muted-foreground">
-                          Waiting for buyer response to counter offer.
-                        </div>
-                      ) : order.status === 'offer_accepted' ? (
-                        <div className="text-xs text-muted-foreground">
-                          Accepted. Buyer has been emailed a checkout link.
-                        </div>
-                      ) : null}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle>Offer Management</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Review, counter, accept, or reject offers on your shop items.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {isOffersLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Loading offers...
                     </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Purchased Items</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Items that have been purchased by buyers. Mark them as shipped once sent.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {isPurchasedOrdersLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading purchases...
-                  </div>
-                ) : purchasedOrders.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No purchases yet.</p>
-                ) : (
-                  purchasedOrders.map(order => (
-                    <div key={order.id} className="border rounded-md p-3 space-y-3">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="font-medium">
-                            {order.prizeConfiguration?.name || 'Shop Item'}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Buyer: {order.user?.username || 'Unknown'} • Ordered:{' '}
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {order.user?.address && (
-                              <>
-                                {order.user.address}
-                                {order.user.city && `, ${order.user.city}`}
-                                {order.user.state && ` ${order.user.state}`}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <Badge className={cn('border', getOfferStatusClass(order.status))}>
-                          {order.status === 'paid'
-                            ? 'Pending Shipment'
-                            : order.status === 'shipped'
-                              ? 'Shipped'
-                              : 'Delivered'}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Total: </span>
-                          <span className="font-medium">
-                            ${order.totalPrice?.toFixed(2) || '0.00'}
-                          </span>
-                        </div>
-                        {order.trackingNumber && (
+                  ) : offers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No offers yet.</p>
+                  ) : (
+                    offers.map(order => (
+                      <div key={order.id} className="border rounded-md p-3 space-y-3">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
-                            <span className="text-muted-foreground">Tracking: </span>
-                            <span className="font-medium">{order.trackingNumber}</span>
+                            <div className="font-medium">
+                              {order.prizeConfig?.name || 'Shop Item'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Buyer: {order.user?.username || 'Unknown'} • Offer: $
+                              {order.offerAmount?.toFixed(2) || '0.00'}
+                            </div>
+                            {order.counterOfferAmount ? (
+                              <div className="text-xs text-muted-foreground">
+                                Countered at: ${order.counterOfferAmount.toFixed(2)}
+                              </div>
+                            ) : null}
                           </div>
-                        )}
-                        {order.shippingCarrier && (
-                          <div className="col-span-2">
-                            <span className="text-muted-foreground">Carrier: </span>
-                            <span className="font-medium">{order.shippingCarrier}</span>
-                          </div>
-                        )}
-                      </div>
+                          <Badge className={cn('border', getOfferStatusClass(order.status))}>
+                            {order.status.replace(/_/g, ' ').toUpperCase()}
+                          </Badge>
+                        </div>
 
-                      {order.status === 'paid' ? (
-                        <Button
-                          size="sm"
-                          onClick={() => handleOpenShipDialog(order)}
-                          className="w-full"
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          Mark as Shipped
-                        </Button>
-                      ) : (
-                        <div className="text-xs text-muted-foreground">
-                          {order.shippedAt && (
-                            <>Shipped on: {new Date(order.shippedAt).toLocaleDateString()}</>
+                        {order.offerNotes ? (
+                          <p className="text-xs italic text-muted-foreground">
+                            "{order.offerNotes}"
+                          </p>
+                        ) : null}
+
+                        {order.status === 'offer_made' ? (
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => acceptOfferMutation.mutate(order.id)}
+                              disabled={acceptOfferMutation.isPending}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenCounterDialog(order)}
+                              disabled={counterOfferMutation.isPending}
+                            >
+                              Counter
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => rejectOfferMutation.mutate(order.id)}
+                              disabled={rejectOfferMutation.isPending}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        ) : order.status === 'countered' ? (
+                          <div className="text-xs text-muted-foreground">
+                            Waiting for buyer response to counter offer.
+                          </div>
+                        ) : order.status === 'offer_accepted' ? (
+                          <div className="text-xs text-muted-foreground">
+                            Accepted. Buyer has been emailed a checkout link.
+                          </div>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle>Purchased Items</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Items that have been purchased by buyers. Mark them as shipped once sent.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {isPurchasedOrdersLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Loading purchases...
+                    </div>
+                  ) : purchasedOrders.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No purchases yet.</p>
+                  ) : (
+                    purchasedOrders.map(order => (
+                      <div key={order.id} className="border rounded-md p-3 space-y-3">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="font-medium">
+                              {order.prizeConfiguration?.name || 'Shop Item'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Buyer: {order.user?.username || 'Unknown'} • Ordered:{' '}
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {order.user?.address && (
+                                <>
+                                  {order.user.address}
+                                  {order.user.city && `, ${order.user.city}`}
+                                  {order.user.state && ` ${order.user.state}`}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <Badge className={cn('border', getOfferStatusClass(order.status))}>
+                            {order.status === 'paid'
+                              ? 'Pending Shipment'
+                              : order.status === 'shipped'
+                                ? 'Shipped'
+                                : 'Delivered'}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Total: </span>
+                            <span className="font-medium">
+                              ${order.totalPrice?.toFixed(2) || '0.00'}
+                            </span>
+                          </div>
+                          {order.trackingNumber && (
+                            <div>
+                              <span className="text-muted-foreground">Tracking: </span>
+                              <span className="font-medium">{order.trackingNumber}</span>
+                            </div>
+                          )}
+                          {order.shippingCarrier && (
+                            <div className="col-span-2">
+                              <span className="text-muted-foreground">Carrier: </span>
+                              <span className="font-medium">{order.shippingCarrier}</span>
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
+
+                        {order.status === 'paid' ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleOpenShipDialog(order)}
+                            className="w-full"
+                          >
+                            <ShoppingCart className="w-4 h-4 mr-2" />
+                            Mark as Shipped
+                          </Button>
+                        ) : (
+                          <div className="text-xs text-muted-foreground">
+                            {order.shippedAt && (
+                              <>Shipped on: {new Date(order.shippedAt).toLocaleDateString()}</>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </>
         ) : !isCardCadeMode ? (
           <p className="text-red-500">
@@ -1717,7 +1729,7 @@ function ConciergeCard() {
     queryKey: ['my-concierge-request'],
     queryFn: async () => {
       const res = await api.concierge.getMyRequest();
-      return res.data?.data ?? null;
+      return res.data ?? null;
     },
   });
 
@@ -1741,43 +1753,48 @@ function ConciergeCard() {
 
   if (isLoading) return null;
 
+  const isPending = myRequest?.status === 'pending' || requestMutation.isSuccess;
+  const isClaimed = myRequest?.status === 'claimed';
+
   return (
-    <Card className="border-yellow-500/30 bg-gradient-to-r from-yellow-500/5 to-transparent">
+    <Card className="border-yellow-500/30 bg-gradient-to-b from-yellow-500/5 to-transparent h-fit">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-yellow-400">
+        <CardTitle className="flex items-center gap-2 text-yellow-400 text-base">
           <HeadphonesIcon className="h-5 w-5" />
-          CardCade Pro Concierge
+          Pro Concierge
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {myRequest?.status === 'claimed' ? (
+        {isClaimed ? (
           <div className="space-y-2">
             <p className="text-sm text-green-400 font-medium">
               ✓ Your concierge is {myRequest.claimedByName}
             </p>
-            <p className="text-xs text-gray-400">
-              They will be reaching out to you shortly.
-            </p>
+            <p className="text-xs text-gray-400">They will be reaching out to you shortly.</p>
           </div>
-        ) : myRequest?.status === 'pending' ? (
-          <div className="space-y-2">
-            <p className="text-sm text-yellow-400 font-medium">
-              ⏳ Your concierge request is pending
-            </p>
+        ) : isPending ? (
+          <div className="space-y-3">
+            <p className="text-sm text-yellow-400 font-medium">⏳ Concierge Request Pending</p>
             <p className="text-xs text-gray-400">
               We&apos;re assigning a concierge to help you. Sit tight!
             </p>
+            <Button
+              disabled
+              className="w-full bg-yellow-500/20 text-yellow-400/60 border border-yellow-500/20 cursor-not-allowed"
+            >
+              <HeadphonesIcon className="h-4 w-4 mr-2" />
+              Request Pending
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
             <p className="text-sm text-gray-300">
-              As a CardCade Pro seller, you get a dedicated concierge to help
-              you maximize your shop&apos;s potential.
+              Get a dedicated concierge to help you maximize your shop&apos;s potential.
             </p>
             <Button
               onClick={() => requestMutation.mutate()}
               disabled={requestMutation.isPending}
-              className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
             >
               <HeadphonesIcon className="h-4 w-4 mr-2" />
               {requestMutation.isPending ? 'Requesting...' : 'Request Concierge'}

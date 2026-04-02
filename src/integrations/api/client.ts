@@ -1303,9 +1303,8 @@ export const prizeAPI = {
   },
 
   // Get all shop items across all sellers (for main Shop page)
-  getAllShopItems: async (isPro?: boolean): Promise<PrizeConfiguration[]> => {
-    const params = isPro ? '?pro=true' : '';
-    const response = await apiClient.get(`/prizes/shop-items${params}`);
+  getAllShopItems: async (): Promise<PrizeConfiguration[]> => {
+    const response = await apiClient.get('/prizes/shop-items');
     return response.data;
   },
 
@@ -1317,12 +1316,8 @@ export const prizeAPI = {
   },
 
   // Get one seller's public shop items
-  getShopItemsByUsername: async (
-    username: string,
-    isPro?: boolean
-  ): Promise<SellerShopResponse> => {
-    const params = isPro ? '?pro=true' : '';
-    const response = await apiClient.get(`/prizes/shops/${username}/items${params}`);
+  getShopItemsByUsername: async (username: string): Promise<SellerShopResponse> => {
+    const response = await apiClient.get(`/prizes/shops/${username}/items`);
     return response.data;
   },
 

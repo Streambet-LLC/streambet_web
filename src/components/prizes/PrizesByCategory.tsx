@@ -26,6 +26,8 @@ export interface Prize {
   createdByUsername?: string | null;
   createdByShopName?: string | null;
   sellerDisplayName?: string | null;
+  isProOnly?: boolean;
+  proEarlyAccessUntil?: string | null;
 }
 
 interface PrizesByCategoryProps {

@@ -3,13 +3,22 @@ import { Button } from '../ui/button';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { ShoppingCart, DollarSign, Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  ShoppingCart,
+  DollarSign,
+  Expand,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Crown,
+} from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Prize } from './PrizesByCategory';
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import FeaturedBetCard from '../FeaturedBetCard';
 import { Link } from 'react-router-dom';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface PrizeCardProps {
   prize: Prize;
@@ -28,7 +37,7 @@ const normalizePrizeImageUrls = (prize: Prize): string[] => {
   const uniqueUrls: string[] = [];
   const imageUrls = prize.imageUrls || [];
 
-  imageUrls.forEach((imageUrl) => {
+  imageUrls.forEach(imageUrl => {
     const trimmedUrl = typeof imageUrl === 'string' ? imageUrl.trim() : '';
     if (!trimmedUrl) {
       return;
@@ -274,6 +283,17 @@ export default function PrizeCard({
   const canOffer = prize.purchaseOption === 'offers_only' || prize.purchaseOption === 'both';
   const isOutOfStock = !prize.stock || prize.stock === 0;
 
+  // Pro-only gating: item is locked for non-Pro users
+  const { session } = useAuthContext();
+  const isProUser = !!session?.isProSubscriber;
+  const isProLocked = useMemo(() => {
+    if (isProUser) return false;
+    if (prize.isProOnly) return true;
+    if (prize.proEarlyAccessUntil && new Date(prize.proEarlyAccessUntil) > new Date()) return true;
+    return false;
+  }, [isProUser, prize.isProOnly, prize.proEarlyAccessUntil]);
+  const isDisabled = isOutOfStock || isProLocked;
+
   // ── Redemption variant (prod-style landscape card) ───────────────────────
   if (variant === 'redemption') {
     return (
@@ -364,14 +384,15 @@ export default function PrizeCard({
                 className="flex-1 gap-2"
                 type="button"
                 tabIndex={0}
-                disabled={isOutOfStock}
+                disabled={isDisabled}
                 onClick={e => {
                   e.stopPropagation();
                   onClick(prize);
                 }}
               >
+                {isProLocked && <Crown className="w-4 h-4" />}
                 <ShoppingCart className="w-4 h-4" />
-                Buy Now
+                {isProLocked ? 'Pro Only' : 'Buy Now'}
               </Button>
             )}
             {!hideButtons && canOffer && onOfferClick && (
@@ -380,7 +401,7 @@ export default function PrizeCard({
                 className="flex-1 gap-2 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00]"
                 type="button"
                 tabIndex={0}
-                disabled={isOutOfStock}
+                disabled={isDisabled}
                 onClick={e => {
                   e.stopPropagation();
                   onOfferClick(prize);
@@ -484,6 +505,24 @@ export default function PrizeCard({
                 Out of Stock
               </Badge>
             )}
+            {/* Pro-Only Badge */}
+            {!isOutOfStock && isProLocked && (
+              <Badge className="absolute top-2 right-2 font-semibold bg-yellow-500/90 text-black border-yellow-400 gap-1">
+                <Crown className="w-3 h-3" />
+                Pro Only
+              </Badge>
+            )}
+            {/* Pro crown for Pro users too (just visual indicator) */}
+            {!isOutOfStock &&
+              !isProLocked &&
+              (prize.isProOnly ||
+                (prize.proEarlyAccessUntil &&
+                  new Date(prize.proEarlyAccessUntil) > new Date())) && (
+                <Badge className="absolute top-2 right-2 font-semibold bg-yellow-500/90 text-black border-yellow-400 gap-1">
+                  <Crown className="w-3 h-3" />
+                  Pro
+                </Badge>
+              )}
           </div>
         </CardHeader>
 
@@ -529,15 +568,29 @@ export default function PrizeCard({
             <Button
               variant="default"
               size="sm"
-              className="flex-1 bg-primary text-black hover:bg-primary/90 h-8 text-xs"
+              className={cn(
+                'flex-1 h-8 text-xs',
+                isProLocked
+                  ? 'bg-yellow-500/80 text-black hover:bg-yellow-500/70'
+                  : 'bg-primary text-black hover:bg-primary/90'
+              )}
               onClick={e => {
                 e.stopPropagation();
                 onClick(prize);
               }}
-              disabled={isOutOfStock}
+              disabled={isDisabled}
             >
-              <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
-              Buy Now
+              {isProLocked ? (
+                <>
+                  <Crown className="w-3.5 h-3.5 mr-1.5" />
+                  Pro Only
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                  Buy Now
+                </>
+              )}
             </Button>
           )}
           {!hideButtons && canOffer && onOfferClick && (
@@ -549,7 +602,7 @@ export default function PrizeCard({
                 e.stopPropagation();
                 onOfferClick(prize);
               }}
-              disabled={isOutOfStock}
+              disabled={isDisabled}
             >
               <DollarSign className="w-3.5 h-3.5" />
               Make Offer
