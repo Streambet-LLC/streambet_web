@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PublicUserProfile } from '@/types/profile';
 import ProfilePrizeProgress from './ProfilePrizeProgress';
 import { getBadgeRingColor, getPrizeColor } from '@/utils/prizeColors';
+import { ProBadge } from '@/components/pro/ProBadge';
 
 const socialsMapping = {
   instagram: {
@@ -109,21 +110,26 @@ export default function Profile() {
                 <div className="flex flex-col md:flex-row gap-6 justify-between">
                   <div className="flex gap-6">
                     <div className="relative">
-                      <Avatar className={cn(
-                        "h-28 w-28 transition-all",
-                        profile.badgeLevel !== 'none' && `ring-4 ${getBadgeRingColor(profile.badgeLevel)} shadow-lg`
-                      )}>
+                      <Avatar
+                        className={cn(
+                          'h-28 w-28 transition-all',
+                          profile.badgeLevel !== 'none' &&
+                            `ring-4 ${getBadgeRingColor(profile.badgeLevel)} shadow-lg`
+                        )}
+                      >
                         <AvatarImage src={getImageLink(profile.profileImageUrl)} alt={username} />
                         <AvatarFallback>{username[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
                       {profile.isCreator && profile.badgeLevel !== 'none' && (
-                        <div className={cn(
-                          "absolute -bottom-2 left-1/2 -translate-x-1/2",
-                          "px-2 py-1 rounded-full text-xs font-bold",
-                          "bg-background border-2",
-                          getPrizeColor(parseInt(profile.badgeLevel, 10), 'border'),
-                          getPrizeColor(parseInt(profile.badgeLevel, 10), 'text')
-                        )}>
+                        <div
+                          className={cn(
+                            'absolute -bottom-2 left-1/2 -translate-x-1/2',
+                            'px-2 py-1 rounded-full text-xs font-bold',
+                            'bg-background border-2',
+                            getPrizeColor(parseInt(profile.badgeLevel, 10), 'border'),
+                            getPrizeColor(parseInt(profile.badgeLevel, 10), 'text')
+                          )}
+                        >
                           {profile.title}
                         </div>
                       )}
@@ -131,17 +137,20 @@ export default function Profile() {
                     <div className="flex relative flex-col">
                       <div className="flex gap-2 items-center">
                         <div className="text-lg font-semibold text-white">{username}</div>
+                        {profile.isProSubscriber && <ProBadge size="md" />}
                       </div>
                       <div className="text-xs text-gray-400 mt-2">
                         Date joined: {format(profile.accountCreationDate.toString(), 'MMMM d, yyy')}
                       </div>
                       {!profile.isCreator && profile.badgeLevel !== 'none' && (
-                        <div className={cn(
-                          "mt-2 px-3 py-1.5 rounded-full text-xs font-bold w-fit",
-                          "bg-background border-2",
-                          getPrizeColor(parseInt(profile.badgeLevel, 10), 'border'),
-                          getPrizeColor(parseInt(profile.badgeLevel, 10), 'text')
-                        )}>
+                        <div
+                          className={cn(
+                            'mt-2 px-3 py-1.5 rounded-full text-xs font-bold w-fit',
+                            'bg-background border-2',
+                            getPrizeColor(parseInt(profile.badgeLevel, 10), 'border'),
+                            getPrizeColor(parseInt(profile.badgeLevel, 10), 'text')
+                          )}
+                        >
                           {profile.title}
                         </div>
                       )}
@@ -202,12 +211,12 @@ export default function Profile() {
                     </Link>
                   )}
                 </div>
-                
+
                 {/* Prize Progress Section - Shows for all users */}
                 <div className="mt-6">
                   <ProfilePrizeProgress
                     currentCadeCoins={profile.currentCadeCoins}
-                    lifetimeCadeCoins={profile.lifetimeCadeCoins} 
+                    lifetimeCadeCoins={profile.lifetimeCadeCoins}
                   />
                 </div>
               </div>
@@ -215,12 +224,12 @@ export default function Profile() {
                 <>
                   {/* Divider after Prize Progress */}
                   <div className="border-t border-gray-700 my-6" />
-                  
+
                   {/* "Creator Tools" header */}
                   <div className="mb-6">
                     <h2 className="text-xl font-bold text-white">Creator Tools</h2>
                   </div>
-                  
+
                   {/* Existing creator content */}
                   <div className="flex flex-col gap-12 font-semibold pb-32">
                     <ProfileLiveUpcomingStreams username={username} />

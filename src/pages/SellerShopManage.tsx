@@ -16,11 +16,21 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, ShoppingCart, DollarSign, Pencil, X, Camera } from 'lucide-react';
+import {
+  Loader2,
+  Trash2,
+  ShoppingCart,
+  DollarSign,
+  Pencil,
+  X,
+  Camera,
+  HeadphonesIcon,
+} from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PrizeBrand, PrizeConfiguration } from '@/types/prize';
 import { CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -126,6 +136,7 @@ export default function SellerShopManage() {
     purchaseOption: 'buy_only' as 'buy_only' | 'offers_only' | 'both',
     brand: 'other' as PrizeBrand,
     sellerDisplayOrderShop: 1,
+    isProOnly: false,
   });
 
   const [selectedPurchasedOrder, setSelectedPurchasedOrder] = useState<SellerPurchasedOrder | null>(
@@ -304,6 +315,7 @@ export default function SellerShopManage() {
         coverImageIndex: imagePayload.coverImageIndex,
         amount: amountInCoins,
         category: 'slab' as const, // All shop items are slabs
+        isProOnly: form.isProOnly,
       };
 
       if (editingItemId) {
@@ -328,6 +340,7 @@ export default function SellerShopManage() {
         purchaseOption: 'buy_only',
         brand: 'other',
         sellerDisplayOrderShop: 1,
+        isProOnly: false,
       });
       setItemImages([]);
       setCoverImageIndex(0);
@@ -538,6 +551,7 @@ export default function SellerShopManage() {
       purchaseOption: item.purchaseOption || 'buy_only',
       brand: item.brand || 'other',
       sellerDisplayOrderShop: item.sellerDisplayOrderShop ?? item.displayOrderShop ?? 1,
+      isProOnly: item.isProOnly ?? false,
     });
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
@@ -556,6 +570,7 @@ export default function SellerShopManage() {
       purchaseOption: 'buy_only',
       brand: 'other',
       sellerDisplayOrderShop: 1,
+      isProOnly: false,
     });
     setItemImages([]);
     setCoverImageIndex(0);
@@ -674,90 +689,97 @@ export default function SellerShopManage() {
                 <div className="flex items-start gap-4">
                   {isCardCadeMode && (
                     <Avatar className="h-16 w-16 shrink-0">
-                      <AvatarImage src={shopProfileImageUrl ? getThumbnailUrl(shopProfileImageUrl) : undefined} />
+                      <AvatarImage
+                        src={shopProfileImageUrl ? getThumbnailUrl(shopProfileImageUrl) : undefined}
+                      />
                       <AvatarFallback className="text-xl font-bold">C</AvatarFallback>
                     </Avatar>
                   )}
                   <div>
-                  <p className="text-sm font-medium text-muted-foreground">Shop Name</p>
-                  <p className="text-lg font-semibold mt-1">
-                    {shopName ||
-                      (isCardCadeMode
-                        ? "CardCade's Shop"
-                        : session?.user?.shopName ||
-                          (session?.user?.username
-                            ? `${session.user.username}'s Shop`
-                            : 'Your Shop'))}
-                  </p>
+                    <p className="text-sm font-medium text-muted-foreground">Shop Name</p>
+                    <p className="text-lg font-semibold mt-1">
+                      {shopName ||
+                        (isCardCadeMode
+                          ? "CardCade's Shop"
+                          : session?.user?.shopName ||
+                            (session?.user?.username
+                              ? `${session.user.username}'s Shop`
+                              : 'Your Shop'))}
+                    </p>
 
-                  <div className="mt-3 space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Social Links</p>
-                    {Object.values(isCardCadeMode ? shopSocials : session?.socials || {}).some(
-                      Boolean
-                    ) ? (
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        {(isCardCadeMode ? shopSocials.instagram : session?.socials?.instagram) && (
-                          <p>
-                            Instagram:{' '}
-                            {isCardCadeMode ? shopSocials.instagram : session?.socials?.instagram}
-                          </p>
-                        )}
-                        {(isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter) && (
-                          <p>
-                            Twitter:{' '}
-                            {isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter}
-                          </p>
-                        )}
-                        {!isCardCadeMode && session?.socials?.twitch && (
-                          <p>Twitch: {session.socials.twitch}</p>
-                        )}
-                        {!isCardCadeMode && session?.socials?.kick && (
-                          <p>Kick: {session.socials.kick}</p>
-                        )}
-                        {(isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube) && (
-                          <p>
-                            YouTube:{' '}
-                            {isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube}
-                          </p>
-                        )}
-                        {(isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok) && (
-                          <p>
-                            TikTok: {isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok}
-                          </p>
-                        )}
+                    <div className="mt-3 space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Social Links</p>
+                      {Object.values(isCardCadeMode ? shopSocials : session?.socials || {}).some(
+                        Boolean
+                      ) ? (
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          {(isCardCadeMode
+                            ? shopSocials.instagram
+                            : session?.socials?.instagram) && (
+                            <p>
+                              Instagram:{' '}
+                              {isCardCadeMode ? shopSocials.instagram : session?.socials?.instagram}
+                            </p>
+                          )}
+                          {(isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter) && (
+                            <p>
+                              Twitter:{' '}
+                              {isCardCadeMode ? shopSocials.twitter : session?.socials?.twitter}
+                            </p>
+                          )}
+                          {!isCardCadeMode && session?.socials?.twitch && (
+                            <p>Twitch: {session.socials.twitch}</p>
+                          )}
+                          {!isCardCadeMode && session?.socials?.kick && (
+                            <p>Kick: {session.socials.kick}</p>
+                          )}
+                          {(isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube) && (
+                            <p>
+                              YouTube:{' '}
+                              {isCardCadeMode ? shopSocials.youtube : session?.socials?.youtube}
+                            </p>
+                          )}
+                          {(isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok) && (
+                            <p>
+                              TikTok:{' '}
+                              {isCardCadeMode ? shopSocials.tiktok : session?.socials?.tiktok}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No social links set yet.</p>
+                      )}
+                    </div>
+
+                    {(isCardCadeMode
+                      ? sellerTradingExperience
+                      : session?.sellerTradingExperience) && (
+                      <div className="mt-3 space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Cards Experience
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {isCardCadeMode
+                            ? sellerTradingExperience
+                            : session?.sellerTradingExperience}
+                        </p>
                       </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No social links set yet.</p>
+                    )}
+
+                    {(isCardCadeMode
+                      ? city || state || country
+                      : session?.city || session?.state || session?.country) && (
+                      <div className="mt-3 space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">Location</p>
+                        <p className="text-sm text-muted-foreground">
+                          {isCardCadeMode
+                            ? country || [city, state].filter(Boolean).join(', ')
+                            : session?.country ||
+                              [session?.city, session?.state].filter(Boolean).join(', ')}
+                        </p>
+                      </div>
                     )}
                   </div>
-
-                  {(isCardCadeMode
-                    ? sellerTradingExperience
-                    : session?.sellerTradingExperience) && (
-                    <div className="mt-3 space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Cards Experience</p>
-                      <p className="text-sm text-muted-foreground">
-                        {isCardCadeMode
-                          ? sellerTradingExperience
-                          : session?.sellerTradingExperience}
-                      </p>
-                    </div>
-                  )}
-
-                  {(isCardCadeMode
-                    ? city || state || country
-                    : session?.city || session?.state || session?.country) && (
-                    <div className="mt-3 space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Location</p>
-                      <p className="text-sm text-muted-foreground">
-                        {isCardCadeMode
-                          ? country || [city, state].filter(Boolean).join(', ')
-                          : session?.country ||
-                            [session?.city, session?.state].filter(Boolean).join(', ')}
-                      </p>
-                    </div>
-                  )}
-                </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
                   <Pencil className="w-4 h-4 mr-2" />
@@ -797,7 +819,9 @@ export default function SellerShopManage() {
                           size="sm"
                           onClick={() => shopProfileImageInputRef.current?.click()}
                         >
-                          {shopProfileImageUrl || shopProfileImageFile ? 'Change Image' : 'Upload Image'}
+                          {shopProfileImageUrl || shopProfileImageFile
+                            ? 'Change Image'
+                            : 'Upload Image'}
                         </Button>
                         {(shopProfileImageUrl || shopProfileImageFile) && (
                           <Button
@@ -828,7 +852,9 @@ export default function SellerShopManage() {
                         }}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">Recommended: Square image, at least 200x200px</p>
+                    <p className="text-xs text-muted-foreground">
+                      Recommended: Square image, at least 200x200px
+                    </p>
                   </div>
                 )}
                 <div className="grid gap-2">
@@ -977,7 +1003,9 @@ export default function SellerShopManage() {
                         city,
                         state,
                         country,
-                        ...(isCardCadeMode ? { profileImageUrl: shopProfileImageUrl ?? undefined } : {}),
+                        ...(isCardCadeMode
+                          ? { profileImageUrl: shopProfileImageUrl ?? undefined }
+                          : {}),
                       })
                     }
                     disabled={updateShopSettingsMutation.isPending}
@@ -1007,6 +1035,9 @@ export default function SellerShopManage() {
             )}
           </CardContent>
         </Card>
+
+        {/* CardCade Pro Concierge */}
+        {session?.isProSubscriber && !isCardCadeMode && <ConciergeCard />}
 
         {!isCardCadeMode && session.stripeAccountConnected ? (
           <>
@@ -1132,6 +1163,23 @@ export default function SellerShopManage() {
                       Lower numbers show first (e.g. 1 shows before 2).
                     </p>
                   </div>
+
+                  {session?.isProSubscriber && (
+                    <div className="flex items-center justify-between rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-medium text-yellow-400">
+                          CardCade Pro Exclusive
+                        </Label>
+                        <p className="text-xs text-gray-400">
+                          Only CardCade Pro members can purchase this item.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={form.isProOnly}
+                        onCheckedChange={checked => setForm(p => ({ ...p, isProOnly: checked }))}
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-2.5">
                     <ItemImageGallery
@@ -1655,5 +1703,88 @@ export default function SellerShopManage() {
         )}
       </div>
     </MainLayout>
+  );
+}
+
+/**
+ * ConciergeCard - Displayed for pro sellers to request a concierge
+ */
+function ConciergeCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: myRequest, isLoading } = useQuery({
+    queryKey: ['my-concierge-request'],
+    queryFn: async () => {
+      const res = await api.concierge.getMyRequest();
+      return res.data?.data ?? null;
+    },
+  });
+
+  const requestMutation = useMutation({
+    mutationFn: () => api.concierge.createRequest(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-concierge-request'] });
+      toast({
+        title: 'Concierge Requested!',
+        description: 'A concierge will be assigned to you shortly.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Request Failed',
+        description: 'You may already have an active concierge request.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  if (isLoading) return null;
+
+  return (
+    <Card className="border-yellow-500/30 bg-gradient-to-r from-yellow-500/5 to-transparent">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-yellow-400">
+          <HeadphonesIcon className="h-5 w-5" />
+          CardCade Pro Concierge
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {myRequest?.status === 'claimed' ? (
+          <div className="space-y-2">
+            <p className="text-sm text-green-400 font-medium">
+              ✓ Your concierge is {myRequest.claimedByName}
+            </p>
+            <p className="text-xs text-gray-400">
+              They will be reaching out to you shortly.
+            </p>
+          </div>
+        ) : myRequest?.status === 'pending' ? (
+          <div className="space-y-2">
+            <p className="text-sm text-yellow-400 font-medium">
+              ⏳ Your concierge request is pending
+            </p>
+            <p className="text-xs text-gray-400">
+              We&apos;re assigning a concierge to help you. Sit tight!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-300">
+              As a CardCade Pro seller, you get a dedicated concierge to help
+              you maximize your shop&apos;s potential.
+            </p>
+            <Button
+              onClick={() => requestMutation.mutate()}
+              disabled={requestMutation.isPending}
+              className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
+            >
+              <HeadphonesIcon className="h-4 w-4 mr-2" />
+              {requestMutation.isPending ? 'Requesting...' : 'Request Concierge'}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

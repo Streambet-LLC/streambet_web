@@ -44,6 +44,8 @@ export interface PrizeConfiguration {
   createdByUsername: string | null;
   createdByShopName: string | null;
   updatedBy: string | null;
+  isProOnly: boolean;
+  proEarlyAccessUntil: string | null;
 }
 
 export interface SellerShopSummary {
@@ -100,6 +102,7 @@ export interface CreatePrizeTierRequest {
   showOnRedemptions?: boolean;
   showOnShop?: boolean;
   createdBy?: string | null;
+  isProOnly?: boolean;
 }
 
 /**
@@ -123,6 +126,7 @@ export interface UpdatePrizeTierRequest {
   showOnRedemptions?: boolean;
   showOnShop?: boolean;
   createdBy?: string | null;
+  isProOnly?: boolean;
 }
 
 /**
