@@ -2,14 +2,34 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ProBadge } from '@/components/pro/ProBadge';
-import { Crown, ExternalLink, ArrowUpCircle, Mail } from 'lucide-react';
+import { Crown, ArrowUpCircle, Mail, Sparkles, ShieldCheck, Clock, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import type { Subscription } from '@/types/subscription';
+
+const benefits = [
+  {
+    icon: Clock,
+    title: '48-Hour Early Access',
+    description: 'Be first to shop all new items before anyone else',
+  },
+  {
+    icon: Star,
+    title: 'Pro-Exclusive Items',
+    description: 'Unlock items only available to Pro members',
+  },
+  {
+    icon: Crown,
+    title: 'Gold Pro Badge',
+    description: 'Stand out with a verified Pro badge on your profile',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Concierge Support',
+    description: 'Priority seller support with dedicated assistance',
+  },
+];
 
 export const SubscriptionSettings = () => {
   const { session, refetchSession } = useAuthContext();
@@ -61,8 +81,8 @@ export const SubscriptionSettings = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-electric-lime" />
       </div>
     );
   }
@@ -73,126 +93,184 @@ export const SubscriptionSettings = () => {
   // Not subscribed
   if (!isActive) {
     return (
-      <Card className="border-yellow-600/30 bg-gradient-to-br from-[#1a1a2e] to-[#16213e]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-yellow-400">
-            <Crown className="w-5 h-5 fill-yellow-400" />
-            CardCade Pro
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Unlock exclusive benefits with CardCade Pro:
-          </p>
-          <ul className="space-y-2 text-sm text-gray-300">
-            <li className="flex items-start gap-2">
-              <span className="text-yellow-400 mt-0.5">✦</span>
-              48-hour early access to all new shop items
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-yellow-400 mt-0.5">✦</span>
-              Access to Pro-exclusive items
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-yellow-400 mt-0.5">✦</span>
-              Gold Pro badge on your profile
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-yellow-400 mt-0.5">✦</span>
-              Concierge support for sellers
-            </li>
-          </ul>
+      <div className="space-y-6">
+        {/* Hero header */}
+        <div className="relative overflow-hidden rounded-2xl bg-[#0f0f0f] border border-[rgba(255,255,255,0.08)] p-6 sm:p-8">
+          {/* Subtle lime glow at top */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-[1px] bg-gradient-to-r from-transparent via-electric-lime to-transparent" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40%] h-16 bg-electric-lime/5 blur-3xl" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <Button
-              onClick={() => checkoutMutation.mutate('monthly')}
-              disabled={checkoutMutation.isPending}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white"
-            >
-              {checkoutMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : null}
-              Monthly — $20/mo
-            </Button>
-            <Button
-              onClick={() => checkoutMutation.mutate('yearly')}
-              disabled={checkoutMutation.isPending}
-              variant="outline"
-              className="border-yellow-600/50 text-yellow-400 hover:bg-yellow-600/10"
-            >
-              {checkoutMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : null}
-              Yearly — $199/yr
-              <Badge
-                variant="secondary"
-                className="ml-2 text-[10px] bg-green-900/50 text-green-400"
-              >
-                Save 17%
-              </Badge>
-            </Button>
+          <div className="relative flex items-center gap-3 mb-2">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-electric-lime/10 border border-electric-lime/20">
+              <Crown className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white font-fabio tracking-wide">
+                CardCade Pro
+              </h2>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <p className="text-sm text-muted-foreground mt-1">
+            Unlock the full CardCade experience with exclusive perks.
+          </p>
+        </div>
+
+        {/* Benefits grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {benefits.map(benefit => (
+            <div
+              key={benefit.title}
+              className="flex items-start gap-3 rounded-xl bg-[#141414] border border-[rgba(255,255,255,0.06)] p-4 transition-colors hover:border-electric-lime/20"
+            >
+              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-electric-lime/10 shrink-0 mt-0.5">
+                <benefit.icon className="w-4 h-4 text-electric-lime" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">{benefit.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  {benefit.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pricing cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Monthly */}
+          <button
+            onClick={() => checkoutMutation.mutate('monthly')}
+            disabled={checkoutMutation.isPending}
+            className="relative group rounded-2xl bg-[#141414] border border-[rgba(255,255,255,0.08)] p-5 text-left transition-all hover:border-electric-lime/30 hover:shadow-[0_0_20px_rgba(189,255,0,0.08)] disabled:opacity-50"
+          >
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">
+              Monthly
+            </p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-white">$20</span>
+              <span className="text-sm text-muted-foreground">/mo</span>
+            </div>
+            <div className="mt-4">
+              <span className="inline-flex items-center justify-center w-full rounded-full border border-white/20 text-white font-semibold py-2.5 text-sm transition-all group-hover:border-electric-lime/40 group-hover:text-electric-lime">
+                {checkoutMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Get Started'
+                )}
+              </span>
+            </div>
+          </button>
+
+          {/* Yearly */}
+          <button
+            onClick={() => checkoutMutation.mutate('yearly')}
+            disabled={checkoutMutation.isPending}
+            className="relative group rounded-2xl bg-[#141414] border border-electric-lime/20 p-5 text-left transition-all hover:border-electric-lime/40 hover:shadow-[0_0_20px_rgba(189,255,0,0.12)] disabled:opacity-50"
+          >
+            {/* Best value tag */}
+            <div className="absolute -top-2.5 right-4">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#BDFF00] text-black text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5">
+                <Sparkles className="w-3 h-3" />
+                Save 17%
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">
+              Yearly
+            </p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-white">$199</span>
+              <span className="text-sm text-muted-foreground">/yr</span>
+            </div>
+            <div className="mt-3">
+              <span className="inline-flex items-center justify-center w-full rounded-full bg-[#BDFF00] text-black font-semibold py-2.5 text-sm transition-all group-hover:brightness-110 group-hover:shadow-[0_0_15px_rgba(189,255,0,0.3)]">
+                {checkoutMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Get Started'
+                )}
+              </span>
+            </div>
+          </button>
+        </div>
+      </div>
     );
   }
 
   // Active subscription
   return (
-    <Card className="border-yellow-600/30 bg-gradient-to-br from-[#1a1a2e] to-[#16213e]">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-yellow-400">
-          <ProBadge size="md" showTooltip={false} />
-          CardCade Pro
-          <Badge className="bg-green-900/50 text-green-400 border-green-600/30 text-xs">
-            Active
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between text-gray-400">
-            <span>Plan</span>
-            <span className="text-white capitalize">
+    <div className="space-y-4">
+      {/* Active status card */}
+      <div className="relative overflow-hidden rounded-2xl bg-[#0f0f0f] border border-electric-lime/20 p-6 sm:p-8">
+        {/* Lime accent line at top */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-electric-lime to-transparent" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40%] h-16 bg-electric-lime/5 blur-3xl" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-electric-lime/10 border border-electric-lime/20">
+              <ProBadge size="md" showTooltip={false} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-white font-fabio tracking-wide">
+                  CardCade Pro
+                </h2>
+                <span className="inline-flex items-center rounded-full bg-electric-lime/10 border border-electric-lime/20 text-electric-lime text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">
+                  Active
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                You're enjoying all Pro benefits
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Plan details */}
+        <div className="relative mt-6 rounded-xl bg-[#141414] border border-[rgba(255,255,255,0.06)] p-4 space-y-3">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Plan</span>
+            <span className="text-white font-medium capitalize">
               {subscriptionData.plan}
               {isMonthly ? ' — $20/mo' : ' — $199/yr'}
             </span>
           </div>
           {subscriptionData.currentPeriodEnd && (
-            <div className="flex justify-between text-gray-400">
-              <span>Next billing date</span>
-              <span className="text-white">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Next billing date</span>
+              <span className="text-white font-medium">
                 {format(new Date(subscriptionData.currentPeriodEnd), 'MMM d, yyyy')}
               </span>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+        {/* Actions */}
+        <div className="relative flex flex-col sm:flex-row gap-2 mt-4">
           {isMonthly && (
-            <Button
+            <button
               onClick={() => upgradeMutation.mutate()}
               disabled={upgradeMutation.isPending}
-              variant="outline"
-              className="border-yellow-600/50 text-yellow-400 hover:bg-yellow-600/10"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-electric-lime/30 text-electric-lime font-semibold py-2.5 px-5 text-sm transition-all hover:bg-electric-lime/10 hover:border-electric-lime/50 disabled:opacity-50"
             >
               {upgradeMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <ArrowUpCircle className="w-4 h-4 mr-2" />
+                <ArrowUpCircle className="w-4 h-4" />
               )}
               Upgrade to Yearly — Save 17%
-            </Button>
+            </button>
           )}
 
-          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-300" asChild>
-            <a href="mailto:info@streambet.tv?subject=Cancel CardCade Pro Subscription">
-              <Mail className="w-4 h-4 mr-2" />
-              Cancel Subscription
-            </a>
-          </Button>
+          <a
+            href="mailto:info@streambet.tv?subject=Cancel CardCade Pro Subscription"
+            className="inline-flex items-center justify-center gap-2 rounded-full text-muted-foreground hover:text-white/70 text-sm py-2.5 px-4 transition-colors"
+          >
+            <Mail className="w-4 h-4" />
+            Cancel Subscription
+          </a>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
