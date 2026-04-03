@@ -157,6 +157,33 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     },
   });
 
+  const toggleProMutation = useMutation({
+    mutationFn: async ({ userId, isPro }: { userId: string; isPro: boolean }) => {
+      if (isPro) {
+        return await api.admin.revokePro(userId);
+      } else {
+        return await api.admin.grantPro(userId, 'monthly');
+      }
+    },
+    onSuccess: (_data, variables) => {
+      refetchProfiles();
+      toast({
+        description: variables.isPro
+          ? 'Pro subscription revoked'
+          : 'Pro subscription granted',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to update Pro status',
+        variant: 'destructive',
+      });
+      refetchProfiles();
+    },
+  });
+
   const getDisplayedFee = (user: any) => {
     if (user?.effectiveSellerFeePercent !== null && user?.effectiveSellerFeePercent !== undefined) {
       return Number(user.effectiveSellerFeePercent);
@@ -356,6 +383,22 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     />
                   </div>
 
+                  {/* Pro */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Pro:</span>
+                    <Switch
+                      checked={!!user.isProSubscriber}
+                      disabled={toggleProMutation.isPending}
+                      style={{ backgroundColor: user.isProSubscriber ? '#7AFF14' : undefined }}
+                      onCheckedChange={() => {
+                        toggleProMutation.mutate({
+                          userId: user.id,
+                          isPro: !!user.isProSubscriber,
+                        });
+                      }}
+                    />
+                  </div>
+
                   {/* Actions Row */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <AddTokens
@@ -409,13 +452,14 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 <TableHead>Wallet</TableHead>
                 <TableHead>Profile</TableHead>
                 <TableHead>Creator</TableHead>
+                <TableHead>Pro</TableHead>
                 <TableHead>Delete</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedUsers?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={15} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={16} className="text-center py-6 text-muted-foreground">
                     No users found matching
                   </TableCell>
                 </TableRow>
@@ -564,6 +608,19 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                           updateCreatorStatusMutation.mutate({
                             userId: user.id,
                             isCreator: user?.role !== 'creator',
+                          });
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell className="cursor-pointer" title="Toggle Pro Subscription">
+                      <Switch
+                        checked={!!user.isProSubscriber}
+                        disabled={toggleProMutation.isPending}
+                        style={{ backgroundColor: user.isProSubscriber ? '#7AFF14' : undefined }}
+                        onCheckedChange={() => {
+                          toggleProMutation.mutate({
+                            userId: user.id,
+                            isPro: !!user.isProSubscriber,
                           });
                         }}
                       />
