@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ProfileSection } from './ProfileSection';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +7,7 @@ import { z } from 'zod';
 import { getImageLink } from '@/utils/helper';
 import { TabSwitch } from '@/components/navigation/TabSwitch';
 import { NotificationSettings } from './NotificationSettings';
+import { SubscriptionSettings } from './SubscriptionSettings';
 import { useAuthContext } from '@/contexts/AuthContext';
 import ReferralSettings from './ReferralSettings';
 
@@ -14,7 +16,9 @@ const formSchema = z.object({
 });
 
 export const ProfileSettings = () => {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam === 'pro' ? 'subscription' : 'profile');
   const { session } = useAuthContext();
 
   const form = useForm({
@@ -35,6 +39,7 @@ export const ProfileSettings = () => {
 
   const tabs = [
     { key: 'profile', label: 'Profile' },
+    { key: 'subscription', label: 'CardCade Pro' },
     { key: 'referrals', label: 'Referrals' },
     { key: 'notifications', label: 'Notifications' },
   ];
@@ -53,6 +58,7 @@ export const ProfileSettings = () => {
 
       {activeTab === 'notifications' && <NotificationSettings />}
       {activeTab === 'referrals' && <ReferralSettings />}
+      {activeTab === 'subscription' && <SubscriptionSettings />}
     </div>
   );
 };

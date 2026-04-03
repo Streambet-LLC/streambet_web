@@ -10,6 +10,7 @@ interface Session {
   maxGoldCoinsBet?: number;
   maxCadeCoinsBet?: number;
   isSeller?: boolean;
+  isProSubscriber?: boolean;
   user?: {
     id: string;
     email: string;

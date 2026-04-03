@@ -44,6 +44,7 @@ import { PrizeOrders } from './PrizeOrders';
 import { ApplicationsTable } from './ApplicationsTable';
 import PendingOnboardingTable from './PendingOnboardingTable';
 import { AdminInboxPanel } from './AdminInboxPanel';
+import { ConciergePanel } from './ConciergePanel';
 
 export const AdminManagement = ({
   session,
@@ -120,6 +121,7 @@ export const AdminManagement = ({
     { key: 'prize-offers', label: 'Prize Offers' },
     { key: 'support-inbox', label: 'Support Inbox' },
     { key: 'user-messages', label: 'User Messages' },
+    { key: 'concierge', label: 'Concierge' },
   ];
 
   const createStreamMutation = useMutation({
@@ -1468,6 +1470,7 @@ export const AdminManagement = ({
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               className="ml-4"
+              scrollable
             />
           </div>
 
@@ -1754,6 +1757,12 @@ export const AdminManagement = ({
           {activeTab === 'user-messages' && (
             <div className="space-y-4">
               <AdminInboxPanel tab="user_messages" />
+            </div>
+          )}
+
+          {activeTab === 'concierge' && (
+            <div className="space-y-4">
+              <ConciergePanel />
             </div>
           )}
         </>

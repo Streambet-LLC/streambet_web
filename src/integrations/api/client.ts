@@ -861,10 +861,9 @@ export const adminAPI = {
   },
 
   updateSellerFeeOverride: async (payload: { userId: string; feePercent: number }) => {
-    const response = await apiClient.patch(
-      `/admin/users/${payload.userId}/fee-override`,
-      { feePercent: payload.feePercent }
-    );
+    const response = await apiClient.patch(`/admin/users/${payload.userId}/fee-override`, {
+      feePercent: payload.feePercent,
+    });
     return response.data;
   },
 
@@ -1137,6 +1136,19 @@ export const adminAPI = {
 
   getSellerStripeStatus: async () => {
     const response = await apiClient.get(`/admin/sellers/stripe-status`);
+    return response.data;
+  },
+
+  // CardCade Pro admin
+  grantPro: async (userId: string, plan?: 'monthly' | 'yearly') => {
+    const response = await apiClient.post(`/admin/pro/grant/${userId}`, {
+      plan: plan || 'monthly',
+    });
+    return response.data;
+  },
+
+  revokePro: async (userId: string) => {
+    const response = await apiClient.post(`/admin/pro/revoke/${userId}`);
     return response.data;
   },
 };
@@ -1693,6 +1705,48 @@ export const inboxAPI = {
   },
 };
 
+// ─── Subscription API ────────────────────────────────────────
+const subscriptionAPI = {
+  createCheckoutSession: async (plan: 'monthly' | 'yearly') => {
+    const response = await apiClient.post('/subscription/checkout', { plan });
+    return response.data;
+  },
+
+  getStatus: async () => {
+    const response = await apiClient.get('/subscription/status');
+    return response.data;
+  },
+
+  upgradeToYearly: async () => {
+    const response = await apiClient.patch('/subscription/upgrade');
+    return response.data;
+  },
+};
+
+// ─── Concierge API ──────────────────────────────────────────
+const conciergeAPI = {
+  createRequest: async () => {
+    const response = await apiClient.post('/concierge/request');
+    return response.data;
+  },
+
+  getMyRequest: async () => {
+    const response = await apiClient.get('/concierge/my-request');
+    return response.data;
+  },
+
+  // Admin
+  getAllRequests: async () => {
+    const response = await apiClient.get('/concierge/admin/requests');
+    return response.data;
+  },
+
+  claimRequest: async (requestId: string) => {
+    const response = await apiClient.post(`/concierge/admin/claim/${requestId}`);
+    return response.data;
+  },
+};
+
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,
@@ -1708,6 +1762,8 @@ export const api = {
   prize: prizeAPI,
   dailySpin: dailySpinAPI,
   inbox: inboxAPI,
+  subscription: subscriptionAPI,
+  concierge: conciergeAPI,
 };
 
 export default api;

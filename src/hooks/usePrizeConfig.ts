@@ -21,6 +21,7 @@ export const usePrizeTiers = () => {
 /**
  * Hook to fetch all shop items across all sellers (public endpoint)
  * Used for the main Shop page in the navbar
+ * Items include isProOnly and proEarlyAccessUntil flags for UI rendering
  */
 export const useShopItems = () => {
   return useQuery<PrizeConfiguration[]>({
