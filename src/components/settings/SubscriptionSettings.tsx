@@ -3,7 +3,7 @@ import { api } from '@/integrations/api/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ProBadge } from '@/components/pro/ProBadge';
-import { Crown, ArrowUpCircle, Mail, Sparkles, ShieldCheck, Clock, Star } from 'lucide-react';
+import { Crown, ArrowUpCircle, Mail, Sparkles, ShieldCheck, Clock, Star, Gift } from 'lucide-react';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import type { Subscription } from '@/types/subscription';
@@ -89,6 +89,75 @@ export const SubscriptionSettings = () => {
 
   const isActive = subscriptionData?.status === 'active';
   const isMonthly = subscriptionData?.plan === 'monthly';
+  const isAdminGranted = subscriptionData?.stripeSubscriptionId?.startsWith('admin_grant_');
+
+  // Admin-granted Pro
+  if (isActive && isAdminGranted) {
+    return (
+      <div className="space-y-6 pb-16 sm:pb-24">
+        {/* Active status card */}
+        <div className="relative overflow-hidden rounded-2xl bg-[#0f0f0f] border border-electric-lime/20 p-5 sm:p-8">
+          {/* Lime accent line at top */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-electric-lime to-transparent" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40%] h-16 bg-electric-lime/5 blur-3xl" />
+
+          <div className="relative flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-electric-lime/10 border border-electric-lime/20 shrink-0">
+              <ProBadge size="md" showTooltip={false} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-bold text-white font-fabio tracking-wide">
+                  CardCade Pro
+                </h2>
+                <span className="inline-flex items-center rounded-full bg-electric-lime/10 border border-electric-lime/20 text-electric-lime text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">
+                  Active
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                You're enjoying all Pro benefits
+              </p>
+            </div>
+          </div>
+
+          {/* Granted by CardCade */}
+          <div className="relative mt-5 rounded-xl bg-[#141414] border border-[rgba(255,255,255,0.06)] p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-electric-lime/10 shrink-0">
+                <Gift className="w-4 h-4 text-electric-lime" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Granted by CardCade</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Your Pro membership was granted by the CardCade team. Enjoy all the perks!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Benefits grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {benefits.map(benefit => (
+            <div
+              key={benefit.title}
+              className="flex items-start gap-3 rounded-xl bg-[#141414] border border-[rgba(255,255,255,0.06)] p-4 transition-colors hover:border-electric-lime/20"
+            >
+              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-electric-lime/10 shrink-0 mt-0.5">
+                <benefit.icon className="w-4 h-4 text-electric-lime" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">{benefit.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  {benefit.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Not subscribed
   if (!isActive) {
