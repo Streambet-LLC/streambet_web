@@ -9,6 +9,7 @@ import {
   PrizeConfiguration,
   SellerShopResponse,
   SellerShopSummary,
+  PsaImportResult,
   SubmitPrizeRedemptionRequest,
 } from '@/types/prize';
 import { PromotedBetsResponse } from '@/types/promo';
@@ -1456,6 +1457,13 @@ export const prizeAPI = {
 
   rejectMyShopOffer: async (orderId: string) => {
     const response = await apiClient.patch(`/seller/prizes/offers/${orderId}/reject-offer`);
+    return response.data;
+  },
+
+  importPsaCert: async (certNumber: string): Promise<PsaImportResult> => {
+    const response = await apiClient.post('/seller/prizes/psa/import-cert', {
+      certNumber,
+    });
     return response.data;
   },
 
