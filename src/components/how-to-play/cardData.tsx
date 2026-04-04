@@ -30,7 +30,7 @@ export const infoCards: InfoCard[] = [
     trailWord: 'FUN',
     description: (
       <>
-        Win prizes along the way by accumulating CadeCoins from buying, selling, and participating in predictions & games.
+        Win prizes along the way by accumulating CadeCoins from buying, selling, and participating in predictions & games. The more you buy and sell, the higher your discount tier climbs. As you level up, your seller fee can drop from 4% to 2% so you keep more on every sale.
       </>
     ),
   },

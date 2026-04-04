@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { roundDownCoinAmount } from '@/utils/format';
 import { getPrizeColor } from '@/utils/prizeColors';
 
 interface ProfilePrizeProgressProps {
@@ -32,6 +33,16 @@ export default function ProfilePrizeProgress({
   const progressPercent = Math.min(100, (clampedLifetime / MAX_MILESTONE) * 100);
   const nextMilestone = MILESTONES.find((milestone) => clampedLifetime < milestone.amount);
   const currentSellerFee = getSellerFeeFromLifetime(clampedLifetime);
+  const tierFeeData = MILESTONES.map((milestone) => {
+    const feeAtTier = getSellerFeeFromLifetime(milestone.amount);
+    const feeDecreaseFromCurrent = Math.max(0, currentSellerFee - feeAtTier);
+
+    return {
+      ...milestone,
+      feeAtTier,
+      feeDecreaseFromCurrent,
+    };
+  });
 
   // Calculate tick mark positions for equal segments across the progress bar
   const getTickPosition = (index: number) => {
@@ -53,9 +64,14 @@ export default function ProfilePrizeProgress({
               alt="CadeCoins" 
               className="w-5 h-5"
             />
-            <span>Current: <span className="font-bold text-base">{currentCadeCoins.toLocaleString('en-US')}</span></span>
+            <span>Current: <span className="font-bold text-base">{roundDownCoinAmount(currentCadeCoins).toLocaleString('en-US')}</span></span>
             <span className="text-muted-foreground">|</span>
-            <span>Lifetime: <span className="font-bold text-base">{lifetimeCadeCoins.toLocaleString('en-US')}</span></span>
+            <img 
+              src="/icons/cade-coins.png" 
+              alt="CadeCoins" 
+              className="w-5 h-5"
+            />
+            <span>Lifetime: <span className="font-bold text-base">{roundDownCoinAmount(lifetimeCadeCoins).toLocaleString('en-US')}</span></span>
           </div>
           
           {nextMilestone ? (
@@ -75,7 +91,7 @@ export default function ProfilePrizeProgress({
                   </div>
                   
                   {/* Fixed tier tick marks */}
-                  {MILESTONES.map((milestone, index) => {
+                  {tierFeeData.map((milestone, index) => {
                     const position = getTickPosition(index);
                     const achieved = clampedLifetime >= milestone.amount;
                     const isLast = index === MILESTONES.length - 1;
@@ -100,11 +116,11 @@ export default function ProfilePrizeProgress({
                 </div>
               </div>
               
-              <div className="relative hidden sm:flex justify-between text-xs sm:text-sm font-bold mt-3">
+              <div className="relative hidden sm:flex justify-between text-xs sm:text-sm font-bold mt-4">
                 <span className="text-muted-foreground">{PROGRESS_START.toLocaleString('en-US')}</span>
                 
                 {/* Fixed tier labels */}
-                {MILESTONES.map((milestone, index) => {
+                {tierFeeData.map((milestone, index) => {
                   const position = getTickPosition(index);
                   const achieved = clampedLifetime >= milestone.amount;
                   const isLast = index === MILESTONES.length - 1;
@@ -113,7 +129,7 @@ export default function ProfilePrizeProgress({
                     <span 
                       key={milestone.amount}
                       className={cn(
-                        'absolute flex flex-col',
+                        'absolute flex flex-col leading-tight',
                         getPrizeColor(index, 'text'),
                         !achieved && 'opacity-50',
                         isLast ? 'items-end right-0' : 'items-center -translate-x-1/2'
@@ -122,11 +138,36 @@ export default function ProfilePrizeProgress({
                     >
                       <span className="text-xs sm:text-sm">{milestone.amount.toLocaleString('en-US')}</span>
                       <span className="text-[10px] sm:text-xs mt-0.5">{milestone.label}</span>
+                      <span className="text-[10px] sm:text-xs mt-0.5">
+                        Fee: {milestone.feeAtTier.toFixed(1)}% {achieved ? '(reached)' : `(-${milestone.feeDecreaseFromCurrent.toFixed(1)}%)`}
+                      </span>
                     </span>
                   );
                 })}
               </div>
-              <p className="text-center text-sm mt-8">
+              <div className="sm:hidden grid grid-cols-2 gap-3 mt-4">
+                {tierFeeData.map((milestone, index) => {
+                  const achieved = clampedLifetime >= milestone.amount;
+
+                  return (
+                    <div
+                      key={milestone.amount}
+                      className={cn(
+                        'rounded-md border p-2 text-xs',
+                        getPrizeColor(index, 'border'),
+                        !achieved && 'opacity-70'
+                      )}
+                    >
+                      <p className={cn('font-bold', getPrizeColor(index, 'text'))}>{milestone.label}</p>
+                      <p className="text-muted-foreground">{milestone.amount.toLocaleString('en-US')} coins</p>
+                      <p className="mt-1">
+                        Fee: {milestone.feeAtTier.toFixed(1)}% {achieved ? '(reached)' : `(-${milestone.feeDecreaseFromCurrent.toFixed(1)}%)`}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-center text-sm mt-10">
                 <span className="font-semibold">
                   {Math.max(0, nextMilestone.amount - clampedLifetime).toLocaleString('en-US')}
                 </span>
