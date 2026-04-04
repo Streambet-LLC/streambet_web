@@ -228,8 +228,8 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                             setIsDrawerOpen(false);
                           }}
                         >
-                          <Crown className="h-4 w-4 mr-2 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]" />
-                          <span>{session?.isProSubscriber ? 'Pro' : 'CardCade Pro'}</span>
+                          <Crown className="h-4 w-4 mr-2 fill-yellow-100 drop-shadow-[0_0_6px_rgba(253,224,71,0.6)]" />
+                          <span>{session?.isProSubscriber ? 'Pro' : 'Get CardCade Pro'}</span>
                         </Button>
                         <Button
                           variant="ghost"
@@ -363,7 +363,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                       className="hidden md:inline-flex h-9 w-9 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10"
                       onClick={() => navigate('/settings?tab=pro')}
                     >
-                      <Crown className="h-4.5 w-4.5 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]" />
+                      <Crown className="h-4.5 w-4.5 fill-yellow-100 drop-shadow-[0_0_6px_rgba(253,224,71,0.6)]" />
                     </Button>
                   ) : (
                     <Button
@@ -372,8 +372,8 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                       className="hidden md:inline-flex items-center gap-1.5 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10 px-3 py-2 font-medium"
                       onClick={() => navigate('/settings?tab=pro')}
                     >
-                      <Crown className="h-4 w-4 fill-yellow-400" />
-                      <span className="text-sm">CardCade Pro</span>
+                      <Crown className="h-4 w-4 fill-yellow-100" />
+                      <span className="text-sm">Get CardCade Pro</span>
                     </Button>
                   )}
 
