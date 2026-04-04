@@ -228,7 +228,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                             setIsDrawerOpen(false);
                           }}
                         >
-                          <Crown className="h-4 w-4 mr-2 fill-yellow-300 drop-shadow-[0_0_6px_rgba(253,224,71,0.6)]" />
+                          <Crown className="h-4 w-4 mr-2 fill-yellow-100 drop-shadow-[0_0_6px_rgba(253,224,71,0.6)]" />
                           <span>{session?.isProSubscriber ? 'Pro' : 'Get CardCade Pro'}</span>
                         </Button>
                         <Button
