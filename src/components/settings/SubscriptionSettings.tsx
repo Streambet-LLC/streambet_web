@@ -93,7 +93,7 @@ export const SubscriptionSettings = () => {
   // Not subscribed
   if (!isActive) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-16 sm:pb-24">
         {/* Hero header */}
         <div className="relative overflow-hidden rounded-2xl bg-[#0f0f0f] border border-[rgba(255,255,255,0.08)] p-6 sm:p-8">
           {/* Subtle lime glow at top */}
