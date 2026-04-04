@@ -229,7 +229,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                           }}
                         >
                           <Crown className="h-4 w-4 mr-2 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]" />
-                          <span>{session?.isProSubscriber ? 'Pro' : 'CardCade Pro'}</span>
+                          <span>{session?.isProSubscriber ? 'Pro' : 'Get CardCade Pro'}</span>
                         </Button>
                         <Button
                           variant="ghost"
@@ -373,7 +373,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                       onClick={() => navigate('/settings?tab=pro')}
                     >
                       <Crown className="h-4 w-4 fill-yellow-400" />
-                      <span className="text-sm">CardCade Pro</span>
+                      <span className="text-sm">Get CardCade Pro</span>
                     </Button>
                   )}
 
