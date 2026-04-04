@@ -126,7 +126,7 @@ export default function ProfilePrizeProgress({
                   );
                 })}
               </div>
-              <p className="text-center text-sm mt-8">
+              <p className="text-center text-sm mt-14">
                 <span className="font-semibold">
                   {Math.max(0, Math.floor(nextMilestone.amount - clampedLifetime)).toLocaleString('en-US')}
                 </span>
