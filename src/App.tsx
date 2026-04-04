@@ -55,6 +55,7 @@ import Shops from './pages/Shops';
 import SellerShopManage from './pages/SellerShopManage';
 import Inbox from './pages/Inbox';
 import PurchaseSuccess from './pages/PurchaseSuccess';
+import CartPage from './pages/CartPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -148,6 +149,7 @@ const App = () => {
                             <Route path="/auth/google-callback" element={<GoogleCallback />} />
                             <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
                             <Route path="/purchase-success" element={<PurchaseSuccess />} />
+                            <Route path="/cart" element={<CartPage />} />
                             <Route path="/shop" element={<Prizes />} />
                             <Route path="/redemptions" element={<Redemptions />} />
                             <Route path="/" element={<Prizes />} />

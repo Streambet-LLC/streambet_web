@@ -13,6 +13,17 @@ import {
 } from '@/types/prize';
 import { PromotedBetsResponse } from '@/types/promo';
 import { CurrencyType } from '@/utils/currency';
+import {
+  CartSummary,
+  CartCountResponse,
+  AddToCartRequest,
+  UpdateCartItemRequest,
+  CartCheckoutRequest,
+  CartCheckoutResponse,
+  BundleOfferRequest,
+  BundleOfferResponse,
+  Cart,
+} from '@/types/cart';
 import { SpinStatusResponse, SpinResultResponse } from '@/types/daily-spin';
 import {
   Conversation,
@@ -1747,6 +1758,60 @@ const conciergeAPI = {
   },
 };
 
+// ==================== Cart API ====================
+export const cartAPI = {
+  /** Get cart summary grouped by seller with pricing */
+  getCartSummary: async (): Promise<CartSummary> => {
+    const response = await apiClient.get('/cart');
+    return response.data;
+  },
+
+  /** Get cart item count for nav badge */
+  getCartCount: async (): Promise<CartCountResponse> => {
+    const response = await apiClient.get('/cart/count');
+    return response.data;
+  },
+
+  /** Add an item to cart */
+  addToCart: async (dto: AddToCartRequest): Promise<Cart> => {
+    const response = await apiClient.post('/cart/items', dto);
+    return response.data;
+  },
+
+  /** Update cart item quantity */
+  updateCartItem: async (
+    cartItemId: string,
+    dto: UpdateCartItemRequest,
+  ): Promise<Cart> => {
+    const response = await apiClient.patch(`/cart/items/${cartItemId}`, dto);
+    return response.data;
+  },
+
+  /** Remove item from cart */
+  removeCartItem: async (cartItemId: string): Promise<Cart> => {
+    const response = await apiClient.delete(`/cart/items/${cartItemId}`);
+    return response.data;
+  },
+
+  /** Empty entire cart */
+  clearCart: async (): Promise<Cart> => {
+    const response = await apiClient.delete('/cart');
+    return response.data;
+  },
+
+  /** Checkout cart - returns Stripe session URL for USD items */
+  checkout: async (dto: CartCheckoutRequest): Promise<CartCheckoutResponse> => {
+    const response = await apiClient.post('/cart/checkout', dto);
+    return response.data;
+  },
+
+  /** Submit a bundle offer for items from the same seller */
+  submitBundleOffer: async (dto: BundleOfferRequest): Promise<BundleOfferResponse> => {
+    const response = await apiClient.post('/cart/bundle-offer', dto);
+    return response.data;
+  },
+};
+
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,
@@ -1764,6 +1829,7 @@ export const api = {
   inbox: inboxAPI,
   subscription: subscriptionAPI,
   concierge: conciergeAPI,
+  cart: cartAPI,
 };
 
 export default api;

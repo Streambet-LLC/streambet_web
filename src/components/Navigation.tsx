@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { WalletDropdown } from './navigation/WalletDropdown';
 import { UserDropdown } from './navigation/UserDropdown';
-import { Menu, Mail, Crown } from 'lucide-react';
+import { Menu, Mail, Crown, ShoppingCart } from 'lucide-react';
 import { SearchInput } from './ui/SearchInput';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -18,12 +18,52 @@ import { useCookies } from 'react-cookie';
 import moment from 'moment';
 import { Separator } from './ui/separator';
 import { api } from '@/integrations/api/client';
+import { useCartCount } from '@/hooks/useCart';
 
 interface NavigationProps {
   onDashboardClick?: () => void;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
 }
+
+/** Cart icon button with badge for the navigation bar */
+const CartNavButton = () => {
+  const navigate = useNavigate();
+  const { session } = useAuthContext();
+  const { data: cartCount } = useCartCount(!!session);
+  const count = cartCount?.count || 0;
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="relative h-9 w-9"
+      onClick={() => navigate('/cart')}
+    >
+      <ShoppingCart className="h-5 w-5" />
+      {count > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground px-1">
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
+    </Button>
+  );
+};
+
+/** Cart badge for mobile drawer */
+const CartMobileBadge = () => {
+  const { session } = useAuthContext();
+  const { data: cartCount } = useCartCount(!!session);
+  const count = cartCount?.count || 0;
+
+  if (count === 0) return null;
+
+  return (
+    <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground px-1.5">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+};
 
 export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: NavigationProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -236,6 +276,20 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                           className="justify-start text-left h-12 text-[#FFFFFF80] hover:text-white hover:bg-primary/5"
                           onClick={() => {
                             setTimeout(() => {
+                              navigate('/cart');
+                            }, 100);
+                            setIsDrawerOpen(false);
+                          }}
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          <span>Cart</span>
+                          <CartMobileBadge />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="justify-start text-left h-12 text-[#FFFFFF80] hover:text-white hover:bg-primary/5"
+                          onClick={() => {
+                            setTimeout(() => {
                               navigate('/inbox');
                             }, 100);
                             setIsDrawerOpen(false);
@@ -378,6 +432,8 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
                   )}
 
                   <WalletDropdown walletBalance={session?.walletBalanceCadeCoin || 0} />
+
+                  <CartNavButton />
 
                   <Button
                     variant="ghost"
