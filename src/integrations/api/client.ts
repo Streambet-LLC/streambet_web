@@ -22,7 +22,6 @@ import {
   CartCheckoutResponse,
   BundleOfferRequest,
   BundleOfferResponse,
-  Cart,
 } from '@/types/cart';
 import { SpinStatusResponse, SpinResultResponse } from '@/types/daily-spin';
 import {
@@ -413,7 +412,9 @@ export const userAPI = {
     return response.data;
   },
 
-  getSellers: async (): Promise<{ id: string; username: string; displayName: string; profileImageUrl: string | null }[]> => {
+  getSellers: async (): Promise<
+    { id: string; username: string; displayName: string; profileImageUrl: string | null }[]
+  > => {
     const response = await apiClient.get('/users/sellers');
     return response.data?.data ?? [];
   },
@@ -1611,10 +1612,7 @@ export const inboxAPI = {
     conversationId: string,
     params?: { page?: number; limit?: number }
   ): Promise<MessageListResponse> => {
-    const response = await apiClient.get(
-      `/inbox/conversations/${conversationId}`,
-      { params }
-    );
+    const response = await apiClient.get(`/inbox/conversations/${conversationId}`, { params });
     return response.data;
   },
 
@@ -1626,18 +1624,13 @@ export const inboxAPI = {
       attachments?: UploadedAttachment[];
     }
   ) => {
-    const response = await apiClient.post(
-      `/inbox/conversations/${conversationId}/messages`,
-      data
-    );
+    const response = await apiClient.post(`/inbox/conversations/${conversationId}/messages`, data);
     return response.data;
   },
 
   // Mark conversation as read
   markAsRead: async (conversationId: string) => {
-    const response = await apiClient.post(
-      `/inbox/conversations/${conversationId}/read`
-    );
+    const response = await apiClient.post(`/inbox/conversations/${conversationId}/read`);
     return response.data;
   },
 
@@ -1699,19 +1692,17 @@ export const inboxAPI = {
     conversationId: string,
     params?: { page?: number; limit?: number }
   ): Promise<MessageListResponse> => {
-    const response = await apiClient.get(
-      `/admin/inbox/conversations/${conversationId}`,
-      { params }
-    );
+    const response = await apiClient.get(`/admin/inbox/conversations/${conversationId}`, {
+      params,
+    });
     return response.data;
   },
 
   // Admin: send message
   adminSendMessage: async (conversationId: string, content: string) => {
-    const response = await apiClient.post(
-      `/admin/inbox/conversations/${conversationId}/messages`,
-      { content }
-    );
+    const response = await apiClient.post(`/admin/inbox/conversations/${conversationId}/messages`, {
+      content,
+    });
     return response.data;
   },
 };
@@ -1763,52 +1754,106 @@ export const cartAPI = {
   /** Get cart summary grouped by seller with pricing */
   getCartSummary: async (): Promise<CartSummary> => {
     const response = await apiClient.get('/cart');
-    return response.data;
+    const raw = response.data?.data ?? response.data;
+
+    // Transform backend response shape to frontend CartSummary type
+    return {
+      cart: {
+        id: raw.cartId ?? '',
+        userId: '',
+        createdAt: '',
+        updatedAt: '',
+        items: (raw.sellerGroups ?? []).flatMap((g: any) =>
+          (g.items ?? []).map((item: any) => ({
+            id: item.id,
+            cartId: raw.cartId ?? '',
+            prizeConfigurationId: item.prizeConfiguration?.id ?? '',
+            quantity: item.quantity,
+            createdAt: '',
+            updatedAt: '',
+            prizeConfiguration: item.prizeConfiguration,
+          }))
+        ),
+      },
+      sellerGroups: (raw.sellerGroups ?? []).map((g: any) => ({
+        sellerId: g.sellerId,
+        sellerName: g.sellerName,
+        shopName: g.shopName,
+        stripeAccountId: g.stripeAccountId ?? null,
+        items: (g.items ?? []).map((item: any) => ({
+          id: item.id,
+          cartId: raw.cartId ?? '',
+          prizeConfigurationId: item.prizeConfiguration?.id ?? '',
+          quantity: item.quantity,
+          createdAt: '',
+          updatedAt: '',
+          prizeConfiguration: item.prizeConfiguration,
+        })),
+        itemSubtotalCents: Math.round(parseFloat(g.itemSubtotal ?? '0') * 100),
+        shippingCents: Math.round(parseFloat(g.shipping ?? '0') * 100),
+        buyerFeeCents: Math.round(parseFloat(g.buyerFee ?? '0') * 100),
+        sellerFeeCents: 0,
+        sellerFeePercent: 0,
+        totalCents: Math.round(parseFloat(g.total ?? '0') * 100),
+      })),
+      cartTotals: {
+        itemSubtotalCents: Math.round(parseFloat(raw.totals?.itemSubtotal ?? '0') * 100),
+        shippingCents: Math.round(parseFloat(raw.totals?.shipping ?? '0') * 100),
+        buyerFeeCents: Math.round(parseFloat(raw.totals?.buyerFee ?? '0') * 100),
+        totalCents: Math.round(parseFloat(raw.totals?.total ?? '0') * 100),
+        itemCount: raw.totals?.itemCount ?? 0,
+      },
+      removedItems: raw.removedItems ?? [],
+    };
   },
 
   /** Get cart item count for nav badge */
   getCartCount: async (): Promise<CartCountResponse> => {
     const response = await apiClient.get('/cart/count');
-    return response.data;
+    const raw = response.data?.data ?? response.data;
+    return { count: raw.count ?? 0 };
   },
 
   /** Add an item to cart */
-  addToCart: async (dto: AddToCartRequest): Promise<Cart> => {
-    const response = await apiClient.post('/cart/items', dto);
-    return response.data;
+  addToCart: async (dto: AddToCartRequest): Promise<void> => {
+    await apiClient.post('/cart/items', dto);
   },
 
   /** Update cart item quantity */
-  updateCartItem: async (
-    cartItemId: string,
-    dto: UpdateCartItemRequest,
-  ): Promise<Cart> => {
-    const response = await apiClient.patch(`/cart/items/${cartItemId}`, dto);
-    return response.data;
+  updateCartItem: async (cartItemId: string, dto: UpdateCartItemRequest): Promise<void> => {
+    await apiClient.patch(`/cart/items/${cartItemId}`, dto);
   },
 
   /** Remove item from cart */
-  removeCartItem: async (cartItemId: string): Promise<Cart> => {
-    const response = await apiClient.delete(`/cart/items/${cartItemId}`);
-    return response.data;
+  removeCartItem: async (cartItemId: string): Promise<void> => {
+    await apiClient.delete(`/cart/items/${cartItemId}`);
   },
 
   /** Empty entire cart */
-  clearCart: async (): Promise<Cart> => {
-    const response = await apiClient.delete('/cart');
-    return response.data;
+  clearCart: async (): Promise<void> => {
+    await apiClient.delete('/cart');
   },
 
   /** Checkout cart - returns Stripe session URL for USD items */
   checkout: async (dto: CartCheckoutRequest): Promise<CartCheckoutResponse> => {
     const response = await apiClient.post('/cart/checkout', dto);
-    return response.data;
+    const raw = response.data?.data ?? response.data;
+    return {
+      stripeSessionUrl: raw.stripeSessionUrl,
+      coinOnlyOrderIds: raw.coinOnlyOrderIds,
+      message: response.data?.message ?? 'Checkout complete',
+    };
   },
 
   /** Submit a bundle offer for items from the same seller */
   submitBundleOffer: async (dto: BundleOfferRequest): Promise<BundleOfferResponse> => {
     const response = await apiClient.post('/cart/bundle-offer', dto);
-    return response.data;
+    const raw = response.data?.data ?? response.data;
+    return {
+      bundleId: raw.bundleId ?? '',
+      orderIds: raw.orderIds ?? [],
+      message: response.data?.message ?? 'Bundle offer submitted',
+    };
   },
 };
 
