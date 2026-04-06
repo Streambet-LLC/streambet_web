@@ -1,15 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CreditCard, Loader2, Truck } from 'lucide-react';
+import { CreditCard, Loader2, Truck, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useQuery } from '@tanstack/react-query';
-import { prizeAPI } from '@/integrations/api/client';
 import { useCartCheckout } from '@/hooks/useCart';
-import { CartSummary } from '@/types/cart';
+import { CartSummary, ShippingAddressForm } from '@/types/cart';
 import { useToast } from '@/hooks/use-toast';
 
 const formatCents = (cents: number) => {
@@ -18,50 +14,27 @@ const formatCents = (cents: number) => {
 
 interface CartCheckoutPanelProps {
   cartSummary: CartSummary;
+  shippingAddress: ShippingAddressForm;
+  onUpdateAddressField: (field: keyof ShippingAddressForm, value: string) => void;
+  hasOfferItems: boolean;
 }
 
-export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProps) {
-  const navigate = useNavigate();
+export default function CartCheckoutPanel({
+  cartSummary,
+  shippingAddress,
+  onUpdateAddressField,
+  hasOfferItems,
+}: CartCheckoutPanelProps) {
   const { toast } = useToast();
   const checkout = useCartCheckout();
 
-  // Fetch saved address
-  const { data: userAddress } = useQuery({
-    queryKey: ['userAddress'],
-    queryFn: async () => {
-      const response = await prizeAPI.getMyAddress();
-      return response;
-    },
-  });
-
-  const [formData, setFormData] = useState({
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: 'United States',
-  });
-
-  useEffect(() => {
-    if (userAddress) {
-      setFormData({
-        addressLine1: userAddress.address || '',
-        addressLine2: userAddress.address2 || '',
-        city: userAddress.city || '',
-        state: userAddress.state || '',
-        zipCode: userAddress.zipCode || '',
-        country: 'United States',
-      });
-    }
-  }, [userAddress]);
-
-  const updateField = (field: keyof typeof formData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleCheckout = () => {
-    if (!formData.addressLine1 || !formData.city || !formData.state || !formData.zipCode) {
+    if (
+      !shippingAddress.addressLine1 ||
+      !shippingAddress.city ||
+      !shippingAddress.state ||
+      !shippingAddress.zipCode
+    ) {
       toast({
         title: 'Missing address',
         description: 'Please fill in all required shipping address fields.',
@@ -72,12 +45,12 @@ export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProp
 
     checkout.mutate({
       shippingAddress: {
-        addressLine1: formData.addressLine1,
-        addressLine2: formData.addressLine2 || undefined,
-        city: formData.city,
-        state: formData.state,
-        zipCode: formData.zipCode,
-        country: formData.country,
+        addressLine1: shippingAddress.addressLine1,
+        addressLine2: shippingAddress.addressLine2 || undefined,
+        city: shippingAddress.city,
+        state: shippingAddress.state,
+        zipCode: shippingAddress.zipCode,
+        country: shippingAddress.country,
       },
     });
   };
@@ -94,9 +67,7 @@ export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProp
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">
-              Items ({cartTotals.itemCount})
-            </span>
+            <span className="text-muted-foreground">Items ({cartTotals.itemCount})</span>
             <span>{formatCents(cartTotals.itemSubtotalCents)}</span>
           </div>
           <div className="flex justify-between text-sm">
@@ -119,6 +90,18 @@ export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProp
         </CardContent>
       </Card>
 
+      {/* Offer items info */}
+      {hasOfferItems && (
+        <div className="flex items-start gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
+          <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-muted-foreground">
+            Items set to <strong className="text-blue-400">Make Offer</strong> will not
+            be included in checkout. Submit offers from each seller&apos;s card, then
+            proceed to checkout for remaining buy items.
+          </p>
+        </div>
+      )}
+
       {/* Shipping Address */}
       <Card>
         <CardHeader className="pb-3">
@@ -134,8 +117,8 @@ export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProp
             </Label>
             <Input
               id="address1"
-              value={formData.addressLine1}
-              onChange={(e) => updateField('addressLine1', e.target.value)}
+              value={shippingAddress.addressLine1}
+              onChange={e => onUpdateAddressField('addressLine1', e.target.value)}
               placeholder="123 Main St"
               required
               className="h-8 text-sm"
@@ -147,8 +130,8 @@ export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProp
             </Label>
             <Input
               id="address2"
-              value={formData.addressLine2}
-              onChange={(e) => updateField('addressLine2', e.target.value)}
+              value={shippingAddress.addressLine2}
+              onChange={e => onUpdateAddressField('addressLine2', e.target.value)}
               placeholder="Apt, Suite, etc."
               className="h-8 text-sm"
             />
@@ -160,8 +143,8 @@ export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProp
               </Label>
               <Input
                 id="city"
-                value={formData.city}
-                onChange={(e) => updateField('city', e.target.value)}
+                value={shippingAddress.city}
+                onChange={e => onUpdateAddressField('city', e.target.value)}
                 placeholder="City"
                 required
                 className="h-8 text-sm"
@@ -173,8 +156,8 @@ export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProp
               </Label>
               <Input
                 id="state"
-                value={formData.state}
-                onChange={(e) => updateField('state', e.target.value)}
+                value={shippingAddress.state}
+                onChange={e => onUpdateAddressField('state', e.target.value)}
                 placeholder="State"
                 required
                 className="h-8 text-sm"
@@ -188,8 +171,8 @@ export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProp
               </Label>
               <Input
                 id="zip"
-                value={formData.zipCode}
-                onChange={(e) => updateField('zipCode', e.target.value)}
+                value={shippingAddress.zipCode}
+                onChange={e => onUpdateAddressField('zipCode', e.target.value)}
                 placeholder="12345"
                 required
                 className="h-8 text-sm"
@@ -201,7 +184,7 @@ export default function CartCheckoutPanel({ cartSummary }: CartCheckoutPanelProp
               </Label>
               <Input
                 id="country"
-                value={formData.country}
+                value={shippingAddress.country}
                 disabled
                 className="h-8 text-sm bg-muted"
               />

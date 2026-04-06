@@ -94,3 +94,12 @@ export interface BundleOfferResponse {
   orderIds: string[];
   message: string;
 }
+
+export interface ShippingAddressForm {
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}

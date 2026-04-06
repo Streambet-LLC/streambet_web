@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingCart,
@@ -6,17 +6,21 @@ import {
   Minus,
   Plus,
   Store,
-  Package,
   AlertTriangle,
   ArrowLeft,
   X,
   ChevronLeft,
   ChevronRight,
+  Loader2,
+  Tag,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,13 +38,16 @@ import {
   useUpdateCartItem,
   useRemoveCartItem,
   useClearCart,
+  useSubmitBundleOffer,
 } from '@/hooks/useCart';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { SellerGroup, CartItem as CartItemType, RemovedItem } from '@/types/cart';
+import { SellerGroup, CartItem as CartItemType, RemovedItem, ShippingAddressForm } from '@/types/cart';
 import CartCheckoutPanel from '@/components/cart/CartCheckoutPanel';
 import { useToast } from '@/hooks/use-toast';
 import { MainLayout } from '@/components/layout';
 import { getThumbnailUrl } from '@/utils/helper';
+import { useQuery } from '@tanstack/react-query';
+import { prizeAPI } from '@/integrations/api/client';
 
 const formatCents = (cents: number) => {
   return `$${(cents / 100).toFixed(2)}`;
@@ -74,11 +81,74 @@ const CartPage = () => {
   const updateCartItem = useUpdateCartItem();
   const removeCartItem = useRemoveCartItem();
   const clearCart = useClearCart();
+  const submitBundleOffer = useSubmitBundleOffer();
 
   const [removedNotifications, setRemovedNotifications] = useState<RemovedItem[]>([]);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  // Offer mode state: track which items the user wants to make offers on
+  const [itemModes, setItemModes] = useState<Record<string, 'buy' | 'offer'>>({});
+  const [offerPrices, setOfferPrices] = useState<Record<string, string>>({});
+  const [offerMessages, setOfferMessages] = useState<Record<string, string>>({});
+
+  // Shipping address state (shared between checkout and offer submission)
+  const { data: userAddress } = useQuery({
+    queryKey: ['userAddress'],
+    queryFn: async () => {
+      const response = await prizeAPI.getMyAddress();
+      return response;
+    },
+    enabled: !!session,
+  });
+
+  const [shippingAddress, setShippingAddress] = useState<ShippingAddressForm>({
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'United States',
+  });
+
+  useEffect(() => {
+    if (userAddress) {
+      setShippingAddress({
+        addressLine1: userAddress.address || '',
+        addressLine2: userAddress.address2 || '',
+        city: userAddress.city || '',
+        state: userAddress.state || '',
+        zipCode: userAddress.zipCode || '',
+        country: 'United States',
+      });
+    }
+  }, [userAddress]);
+
+  const updateAddressField = (field: keyof ShippingAddressForm, value: string) => {
+    setShippingAddress(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Initialize item modes based on purchaseOption
+  useEffect(() => {
+    if (cartSummary) {
+      setItemModes(prev => {
+        const next = { ...prev };
+        for (const group of cartSummary.sellerGroups) {
+          for (const item of group.items) {
+            // offers_only items must always be in offer mode
+            if (item.prizeConfiguration.purchaseOption === 'offers_only') {
+              next[item.id] = 'offer';
+            } else if (!(item.id in next)) {
+              // Default to 'buy' for buy_only and both
+              next[item.id] = 'buy';
+            }
+          }
+        }
+        return next;
+      });
+    }
+  }, [cartSummary]);
 
   const openLightbox = (item: CartItemType) => {
     const urls = getAllItemImageUrls(item);
@@ -88,6 +158,60 @@ const CartPage = () => {
     setLightboxIndex(coverIdx >= 0 ? coverIdx : 0);
     setLightboxOpen(true);
   };
+
+  const toggleItemMode = (itemId: string) => {
+    setItemModes(prev => ({
+      ...prev,
+      [itemId]: prev[itemId] === 'offer' ? 'buy' : 'offer',
+    }));
+  };
+
+  const setOfferPrice = (itemId: string, price: string) => {
+    setOfferPrices(prev => ({ ...prev, [itemId]: price }));
+  };
+
+  const validateAddress = (): boolean => {
+    if (
+      !shippingAddress.addressLine1 ||
+      !shippingAddress.city ||
+      !shippingAddress.state ||
+      !shippingAddress.zipCode
+    ) {
+      toast({
+        title: 'Missing address',
+        description: 'Please fill in all required shipping address fields before submitting.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmitOffer = (sellerId: string, itemIds: string[], totalAmount: number) => {
+    if (!validateAddress()) return;
+
+    submitBundleOffer.mutate({
+      cartItemIds: itemIds,
+      offerAmount: totalAmount,
+      offerNotes: offerMessages[sellerId] || undefined,
+      shippingAddress: {
+        addressLine1: shippingAddress.addressLine1,
+        addressLine2: shippingAddress.addressLine2 || undefined,
+        city: shippingAddress.city,
+        state: shippingAddress.state,
+        zipCode: shippingAddress.zipCode,
+        country: shippingAddress.country,
+      },
+    });
+  };
+
+  // Check if any items are in offer mode (for checkout panel info)
+  const hasOfferItems = useMemo(() => {
+    if (!cartSummary) return false;
+    return cartSummary.sellerGroups.some(group =>
+      group.items.some(item => (itemModes[item.id] || 'buy') === 'offer'),
+    );
+  }, [cartSummary, itemModes]);
 
   // Show notifications for items that were removed due to stock issues
   useEffect(() => {
@@ -139,7 +263,8 @@ const CartPage = () => {
     );
   }
 
-  const isEmpty = !cartSummary || !cartSummary.cartTotals || cartSummary.cartTotals.itemCount === 0;
+  const isEmpty =
+    !cartSummary || !cartSummary.cartTotals || cartSummary.cartTotals.itemCount === 0;
 
   return (
     <MainLayout>
@@ -229,7 +354,9 @@ const CartPage = () => {
           <div className="text-center py-16">
             <ShoppingCart className="mx-auto h-20 w-20 text-muted-foreground/40 mb-4" />
             <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
-            <p className="text-muted-foreground mb-6">Browse the shop to find items you love!</p>
+            <p className="text-muted-foreground mb-6">
+              Browse the shop to find items you love!
+            </p>
             <Button onClick={() => navigate('/')}>
               <Store className="h-4 w-4 mr-2" />
               Continue Shopping
@@ -249,13 +376,33 @@ const CartPage = () => {
                   onRemoveItem={itemId => removeCartItem.mutate(itemId)}
                   isUpdating={updateCartItem.isPending || removeCartItem.isPending}
                   onImageClick={openLightbox}
+                  itemModes={itemModes}
+                  offerPrices={offerPrices}
+                  onToggleMode={toggleItemMode}
+                  onOfferPriceChange={setOfferPrice}
+                  offerMessage={offerMessages[group.sellerId || 'cardcade'] || ''}
+                  onOfferMessageChange={(msg: string) =>
+                    setOfferMessages(prev => ({
+                      ...prev,
+                      [group.sellerId || 'cardcade']: msg,
+                    }))
+                  }
+                  onSubmitOffer={(itemIds, totalAmount) =>
+                    handleSubmitOffer(group.sellerId || 'cardcade', itemIds, totalAmount)
+                  }
+                  isSubmittingOffer={submitBundleOffer.isPending}
                 />
               ))}
             </div>
 
             {/* Right column: Cart summary / checkout */}
             <div className="lg:col-span-1">
-              <CartCheckoutPanel cartSummary={cartSummary!} />
+              <CartCheckoutPanel
+                cartSummary={cartSummary!}
+                shippingAddress={shippingAddress}
+                onUpdateAddressField={updateAddressField}
+                hasOfferItems={hasOfferItems}
+              />
             </div>
           </div>
         )}
@@ -286,7 +433,9 @@ const CartPage = () => {
                   variant="secondary"
                   className="h-10 w-10 shrink-0 border border-[#7AFF14]"
                   onClick={() =>
-                    setLightboxIndex(prev => (prev === 0 ? lightboxImages.length - 1 : prev - 1))
+                    setLightboxIndex(prev =>
+                      prev === 0 ? lightboxImages.length - 1 : prev - 1,
+                    )
                   }
                   aria-label="Previous image"
                 >
@@ -310,7 +459,9 @@ const CartPage = () => {
                   variant="secondary"
                   className="h-10 w-10 shrink-0 border border-[#7AFF14]"
                   onClick={() =>
-                    setLightboxIndex(prev => (prev === lightboxImages.length - 1 ? 0 : prev + 1))
+                    setLightboxIndex(prev =>
+                      prev === lightboxImages.length - 1 ? 0 : prev + 1,
+                    )
                   }
                   aria-label="Next image"
                 >
@@ -348,28 +499,47 @@ const SellerGroupCard = ({
   onRemoveItem,
   isUpdating,
   onImageClick,
+  itemModes,
+  offerPrices,
+  onToggleMode,
+  onOfferPriceChange,
+  offerMessage,
+  onOfferMessageChange,
+  onSubmitOffer,
+  isSubmittingOffer,
 }: {
   group: SellerGroup;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onRemoveItem: (itemId: string) => void;
   isUpdating: boolean;
   onImageClick: (item: CartItemType) => void;
+  itemModes: Record<string, 'buy' | 'offer'>;
+  offerPrices: Record<string, string>;
+  onToggleMode: (itemId: string) => void;
+  onOfferPriceChange: (itemId: string, price: string) => void;
+  offerMessage: string;
+  onOfferMessageChange: (msg: string) => void;
+  onSubmitOffer: (itemIds: string[], totalAmount: number) => void;
+  isSubmittingOffer: boolean;
 }) => {
-  const navigate = useNavigate();
   const isCardCade = group.sellerId === null;
+
+  const offerItems = group.items.filter(
+    item => (itemModes[item.id] || 'buy') === 'offer',
+  );
+  const buyItems = group.items.filter(
+    item => (itemModes[item.id] || 'buy') === 'buy',
+  );
+
+  const totalOfferAmount = offerItems.reduce((sum, item) => {
+    const price = parseFloat(offerPrices[item.id] || '0');
+    return sum + price * item.quantity;
+  }, 0);
 
   return (
     <Card className="overflow-hidden">
       {/* Seller header */}
-      <div
-        className="flex items-center gap-3 px-4 py-3 bg-muted/50 border-b cursor-pointer hover:bg-muted/70 transition-colors"
-        onClick={() => {
-          if (!isCardCade) {
-            // Navigate to seller shop — would need username, but we don't have it in the group.
-            // For now just skip
-          }
-        }}
-      >
+      <div className="flex items-center gap-3 px-4 py-3 bg-muted/50 border-b">
         <Store className="h-4 w-4 text-muted-foreground" />
         <span className="font-semibold text-sm">{group.shopName}</span>
         <Badge variant="secondary" className="ml-auto text-xs">
@@ -386,32 +556,111 @@ const SellerGroupCard = ({
             onRemoveItem={onRemoveItem}
             isUpdating={isUpdating}
             onImageClick={onImageClick}
+            mode={itemModes[item.id] || 'buy'}
+            canToggle={item.prizeConfiguration.purchaseOption === 'both'}
+            onToggleMode={() => onToggleMode(item.id)}
+            offerPrice={offerPrices[item.id] || ''}
+            onOfferPriceChange={price => onOfferPriceChange(item.id, price)}
           />
         ))}
       </CardContent>
 
-      {/* Seller subtotal */}
-      <div className="px-4 py-3 bg-muted/30 border-t space-y-1">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Subtotal</span>
-          <span>{formatCents(group.itemSubtotalCents)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Shipping</span>
-          <span>{formatCents(group.shippingCents)}</span>
-        </div>
-        {group.buyerFeeCents > 0 && (
+      {/* Buy items subtotal */}
+      {buyItems.length > 0 && (
+        <div className="px-4 py-3 bg-muted/30 border-t space-y-1">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Processing fee (3%)</span>
-            <span>{formatCents(group.buyerFeeCents)}</span>
+            <span className="text-muted-foreground">Subtotal</span>
+            <span>{formatCents(group.itemSubtotalCents)}</span>
           </div>
-        )}
-        <Separator className="my-1" />
-        <div className="flex justify-between font-semibold text-sm">
-          <span>Seller Total</span>
-          <span>{formatCents(group.totalCents)}</span>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Shipping</span>
+            <span>{formatCents(group.shippingCents)}</span>
+          </div>
+          {group.buyerFeeCents > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Processing fee (3%)</span>
+              <span>{formatCents(group.buyerFeeCents)}</span>
+            </div>
+          )}
+          <Separator className="my-1" />
+          <div className="flex justify-between font-semibold text-sm">
+            <span>Seller Total</span>
+            <span>{formatCents(group.totalCents)}</span>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Offer submission section */}
+      {offerItems.length > 0 && (
+        <div className="px-4 py-4 border-t space-y-3 bg-blue-500/5">
+          <div className="flex items-center gap-2">
+            <Tag className="h-4 w-4 text-blue-400" />
+            <span className="text-sm font-semibold">
+              Offer for {offerItems.length} {offerItems.length === 1 ? 'item' : 'items'}
+            </span>
+          </div>
+
+          <div className="space-y-1 text-sm">
+            {offerItems.map(item => {
+              const perItem = parseFloat(offerPrices[item.id] || '0');
+              return (
+                <div key={item.id} className="flex justify-between text-muted-foreground">
+                  <span className="truncate mr-2">
+                    {item.prizeConfiguration.name}
+                    {item.quantity > 1 && ` × ${item.quantity}`}
+                  </span>
+                  <span>
+                    {perItem > 0 ? `$${(perItem * item.quantity).toFixed(2)}` : '—'}
+                  </span>
+                </div>
+              );
+            })}
+            <Separator className="my-1" />
+            <div className="flex justify-between font-semibold">
+              <span>Total offer</span>
+              <span>
+                {totalOfferAmount > 0 ? `$${totalOfferAmount.toFixed(2)}` : '—'}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <MessageSquare className="h-3 w-3" />
+              <span>Message to seller (optional)</span>
+            </div>
+            <Textarea
+              placeholder="Add a note about your offer..."
+              value={offerMessage}
+              onChange={e => onOfferMessageChange(e.target.value)}
+              className="text-sm h-16 resize-none"
+            />
+          </div>
+
+          <Button
+            onClick={() =>
+              onSubmitOffer(
+                offerItems.map(i => i.id),
+                totalOfferAmount,
+              )
+            }
+            disabled={totalOfferAmount <= 0 || isSubmittingOffer}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {isSubmittingOffer ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <Tag className="h-4 w-4 mr-2" />
+                Submit Offer{totalOfferAmount > 0 ? ` — $${totalOfferAmount.toFixed(2)}` : ''}
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </Card>
   );
 };
@@ -423,20 +672,32 @@ const CartItemRow = ({
   onRemoveItem,
   isUpdating,
   onImageClick,
+  mode,
+  canToggle,
+  onToggleMode,
+  offerPrice,
+  onOfferPriceChange,
 }: {
   item: CartItemType;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onRemoveItem: (itemId: string) => void;
   isUpdating: boolean;
   onImageClick: (item: CartItemType) => void;
+  mode: 'buy' | 'offer';
+  canToggle: boolean;
+  onToggleMode: () => void;
+  offerPrice: string;
+  onOfferPriceChange: (price: string) => void;
 }) => {
   const prize = item.prizeConfiguration;
   const priceUsd = Number(prize.amount) / 50; // 50 CadeCoins = $1
-  const itemTotal = priceUsd * item.quantity;
+  const isOffer = mode === 'offer';
+  const offerPriceNum = parseFloat(offerPrice) || 0;
+  const itemTotal = isOffer ? offerPriceNum * item.quantity : priceUsd * item.quantity;
   const imageUrl = getItemImageUrl(item);
 
   return (
-    <div className="flex gap-4 p-4">
+    <div className={`flex gap-4 p-4 transition-colors ${isOffer ? 'bg-blue-500/5' : ''}`}>
       {/* Image */}
       <div
         className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0 cursor-pointer"
@@ -460,12 +721,81 @@ const CartItemRow = ({
             {prize.brand.replace('_', ' ')}
           </Badge>
         )}
-        <p className="text-sm text-muted-foreground mt-1">${priceUsd.toFixed(2)} each</p>
+
+        {/* Mode toggle for 'both' items */}
+        {canToggle && (
+          <div className="flex items-center gap-0 mt-2">
+            <button
+              onClick={() => {
+                if (mode !== 'buy') onToggleMode();
+              }}
+              className={`px-2.5 py-1 text-xs font-medium rounded-l-md border transition-colors ${
+                mode === 'buy'
+                  ? 'bg-[#7AFF14]/20 text-[#7AFF14] border-[#7AFF14]/40'
+                  : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+              }`}
+            >
+              Buy
+            </button>
+            <button
+              onClick={() => {
+                if (mode !== 'offer') onToggleMode();
+              }}
+              className={`px-2.5 py-1 text-xs font-medium rounded-r-md border-r border-t border-b transition-colors ${
+                mode === 'offer'
+                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                  : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+              }`}
+            >
+              Make Offer
+            </button>
+          </div>
+        )}
+
+        {/* Offer-only badge */}
+        {prize.purchaseOption === 'offers_only' && (
+          <Badge
+            variant="secondary"
+            className="mt-2 text-xs bg-blue-500/10 text-blue-400 border-blue-500/30"
+          >
+            Offer Only
+          </Badge>
+        )}
+
+        {/* Price display */}
+        {isOffer ? (
+          <div className="mt-1.5">
+            <p className="text-xs text-muted-foreground line-through">
+              ${priceUsd.toFixed(2)} listed
+            </p>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-xs text-muted-foreground">$</span>
+              <Input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={offerPrice}
+                onChange={e => onOfferPriceChange(e.target.value)}
+                className="h-7 w-24 text-sm"
+                placeholder="Your offer"
+              />
+              <span className="text-xs text-muted-foreground">each</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground mt-1">${priceUsd.toFixed(2)} each</p>
+        )}
       </div>
 
       {/* Quantity controls & price */}
       <div className="flex flex-col items-end gap-2">
-        <span className="font-semibold text-sm">${itemTotal.toFixed(2)}</span>
+        <span className="font-semibold text-sm">
+          {isOffer && offerPriceNum > 0
+            ? `$${itemTotal.toFixed(2)}`
+            : isOffer
+              ? '—'
+              : `$${itemTotal.toFixed(2)}`}
+        </span>
 
         <div className="flex items-center gap-1">
           <Button
