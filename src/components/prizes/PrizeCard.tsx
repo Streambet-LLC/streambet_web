@@ -595,7 +595,7 @@ export default function PrizeCard({
               )}
             </Button>
           )}
-          {!hideButtons && canBuy && !isProLocked && session && (
+          {!hideButtons && (canBuy || canOffer) && !isProLocked && session && (
             <Button
               variant="outline"
               size="icon"
