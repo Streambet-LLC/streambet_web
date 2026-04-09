@@ -136,11 +136,15 @@ const CartPage = () => {
         const next = { ...prev };
         for (const group of cartSummary.sellerGroups) {
           for (const item of group.items) {
+            const opt = item.prizeConfiguration.purchaseOption;
             // offers_only items must always be in offer mode
-            if (item.prizeConfiguration.purchaseOption === 'offers_only') {
+            if (opt === 'offers_only') {
               next[item.id] = 'offer';
+            } else if (opt === 'buy_only') {
+              // buy_only items must always be in buy mode
+              next[item.id] = 'buy';
             } else if (!(item.id in next)) {
-              // Default to 'buy' for buy_only and both
+              // Default to 'buy' for 'both' and undefined/null
               next[item.id] = 'buy';
             }
           }
@@ -209,7 +213,7 @@ const CartPage = () => {
   const hasOfferItems = useMemo(() => {
     if (!cartSummary) return false;
     return cartSummary.sellerGroups.some(group =>
-      group.items.some(item => (itemModes[item.id] || 'buy') === 'offer'),
+      group.items.some(item => (itemModes[item.id] || 'buy') === 'offer')
     );
   }, [cartSummary, itemModes]);
 
@@ -263,8 +267,7 @@ const CartPage = () => {
     );
   }
 
-  const isEmpty =
-    !cartSummary || !cartSummary.cartTotals || cartSummary.cartTotals.itemCount === 0;
+  const isEmpty = !cartSummary || !cartSummary.cartTotals || cartSummary.cartTotals.itemCount === 0;
 
   return (
     <MainLayout>
@@ -354,9 +357,7 @@ const CartPage = () => {
           <div className="text-center py-16">
             <ShoppingCart className="mx-auto h-20 w-20 text-muted-foreground/40 mb-4" />
             <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
-            <p className="text-muted-foreground mb-6">
-              Browse the shop to find items you love!
-            </p>
+            <p className="text-muted-foreground mb-6">Browse the shop to find items you love!</p>
             <Button onClick={() => navigate('/')}>
               <Store className="h-4 w-4 mr-2" />
               Continue Shopping
@@ -433,9 +434,7 @@ const CartPage = () => {
                   variant="secondary"
                   className="h-10 w-10 shrink-0 border border-[#7AFF14]"
                   onClick={() =>
-                    setLightboxIndex(prev =>
-                      prev === 0 ? lightboxImages.length - 1 : prev - 1,
-                    )
+                    setLightboxIndex(prev => (prev === 0 ? lightboxImages.length - 1 : prev - 1))
                   }
                   aria-label="Previous image"
                 >
@@ -459,9 +458,7 @@ const CartPage = () => {
                   variant="secondary"
                   className="h-10 w-10 shrink-0 border border-[#7AFF14]"
                   onClick={() =>
-                    setLightboxIndex(prev =>
-                      prev === lightboxImages.length - 1 ? 0 : prev + 1,
-                    )
+                    setLightboxIndex(prev => (prev === lightboxImages.length - 1 ? 0 : prev + 1))
                   }
                   aria-label="Next image"
                 >
@@ -524,12 +521,8 @@ const SellerGroupCard = ({
 }) => {
   const isCardCade = group.sellerId === null;
 
-  const offerItems = group.items.filter(
-    item => (itemModes[item.id] || 'buy') === 'offer',
-  );
-  const buyItems = group.items.filter(
-    item => (itemModes[item.id] || 'buy') === 'buy',
-  );
+  const offerItems = group.items.filter(item => (itemModes[item.id] || 'buy') === 'offer');
+  const buyItems = group.items.filter(item => (itemModes[item.id] || 'buy') === 'buy');
 
   const totalOfferAmount = offerItems.reduce((sum, item) => {
     const price = parseFloat(offerPrices[item.id] || '0');
@@ -557,7 +550,10 @@ const SellerGroupCard = ({
             isUpdating={isUpdating}
             onImageClick={onImageClick}
             mode={itemModes[item.id] || 'buy'}
-            canToggle={item.prizeConfiguration.purchaseOption === 'both'}
+            canToggle={
+              !item.prizeConfiguration.purchaseOption ||
+              item.prizeConfiguration.purchaseOption === 'both'
+            }
             onToggleMode={() => onToggleMode(item.id)}
             offerPrice={offerPrices[item.id] || ''}
             onOfferPriceChange={price => onOfferPriceChange(item.id, price)}
@@ -609,18 +605,14 @@ const SellerGroupCard = ({
                     {item.prizeConfiguration.name}
                     {item.quantity > 1 && ` × ${item.quantity}`}
                   </span>
-                  <span>
-                    {perItem > 0 ? `$${(perItem * item.quantity).toFixed(2)}` : '—'}
-                  </span>
+                  <span>{perItem > 0 ? `$${(perItem * item.quantity).toFixed(2)}` : '—'}</span>
                 </div>
               );
             })}
             <Separator className="my-1" />
             <div className="flex justify-between font-semibold">
               <span>Total offer</span>
-              <span>
-                {totalOfferAmount > 0 ? `$${totalOfferAmount.toFixed(2)}` : '—'}
-              </span>
+              <span>{totalOfferAmount > 0 ? `$${totalOfferAmount.toFixed(2)}` : '—'}</span>
             </div>
           </div>
 
@@ -641,7 +633,7 @@ const SellerGroupCard = ({
             onClick={() =>
               onSubmitOffer(
                 offerItems.map(i => i.id),
-                totalOfferAmount,
+                totalOfferAmount
               )
             }
             disabled={totalOfferAmount <= 0 || isSubmittingOffer}
@@ -722,7 +714,7 @@ const CartItemRow = ({
           </Badge>
         )}
 
-        {/* Mode toggle for 'both' items */}
+        {/* Mode toggle — shown for items that support both buying and offers */}
         {canToggle && (
           <div className="flex items-center gap-0 mt-2">
             <button
@@ -752,13 +744,23 @@ const CartItemRow = ({
           </div>
         )}
 
-        {/* Offer-only badge */}
-        {prize.purchaseOption === 'offers_only' && (
+        {/* Offer-only badge (only for items explicitly set to offers_only) */}
+        {prize.purchaseOption === 'offers_only' && !canToggle && (
           <Badge
             variant="secondary"
             className="mt-2 text-xs bg-blue-500/10 text-blue-400 border-blue-500/30"
           >
             Offer Only
+          </Badge>
+        )}
+
+        {/* Buy-only badge */}
+        {prize.purchaseOption === 'buy_only' && (
+          <Badge
+            variant="secondary"
+            className="mt-2 text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+          >
+            Buy Only
           </Badge>
         )}
 
