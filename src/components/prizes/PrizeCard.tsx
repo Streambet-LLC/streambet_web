@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import FeaturedBetCard from '../FeaturedBetCard';
 import { Link } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useAddToCart } from '@/hooks/useCart';
 
 interface PrizeCardProps {
   prize: Prize;
@@ -285,6 +286,7 @@ export default function PrizeCard({
 
   // Pro-only gating: item is locked for non-Pro users
   const { session } = useAuthContext();
+  const addToCart = useAddToCart();
   const isProUser = !!session?.isProSubscriber;
   const isProLocked = useMemo(() => {
     if (isProUser) return false;
@@ -591,6 +593,21 @@ export default function PrizeCard({
                   Buy Now
                 </>
               )}
+            </Button>
+          )}
+          {!hideButtons && (canBuy || canOffer) && !isProLocked && session && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 flex-shrink-0 border-primary/30 hover:bg-primary/10"
+              onClick={e => {
+                e.stopPropagation();
+                addToCart.mutate({ prizeConfigurationId: prize.id });
+              }}
+              disabled={isDisabled || addToCart.isPending}
+              title="Add to Cart"
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
             </Button>
           )}
           {!hideButtons && canOffer && onOfferClick && (
