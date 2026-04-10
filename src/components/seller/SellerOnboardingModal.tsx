@@ -39,6 +39,7 @@ export function SellerOnboardingModal({
   const [socials, setSocials] = useState({
     instagram: '',
     twitter: '',
+    youtube: '',
     tiktok: '',
   });
 
@@ -85,6 +86,7 @@ export function SellerOnboardingModal({
         socials: {
           instagram: socials.instagram,
           twitter: socials.twitter,
+          youtube: socials.youtube,
           tiktok: socials.tiktok,
         },
         sellerOnboardingCompleted: true,
@@ -271,6 +273,17 @@ export function SellerOnboardingModal({
                     placeholder="https://twitter.com/username"
                     value={socials.twitter}
                     onChange={e => handleSocialChange('twitter', e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="youtube">YouTube</Label>
+                  <Input
+                    id="youtube"
+                    placeholder="https://youtube.com/@username"
+                    value={socials.youtube}
+                    onChange={e => handleSocialChange('youtube', e.target.value)}
                     className="mt-1"
                   />
                 </div>
