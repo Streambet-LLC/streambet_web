@@ -251,6 +251,7 @@ export interface PrizePurchaseRequest {
   coinsAmount: number; // Amount of coins to use (0 for USD-only)
   usdAmount: number; // Amount in USD (0 for coins-only)
   totalPrice: number; // Total price in USD (coins converted to USD)
+  discountCode?: string; // Optional discount code
 }
 
 export interface PrizeOrder {

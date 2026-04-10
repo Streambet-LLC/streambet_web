@@ -1,16 +1,19 @@
-import { CreditCard, Loader2, Truck, Info } from 'lucide-react';
+import { useState } from 'react';
+import { CreditCard, Loader2, Truck, Info, Tag, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useCartCheckout } from '@/hooks/useCart';
-import { CartSummary, ShippingAddressForm } from '@/types/cart';
+import { useCartCheckout, useValidateDiscountCode } from '@/hooks/useCart';
+import { CartSummary, ShippingAddressForm, ValidateDiscountCodeResponse } from '@/types/cart';
 import { useToast } from '@/hooks/use-toast';
 
 const formatCents = (cents: number) => {
   return `$${(cents / 100).toFixed(2)}`;
 };
+
+const COINS_TO_USD = 50; // 50 coins = $1
 
 interface CartCheckoutPanelProps {
   cartSummary: CartSummary;
@@ -27,6 +30,68 @@ export default function CartCheckoutPanel({
 }: CartCheckoutPanelProps) {
   const { toast } = useToast();
   const checkout = useCartCheckout();
+  const validateDiscount = useValidateDiscountCode();
+
+  const [discountInput, setDiscountInput] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState<ValidateDiscountCodeResponse | null>(null);
+
+  const handleApplyDiscount = () => {
+    const code = discountInput.trim();
+    if (!code) return;
+    validateDiscount.mutate(code, {
+      onSuccess: result => {
+        if (result.valid) {
+          setAppliedDiscount(result);
+          toast({
+            title: 'Discount applied!',
+            description: result.message,
+          });
+        } else {
+          setAppliedDiscount(null);
+          toast({
+            title: 'Invalid discount code',
+            description: result.message,
+            variant: 'destructive',
+          });
+        }
+      },
+    });
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountInput('');
+  };
+
+  // Find cheapest item price across all seller groups for cheapest_item scope
+  const cheapestItemCents = cartSummary.sellerGroups.reduce<number | undefined>(
+    (min, group) =>
+      group.items.reduce((m, item) => {
+        const unitCents = Math.round((Number(item.prizeConfiguration.amount) / COINS_TO_USD) * 100);
+        return m === undefined || unitCents < m ? unitCents : m;
+      }, min),
+    undefined
+  );
+
+  // Calculate discount
+  let discountCents = 0;
+  if (appliedDiscount?.valid) {
+    const baseCents =
+      appliedDiscount.scope === 'cheapest_item' && cheapestItemCents !== undefined
+        ? cheapestItemCents
+        : cartSummary.cartTotals.itemSubtotalCents;
+
+    if (appliedDiscount.discountType === 'percent' && appliedDiscount.discountPercent) {
+      discountCents = Math.round(baseCents * (appliedDiscount.discountPercent / 100));
+    } else if (
+      appliedDiscount.discountType === 'fixed_amount' &&
+      appliedDiscount.discountAmountCents
+    ) {
+      discountCents = Math.min(appliedDiscount.discountAmountCents, baseCents);
+    }
+  }
+
+  const adjustedTotalCents = cartSummary.cartTotals.totalCents - discountCents;
 
   const handleCheckout = () => {
     if (
@@ -52,6 +117,9 @@ export default function CartCheckoutPanel({
         zipCode: shippingAddress.zipCode,
         country: shippingAddress.country,
       },
+      ...(appliedDiscount?.valid && appliedDiscount.code
+        ? { discountCode: appliedDiscount.code }
+        : {}),
     });
   };
 
@@ -82,11 +150,66 @@ export default function CartCheckoutPanel({
               <span>{formatCents(cartTotals.buyerFeeCents)}</span>
             </div>
           )}
+          {discountCents > 0 && (
+            <div className="flex justify-between text-sm text-green-500">
+              <span className="flex items-center gap-1">
+                <Tag className="h-3 w-3" />
+                Discount ({appliedDiscount?.code})
+              </span>
+              <span>−{formatCents(discountCents)}</span>
+            </div>
+          )}
           <Separator />
           <div className="flex justify-between font-bold text-lg">
             <span>Total</span>
-            <span>{formatCents(cartTotals.totalCents)}</span>
+            <span>{formatCents(adjustedTotalCents)}</span>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Discount Code */}
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          {appliedDiscount?.valid ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm text-green-500">
+                <Check className="h-4 w-4" />
+                <span className="font-medium">{appliedDiscount.code}</span>
+                <span className="text-muted-foreground">— {appliedDiscount.message}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleRemoveDiscount}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                value={discountInput}
+                onChange={e => setDiscountInput(e.target.value.toUpperCase())}
+                placeholder="Discount code"
+                className="h-8 text-sm uppercase"
+                onKeyDown={e => e.key === 'Enter' && handleApplyDiscount()}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 shrink-0"
+                onClick={handleApplyDiscount}
+                disabled={validateDiscount.isPending || !discountInput.trim()}
+              >
+                {validateDiscount.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  'Apply'
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -95,9 +218,9 @@ export default function CartCheckoutPanel({
         <div className="flex items-start gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
           <Info className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
           <p className="text-xs text-muted-foreground">
-            Items set to <strong className="text-blue-400">Make Offer</strong> will not
-            be included in checkout. Submit offers from each seller&apos;s card, then
-            proceed to checkout for remaining buy items.
+            Items set to <strong className="text-blue-400">Make Offer</strong> will not be included
+            in checkout. Submit offers from each seller&apos;s card, then proceed to checkout for
+            remaining buy items.
           </p>
         </div>
       )}

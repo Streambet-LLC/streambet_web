@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
-import { CartSummary, CartCountResponse, AddToCartRequest, UpdateCartItemRequest, CartCheckoutRequest, BundleOfferRequest } from '@/types/cart';
+import {
+  CartSummary,
+  CartCountResponse,
+  AddToCartRequest,
+  UpdateCartItemRequest,
+  CartCheckoutRequest,
+  BundleOfferRequest,
+  ValidateDiscountCodeResponse,
+} from '@/types/cart';
 import { useToast } from '@/hooks/use-toast';
 
 export const CART_QUERY_KEY = ['cart'];
@@ -134,6 +142,25 @@ export const useClearCart = () => {
       toast({
         title: 'Error',
         description: 'Failed to empty cart',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+/**
+ * Hook to validate a discount code
+ */
+export const useValidateDiscountCode = () => {
+  const { toast } = useToast();
+
+  return useMutation<ValidateDiscountCodeResponse, Error, string>({
+    mutationFn: (code: string) => api.cart.validateDiscountCode(code),
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || 'Failed to validate discount code';
+      toast({
+        title: 'Error',
+        description: message,
         variant: 'destructive',
       });
     },
