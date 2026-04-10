@@ -1,7 +1,7 @@
 import { MainLayout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { SearchInput } from '@/components/ui/SearchInput';
-import { ExternalLink, Loader2, Mail, Settings } from 'lucide-react';
+import { ExternalLink, Loader2, Mail, Package, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PrizesByCategory, Prize as PrizeDisplay } from '@/components/prizes/PrizesByCategory';
@@ -94,7 +94,12 @@ export default function ShopDetail() {
   // Filter to only show slabs with stock
   // CardCade shop items come from redemptions, so don't filter by showOnShop
   let slabPrizes: PrizeDisplay[] = (shopData?.items || [])
-    .filter(prize => prize.category === 'slab' && prize.stock > 0 && (isCardCadeShop || prize.showOnShop !== false))
+    .filter(
+      prize =>
+        prize.category === 'slab' &&
+        prize.stock > 0 &&
+        (isCardCadeShop || prize.showOnShop !== false)
+    )
     .map(prize => {
       const { imageUrls, coverImageIndex, coverImageUrl } = resolvePrizeImages(prize);
 
@@ -148,7 +153,7 @@ export default function ShopDetail() {
       const matchesName = prize.name?.toLowerCase().includes(query);
       const matchesDescription = prize.description?.toLowerCase().includes(query);
       const matchesBrand = prize.brand?.toLowerCase().includes(query);
-      
+
       return matchesName || matchesDescription || matchesBrand;
     });
   }
@@ -184,7 +189,15 @@ export default function ShopDetail() {
                 <h1 className="text-3xl font-bold">{shopName}</h1>
                 {profileData?.isProSubscriber && <ProBadge size="lg" />}
               </div>
-              <p className="text-muted-foreground">@{username}</p>
+              <div className="flex items-center gap-3">
+                <p className="text-muted-foreground">@{username}</p>
+                {slabPrizes.length > 0 && (
+                  <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Package className="w-3.5 h-3.5" />
+                    {slabPrizes.length} {slabPrizes.length === 1 ? 'item' : 'items'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

@@ -14,4 +14,6 @@ export interface PublicUserProfile {
   badgeLevel: string;
   isCreator?: boolean;
   isProSubscriber?: boolean;
+  isSeller?: boolean;
+  listedItemCount?: number;
 }

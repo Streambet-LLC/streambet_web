@@ -3,15 +3,8 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarTrigger, u
 import SidebarStreamCard from './SidebarStreamCard';
 import { Button } from '../ui/button';
 import { motion } from 'framer-motion';
-import {
-  SidebarIcon,
-  MoreHorizontal,
-  Goal,
-  LayoutGrid,
-  GemIcon,
-  Flame,
-  Swords,
-} from 'lucide-react';
+import { SidebarIcon, MoreHorizontal, LayoutGrid, Flame } from 'lucide-react';
+import { PikachuIcon, LuffyIcon, JordanIcon } from '../icons/CategoryIcons';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
@@ -185,9 +178,9 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
   // Icon options for each category
   const getCategoryIcon = (category: BettingCategory) => {
     const iconMap = {
-      [BettingCategory.POKEMON_CARDS]: LayoutGrid,
-      [BettingCategory.ONE_PIECE]: Swords,
-      [BettingCategory.SPORTS_CARDS]: Goal,
+      [BettingCategory.POKEMON_CARDS]: PikachuIcon,
+      [BettingCategory.ONE_PIECE]: LuffyIcon,
+      [BettingCategory.SPORTS_CARDS]: JordanIcon,
       // HOTFIX: Temporarily removed from UI - backend still supports this
       // [BettingCategory.EMERGING_SPORTS]: SwordsIcon,
       [BettingCategory.OTHER]: MoreHorizontal,
@@ -274,14 +267,14 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                     {controls.open && !controls.isMobile ? (
                       <div className="flex items-center gap-2.5 w-full">
                         <CategoryIconContainer
-                          icon={GemIcon}
+                          icon={LayoutGrid}
                           isSelected={isCategorySelected(null)}
                         />
                         <span className="text-[13px] font-semibold">All</span>
                       </div>
                     ) : (
                       <CategoryIconContainer
-                        icon={GemIcon}
+                        icon={LayoutGrid}
                         isSelected={isCategorySelected(null)}
                         compact
                       />

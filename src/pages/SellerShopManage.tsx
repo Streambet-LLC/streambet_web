@@ -1089,9 +1089,9 @@ export default function SellerShopManage() {
                         type="number"
                         min={1}
                         placeholder="0"
-                        value={form.amount}
+                        value={form.amount || ''}
                         onChange={e =>
-                          setForm(p => ({ ...p, amount: Number(e.target.value) || 0 }))
+                          setForm(p => ({ ...p, amount: e.target.value === '' ? 0 : Number(e.target.value) }))
                         }
                       />
                     </div>
@@ -1101,8 +1101,8 @@ export default function SellerShopManage() {
                         type="number"
                         min={0}
                         placeholder="0 = unlimited"
-                        value={form.stock}
-                        onChange={e => setForm(p => ({ ...p, stock: Number(e.target.value) || 0 }))}
+                        value={form.stock || ''}
+                        onChange={e => setForm(p => ({ ...p, stock: e.target.value === '' ? 0 : Number(e.target.value) }))}
                       />
                     </div>
                   </div>
@@ -1159,11 +1159,11 @@ export default function SellerShopManage() {
                     <Input
                       type="number"
                       placeholder="1"
-                      value={form.sellerDisplayOrderShop}
+                      value={form.sellerDisplayOrderShop || ''}
                       onChange={e =>
                         setForm(p => ({
                           ...p,
-                          sellerDisplayOrderShop: Number(e.target.value) || 0,
+                          sellerDisplayOrderShop: e.target.value === '' ? 0 : Number(e.target.value),
                         }))
                       }
                     />

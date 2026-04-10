@@ -8,6 +8,7 @@ import { formatUrl } from '@/utils/format';
 import NotFound from '@/pages/NotFound';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Store } from 'lucide-react';
 import ProfileLiveUpcomingStreams from './ProfileLiveUpcomingStreams';
 import { getImageLink } from '@/utils/helper';
 import ProfilePastStreams from './ProfilePastStreams';
@@ -164,6 +165,16 @@ export default function Profile() {
                               {isFollowed ? 'Unfollow' : 'Follow'}
                             </Button>
                           )}
+                          {profile.isSeller && typeof profile.listedItemCount === 'number' && (
+                            <Link
+                              to={`/shop/${profile.username}`}
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1"
+                            >
+                              <Store className="w-3.5 h-3.5" />
+                              {profile.listedItemCount}{' '}
+                              {profile.listedItemCount === 1 ? 'item' : 'items'} listed
+                            </Link>
+                          )}
                           {socialsOrder.map(social => {
                             const profileSocial = profile.socials[social];
 
@@ -198,6 +209,18 @@ export default function Profile() {
                           })}
                         </div>
                       )}
+                      {!profile.isCreator &&
+                        profile.isSeller &&
+                        typeof profile.listedItemCount === 'number' && (
+                          <Link
+                            to={`/shop/${profile.username}`}
+                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-3"
+                          >
+                            <Store className="w-3.5 h-3.5" />
+                            {profile.listedItemCount}{' '}
+                            {profile.listedItemCount === 1 ? 'item' : 'items'} listed
+                          </Link>
+                        )}
                     </div>
                   </div>
                   {session?.isCreator && profile.username === session?.username && (
