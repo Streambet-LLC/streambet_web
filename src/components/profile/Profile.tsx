@@ -171,7 +171,8 @@ export default function Profile() {
                               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1"
                             >
                               <Store className="w-3.5 h-3.5" />
-                              {profile.listedItemCount} {profile.listedItemCount === 1 ? 'item' : 'items'} listed
+                              {profile.listedItemCount}{' '}
+                              {profile.listedItemCount === 1 ? 'item' : 'items'} listed
                             </Link>
                           )}
                           {socialsOrder.map(social => {
@@ -208,15 +209,18 @@ export default function Profile() {
                           })}
                         </div>
                       )}
-                      {!profile.isCreator && profile.isSeller && typeof profile.listedItemCount === 'number' && (
-                        <Link
-                          to={`/shop/${profile.username}`}
-                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-3"
-                        >
-                          <Store className="w-3.5 h-3.5" />
-                          {profile.listedItemCount} {profile.listedItemCount === 1 ? 'item' : 'items'} listed
-                        </Link>
-                      )}
+                      {!profile.isCreator &&
+                        profile.isSeller &&
+                        typeof profile.listedItemCount === 'number' && (
+                          <Link
+                            to={`/shop/${profile.username}`}
+                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-3"
+                          >
+                            <Store className="w-3.5 h-3.5" />
+                            {profile.listedItemCount}{' '}
+                            {profile.listedItemCount === 1 ? 'item' : 'items'} listed
+                          </Link>
+                        )}
                     </div>
                   </div>
                   {session?.isCreator && profile.username === session?.username && (
