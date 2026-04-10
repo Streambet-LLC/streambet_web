@@ -467,12 +467,18 @@ export default function PrizeCheckoutModal({
                   type="number"
                   min="0"
                   max={Math.min(userCadeCoins, prizeAmount)}
-                  value={combinedCoinsAmount}
+                  value={combinedCoinsAmount || ''}
                   onChange={e => {
+                    const raw = e.target.value;
+                    if (raw === '') {
+                      setCombinedCoinsAmount(0);
+                      setUsdAmount(parseFloat((prizeAmount / COINS_TO_USD).toFixed(2)));
+                      return;
+                    }
                     const newCoinsAmount = Math.max(
                       0,
                       Math.min(
-                        Math.floor(Number(e.target.value)),
+                        Math.floor(Number(raw)),
                         Math.min(userCadeCoins, prizeAmount)
                       )
                     );
@@ -494,8 +500,12 @@ export default function PrizeCheckoutModal({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={usdAmount}
+                  value={usdAmount || ''}
                   onChange={e => {
+                    if (e.target.value === '') {
+                      setUsdAmount(0);
+                      return;
+                    }
                     const remaining = totalAmount - combinedCoinsAmount;
                     const maxUSD = remaining / COINS_TO_USD;
                     setUsdAmount(Math.max(0, Math.min(Number(e.target.value), maxUSD)));
