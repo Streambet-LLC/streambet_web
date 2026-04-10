@@ -302,53 +302,67 @@ const CartPage = () => {
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <ShoppingCart className="h-6 w-6" />
-            <h1 className="text-2xl font-bold">
-              Your Cart
-              {cartSummary && cartSummary.cartTotals.itemCount > 0 && (
-                <span className="text-muted-foreground font-normal ml-2">
-                  ({cartSummary.cartTotals.itemCount}{' '}
-                  {cartSummary.cartTotals.itemCount === 1 ? 'item' : 'items'})
-                </span>
-              )}
-            </h1>
+        <div className="mb-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                onClick={() => navigate('/')}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 shrink-0" />
+              <h1 className="text-lg sm:text-2xl font-bold">
+                Your Cart
+                {cartSummary && cartSummary.cartTotals.itemCount > 0 && (
+                  <span className="hidden sm:inline text-muted-foreground font-normal ml-2 text-2xl">
+                    ({cartSummary.cartTotals.itemCount}{' '}
+                    {cartSummary.cartTotals.itemCount === 1 ? 'item' : 'items'})
+                  </span>
+                )}
+              </h1>
+            </div>
+
+            {!isEmpty && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Empty Cart</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Empty your cart?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove all items from your cart. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => clearCart.mutate()}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Empty Cart
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
 
-          {!isEmpty && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Empty Cart
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Empty your cart?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will remove all items from your cart. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => clearCart.mutate()}
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    Empty Cart
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          {cartSummary && cartSummary.cartTotals.itemCount > 0 && (
+            <p className="sm:hidden text-sm text-muted-foreground mt-1 ml-12">
+              {cartSummary.cartTotals.itemCount}{' '}
+              {cartSummary.cartTotals.itemCount === 1 ? 'item' : 'items'} in cart
+            </p>
           )}
         </div>
 
@@ -689,152 +703,159 @@ const CartItemRow = ({
   const imageUrl = getItemImageUrl(item);
 
   return (
-    <div className={`flex gap-4 p-4 transition-colors ${isOffer ? 'bg-blue-500/5' : ''}`}>
-      {/* Image */}
-      <div
-        className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0 cursor-pointer"
-        onClick={() => onImageClick(item)}
-      >
-        <img
-          src={imageUrl}
-          alt={prize.name}
-          className="w-full h-full object-cover"
-          onError={e => {
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
-          }}
-        />
-      </div>
-
-      {/* Details */}
-      <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-sm truncate">{prize.name}</h3>
-        {prize.brand && (
-          <Badge variant="outline" className="mt-1 text-xs capitalize">
-            {prize.brand.replace('_', ' ')}
-          </Badge>
-        )}
-
-        {/* Mode toggle — shown for items that support both buying and offers */}
-        {canToggle && (
-          <div className="flex items-center gap-0 mt-2">
-            <button
-              onClick={() => {
-                if (mode !== 'buy') onToggleMode();
-              }}
-              className={`px-2.5 py-1 text-xs font-medium rounded-l-md border transition-colors ${
-                mode === 'buy'
-                  ? 'bg-[#7AFF14]/20 text-[#7AFF14] border-[#7AFF14]/40'
-                  : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
-              }`}
-            >
-              Buy
-            </button>
-            <button
-              onClick={() => {
-                if (mode !== 'offer') onToggleMode();
-              }}
-              className={`px-2.5 py-1 text-xs font-medium rounded-r-md border-r border-t border-b transition-colors ${
-                mode === 'offer'
-                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
-                  : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
-              }`}
-            >
-              Make Offer
-            </button>
-          </div>
-        )}
-
-        {/* Offer-only badge (only for items explicitly set to offers_only) */}
-        {prize.purchaseOption === 'offers_only' && !canToggle && (
-          <Badge
-            variant="secondary"
-            className="mt-2 text-xs bg-blue-500/10 text-blue-400 border-blue-500/30"
-          >
-            Offer Only
-          </Badge>
-        )}
-
-        {/* Buy-only badge */}
-        {prize.purchaseOption === 'buy_only' && (
-          <Badge
-            variant="secondary"
-            className="mt-2 text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-          >
-            Buy Only
-          </Badge>
-        )}
-
-        {/* Price display */}
-        {isOffer ? (
-          <div className="mt-1.5">
-            <p className="text-xs text-muted-foreground line-through">
-              ${priceUsd.toFixed(2)} listed
-            </p>
-            <div className="flex items-center gap-1 mt-1">
-              <span className="text-xs text-muted-foreground">$</span>
-              <Input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={offerPrice}
-                onChange={e => onOfferPriceChange(e.target.value)}
-                className="h-7 w-24 text-sm"
-                placeholder="Your offer"
-              />
-              <span className="text-xs text-muted-foreground">each</span>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground mt-1">${priceUsd.toFixed(2)} each</p>
-        )}
-      </div>
-
-      {/* Quantity controls & price */}
-      <div className="flex flex-col items-end gap-2">
-        <span className="font-semibold text-sm">
-          {isOffer && offerPriceNum > 0
-            ? `$${itemTotal.toFixed(2)}`
-            : isOffer
-              ? '—'
-              : `$${itemTotal.toFixed(2)}`}
-        </span>
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => {
-              if (item.quantity > 1) {
-                onUpdateQuantity(item.id, item.quantity - 1);
-              }
+    <div className={`p-3 sm:p-4 transition-colors ${isOffer ? 'bg-blue-500/5' : ''}`}>
+      <div className="flex gap-3 sm:gap-4">
+        {/* Image */}
+        <div
+          className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0 cursor-pointer"
+          onClick={() => onImageClick(item)}
+        >
+          <img
+            src={imageUrl}
+            alt={prize.name}
+            className="w-full h-full object-cover"
+            onError={e => {
+              (e.target as HTMLImageElement).src = '/placeholder.svg';
             }}
-            disabled={item.quantity <= 1 || isUpdating}
-          >
-            <Minus className="h-3 w-3" />
-          </Button>
-          <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-            disabled={item.quantity >= prize.stock || isUpdating}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          />
         </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
-          onClick={() => onRemoveItem(item.id)}
-          disabled={isUpdating}
-        >
-          <Trash2 className="h-3 w-3 mr-1" />
-          Remove
-        </Button>
+        {/* Details + controls */}
+        <div className="flex-1 min-w-0">
+          {/* Name + total price */}
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-medium text-sm line-clamp-2 leading-tight">{prize.name}</h3>
+            <span className="font-semibold text-sm whitespace-nowrap flex-shrink-0">
+              {isOffer && offerPriceNum > 0
+                ? `$${itemTotal.toFixed(2)}`
+                : isOffer
+                  ? '—'
+                  : `$${itemTotal.toFixed(2)}`}
+            </span>
+          </div>
+
+          {prize.brand && (
+            <Badge variant="outline" className="mt-1 text-xs capitalize">
+              {prize.brand.replace('_', ' ')}
+            </Badge>
+          )}
+
+          {/* Mode toggle — shown for items that support both buying and offers */}
+          {canToggle && (
+            <div className="flex items-center gap-0 mt-2">
+              <button
+                onClick={() => {
+                  if (mode !== 'buy') onToggleMode();
+                }}
+                className={`px-2.5 py-1 text-xs font-medium rounded-l-md border transition-colors ${
+                  mode === 'buy'
+                    ? 'bg-[#7AFF14]/20 text-[#7AFF14] border-[#7AFF14]/40'
+                    : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+                }`}
+              >
+                Buy
+              </button>
+              <button
+                onClick={() => {
+                  if (mode !== 'offer') onToggleMode();
+                }}
+                className={`px-2.5 py-1 text-xs font-medium rounded-r-md border-r border-t border-b transition-colors ${
+                  mode === 'offer'
+                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                    : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+                }`}
+              >
+                Offer
+              </button>
+            </div>
+          )}
+
+          {/* Offer-only badge (only for items explicitly set to offers_only) */}
+          {prize.purchaseOption === 'offers_only' && !canToggle && (
+            <Badge
+              variant="secondary"
+              className="mt-2 text-xs bg-blue-500/10 text-blue-400 border-blue-500/30"
+            >
+              Offer Only
+            </Badge>
+          )}
+
+          {/* Buy-only badge */}
+          {prize.purchaseOption === 'buy_only' && (
+            <Badge
+              variant="secondary"
+              className="mt-2 text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+            >
+              Buy Only
+            </Badge>
+          )}
+
+          {/* Price display */}
+          {isOffer ? (
+            <div className="mt-1.5">
+              <p className="text-xs text-muted-foreground line-through">
+                ${priceUsd.toFixed(2)} listed
+              </p>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-xs text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={offerPrice}
+                  onChange={e => onOfferPriceChange(e.target.value)}
+                  className="h-7 w-20 sm:w-24 text-sm"
+                  placeholder="Your offer"
+                />
+                <span className="text-xs text-muted-foreground">each</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              ${priceUsd.toFixed(2)} each
+            </p>
+          )}
+
+          {/* Quantity controls + Remove */}
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => {
+                  if (item.quantity > 1) {
+                    onUpdateQuantity(item.id, item.quantity - 1);
+                  }
+                }}
+                disabled={item.quantity <= 1 || isUpdating}
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                disabled={item.quantity >= prize.stock || isUpdating}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+              onClick={() => onRemoveItem(item.id)}
+              disabled={isUpdating}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Remove
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -140,7 +140,10 @@ export default function CartCheckoutPanel({
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
-              Shipping ({sellerCount} {sellerCount === 1 ? 'seller' : 'sellers'} × $5.00)
+              Shipping
+              <span className="block text-xs">
+                ({sellerCount} {sellerCount === 1 ? 'seller' : 'sellers'} × $5.00)
+              </span>
             </span>
             <span>{formatCents(cartTotals.shippingCents)}</span>
           </div>
@@ -259,7 +262,7 @@ export default function CartCheckoutPanel({
               className="h-8 text-sm"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <Label htmlFor="city" className="text-xs">
                 City <span className="text-destructive">*</span>
@@ -287,7 +290,7 @@ export default function CartCheckoutPanel({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <Label htmlFor="zip" className="text-xs">
                 ZIP Code <span className="text-destructive">*</span>
