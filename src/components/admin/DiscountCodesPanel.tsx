@@ -211,7 +211,7 @@ export const DiscountCodesPanel = () => {
           discountAmountCents:
             form.discountType === 'fixed_amount' ? Number(form.discountAmountCents) : undefined,
           usageType: form.usageType,
-          maxUses: form.maxUses ? Number(form.maxUses) : null,
+          maxUses: form.usageType === 'single_use' ? 1 : form.maxUses ? Number(form.maxUses) : null,
           scope: form.scope,
           isActive: form.isActive,
           expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
@@ -225,7 +225,7 @@ export const DiscountCodesPanel = () => {
         discountAmountCents:
           form.discountType === 'fixed_amount' ? Number(form.discountAmountCents) : undefined,
         usageType: form.usageType,
-        maxUses: form.maxUses ? Number(form.maxUses) : undefined,
+        maxUses: form.usageType === 'single_use' ? 1 : form.maxUses ? Number(form.maxUses) : undefined,
         scope: form.scope,
         expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
       });
