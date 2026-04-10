@@ -259,7 +259,7 @@ export default function BetTokens({
                   min={0}
                   max={sliderMax}
                   step={1}
-                  value={betAmount}
+                  value={betAmount || ''}
                   disabled={session == null || lockedOptions}
                   onFocus={e => {
                     e.target.select();

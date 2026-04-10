@@ -230,8 +230,12 @@ const SortablePrizeItem = ({
                   type="number"
                   min={1}
                   step={1}
-                  value={changes.featuredDisplayOrder ?? 1}
+                  value={changes.featuredDisplayOrder ?? ''}
                   onChange={e => {
+                    if (e.target.value === '') {
+                      onFeaturedOrderChange(tier.id, 1);
+                      return;
+                    }
                     const value = parseInt(e.target.value);
                     if (!isNaN(value) && value >= 1) {
                       onFeaturedOrderChange(tier.id, value);
@@ -1651,7 +1655,7 @@ export const PrizeConfiguration = () => {
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.amount}
+                value={formData.amount || ''}
                 onChange={e => handleCoinAmountChange(e.target.value)}
                 className="h-12 text-base"
                 placeholder={formData.purchaseOption === 'offers_only' ? 'Optional' : '0'}
@@ -1787,9 +1791,9 @@ export const PrizeConfiguration = () => {
                 id="stock"
                 type="number"
                 min="0"
-                value={formData.stock}
+                value={formData.stock || ''}
                 onChange={e => {
-                  setFormData({ ...formData, stock: parseInt(e.target.value) || 0 });
+                  setFormData({ ...formData, stock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 });
                   setValidationError('');
                 }}
                 className="h-12 text-base"

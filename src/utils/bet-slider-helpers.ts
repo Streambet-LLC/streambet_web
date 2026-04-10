@@ -40,6 +40,9 @@ export function calculatePresetAmounts({
  * @returns Validated and constrained bet amount, or null if input should be blocked
  */
 export function validateBetAmount(inputValue: string, maxValue: number): number | null {
+  // Allow empty input (treat as 0)
+  if (inputValue === '') return 0;
+
   // Block if more than 3 decimal places
   if (inputValue.includes('.')) {
     const decimalPart = inputValue.split('.')[1];
