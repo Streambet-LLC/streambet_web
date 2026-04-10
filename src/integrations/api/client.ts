@@ -22,6 +22,7 @@ import {
   CartCheckoutResponse,
   BundleOfferRequest,
   BundleOfferResponse,
+  ValidateDiscountCodeResponse,
 } from '@/types/cart';
 import { SpinStatusResponse, SpinResultResponse } from '@/types/daily-spin';
 import {
@@ -1163,6 +1164,43 @@ export const adminAPI = {
     const response = await apiClient.post(`/admin/pro/revoke/${userId}`);
     return response.data;
   },
+
+  // Discount Codes
+  getDiscountCodes: async () => {
+    const response = await apiClient.get('/admin/discount-codes');
+    return response.data;
+  },
+
+  createDiscountCode: async (data: {
+    code: string;
+    discountType: 'percent' | 'fixed_amount';
+    discountPercent?: number;
+    discountAmountCents?: number;
+    usageType: 'per_account' | 'single_use';
+    maxUses?: number;
+    scope: 'cart' | 'cheapest_item';
+    expiresAt?: string;
+  }) => {
+    const response = await apiClient.post('/admin/discount-codes', data);
+    return response.data;
+  },
+
+  updateDiscountCode: async (
+    id: string,
+    data: {
+      discountType?: 'percent' | 'fixed_amount';
+      discountPercent?: number;
+      discountAmountCents?: number;
+      usageType?: 'per_account' | 'single_use';
+      maxUses?: number | null;
+      scope?: 'cart' | 'cheapest_item';
+      isActive?: boolean;
+      expiresAt?: string | null;
+    }
+  ) => {
+    const response = await apiClient.patch(`/admin/discount-codes/${id}`, data);
+    return response.data;
+  },
 };
 
 // Creator API
@@ -1832,6 +1870,12 @@ export const cartAPI = {
   /** Empty entire cart */
   clearCart: async (): Promise<void> => {
     await apiClient.delete('/cart');
+  },
+
+  /** Validate a discount code */
+  validateDiscountCode: async (code: string): Promise<ValidateDiscountCodeResponse> => {
+    const response = await apiClient.post('/cart/validate-discount-code', { code });
+    return response.data?.data ?? response.data;
   },
 
   /** Checkout cart - returns Stripe session URL for USD items */

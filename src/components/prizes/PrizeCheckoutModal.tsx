@@ -9,14 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Info } from 'lucide-react';
+import { Loader2, Info, Check, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { prizeAPI } from '@/integrations/api/client';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { handleMutationError } from '@/lib/mutationHelpers';
 import { roundDownCoinAmount } from '@/utils/format';
+import { useValidateDiscountCode } from '@/hooks/useCart';
 import type { PrizePurchaseRequest } from '@/types/prize';
+import type { ValidateDiscountCodeResponse } from '@/types/cart';
 
 interface PrizeCheckoutModalProps {
   isOpen: boolean;
@@ -135,6 +137,56 @@ export default function PrizeCheckoutModal({
     }
   }, [allowCadeCoins, paymentMethod, totalAmount, userCadeCoins]);
 
+  // --- Discount code state ---
+  const validateDiscount = useValidateDiscountCode();
+  const [discountInput, setDiscountInput] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState<ValidateDiscountCodeResponse | null>(null);
+
+  const handleApplyDiscount = () => {
+    const code = discountInput.trim();
+    if (!code) return;
+    validateDiscount.mutate(code, {
+      onSuccess: result => {
+        if (result.valid) {
+          setAppliedDiscount(result);
+          toast({
+            title: 'Discount applied!',
+            description: result.message,
+          });
+        } else {
+          setAppliedDiscount(null);
+          toast({
+            title: 'Invalid discount code',
+            description: result.message,
+            variant: 'destructive',
+          });
+        }
+      },
+    });
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountInput('');
+  };
+
+  // Calculate discount cents (only applies to USD portion of item price, not shipping)
+  const itemPriceCents = Math.round(displayItemPriceUsd * 100);
+  let discountCents = 0;
+  if (appliedDiscount?.valid) {
+    const baseCents = appliedDiscount.scope === 'cheapest_item' ? itemPriceCents : itemPriceCents;
+
+    if (appliedDiscount.discountType === 'percent' && appliedDiscount.discountPercent) {
+      discountCents = Math.round(baseCents * (appliedDiscount.discountPercent / 100));
+    } else if (
+      appliedDiscount.discountType === 'fixed_amount' &&
+      appliedDiscount.discountAmountCents
+    ) {
+      discountCents = Math.min(appliedDiscount.discountAmountCents, baseCents);
+    }
+  }
+  const discountUsd = discountCents / 100;
+
   const displayCoinsAmount =
     paymentMethod === 'combined'
       ? combinedCoinsAmount
@@ -223,6 +275,9 @@ export default function PrizeCheckoutModal({
       coinsAmount: finalCoinsAmount,
       usdAmount,
       totalPrice: finalTotalPrice,
+      ...(appliedDiscount?.valid && appliedDiscount.code
+        ? { discountCode: appliedDiscount.code }
+        : {}),
     });
   };
 
@@ -257,13 +312,19 @@ export default function PrizeCheckoutModal({
                   </span>
                 </div>
               )}
+              {discountCents > 0 && (
+                <div className="flex justify-between text-sm text-green-500">
+                  <span>Discount:</span>
+                  <span>-${discountUsd.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm font-semibold border-t pt-2">
                 <span>Total:</span>
                 <span>
                   $
                   {(paymentMethod === 'usd' || paymentMethod === 'combined'
-                    ? totalAmount / COINS_TO_USD + getBuyerFeeUsd(usdAmount)
-                    : totalAmount / COINS_TO_USD
+                    ? totalAmount / COINS_TO_USD + getBuyerFeeUsd(usdAmount) - discountUsd
+                    : totalAmount / COINS_TO_USD - discountUsd
                   ).toFixed(2)}
                 </span>
               </div>
@@ -272,6 +333,50 @@ export default function PrizeCheckoutModal({
               <p className="text-sm text-muted-foreground mt-3">
                 Your Balance: {roundDownCoinAmount(userCadeCoins).toLocaleString('en-US')} CadeCoins
               </p>
+            )}
+          </div>
+
+          {/* Discount Code */}
+          <div className="bg-muted p-4 rounded-lg">
+            {appliedDiscount?.valid ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-green-500">
+                  <Check className="h-4 w-4" />
+                  <span className="font-medium">{appliedDiscount.code}</span>
+                  <span className="text-muted-foreground">— {appliedDiscount.message}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={handleRemoveDiscount}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  value={discountInput}
+                  onChange={e => setDiscountInput(e.target.value.toUpperCase())}
+                  placeholder="Discount code"
+                  className="h-8 text-sm uppercase"
+                  onKeyDown={e => e.key === 'Enter' && handleApplyDiscount()}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 shrink-0"
+                  onClick={handleApplyDiscount}
+                  disabled={validateDiscount.isPending || !discountInput.trim()}
+                >
+                  {validateDiscount.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    'Apply'
+                  )}
+                </Button>
+              </div>
             )}
           </div>
 

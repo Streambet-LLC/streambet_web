@@ -74,11 +74,27 @@ export interface CartCheckoutRequest {
   shippingAddress: ShippingAddress;
   cardcadePaymentMethod?: 'coins' | 'usd' | 'combined';
   coinsToApply?: number;
+  discountCode?: string;
 }
 
 export interface CartCheckoutResponse {
   stripeSessionUrl?: string;
   coinOnlyOrderIds?: string[];
+  message: string;
+}
+
+export interface ValidateDiscountCodeRequest {
+  code: string;
+}
+
+export interface ValidateDiscountCodeResponse {
+  valid: boolean;
+  discountCodeId?: string;
+  code?: string;
+  discountType?: 'percent' | 'fixed_amount';
+  discountPercent?: number;
+  discountAmountCents?: number;
+  scope?: 'cart' | 'cheapest_item';
   message: string;
 }
 
