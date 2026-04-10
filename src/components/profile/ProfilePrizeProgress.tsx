@@ -59,45 +59,44 @@ export default function ProfilePrizeProgress({
         {/* Current Progress Section */}
         <div>
           <div className="flex items-center gap-2 text-sm font-medium">
-            <img 
-              src="/icons/cade-coins.png" 
-              alt="CadeCoins" 
-              className="w-5 h-5"
-            />
-            <span>Current: <span className="font-bold text-base">{roundDownCoinAmount(currentCadeCoins).toLocaleString('en-US')}</span></span>
+            <img src="/icons/cade-coins.png" alt="CadeCoins" className="w-5 h-5" />
+            <span>
+              Current:{' '}
+              <span className="font-bold text-base">
+                {roundDownCoinAmount(currentCadeCoins).toLocaleString('en-US')}
+              </span>
+            </span>
             <span className="text-muted-foreground">|</span>
-            <img 
-              src="/icons/cade-coins.png" 
-              alt="CadeCoins" 
-              className="w-5 h-5"
-            />
-            <span>Lifetime: <span className="font-bold text-base">{roundDownCoinAmount(lifetimeCadeCoins).toLocaleString('en-US')}</span></span>
+            <img src="/icons/cade-coins.png" alt="CadeCoins" className="w-5 h-5" />
+            <span>
+              Lifetime:{' '}
+              <span className="font-bold text-base">
+                {roundDownCoinAmount(lifetimeCadeCoins).toLocaleString('en-US')}
+              </span>
+            </span>
           </div>
-          
+
           {nextMilestone ? (
             <>
               {/* Progress bar with fixed milestone tick marks */}
               <div className="relative mt-3">
                 <Progress value={progressPercent} className="h-3" />
-                
+
                 {/* Prize tick marks overlay */}
                 <div className="absolute -top-1 left-0 w-full h-5 pointer-events-none">
                   {/* Start - 0% */}
-                  <div 
-                    className="absolute flex flex-col items-start" 
-                    style={{ left: '0%' }}
-                  >
+                  <div className="absolute flex flex-col items-start" style={{ left: '0%' }}>
                     <div className="w-1 h-5 rounded-full bg-muted-foreground/30" />
                   </div>
-                  
+
                   {/* Fixed tier tick marks */}
                   {tierFeeData.map((milestone, index) => {
                     const position = getTickPosition(index);
                     const achieved = clampedLifetime >= milestone.amount;
                     const isLast = index === MILESTONES.length - 1;
-                    
+
                     return (
-                      <div 
+                      <div
                         key={milestone.amount}
                         className={cn(
                           'absolute flex flex-col items-center',
@@ -105,28 +104,32 @@ export default function ProfilePrizeProgress({
                         )}
                         style={{ left: `${position}%` }}
                       >
-                        <div className={cn(
-                          'w-1 h-5 rounded-full',
-                          getPrizeColor(index, 'bg'),
-                          !achieved && 'opacity-30'
-                        )} />
+                        <div
+                          className={cn(
+                            'w-1 h-5 rounded-full',
+                            getPrizeColor(index, 'bg'),
+                            !achieved && 'opacity-30'
+                          )}
+                        />
                       </div>
                     );
                   })}
                 </div>
               </div>
-              
+
               <div className="relative hidden sm:flex justify-between text-xs sm:text-sm font-bold mt-4">
-                <span className="text-muted-foreground">{PROGRESS_START.toLocaleString('en-US')}</span>
-                
+                <span className="text-muted-foreground">
+                  {PROGRESS_START.toLocaleString('en-US')}
+                </span>
+
                 {/* Fixed tier labels */}
                 {tierFeeData.map((milestone, index) => {
                   const position = getTickPosition(index);
                   const achieved = clampedLifetime >= milestone.amount;
                   const isLast = index === MILESTONES.length - 1;
-                  
+
                   return (
-                    <span 
+                    <span
                       key={milestone.amount}
                       className={cn(
                         'absolute flex flex-col leading-tight',
@@ -136,10 +139,15 @@ export default function ProfilePrizeProgress({
                       )}
                       style={isLast ? {} : { left: `${position}%` }}
                     >
-                      <span className="text-xs sm:text-sm">{milestone.amount.toLocaleString('en-US')}</span>
+                      <span className="text-xs sm:text-sm">
+                        {milestone.amount.toLocaleString('en-US')}
+                      </span>
                       <span className="text-[10px] sm:text-xs mt-0.5">{milestone.label}</span>
                       <span className="text-[10px] sm:text-xs mt-0.5">
-                        Fee: {milestone.feeAtTier.toFixed(1)}% {achieved ? '(reached)' : `(-${milestone.feeDecreaseFromCurrent.toFixed(1)}%)`}
+                        Fee: {milestone.feeAtTier.toFixed(1)}%{' '}
+                        {achieved
+                          ? '(reached)'
+                          : `(-${milestone.feeDecreaseFromCurrent.toFixed(1)}%)`}
                       </span>
                     </span>
                   );
@@ -158,30 +166,51 @@ export default function ProfilePrizeProgress({
                         !achieved && 'opacity-70'
                       )}
                     >
-                      <p className={cn('font-bold', getPrizeColor(index, 'text'))}>{milestone.label}</p>
-                      <p className="text-muted-foreground">{milestone.amount.toLocaleString('en-US')} coins</p>
+                      <p className={cn('font-bold', getPrizeColor(index, 'text'))}>
+                        {milestone.label}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {milestone.amount.toLocaleString('en-US')} coins
+                      </p>
                       <p className="mt-1">
-                        Fee: {milestone.feeAtTier.toFixed(1)}% {achieved ? '(reached)' : `(-${milestone.feeDecreaseFromCurrent.toFixed(1)}%)`}
+                        Fee: {milestone.feeAtTier.toFixed(1)}%{' '}
+                        {achieved
+                          ? '(reached)'
+                          : `(-${milestone.feeDecreaseFromCurrent.toFixed(1)}%)`}
                       </p>
                     </div>
                   );
                 })}
               </div>
-              <p className="text-center text-sm mt-10">
+              <p className="text-center text-sm mt-6 sm:mt-16">
                 <span className="font-semibold">
-                  {Math.max(0, Math.floor(nextMilestone.amount - clampedLifetime)).toLocaleString('en-US')}
-                </span>
-                {' '}coins until{' '}
-                <span className={cn('font-bold', getPrizeColor(MILESTONES.findIndex((m) => m.amount === nextMilestone.amount), 'text'))}>
+                  {Math.max(0, Math.floor(nextMilestone.amount - clampedLifetime)).toLocaleString(
+                    'en-US'
+                  )}
+                </span>{' '}
+                coins until{' '}
+                <span
+                  className={cn(
+                    'font-bold',
+                    getPrizeColor(
+                      MILESTONES.findIndex(m => m.amount === nextMilestone.amount),
+                      'text'
+                    )
+                  )}
+                >
                   {nextMilestone.label}
-                </span>
-                {' '}({Math.max(2, currentSellerFee - 0.5).toFixed(1)}% seller fee)
+                </span>{' '}
+                ({Math.max(2, currentSellerFee - 0.5).toFixed(1)}% seller fee)
               </p>
             </>
           ) : (
             <div className="text-center py-4">
-              <p className={cn('text-lg font-bold', getPrizeColor(MILESTONES.length - 1, 'text'))}>All Milestones Achieved!</p>
-              <p className="text-sm text-muted-foreground mt-1">You have reached the minimum seller fee tier: 2.0%</p>
+              <p className={cn('text-lg font-bold', getPrizeColor(MILESTONES.length - 1, 'text'))}>
+                All Milestones Achieved!
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                You have reached the minimum seller fee tier: 2.0%
+              </p>
             </div>
           )}
         </div>
