@@ -20,6 +20,7 @@ import FeaturedBetCard from '../FeaturedBetCard';
 import { Link } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useAddToCart } from '@/hooks/useCart';
+import { useCountdown } from '@/hooks/use-countdown';
 
 interface PrizeCardProps {
   prize: Prize;
@@ -296,6 +297,11 @@ export default function PrizeCard({
   }, [isProUser, prize.isProOnly, prize.proEarlyAccessUntil]);
   const isDisabled = isOutOfStock || isProLocked;
 
+  // Early-access countdown: only for items with a timed window (not permanently pro-only)
+  const earlyAccessDate = !prize.isProOnly ? prize.proEarlyAccessUntil : null;
+  const { timeLeft: earlyAccessTimeLeft } = useCountdown(earlyAccessDate);
+  const hasEarlyAccessTimer = !!earlyAccessTimeLeft;
+
   // ── Redemption variant (prod-style landscape card) ───────────────────────
   if (variant === 'redemption') {
     return (
@@ -511,7 +517,7 @@ export default function PrizeCard({
             {!isOutOfStock && isProLocked && (
               <Badge className="absolute top-2 right-2 font-semibold bg-yellow-500/90 text-black border-yellow-400 gap-1">
                 <Crown className="w-3 h-3" />
-                Pro Only
+                {hasEarlyAccessTimer ? earlyAccessTimeLeft : 'Pro Only'}
               </Badge>
             )}
             {/* Pro crown for Pro users too (just visual indicator) */}
@@ -522,7 +528,7 @@ export default function PrizeCard({
                   new Date(prize.proEarlyAccessUntil) > new Date())) && (
                 <Badge className="absolute top-2 right-2 font-semibold bg-yellow-500/90 text-black border-yellow-400 gap-1">
                   <Crown className="w-3 h-3" />
-                  Pro
+                  {hasEarlyAccessTimer ? earlyAccessTimeLeft : 'Pro'}
                 </Badge>
               )}
           </div>
@@ -584,8 +590,8 @@ export default function PrizeCard({
             >
               {isProLocked ? (
                 <>
-                  <Crown className="w-3.5 h-3.5 mr-1.5" />
-                  Pro Only
+                  <Crown className="w-3.5 h-3.5 mr-1" />
+                  {hasEarlyAccessTimer ? earlyAccessTimeLeft : 'Pro Only'}
                 </>
               ) : (
                 <>
