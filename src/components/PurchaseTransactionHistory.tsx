@@ -24,9 +24,7 @@ const PurchaseTransactionHistory = () => {
       <div
         className={`${isMobile ? 'block' : 'flex bg-[#0D0D0D] p-6 border-l border-r border-t border-[#191D24] rounded-tl-md rounded-tr-md'} items-center justify-between`}
       >
-        <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>
-          My Purchase/Prize History
-        </h1>
+        <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>Purchases</h1>
       </div>
       <>
         {transactions?.length === 0 ? (

@@ -26,7 +26,6 @@ import { LocationRestrictionProvider } from '@/contexts/LocationRestrictionConte
 import { AuthProvider } from '@/contexts/AuthContext';
 import { BettingStatusProvider } from './contexts/BettingStatusContext';
 import { BettingProvider } from './contexts/BettingContext';
-import { HistoryType } from './enums';
 import BugSnagErrorBoundary from './bugsnag';
 import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 import Redeem from './components/withdraw/Redeem';
@@ -103,18 +102,11 @@ const App = () => {
                               <Route path="/withdraw/verification" element={<Kyc />} />
                               <Route
                                 path="/transactions"
-                                element={
-                                  <Transactions
-                                    key="transactions"
-                                    historyType={HistoryType.Transaction}
-                                  />
-                                }
+                                element={<Transactions key="transactions" />}
                               />
                               <Route
                                 path="/betting-history"
-                                element={
-                                  <Transactions key="betting" historyType={HistoryType.Bet} />
-                                }
+                                element={<Transactions key="betting-redirect" />}
                               />
                               <Route
                                 path="/creator-payouts-history"
