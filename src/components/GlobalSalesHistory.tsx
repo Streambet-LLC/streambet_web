@@ -14,11 +14,30 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from './ui/pagination';
+import OrderItemDetailDialog from './OrderItemDetailDialog';
+
+/** Map a global sale row to the shape OrderItemDetailDialog expects */
+const mapSaleToTransaction = (sale: any) => ({
+  id: sale.id,
+  createdAt: sale.createdAt,
+  totalPrice: sale.totalPrice,
+  paymentMethod: sale.paymentMethod,
+  status: sale.status,
+  username: sale.buyerUsername,
+  prizeConfig: {
+    name: sale.itemName,
+    category: sale.itemCategory,
+    image: sale.itemImage,
+    images: sale.itemImages || [],
+    sellerUsername: sale.sellerUsername,
+  },
+});
 
 const GlobalSalesHistory = () => {
   const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSale, setSelectedSale] = useState<any | null>(null);
   const itemsPerPage = 7;
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
@@ -76,7 +95,8 @@ const GlobalSalesHistory = () => {
             sales.map((sale: any) => (
               <Card
                 key={sale.id}
-                className="bg-[#181A20] border border-[#23272F] rounded-lg shadow-sm"
+                className="bg-[#181A20] border border-[#23272F] rounded-lg shadow-sm cursor-pointer hover:border-[#7AFF14]/30 transition-colors"
+                onClick={() => setSelectedSale(mapSaleToTransaction(sale))}
               >
                 <CardContent className="p-3 space-y-2">
                   <div className="flex flex-col gap-1">
@@ -143,7 +163,11 @@ const GlobalSalesHistory = () => {
                 </TableRow>
               ) : (
                 sales.map((sale: any) => (
-                  <TableRow key={sale.id}>
+                  <TableRow
+                    key={sale.id}
+                    className="cursor-pointer hover:bg-[#23272F]/50 transition-colors"
+                    onClick={() => setSelectedSale(mapSaleToTransaction(sale))}
+                  >
                     <TableCell className="text-left">
                       {sale.createdAt
                         ? new Date(sale.createdAt).toLocaleDateString('en-GB', {
@@ -153,7 +177,7 @@ const GlobalSalesHistory = () => {
                           })
                         : ''}
                     </TableCell>
-                    <TableCell className="text-left">{sale.itemName}</TableCell>
+                    <TableCell className="text-left text-[#7AFF14] hover:underline">{sale.itemName}</TableCell>
                     <TableCell className="text-left">{sale.buyerUsername}</TableCell>
                     <TableCell className="text-left">{sale.sellerDisplayName}</TableCell>
                     <TableCell className="text-right" style={{ color: '#7AFF14' }}>
@@ -200,6 +224,15 @@ const GlobalSalesHistory = () => {
           </PaginationContent>
         </Pagination>
       </div>
+
+      <OrderItemDetailDialog
+        open={!!selectedSale}
+        onOpenChange={open => {
+          if (!open) setSelectedSale(null);
+        }}
+        transaction={selectedSale}
+        variant="purchase"
+      />
     </div>
   );
 };
