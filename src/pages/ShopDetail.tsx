@@ -318,7 +318,7 @@ export default function ShopDetail() {
             })
           }
           showFilters={true}
-          showCategoryHeaders={false}
+          showCategoryHeaders={true}
           showBrandFilter={false}
           searchNode={
             <SearchInput
