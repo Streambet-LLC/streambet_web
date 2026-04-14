@@ -1,5 +1,5 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from './ui/input';
 import { Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -7,9 +7,11 @@ import api from '@/integrations/api/client';
 import { Card, CardContent } from './ui/card';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow, Table } from './ui/table';
 import _ from 'lodash';
+import OrderItemDetailDialog from './OrderItemDetailDialog';
 
 const PurchaseTransactionHistory = () => {
   const isMobile = useIsMobile();
+  const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
 
   const { data: transactions, refetch: refetchTransactions } = useQuery({
     queryKey: ['prize-orders'],
@@ -24,9 +26,7 @@ const PurchaseTransactionHistory = () => {
       <div
         className={`${isMobile ? 'block' : 'flex bg-[#0D0D0D] p-6 border-l border-r border-t border-[#191D24] rounded-tl-md rounded-tr-md'} items-center justify-between`}
       >
-        <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>
-          My Purchase/Prize History
-        </h1>
+        <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>Purchases</h1>
       </div>
       <>
         {transactions?.length === 0 ? (
@@ -40,7 +40,8 @@ const PurchaseTransactionHistory = () => {
                 {transactions?.map(transaction => (
                   <Card
                     key={transaction.id}
-                    className="bg-[#181A20] border border-[#23272F] rounded-lg shadow-sm"
+                    className="bg-[#181A20] border border-[#23272F] rounded-lg shadow-sm cursor-pointer hover:border-[#7AFF14]/30 transition-colors"
+                    onClick={() => setSelectedTransaction(transaction)}
                   >
                     <CardContent className="p-3 space-y-2">
                       <div className="flex flex-col gap-1">
@@ -98,7 +99,11 @@ const PurchaseTransactionHistory = () => {
                   </TableHeader>
                   <TableBody>
                     {transactions?.map(transaction => (
-                      <TableRow key={transaction.id}>
+                      <TableRow
+                        key={transaction.id}
+                        className="cursor-pointer hover:bg-[#23272F]/50 transition-colors"
+                        onClick={() => setSelectedTransaction(transaction)}
+                      >
                         <TableCell className="text-left">
                           {transaction.createdAt
                             ? new Date(transaction.createdAt).toLocaleDateString('en-GB', {
@@ -108,7 +113,9 @@ const PurchaseTransactionHistory = () => {
                               })
                             : ''}
                         </TableCell>
-                        <TableCell className="text-left">{transaction.prizeConfig.name}</TableCell>
+                        <TableCell className="text-left text-[#7AFF14] hover:underline">
+                          {transaction.prizeConfig.name}
+                        </TableCell>
                         <TableCell
                           className="text-right"
                           style={{
@@ -130,6 +137,15 @@ const PurchaseTransactionHistory = () => {
           </>
         )}
       </>
+
+      <OrderItemDetailDialog
+        open={!!selectedTransaction}
+        onOpenChange={open => {
+          if (!open) setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
+        variant="purchase"
+      />
     </div>
   );
 };

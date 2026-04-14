@@ -23,7 +23,7 @@ export function SidebarProfileCard({ compact = false }: SidebarProfileCardProps)
   const cadeCoins = session?.walletBalanceCadeCoin || 0;
 
   const handleClick = () => {
-    navigate('/betting-history');
+    navigate('/transactions');
   };
 
   const handleCoinsClick = (e: React.MouseEvent) => {

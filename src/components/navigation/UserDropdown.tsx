@@ -137,10 +137,6 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         )}
 
         <DropdownMenuItem asChild className="cursor-pointer">
-          <Link to="/betting-history">Pick History</Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/transactions">Transaction History</Link>
         </DropdownMenuItem>
 
