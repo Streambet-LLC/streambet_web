@@ -1590,6 +1590,12 @@ export const prizeAPI = {
     return response.data;
   },
 
+  // Get global sales feed (all completed sales across the platform)
+  getGlobalSales: async (params?: { range?: string; q?: string }) => {
+    const response = await apiClient.get('/prizes/global-sales', { params });
+    return response.data;
+  },
+
   // Get user's address (secure endpoint)
   // Note: Lives in users API since address is user data, but primarily used
   // by prize redemption feature for shipping address pre-population
