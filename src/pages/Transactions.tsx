@@ -21,10 +21,10 @@ const Transactions = () => {
   }, [session, navigate, isFetching]);
 
   const tabs = [
-    { key: 'purchases', label: 'Purchases' },
-    ...(session?.isSeller ? [{ key: 'sales', label: 'Sales' }] : []),
-    { key: 'global', label: 'Global' },
-    { key: 'cadecoins', label: 'CadeCoins' },
+    { key: 'purchases', label: 'My Purchases' },
+    ...(session?.isSeller ? [{ key: 'sales', label: 'My Sales' }] : []),
+    { key: 'cadecoins', label: 'My CadeCoins' },
+    { key: 'global', label: 'Public Sales', tooltip: 'All transactions for all users on CardCade.' },
   ];
 
   return (

@@ -91,12 +91,12 @@ export default function ShopDetail() {
 
   const isCardCadeShop = username?.toLowerCase() === 'cardcade';
 
-  // Filter to only show slabs with stock
+  // Filter to only show slabs and sealed with stock
   // CardCade shop items come from redemptions, so don't filter by showOnShop
   let slabPrizes: PrizeDisplay[] = (shopData?.items || [])
     .filter(
       prize =>
-        prize.category === 'slab' &&
+        (prize.category === 'slab' || prize.category === 'sealed') &&
         prize.stock > 0 &&
         (isCardCadeShop || prize.showOnShop !== false)
     )
@@ -110,7 +110,7 @@ export default function ShopDetail() {
         imageUrl: coverImageUrl,
         imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         coverImageIndex,
-        category: 'slab' as const,
+        category: prize.category as 'slab' | 'sealed',
         amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
         stock: prize.stock,
         purchaseOption: prize.purchaseOption,
