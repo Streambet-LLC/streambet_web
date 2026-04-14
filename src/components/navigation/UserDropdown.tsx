@@ -137,7 +137,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         )}
 
         <DropdownMenuItem asChild className="cursor-pointer">
-          <Link to="/transactions">Transaction History</Link>
+          <Link to="/transactions">Transactions</Link>
         </DropdownMenuItem>
 
         {/* <DropdownMenuItem asChild className="cursor-pointer">

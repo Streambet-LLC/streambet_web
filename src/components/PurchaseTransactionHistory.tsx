@@ -17,7 +17,7 @@ const PurchaseTransactionHistory = () => {
     queryKey: ['prize-orders'],
     queryFn: async () => {
       const data = await api.prize.getMyOrders();
-      return data;
+      return data?.filter(t => ['paid', 'shipped'].includes(t.status));
     },
   });
 

@@ -116,9 +116,9 @@ const CadeCoinHistory = () => {
                       </span>
                     </div>
                     {tx.description && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">Description</span>
-                        <span className="text-xs font-medium text-right max-w-[180px] truncate">
+                      <div className="flex justify-between items-start gap-4">
+                        <span className="text-xs text-muted-foreground shrink-0">Description</span>
+                        <span className="text-xs font-medium text-right break-words min-w-0">
                           {tx.description}
                         </span>
                       </div>

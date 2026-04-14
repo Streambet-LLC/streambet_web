@@ -1,8 +1,11 @@
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface TabItem {
      key: string;
      label: string;
+     tooltip?: string;
 };
 
 type TabProps = {
@@ -32,7 +35,7 @@ export const TabSwitch = ({
           const isFirst = idx === 0;
           const isLast = idx === tabs.length - 1;
 
-          return (
+          const button = (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
@@ -44,14 +47,34 @@ export const TabSwitch = ({
                                         ${isFirst ? 'rounded-l-lg' : ''}
                                         ${isLast ? 'rounded-r-lg' : ''}
                                         ${isActive ? 'bg-[#2A2A2A] text-white' : ' text-white hover:bg-[#1f1f1f]'}
+                                        ${tab.tooltip ? 'flex items-center gap-1' : ''}
                                    `}
               style={{
                 borderColor: '#2D343E',
               }}
             >
               {tab.label}
+              {tab.tooltip && (
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                        className="inline-flex items-center text-muted-foreground hover:text-white transition-colors"
+                      >
+                        <Info className="w-3.5 h-3.5" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">{tab.tooltip}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </button>
           );
+
+          return button;
         })}
       </div>
     </div>
