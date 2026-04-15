@@ -77,6 +77,8 @@ interface SellerPurchasedOrder {
   user?: {
     username: string;
     email: string;
+    firstName?: string;
+    lastName?: string;
     address?: string;
     city?: string;
     state?: string;
@@ -1538,7 +1540,9 @@ export default function SellerShopManage() {
                               {order.prizeConfiguration?.name || 'Shop Item'}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              Buyer: {order.user?.username || 'Unknown'} • Ordered:{' '}
+                              Buyer: {order.user?.firstName && order.user?.lastName
+                                ? `${order.user.firstName} ${order.user.lastName} (${order.user?.username || 'Unknown'})`
+                                : order.user?.username || 'Unknown'} • Ordered:{' '}
                               {new Date(order.createdAt).toLocaleDateString()}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
