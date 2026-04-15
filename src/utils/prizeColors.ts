@@ -1,6 +1,6 @@
 /**
  * Shared color constants for prize badges and progress
- * Supports up to 10 prize levels with distinct colors
+ * CardCade brand palette — neon lime/green tones
  */
 
 /**
@@ -9,74 +9,74 @@
  */
 const PRIZE_COLOR_PALETTE = [
   { 
-    base: 'amber-500',
-    text: 'text-amber-500',
-    bg: 'bg-amber-500',
-    border: 'border-amber-500',
-    ring: 'ring-amber-500 shadow-amber-500/50'
+    base: 'lime-400',
+    text: 'text-lime-400',
+    bg: 'bg-lime-400',
+    border: 'border-lime-400',
+    ring: 'ring-lime-400 shadow-lime-400/50'
   },
   { 
-    base: 'blue-500',
-    text: 'text-blue-500',
-    bg: 'bg-blue-500',
-    border: 'border-blue-500',
-    ring: 'ring-blue-500 shadow-blue-500/50'
+    base: 'green-400',
+    text: 'text-green-400',
+    bg: 'bg-green-400',
+    border: 'border-green-400',
+    ring: 'ring-green-400 shadow-green-400/50'
   },
   { 
-    base: 'purple-500',
-    text: 'text-purple-500',
-    bg: 'bg-purple-500',
-    border: 'border-purple-500',
-    ring: 'ring-purple-500 shadow-purple-500/50'
+    base: 'emerald-400',
+    text: 'text-emerald-400',
+    bg: 'bg-emerald-400',
+    border: 'border-emerald-400',
+    ring: 'ring-emerald-400 shadow-emerald-400/50'
   },
   { 
-    base: 'emerald-500',
-    text: 'text-emerald-500',
-    bg: 'bg-emerald-500',
-    border: 'border-emerald-500',
-    ring: 'ring-emerald-500 shadow-emerald-500/50'
+    base: 'yellow-300',
+    text: 'text-yellow-300',
+    bg: 'bg-yellow-300',
+    border: 'border-yellow-300',
+    ring: 'ring-yellow-300 shadow-yellow-300/50'
   },
   { 
-    base: 'rose-500',
-    text: 'text-rose-500',
-    bg: 'bg-rose-500',
-    border: 'border-rose-500',
-    ring: 'ring-rose-500 shadow-rose-500/50'
+    base: 'teal-400',
+    text: 'text-teal-400',
+    bg: 'bg-teal-400',
+    border: 'border-teal-400',
+    ring: 'ring-teal-400 shadow-teal-400/50'
   },
   { 
-    base: 'cyan-500',
-    text: 'text-cyan-500',
-    bg: 'bg-cyan-500',
-    border: 'border-cyan-500',
-    ring: 'ring-cyan-500 shadow-cyan-500/50'
+    base: 'cyan-400',
+    text: 'text-cyan-400',
+    bg: 'bg-cyan-400',
+    border: 'border-cyan-400',
+    ring: 'ring-cyan-400 shadow-cyan-400/50'
   },
   { 
-    base: 'orange-500',
-    text: 'text-orange-500',
-    bg: 'bg-orange-500',
-    border: 'border-orange-500',
-    ring: 'ring-orange-500 shadow-orange-500/50'
+    base: 'amber-400',
+    text: 'text-amber-400',
+    bg: 'bg-amber-400',
+    border: 'border-amber-400',
+    ring: 'ring-amber-400 shadow-amber-400/50'
   },
   { 
-    base: 'pink-500',
-    text: 'text-pink-500',
-    bg: 'bg-pink-500',
-    border: 'border-pink-500',
-    ring: 'ring-pink-500 shadow-pink-500/50'
+    base: 'chartreuse-400',
+    text: 'text-lime-300',
+    bg: 'bg-lime-300',
+    border: 'border-lime-300',
+    ring: 'ring-lime-300 shadow-lime-300/50'
   },
   { 
-    base: 'lime-500',
-    text: 'text-lime-500',
-    bg: 'bg-lime-500',
-    border: 'border-lime-500',
-    ring: 'ring-lime-500 shadow-lime-500/50'
+    base: 'green-300',
+    text: 'text-green-300',
+    bg: 'bg-green-300',
+    border: 'border-green-300',
+    ring: 'ring-green-300 shadow-green-300/50'
   },
   { 
-    base: 'indigo-500',
-    text: 'text-indigo-500',
-    bg: 'bg-indigo-500',
-    border: 'border-indigo-500',
-    ring: 'ring-indigo-500 shadow-indigo-500/50'
+    base: 'emerald-300',
+    text: 'text-emerald-300',
+    bg: 'bg-emerald-300',
+    border: 'border-emerald-300',
+    ring: 'ring-emerald-300 shadow-emerald-300/50'
   },
 ] as const;
 

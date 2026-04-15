@@ -9,11 +9,8 @@ import NotFound from '@/pages/NotFound';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Store } from 'lucide-react';
-import ProfileLiveUpcomingStreams from './ProfileLiveUpcomingStreams';
 import { getImageLink } from '@/utils/helper';
-import ProfilePastStreams from './ProfilePastStreams';
 import { Footer } from '../Footer';
-import ProfileLiveUpcomingNonVideoBets from './ProfileLiveUpcomingNonVideoBets';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '../ui/button';
 import { useEffect, useState } from 'react';
@@ -22,6 +19,8 @@ import { PublicUserProfile } from '@/types/profile';
 import ProfilePrizeProgress from './ProfilePrizeProgress';
 import { getBadgeRingColor, getPrizeColor } from '@/utils/prizeColors';
 import { ProBadge } from '@/components/pro/ProBadge';
+import ProfileSellerItems from './ProfileSellerItems';
+import ProfileRecentPurchases from './ProfileRecentPurchases';
 
 const socialsMapping = {
   instagram: {
@@ -243,24 +242,24 @@ export default function Profile() {
                   />
                 </div>
               </div>
-              {profile.isCreator && (
+
+              {/* Seller Items Section - Shows for sellers with items */}
+              {profile.isSeller && (
                 <>
-                  {/* Divider after Prize Progress */}
                   <div className="border-t border-gray-700 my-6" />
-
-                  {/* "Creator Tools" header */}
-                  <div className="mb-6">
-                    <h2 className="text-xl font-bold text-white">Creator Tools</h2>
-                  </div>
-
-                  {/* Existing creator content */}
-                  <div className="flex flex-col gap-12 font-semibold pb-32">
-                    <ProfileLiveUpcomingStreams username={username} />
-                    <ProfileLiveUpcomingNonVideoBets username={username} />
-                    <ProfilePastStreams username={username} />
-                  </div>
+                  <ProfileSellerItems
+                    username={username}
+                    isOwnProfile={profile.username === session?.username}
+                    isProSubscriber={profile.isProSubscriber ?? false}
+                  />
                 </>
               )}
+
+              {/* Recent Purchases Section - Shows for all users with purchases */}
+              <div className="border-t border-gray-700 my-6" />
+              <ProfileRecentPurchases username={username} />
+
+              <div className="pb-32" />
             </div>
           </MainLayout>
         )}

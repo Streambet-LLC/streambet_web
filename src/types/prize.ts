@@ -38,6 +38,7 @@ export interface PrizeConfiguration {
   sortByPurchaseOptionShop: boolean;
   sortByPurchaseOptionRedemptions: boolean;
   isActive: boolean;
+  profileFeatured: boolean;
   createdAt: string;
   updatedAt: string;
   createdBy: string | null;
@@ -153,6 +154,8 @@ export const SHIPPING_CARRIERS = [
 export type ShippingCarrier = typeof SHIPPING_CARRIERS[number];
 
 export interface ShippingAddress {
+  firstName: string;
+  lastName: string;
   addressLine1: string;
   addressLine2?: string;
   city: string;

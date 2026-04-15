@@ -1371,6 +1371,12 @@ export const prizeAPI = {
     return response.data;
   },
 
+  // Get recent purchases by username (public)
+  getRecentPurchasesByUsername: async (username: string, limit: number = 6) => {
+    const response = await apiClient.get(`/prizes/purchases/${username}?limit=${limit}`);
+    return response.data;
+  },
+
   // Seller: manage own shop inventory
   getMyShopItems: async (): Promise<PrizeConfiguration[]> => {
     const response = await apiClient.get('/seller/prizes/items');
@@ -1390,6 +1396,7 @@ export const prizeAPI = {
     purchaseOption?: 'offers_only' | 'buy_only' | 'both';
     brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
     sellerDisplayOrderShop?: number;
+    profileFeatured?: boolean;
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/seller/prizes/items', payload);
     return response.data;
@@ -1410,6 +1417,7 @@ export const prizeAPI = {
       purchaseOption?: 'offers_only' | 'buy_only' | 'both';
       brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
       sellerDisplayOrderShop?: number;
+      profileFeatured?: boolean;
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/seller/prizes/items/${id}`, payload);
@@ -1418,6 +1426,11 @@ export const prizeAPI = {
 
   deleteMyShopItem: async (id: string): Promise<{ message: string }> => {
     const response = await apiClient.delete(`/seller/prizes/items/${id}`);
+    return response.data;
+  },
+
+  updateProfileFeaturedItems: async (featuredItemIds: string[]): Promise<{ featuredCount: number }> => {
+    const response = await apiClient.patch('/seller/prizes/profile-featured', { featuredItemIds });
     return response.data;
   },
 

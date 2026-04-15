@@ -84,6 +84,8 @@ export default function PrizeCheckoutModal({
   const [usdAmount, setUsdAmount] = useState(0);
 
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     addressLine1: '',
     addressLine2: undefined as string | undefined,
     city: '',
@@ -94,14 +96,15 @@ export default function PrizeCheckoutModal({
 
   useEffect(() => {
     if (userAddress) {
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         addressLine1: userAddress.address || '',
         addressLine2: userAddress.address2 || undefined,
         city: userAddress.city || '',
         state: userAddress.state || '',
         zipCode: userAddress.zipCode || '',
         country: 'United States',
-      });
+      }));
     }
   }, [userAddress]);
 
@@ -226,10 +229,10 @@ export default function PrizeCheckoutModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.addressLine1 || !formData.city || !formData.state || !formData.zipCode) {
+    if (!formData.firstName || !formData.lastName || !formData.addressLine1 || !formData.city || !formData.state || !formData.zipCode) {
       toast({
         title: 'Error',
-        description: 'Please fill in all required address fields',
+        description: 'Please fill in all required fields',
         variant: 'destructive',
       });
       return;
@@ -264,6 +267,8 @@ export default function PrizeCheckoutModal({
     createOrderMutation.mutate({
       prizeConfigId: prizeId,
       shippingAddress: {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         addressLine1: formData.addressLine1,
         ...(formData.addressLine2 && { addressLine2: formData.addressLine2 }),
         city: formData.city,
@@ -540,6 +545,29 @@ export default function PrizeCheckoutModal({
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={e => updateField('firstName', e.target.value)}
+                      placeholder="John"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={e => updateField('lastName', e.target.value)}
+                      placeholder="Doe"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="address1">Street Address *</Label>
                   <Input
@@ -627,6 +655,8 @@ export default function PrizeCheckoutModal({
                   className="w-full"
                   disabled={
                     createOrderMutation.isPending ||
+                    !formData.firstName ||
+                    !formData.lastName ||
                     !formData.addressLine1 ||
                     !formData.city ||
                     !formData.state ||

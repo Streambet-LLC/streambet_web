@@ -104,6 +104,8 @@ const CartPage = () => {
   });
 
   const [shippingAddress, setShippingAddress] = useState<ShippingAddressForm>({
+    firstName: '',
+    lastName: '',
     addressLine1: '',
     addressLine2: '',
     city: '',
@@ -114,14 +116,15 @@ const CartPage = () => {
 
   useEffect(() => {
     if (userAddress) {
-      setShippingAddress({
+      setShippingAddress(prev => ({
+        ...prev,
         addressLine1: userAddress.address || '',
         addressLine2: userAddress.address2 || '',
         city: userAddress.city || '',
         state: userAddress.state || '',
         zipCode: userAddress.zipCode || '',
         country: 'United States',
-      });
+      }));
     }
   }, [userAddress]);
 
@@ -176,6 +179,8 @@ const CartPage = () => {
 
   const validateAddress = (): boolean => {
     if (
+      !shippingAddress.firstName ||
+      !shippingAddress.lastName ||
       !shippingAddress.addressLine1 ||
       !shippingAddress.city ||
       !shippingAddress.state ||
@@ -183,7 +188,7 @@ const CartPage = () => {
     ) {
       toast({
         title: 'Missing address',
-        description: 'Please fill in all required shipping address fields before submitting.',
+        description: 'Please fill in all required shipping fields before submitting.',
         variant: 'destructive',
       });
       return false;
@@ -199,6 +204,8 @@ const CartPage = () => {
       offerAmount: totalAmount,
       offerNotes: offerMessages[sellerId] || undefined,
       shippingAddress: {
+        firstName: shippingAddress.firstName,
+        lastName: shippingAddress.lastName,
         addressLine1: shippingAddress.addressLine1,
         addressLine2: shippingAddress.addressLine2 || undefined,
         city: shippingAddress.city,

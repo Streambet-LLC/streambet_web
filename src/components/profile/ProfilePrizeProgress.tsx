@@ -51,11 +51,11 @@ export default function ProfilePrizeProgress({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <Card className="w-full bg-transparent border-0 shadow-none">
+      <CardHeader className="px-0 pt-0">
         <CardTitle className="text-xl">Prize Progress</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 px-0">
         {/* Current Progress Section */}
         <div>
           <div className="flex items-center gap-2 text-sm font-medium">
