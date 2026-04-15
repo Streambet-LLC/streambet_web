@@ -95,14 +95,16 @@ export default function CartCheckoutPanel({
 
   const handleCheckout = () => {
     if (
+      !shippingAddress.firstName ||
+      !shippingAddress.lastName ||
       !shippingAddress.addressLine1 ||
       !shippingAddress.city ||
       !shippingAddress.state ||
       !shippingAddress.zipCode
     ) {
       toast({
-        title: 'Missing address',
-        description: 'Please fill in all required shipping address fields.',
+        title: 'Missing information',
+        description: 'Please fill in all required shipping fields.',
         variant: 'destructive',
       });
       return;
@@ -110,6 +112,8 @@ export default function CartCheckoutPanel({
 
     checkout.mutate({
       shippingAddress: {
+        firstName: shippingAddress.firstName,
+        lastName: shippingAddress.lastName,
         addressLine1: shippingAddress.addressLine1,
         addressLine2: shippingAddress.addressLine2 || undefined,
         city: shippingAddress.city,
@@ -237,6 +241,34 @@ export default function CartCheckoutPanel({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="firstName" className="text-xs">
+                First Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="firstName"
+                value={shippingAddress.firstName}
+                onChange={e => onUpdateAddressField('firstName', e.target.value)}
+                placeholder="John"
+                required
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lastName" className="text-xs">
+                Last Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="lastName"
+                value={shippingAddress.lastName}
+                onChange={e => onUpdateAddressField('lastName', e.target.value)}
+                placeholder="Doe"
+                required
+                className="h-8 text-sm"
+              />
+            </div>
+          </div>
           <div>
             <Label htmlFor="address1" className="text-xs">
               Address Line 1 <span className="text-destructive">*</span>

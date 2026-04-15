@@ -50,6 +50,8 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
   const [offerAmount, setOfferAmount] = useState('');
   const [offerNotes, setOfferNotes] = useState('');
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
+    firstName: '',
+    lastName: '',
     addressLine1: '',
     addressLine2: '',
     city: '',
@@ -101,6 +103,8 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
       setOfferAmount('');
       setOfferNotes('');
       setShippingAddress({
+        firstName: '',
+        lastName: '',
         addressLine1: '',
         addressLine2: '',
         city: '',
@@ -195,6 +199,33 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
 
             <div className="space-y-4">
               <Label className="text-base font-semibold">Shipping Address</Label>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name *</Label>
+                  <Input
+                    id="firstName"
+                    value={shippingAddress.firstName}
+                    onChange={e =>
+                      setShippingAddress({ ...shippingAddress, firstName: e.target.value })
+                    }
+                    placeholder="John"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Input
+                    id="lastName"
+                    value={shippingAddress.lastName}
+                    onChange={e =>
+                      setShippingAddress({ ...shippingAddress, lastName: e.target.value })
+                    }
+                    placeholder="Doe"
+                    required
+                  />
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="address1">Street Address *</Label>
