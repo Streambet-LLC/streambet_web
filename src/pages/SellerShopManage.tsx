@@ -137,6 +137,7 @@ export default function SellerShopManage() {
     brand: 'other' as PrizeBrand,
     sellerDisplayOrderShop: 1,
     isProOnly: false,
+    profileFeatured: false,
   });
 
   const [selectedPurchasedOrder, setSelectedPurchasedOrder] = useState<SellerPurchasedOrder | null>(
@@ -316,6 +317,7 @@ export default function SellerShopManage() {
         amount: amountInCoins,
         category: 'slab' as const, // All shop items are slabs
         isProOnly: form.isProOnly,
+        profileFeatured: form.profileFeatured,
       };
 
       if (editingItemId) {
@@ -341,6 +343,7 @@ export default function SellerShopManage() {
         brand: 'other',
         sellerDisplayOrderShop: 1,
         isProOnly: false,
+        profileFeatured: false,
       });
       setItemImages([]);
       setCoverImageIndex(0);
@@ -552,6 +555,7 @@ export default function SellerShopManage() {
       brand: item.brand || 'other',
       sellerDisplayOrderShop: item.sellerDisplayOrderShop ?? item.displayOrderShop ?? 1,
       isProOnly: item.isProOnly ?? false,
+      profileFeatured: item.profileFeatured ?? false,
     });
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
@@ -571,6 +575,7 @@ export default function SellerShopManage() {
       brand: 'other',
       sellerDisplayOrderShop: 1,
       isProOnly: false,
+      profileFeatured: false,
     });
     setItemImages([]);
     setCoverImageIndex(0);
@@ -1091,7 +1096,10 @@ export default function SellerShopManage() {
                         placeholder="0"
                         value={form.amount || ''}
                         onChange={e =>
-                          setForm(p => ({ ...p, amount: e.target.value === '' ? 0 : Number(e.target.value) }))
+                          setForm(p => ({
+                            ...p,
+                            amount: e.target.value === '' ? 0 : Number(e.target.value),
+                          }))
                         }
                       />
                     </div>
@@ -1102,7 +1110,12 @@ export default function SellerShopManage() {
                         min={0}
                         placeholder="0 = unlimited"
                         value={form.stock || ''}
-                        onChange={e => setForm(p => ({ ...p, stock: e.target.value === '' ? 0 : Number(e.target.value) }))}
+                        onChange={e =>
+                          setForm(p => ({
+                            ...p,
+                            stock: e.target.value === '' ? 0 : Number(e.target.value),
+                          }))
+                        }
                       />
                     </div>
                   </div>
@@ -1163,7 +1176,8 @@ export default function SellerShopManage() {
                       onChange={e =>
                         setForm(p => ({
                           ...p,
-                          sellerDisplayOrderShop: e.target.value === '' ? 0 : Number(e.target.value),
+                          sellerDisplayOrderShop:
+                            e.target.value === '' ? 0 : Number(e.target.value),
                         }))
                       }
                     />
@@ -1185,6 +1199,25 @@ export default function SellerShopManage() {
                       <Switch
                         checked={form.isProOnly}
                         onCheckedChange={checked => setForm(p => ({ ...p, isProOnly: checked }))}
+                      />
+                    </div>
+                  )}
+
+                  {session?.isProSubscriber && (
+                    <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-medium text-primary">
+                          Feature on Profile
+                        </Label>
+                        <p className="text-xs text-gray-400">
+                          Highlight this item on your profile page for visitors to see.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={form.profileFeatured}
+                        onCheckedChange={checked =>
+                          setForm(p => ({ ...p, profileFeatured: checked }))
+                        }
                       />
                     </div>
                   )}

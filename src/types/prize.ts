@@ -38,6 +38,7 @@ export interface PrizeConfiguration {
   sortByPurchaseOptionShop: boolean;
   sortByPurchaseOptionRedemptions: boolean;
   isActive: boolean;
+  profileFeatured: boolean;
   createdAt: string;
   updatedAt: string;
   createdBy: string | null;
