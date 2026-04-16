@@ -139,7 +139,7 @@ export default function ProfilePrizeProgress({
                       )}
                       style={isLast ? {} : { left: `${position}%` }}
                     >
-                      <span className="text-xs sm:text-sm">
+                      <span className="text-sm sm:text-base font-extrabold text-white">
                         {milestone.amount.toLocaleString('en-US')}
                       </span>
                       <span className="text-[10px] sm:text-xs mt-0.5">{milestone.label}</span>

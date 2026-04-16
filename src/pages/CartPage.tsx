@@ -118,6 +118,8 @@ const CartPage = () => {
     if (userAddress) {
       setShippingAddress(prev => ({
         ...prev,
+        firstName: userAddress.firstName || '',
+        lastName: userAddress.lastName || '',
         addressLine1: userAddress.address || '',
         addressLine2: userAddress.address2 || '',
         city: userAddress.city || '',
