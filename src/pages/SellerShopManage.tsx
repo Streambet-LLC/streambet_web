@@ -658,6 +658,9 @@ export default function SellerShopManage() {
     return matchesName || matchesDescription || matchesBrand || matchesAmount;
   });
 
+  const liveItems = filteredItems.filter(item => (item.stock ?? 0) > 0);
+  const outOfStockItems = filteredItems.filter(item => (item.stock ?? 0) === 0);
+
   const coverPreviewImage = itemImages[coverImageIndex];
   const livePreviewImageSrc = coverPreviewImage
     ? coverPreviewImage.imageUrl.startsWith('blob:')
@@ -1396,10 +1399,12 @@ export default function SellerShopManage() {
                   </div>
                 ) : items.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No items yet.</p>
-                ) : filteredItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No items match your search.</p>
+                ) : liveItems.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No in-stock items match your search.
+                  </p>
                 ) : (
-                  filteredItems.map(item => (
+                  liveItems.map(item => (
                     <div
                       key={item.id}
                       className="flex items-center justify-between border rounded-md p-3"
@@ -1540,10 +1545,11 @@ export default function SellerShopManage() {
                               {order.prizeConfiguration?.name || 'Shop Item'}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              Buyer: {order.user?.firstName && order.user?.lastName
+                              Buyer:{' '}
+                              {order.user?.firstName && order.user?.lastName
                                 ? `${order.user.firstName} ${order.user.lastName} (${order.user?.username || 'Unknown'})`
-                                : order.user?.username || 'Unknown'} • Ordered:{' '}
-                              {new Date(order.createdAt).toLocaleDateString()}
+                                : order.user?.username || 'Unknown'}{' '}
+                              • Ordered: {new Date(order.createdAt).toLocaleDateString()}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
                               {order.user?.address && (
@@ -1607,6 +1613,48 @@ export default function SellerShopManage() {
                 </CardContent>
               </Card>
             </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Out of Stock</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {outOfStockItems.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No out of stock items.</p>
+                ) : (
+                  outOfStockItems.map(item => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between border rounded-md p-3 opacity-60"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium">{item.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          ${item.amount ? Math.round(item.amount / 50) : 0} USD • Stock {item.stock}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditItem(item)}
+                          disabled={deleteItem.isPending}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteItem.mutate(item.id)}
+                          disabled={deleteItem.isPending}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
           </>
         ) : !isCardCadeMode ? (
           <p className="text-red-500">
