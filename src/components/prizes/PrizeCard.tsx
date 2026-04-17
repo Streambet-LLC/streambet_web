@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
+  Loader2,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Prize } from './PrizesByCategory';
@@ -89,6 +90,7 @@ export default function PrizeCard({
   const [showImageModal, setShowImageModal] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [modalImageIndex, setModalImageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const inlineTouchStartXRef = useRef<number | null>(null);
   const modalTouchStartXRef = useRef<number | null>(null);
   const suppressNextInlineOpenRef = useRef(false);
@@ -106,6 +108,10 @@ export default function PrizeCard({
     setActiveImageIndex(coverImageIndex);
     setModalImageIndex(coverImageIndex);
   }, [prize.id, coverImageIndex]);
+
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [activeImageUrl]);
 
   useEffect(() => {
     if (!showImageModal || !hasMultipleImages) {
@@ -449,11 +455,17 @@ export default function PrizeCard({
             onTouchEnd={handleInlineTouchEnd}
             onTouchCancel={handleInlineTouchCancel}
           >
+            {!imageLoaded && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            )}
             <img
               src={activeImageUrl}
               alt={prize.name}
-              className="w-full h-full object-contain"
+              className={`w-full h-full object-contain transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               loading="lazy"
+              onLoad={() => setImageLoaded(true)}
             />
 
             {hasMultipleImages && (
