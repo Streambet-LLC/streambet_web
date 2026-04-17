@@ -1,6 +1,7 @@
 import { MainLayout } from "@/components/layout";
 import { useShopItems } from '@/hooks/usePrizeConfig';
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -723,7 +724,21 @@ export default function Prizes() {
                         const catLabel = cat === 'raw' ? 'Raw' : cat === 'slab' ? 'Slabs' : 'Sealed';
                         return (
                           <div key={cat}>
-                            <h3 className="text-4xl font-bold mb-8 py-6">{catLabel}</h3>
+                            <h3 className="text-4xl font-bold mb-8 py-6 flex items-center gap-2">
+                              {catLabel}
+                              {cat === 'raw' && (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button type="button" className="inline-flex">
+                                      <Info className="w-5 h-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent side="bottom" align="start" className="max-w-xs text-sm">
+                                    Raw card conditions are labeled by the seller. Purchase at your own risk!
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                               {catPrizes.map(prize => (
                                 <PrizeCard
