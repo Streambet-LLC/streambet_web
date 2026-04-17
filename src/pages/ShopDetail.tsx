@@ -94,12 +94,7 @@ export default function ShopDetail() {
   // Filter to only show slabs and sealed with stock
   // CardCade shop items come from redemptions, so don't filter by showOnShop
   let slabPrizes: PrizeDisplay[] = (shopData?.items || [])
-    .filter(
-      prize =>
-        (prize.category === 'raw' || prize.category === 'slab' || prize.category === 'sealed') &&
-        prize.stock > 0 &&
-        (isCardCadeShop || prize.showOnShop !== false)
-    )
+    .filter(prize => prize.stock > 0 && (isCardCadeShop || prize.showOnShop !== false))
     .map(prize => {
       const { imageUrls, coverImageIndex, coverImageUrl } = resolvePrizeImages(prize);
 
@@ -110,7 +105,7 @@ export default function ShopDetail() {
         imageUrl: coverImageUrl,
         imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         coverImageIndex,
-        category: prize.category as 'raw' | 'slab' | 'sealed',
+        category: (prize.category as 'raw' | 'slab' | 'sealed') || 'slab',
         grade: (prize as any).grade || null,
         amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
         stock: prize.stock,
