@@ -125,6 +125,7 @@ export default function Redemptions() {
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           coverImageIndex,
           category: mapCategory(prize),
+          grade: (prize as any).grade || null,
           amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
           stock: prize.stock,
           purchaseOption: prize.purchaseOption,

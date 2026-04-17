@@ -1,6 +1,7 @@
 import { MainLayout } from "@/components/layout";
 import { useShopItems } from '@/hooks/usePrizeConfig';
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -56,7 +57,7 @@ export default function Prizes() {
   const [selectedPrizeForOffer, setSelectedPrizeForOffer] = useState<PrizeDisplay | null>(null);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(24);
-  const [showPriceFilter, setShowPriceFilter] = useState(true);
+  const [showPriceFilter, setShowPriceFilter] = useState(!isMobile);
   const [minPrice, setMinPrice] = useState<number | ''>('');
   const [maxPrice, setMaxPrice] = useState<number | ''>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,6 +65,14 @@ export default function Prizes() {
   // Get brand filter from URL params (supports comma-separated values)
   const brandFilterParam = searchParams.get('brand');
   const selectedBrands = brandFilterParam ? brandFilterParam.split(',') : [];
+
+  // Get category filter from URL params (supports comma-separated values)
+  const categoryFilterParam = searchParams.get('category');
+  const selectedCategories = categoryFilterParam ? categoryFilterParam.split(',') : [];
+
+  // Get grade filter from URL params (supports comma-separated values)
+  const gradeFilterParam = searchParams.get('grade');
+  const selectedGrades = gradeFilterParam ? gradeFilterParam.split(',') : [];
 
   const userCadeCoins = session?.walletBalanceCadeCoin || 0;
 
@@ -167,6 +176,7 @@ export default function Prizes() {
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
           coverImageIndex,
           category: mapCategory(prize),
+          grade: (prize as any).grade || null,
           amount: typeof prize.amount === 'number' && !isNaN(prize.amount) ? prize.amount : 0,
           stock: prize.stock,
           purchaseOption: prize.purchaseOption,
@@ -217,12 +227,22 @@ export default function Prizes() {
       });
   }, [allPrizes]);
 
-  // Filter by brand and price
+  // Filter by brand, category, and price
   const filteredPrizes = useMemo(() => {
     let filtered =
       selectedBrands.length > 0
         ? allPrizes.filter(prize => prize.brand && selectedBrands.includes(prize.brand))
         : allPrizes;
+
+    // Apply category filter if set
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(prize => prize.category && selectedCategories.includes(prize.category));
+    }
+
+    // Apply grade filter if set
+    if (selectedGrades.length > 0) {
+      filtered = filtered.filter(prize => prize.grade && selectedGrades.includes(prize.grade));
+    }
 
     // Apply price filter if set
     if (minPrice !== '' || maxPrice !== '') {
@@ -251,7 +271,7 @@ export default function Prizes() {
     }
 
     return filtered;
-  }, [allPrizes, selectedBrands, minPrice, maxPrice, searchQuery]);
+  }, [allPrizes, selectedBrands, selectedCategories, selectedGrades, minPrice, maxPrice, searchQuery]);
 
   // Display only first N items (client-side pagination)
   const displayedPrizes = filteredPrizes.slice(0, displayCount);
@@ -393,71 +413,7 @@ export default function Prizes() {
               <>
                 <h2 className="text-2xl font-bold mb-4 px-2">All Items:</h2>
 
-                {/* Brand Filter Tabs */}
-                <div className="flex flex-col gap-4">
-                  <div
-                    className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
-                    role="tablist"
-                    aria-label="Prize brands"
-                  >
-                    <Button
-                      variant="outline"
-                      role="tab"
-                      aria-selected={selectedBrands.length === 0}
-                      className={`${
-                        selectedBrands.length === 0
-                          ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
-                          : `border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
-                      }`}
-                      onClick={() => {
-                        const newParams = new URLSearchParams(searchParams);
-                        newParams.delete('brand');
-                        setSearchParams(newParams);
-                      }}
-                    >
-                      All Brands
-                    </Button>
-                    {(['pokemon', 'one_piece', 'sports', 'other'] as PrizeBrand[]).map(brand => (
-                      <Button
-                        key={brand}
-                        variant="outline"
-                        role="tab"
-                        aria-selected={selectedBrands.includes(brand)}
-                        className={`${
-                          selectedBrands.includes(brand)
-                            ? `bg-primary text-black ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
-                            : `border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)] ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`
-                        }`}
-                        onClick={() => {
-                          const newParams = new URLSearchParams(searchParams);
-                          const brandIndex = selectedBrands.indexOf(brand);
-                          let updatedBrands: string[];
-
-                          if (brandIndex > -1) {
-                            // Brand is selected, remove it
-                            updatedBrands = selectedBrands.filter(b => b !== brand);
-                          } else {
-                            // Brand is not selected, add it
-                            updatedBrands = [...selectedBrands, brand];
-                          }
-
-                          // Update URL param
-                          if (updatedBrands.length > 0) {
-                            newParams.set('brand', updatedBrands.join(','));
-                          } else {
-                            // If no brands selected, remove param
-                            newParams.delete('brand');
-                          }
-                          setSearchParams(newParams);
-                        }}
-                      >
-                        {getBrandLabel(brand)}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Price Filter Toggle & Section */}
+                {/* Filters Toggle & Section */}
                 <div className="px-2 space-y-4">
                   <Button
                     variant="outline"
@@ -474,14 +430,214 @@ export default function Prizes() {
                       <>
                         <ChevronDown className="w-4 h-4" />
                         Show Filters
+                        {(selectedBrands.length > 0 || selectedCategories.length > 0 || selectedGrades.length > 0 || minPrice !== '' || maxPrice !== '') && (
+                          <span className="ml-1 bg-primary text-black text-xs rounded-full px-1.5 py-0.5 font-bold">
+                            {selectedBrands.length + selectedCategories.length + selectedGrades.length + (minPrice !== '' || maxPrice !== '' ? 1 : 0)}
+                          </span>
+                        )}
                       </>
                     )}
                   </Button>
 
                   {showPriceFilter && (
                     <div className="bg-secondary/50 p-4 rounded-lg space-y-4 mt-4">
+                      {/* Brand Filter */}
                       <div>
-                        <h3 className="text-sm font-semibold mb-3">Filter by Price (USD):</h3>
+                        <h3 className="text-sm font-semibold mb-3">Card Type:</h3>
+                        <div
+                          className={`flex gap-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'flex-wrap'}`}
+                          role="tablist"
+                          aria-label="Prize brands"
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            role="tab"
+                            aria-selected={selectedBrands.length === 0}
+                            className={`${
+                              selectedBrands.length === 0
+                                ? 'bg-primary text-black'
+                                : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
+                            } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+                            onClick={() => {
+                              const newParams = new URLSearchParams(searchParams);
+                              newParams.delete('brand');
+                              setSearchParams(newParams);
+                            }}
+                          >
+                            All
+                          </Button>
+                          {(['pokemon', 'one_piece', 'sports', 'other'] as PrizeBrand[]).map(brand => (
+                            <Button
+                              key={brand}
+                              variant="outline"
+                              size="sm"
+                              role="tab"
+                              aria-selected={selectedBrands.includes(brand)}
+                              className={`${
+                                selectedBrands.includes(brand)
+                                  ? 'bg-primary text-black'
+                                  : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
+                              } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+                              onClick={() => {
+                                const newParams = new URLSearchParams(searchParams);
+                                const brandIndex = selectedBrands.indexOf(brand);
+                                let updatedBrands: string[];
+
+                                if (brandIndex > -1) {
+                                  updatedBrands = selectedBrands.filter(b => b !== brand);
+                                } else {
+                                  updatedBrands = [...selectedBrands, brand];
+                                }
+
+                                if (updatedBrands.length > 0) {
+                                  newParams.set('brand', updatedBrands.join(','));
+                                } else {
+                                  newParams.delete('brand');
+                                }
+                                setSearchParams(newParams);
+                              }}
+                            >
+                              {getBrandLabel(brand)}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Category Filter */}
+                      <div>
+                        <h3 className="text-sm font-semibold mb-3">Product Type:</h3>
+                        <div
+                          className={`flex gap-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'flex-wrap'}`}
+                          role="tablist"
+                          aria-label="Item conditions"
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            role="tab"
+                            aria-selected={selectedCategories.length === 0}
+                            className={`${
+                              selectedCategories.length === 0
+                                ? 'bg-primary text-black'
+                                : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
+                            } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+                            onClick={() => {
+                              const newParams = new URLSearchParams(searchParams);
+                              newParams.delete('category');
+                              setSearchParams(newParams);
+                            }}
+                          >
+                            All
+                          </Button>
+                          {([['raw', 'Raw'], ['slab', 'Slabs'], ['sealed', 'Sealed']] as const).map(([cat, label]) => (
+                            <Button
+                              key={cat}
+                              variant="outline"
+                              size="sm"
+                              role="tab"
+                              aria-selected={selectedCategories.includes(cat)}
+                              className={`${
+                                selectedCategories.includes(cat)
+                                  ? 'bg-primary text-black'
+                                  : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
+                              } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+                              onClick={() => {
+                                const newParams = new URLSearchParams(searchParams);
+                                const catIndex = selectedCategories.indexOf(cat);
+                                let updatedCats: string[];
+
+                                if (catIndex > -1) {
+                                  updatedCats = selectedCategories.filter(c => c !== cat);
+                                } else {
+                                  updatedCats = [...selectedCategories, cat];
+                                }
+
+                                if (updatedCats.length > 0) {
+                                  newParams.set('category', updatedCats.join(','));
+                                } else {
+                                  newParams.delete('category');
+                                }
+                                setSearchParams(newParams);
+                              }}
+                            >
+                              {label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Grade Filter - Show when a non-sealed category is selected */}
+                      {selectedCategories.length > 0 && !selectedCategories.includes('sealed') && (
+                        <div>
+                          <h3 className="text-sm font-semibold mb-3">
+                            {selectedCategories.includes('slab') ? 'Grade:' : 'Condition:'}
+                          </h3>
+                          <div
+                            className={`flex gap-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'flex-wrap'}`}
+                            role="tablist"
+                            aria-label="Item grades"
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              role="tab"
+                              aria-selected={selectedGrades.length === 0}
+                              className={`${
+                                selectedGrades.length === 0
+                                  ? 'bg-primary text-black'
+                                  : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
+                              } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+                              onClick={() => {
+                                const newParams = new URLSearchParams(searchParams);
+                                newParams.delete('grade');
+                                setSearchParams(newParams);
+                              }}
+                            >
+                              All
+                            </Button>
+                            {(selectedCategories.includes('slab')
+                              ? ['10', '9', '8', '7', '6', '5', '4', '3', '2', '1']
+                              : ['NM', 'LP', 'MP', 'HP', 'DMG', 'MT', 'EX', 'VG', 'GD', 'PR']
+                            ).map(grade => (
+                              <Button
+                                key={grade}
+                                variant="outline"
+                                size="sm"
+                                role="tab"
+                                aria-selected={selectedGrades.includes(grade)}
+                                className={`${
+                                  selectedGrades.includes(grade)
+                                    ? 'bg-primary text-black'
+                                    : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
+                                } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+                                onClick={() => {
+                                  const newParams = new URLSearchParams(searchParams);
+                                  const idx = selectedGrades.indexOf(grade);
+                                  let updated: string[];
+                                  if (idx > -1) {
+                                    updated = selectedGrades.filter(g => g !== grade);
+                                  } else {
+                                    updated = [...selectedGrades, grade];
+                                  }
+                                  if (updated.length > 0) {
+                                    newParams.set('grade', updated.join(','));
+                                  } else {
+                                    newParams.delete('grade');
+                                  }
+                                  setSearchParams(newParams);
+                                }}
+                              >
+                                {grade}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Price Filter */}
+                      <div>
+                        <h3 className="text-sm font-semibold mb-3">Price (USD):</h3>
                         <div className="flex gap-3 items-end">
                           <div className="flex flex-col gap-1">
                             <label htmlFor="minPrice" className="text-xs text-muted-foreground">
@@ -552,34 +708,58 @@ export default function Prizes() {
                   />
                 </div>
 
-                {/* Items Grid */}
+                {/* Items Grid - Grouped by Category */}
                 <div className="flex flex-col gap-4" role="tabpanel">
                   {filteredPrizes.length === 0 ? (
                     <div className="mx-auto text-weak py-12">
-                      {selectedBrands.length > 0
-                        ? 'No items found for selected brands.'
+                      {selectedBrands.length > 0 || selectedCategories.length > 0
+                        ? 'No items found for selected filters.'
                         : 'No items available.'}
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {displayedPrizes.map(prize => (
-                          <PrizeCard
-                            key={prize.id}
-                            prize={prize}
-                            onClick={prize => {
-                              const fullPrize = allPrizes.find(p => p.id === prize.id);
-                              setSelectedPrizeForCheckout({
-                                id: prize.id,
-                                name: prize.name,
-                                amount: prize.amount ?? 0,
-                                createdBy: (fullPrize as any)?.createdBy ?? null,
-                              });
-                            }}
-                            onOfferClick={handleOfferClick}
-                          />
-                        ))}
-                      </div>
+                      {(['slab', 'sealed', 'raw'] as const).map(cat => {
+                        const catPrizes = displayedPrizes.filter(p => p.category === cat);
+                        if (catPrizes.length === 0) return null;
+                        const catLabel = cat === 'raw' ? 'Raw' : cat === 'slab' ? 'Slabs' : 'Sealed';
+                        return (
+                          <div key={cat}>
+                            <h3 className="text-4xl font-bold mb-8 py-6 flex items-center gap-2">
+                              {catLabel}
+                              {cat === 'raw' && (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button type="button" className="inline-flex">
+                                      <Info className="w-5 h-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent side="bottom" align="start" className="max-w-xs text-sm">
+                                    Raw card conditions are labeled by the seller. Purchase at your own risk!
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                              {catPrizes.map(prize => (
+                                <PrizeCard
+                                  key={prize.id}
+                                  prize={prize}
+                                  onClick={prize => {
+                                    const fullPrize = allPrizes.find(p => p.id === prize.id);
+                                    setSelectedPrizeForCheckout({
+                                      id: prize.id,
+                                      name: prize.name,
+                                      amount: prize.amount ?? 0,
+                                      createdBy: (fullPrize as any)?.createdBy ?? null,
+                                    });
+                                  }}
+                                  onOfferClick={handleOfferClick}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
                       {hasMore && (
                         <Button
                           disabled={isLoading}

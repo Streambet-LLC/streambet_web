@@ -128,6 +128,7 @@ export default function SellerShopManage() {
   const [shopProfileImageUrl, setShopProfileImageUrl] = useState<string | null>(null);
   const [shopProfileImageFile, setShopProfileImageFile] = useState<File | null>(null);
   const shopProfileImageInputRef = React.useRef<HTMLInputElement>(null);
+  const ordersRef = React.useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -136,7 +137,9 @@ export default function SellerShopManage() {
     amount: 0,
     stock: 1,
     purchaseOption: 'buy_only' as 'buy_only' | 'offers_only' | 'both',
-    brand: 'other' as PrizeBrand,
+    brand: 'pokemon' as PrizeBrand,
+    category: 'slab' as 'raw' | 'slab' | 'sealed',
+    grade: '' as string,
     sellerDisplayOrderShop: 1,
     isProOnly: false,
     profileFeatured: false,
@@ -317,7 +320,8 @@ export default function SellerShopManage() {
         imageUrls: imagePayload.imageUrls,
         coverImageIndex: imagePayload.coverImageIndex,
         amount: amountInCoins,
-        category: 'slab' as const, // All shop items are slabs
+        category: form.category,
+        grade: form.grade || null,
         isProOnly: form.isProOnly,
         profileFeatured: form.profileFeatured,
       };
@@ -342,7 +346,9 @@ export default function SellerShopManage() {
         amount: 0,
         stock: 1,
         purchaseOption: 'buy_only',
-        brand: 'other',
+        brand: 'pokemon',
+        category: 'slab',
+        grade: '',
         sellerDisplayOrderShop: 1,
         isProOnly: false,
         profileFeatured: false,
@@ -519,6 +525,20 @@ export default function SellerShopManage() {
     setIsShipDialogOpen(true);
   };
 
+  // Auto-open ship dialog when arriving from email with orderId param
+  const emailOrderId = searchParams.get('orderId');
+  useEffect(() => {
+    if (emailOrderId && purchasedOrders.length > 0) {
+      const order = purchasedOrders.find(o => o.id === emailOrderId);
+      if (order) {
+        setTimeout(() => {
+          ordersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+        handleOpenShipDialog(order);
+      }
+    }
+  }, [emailOrderId, purchasedOrders]);
+
   const handleSubmitShip = () => {
     if (!selectedPurchasedOrder) return;
     markAsShippedMutation.mutate({
@@ -554,7 +574,9 @@ export default function SellerShopManage() {
       amount: item.amount ? Math.round(item.amount / 50) : 0,
       stock: item.stock || 0,
       purchaseOption: item.purchaseOption || 'buy_only',
-      brand: item.brand || 'other',
+      brand: item.brand || 'pokemon',
+      category: (item.category as 'raw' | 'slab' | 'sealed') || 'slab',
+      grade: (item as any).grade || '',
       sellerDisplayOrderShop: item.sellerDisplayOrderShop ?? item.displayOrderShop ?? 1,
       isProOnly: item.isProOnly ?? false,
       profileFeatured: item.profileFeatured ?? false,
@@ -574,7 +596,9 @@ export default function SellerShopManage() {
       amount: 0,
       stock: 1,
       purchaseOption: 'buy_only',
-      brand: 'other',
+      brand: 'pokemon',
+      category: 'slab',
+      grade: '',
       sellerDisplayOrderShop: 1,
       isProOnly: false,
       profileFeatured: false,
@@ -1148,7 +1172,7 @@ export default function SellerShopManage() {
                     <Label>Card Type *</Label>
                     <Select
                       value={form.brand}
-                      onValueChange={(value: PrizeBrand) => setForm(p => ({ ...p, brand: value }))}
+                      onValueChange={(value: PrizeBrand) => setForm(p => ({ ...p, brand: value, grade: p.category === 'raw' ? '' : p.grade }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select brand" />
@@ -1161,6 +1185,86 @@ export default function SellerShopManage() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="grid gap-2">
+                    <Label>Format *</Label>
+                    <Select
+                      value={form.category}
+                      onValueChange={(value: 'raw' | 'slab' | 'sealed') =>
+                        setForm(p => ({ ...p, category: value, grade: '' }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="raw">Raw</SelectItem>
+                        <SelectItem value="slab">Slab</SelectItem>
+                        <SelectItem value="sealed">Sealed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Conditional Grade selector */}
+                  {form.category === 'raw' && (
+                    <div className="grid gap-2">
+                      <Label>Condition *</Label>
+                      <Select
+                        value={form.grade}
+                        onValueChange={(value: string) => setForm(p => ({ ...p, grade: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select condition" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {form.brand === 'sports' ? (
+                            <>
+                              <SelectItem value="MT">MT - Mint</SelectItem>
+                              <SelectItem value="NM">NM - Near Mint</SelectItem>
+                              <SelectItem value="EX">EX - Excellent</SelectItem>
+                              <SelectItem value="VG">VG - Very Good</SelectItem>
+                              <SelectItem value="GD">GD - Good</SelectItem>
+                              <SelectItem value="PR">PR - Poor</SelectItem>
+                            </>
+                          ) : (
+                            <>
+                              <SelectItem value="NM">NM - Near Mint</SelectItem>
+                              <SelectItem value="LP">LP - Lightly Played</SelectItem>
+                              <SelectItem value="MP">MP - Moderately Played</SelectItem>
+                              <SelectItem value="HP">HP - Heavily Played</SelectItem>
+                              <SelectItem value="DMG">DMG - Damaged</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {form.category === 'slab' && (
+                    <div className="grid gap-2">
+                      <Label>Grade *</Label>
+                      <Select
+                        value={form.grade}
+                        onValueChange={(value: string) => setForm(p => ({ ...p, grade: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select grade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="9">9</SelectItem>
+                          <SelectItem value="8">8</SelectItem>
+                          <SelectItem value="7">7</SelectItem>
+                          <SelectItem value="6">6</SelectItem>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="1">1</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   <div className="grid gap-2">
                     <Label>Description</Label>
@@ -1522,7 +1626,7 @@ export default function SellerShopManage() {
                   )}
                 </CardContent>
               </Card>
-              <Card className="h-fit">
+              <Card className="h-fit" ref={ordersRef}>
                 <CardHeader>
                   <CardTitle>Purchased Items</CardTitle>
                   <p className="text-sm text-muted-foreground">

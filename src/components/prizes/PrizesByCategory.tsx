@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { MakeOfferModal } from './MakeOfferModal';
 import { PrizeBrand } from '@/types/prize';
 import PrizeCard from './PrizeCard';
 
-export type PrizeCategoryType = 'slab' | 'sealed';
+export type PrizeCategoryType = 'raw' | 'slab' | 'sealed';
 
 export interface Prize {
   id: string;
@@ -16,6 +17,7 @@ export interface Prize {
   imageUrls?: string[];
   coverImageIndex?: number;
   category: PrizeCategoryType;
+  grade?: string | null;
   amount?: number;
   stock?: number;
   purchaseOption?: 'offers_only' | 'buy_only' | 'both';
@@ -46,6 +48,7 @@ interface PrizesByCategoryProps {
 const CATEGORY_LABELS: Record<PrizeCategoryType, string> = {
   slab: 'Slabs',
   sealed: 'Sealed Product',
+  raw: 'Raw',
 };
 
 export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
@@ -68,10 +71,11 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   const categories: Record<PrizeCategoryType, Prize[]> = {
     slab: [],
     sealed: [],
+    raw: [],
   };
 
   prizes.forEach(prize => {
-    if (prize.category === 'slab' || prize.category === 'sealed') {
+    if (prize.category === 'raw' || prize.category === 'slab' || prize.category === 'sealed') {
       categories[prize.category].push(prize);
     }
   });
@@ -271,8 +275,20 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
               items.length > 0 ? (
                 <div key={key}>
                   {showCategoryHeaders && (
-                    <h2 className="text-4xl font-bold mb-8 py-6">
+                    <h2 className="text-4xl font-bold mb-8 py-6 flex items-center gap-2">
                       {CATEGORY_LABELS[key as PrizeCategoryType]}
+                      {key === 'raw' && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="inline-flex">
+                              <Info className="w-5 h-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent side="bottom" align="start" className="max-w-xs text-sm">
+                            Raw card conditions are labeled by the seller. Purchase at your own risk!
+                          </PopoverContent>
+                        </Popover>
+                      )}
                     </h2>
                   )}
                   <div
