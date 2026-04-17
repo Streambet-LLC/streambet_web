@@ -128,6 +128,7 @@ export default function SellerShopManage() {
   const [shopProfileImageUrl, setShopProfileImageUrl] = useState<string | null>(null);
   const [shopProfileImageFile, setShopProfileImageFile] = useState<File | null>(null);
   const shopProfileImageInputRef = React.useRef<HTMLInputElement>(null);
+  const ordersRef = React.useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -518,6 +519,20 @@ export default function SellerShopManage() {
     setShippingCarrier(order.shippingCarrier || '');
     setIsShipDialogOpen(true);
   };
+
+  // Auto-open ship dialog when arriving from email with orderId param
+  const emailOrderId = searchParams.get('orderId');
+  useEffect(() => {
+    if (emailOrderId && purchasedOrders.length > 0) {
+      const order = purchasedOrders.find(o => o.id === emailOrderId);
+      if (order) {
+        setTimeout(() => {
+          ordersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+        handleOpenShipDialog(order);
+      }
+    }
+  }, [emailOrderId, purchasedOrders]);
 
   const handleSubmitShip = () => {
     if (!selectedPurchasedOrder) return;
@@ -1522,7 +1537,7 @@ export default function SellerShopManage() {
                   )}
                 </CardContent>
               </Card>
-              <Card className="h-fit">
+              <Card className="h-fit" ref={ordersRef}>
                 <CardHeader>
                   <CardTitle>Purchased Items</CardTitle>
                   <p className="text-sm text-muted-foreground">
