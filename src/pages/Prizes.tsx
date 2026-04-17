@@ -56,7 +56,11 @@ export default function Prizes() {
   } | null>(null);
   const [selectedPrizeForOffer, setSelectedPrizeForOffer] = useState<PrizeDisplay | null>(null);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
-  const [displayCount, setDisplayCount] = useState(24);
+  const [displayCounts, setDisplayCounts] = useState<Record<string, number>>({
+    slab: 24,
+    sealed: 24,
+    raw: 24,
+  });
   const [showPriceFilter, setShowPriceFilter] = useState(!isMobile);
   const [minPrice, setMinPrice] = useState<number | ''>('');
   const [maxPrice, setMaxPrice] = useState<number | ''>('');
@@ -236,7 +240,9 @@ export default function Prizes() {
 
     // Apply category filter if set
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter(prize => prize.category && selectedCategories.includes(prize.category));
+      filtered = filtered.filter(
+        prize => prize.category && selectedCategories.includes(prize.category)
+      );
     }
 
     // Apply grade filter if set
@@ -271,15 +277,25 @@ export default function Prizes() {
     }
 
     return filtered;
-  }, [allPrizes, selectedBrands, selectedCategories, selectedGrades, minPrice, maxPrice, searchQuery]);
+  }, [
+    allPrizes,
+    selectedBrands,
+    selectedCategories,
+    selectedGrades,
+    minPrice,
+    maxPrice,
+    searchQuery,
+  ]);
 
-  // Display only first N items (client-side pagination)
-  const displayedPrizes = filteredPrizes.slice(0, displayCount);
-  const hasMore = displayCount < filteredPrizes.length;
-
-  const handleLoadMore = () => {
-    setDisplayCount(prev => prev + 24);
-  };
+  // Group filtered prizes by category for per-section pagination
+  const prizesByCategory = useMemo(() => {
+    const grouped: Record<string, PrizeDisplay[]> = { slab: [], sealed: [], raw: [] };
+    filteredPrizes.forEach(p => {
+      const cat = p.category || 'slab';
+      if (grouped[cat]) grouped[cat].push(p);
+    });
+    return grouped;
+  }, [filteredPrizes]);
 
   const handleOfferClick = (prize: PrizeDisplay) => {
     setSelectedPrizeForOffer(prize);
@@ -430,9 +446,16 @@ export default function Prizes() {
                       <>
                         <ChevronDown className="w-4 h-4" />
                         Show Filters
-                        {(selectedBrands.length > 0 || selectedCategories.length > 0 || selectedGrades.length > 0 || minPrice !== '' || maxPrice !== '') && (
+                        {(selectedBrands.length > 0 ||
+                          selectedCategories.length > 0 ||
+                          selectedGrades.length > 0 ||
+                          minPrice !== '' ||
+                          maxPrice !== '') && (
                           <span className="ml-1 bg-primary text-black text-xs rounded-full px-1.5 py-0.5 font-bold">
-                            {selectedBrands.length + selectedCategories.length + selectedGrades.length + (minPrice !== '' || maxPrice !== '' ? 1 : 0)}
+                            {selectedBrands.length +
+                              selectedCategories.length +
+                              selectedGrades.length +
+                              (minPrice !== '' || maxPrice !== '' ? 1 : 0)}
                           </span>
                         )}
                       </>
@@ -467,40 +490,42 @@ export default function Prizes() {
                           >
                             All
                           </Button>
-                          {(['pokemon', 'one_piece', 'sports', 'other'] as PrizeBrand[]).map(brand => (
-                            <Button
-                              key={brand}
-                              variant="outline"
-                              size="sm"
-                              role="tab"
-                              aria-selected={selectedBrands.includes(brand)}
-                              className={`${
-                                selectedBrands.includes(brand)
-                                  ? 'bg-primary text-black'
-                                  : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
-                              } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
-                              onClick={() => {
-                                const newParams = new URLSearchParams(searchParams);
-                                const brandIndex = selectedBrands.indexOf(brand);
-                                let updatedBrands: string[];
+                          {(['pokemon', 'one_piece', 'sports', 'other'] as PrizeBrand[]).map(
+                            brand => (
+                              <Button
+                                key={brand}
+                                variant="outline"
+                                size="sm"
+                                role="tab"
+                                aria-selected={selectedBrands.includes(brand)}
+                                className={`${
+                                  selectedBrands.includes(brand)
+                                    ? 'bg-primary text-black'
+                                    : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
+                                } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+                                onClick={() => {
+                                  const newParams = new URLSearchParams(searchParams);
+                                  const brandIndex = selectedBrands.indexOf(brand);
+                                  let updatedBrands: string[];
 
-                                if (brandIndex > -1) {
-                                  updatedBrands = selectedBrands.filter(b => b !== brand);
-                                } else {
-                                  updatedBrands = [...selectedBrands, brand];
-                                }
+                                  if (brandIndex > -1) {
+                                    updatedBrands = selectedBrands.filter(b => b !== brand);
+                                  } else {
+                                    updatedBrands = [...selectedBrands, brand];
+                                  }
 
-                                if (updatedBrands.length > 0) {
-                                  newParams.set('brand', updatedBrands.join(','));
-                                } else {
-                                  newParams.delete('brand');
-                                }
-                                setSearchParams(newParams);
-                              }}
-                            >
-                              {getBrandLabel(brand)}
-                            </Button>
-                          ))}
+                                  if (updatedBrands.length > 0) {
+                                    newParams.set('brand', updatedBrands.join(','));
+                                  } else {
+                                    newParams.delete('brand');
+                                  }
+                                  setSearchParams(newParams);
+                                }}
+                              >
+                                {getBrandLabel(brand)}
+                              </Button>
+                            )
+                          )}
                         </div>
                       </div>
 
@@ -530,7 +555,13 @@ export default function Prizes() {
                           >
                             All
                           </Button>
-                          {([['raw', 'Raw'], ['slab', 'Slabs'], ['sealed', 'Sealed']] as const).map(([cat, label]) => (
+                          {(
+                            [
+                              ['raw', 'Raw'],
+                              ['slab', 'Slabs'],
+                              ['sealed', 'Sealed'],
+                            ] as const
+                          ).map(([cat, label]) => (
                             <Button
                               key={cat}
                               variant="outline"
@@ -719,13 +750,20 @@ export default function Prizes() {
                   ) : (
                     <>
                       {(['slab', 'sealed', 'raw'] as const).map(cat => {
-                        const catPrizes = displayedPrizes.filter(p => p.category === cat);
-                        if (catPrizes.length === 0) return null;
-                        const catLabel = cat === 'raw' ? 'Raw' : cat === 'slab' ? 'Slabs' : 'Sealed';
+                        const allCatPrizes = prizesByCategory[cat] || [];
+                        if (allCatPrizes.length === 0) return null;
+                        const catDisplayCount = displayCounts[cat] || 24;
+                        const catPrizes = allCatPrizes.slice(0, catDisplayCount);
+                        const catHasMore = catDisplayCount < allCatPrizes.length;
+                        const catLabel =
+                          cat === 'raw' ? 'Raw' : cat === 'slab' ? 'Slabs' : 'Sealed';
                         return (
                           <div key={cat}>
                             <h3 className="text-4xl font-bold mb-8 py-6 flex items-center gap-2">
                               {catLabel}
+                              <span className="text-base font-normal text-muted-foreground">
+                                ({allCatPrizes.length})
+                              </span>
                               {cat === 'raw' && (
                                 <Popover>
                                   <PopoverTrigger asChild>
@@ -733,8 +771,13 @@ export default function Prizes() {
                                       <Info className="w-5 h-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
                                     </button>
                                   </PopoverTrigger>
-                                  <PopoverContent side="bottom" align="start" className="max-w-xs text-sm">
-                                    Raw card conditions are labeled by the seller. Purchase at your own risk!
+                                  <PopoverContent
+                                    side="bottom"
+                                    align="start"
+                                    className="max-w-xs text-sm"
+                                  >
+                                    Raw card conditions are labeled by the seller. Purchase at your
+                                    own risk!
                                   </PopoverContent>
                                 </Popover>
                               )}
@@ -757,26 +800,26 @@ export default function Prizes() {
                                 />
                               ))}
                             </div>
+                            {catHasMore && (
+                              <div className="flex justify-center mt-4">
+                                <Button
+                                  disabled={isLoading}
+                                  variant="outline"
+                                  className="border-primary"
+                                  onClick={() =>
+                                    setDisplayCounts(prev => ({
+                                      ...prev,
+                                      [cat]: (prev[cat] || 24) + 24,
+                                    }))
+                                  }
+                                >
+                                  Load More {catLabel}
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
-                      {hasMore && (
-                        <Button
-                          disabled={isLoading}
-                          variant="outline"
-                          className="mx-auto border-primary"
-                          onClick={handleLoadMore}
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="animate-spin mr-2" />
-                              Loading
-                            </>
-                          ) : (
-                            'Load More'
-                          )}
-                        </Button>
-                      )}
                     </>
                   )}
                 </div>
