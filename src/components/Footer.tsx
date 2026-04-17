@@ -58,10 +58,10 @@ export const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-bold">Contact</h3>
             <a
-              href="mailto:info@streambet.tv"
+              href="mailto:contact@cardcade.fun"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              info@streambet.tv
+              contact@cardcade.fun
             </a>
           </div>
 

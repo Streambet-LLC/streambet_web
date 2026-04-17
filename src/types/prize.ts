@@ -25,7 +25,8 @@ export interface PrizeConfiguration {
   imageUrls?: string[];
   itemImages?: ItemImage[];
   coverImageId?: string | null;
-  category: 'slab' | 'sealed';
+  category: 'raw' | 'slab' | 'sealed';
+  grade: string | null;
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
   brand: PrizeBrand;
@@ -92,7 +93,8 @@ export interface CreatePrizeTierRequest {
   imageUrl?: string;
   imageUrls?: string[];
   coverImageIndex?: number;
-  category: 'slab' | 'sealed';
+  category: 'raw' | 'slab' | 'sealed';
+  grade?: string | null;
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
   brand?: PrizeBrand;
@@ -116,7 +118,8 @@ export interface UpdatePrizeTierRequest {
   imageUrl?: string;
   imageUrls?: string[];
   coverImageIndex?: number;
-  category: 'slab' | 'sealed';
+  category: 'raw' | 'slab' | 'sealed';
+  grade?: string | null;
   stock: number;
   purchaseOption: 'offers_only' | 'buy_only' | 'both';
   brand?: PrizeBrand;

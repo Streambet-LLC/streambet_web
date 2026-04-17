@@ -3,7 +3,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarTrigger, u
 import SidebarStreamCard from './SidebarStreamCard';
 import { Button } from '../ui/button';
 import { motion } from 'framer-motion';
-import { SidebarIcon, MoreHorizontal, LayoutGrid, Flame } from 'lucide-react';
+import { SidebarIcon, MoreHorizontal, LayoutGrid, Flame, Layers, Square, Award, Package } from 'lucide-react';
 import { PikachuIcon, LuffyIcon, JordanIcon } from '../icons/CategoryIcons';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
@@ -87,6 +87,38 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
   // Get current brands from URL params (for shop pages) - supports comma-separated values
   const currentBrandParam = searchParams.get('brand');
   const selectedBrands = currentBrandParam ? currentBrandParam.split(',') : [];
+
+  // Get current categories (raw/slab/sealed) from URL params
+  const currentCategoryParam = searchParams.get('category');
+  const selectedProductCategories = currentCategoryParam ? currentCategoryParam.split(',') : [];
+
+  const PRODUCT_CATEGORIES = [
+    { value: 'raw', label: 'Raw', icon: Square },
+    { value: 'slab', label: 'Slabs', icon: Award },
+    { value: 'sealed', label: 'Sealed', icon: Package },
+  ] as const;
+
+  // Handle product category click (raw/slab/sealed)
+  const handleProductCategoryClick = (categoryValue: string | null) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (categoryValue === null) {
+      newParams.delete('category');
+    } else {
+      const idx = selectedProductCategories.indexOf(categoryValue);
+      let updated: string[];
+      if (idx > -1) {
+        updated = selectedProductCategories.filter(c => c !== categoryValue);
+      } else {
+        updated = [...selectedProductCategories, categoryValue];
+      }
+      if (updated.length > 0) {
+        newParams.set('category', updated.join(','));
+      } else {
+        newParams.delete('category');
+      }
+    }
+    setSearchParams(newParams);
+  };
 
   // Handle category/brand click (toggles brand selection for shop pages)
   const handleCategoryClick = (category: BettingCategory | null) => {
@@ -331,6 +363,106 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                   );
                 })}{' '}
               </div>
+
+              {/* Product Category Section (Raw/Slabs/Sealed) - Shop pages only */}
+              {isShopPage && (
+                <>
+                  <div className="border-t border-border my-2" />
+                  {controls.open && !controls.isMobile && (
+                    <div className="text-sm font-semibold pl-2 mb-2" id="sidebar-product-category-label">
+                      Product Type
+                    </div>
+                  )}
+                  <div
+                    className="flex flex-col gap-2"
+                    role="navigation"
+                    aria-label="Pick product types"
+                    aria-labelledby={
+                      controls.open && !controls.isMobile ? 'sidebar-product-category-label' : undefined
+                    }
+                  >
+                    <Button
+                      onClick={() => handleProductCategoryClick(null)}
+                      className={cn(
+                        'h-auto overflow-visible transition-all cursor-pointer',
+                        controls.open && !controls.isMobile
+                          ? 'justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
+                          : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',
+                        selectedProductCategories.length === 0
+                          ? '!bg-primary !text-black hover:!bg-primary !border-primary'
+                          : 'text-white bg-transparent border-primary/50 hover:border-primary'
+                      )}
+                      aria-pressed={selectedProductCategories.length === 0}
+                      aria-label="Show all product types"
+                    >
+                      <motion.div
+                        className="w-full"
+                        whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}
+                      >
+                        {controls.open && !controls.isMobile ? (
+                          <div className="flex items-center gap-2.5 w-full">
+                            <CategoryIconContainer
+                              icon={Layers}
+                              isSelected={selectedProductCategories.length === 0}
+                            />
+                            <span className="text-[13px] font-semibold">All</span>
+                          </div>
+                        ) : (
+                          <CategoryIconContainer
+                            icon={Layers}
+                            isSelected={selectedProductCategories.length === 0}
+                            compact
+                          />
+                        )}
+                      </motion.div>
+                    </Button>
+                    {PRODUCT_CATEGORIES.map(({ value, label, icon }) => {
+                      const isSelected = selectedProductCategories.includes(value);
+                      return (
+                        <Button
+                          key={value}
+                          onClick={() => handleProductCategoryClick(value)}
+                          className={cn(
+                            'h-auto overflow-visible transition-all cursor-pointer',
+                            controls.open && !controls.isMobile
+                              ? 'justify-start text-left p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
+                              : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',
+                            isSelected
+                              ? '!bg-primary !text-black hover:!bg-primary !border-primary'
+                              : 'text-white bg-transparent border-primary/50 hover:border-primary'
+                          )}
+                          aria-pressed={isSelected}
+                          aria-label={`Filter by ${label}`}
+                        >
+                          <motion.div
+                            className="w-full"
+                            whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}
+                          >
+                            {controls.open && !controls.isMobile ? (
+                              <div className="flex items-center gap-2.5 w-full">
+                                <CategoryIconContainer icon={icon} isSelected={isSelected} />
+                                <span className="text-[13px] font-semibold">{label}</span>
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => handleProductCategoryClick(value)}
+                                  onClick={e => e.stopPropagation()}
+                                  className="ml-auto"
+                                />
+                              </div>
+                            ) : (
+                              <CategoryIconContainer
+                                icon={icon}
+                                isSelected={isSelected}
+                                compact
+                              />
+                            )}
+                          </motion.div>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </>
           )}
         </SidebarGroup>
