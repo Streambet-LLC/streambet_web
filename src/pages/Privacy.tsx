@@ -16,64 +16,88 @@ const Privacy = () => {
             <p className="text-muted-foreground">
               Effective Date: {new Date().toLocaleDateString()}
             </p>
-            <p className="text-muted-foreground">
-              Last Updated: {new Date().toLocaleDateString()}
-            </p>
+            <p className="text-muted-foreground">Last Updated: {new Date().toLocaleDateString()}</p>
           </div>
 
           <div className="grid gap-8">
             {[
               {
-                title: "Introduction",
+                title: 'Introduction',
                 content: (
                   <>
                     <p className="text-muted-foreground mb-4">
-                      CardCade Inc. ("CardCade", "we", "us", or "our") respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, share, and safeguard your information when you use our free-to-play entertainment platform where users earn tokens to compete for prizes.
+                      CardCade Inc. ("CardCade", "we", "us", or "our") respects your privacy and is
+                      committed to protecting your personal information. This Privacy Policy
+                      explains how we collect, use, share, and safeguard your information when you
+                      use our free-to-play entertainment platform where users earn tokens to compete
+                      for prizes.
                     </p>
                     <p className="text-muted-foreground mb-4">
-                      This Policy applies to users in the United States, European Union (EU), United Kingdom (UK), Canada, and other applicable jurisdictions. By using CardCade, you consent to the data practices described in this Privacy Policy.
+                      This Policy applies to users in the United States, European Union (EU), United
+                      Kingdom (UK), Canada, and other applicable jurisdictions. By using CardCade,
+                      you consent to the data practices described in this Privacy Policy.
                     </p>
                   </>
                 ),
               },
               {
-                title: "1. Information We Collect",
+                title: '1. Information We Collect',
                 content: (
                   <>
-                    <p className="text-muted-foreground mb-2 font-semibold">a. Personal Information</p>
+                    <p className="text-muted-foreground mb-2 font-semibold">
+                      a. Personal Information
+                    </p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>Name, email address, username</li>
                       <li>Date of birth (for age verification)</li>
                     </ul>
-                    <p className="text-muted-foreground mt-4 mb-2 font-semibold">b. Platform Activity</p>
+                    <p className="text-muted-foreground mt-4 mb-2 font-semibold">
+                      b. Platform Activity
+                    </p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>Token usage, game participation, and outcomes</li>
                       <li>Token balance and prize redemption history</li>
                       <li>Time spent on the platform, session logs</li>
                     </ul>
-                    <p className="text-muted-foreground mt-4 mb-2 font-semibold">c. Device and Technical Data</p>
+                    <p className="text-muted-foreground mt-4 mb-2 font-semibold">
+                      c. Device and Technical Data
+                    </p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>IP address and geolocation data (for analytics and security purposes)</li>
                       <li>Browser type, device identifier, operating system</li>
                       <li>Unique session IDs and usage metadata</li>
                     </ul>
-                    <p className="text-muted-foreground mt-4 mb-2 font-semibold">d. Livestream Interaction</p>
+                    <p className="text-muted-foreground mt-4 mb-2 font-semibold">
+                      d. Livestream Interaction
+                    </p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>Chat messages</li>
                       <li>Viewer engagement data (e.g., stream views, interaction frequency)</li>
-                      <li>Participation metrics and engagement stats (shared with content creators)</li>
+                      <li>
+                        Participation metrics and engagement stats (shared with content creators)
+                      </li>
                       <li>Recorded livestreams, which may be reused for marketing purposes</li>
                     </ul>
-                    <p className="text-muted-foreground mt-4 mb-2 font-semibold">e. Cookies and Tracking</p>
+                    <p className="text-muted-foreground mt-4 mb-2 font-semibold">
+                      e. Cookies and Tracking
+                    </p>
                     <ul className="list-disc pl-6 space-y-2">
-                      <li>We use cookies, pixels, and similar tracking technologies to recognize returning users, monitor app usage and performance, and deliver personalized advertising and retargeting via platforms like Google, Meta (Facebook), and others.</li>
-                      <li>You may manage cookie preferences through your browser or opt out using industry-standard tools (e.g., DAA, NAI).</li>
+                      <li>
+                        We use cookies, pixels, and similar tracking technologies to recognize
+                        returning users, monitor app usage and performance, and deliver personalized
+                        advertising and retargeting via platforms like Google, Meta (Facebook), and
+                        others.
+                      </li>
+                      <li>
+                        You may manage cookie preferences through your browser or opt out using
+                        industry-standard tools (e.g., DAA, NAI).
+                      </li>
                     </ul>
                   </>
                 ),
               },
               {
-                title: "2. How We Use Your Information",
+                title: '2. How We Use Your Information',
                 content: (
                   <>
                     <ul className="list-disc pl-6 space-y-2">
@@ -88,83 +112,128 @@ const Privacy = () => {
                 ),
               },
               {
-                title: "3. Sharing and Disclosure",
+                title: '3. Sharing and Disclosure',
                 content: (
                   <>
-                    <p className="text-muted-foreground mb-2">We do not sell your personal data. We may share your information with:</p>
+                    <p className="text-muted-foreground mb-2">
+                      We do not sell your personal data. We may share your information with:
+                    </p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>Prize Fulfillment Partners (to deliver prizes and rewards)</li>
-                      <li>Analytics and Marketing Tools (e.g., Google Analytics, Mixpanel, Meta Pixel)</li>
-                      <li>Content Creators (aggregated data: number of participants, engagement metrics, viewer counts)</li>
-                      <li>Legal Authorities when required by subpoena, court order, or government request</li>
+                      <li>
+                        Analytics and Marketing Tools (e.g., Google Analytics, Mixpanel, Meta Pixel)
+                      </li>
+                      <li>
+                        Content Creators (aggregated data: number of participants, engagement
+                        metrics, viewer counts)
+                      </li>
+                      <li>
+                        Legal Authorities when required by subpoena, court order, or government
+                        request
+                      </li>
                       <li>Successors or acquirers in the event of a merger or sale</li>
                     </ul>
                   </>
                 ),
               },
               {
-                title: "4. Age Restrictions",
+                title: '4. Age Restrictions',
                 content: (
                   <>
-                    <p className="text-muted-foreground mb-2">CardCade is intended for users 18 years of age or older. We do not knowingly collect data from individuals under 18.</p>
-                    <p className="text-muted-foreground mt-2">CardCade is a free-to-play platform with no purchase necessary. Tokens have no cash value and are provided at no cost.</p>
+                    <p className="text-muted-foreground mb-2">
+                      CardCade is intended for users 18 years of age or older. We do not knowingly
+                      collect data from individuals under 18.
+                    </p>
+                    <p className="text-muted-foreground mt-2">
+                      CardCade is a free-to-play platform with no purchase necessary. Tokens have no
+                      cash value and are provided at no cost.
+                    </p>
                   </>
                 ),
               },
               {
-                title: "5. International Data Transfers & Legal Compliance",
+                title: '5. International Data Transfers & Legal Compliance',
                 content: (
                   <>
-                    <p className="text-muted-foreground mb-2">We process and store data in the United States. If you access CardCade.fun from outside the U.S., you consent to transferring your data to the U.S.</p>
-                    <p className="text-muted-foreground mb-2">We comply with the following regional privacy laws:</p>
+                    <p className="text-muted-foreground mb-2">
+                      We process and store data in the United States. If you access CardCade.fun
+                      from outside the U.S., you consent to transferring your data to the U.S.
+                    </p>
+                    <p className="text-muted-foreground mb-2">
+                      We comply with the following regional privacy laws:
+                    </p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>General Data Protection Regulation (GDPR) – European Union</li>
                       <li>UK Data Protection Act 2018 – United Kingdom</li>
                       <li>California Consumer Privacy Act (CCPA/CPRA) – California</li>
-                      <li>Personal Information Protection and Electronic Documents Act (PIPEDA) – Canada</li>
+                      <li>
+                        Personal Information Protection and Electronic Documents Act (PIPEDA) –
+                        Canada
+                      </li>
                     </ul>
-                    <p className="text-muted-foreground mt-2 mb-2">Depending on your jurisdiction, you may have the right to:</p>
+                    <p className="text-muted-foreground mt-2 mb-2">
+                      Depending on your jurisdiction, you may have the right to:
+                    </p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>Request access to your data</li>
                       <li>Correct or delete your data</li>
                       <li>Withdraw consent or object to certain uses</li>
                       <li>Request data portability</li>
                     </ul>
-                    <p className="text-muted-foreground mt-2">Submit such requests by emailing <a href="mailto:info@streambet.tv" className="underline">info@streambet.tv</a>.</p>
-                  </>
-                ),
-              },
-              {
-                title: "6. Data Retention",
-                content: (
-                  <>
-                    <p className="text-muted-foreground mb-2">
-                      We retain user data as long as your account is active or as necessary to comply with our legal obligations. Upon account deletion, your data will be retained for 30 days before being permanently removed from our systems, unless required otherwise by law.
+                    <p className="text-muted-foreground mt-2">
+                      Submit such requests by emailing{' '}
+                      <a href="mailto:contact@cardcade.fun" className="underline">
+                        contact@cardcade.fun
+                      </a>
+                      .
                     </p>
                   </>
                 ),
               },
               {
-                title: "7. Security and Breach Notification",
+                title: '6. Data Retention',
                 content: (
                   <>
                     <p className="text-muted-foreground mb-2">
-                      We implement physical, technical, and organizational safeguards to protect your data. No system is 100% secure, but we maintain protocols to detect and respond to potential data breaches.
+                      We retain user data as long as your account is active or as necessary to
+                      comply with our legal obligations. Upon account deletion, your data will be
+                      retained for 30 days before being permanently removed from our systems, unless
+                      required otherwise by law.
+                    </p>
+                  </>
+                ),
+              },
+              {
+                title: '7. Security and Breach Notification',
+                content: (
+                  <>
+                    <p className="text-muted-foreground mb-2">
+                      We implement physical, technical, and organizational safeguards to protect
+                      your data. No system is 100% secure, but we maintain protocols to detect and
+                      respond to potential data breaches.
                     </p>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>We will notify affected users as required under applicable law</li>
-                      <li>We will report to appropriate supervisory authorities (e.g., ICO, CPPA, etc.)</li>
+                      <li>
+                        We will report to appropriate supervisory authorities (e.g., ICO, CPPA,
+                        etc.)
+                      </li>
                     </ul>
                   </>
                 ),
               },
               {
-                title: "8. Your Controls and Choices",
+                title: '8. Your Controls and Choices',
                 content: (
                   <>
                     <ul className="list-disc pl-6 space-y-2">
                       <li>View and edit your profile data</li>
-                      <li>Request account deletion or data export via <a href="mailto:info@streambet.tv" className="underline">info@streambet.tv</a></li>
+                      <li>
+                        Request account deletion or data export via{' '}
+                        <a href="mailto:contact@cardcade.fun" className="underline">
+                          contact@cardcade.fun
+                        </a>
+                      </li>
                       <li>Opt out of marketing communications via email unsubscribe links</li>
                       <li>Adjust cookie and tracking settings in your browser</li>
                     </ul>
@@ -172,24 +241,31 @@ const Privacy = () => {
                 ),
               },
               {
-                title: "9. Changes to This Policy",
+                title: '9. Changes to This Policy',
                 content: (
                   <>
                     <p className="text-muted-foreground mb-2">
-                      We may update this Privacy Policy periodically. Material changes will be posted on this page with a revised “Effective Date.” We may also notify users via email or in-app notices.
+                      We may update this Privacy Policy periodically. Material changes will be
+                      posted on this page with a revised “Effective Date.” We may also notify users
+                      via email or in-app notices.
                     </p>
                   </>
                 ),
               },
               {
-                title: "10. Contact Us",
+                title: '10. Contact Us',
                 content: (
                   <>
                     <p className="text-muted-foreground mb-2">
-                      If you have any questions or concerns about this Privacy Policy or your data rights, contact us at:
+                      If you have any questions or concerns about this Privacy Policy or your data
+                      rights, contact us at:
                     </p>
                     <ul className="list-disc pl-6 space-y-2">
-                      <li><a href="mailto:info@streambet.tv" className="underline">info@streambet.tv</a></li>
+                      <li>
+                        <a href="mailto:contact@cardcade.fun" className="underline">
+                          contact@cardcade.fun
+                        </a>
+                      </li>
                       <li>CardCade Inc.</li>
                     </ul>
                   </>

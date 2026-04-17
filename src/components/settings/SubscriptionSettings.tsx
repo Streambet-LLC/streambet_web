@@ -336,7 +336,7 @@ export const SubscriptionSettings = () => {
           )}
 
           <a
-            href="mailto:info@streambet.tv?subject=Cancel CardCade Pro Subscription"
+            href="mailto:contact@cardcade.fun?subject=Cancel CardCade Pro Subscription"
             className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-white/10 text-muted-foreground hover:text-white/70 hover:border-white/20 text-sm py-2.5 px-4 transition-colors"
           >
             <Mail className="w-4 h-4" />
