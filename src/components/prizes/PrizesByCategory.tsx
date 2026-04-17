@@ -6,7 +6,7 @@ import { MakeOfferModal } from './MakeOfferModal';
 import { PrizeBrand } from '@/types/prize';
 import PrizeCard from './PrizeCard';
 
-export type PrizeCategoryType = 'slab' | 'sealed';
+export type PrizeCategoryType = 'raw' | 'slab' | 'sealed';
 
 export interface Prize {
   id: string;
@@ -16,6 +16,7 @@ export interface Prize {
   imageUrls?: string[];
   coverImageIndex?: number;
   category: PrizeCategoryType;
+  grade?: string | null;
   amount?: number;
   stock?: number;
   purchaseOption?: 'offers_only' | 'buy_only' | 'both';
@@ -46,6 +47,7 @@ interface PrizesByCategoryProps {
 const CATEGORY_LABELS: Record<PrizeCategoryType, string> = {
   slab: 'Slabs',
   sealed: 'Sealed Product',
+  raw: 'Raw',
 };
 
 export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
@@ -68,10 +70,11 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   const categories: Record<PrizeCategoryType, Prize[]> = {
     slab: [],
     sealed: [],
+    raw: [],
   };
 
   prizes.forEach(prize => {
-    if (prize.category === 'slab' || prize.category === 'sealed') {
+    if (prize.category === 'raw' || prize.category === 'slab' || prize.category === 'sealed') {
       categories[prize.category].push(prize);
     }
   });
