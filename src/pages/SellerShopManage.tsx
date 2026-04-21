@@ -1116,7 +1116,9 @@ export default function SellerShopManage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
-                    <Label>Name *</Label>
+                    <Label>
+                      Name <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       placeholder="e.g., Charizard PSA 10"
                       value={form.name}
@@ -1126,7 +1128,12 @@ export default function SellerShopManage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label>Price (USD) {form.purchaseOption !== 'offers_only' ? '*' : ''}</Label>
+                      <Label>
+                        Price (USD)
+                        {form.purchaseOption !== 'offers_only' && (
+                          <span className="text-red-500"> *</span>
+                        )}
+                      </Label>
                       <Input
                         type="number"
                         min={1}
@@ -1158,7 +1165,9 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Purchase Option *</Label>
+                    <Label>
+                      Purchase Option <span className="text-red-500">*</span>
+                    </Label>
                     <Select
                       value={form.purchaseOption}
                       onValueChange={(value: 'buy_only' | 'offers_only' | 'both') =>
@@ -1177,7 +1186,9 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Card Type *</Label>
+                    <Label>
+                      Card Type <span className="text-red-500">*</span>
+                    </Label>
                     <Select
                       value={form.brand}
                       onValueChange={(value: PrizeBrand) =>
@@ -1201,7 +1212,9 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Format *</Label>
+                    <Label>
+                      Format <span className="text-red-500">*</span>
+                    </Label>
                     <Select
                       value={form.category}
                       onValueChange={(value: 'raw' | 'slab' | 'sealed') =>
@@ -1222,7 +1235,9 @@ export default function SellerShopManage() {
                   {/* Conditional Grade selector */}
                   {form.category === 'raw' && (
                     <div className="grid gap-2">
-                      <Label>Condition *</Label>
+                      <Label>
+                        Condition <span className="text-red-500">*</span>
+                      </Label>
                       <Select
                         value={form.grade}
                         onValueChange={(value: string) => setForm(p => ({ ...p, grade: value }))}
@@ -1256,7 +1271,9 @@ export default function SellerShopManage() {
 
                   {form.category === 'slab' && (
                     <div className="grid gap-2">
-                      <Label>Grade *</Label>
+                      <Label>
+                        Grade <span className="text-red-500">*</span>
+                      </Label>
                       <Select
                         value={form.grade}
                         onValueChange={(value: string) => setForm(p => ({ ...p, grade: value }))}
@@ -1283,7 +1300,7 @@ export default function SellerShopManage() {
                   <div className="grid gap-2">
                     <Label>Description</Label>
                     <Textarea
-                      placeholder="Item description..."
+                      placeholder="Label details about the item here like any rips or tears, wear, damage, or anything else that is important to share"
                       value={form.description}
                       onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                       rows={3}
