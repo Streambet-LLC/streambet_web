@@ -93,8 +93,13 @@ const getPurchaseOptionBadge = (purchaseOption: 'both' | 'buy_only' | 'offers_on
 };
 
 // Helper function to get category badge styling
-const getCategoryBadge = (category: 'slab' | 'sealed') => {
+const getCategoryBadge = (category: 'raw' | 'slab' | 'sealed') => {
   switch (category) {
+    case 'raw':
+      return {
+        label: 'Raw',
+        className: 'bg-sky-300 text-sky-900 dark:bg-sky-900 dark:text-sky-100',
+      };
     case 'slab':
       return {
         label: 'Slab',
@@ -595,7 +600,7 @@ export const PrizeConfiguration = () => {
   );
 
   // Helper function to get sorted prizes based on current state
-  const getSortedPrizes = (category?: 'slab' | 'sealed', includeSearchFilter = true) => {
+  const getSortedPrizes = (category?: 'raw' | 'slab' | 'sealed', includeSearchFilter = true) => {
     let prizes = activeTiers;
 
     // Filter by category if specified
@@ -667,14 +672,14 @@ export const PrizeConfiguration = () => {
   }, [tiers]);
 
   // Helper function to get the actual position of a prize in the full (unfiltered) sorted list
-  const getRealPosition = (tierId: string, category?: 'slab' | 'sealed'): number => {
+  const getRealPosition = (tierId: string, category?: 'raw' | 'slab' | 'sealed'): number => {
     const fullList = getSortedPrizes(category, false); // Get list without search filter
     const index = fullList.findIndex(t => t.id === tierId);
     return index !== -1 ? index + 1 : 0;
   };
 
   // Drag handler for reordering prizes
-  const handleDragEnd = (event: DragEndEvent, category?: 'slab' | 'sealed') => {
+  const handleDragEnd = (event: DragEndEvent, category?: 'raw' | 'slab' | 'sealed') => {
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
@@ -1689,7 +1694,7 @@ export const PrizeConfiguration = () => {
               <Select
                 value={formData.category}
                 onValueChange={value => {
-                  setFormData({ ...formData, category: value as 'slab' | 'sealed' });
+                    setFormData({ ...formData, category: value as 'raw' | 'slab' | 'sealed' });
                   setValidationError('');
                 }}
               >
@@ -1697,6 +1702,7 @@ export const PrizeConfiguration = () => {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="raw">Raw</SelectItem>
                   <SelectItem value="slab">Slab</SelectItem>
                   <SelectItem value="sealed">Sealed</SelectItem>
                 </SelectContent>
