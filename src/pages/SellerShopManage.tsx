@@ -129,6 +129,7 @@ export default function SellerShopManage() {
   const [shopProfileImageFile, setShopProfileImageFile] = useState<File | null>(null);
   const shopProfileImageInputRef = React.useRef<HTMLInputElement>(null);
   const ordersRef = React.useRef<HTMLDivElement>(null);
+  const itemFormRef = React.useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -583,8 +584,15 @@ export default function SellerShopManage() {
     });
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
-    // Scroll to top on mobile, form is already visible on desktop
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to the edit form so the user can see where editing takes place
+    // Use a short timeout to allow the form to render/update before scrolling
+    setTimeout(() => {
+      if (itemFormRef.current) {
+        itemFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 0);
   };
 
   const handleCancelEdit = () => {
@@ -1087,7 +1095,7 @@ export default function SellerShopManage() {
             {/* Mobile: Preview at top, Desktop: Side-by-side layout */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-6">
               {/* Form Section */}
-              <Card className="order-2 lg:order-1">
+              <Card className="order-2 lg:order-1" ref={itemFormRef}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
