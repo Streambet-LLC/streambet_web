@@ -1274,26 +1274,41 @@ export default function SellerShopManage() {
                       <Label>
                         Grade <span className="text-red-500">*</span>
                       </Label>
-                      <Select
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Enter grade between 1 and 10"
                         value={form.grade}
-                        onValueChange={(value: string) => setForm(p => ({ ...p, grade: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select grade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="9">9</SelectItem>
-                          <SelectItem value="8">8</SelectItem>
-                          <SelectItem value="7">7</SelectItem>
-                          <SelectItem value="6">6</SelectItem>
-                          <SelectItem value="5">5</SelectItem>
-                          <SelectItem value="4">4</SelectItem>
-                          <SelectItem value="3">3</SelectItem>
-                          <SelectItem value="2">2</SelectItem>
-                          <SelectItem value="1">1</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={e => setForm(p => ({ ...p, grade: e.target.value }))}
+                        onBlur={e => {
+                          const raw = e.target.value.trim();
+                          if (raw === '') {
+                            setForm(p => ({ ...p, grade: '' }));
+                            return;
+                          }
+                          const parsed = Number(raw);
+                          if (Number.isNaN(parsed)) {
+                            setForm(p => ({ ...p, grade: '' }));
+                            return;
+                          }
+                          // Clamp between 1 and 10
+                          let clamped = Math.min(10, Math.max(1, parsed));
+                          // Whole numbers stay; any decimal becomes the .5 step
+                          const normalized = Number.isInteger(clamped)
+                            ? clamped
+                            : Math.min(9.5, Math.floor(clamped) + 0.5);
+                          setForm(p => ({ ...p, grade: String(normalized) }));
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Allowed grades: 1, 1.5, 2, 2.5 ... 9.5, 10
+                      </p>
                     </div>
                   )}
 
