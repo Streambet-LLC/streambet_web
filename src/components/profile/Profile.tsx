@@ -13,6 +13,7 @@ import { getImageLink } from '@/utils/helper';
 import { Footer } from '../Footer';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '../ui/button';
+import RatingSummary from '@/components/reviews/RatingSummary';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { PublicUserProfile } from '@/types/profile';
@@ -138,6 +139,9 @@ export default function Profile() {
                       <div className="flex gap-2 items-center">
                         <div className="text-lg font-semibold text-white">{username}</div>
                         {profile.isProSubscriber && <ProBadge size="md" />}
+                      </div>
+                      <div className="mt-1">
+                        <RatingSummary username={username} side="as_buyer" size="sm" />
                       </div>
                       <div className="text-xs text-gray-400 mt-2">
                         Date joined: {format(profile.accountCreationDate.toString(), 'MMMM d, yyy')}

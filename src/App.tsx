@@ -34,6 +34,7 @@ import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coin
 import Kyc from './components/withdraw/Kyc';
 import RouteGroup from './components/RouteGroup';
 import Profile from './pages/Profile';
+import Reviews from './pages/Reviews';
 import 'react-image-crop/dist/ReactCrop.css';
 import Home from './pages/Home';
 import Creator from './pages/Creator';
@@ -122,6 +123,7 @@ const App = () => {
 
                             {/* Public Routes */}
                             <Route path="/:username" element={<Profile />} />
+                            <Route path="/users/:username/reviews" element={<Reviews />} />
                             <Route path="/stream/:id" element={<Stream />} />
                             <Route path="/nonvideo/:id" element={<NonVideo />} />
                             <Route path="/privacy" element={<Privacy />} />
