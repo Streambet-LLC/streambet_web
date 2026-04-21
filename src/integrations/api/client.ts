@@ -27,6 +27,15 @@ import {
 } from '@/types/cart';
 import { SpinStatusResponse, SpinResultResponse } from '@/types/daily-spin';
 import {
+  CreateReviewPayload,
+  ListReviewsQuery,
+  PaginatedReviews,
+  Review,
+  ReviewableOrderSide,
+  ReviewStats,
+  UpdateReviewPayload,
+} from '@/types/review';
+import {
   Conversation,
   ConversationListResponse,
   MessageListResponse,
@@ -1432,7 +1441,9 @@ export const prizeAPI = {
     return response.data;
   },
 
-  updateProfileFeaturedItems: async (featuredItemIds: string[]): Promise<{ featuredCount: number }> => {
+  updateProfileFeaturedItems: async (
+    featuredItemIds: string[]
+  ): Promise<{ featuredCount: number }> => {
     const response = await apiClient.patch('/seller/prizes/profile-featured', { featuredItemIds });
     return response.data;
   },
@@ -1930,6 +1941,59 @@ export const cartAPI = {
   },
 };
 
+export const reviewAPI = {
+  /** Aggregate buyer/seller stats for a user. Public. */
+  getUserStats: async (username: string): Promise<ReviewStats> => {
+    const response = await apiClient.get(`/reviews/user/${encodeURIComponent(username)}/stats`);
+    return response.data?.data ?? response.data;
+  },
+
+  /** Paginated list of reviews about a user with optional filters/sort. Public. */
+  listReviewsForUser: async (
+    username: string,
+    query: ListReviewsQuery = {}
+  ): Promise<PaginatedReviews> => {
+    const params: Record<string, string | number> = {};
+    if (query.role) params.role = query.role;
+    if (query.sort) params.sort = query.sort;
+    if (query.page) params.page = query.page;
+    if (query.perPage) params.perPage = query.perPage;
+    const response = await apiClient.get(`/reviews/user/${encodeURIComponent(username)}`, {
+      params,
+    });
+    return response.data?.data ?? response.data;
+  },
+
+  /** Create a new review for one of my orders. */
+  createReview: async (payload: CreateReviewPayload): Promise<Review> => {
+    const response = await apiClient.post('/reviews', payload);
+    return response.data?.data ?? response.data;
+  },
+
+  /** Edit one of my own reviews (within 7 days of posting). */
+  updateReview: async (id: string, payload: UpdateReviewPayload): Promise<Review> => {
+    const response = await apiClient.patch(`/reviews/${id}`, payload);
+    return response.data?.data ?? response.data;
+  },
+
+  /** Delete one of my own reviews (within 14 days of posting). */
+  deleteReview: async (id: string): Promise<void> => {
+    await apiClient.delete(`/reviews/${id}`);
+  },
+
+  /** All of my orders that are reviewable (with any review I've left). */
+  getMyReviewable: async (): Promise<ReviewableOrderSide[]> => {
+    const response = await apiClient.get('/reviews/me/reviewable');
+    return response.data?.data ?? response.data;
+  },
+
+  /** My review (and counterparty info) for a specific order. */
+  getReviewForOrder: async (orderId: string): Promise<ReviewableOrderSide> => {
+    const response = await apiClient.get(`/reviews/order/${encodeURIComponent(orderId)}`);
+    return response.data?.data ?? response.data;
+  },
+};
+
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,
@@ -1948,6 +2012,7 @@ export const api = {
   subscription: subscriptionAPI,
   concierge: conciergeAPI,
   cart: cartAPI,
+  review: reviewAPI,
 };
 
 export default api;

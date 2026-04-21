@@ -1,5 +1,5 @@
 import { useIsMobile } from '@/hooks/use-mobile';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Input } from './ui/input';
 import { Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -8,8 +8,17 @@ import { Card, CardContent } from './ui/card';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow, Table } from './ui/table';
 import _ from 'lodash';
 import OrderItemDetailDialog from './OrderItemDetailDialog';
+import ReviewOrderButton from './reviews/ReviewOrderButton';
+import { ReviewableOrderSide } from '@/types/review';
 
-const ShopPurchaseTransactionHistory = () => {
+interface ShopPurchaseTransactionHistoryProps {
+  /** Called with an orderId when the user clicks the review button on a row. */
+  onOpenReview?: (orderId: string) => void;
+}
+
+const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryProps> = ({
+  onOpenReview,
+}) => {
   const isMobile = useIsMobile();
   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
 
@@ -20,6 +29,20 @@ const ShopPurchaseTransactionHistory = () => {
       return data?.filter(t => ['paid', 'shipped'].includes(t.status));
     },
   });
+
+  const { data: reviewableOrders } = useQuery({
+    queryKey: ['my-reviewable-orders'],
+    queryFn: () => api.review.getMyReviewable(),
+    staleTime: 60_000,
+  });
+
+  const reviewSideByOrderId = useMemo(() => {
+    const map = new Map<string, ReviewableOrderSide>();
+    for (const s of reviewableOrders ?? []) {
+      if (s.myRole === 'seller') map.set(s.orderId, s);
+    }
+    return map;
+  }, [reviewableOrders]);
 
   return (
     <div>
@@ -87,6 +110,15 @@ const ShopPurchaseTransactionHistory = () => {
                             {_.startCase(transaction.status)}
                           </span>
                         </div>
+                        {onOpenReview && reviewSideByOrderId.get(transaction.id) && (
+                          <div className="flex justify-between items-center pt-1">
+                            <span className="text-xs text-muted-foreground">Review</span>
+                            <ReviewOrderButton
+                              side={reviewSideByOrderId.get(transaction.id)}
+                              onOpen={onOpenReview}
+                            />
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -102,6 +134,7 @@ const ShopPurchaseTransactionHistory = () => {
                       <TableHead className="text-left">Prize</TableHead>
                       <TableHead className="text-right">Purchase Amount</TableHead>
                       <TableHead className="text-right">Status</TableHead>
+                      {onOpenReview && <TableHead className="text-right">Review</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -136,6 +169,14 @@ const ShopPurchaseTransactionHistory = () => {
                         <TableCell className="text-right">
                           {_.startCase(transaction.status)}
                         </TableCell>
+                        {onOpenReview && (
+                          <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+                            <ReviewOrderButton
+                              side={reviewSideByOrderId.get(transaction.id)}
+                              onOpen={onOpenReview}
+                            />
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>

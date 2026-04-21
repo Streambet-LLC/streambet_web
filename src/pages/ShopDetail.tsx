@@ -16,6 +16,7 @@ import { FaInstagram, FaTiktok, FaTwitter, FaYoutube } from 'react-icons/fa';
 import { PublicUserProfile } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 import { ProBadge } from '@/components/pro/ProBadge';
+import RatingSummary from '@/components/reviews/RatingSummary';
 
 const shopSocialsMapping = {
   instagram: {
@@ -185,7 +186,7 @@ export default function ShopDetail() {
                 <h1 className="text-3xl font-bold">{shopName}</h1>
                 {profileData?.isProSubscriber && <ProBadge size="lg" />}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <p className="text-muted-foreground">@{username}</p>
                 {slabPrizes.length > 0 && (
                   <span className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -193,6 +194,7 @@ export default function ShopDetail() {
                     {slabPrizes.length} {slabPrizes.length === 1 ? 'item' : 'items'}
                   </span>
                 )}
+                {username && <RatingSummary username={username} side="as_seller" size="sm" />}
               </div>
             </div>
           </div>
