@@ -60,6 +60,7 @@ export default function Prizes() {
     slab: 24,
     sealed: 24,
     raw: 24,
+    other: 24,
   });
   const [showPriceFilter, setShowPriceFilter] = useState(!isMobile);
   const [minPrice, setMinPrice] = useState<number | ''>('');
@@ -289,7 +290,7 @@ export default function Prizes() {
 
   // Group filtered prizes by category for per-section pagination
   const prizesByCategory = useMemo(() => {
-    const grouped: Record<string, PrizeDisplay[]> = { slab: [], sealed: [], raw: [] };
+    const grouped: Record<string, PrizeDisplay[]> = { slab: [], sealed: [], raw: [], other: [] };
     filteredPrizes.forEach(p => {
       const cat = p.category || 'slab';
       if (grouped[cat]) grouped[cat].push(p);
@@ -560,6 +561,7 @@ export default function Prizes() {
                               ['raw', 'Raw'],
                               ['slab', 'Slabs'],
                               ['sealed', 'Sealed'],
+                              ['other', 'Other'],
                             ] as const
                           ).map(([cat, label]) => (
                             <Button
@@ -598,73 +600,75 @@ export default function Prizes() {
                         </div>
                       </div>
 
-                      {/* Grade Filter - Show when a non-sealed category is selected */}
-                      {selectedCategories.length > 0 && !selectedCategories.includes('sealed') && (
-                        <div>
-                          <h3 className="text-sm font-semibold mb-3">
-                            {selectedCategories.includes('slab') ? 'Grade:' : 'Condition:'}
-                          </h3>
-                          <div
-                            className={`flex gap-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'flex-wrap'}`}
-                            role="tablist"
-                            aria-label="Item grades"
-                          >
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              role="tab"
-                              aria-selected={selectedGrades.length === 0}
-                              className={`${
-                                selectedGrades.length === 0
-                                  ? 'bg-primary text-black'
-                                  : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
-                              } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
-                              onClick={() => {
-                                const newParams = new URLSearchParams(searchParams);
-                                newParams.delete('grade');
-                                setSearchParams(newParams);
-                              }}
+                      {/* Grade Filter - Show only when raw or slab is selected */}
+                      {selectedCategories.length > 0 &&
+                        (selectedCategories.includes('raw') ||
+                          selectedCategories.includes('slab')) && (
+                          <div>
+                            <h3 className="text-sm font-semibold mb-3">
+                              {selectedCategories.includes('slab') ? 'Grade:' : 'Condition:'}
+                            </h3>
+                            <div
+                              className={`flex gap-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'flex-wrap'}`}
+                              role="tablist"
+                              aria-label="Item grades"
                             >
-                              All
-                            </Button>
-                            {(selectedCategories.includes('slab')
-                              ? ['10', '9', '8', '7', '6', '5', '4', '3', '2', '1']
-                              : ['NM', 'LP', 'MP', 'HP', 'DMG', 'MT', 'EX', 'VG', 'GD', 'PR']
-                            ).map(grade => (
                               <Button
-                                key={grade}
                                 variant="outline"
                                 size="sm"
                                 role="tab"
-                                aria-selected={selectedGrades.includes(grade)}
+                                aria-selected={selectedGrades.length === 0}
                                 className={`${
-                                  selectedGrades.includes(grade)
+                                  selectedGrades.length === 0
                                     ? 'bg-primary text-black'
                                     : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
                                 } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
                                 onClick={() => {
                                   const newParams = new URLSearchParams(searchParams);
-                                  const idx = selectedGrades.indexOf(grade);
-                                  let updated: string[];
-                                  if (idx > -1) {
-                                    updated = selectedGrades.filter(g => g !== grade);
-                                  } else {
-                                    updated = [...selectedGrades, grade];
-                                  }
-                                  if (updated.length > 0) {
-                                    newParams.set('grade', updated.join(','));
-                                  } else {
-                                    newParams.delete('grade');
-                                  }
+                                  newParams.delete('grade');
                                   setSearchParams(newParams);
                                 }}
                               >
-                                {grade}
+                                All
                               </Button>
-                            ))}
+                              {(selectedCategories.includes('slab')
+                                ? ['10', '9', '8', '7', '6', '5', '4', '3', '2', '1']
+                                : ['NM', 'LP', 'MP', 'HP', 'DMG', 'MT', 'EX', 'VG', 'GD', 'PR']
+                              ).map(grade => (
+                                <Button
+                                  key={grade}
+                                  variant="outline"
+                                  size="sm"
+                                  role="tab"
+                                  aria-selected={selectedGrades.includes(grade)}
+                                  className={`${
+                                    selectedGrades.includes(grade)
+                                      ? 'bg-primary text-black'
+                                      : 'border-primary shadow-[0_0_8px_rgba(189,255,0,0.5)]'
+                                  } ${isMobile ? 'flex-1 px-3 py-2 text-xs' : ''}`}
+                                  onClick={() => {
+                                    const newParams = new URLSearchParams(searchParams);
+                                    const idx = selectedGrades.indexOf(grade);
+                                    let updated: string[];
+                                    if (idx > -1) {
+                                      updated = selectedGrades.filter(g => g !== grade);
+                                    } else {
+                                      updated = [...selectedGrades, grade];
+                                    }
+                                    if (updated.length > 0) {
+                                      newParams.set('grade', updated.join(','));
+                                    } else {
+                                      newParams.delete('grade');
+                                    }
+                                    setSearchParams(newParams);
+                                  }}
+                                >
+                                  {grade}
+                                </Button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Price Filter */}
                       <div>
@@ -749,14 +753,20 @@ export default function Prizes() {
                     </div>
                   ) : (
                     <>
-                      {(['slab', 'sealed', 'raw'] as const).map(cat => {
+                      {(['slab', 'sealed', 'raw', 'other'] as const).map(cat => {
                         const allCatPrizes = prizesByCategory[cat] || [];
                         if (allCatPrizes.length === 0) return null;
                         const catDisplayCount = displayCounts[cat] || 24;
                         const catPrizes = allCatPrizes.slice(0, catDisplayCount);
                         const catHasMore = catDisplayCount < allCatPrizes.length;
                         const catLabel =
-                          cat === 'raw' ? 'Raw' : cat === 'slab' ? 'Slabs' : 'Sealed';
+                          cat === 'raw'
+                            ? 'Raw'
+                            : cat === 'slab'
+                              ? 'Slabs'
+                              : cat === 'sealed'
+                                ? 'Sealed'
+                                : 'Other';
                         return (
                           <div key={cat}>
                             <h3 className="text-4xl font-bold mb-8 py-6 flex items-center gap-2">

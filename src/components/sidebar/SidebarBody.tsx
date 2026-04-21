@@ -96,6 +96,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
     { value: 'raw', label: 'Raw', icon: Square },
     { value: 'slab', label: 'Slabs', icon: Award },
     { value: 'sealed', label: 'Sealed', icon: Package },
+    { value: 'other', label: 'Other', icon: MoreHorizontal },
   ] as const;
 
   // Handle product category click (raw/slab/sealed)
