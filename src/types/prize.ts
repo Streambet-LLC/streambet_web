@@ -4,6 +4,45 @@
 
 export type PrizeBrand = 'pokemon' | 'one_piece' | 'sports' | 'other';
 
+export interface PsaImportResult {
+  certNumber: string;
+  title: string;
+  brand: string | null;
+  category: string | null;
+  year: string | null;
+  cardNumber: string | null;
+  subject: string | null;
+  variety: string | null;
+  gradeDescription: string | null;
+  cardGrade: string | null;
+  description: string | null;
+  imageUrls: string[];
+  coverImageIndex: number;
+  coverImageUrl: string | null;
+  hasImages: boolean;
+  psaSpecId: number | null;
+  psaPopulation: {
+    gradePopulation: number | null;
+  } | null;
+  rateLimitedUntilTomorrow: boolean;
+  rateLimitedUntil: string | null;
+  psaCertUrl: string;
+  itemInformation: {
+    certNumber: string;
+    itemGrade: string | null;
+    labelType: string | null;
+    fugitiveInkTechnology: string | null;
+    reverseCertBarcode: string | null;
+    year: string | null;
+    brandTitle: string | null;
+    subject: string | null;
+    cardNumber: string | null;
+    category: string | null;
+    varietyPedigree: string | null;
+  };
+  source: 'psa';
+}
+
 export interface ItemImage {
   id: string;
   imageUrl: string;
