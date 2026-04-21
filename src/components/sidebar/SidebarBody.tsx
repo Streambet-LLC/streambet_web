@@ -230,7 +230,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
       )}
     >
       <SidebarContent>
-        <SidebarGroup className="flex flex-col gap-2 overflow-auto flex-1">
+        <SidebarGroup className="flex flex-col gap-2">
           <div className="flex justify-between items-center md:mb-2">
             {controls.open && !controls.isMobile && (
               <div className="flex items-center gap-1.5 pl-2">
@@ -369,7 +369,10 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                 <>
                   <div className="border-t border-border my-2" />
                   {controls.open && !controls.isMobile && (
-                    <div className="text-sm font-semibold pl-2 mb-2" id="sidebar-product-category-label">
+                    <div
+                      className="text-sm font-semibold pl-2 mb-2"
+                      id="sidebar-product-category-label"
+                    >
                       Product Type
                     </div>
                   )}
@@ -378,7 +381,9 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                     role="navigation"
                     aria-label="Pick product types"
                     aria-labelledby={
-                      controls.open && !controls.isMobile ? 'sidebar-product-category-label' : undefined
+                      controls.open && !controls.isMobile
+                        ? 'sidebar-product-category-label'
+                        : undefined
                     }
                   >
                     <Button
@@ -450,11 +455,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                                 />
                               </div>
                             ) : (
-                              <CategoryIconContainer
-                                icon={icon}
-                                isSelected={isSelected}
-                                compact
-                              />
+                              <CategoryIconContainer icon={icon} isSelected={isSelected} compact />
                             )}
                           </motion.div>
                         </Button>
@@ -466,145 +467,147 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
             </>
           )}
         </SidebarGroup>
+
+        {/* Footer Section - Shops on shop pages, Creators on predictions page */}
+        <SidebarFooter className="border-t border-border">
+          {isPredictionsPage ? (
+            // Creators section for predictions page
+            <>
+              {controls.open && !controls.isMobile && (
+                <div className="flex items-center justify-between" id="sidebar-creators-label">
+                  <div className="text-sm font-semibold">Creators</div>
+                  <Link
+                    to="/creators"
+                    className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+                  >
+                    See All
+                  </Link>
+                </div>
+              )}
+              <div
+                className="flex flex-col gap-2"
+                role="navigation"
+                aria-label="Live creators"
+                aria-labelledby={
+                  controls.open && !controls.isMobile ? 'sidebar-creators-label' : undefined
+                }
+              >
+                {data?.slice(0, 5).map(stream => {
+                  const commonClassName = cn(
+                    'h-auto overflow-visible transition-all cursor-pointer no-underline',
+                    controls.open && !controls.isMobile
+                      ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
+                      : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
+                  );
+
+                  return (
+                    <Link key={stream.id} to={`/${stream.creator}`} className={commonClassName}>
+                      <Avatar
+                        className={cn(
+                          controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
+                          'flex-shrink-0'
+                        )}
+                      >
+                        <AvatarImage
+                          src={stream.pfp ? getImageLink(stream.pfp) : undefined}
+                          alt={stream.creator}
+                        />
+                        <AvatarFallback className="bg-primary text-black font-semibold text-xs">
+                          {stream.creator?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {controls.open && !controls.isMobile && (
+                        <span className="text-[13px] font-semibold text-primary truncate">
+                          {stream.creator}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            // Shops section for shop/home pages
+            <>
+              {controls.open && !controls.isMobile && (
+                <div className="flex items-center justify-between" id="sidebar-shops-label">
+                  <div className="text-sm font-semibold">Shops</div>
+                  <Link
+                    to="/shops"
+                    className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
+                  >
+                    See All
+                  </Link>
+                </div>
+              )}
+              <div
+                className="flex flex-col gap-2"
+                role="navigation"
+                aria-label="Featured shops"
+                aria-labelledby={
+                  controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined
+                }
+              >
+                {sortedShops.map(shop => {
+                  const isActiveShop = currentShopUsername === shop.username.toLowerCase();
+                  const commonClassName = cn(
+                    'h-auto overflow-visible transition-all cursor-pointer no-underline',
+                    controls.open && !controls.isMobile
+                      ? cn(
+                          'p-2.5 rounded-[8px] flex items-center gap-2.5',
+                          isActiveShop
+                            ? 'bg-primary/15 border border-primary hover:bg-primary/20'
+                            : 'bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary'
+                        )
+                      : cn(
+                          'px-1 py-1 rounded-md flex justify-center',
+                          isActiveShop
+                            ? 'bg-primary/15 ring-1 ring-primary'
+                            : 'hover:bg-sidebar-compact-hover'
+                        )
+                  );
+
+                  const shopContent = (
+                    <>
+                      <Avatar
+                        className={cn(
+                          controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
+                          'flex-shrink-0'
+                        )}
+                      >
+                        <AvatarImage
+                          src={
+                            shop.profileImageUrl ? getImageLink(shop.profileImageUrl) : undefined
+                          }
+                          alt={shop.name}
+                        />
+                        <AvatarFallback className="bg-primary text-black font-semibold text-xs">
+                          {shop.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {controls.open && !controls.isMobile && (
+                        <span className="text-[13px] font-semibold text-primary truncate">
+                          {shop.name}
+                        </span>
+                      )}
+                    </>
+                  );
+
+                  return shop.isClickable ? (
+                    <Link key={shop.id} to={`/shop/${shop.username}`} className={commonClassName}>
+                      {shopContent}
+                    </Link>
+                  ) : (
+                    <div key={shop.id} className={commonClassName}>
+                      {shopContent}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </SidebarFooter>
       </SidebarContent>
-
-      {/* Footer Section - Shops on shop pages, Creators on predictions page */}
-      <SidebarFooter className="border-t border-border">
-        {isPredictionsPage ? (
-          // Creators section for predictions page
-          <>
-            {controls.open && !controls.isMobile && (
-              <div className="flex items-center justify-between" id="sidebar-creators-label">
-                <div className="text-sm font-semibold">Creators</div>
-                <Link
-                  to="/creators"
-                  className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
-                >
-                  See All
-                </Link>
-              </div>
-            )}
-            <div
-              className="flex flex-col gap-2"
-              role="navigation"
-              aria-label="Live creators"
-              aria-labelledby={
-                controls.open && !controls.isMobile ? 'sidebar-creators-label' : undefined
-              }
-            >
-              {data?.slice(0, 5).map(stream => {
-                const commonClassName = cn(
-                  'h-auto overflow-visible transition-all cursor-pointer no-underline',
-                  controls.open && !controls.isMobile
-                    ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
-                    : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
-                );
-
-                return (
-                  <Link key={stream.id} to={`/${stream.creator}`} className={commonClassName}>
-                    <Avatar
-                      className={cn(
-                        controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
-                        'flex-shrink-0'
-                      )}
-                    >
-                      <AvatarImage
-                        src={stream.pfp ? getImageLink(stream.pfp) : undefined}
-                        alt={stream.creator}
-                      />
-                      <AvatarFallback className="bg-primary text-black font-semibold text-xs">
-                        {stream.creator?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {controls.open && !controls.isMobile && (
-                      <span className="text-[13px] font-semibold text-primary truncate">
-                        {stream.creator}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          // Shops section for shop/home pages
-          <>
-            {controls.open && !controls.isMobile && (
-              <div className="flex items-center justify-between" id="sidebar-shops-label">
-                <div className="text-sm font-semibold">Shops</div>
-                <Link
-                  to="/shops"
-                  className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
-                >
-                  See All
-                </Link>
-              </div>
-            )}
-            <div
-              className="flex flex-col gap-2"
-              role="navigation"
-              aria-label="Featured shops"
-              aria-labelledby={
-                controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined
-              }
-            >
-              {sortedShops.map(shop => {
-                const isActiveShop = currentShopUsername === shop.username.toLowerCase();
-                const commonClassName = cn(
-                  'h-auto overflow-visible transition-all cursor-pointer no-underline',
-                  controls.open && !controls.isMobile
-                    ? cn(
-                        'p-2.5 rounded-[8px] flex items-center gap-2.5',
-                        isActiveShop
-                          ? 'bg-primary/15 border border-primary hover:bg-primary/20'
-                          : 'bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary'
-                      )
-                    : cn(
-                        'px-1 py-1 rounded-md flex justify-center',
-                        isActiveShop
-                          ? 'bg-primary/15 ring-1 ring-primary'
-                          : 'hover:bg-sidebar-compact-hover'
-                      )
-                );
-
-                const shopContent = (
-                  <>
-                    <Avatar
-                      className={cn(
-                        controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
-                        'flex-shrink-0'
-                      )}
-                    >
-                      <AvatarImage
-                        src={shop.profileImageUrl ? getImageLink(shop.profileImageUrl) : undefined}
-                        alt={shop.name}
-                      />
-                      <AvatarFallback className="bg-primary text-black font-semibold text-xs">
-                        {shop.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {controls.open && !controls.isMobile && (
-                      <span className="text-[13px] font-semibold text-primary truncate">
-                        {shop.name}
-                      </span>
-                    )}
-                  </>
-                );
-
-                return shop.isClickable ? (
-                  <Link key={shop.id} to={`/shop/${shop.username}`} className={commonClassName}>
-                    {shopContent}
-                  </Link>
-                ) : (
-                  <div key={shop.id} className={commonClassName}>
-                    {shopContent}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </SidebarFooter>
     </Sidebar>
   );
 }

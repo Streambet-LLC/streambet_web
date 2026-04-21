@@ -27,7 +27,7 @@ import {
   HeadphonesIcon,
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { PrizeBrand, PrizeConfiguration } from '@/types/prize';
+import { PrizeBrand, PrizeConfiguration, type PsaImportResult } from '@/types/prize';
 import { CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -91,6 +91,9 @@ interface SellerPurchasedOrder {
 }
 
 export default function SellerShopManage() {
+  const PSA_RATE_LIMIT_MESSAGE = 'PSA is rate-limiting requests right now. Try again tomorrow.';
+  const PSA_RATE_LIMIT_UNTIL_KEY = 'sellerShopManage.psaRateLimitedUntil';
+
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -129,6 +132,10 @@ export default function SellerShopManage() {
   const [shopProfileImageFile, setShopProfileImageFile] = useState<File | null>(null);
   const shopProfileImageInputRef = React.useRef<HTMLInputElement>(null);
   const ordersRef = React.useRef<HTMLDivElement>(null);
+  const itemFormRef = React.useRef<HTMLDivElement>(null);
+  const [psaCertNumber, setPsaCertNumber] = useState('');
+  const [psaImportResult, setPsaImportResult] = useState<PsaImportResult | null>(null);
+  const [psaRateLimitedUntil, setPsaRateLimitedUntil] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -144,6 +151,61 @@ export default function SellerShopManage() {
     isProOnly: false,
     profileFeatured: false,
   });
+
+  const normalizePsaBrand = (brand: string | null | undefined): PrizeBrand => {
+    const normalized = (brand || '').toLowerCase().trim();
+    if (normalized.includes('pokemon')) return 'pokemon';
+    if (normalized.includes('one piece')) return 'one_piece';
+    if (normalized.includes('sports')) return 'sports';
+    return 'other';
+  };
+
+  const getTomorrowStartMs = () => {
+    const tomorrow = new Date();
+    tomorrow.setHours(24, 0, 0, 0);
+    return tomorrow.getTime();
+  };
+
+  const clearPsaRateLimitCooldown = () => {
+    setPsaRateLimitedUntil(null);
+    localStorage.removeItem(PSA_RATE_LIMIT_UNTIL_KEY);
+  };
+
+  const activatePsaRateLimitCooldown = (untilIso?: string | null) => {
+    const parsed = untilIso ? Date.parse(untilIso) : NaN;
+    const fallback = getTomorrowStartMs();
+    const until = Number.isFinite(parsed) ? Math.max(parsed, Date.now()) : fallback;
+
+    setPsaRateLimitedUntil(until);
+    localStorage.setItem(PSA_RATE_LIMIT_UNTIL_KEY, String(until));
+  };
+
+  const isPsaRateLimited = Boolean(psaRateLimitedUntil && Date.now() < psaRateLimitedUntil);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(PSA_RATE_LIMIT_UNTIL_KEY);
+    if (!stored) {
+      return;
+    }
+
+    const until = Number(stored);
+    if (!Number.isFinite(until) || Date.now() >= until) {
+      localStorage.removeItem(PSA_RATE_LIMIT_UNTIL_KEY);
+      return;
+    }
+
+    setPsaRateLimitedUntil(until);
+  }, []);
+
+  useEffect(() => {
+    if (!psaRateLimitedUntil) {
+      return;
+    }
+
+    if (Date.now() >= psaRateLimitedUntil) {
+      clearPsaRateLimitCooldown();
+    }
+  }, [psaRateLimitedUntil]);
 
   const [selectedPurchasedOrder, setSelectedPurchasedOrder] = useState<SellerPurchasedOrder | null>(
     null
@@ -388,6 +450,68 @@ export default function SellerShopManage() {
     },
   });
 
+  const psaImportMutation = useMutation({
+    mutationFn: (certNumber: string) => api.prize.importPsaCert(certNumber),
+    onSuccess: (result: PsaImportResult) => {
+      if (result.rateLimitedUntilTomorrow) {
+        activatePsaRateLimitCooldown(result.rateLimitedUntil);
+        toast({
+          title: 'PSA import limited',
+          description: PSA_RATE_LIMIT_MESSAGE,
+          variant: 'destructive',
+        });
+      }
+
+      setPsaImportResult(result);
+
+      const importedImages = result.imageUrls.map((imageUrl, index) => ({
+        id: `psa-${result.certNumber}-${index}`,
+        imageUrl,
+        isNew: false,
+      }));
+
+      setForm(prev => ({
+        ...prev,
+        name: result.title || prev.name,
+        description: result.description || result.title || prev.description,
+        brand: normalizePsaBrand(result.brand),
+      }));
+
+      if (importedImages.length > 0) {
+        setItemImages(importedImages);
+        setCoverImageIndex(Math.min(result.coverImageIndex, importedImages.length - 1));
+      }
+
+      toast({
+        title: 'PSA import complete',
+        description: result.hasImages
+          ? 'Title, details, and images were filled from PSA.'
+          : 'Title and details were filled from PSA. No images were available for this cert.',
+      });
+    },
+    onError: (error: any) => {
+      const statusCode = error?.response?.status;
+      const errorCode = error?.response?.data?.errorCode;
+
+      if (statusCode === 429 || errorCode === 'PSA_RATE_LIMITED') {
+        activatePsaRateLimitCooldown(error?.response?.data?.rateLimitedUntil);
+        toast({
+          title: 'PSA import limited',
+          description: PSA_RATE_LIMIT_MESSAGE,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'PSA import failed',
+        description:
+          error?.response?.data?.message || error?.message || 'Unable to import PSA cert data.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const counterOfferMutation = useMutation({
     mutationFn: (data: { orderId: string; counterOfferAmount: number; offerNotes?: string }) =>
       api.prize.counterMyShopOffer(data.orderId, data),
@@ -583,12 +707,20 @@ export default function SellerShopManage() {
     });
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
-    // Scroll to top on mobile, form is already visible on desktop
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to the edit form so the user can see where editing takes place
+    // Use a short timeout to allow the form to render/update before scrolling
+    setTimeout(() => {
+      if (itemFormRef.current) {
+        itemFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 0);
   };
 
   const handleCancelEdit = () => {
     setEditingItemId(null);
+    setPsaImportResult(null);
     setForm({
       name: '',
       description: '',
@@ -1087,7 +1219,7 @@ export default function SellerShopManage() {
             {/* Mobile: Preview at top, Desktop: Side-by-side layout */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-6">
               {/* Form Section */}
-              <Card className="order-2 lg:order-1">
+              <Card className="order-2 lg:order-1" ref={itemFormRef}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -1108,7 +1240,105 @@ export default function SellerShopManage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
-                    <Label>Name *</Label>
+                    <Label>PSA Cert Number</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Input
+                        placeholder="Enter PSA cert number"
+                        value={psaCertNumber}
+                        onChange={e => setPsaCertNumber(e.target.value)}
+                        disabled={isPsaRateLimited}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => psaImportMutation.mutate(psaCertNumber)}
+                        disabled={psaImportMutation.isPending || !psaCertNumber.trim() || isPsaRateLimited}
+                      >
+                        {psaImportMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : null}
+                        Autofill from PSA
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Pulls the title, grade, and available PSA images into the listing form.
+                    </p>
+                    {isPsaRateLimited && (
+                      <p className="text-xs text-destructive">{PSA_RATE_LIMIT_MESSAGE}</p>
+                    )}
+
+                    {psaImportResult && (
+                      <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground space-y-2">
+                        <div className="font-semibold text-foreground">PSA Import Summary</div>
+                        <div>
+                          Population ({psaImportResult.cardGrade ? `PSA ${psaImportResult.cardGrade}` : 'this grade'}):{' '}
+                          {psaImportResult.psaPopulation?.gradePopulation !== null &&
+                          psaImportResult.psaPopulation?.gradePopulation !== undefined
+                            ? new Intl.NumberFormat().format(psaImportResult.psaPopulation.gradePopulation)
+                            : 'N/A'}
+                        </div>
+                        <div>
+                          <a
+                            href={psaImportResult.psaCertUrl || `https://www.psacard.com/cert/${encodeURIComponent(psaImportResult.certNumber)}/psa`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-primary underline underline-offset-2"
+                          >
+                            View on PSA
+                          </a>
+                        </div>
+
+                        <div className="pt-1">
+                          <div className="font-semibold text-foreground">Item Information</div>
+                          <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Cert Number:</span>{' '}
+                              {psaImportResult.itemInformation?.certNumber || 'N/A'}
+                            </div>
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Item Grade:</span>{' '}
+                              {psaImportResult.itemInformation?.itemGrade ?? 'N/A'}
+                            </div>
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Brand/Title:</span>{' '}
+                              {psaImportResult.itemInformation?.brandTitle ?? 'N/A'}
+                            </div>
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Subject:</span>{' '}
+                              {psaImportResult.itemInformation?.subject ?? 'N/A'}
+                            </div>
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Variety/Pedigree:</span>{' '}
+                              {psaImportResult.itemInformation?.varietyPedigree ?? 'N/A'}
+                            </div>
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Year:</span>{' '}
+                              {psaImportResult.itemInformation?.year ?? 'N/A'}
+                            </div>
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Card Number:</span>{' '}
+                              {psaImportResult.itemInformation?.cardNumber ?? 'N/A'}
+                            </div>
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Category:</span>{' '}
+                              {psaImportResult.itemInformation?.category ?? 'N/A'}
+                            </div>
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Label Type:</span>{' '}
+                              {psaImportResult.itemInformation?.labelType ?? 'N/A'}
+                            </div>
+                            <div className="text-foreground">
+                              <span className="text-muted-foreground">Reverse Cert/Barcode:</span>{' '}
+                              {psaImportResult.itemInformation?.reverseCertBarcode ?? 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Name <span className="text-red-500">*</span></Label>
                     <Input
                       placeholder="e.g., Charizard PSA 10"
                       value={form.name}
@@ -1118,7 +1348,12 @@ export default function SellerShopManage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label>Price (USD) {form.purchaseOption !== 'offers_only' ? '*' : ''}</Label>
+                      <Label>
+                        Price (USD)
+                        {form.purchaseOption !== 'offers_only' && (
+                          <span className="text-red-500"> *</span>
+                        )}
+                      </Label>
                       <Input
                         type="number"
                         min={1}
@@ -1150,7 +1385,9 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Purchase Option *</Label>
+                    <Label>
+                      Purchase Option <span className="text-red-500">*</span>
+                    </Label>
                     <Select
                       value={form.purchaseOption}
                       onValueChange={(value: 'buy_only' | 'offers_only' | 'both') =>
@@ -1169,10 +1406,18 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Card Type *</Label>
+                    <Label>
+                      Card Type <span className="text-red-500">*</span>
+                    </Label>
                     <Select
                       value={form.brand}
-                      onValueChange={(value: PrizeBrand) => setForm(p => ({ ...p, brand: value, grade: p.category === 'raw' ? '' : p.grade }))}
+                      onValueChange={(value: PrizeBrand) =>
+                        setForm(p => ({
+                          ...p,
+                          brand: value,
+                          grade: p.category === 'raw' ? '' : p.grade,
+                        }))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select brand" />
@@ -1187,7 +1432,9 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Format *</Label>
+                    <Label>
+                      Format <span className="text-red-500">*</span>
+                    </Label>
                     <Select
                       value={form.category}
                       onValueChange={(value: 'raw' | 'slab' | 'sealed') =>
@@ -1208,7 +1455,9 @@ export default function SellerShopManage() {
                   {/* Conditional Grade selector */}
                   {form.category === 'raw' && (
                     <div className="grid gap-2">
-                      <Label>Condition *</Label>
+                      <Label>
+                        Condition <span className="text-red-500">*</span>
+                      </Label>
                       <Select
                         value={form.grade}
                         onValueChange={(value: string) => setForm(p => ({ ...p, grade: value }))}
@@ -1242,34 +1491,51 @@ export default function SellerShopManage() {
 
                   {form.category === 'slab' && (
                     <div className="grid gap-2">
-                      <Label>Grade *</Label>
-                      <Select
+                      <Label>
+                        Grade <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Enter grade between 1 and 10"
                         value={form.grade}
-                        onValueChange={(value: string) => setForm(p => ({ ...p, grade: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select grade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="9">9</SelectItem>
-                          <SelectItem value="8">8</SelectItem>
-                          <SelectItem value="7">7</SelectItem>
-                          <SelectItem value="6">6</SelectItem>
-                          <SelectItem value="5">5</SelectItem>
-                          <SelectItem value="4">4</SelectItem>
-                          <SelectItem value="3">3</SelectItem>
-                          <SelectItem value="2">2</SelectItem>
-                          <SelectItem value="1">1</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={e => setForm(p => ({ ...p, grade: e.target.value }))}
+                        onBlur={e => {
+                          const raw = e.target.value.trim();
+                          if (raw === '') {
+                            setForm(p => ({ ...p, grade: '' }));
+                            return;
+                          }
+                          const parsed = Number(raw);
+                          if (Number.isNaN(parsed)) {
+                            setForm(p => ({ ...p, grade: '' }));
+                            return;
+                          }
+                          // Clamp between 1 and 10
+                          let clamped = Math.min(10, Math.max(1, parsed));
+                          // Whole numbers stay; any decimal becomes the .5 step
+                          const normalized = Number.isInteger(clamped)
+                            ? clamped
+                            : Math.min(9.5, Math.floor(clamped) + 0.5);
+                          setForm(p => ({ ...p, grade: String(normalized) }));
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Allowed grades: 1, 1.5, 2, 2.5 ... 9.5, 10
+                      </p>
                     </div>
                   )}
 
                   <div className="grid gap-2">
                     <Label>Description</Label>
                     <Textarea
-                      placeholder="Item description..."
+                      placeholder="Label details about the item here like any rips or tears, wear, damage, or anything else that is important to share"
                       value={form.description}
                       onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                       rows={3}
@@ -1294,6 +1560,12 @@ export default function SellerShopManage() {
                       Lower numbers show first (e.g. 1 shows before 2).
                     </p>
                   </div>
+
+                  {psaCertNumber.trim() && (
+                    <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                      PSA cert {psaCertNumber.trim()} is ready to import or update.
+                    </div>
+                  )}
 
                   {session?.isProSubscriber && (
                     <div className="flex items-center justify-between rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
@@ -1344,9 +1616,8 @@ export default function SellerShopManage() {
                       Drag to reorder photos. Use the star button to choose cover photo.
                     </p>
                     <p className="rounded-md border border-[#D4FF00]/40 bg-[#D4FF00]/10 px-3 py-2 text-xs font-semibold text-[#D4FF00]">
-                      Please lookup the cert number for your slab to see if there are high
-                      resolution photos of it. If so, right click images, save to downloads, and
-                      upload those photos here.
+                      You can import PSA cert details and images first, then make any manual edits
+                      before saving the listing.
                     </p>
                   </div>
 
@@ -1628,7 +1899,7 @@ export default function SellerShopManage() {
               </Card>
               <Card className="h-fit" ref={ordersRef}>
                 <CardHeader>
-                  <CardTitle>Purchased Items</CardTitle>
+                  <CardTitle>Sold Items</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Items that have been purchased by buyers. Mark them as shipped once sent.
                   </p>
