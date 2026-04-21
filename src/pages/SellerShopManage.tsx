@@ -132,6 +132,7 @@ export default function SellerShopManage() {
   const [shopProfileImageFile, setShopProfileImageFile] = useState<File | null>(null);
   const shopProfileImageInputRef = React.useRef<HTMLInputElement>(null);
   const ordersRef = React.useRef<HTMLDivElement>(null);
+  const itemFormRef = React.useRef<HTMLDivElement>(null);
   const [psaCertNumber, setPsaCertNumber] = useState('');
   const [psaImportResult, setPsaImportResult] = useState<PsaImportResult | null>(null);
   const [psaRateLimitedUntil, setPsaRateLimitedUntil] = useState<number | null>(null);
@@ -706,8 +707,15 @@ export default function SellerShopManage() {
     });
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
-    // Scroll to top on mobile, form is already visible on desktop
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to the edit form so the user can see where editing takes place
+    // Use a short timeout to allow the form to render/update before scrolling
+    setTimeout(() => {
+      if (itemFormRef.current) {
+        itemFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 0);
   };
 
   const handleCancelEdit = () => {
@@ -1211,7 +1219,7 @@ export default function SellerShopManage() {
             {/* Mobile: Preview at top, Desktop: Side-by-side layout */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-6">
               {/* Form Section */}
-              <Card className="order-2 lg:order-1">
+              <Card className="order-2 lg:order-1" ref={itemFormRef}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -1330,7 +1338,7 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Name *</Label>
+                    <Label>Name <span className="text-red-500">*</span></Label>
                     <Input
                       placeholder="e.g., Charizard PSA 10"
                       value={form.name}
@@ -1340,7 +1348,12 @@ export default function SellerShopManage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label>Price (USD) {form.purchaseOption !== 'offers_only' ? '*' : ''}</Label>
+                      <Label>
+                        Price (USD)
+                        {form.purchaseOption !== 'offers_only' && (
+                          <span className="text-red-500"> *</span>
+                        )}
+                      </Label>
                       <Input
                         type="number"
                         min={1}
@@ -1372,7 +1385,9 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Purchase Option *</Label>
+                    <Label>
+                      Purchase Option <span className="text-red-500">*</span>
+                    </Label>
                     <Select
                       value={form.purchaseOption}
                       onValueChange={(value: 'buy_only' | 'offers_only' | 'both') =>
@@ -1391,10 +1406,18 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Card Type *</Label>
+                    <Label>
+                      Card Type <span className="text-red-500">*</span>
+                    </Label>
                     <Select
                       value={form.brand}
-                      onValueChange={(value: PrizeBrand) => setForm(p => ({ ...p, brand: value, grade: p.category === 'raw' ? '' : p.grade }))}
+                      onValueChange={(value: PrizeBrand) =>
+                        setForm(p => ({
+                          ...p,
+                          brand: value,
+                          grade: p.category === 'raw' ? '' : p.grade,
+                        }))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select brand" />
@@ -1409,7 +1432,9 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Format *</Label>
+                    <Label>
+                      Format <span className="text-red-500">*</span>
+                    </Label>
                     <Select
                       value={form.category}
                       onValueChange={(value: 'raw' | 'slab' | 'sealed') =>
@@ -1430,7 +1455,9 @@ export default function SellerShopManage() {
                   {/* Conditional Grade selector */}
                   {form.category === 'raw' && (
                     <div className="grid gap-2">
-                      <Label>Condition *</Label>
+                      <Label>
+                        Condition <span className="text-red-500">*</span>
+                      </Label>
                       <Select
                         value={form.grade}
                         onValueChange={(value: string) => setForm(p => ({ ...p, grade: value }))}
@@ -1464,34 +1491,51 @@ export default function SellerShopManage() {
 
                   {form.category === 'slab' && (
                     <div className="grid gap-2">
-                      <Label>Grade *</Label>
-                      <Select
+                      <Label>
+                        Grade <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Enter grade between 1 and 10"
                         value={form.grade}
-                        onValueChange={(value: string) => setForm(p => ({ ...p, grade: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select grade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="9">9</SelectItem>
-                          <SelectItem value="8">8</SelectItem>
-                          <SelectItem value="7">7</SelectItem>
-                          <SelectItem value="6">6</SelectItem>
-                          <SelectItem value="5">5</SelectItem>
-                          <SelectItem value="4">4</SelectItem>
-                          <SelectItem value="3">3</SelectItem>
-                          <SelectItem value="2">2</SelectItem>
-                          <SelectItem value="1">1</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        onChange={e => setForm(p => ({ ...p, grade: e.target.value }))}
+                        onBlur={e => {
+                          const raw = e.target.value.trim();
+                          if (raw === '') {
+                            setForm(p => ({ ...p, grade: '' }));
+                            return;
+                          }
+                          const parsed = Number(raw);
+                          if (Number.isNaN(parsed)) {
+                            setForm(p => ({ ...p, grade: '' }));
+                            return;
+                          }
+                          // Clamp between 1 and 10
+                          let clamped = Math.min(10, Math.max(1, parsed));
+                          // Whole numbers stay; any decimal becomes the .5 step
+                          const normalized = Number.isInteger(clamped)
+                            ? clamped
+                            : Math.min(9.5, Math.floor(clamped) + 0.5);
+                          setForm(p => ({ ...p, grade: String(normalized) }));
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            (e.target as HTMLInputElement).blur();
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Allowed grades: 1, 1.5, 2, 2.5 ... 9.5, 10
+                      </p>
                     </div>
                   )}
 
                   <div className="grid gap-2">
                     <Label>Description</Label>
                     <Textarea
-                      placeholder="Item description..."
+                      placeholder="Label details about the item here like any rips or tears, wear, damage, or anything else that is important to share"
                       value={form.description}
                       onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                       rows={3}
@@ -1855,7 +1899,7 @@ export default function SellerShopManage() {
               </Card>
               <Card className="h-fit" ref={ordersRef}>
                 <CardHeader>
-                  <CardTitle>Purchased Items</CardTitle>
+                  <CardTitle>Sold Items</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Items that have been purchased by buyers. Mark them as shipped once sent.
                   </p>
