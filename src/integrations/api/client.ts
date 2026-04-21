@@ -1497,7 +1497,7 @@ export const prizeAPI = {
     imageUrl?: string;
     imageUrls?: string[];
     coverImageIndex?: number;
-    category?: 'slab' | 'sealed';
+    category?: 'raw' | 'slab' | 'sealed';
     stock?: number;
     purchaseOption?: 'offers_only' | 'buy_only' | 'both';
     brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
@@ -1517,7 +1517,7 @@ export const prizeAPI = {
       imageUrl?: string;
       imageUrls?: string[];
       coverImageIndex?: number;
-      category?: 'slab' | 'sealed';
+      category?: 'raw' | 'slab' | 'sealed';
       stock?: number;
       purchaseOption?: 'offers_only' | 'buy_only' | 'both';
       brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
