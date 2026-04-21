@@ -1172,7 +1172,13 @@ export default function SellerShopManage() {
                     <Label>Card Type *</Label>
                     <Select
                       value={form.brand}
-                      onValueChange={(value: PrizeBrand) => setForm(p => ({ ...p, brand: value, grade: p.category === 'raw' ? '' : p.grade }))}
+                      onValueChange={(value: PrizeBrand) =>
+                        setForm(p => ({
+                          ...p,
+                          brand: value,
+                          grade: p.category === 'raw' ? '' : p.grade,
+                        }))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select brand" />
@@ -1628,7 +1634,7 @@ export default function SellerShopManage() {
               </Card>
               <Card className="h-fit" ref={ordersRef}>
                 <CardHeader>
-                  <CardTitle>Purchased Items</CardTitle>
+                  <CardTitle>Sold Items</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Items that have been purchased by buyers. Mark them as shipped once sent.
                   </p>
