@@ -739,6 +739,24 @@ export default function SellerShopManage() {
     setCoverImageIndex(0);
   };
 
+  // Auto-open the edit form when arriving with ?editItemId=<id> (e.g. from a
+  // PrizeCard "Edit Item" link on the public shop page). Triggers once per id.
+  const editItemIdParam = searchParams.get('editItemId');
+  const handledEditParamRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!editItemIdParam || items.length === 0) return;
+    if (handledEditParamRef.current === editItemIdParam) return;
+    if (editingItemId === editItemIdParam) {
+      handledEditParamRef.current = editItemIdParam;
+      return;
+    }
+    const item = items.find(i => i.id === editItemIdParam);
+    if (item) {
+      handledEditParamRef.current = editItemIdParam;
+      handleEditItem(item);
+    }
+  }, [editItemIdParam, items, editingItemId]);
+
   const handleOpenCounterDialog = (order: SellerOfferOrder) => {
     setSelectedOffer(order);
     setCounterAmount(order.offerAmount?.toString() || '');
