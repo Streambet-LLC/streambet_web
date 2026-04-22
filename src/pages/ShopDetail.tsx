@@ -114,6 +114,7 @@ export default function ShopDetail() {
         brand: prize.brand,
         displayOrder: prize.sellerDisplayOrderShop ?? prize.displayOrderShop ?? 999,
         createdBy: prize.createdBy ?? null,
+        createdByUsername: (prize as any).createdByUsername ?? username ?? null,
         isProOnly: prize.isProOnly ?? false,
         proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
         // Don't show shop link in shop detail - user is already in the shop
