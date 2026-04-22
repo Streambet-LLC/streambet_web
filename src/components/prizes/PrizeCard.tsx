@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Crown,
   Loader2,
+  Pencil,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Prize } from './PrizesByCategory';
@@ -295,6 +296,29 @@ export default function PrizeCard({
   const { session } = useAuthContext();
   const addToCart = useAddToCart();
   const isProUser = !!session?.isProSubscriber;
+  // Owner detection: if the current user is the seller of this item, show an Edit
+  // shortcut instead of Buy/Make Offer buttons (you can't buy your own item).
+  // The session shape is inconsistent across the app: sometimes the current user's
+  // id lives at `session.user.id` and sometimes at `session.id` (see Inbox.tsx),
+  // so we accept either. We also fall back to comparing usernames because some
+  // shop pages don't propagate the seller user id on every item, and some code
+  // paths fall back `createdBy` to the literal string 'cardcade'.
+  const sessionUserId = session?.user?.id || session?.id || null;
+  const sessionUsername = (session?.user?.username || (session as any)?.username || '')
+    .toString()
+    .toLowerCase();
+  const prizeCreatorId = prize.createdBy ?? null;
+  const prizeCreatorUsername = prize.createdByUsername?.toLowerCase() ?? null;
+  const isOwnItem =
+    !!sessionUserId &&
+    ((!!prizeCreatorId &&
+      prizeCreatorId !== 'cardcade' &&
+      prizeCreatorId === sessionUserId) ||
+      (!!sessionUsername &&
+        !!prizeCreatorUsername &&
+        prizeCreatorUsername !== 'cardcade' &&
+        prizeCreatorUsername === sessionUsername));
+  const editHref = `/seller/shop/manage?editItemId=${prize.id}`;
   const isProLocked = useMemo(() => {
     if (isProUser) return false;
     if (prize.isProOnly) return true;
@@ -393,7 +417,24 @@ export default function PrizeCard({
             </p>
           )}
           <div className="flex flex-col sm:flex-row gap-2 mt-auto">
-            {!hideButtons && canBuy && (
+            {!hideButtons && isOwnItem && (
+              <Button
+                asChild
+                variant="outline"
+                className="flex-1 gap-2 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+                type="button"
+                tabIndex={0}
+              >
+                <Link
+                  to={editHref}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit Item
+                </Link>
+              </Button>
+            )}
+            {!hideButtons && !isOwnItem && canBuy && (
               <Button
                 className="flex-1 gap-2"
                 type="button"
@@ -409,7 +450,7 @@ export default function PrizeCard({
                 {isProLocked ? 'Pro Only' : 'Buy Now'}
               </Button>
             )}
-            {!hideButtons && canOffer && onOfferClick && (
+            {!hideButtons && !isOwnItem && canOffer && onOfferClick && (
               <Button
                 variant="outline"
                 className="flex-1 gap-2 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00]"
@@ -584,7 +625,20 @@ export default function PrizeCard({
         </CardContent>
 
         <CardFooter className="p-3 pt-0 flex gap-2">
-          {!hideButtons && canBuy && (
+          {!hideButtons && isOwnItem && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="flex-1 h-8 text-xs gap-1.5 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+            >
+              <Link to={editHref} onClick={e => e.stopPropagation()}>
+                <Pencil className="w-3.5 h-3.5" />
+                Edit Item
+              </Link>
+            </Button>
+          )}
+          {!hideButtons && !isOwnItem && canBuy && (
             <Button
               variant="default"
               size="sm"
@@ -613,7 +667,7 @@ export default function PrizeCard({
               )}
             </Button>
           )}
-          {!hideButtons && (canBuy || canOffer) && !isProLocked && session && (
+          {!hideButtons && !isOwnItem && (canBuy || canOffer) && !isProLocked && session && (
             <Button
               variant="outline"
               size="icon"
@@ -628,7 +682,7 @@ export default function PrizeCard({
               <ShoppingCart className="w-3.5 h-3.5" />
             </Button>
           )}
-          {!hideButtons && canOffer && onOfferClick && (
+          {!hideButtons && !isOwnItem && canOffer && onOfferClick && (
             <Button
               variant="outline"
               size="sm"

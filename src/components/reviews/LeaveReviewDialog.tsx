@@ -174,7 +174,7 @@ const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#0D0D0D] border-[#23272F] text-white max-w-md sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-white">{headingTitle}</DialogTitle>
+          <DialogTitle className="text-white break-words">{headingTitle}</DialogTitle>
           {headingDescription && (
             <DialogDescription className="text-muted-foreground">
               {headingDescription}
@@ -199,12 +199,17 @@ const LeaveReviewDialog: React.FC<LeaveReviewDialogProps> = ({
           </div>
         ) : (
           <div className="space-y-4 py-2">
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground w-20">Item</div>
-              <div className="flex-1 truncate text-sm">{side.itemName || '—'}</div>
+            <div className="flex items-start gap-3">
+              <div className="text-sm text-muted-foreground w-20 shrink-0 pt-0.5">Item</div>
+              <div
+                className="flex-1 min-w-0 text-sm break-words line-clamp-2"
+                title={side.itemName || undefined}
+              >
+                {side.itemName || '—'}
+              </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground w-20">Rating</div>
+              <div className="text-sm text-muted-foreground w-20 shrink-0">Rating</div>
               <StarRating
                 value={rating}
                 onChange={canEdit ? setRating : undefined}
