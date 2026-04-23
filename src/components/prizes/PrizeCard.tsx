@@ -13,6 +13,8 @@ import {
   Crown,
   Loader2,
   Pencil,
+  Eye,
+  Heart,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Prize } from './PrizesByCategory';
@@ -23,6 +25,8 @@ import { Link } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useAddToCart } from '@/hooks/useCart';
 import { useCountdown } from '@/hooks/use-countdown';
+import { useViewTracker } from '@/hooks/useViewTracker';
+import WatchButton from './WatchButton';
 
 interface PrizeCardProps {
   prize: Prize;
@@ -113,6 +117,14 @@ export default function PrizeCard({
   useEffect(() => {
     setImageLoaded(false);
   }, [activeImageUrl]);
+
+  // Record one item-view event per card render (deduped per session in
+  // memory, and per (item, viewer, day) by the backend).
+  const trackView = useViewTracker();
+  useEffect(() => {
+    trackView(prize.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prize.id]);
 
   useEffect(() => {
     if (!showImageModal || !hasMultipleImages) {
@@ -584,6 +596,19 @@ export default function PrizeCard({
                   {hasEarlyAccessTimer ? earlyAccessTimeLeft : 'Pro'}
                 </Badge>
               )}
+
+            {/* Watchlist heart (own items can't be watched) */}
+            {!isOwnItem && (
+              <div className="absolute bottom-2 right-2 z-20">
+                <WatchButton
+                  itemId={prize.id}
+                  initialIsWatching={!!prize.isWatching}
+                  initialWatcherCount={prize.watcherCount ?? 0}
+                  overlay
+                  size="sm"
+                />
+              </div>
+            )}
           </div>
         </CardHeader>
 
@@ -621,6 +646,20 @@ export default function PrizeCard({
             <p className="text-[10px] text-muted-foreground">
               Stock: {prize.stock} {prize.stock === 1 ? 'item' : 'items'}
             </p>
+          )}
+
+          {/* Engagement stats */}
+          {((prize.viewCount ?? 0) > 0 || (prize.watcherCount ?? 0) > 0) && (
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <Eye className="h-3 w-3" />
+                {prize.viewCount ?? 0}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Heart className="h-3 w-3" />
+                {prize.watcherCount ?? 0}
+              </span>
+            </div>
           )}
         </CardContent>
 
