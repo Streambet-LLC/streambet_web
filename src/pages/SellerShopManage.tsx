@@ -136,6 +136,7 @@ export default function SellerShopManage() {
   const [psaCertNumber, setPsaCertNumber] = useState('');
   const [psaImportResult, setPsaImportResult] = useState<PsaImportResult | null>(null);
   const [psaRateLimitedUntil, setPsaRateLimitedUntil] = useState<number | null>(null);
+  const [isGradeAutofillFailed, setIsGradeAutofillFailed] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -158,6 +159,43 @@ export default function SellerShopManage() {
     if (normalized.includes('one piece')) return 'one_piece';
     if (normalized.includes('sports')) return 'sports';
     return 'other';
+  };
+
+  const normalizeSlabGradeValue = (raw: number): string => {
+    const clamped = Math.min(10, Math.max(1, raw));
+    const normalized = Number.isInteger(clamped)
+      ? clamped
+      : Math.min(9.5, Math.floor(clamped) + 0.5);
+    return String(normalized);
+  };
+
+  const parsePsaSlabGrade = (result: PsaImportResult): string | null => {
+    const candidates = [
+      result.cardGrade,
+      result.itemInformation?.itemGrade,
+      result.gradeDescription,
+    ].filter((value): value is string => Boolean(value && value.trim()));
+
+    for (const candidate of candidates) {
+      const trimmed = candidate.trim();
+      const direct = Number(trimmed);
+      if (Number.isFinite(direct)) {
+        return normalizeSlabGradeValue(direct);
+      }
+
+      // Handles values like "GEM MT 10", "MINT 9Q", "8.5".
+      const match = trimmed.match(/(\d+(?:\.\d+)?)(?:\s*[Qq])?\s*$/);
+      if (!match) {
+        continue;
+      }
+
+      const parsed = Number(match[1]);
+      if (Number.isFinite(parsed)) {
+        return normalizeSlabGradeValue(parsed);
+      }
+    }
+
+    return null;
   };
 
   const getTomorrowStartMs = () => {
@@ -418,6 +456,7 @@ export default function SellerShopManage() {
       setItemImages([]);
       setCoverImageIndex(0);
       setEditingItemId(null);
+      setIsGradeAutofillFailed(false);
       queryClient.invalidateQueries({ queryKey: ['seller-shop-items-manage'] });
       queryClient.invalidateQueries({ queryKey: ['seller-shop-items', session?.user?.username] });
       queryClient.invalidateQueries({ queryKey: ['seller-shops'] });
@@ -463,6 +502,7 @@ export default function SellerShopManage() {
       }
 
       setPsaImportResult(result);
+      const parsedSlabGrade = parsePsaSlabGrade(result);
 
       const importedImages = result.imageUrls.map((imageUrl, index) => ({
         id: `psa-${result.certNumber}-${index}`,
@@ -475,7 +515,21 @@ export default function SellerShopManage() {
         name: result.title || prev.name,
         description: result.description || result.title || prev.description,
         brand: normalizePsaBrand(result.brand),
+        category: 'slab',
+        grade: parsedSlabGrade ?? prev.grade,
       }));
+
+      if (parsedSlabGrade) {
+        setIsGradeAutofillFailed(false);
+      } else {
+        setIsGradeAutofillFailed(true);
+        toast({
+          title: 'PSA grade not auto-selected',
+          description:
+            'We could not parse this PSA grade. Your current grade was kept. Please confirm or update the slab grade.',
+          variant: 'destructive',
+        });
+      }
 
       if (importedImages.length > 0) {
         setItemImages(importedImages);
@@ -721,6 +775,7 @@ export default function SellerShopManage() {
   const handleCancelEdit = () => {
     setEditingItemId(null);
     setPsaImportResult(null);
+    setIsGradeAutofillFailed(false);
     setForm({
       name: '',
       description: '',
@@ -1468,9 +1523,10 @@ export default function SellerShopManage() {
                     </Label>
                     <Select
                       value={form.category}
-                      onValueChange={(value: 'raw' | 'slab' | 'sealed' | 'other') =>
-                        setForm(p => ({ ...p, category: value, grade: '' }))
-                      }
+                      onValueChange={(value: 'raw' | 'slab' | 'sealed' | 'other') => {
+                        setIsGradeAutofillFailed(false);
+                        setForm(p => ({ ...p, category: value, grade: '' }));
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select format" />
@@ -1531,8 +1587,15 @@ export default function SellerShopManage() {
                         inputMode="decimal"
                         placeholder="Enter grade between 1 and 10"
                         value={form.grade}
-                        onChange={e => setForm(p => ({ ...p, grade: e.target.value }))}
+                        className={cn(
+                          isGradeAutofillFailed && 'border-destructive ring-2 ring-destructive/40'
+                        )}
+                        onChange={e => {
+                          setIsGradeAutofillFailed(false);
+                          setForm(p => ({ ...p, grade: e.target.value }));
+                        }}
                         onBlur={e => {
+                          setIsGradeAutofillFailed(false);
                           const raw = e.target.value.trim();
                           if (raw === '') {
                             setForm(p => ({ ...p, grade: '' }));
