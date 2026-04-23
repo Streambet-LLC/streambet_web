@@ -19,7 +19,6 @@ import { roundDownCoinAmount } from '@/utils/format';
 import { useValidateDiscountCode } from '@/hooks/useCart';
 import type { PrizePurchaseRequest } from '@/types/prize';
 import type { ValidateDiscountCodeResponse } from '@/types/cart';
-import WatchButton from './WatchButton';
 
 interface PrizeCheckoutModalProps {
   isOpen: boolean;
@@ -30,11 +29,6 @@ interface PrizeCheckoutModalProps {
   userCadeCoins: number;
   allowCadeCoins?: boolean;
   isShopItem?: boolean; // If true, prizeAmount is in USD; if false/undefined, prizeAmount is in coins
-  /** Optional: initial watch state to show the heart toggle in the modal header. */
-  initialIsWatching?: boolean;
-  initialWatcherCount?: number;
-  /** Hide the watchlist toggle (e.g. for own items or non-shop redemptions). */
-  showWatchToggle?: boolean;
 }
 
 const COINS_TO_USD = 50; // 50 coins = $1
@@ -52,9 +46,6 @@ export default function PrizeCheckoutModal({
   userCadeCoins,
   allowCadeCoins = true,
   isShopItem = false,
-  initialIsWatching = false,
-  initialWatcherCount = 0,
-  showWatchToggle = true,
 }: PrizeCheckoutModalProps) {
   const queryClient = useQueryClient();
 
@@ -240,7 +231,14 @@ export default function PrizeCheckoutModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName || !formData.lastName || !formData.addressLine1 || !formData.city || !formData.state || !formData.zipCode) {
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.addressLine1 ||
+      !formData.city ||
+      !formData.state ||
+      !formData.zipCode
+    ) {
       toast({
         title: 'Error',
         description: 'Please fill in all required fields',
@@ -301,25 +299,12 @@ export default function PrizeCheckoutModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="text-2xl">{prizeName} - Checkout</DialogTitle>
-              <DialogDescription>
-                {allowCadeCoins
-                  ? 'Complete your purchase with flexible payment options'
-                  : 'This seller accepts card payments only'}
-              </DialogDescription>
-            </div>
-            {showWatchToggle && (
-              <WatchButton
-                itemId={prizeId}
-                initialIsWatching={initialIsWatching}
-                initialWatcherCount={initialWatcherCount}
-                showCount
-                size="md"
-              />
-            )}
-          </div>
+          <DialogTitle className="text-2xl">{prizeName} - Checkout</DialogTitle>
+          <DialogDescription>
+            {allowCadeCoins
+              ? 'Complete your purchase with flexible payment options'
+              : 'This seller accepts card payments only'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -506,10 +491,7 @@ export default function PrizeCheckoutModal({
                     }
                     const newCoinsAmount = Math.max(
                       0,
-                      Math.min(
-                        Math.floor(Number(raw)),
-                        Math.min(userCadeCoins, prizeAmount)
-                      )
+                      Math.min(Math.floor(Number(raw)), Math.min(userCadeCoins, prizeAmount))
                     );
                     setCombinedCoinsAmount(newCoinsAmount);
                     const remaining = prizeAmount - newCoinsAmount;

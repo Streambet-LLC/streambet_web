@@ -96,19 +96,14 @@ export default function Watchlist() {
         {isLoading && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-[4/5] rounded-lg bg-muted animate-pulse"
-              />
+              <div key={i} className="aspect-[4/5] rounded-lg bg-muted animate-pulse" />
             ))}
           </div>
         )}
 
         {!isLoading && isError && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground mb-3">
-              We couldn&apos;t load your watchlist.
-            </p>
+            <p className="text-muted-foreground mb-3">We couldn&apos;t load your watchlist.</p>
             <Button variant="outline" onClick={() => refetch()}>
               Try again
             </Button>
@@ -120,8 +115,8 @@ export default function Watchlist() {
             <Heart className="h-10 w-10 text-rose-500" />
             <h3 className="text-lg font-semibold">No saved items yet</h3>
             <p className="text-muted-foreground max-w-md">
-              Tap the heart on any item to add it here. We&apos;ll notify you about
-              price changes and when items sell out.
+              Tap the heart on any item to add it here. We&apos;ll notify you about price changes
+              and when items sell out.
             </p>
             <Button onClick={() => navigate('/shop')}>Browse the shop</Button>
           </div>
@@ -144,10 +139,10 @@ export default function Watchlist() {
             prizeName={checkoutPrize.name}
             prizeAmount={checkoutPrize.amount ?? 0}
             userCadeCoins={session?.cadeCoins ?? 0}
-            allowCadeCoins
+            // CadeCoin payments are only valid for admin-owned (CardCade) items.
+            // Seller-owned items always have a creator id, so card-only.
+            allowCadeCoins={!checkoutPrize.createdBy}
             isShopItem
-            initialIsWatching={!!checkoutPrize.isWatching}
-            initialWatcherCount={checkoutPrize.watcherCount ?? 0}
           />
         )}
       </div>
