@@ -193,6 +193,9 @@ export default function Prizes() {
           sellerDisplayName: prize.createdByShopName || prize.createdByUsername || 'CardCade Shop',
           isProOnly: prize.isProOnly ?? false,
           proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
+          viewCount: prize.viewCount ?? 0,
+          watcherCount: prize.watcherCount ?? 0,
+          isWatching: prize.isWatching ?? false,
         };
       });
 

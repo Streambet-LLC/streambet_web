@@ -30,6 +30,9 @@ export interface Prize {
   sellerDisplayName?: string | null;
   isProOnly?: boolean;
   proEarlyAccessUntil?: string | null;
+  viewCount?: number;
+  watcherCount?: number;
+  isWatching?: boolean;
 }
 
 interface PrizesByCategoryProps {
@@ -67,6 +70,8 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
   const [minPrice, setMinPrice] = useState<number | ''>('');
   const [maxPrice, setMaxPrice] = useState<number | ''>('');
+  const [minViews, setMinViews] = useState<number | ''>('');
+  const [minWatchers, setMinWatchers] = useState<number | ''>('');
   const [showPriceFilter, setShowPriceFilter] = useState(true);
 
   const categories: Record<PrizeCategoryType, Prize[]> = {
@@ -106,20 +111,31 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
 
   // Filter prizes by price range (filters by USD price)
   const filterByPriceRange = (prizeList: Prize[]) => {
-    // Only apply filter if at least one price is set
-    if (minPrice === '' && maxPrice === '') return prizeList;
+    let filtered = prizeList;
 
-    return prizeList.filter(prize => {
-      // Only show items with a buy price (not offers_only)
-      if (prize.purchaseOption === 'offers_only' || !prize.amount) return false;
+    if (minPrice !== '' || maxPrice !== '') {
+      filtered = filtered.filter(prize => {
+        // Only show items with a buy price (not offers_only)
+        if (prize.purchaseOption === 'offers_only' || !prize.amount) return false;
 
-      // Convert CadeCoins to USD (50 coins = $1)
-      const priceInUSD = prize.amount / 50;
-      const min = minPrice === '' ? 0 : minPrice;
-      const max = maxPrice === '' ? Infinity : maxPrice;
+        // Convert CadeCoins to USD (50 coins = $1)
+        const priceInUSD = prize.amount / 50;
+        const min = minPrice === '' ? 0 : minPrice;
+        const max = maxPrice === '' ? Infinity : maxPrice;
 
-      return priceInUSD >= min && priceInUSD <= max;
-    });
+        return priceInUSD >= min && priceInUSD <= max;
+      });
+    }
+
+    if (minViews !== '' && typeof minViews === 'number') {
+      filtered = filtered.filter(prize => (prize.viewCount ?? 0) >= minViews);
+    }
+
+    if (minWatchers !== '' && typeof minWatchers === 'number') {
+      filtered = filtered.filter(prize => (prize.watcherCount ?? 0) >= minWatchers);
+    }
+
+    return filtered;
   };
 
   return (
@@ -261,6 +277,59 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                   maxPrice < minPrice && (
                     <p className="text-xs text-red-500 mt-2">Max should be greater than min</p>
                   )}
+              </div>
+
+              {/* Engagement Filters: min Views and min Watchers */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3">Filter by Engagement:</h3>
+                <div className="flex flex-wrap gap-3 items-end">
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="minViews" className="text-xs text-muted-foreground">
+                      Min Views
+                    </label>
+                    <Input
+                      id="minViews"
+                      type="number"
+                      placeholder="0"
+                      value={minViews}
+                      onChange={e => {
+                        const val =
+                          e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
+                        setMinViews(val);
+                      }}
+                      className="w-24"
+                      min="0"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label htmlFor="minWatchers" className="text-xs text-muted-foreground">
+                      Min Watchers
+                    </label>
+                    <Input
+                      id="minWatchers"
+                      type="number"
+                      placeholder="0"
+                      value={minWatchers}
+                      onChange={e => {
+                        const val =
+                          e.target.value === '' ? '' : Math.max(0, Number(e.target.value));
+                        setMinWatchers(val);
+                      }}
+                      className="w-28"
+                      min="0"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMinViews('');
+                      setMinWatchers('');
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
               </div>
             </div>
           )}

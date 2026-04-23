@@ -89,11 +89,18 @@ const getPurchaseOptionBadge = (purchaseOption: 'both' | 'buy_only' | 'offers_on
         label: 'Make Offer Only',
         className: 'bg-orange-300 text-orange-900 dark:bg-orange-900 dark:text-orange-100 border-orange-200',
       };
+    default:
+      // Fallback so an unrecognized value never returns undefined and
+      // crashes the admin grid (`.className` access on undefined).
+      return {
+        label: String(purchaseOption ?? 'Unknown'),
+        className: 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-100',
+      };
   }
 };
 
 // Helper function to get category badge styling
-const getCategoryBadge = (category: 'raw' | 'slab' | 'sealed') => {
+const getCategoryBadge = (category: 'raw' | 'slab' | 'sealed' | 'other') => {
   switch (category) {
     case 'raw':
       return {
@@ -109,6 +116,18 @@ const getCategoryBadge = (category: 'raw' | 'slab' | 'sealed') => {
       return {
         label: 'Sealed',
         className: 'bg-yellow-200 text-yellow-900 dark:bg-emerald-900 dark:text-emerald-100',
+      };
+    case 'other':
+      return {
+        label: 'Other',
+        className: 'bg-zinc-300 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100',
+      };
+    default:
+      // Defensive fallback for any future category values so the entire
+      // admin page doesn't blank out on `.className` of undefined.
+      return {
+        label: String(category ?? 'Unknown'),
+        className: 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-100',
       };
   }
 };

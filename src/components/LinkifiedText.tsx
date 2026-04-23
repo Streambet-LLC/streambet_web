@@ -16,14 +16,16 @@ interface LinkifiedTextProps {
  */
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ children, className = '' }) => {
   const parseText = (text: string): React.ReactNode[] => {
-    const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    // Combined matcher: markdown image ![alt](url) OR markdown link [text](url)
+    // Image syntax must be tested first because it differs only by the leading '!'.
+    const tokenRegex = /!\[([^\]]*)\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)/g;
     const elements: React.ReactNode[] = [];
     let lastIndex = 0;
     let match;
     let key = 0;
 
-    while ((match = markdownLinkRegex.exec(text)) !== null) {
-      // Add text before the markdown link (with auto-linkify for plain URLs)
+    while ((match = tokenRegex.exec(text)) !== null) {
+      // Add text before the token (with auto-linkify for plain URLs)
       if (match.index > lastIndex) {
         const textBefore = text.slice(lastIndex, match.index);
         elements.push(
@@ -33,27 +35,43 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ children, classNam
         );
       }
 
-      // Add the markdown link with custom text
-      const linkText = match[1];
-      let url = match[2];
-      
+      const isImage = match[0].startsWith('!');
+      const altOrLabel = (isImage ? match[1] : match[3]) ?? '';
+      let url = (isImage ? match[2] : match[4]) ?? '';
+
       // Ensure URL has a protocol (http:// or https://)
       const lowerUrl = url.toLowerCase();
-      if (!lowerUrl.startsWith('http://') && !lowerUrl.startsWith('https://')) {
+      if (
+        !lowerUrl.startsWith('http://') &&
+        !lowerUrl.startsWith('https://') &&
+        !lowerUrl.startsWith('/')
+      ) {
         url = 'https://' + url;
       }
-      
-      elements.push(
-        <a
-          key={`link-${key++}`}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${className} hover:underline`}
-        >
-          {linkText}
-        </a>
-      );
+
+      if (isImage) {
+        elements.push(
+          <img
+            key={`img-${key++}`}
+            src={url}
+            alt={altOrLabel}
+            className="my-2 rounded-lg max-h-48 w-auto object-cover"
+            loading="lazy"
+          />
+        );
+      } else {
+        elements.push(
+          <a
+            key={`link-${key++}`}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${className} underline hover:opacity-80`}
+          >
+            {altOrLabel}
+          </a>
+        );
+      }
 
       lastIndex = match.index + match[0].length;
     }
@@ -73,7 +91,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ children, classNam
       return [
         <LinkItUrl key="text-0" className={className}>
           {text}
-        </LinkItUrl>
+        </LinkItUrl>,
       ];
     }
 

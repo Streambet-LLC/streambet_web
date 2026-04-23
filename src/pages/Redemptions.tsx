@@ -133,6 +133,9 @@ export default function Redemptions() {
           displayOrder: prize.displayOrderRedemptions ?? 999,
           isProOnly: prize.isProOnly ?? false,
           proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
+          viewCount: prize.viewCount ?? 0,
+          watcherCount: prize.watcherCount ?? 0,
+          isWatching: prize.isWatching ?? false,
         };
       });
 

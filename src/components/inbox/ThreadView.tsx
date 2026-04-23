@@ -124,6 +124,11 @@ export const ThreadView = ({ conversationId, currentUserId, onBack }: ThreadView
         otherParticipant?.user?.name ||
         (isSupport ? 'Support' : 'User');
 
+  // System / automated CardCade notification thread — the bot does not read
+  // replies, so we hide the compose box and show a notice instead.
+  const isSystemBotThread =
+    !isSupport && (otherParticipant?.user?.username || '').toLowerCase() === 'cardcade';
+
   if (isLoading) {
     return (
       <div className="flex-1 flex flex-col min-h-0">
@@ -245,10 +250,17 @@ export const ThreadView = ({ conversationId, currentUserId, onBack }: ThreadView
         </div>
       </ScrollArea>
 
-      {/* Compose */}
-      {!isBlocked && (
+      {/* Compose (hidden for one-way system / CardCade notification threads) */}
+      {!isBlocked && !isSystemBotThread && (
         <div className="shrink-0">
           <ComposeMessage conversationId={conversationId} onMessageSent={handleMessageSent} />
+        </div>
+      )}
+      {isSystemBotThread && (
+        <div className="shrink-0 border-t border-border/40 px-4 py-3 text-center">
+          <p className="text-xs text-muted-foreground">
+            CardCade notifications — replies are disabled
+          </p>
         </div>
       )}
 

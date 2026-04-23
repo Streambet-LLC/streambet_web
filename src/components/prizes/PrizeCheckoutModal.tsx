@@ -231,7 +231,14 @@ export default function PrizeCheckoutModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName || !formData.lastName || !formData.addressLine1 || !formData.city || !formData.state || !formData.zipCode) {
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.addressLine1 ||
+      !formData.city ||
+      !formData.state ||
+      !formData.zipCode
+    ) {
       toast({
         title: 'Error',
         description: 'Please fill in all required fields',
@@ -484,10 +491,7 @@ export default function PrizeCheckoutModal({
                     }
                     const newCoinsAmount = Math.max(
                       0,
-                      Math.min(
-                        Math.floor(Number(raw)),
-                        Math.min(userCadeCoins, prizeAmount)
-                      )
+                      Math.min(Math.floor(Number(raw)), Math.min(userCadeCoins, prizeAmount))
                     );
                     setCombinedCoinsAmount(newCoinsAmount);
                     const remaining = prizeAmount - newCoinsAmount;
