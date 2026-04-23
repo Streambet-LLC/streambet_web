@@ -117,6 +117,9 @@ export default function ShopDetail() {
         createdByUsername: (prize as any).createdByUsername ?? username ?? null,
         isProOnly: prize.isProOnly ?? false,
         proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
+        viewCount: prize.viewCount ?? 0,
+        watcherCount: prize.watcherCount ?? 0,
+        isWatching: prize.isWatching ?? false,
         // Don't show shop link in shop detail - user is already in the shop
       };
     });

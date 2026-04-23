@@ -74,6 +74,9 @@ export default function ProfileSellerItems({
         createdBy: prize.createdBy ?? null,
         isProOnly: prize.isProOnly ?? false,
         proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
+        viewCount: prize.viewCount ?? 0,
+        watcherCount: prize.watcherCount ?? 0,
+        isWatching: prize.isWatching ?? false,
         featuredDisplayOrder: prize.profileFeatured ? 1 : null,
       };
     });

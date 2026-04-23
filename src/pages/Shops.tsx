@@ -5,7 +5,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getImageLink } from '@/utils/helper';
 import { Link } from 'react-router-dom';
-import { Store } from 'lucide-react';
+import { Store, Eye, Heart } from 'lucide-react';
 
 export default function Shops() {
   const { data: shops, isLoading } = useQuery({
@@ -16,6 +16,14 @@ export default function Shops() {
   });
 
   const totalItems = (shops ?? []).reduce((sum, shop) => sum + (Number(shop.itemCount) || 0), 0);
+  const totalViews = (shops ?? []).reduce(
+    (sum, shop) => sum + (Number(shop.totalViews) || 0),
+    0
+  );
+  const totalWatchers = (shops ?? []).reduce(
+    (sum, shop) => sum + (Number(shop.totalWatchers) || 0),
+    0
+  );
 
   return (
     <MainLayout showFooter>
@@ -23,10 +31,21 @@ export default function Shops() {
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold">All Shops</h2>
           {!isLoading && shops && shops.length > 0 && (
-            <span className="text-sm text-muted-foreground flex items-center gap-1">
-              <Store className="h-4 w-4" />
-              {totalItems.toLocaleString()} {totalItems === 1 ? 'item' : 'items'} listed
-            </span>
+            <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="inline-flex items-center gap-1">
+                <Store className="h-4 w-4" />
+                {totalItems.toLocaleString()} {totalItems === 1 ? 'item' : 'items'} listed
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Eye className="h-4 w-4" />
+                {totalViews.toLocaleString()} {totalViews === 1 ? 'view' : 'views'}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Heart className="h-4 w-4" />
+                {totalWatchers.toLocaleString()}{' '}
+                {totalWatchers === 1 ? 'watcher' : 'watchers'}
+              </span>
+            </div>
           )}
         </div>
         {isLoading ? (
@@ -69,6 +88,18 @@ export default function Shops() {
                         <Store className="h-3 w-3" />
                         {shop.itemCount} {shop.itemCount === 1 ? 'item' : 'items'}
                       </span>
+                      {((shop.totalViews ?? 0) > 0 || (shop.totalWatchers ?? 0) > 0) && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-3 mt-0.5">
+                          <span className="inline-flex items-center gap-1">
+                            <Eye className="h-3 w-3" />
+                            {shop.totalViews ?? 0}
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <Heart className="h-3 w-3" />
+                            {shop.totalWatchers ?? 0}
+                          </span>
+                        </span>
+                      )}
                     </div>
                   </CardHeader>
                 </Card>

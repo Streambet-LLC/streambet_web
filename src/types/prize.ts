@@ -87,6 +87,9 @@ export interface PrizeConfiguration {
   updatedBy: string | null;
   isProOnly: boolean;
   proEarlyAccessUntil: string | null;
+  viewCount?: number;
+  watcherCount?: number;
+  isWatching?: boolean;
 }
 
 export interface SellerShopSummary {
@@ -95,6 +98,8 @@ export interface SellerShopSummary {
   displayName: string;
   profileImageUrl: string | null;
   itemCount: number;
+  totalViews?: number;
+  totalWatchers?: number;
 }
 
 export interface SellerShopResponse {

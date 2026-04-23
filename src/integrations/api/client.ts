@@ -45,6 +45,7 @@ import {
   ConversationTab,
   AdminConversationTab,
 } from '@/types/inbox';
+import { getOrCreateAnonId } from '@/utils/anonId';
 
 // API base URL from environment variable
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -68,6 +69,14 @@ const RETRY_401 = Symbol('RETRY_401');
 // Add request interceptor to include the token in every request and check expiry
 apiClient.interceptors.request.use(
   config => {
+    // Always attach the anonymous viewer id so the backend can dedupe
+    // item-view events for non-logged-in users without leaking PII.
+    try {
+      config.headers['x-anon-id'] = getOrCreateAnonId();
+    } catch {
+      // ignore – best-effort header
+    }
+
     const token = localStorage.getItem('accessToken');
     if (token) {
       try {
@@ -1658,6 +1667,37 @@ export const prizeAPI = {
   // Get order success details for purchase confirmation page
   getOrderSuccessDetails: async (orderId: string) => {
     const response = await apiClient.get(`/prizes/orders/${orderId}/success-details`);
+    return response.data;
+  },
+
+  // ---- Item engagement: views & watchers ----
+
+  /**
+   * Record one or more item view events. The backend dedupes by
+   * (item, viewer, day) so calling this many times is cheap. Anonymous
+   * viewers are identified by the `x-anon-id` header which is attached
+   * automatically by the request interceptor.
+   */
+  trackItemViews: async (itemIds: string[]): Promise<void> => {
+    if (!itemIds || itemIds.length === 0) return;
+    await apiClient.post('/prizes/views', { itemIds });
+  },
+
+  /** Add an item to the current user's watchlist (login required). */
+  watchItem: async (itemId: string): Promise<{ watching: boolean; watcherCount: number }> => {
+    const response = await apiClient.post(`/prizes/${itemId}/watch`);
+    return response.data;
+  },
+
+  /** Remove an item from the current user's watchlist (login required). */
+  unwatchItem: async (itemId: string): Promise<{ watching: boolean; watcherCount: number }> => {
+    const response = await apiClient.delete(`/prizes/${itemId}/watch`);
+    return response.data;
+  },
+
+  /** Get the current user's full watchlist (login required). */
+  getWatchlist: async (): Promise<PrizeConfiguration[]> => {
+    const response = await apiClient.get('/prizes/watchlist');
     return response.data;
   },
 };

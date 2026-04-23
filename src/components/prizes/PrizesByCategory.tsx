@@ -30,6 +30,9 @@ export interface Prize {
   sellerDisplayName?: string | null;
   isProOnly?: boolean;
   proEarlyAccessUntil?: string | null;
+  viewCount?: number;
+  watcherCount?: number;
+  isWatching?: boolean;
 }
 
 interface PrizesByCategoryProps {
