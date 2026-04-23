@@ -24,6 +24,7 @@ import {
   ImageIcon,
 } from 'lucide-react';
 import { ComposeMessage } from './ComposeMessage';
+import { LinkifiedText } from '@/components/LinkifiedText';
 import { toast } from '@/hooks/use-toast';
 import { handleMutationError } from '@/lib/mutationHelpers';
 import type { Message, Conversation } from '@/types/inbox';
@@ -35,11 +36,7 @@ interface ThreadViewProps {
   onBack: () => void;
 }
 
-export const ThreadView = ({
-  conversationId,
-  currentUserId,
-  onBack,
-}: ThreadViewProps) => {
+export const ThreadView = ({ conversationId, currentUserId, onBack }: ThreadViewProps) => {
   const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
@@ -81,7 +78,7 @@ export const ThreadView = ({
       toast({ title: 'User blocked', description: 'They have been notified.' });
       queryClient.invalidateQueries({ queryKey: ['inbox-conversations'] });
     },
-    onError: (err) => handleMutationError(err, 'Failed to block user'),
+    onError: err => handleMutationError(err, 'Failed to block user'),
   });
 
   const unblockMutation = useMutation({
@@ -90,7 +87,7 @@ export const ThreadView = ({
       toast({ title: 'User unblocked' });
       queryClient.invalidateQueries({ queryKey: ['inbox-conversations'] });
     },
-    onError: (err) => handleMutationError(err, 'Failed to unblock user'),
+    onError: err => handleMutationError(err, 'Failed to unblock user'),
   });
 
   const handleMessageSent = () => {
@@ -107,22 +104,25 @@ export const ThreadView = ({
   // For direct: find the other participant (not the current user)
   const otherParticipant = isSupport
     ? conversation?.participants.find(
-        (p) => p.user?.role !== 'admin' && String(p.userId ?? p.user?.id) !== String(currentUserId)
-      ) || conversation?.participants.find((p) => p.user?.role !== 'admin')
+        p => p.user?.role !== 'admin' && String(p.userId ?? p.user?.id) !== String(currentUserId)
+      ) || conversation?.participants.find(p => p.user?.role !== 'admin')
     : conversation?.participants.find(
-        (p) => String(p.userId ?? p.user?.id ?? p.id) !== String(currentUserId)
+        p => String(p.userId ?? p.user?.id ?? p.id) !== String(currentUserId)
       );
 
   // For support: check if we are the requester (non-admin) — if so, show "Support" as the display name
-  const iAmRequester = isSupport && conversation?.participants.some(
-    (p) => p.user?.role !== 'admin' && String(p.userId ?? p.user?.id) === String(currentUserId)
-  );
+  const iAmRequester =
+    isSupport &&
+    conversation?.participants.some(
+      p => p.user?.role !== 'admin' && String(p.userId ?? p.user?.id) === String(currentUserId)
+    );
 
-  const displayName = isSupport && iAmRequester
-    ? 'Support'
-    : otherParticipant?.user?.username
-      || otherParticipant?.user?.name
-      || (isSupport ? 'Support' : 'User');
+  const displayName =
+    isSupport && iAmRequester
+      ? 'Support'
+      : otherParticipant?.user?.username ||
+        otherParticipant?.user?.name ||
+        (isSupport ? 'Support' : 'User');
 
   if (isLoading) {
     return (
@@ -133,10 +133,7 @@ export const ThreadView = ({
         </div>
         <div className="flex-1 p-4 space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}
-            >
+            <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
               <Skeleton className="h-16 w-64 rounded-2xl" />
             </div>
           ))}
@@ -150,35 +147,20 @@ export const ThreadView = ({
       {/* Thread header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 shrink-0">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBack}
-            className="md:hidden h-8 w-8"
-          >
+          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-8 w-8">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={
-                isSupport
-                  ? undefined
-                  : otherParticipant?.user?.profileImageUrl || undefined
-              }
+              src={isSupport ? undefined : otherParticipant?.user?.profileImageUrl || undefined}
             />
             <AvatarFallback className="bg-primary/20 text-primary text-sm">
-              {isSupport ? (
-                <Shield className="h-4 w-4" />
-              ) : (
-                displayName.charAt(0).toUpperCase()
-              )}
+              {isSupport ? <Shield className="h-4 w-4" /> : displayName.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-medium text-sm text-white">
-                {displayName}
-              </span>
+              <span className="font-medium text-sm text-white">{displayName}</span>
               {otherParticipant?.user?.isSeller && !isSupport && (
                 <Badge
                   variant="outline"
@@ -189,9 +171,7 @@ export const ThreadView = ({
               )}
             </div>
             {conversation?.subject && (
-              <p className="text-xs text-muted-foreground">
-                {conversation.subject}
-              </p>
+              <p className="text-xs text-muted-foreground">{conversation.subject}</p>
             )}
           </div>
         </div>
@@ -206,9 +186,7 @@ export const ThreadView = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {isBlocked ? (
-                <DropdownMenuItem
-                  onClick={() => unblockMutation.mutate(otherParticipant.userId)}
-                >
+                <DropdownMenuItem onClick={() => unblockMutation.mutate(otherParticipant.userId)}>
                   <Unlock className="h-4 w-4 mr-2" />
                   Unblock User
                 </DropdownMenuItem>
@@ -270,10 +248,7 @@ export const ThreadView = ({
       {/* Compose */}
       {!isBlocked && (
         <div className="shrink-0">
-          <ComposeMessage
-            conversationId={conversationId}
-            onMessageSent={handleMessageSent}
-          />
+          <ComposeMessage conversationId={conversationId} onMessageSent={handleMessageSent} />
         </div>
       )}
 
@@ -335,15 +310,15 @@ const MessageBubble = ({ message, isOwn, currentUserId, onImageClick }: MessageB
 
         {/* Content */}
         {message.content && (
-          <p className="text-sm whitespace-pre-wrap break-words">
+          <LinkifiedText className="text-sm whitespace-pre-wrap break-words">
             {message.content}
-          </p>
+          </LinkifiedText>
         )}
 
         {/* Attachments */}
         {message.attachments && message.attachments.length > 0 && (
           <div className="mt-2 space-y-2">
-            {message.attachments.map((att) => (
+            {message.attachments.map(att => (
               <button
                 key={att.id}
                 type="button"
@@ -362,11 +337,7 @@ const MessageBubble = ({ message, isOwn, currentUserId, onImageClick }: MessageB
         )}
 
         {/* Timestamp + read receipt */}
-        <div
-          className={`flex items-center gap-1 mt-1 ${
-            isOwn ? 'justify-end' : 'justify-start'
-          }`}
-        >
+        <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
           <span
             className={`text-[10px] ${
               isOwn ? 'text-primary-foreground/60' : 'text-muted-foreground'

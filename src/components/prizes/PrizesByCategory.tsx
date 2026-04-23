@@ -7,7 +7,7 @@ import { MakeOfferModal } from './MakeOfferModal';
 import { PrizeBrand } from '@/types/prize';
 import PrizeCard from './PrizeCard';
 
-export type PrizeCategoryType = 'raw' | 'slab' | 'sealed';
+export type PrizeCategoryType = 'raw' | 'slab' | 'sealed' | 'other';
 
 export interface Prize {
   id: string;
@@ -49,6 +49,7 @@ const CATEGORY_LABELS: Record<PrizeCategoryType, string> = {
   slab: 'Slabs',
   sealed: 'Sealed Product',
   raw: 'Raw',
+  other: 'Other',
 };
 
 export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
@@ -72,10 +73,16 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
     slab: [],
     sealed: [],
     raw: [],
+    other: [],
   };
 
   prizes.forEach(prize => {
-    if (prize.category === 'raw' || prize.category === 'slab' || prize.category === 'sealed') {
+    if (
+      prize.category === 'raw' ||
+      prize.category === 'slab' ||
+      prize.category === 'sealed' ||
+      prize.category === 'other'
+    ) {
       categories[prize.category].push(prize);
     }
   });
@@ -285,7 +292,8 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                             </button>
                           </PopoverTrigger>
                           <PopoverContent side="bottom" align="start" className="max-w-xs text-sm">
-                            Raw card conditions are labeled by the seller. Purchase at your own risk!
+                            Raw card conditions are labeled by the seller. Purchase at your own
+                            risk!
                           </PopoverContent>
                         </Popover>
                       )}

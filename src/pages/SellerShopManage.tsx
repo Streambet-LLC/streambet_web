@@ -146,7 +146,7 @@ export default function SellerShopManage() {
     stock: 1,
     purchaseOption: 'buy_only' as 'buy_only' | 'offers_only' | 'both',
     brand: 'pokemon' as PrizeBrand,
-    category: 'slab' as 'raw' | 'slab' | 'sealed',
+    category: 'slab' as 'raw' | 'slab' | 'sealed' | 'other',
     grade: '' as string,
     sellerDisplayOrderShop: 1,
     isProOnly: false,
@@ -753,7 +753,7 @@ export default function SellerShopManage() {
       stock: item.stock || 0,
       purchaseOption: item.purchaseOption || 'buy_only',
       brand: item.brand || 'pokemon',
-      category: (item.category as 'raw' | 'slab' | 'sealed') || 'slab',
+      category: (item.category as 'raw' | 'slab' | 'sealed' | 'other') || 'slab',
       grade: (item as any).grade || '',
       sellerDisplayOrderShop: item.sellerDisplayOrderShop ?? item.displayOrderShop ?? 1,
       isProOnly: item.isProOnly ?? false,
@@ -793,6 +793,24 @@ export default function SellerShopManage() {
     setItemImages([]);
     setCoverImageIndex(0);
   };
+
+  // Auto-open the edit form when arriving with ?editItemId=<id> (e.g. from a
+  // PrizeCard "Edit Item" link on the public shop page). Triggers once per id.
+  const editItemIdParam = searchParams.get('editItemId');
+  const handledEditParamRef = React.useRef<string | null>(null);
+  useEffect(() => {
+    if (!editItemIdParam || items.length === 0) return;
+    if (handledEditParamRef.current === editItemIdParam) return;
+    if (editingItemId === editItemIdParam) {
+      handledEditParamRef.current = editItemIdParam;
+      return;
+    }
+    const item = items.find(i => i.id === editItemIdParam);
+    if (item) {
+      handledEditParamRef.current = editItemIdParam;
+      handleEditItem(item);
+    }
+  }, [editItemIdParam, items, editingItemId]);
 
   const handleOpenCounterDialog = (order: SellerOfferOrder) => {
     setSelectedOffer(order);
@@ -1307,7 +1325,9 @@ export default function SellerShopManage() {
                         type="button"
                         variant="outline"
                         onClick={() => psaImportMutation.mutate(psaCertNumber)}
-                        disabled={psaImportMutation.isPending || !psaCertNumber.trim() || isPsaRateLimited}
+                        disabled={
+                          psaImportMutation.isPending || !psaCertNumber.trim() || isPsaRateLimited
+                        }
                       >
                         {psaImportMutation.isPending ? (
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1326,15 +1346,24 @@ export default function SellerShopManage() {
                       <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground space-y-2">
                         <div className="font-semibold text-foreground">PSA Import Summary</div>
                         <div>
-                          Population ({psaImportResult.cardGrade ? `PSA ${psaImportResult.cardGrade}` : 'this grade'}):{' '}
+                          Population (
+                          {psaImportResult.cardGrade
+                            ? `PSA ${psaImportResult.cardGrade}`
+                            : 'this grade'}
+                          ):{' '}
                           {psaImportResult.psaPopulation?.gradePopulation !== null &&
                           psaImportResult.psaPopulation?.gradePopulation !== undefined
-                            ? new Intl.NumberFormat().format(psaImportResult.psaPopulation.gradePopulation)
+                            ? new Intl.NumberFormat().format(
+                                psaImportResult.psaPopulation.gradePopulation
+                              )
                             : 'N/A'}
                         </div>
                         <div>
                           <a
-                            href={psaImportResult.psaCertUrl || `https://www.psacard.com/cert/${encodeURIComponent(psaImportResult.certNumber)}/psa`}
+                            href={
+                              psaImportResult.psaCertUrl ||
+                              `https://www.psacard.com/cert/${encodeURIComponent(psaImportResult.certNumber)}/psa`
+                            }
                             target="_blank"
                             rel="noreferrer"
                             className="text-primary underline underline-offset-2"
@@ -1393,7 +1422,9 @@ export default function SellerShopManage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Name <span className="text-red-500">*</span></Label>
+                    <Label>
+                      Name <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       placeholder="e.g., Charizard PSA 10"
                       value={form.name}
@@ -1492,7 +1523,7 @@ export default function SellerShopManage() {
                     </Label>
                     <Select
                       value={form.category}
-                      onValueChange={(value: 'raw' | 'slab' | 'sealed') => {
+                      onValueChange={(value: 'raw' | 'slab' | 'sealed' | 'other') => {
                         setIsGradeAutofillFailed(false);
                         setForm(p => ({ ...p, category: value, grade: '' }));
                       }}
@@ -1504,6 +1535,7 @@ export default function SellerShopManage() {
                         <SelectItem value="raw">Raw</SelectItem>
                         <SelectItem value="slab">Slab</SelectItem>
                         <SelectItem value="sealed">Sealed</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
