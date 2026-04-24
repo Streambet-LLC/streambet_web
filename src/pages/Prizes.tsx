@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { PrizeBrand } from '@/types/prize';
 import PrizeCard from '@/components/prizes/PrizeCard';
+import AuctionCard from '@/components/prizes/AuctionCard';
 import { resolvePrizeImages } from '@/components/prizes/prizeImageUtils';
 import {
   Carousel,
@@ -196,6 +197,8 @@ export default function Prizes() {
           viewCount: prize.viewCount ?? 0,
           watcherCount: prize.watcherCount ?? 0,
           isWatching: prize.isWatching ?? false,
+          saleType: prize.saleType,
+          auction: prize.auction ?? null,
         };
       });
 
@@ -217,20 +220,32 @@ export default function Prizes() {
     }
   }, [tiers]);
 
-  // Featured prizes (filtered by featuredDisplayOrder, sorted by position)
+  // Featured prizes: when any auctions are live we replace the curated
+  // featured strip with those auctions (sorted by soonest endsAt).
+  // Otherwise we fall back to the admin-curated featuredDisplayOrder list.
   const featuredPrizes = useMemo(() => {
+    const isLiveAuction = (prize: PrizeDisplay) =>
+      prize.saleType === 'auction' &&
+      !!prize.auction &&
+      (prize.auction.status === 'active' || prize.auction.status === 'scheduled');
+
+    const liveAuctions = allPrizes.filter(isLiveAuction).sort((a, b) => {
+      if (!a.auction || !b.auction) return 0;
+      return new Date(a.auction.endsAt).getTime() - new Date(b.auction.endsAt).getTime();
+    });
+
+    if (liveAuctions.length > 0) {
+      return liveAuctions;
+    }
+
     return allPrizes
       .filter(
         prize => prize.featuredDisplayOrder !== null && prize.featuredDisplayOrder !== undefined
       )
       .sort((a, b) => {
-        // Primary sort: featured display order
         const orderA = a.featuredDisplayOrder ?? 0;
         const orderB = b.featuredDisplayOrder ?? 0;
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
-        // Tiebreaker: use id for stable sort
+        if (orderA !== orderB) return orderA - orderB;
         return a.id.localeCompare(b.id);
       });
   }, [allPrizes]);
@@ -392,20 +407,27 @@ export default function Prizes() {
                           key={prize.id}
                           className="basis-full md:basis-1/2 lg:basis-1/4 pl-4"
                         >
-                          <PrizeCard
-                            prize={prize}
-                            onClick={prize =>
-                              setSelectedPrizeForCheckout({
-                                id: prize.id,
-                                name: prize.name,
-                                amount: prize.amount ?? 0,
-                                createdBy: prize.createdBy ?? null,
-                              })
-                            }
-                            onOfferClick={handleOfferClick}
-                            isFeatured
-                            hideButtons={!session}
-                          />
+                          {prize.saleType === 'auction' && prize.auction ? (
+                            <AuctionCard
+                              prize={prize as PrizeDisplay & { auction: NonNullable<PrizeDisplay['auction']> }}
+                              isFeatured
+                            />
+                          ) : (
+                            <PrizeCard
+                              prize={prize}
+                              onClick={prize =>
+                                setSelectedPrizeForCheckout({
+                                  id: prize.id,
+                                  name: prize.name,
+                                  amount: prize.amount ?? 0,
+                                  createdBy: prize.createdBy ?? null,
+                                })
+                              }
+                              onOfferClick={handleOfferClick}
+                              isFeatured
+                              hideButtons={!session}
+                            />
+                          )}
                         </CarouselItem>
                       ))}
                     </CarouselContent>

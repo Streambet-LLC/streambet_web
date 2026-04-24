@@ -127,6 +127,16 @@ export interface AuctionSummary {
   reserveMet: boolean | null;
   isLeader: boolean;
   isBidder: boolean;
+  /** Buyer processing fee percent applied on top of the bid (matches sales fee policy). */
+  buyerProcessingFeePercent: number;
+  /** Buyer processing fee in USD computed against currentBidUsd; null when no bids yet. */
+  buyerProcessingFeeUsd: number | null;
+  /** Total the winner would owe (bid + processing fee). null until the first bid. */
+  totalDueIfWonUsd: number | null;
+  /** Buyer fee for the minimum next bid — handy for the bid form preview. */
+  minNextBidProcessingFeeUsd: number;
+  /** Total the bidder would owe if they bid the minimum next amount. */
+  minNextBidTotalUsd: number;
 }
 
 export interface SellerShopSummary {
@@ -187,6 +197,8 @@ export interface CreatePrizeTierRequest {
   showOnShop?: boolean;
   createdBy?: string | null;
   isProOnly?: boolean;
+  /** Set to 'auction' to mark the new item as auction-eligible. After creation an admin must call api.auction.create. */
+  saleType?: PrizeSaleType;
 }
 
 /**

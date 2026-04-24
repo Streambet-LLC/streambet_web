@@ -120,6 +120,11 @@ export default function ShopDetail() {
         viewCount: prize.viewCount ?? 0,
         watcherCount: prize.watcherCount ?? 0,
         isWatching: prize.isWatching ?? false,
+        // Auction support: forward saleType + auction summary so
+        // PrizesByCategory can render an AuctionCard instead of a fixed-
+        // price PrizeCard for these items.
+        saleType: prize.saleType,
+        auction: prize.auction ?? null,
         // Don't show shop link in shop detail - user is already in the shop
       };
     });

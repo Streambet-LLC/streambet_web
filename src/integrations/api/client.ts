@@ -2034,6 +2034,84 @@ export const reviewAPI = {
   },
 };
 
+/**
+ * Auctions API.
+ *
+ * The auction lifecycle:
+ *  1. Admin creates an auction via `create()` (item must already exist
+ *     with `saleType === 'auction'`).
+ *  2. First-time bidder calls `createSetupIntent()`, then mounts Stripe
+ *     Elements to attach a card.
+ *  3. Subsequent bids call `placeBid()` directly using a saved card
+ *     (returned by `listSavedCards()`).
+ */
+export const auctionAPI = {
+  list: async (): Promise<import('@/types/prize').AuctionSummary[]> => {
+    const response = await apiClient.get('/auctions');
+    return response.data;
+  },
+
+  getById: async (id: string): Promise<import('@/types/prize').AuctionSummary> => {
+    const response = await apiClient.get(`/auctions/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Place a bid. Pass `proxyMaxUsd` (the bidder's max-willing-to-pay) and
+   * either an explicit `stripePaymentMethodId` (first bid after SetupIntent
+   * confirmation) or omit it to reuse the most recent saved card.
+   */
+  placeBid: async (
+    auctionId: string,
+    payload: { proxyMaxUsd: number; stripePaymentMethodId?: string }
+  ): Promise<import('@/types/prize').AuctionSummary> => {
+    const response = await apiClient.post(`/auctions/${auctionId}/bid`, payload);
+    return response.data;
+  },
+
+  /** Create a SetupIntent so the bidder can collect & save a card. */
+  createSetupIntent: async (): Promise<{ clientSecret: string; customerId: string }> => {
+    const response = await apiClient.post('/auctions/setup-intent');
+    return response.data;
+  },
+
+  /**
+   * Create a hosted Stripe Checkout setup session. Returns a URL the
+   * frontend should redirect to. On return the bidder's card is saved
+   * to their Stripe customer and they can place a bid.
+   */
+  createSetupCheckout: async (returnUrl: string): Promise<{ url: string }> => {
+    const response = await apiClient.post('/auctions/setup-checkout', { returnUrl });
+    return response.data;
+  },
+
+  /** List the bidder's saved cards (used for the "use saved card" chip). */
+  listSavedCards: async (): Promise<
+    Array<{ id: string; brand: string; last4: string; expMonth: number; expYear: number }>
+  > => {
+    const response = await apiClient.get('/auctions/me/cards');
+    return response.data;
+  },
+
+  // ── Admin ────────────────────────────────────────────────────────────
+  create: async (payload: {
+    prizeConfigurationId: string;
+    durationDays: 1 | 3 | 5 | 7;
+    startingPriceUsd: number;
+    reservePriceUsd?: number;
+    cardValueUsd?: number;
+    startsAt?: string;
+  }) => {
+    const response = await apiClient.post('/admin/auctions', payload);
+    return response.data;
+  },
+
+  cancel: async (id: string) => {
+    const response = await apiClient.post(`/admin/auctions/${id}/cancel`);
+    return response.data;
+  },
+};
+
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,
@@ -2053,6 +2131,7 @@ export const api = {
   concierge: conciergeAPI,
   cart: cartAPI,
   review: reviewAPI,
+  auction: auctionAPI,
 };
 
 export default api;
