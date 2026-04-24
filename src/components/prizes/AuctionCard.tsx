@@ -2,13 +2,26 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Gavel, Clock, TrendingUp, ShieldCheck, ShieldAlert, Eye, Heart, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Gavel,
+  Clock,
+  TrendingUp,
+  ShieldCheck,
+  ShieldAlert,
+  Eye,
+  Heart,
+  Pencil,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import FeaturedBetCard from '../FeaturedBetCard';
 import WatchButton from './WatchButton';
 import AuctionBidModal from './AuctionBidModal';
+import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import useAuctionSocket from '@/hooks/useAuctionSocket';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
@@ -62,16 +75,18 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
   // owner detection — backend also enforces in placeBid().
   const { session } = useAuthContext();
   const sessionUserId = session?.user?.id || (session as { id?: string } | null)?.id || null;
-  const sessionUsername = (session?.user?.username || (session as { username?: string } | null)?.username || '')
+  const sessionUsername = (
+    session?.user?.username ||
+    (session as { username?: string } | null)?.username ||
+    ''
+  )
     .toString()
     .toLowerCase();
   const prizeCreatorId = prize.createdBy ?? null;
   const prizeCreatorUsername = prize.createdByUsername?.toLowerCase() ?? null;
   const isOwnItem =
     !!sessionUserId &&
-    ((!!prizeCreatorId &&
-      prizeCreatorId !== 'cardcade' &&
-      prizeCreatorId === sessionUserId) ||
+    ((!!prizeCreatorId && prizeCreatorId !== 'cardcade' && prizeCreatorId === sessionUserId) ||
       (!!sessionUsername &&
         !!prizeCreatorUsername &&
         prizeCreatorUsername !== 'cardcade' &&
@@ -87,7 +102,8 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
 
   const endsAtMs = new Date(auction.endsAt).getTime();
   const msLeft = endsAtMs - now;
-  const isEnded = msLeft <= 0 || ['ended', 'paid', 'unsold', 'failed', 'cancelled'].includes(auction.status);
+  const isEnded =
+    msLeft <= 0 || ['ended', 'paid', 'unsold', 'failed', 'cancelled'].includes(auction.status);
   const isUrgent = !isEnded && msLeft <= 60 * 60 * 1000; // <1h
 
   // Multi-image carousel: dedupe + thumbnail-normalize the prize's image list,
@@ -105,27 +121,57 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
   }, [prize.imageUrls, prize.imageUrl]);
   const hasMultipleImages = galleryUrls.length > 1;
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const safeIndex = galleryUrls.length
     ? ((activeImageIndex % galleryUrls.length) + galleryUrls.length) % galleryUrls.length
     : 0;
   const activeImageUrl = galleryUrls[safeIndex];
-  const goToPreviousImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const goToPreviousImage = (e?: { stopPropagation?: () => void }) => {
+    e?.stopPropagation?.();
     setActiveImageIndex(i => (i - 1 + galleryUrls.length) % galleryUrls.length);
   };
-  const goToNextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const goToNextImage = (e?: { stopPropagation?: () => void }) => {
+    e?.stopPropagation?.();
     setActiveImageIndex(i => (i + 1) % galleryUrls.length);
   };
+  const handleOpenLightbox = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!galleryUrls.length) return;
+    setIsLightboxOpen(true);
+  };
+
+  // Keyboard navigation while lightbox is open (matches PrizeCard).
+  useEffect(() => {
+    if (!isLightboxOpen || !hasMultipleImages) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        goToPreviousImage();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        goToNextImage();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isLightboxOpen, hasMultipleImages, galleryUrls.length]);
 
   const card = (
     <Card
       className={cn(
         'flex flex-col overflow-hidden transition-colors',
-        isFeatured ? 'bg-transparent border-0 shadow-none' : 'bg-card border border-border hover:border-primary'
+        isFeatured
+          ? 'bg-transparent border-0 shadow-none'
+          : 'bg-card border border-border hover:border-primary'
       )}
     >
-      <div className="relative aspect-square bg-muted overflow-hidden">
+      <div
+        className={cn(
+          'relative aspect-square bg-muted overflow-hidden',
+          activeImageUrl && 'cursor-zoom-in'
+        )}
+        onClick={activeImageUrl ? handleOpenLightbox : undefined}
+      >
         {activeImageUrl ? (
           <img src={activeImageUrl} alt={prize.name} className="w-full h-full object-cover" />
         ) : (
@@ -203,7 +249,12 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
           </Badge>
         )}
         <div className="absolute bottom-2 right-2">
-          <WatchButton itemId={prize.id} initialIsWatching={prize.isWatching ?? false} initialWatcherCount={prize.watcherCount ?? 0} overlay />
+          <WatchButton
+            itemId={prize.id}
+            initialIsWatching={prize.isWatching ?? false}
+            initialWatcherCount={prize.watcherCount ?? 0}
+            overlay
+          />
         </div>
       </div>
 
@@ -245,7 +296,7 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
           </div>
         </div>
 
-        {(prize.viewCount || prize.watcherCount) ? (
+        {prize.viewCount || prize.watcherCount ? (
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Eye className="w-3 h-3" />
@@ -288,11 +339,7 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
             onClick={() => setIsBidOpen(true)}
           >
             <Gavel className="w-4 h-4 mr-2" />
-            {isEnded
-              ? 'Ended'
-              : auction.isLeader
-                ? 'Raise your max'
-                : 'Place a bid'}
+            {isEnded ? 'Ended' : auction.isLeader ? 'Raise your max' : 'Place a bid'}
           </Button>
         )}
       </CardFooter>
@@ -308,6 +355,82 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
         prize={{ id: prize.id, name: prize.name, imageUrl: prize.imageUrl }}
         auction={auction}
       />
+
+      {/* Fullscreen image lightbox — mirrors PrizeCard's behavior */}
+      <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
+        <DialogTitle className="sr-only">Auction Image</DialogTitle>
+        <DialogContent
+          className="max-w-[95vw] max-h-[95vh] p-4 border-0 bg-transparent flex items-center justify-center pointer-events-none"
+          aria-describedby={undefined}
+          hideCloseButton
+        >
+          <div className="relative pointer-events-auto">
+            <button
+              onClick={() => setIsLightboxOpen(false)}
+              className="absolute -top-3 -right-3 z-50 hidden rounded-full border border-[#7AFF14] bg-black/80 p-2 transition-colors hover:bg-black focus:outline-none focus:ring-2 focus:ring-white md:block"
+              aria-label="Close image"
+            >
+              <X className="h-6 w-6 text-white" />
+            </button>
+
+            <div className="flex items-center justify-center gap-2 sm:gap-3">
+              {hasMultipleImages && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="hidden h-9 w-9 shrink-0 border border-[#7AFF14] md:inline-flex md:h-10 md:w-10"
+                  onClick={() => goToPreviousImage()}
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+              )}
+
+              <img
+                src={activeImageUrl}
+                alt={prize.name}
+                className={cn(
+                  'block max-h-[90vh] object-contain rounded-lg select-none',
+                  hasMultipleImages
+                    ? 'max-w-[calc(95vw-6rem)] sm:max-w-[calc(95vw-7rem)]'
+                    : 'max-w-full'
+                )}
+              />
+
+              {hasMultipleImages && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="hidden h-9 w-9 shrink-0 border border-[#7AFF14] md:inline-flex md:h-10 md:w-10"
+                  onClick={() => goToNextImage()}
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+
+            {hasMultipleImages && (
+              <div className="absolute -bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/70 px-3 py-1">
+                {galleryUrls.map((_, index) => (
+                  <button
+                    key={`${prize.id}-lightbox-dot-${index}`}
+                    type="button"
+                    onClick={() => setActiveImageIndex(index)}
+                    className={cn(
+                      'h-2 w-2 rounded-full border border-[#7AFF14] transition-all',
+                      index === safeIndex ? 'bg-white' : 'bg-transparent'
+                    )}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
