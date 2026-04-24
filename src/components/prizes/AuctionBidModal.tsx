@@ -289,7 +289,7 @@ export default function AuctionBidModal({
               <span>${auction.minNextBidIncrement.toFixed(2)}</span>
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-muted-foreground">Bids</span>
+              <span className="text-muted-foreground"># of Bids to Date</span>
               <span>{auction.bidCount}</span>
             </div>
           </div>
@@ -390,8 +390,8 @@ export default function AuctionBidModal({
             </p>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="proxy-max">
+          <div className="space-y-1 rounded-md border-2 border-yellow-500/70 bg-yellow-500/5 p-3 shadow-[0_0_0_1px_rgba(234,179,8,0.15)]">
+            <Label htmlFor="proxy-max" className="text-yellow-400 font-semibold tracking-wide">
               {isRaisingMax ? 'Your new max bid (USD)' : 'Your max bid (USD)'}
             </Label>
             <Input
@@ -403,6 +403,7 @@ export default function AuctionBidModal({
               value={proxyMax}
               onChange={e => setProxyMax(e.target.value)}
               disabled={!hasCard || placeBid.isPending}
+              className="border-yellow-500/50 text-yellow-300 font-semibold text-base focus-visible:ring-yellow-500/60"
             />
             {isRaisingMax ? (
               <p className="text-xs text-muted-foreground">
