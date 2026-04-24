@@ -153,9 +153,13 @@ export default function AuctionBidModal({
       ? proxyMaxNumber
       : 0;
     const fee = +((safeBid * pct) / 100).toFixed(2);
-    const total = +(safeBid + fee).toFixed(2);
-    return { pct, fee, total };
-  }, [auction.buyerProcessingFeePercent, proxyMaxNumber]);
+    // Per-item shipping fee. Defaults to $5 to match the legacy hard-coded
+    // SHIPPING_FEE so callers without the new field still see the same
+    // total they did before. Backend is the source of truth at close.
+    const shipping = +(auction.shippingCostUsd ?? 5).toFixed(2);
+    const total = +(safeBid + fee + shipping).toFixed(2);
+    return { pct, fee, shipping, total };
+  }, [auction.buyerProcessingFeePercent, auction.shippingCostUsd, proxyMaxNumber]);
 
   const reserveBadge = useMemo(() => {
     if (auction.reserveMet === null) return null;
@@ -311,14 +315,18 @@ export default function AuctionBidModal({
               </span>
               <span>${feePreview.fee.toFixed(2)}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Shipping</span>
+              <span>${feePreview.shipping.toFixed(2)}</span>
+            </div>
             <div className="flex justify-between border-t pt-1 mt-1">
               <span className="text-muted-foreground">Total charged to your card</span>
               <span className="font-semibold">${feePreview.total.toFixed(2)}</span>
             </div>
             <p className="text-[11px] text-muted-foreground pt-1">
-              Shipping is calculated separately at close. The actual winning
-              bid is the lowest amount needed to beat the next-highest proxy,
-              so you may end up paying less than your max.
+              The actual winning bid is the lowest amount needed to beat the
+              next-highest proxy, so you may end up paying less than your max.
+              Shipping is included in the total above.
             </p>
           </div>
 

@@ -382,6 +382,9 @@ export const PrizeConfiguration = () => {
     showOnRedemptions: false,
     showOnShop: true,
     createdBy: null,
+    // Per-item shipping fee. Server has DB default $5 but we mirror it
+    // here so the admin form shows a sensible value out of the box.
+    shippingCostUsd: 5,
   });
 
   const resetForm = () => {
@@ -397,6 +400,7 @@ export const PrizeConfiguration = () => {
       showOnRedemptions: false,
       showOnShop: true,
       createdBy: null,
+      shippingCostUsd: 5,
     });
     setValidationError('');
     setItemImages([]);
@@ -1082,6 +1086,7 @@ export const PrizeConfiguration = () => {
       showOnRedemptions: tier.showOnRedemptions ?? true,
       showOnShop: tier.showOnShop ?? true,
       createdBy: tier.createdBy,
+      shippingCostUsd: tier.shippingCostUsd ?? 5,
     });
     // Calculate and display USD equivalent (amount is always in cadecoins)
     if (tier.amount && tier.amount > 0) {
@@ -2092,6 +2097,36 @@ export const PrizeConfiguration = () => {
                 />
               </div>
             )}
+            {/*
+              Per-item shipping fee. Applies to every sale type — fixed-price
+              checkout, offers, and auction close all add this on top of the
+              winner/buyer total. Backend defaults to $5 if omitted.
+            */}
+            <div className="space-y-2.5">
+              <Label htmlFor="shippingCostUsd" className="text-base font-medium">
+                Shipping Cost (USD)
+              </Label>
+              <Input
+                id="shippingCostUsd"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.shippingCostUsd ?? ''}
+                onChange={e => {
+                  const raw = e.target.value;
+                  setFormData({
+                    ...formData,
+                    shippingCostUsd:
+                      raw === '' ? undefined : Math.max(0, parseFloat(raw) || 0),
+                  });
+                }}
+                className="h-12 text-base"
+                placeholder="5.00"
+              />
+              <p className="text-xs text-muted-foreground">
+                Charged to the buyer on top of the sale price (or winning bid for auctions). Defaults to $5.00.
+              </p>
+            </div>
             <div className="space-y-2.5">
               <Label htmlFor="description" className="text-base font-medium">
                 Description

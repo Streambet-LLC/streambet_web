@@ -91,6 +91,8 @@ export interface PrizeConfiguration {
   watcherCount?: number;
   isWatching?: boolean;
   saleType?: PrizeSaleType;
+  /** Per-item shipping fee in USD. Backfilled to $5 for legacy items. */
+  shippingCostUsd?: number;
   auction?: AuctionSummary | null;
 }
 
@@ -143,6 +145,12 @@ export interface AuctionSummary {
    * otherwise (proxy maxes are private from other bidders).
    */
   currentUserProxyMaxUsd: number | null;
+  /**
+   * Per-item shipping fee in USD. Added on top of the winning bid +
+   * buyer processing fee at close. Mirrors the parent prize's value
+   * so the bid modal can show the full "if I win" total.
+   */
+  shippingCostUsd: number;
 }
 
 export interface SellerShopSummary {
@@ -205,6 +213,8 @@ export interface CreatePrizeTierRequest {
   isProOnly?: boolean;
   /** Set to 'auction' to mark the new item as auction-eligible. After creation an admin must call api.auction.create. */
   saleType?: PrizeSaleType;
+  /** Per-item shipping fee in USD. Defaults to $5 server-side if omitted. */
+  shippingCostUsd?: number;
 }
 
 /**
@@ -230,6 +240,8 @@ export interface UpdatePrizeTierRequest {
   showOnShop?: boolean;
   createdBy?: string | null;
   isProOnly?: boolean;
+  /** Per-item shipping fee in USD. */
+  shippingCostUsd?: number;
 }
 
 /**
