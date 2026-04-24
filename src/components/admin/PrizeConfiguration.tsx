@@ -1224,7 +1224,7 @@ export const PrizeConfiguration = () => {
               <div className="flex-1">
                 <SearchInput
                   id="prize-search"
-                  placeholder="Search prizes by name or description..."
+                  placeholder="Search items by name or description..."
                   value={searchQuery}
                   onChange={setSearchQuery}
                   width="lg"
@@ -1327,7 +1327,7 @@ export const PrizeConfiguration = () => {
               {(selectedPage === 'shop' || selectedPage === 'auctions') && (
                 <div>
                   <h3 className="text-lg font-semibold mb-4 text-primary">
-                    {selectedPage === 'auctions' ? 'All Auctions' : 'All Prizes'}
+                    {selectedPage === 'auctions' ? 'All Auctions' : 'All Items'}
                   </h3>
                   {isEditingOrder ? (
                     <DndContext
@@ -2155,7 +2155,7 @@ export const PrizeConfiguration = () => {
             )}
             <div className="space-y-2.5">
               <Label htmlFor="name" className="text-base font-medium">
-                Prize Name <span className="text-destructive">*</span>
+                Item Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
@@ -2170,7 +2170,7 @@ export const PrizeConfiguration = () => {
             </div>
             <div className="space-y-2.5">
               <Label htmlFor="category" className="text-base font-medium">
-                Prize Category <span className="text-destructive">*</span>
+                Item Category <span className="text-destructive">*</span>
               </Label>
               <Select
                 value={formData.category}
@@ -2334,7 +2334,7 @@ export const PrizeConfiguration = () => {
                 id="description"
                 value={formData.description}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Prize description..."
+                placeholder="Item description..."
                 rows={4}
                 className="text-base resize-none"
               />
@@ -2371,7 +2371,7 @@ export const PrizeConfiguration = () => {
             )}
 
             <div className="space-y-2.5">
-              <Label className="text-base font-medium">Prize Image</Label>
+              <Label className="text-base font-medium">Item Image</Label>
               <ItemImageGallery
                 images={itemImages}
                 coverIndex={coverImageIndex}

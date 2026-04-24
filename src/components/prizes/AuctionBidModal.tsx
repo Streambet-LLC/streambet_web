@@ -259,15 +259,13 @@ export default function AuctionBidModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <Gavel className="w-5 h-5" /> {prize.name}
           </DialogTitle>
           <DialogDescription className="flex items-center gap-2">
-            <span>
-              Ends {format(new Date(auction.endsAt), 'MMM d, p')}
-            </span>
+            <span>Ends {format(new Date(auction.endsAt), 'MMM d, p')}</span>
             {reserveBadge}
           </DialogDescription>
         </DialogHeader>
@@ -284,9 +282,7 @@ export default function AuctionBidModal({
             </div>
             <div className="flex justify-between mt-1">
               <span className="text-muted-foreground">Minimum next bid</span>
-              <span className="font-semibold">
-                ${auction.minNextBidUsd.toFixed(2)}
-              </span>
+              <span className="font-semibold">${auction.minNextBidUsd.toFixed(2)}</span>
             </div>
             <div className="flex justify-between mt-1">
               <span className="text-muted-foreground">Increment</span>
@@ -306,32 +302,22 @@ export default function AuctionBidModal({
             <div className="rounded-md border p-3 flex items-center gap-3">
               <CreditCard className="w-4 h-4" />
               <div className="text-sm">
-                Charging{' '}
-                <span className="font-medium uppercase">
-                  {primaryCard!.brand}
-                </span>{' '}
-                ending in{' '}
-                <span className="font-medium">{primaryCard!.last4}</span> if you
-                win.
+                Charging <span className="font-medium uppercase">{primaryCard!.brand}</span> ending
+                in <span className="font-medium">{primaryCard!.last4}</span> if you win.
               </div>
             </div>
           ) : (
             <div className="rounded-md border p-3 space-y-2">
               <div className="text-sm flex items-start gap-2">
                 <Info className="w-4 h-4 mt-0.5 text-amber-400" />
-                <span>
-                  Bidding requires a saved card. We'll only charge it if you
-                  win.
-                </span>
+                <span>Bidding requires a saved card. We'll only charge it if you win.</span>
               </div>
               <Button
                 className="w-full"
                 onClick={() => setupCheckout.mutate()}
                 disabled={setupCheckout.isPending}
               >
-                {setupCheckout.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : null}
+                {setupCheckout.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Save a card to bid
               </Button>
             </div>
@@ -346,9 +332,7 @@ export default function AuctionBidModal({
             <div className="flex items-center gap-2 text-sm font-medium">
               <Truck className="w-4 h-4" /> Shipping address
               {!addressComplete && (
-                <span className="ml-auto text-[11px] text-amber-300">
-                  Required
-                </span>
+                <span className="ml-auto text-[11px] text-amber-300">Required</span>
               )}
             </div>
             {addressQuery.isLoading ? (
@@ -371,17 +355,13 @@ export default function AuctionBidModal({
                   className="col-span-2"
                   placeholder="Address line 1"
                   value={address.addressLine1}
-                  onChange={e =>
-                    updateAddressField('addressLine1', e.target.value)
-                  }
+                  onChange={e => updateAddressField('addressLine1', e.target.value)}
                 />
                 <Input
                   className="col-span-2"
                   placeholder="Address line 2 (optional)"
                   value={address.addressLine2}
-                  onChange={e =>
-                    updateAddressField('addressLine2', e.target.value)
-                  }
+                  onChange={e => updateAddressField('addressLine2', e.target.value)}
                 />
                 <Input
                   placeholder="City"
@@ -406,8 +386,7 @@ export default function AuctionBidModal({
               </div>
             )}
             <p className="text-[11px] text-muted-foreground">
-              We'll ship here if you win. Edits are saved to your profile
-              when you place the bid.
+              We'll ship here if you win. Edits are saved to your profile when you place the bid.
             </p>
           </div>
 
@@ -430,16 +409,14 @@ export default function AuctionBidModal({
                 {existingProxy !== null ? (
                   <>
                     Your current max is{' '}
-                    <span className="font-medium text-foreground">
-                      ${existingProxy.toFixed(2)}
-                    </span>
-                    . Enter a higher number to raise your ceiling — the
-                    visible bid won’t change unless someone challenges you.
+                    <span className="font-medium text-foreground">${existingProxy.toFixed(2)}</span>
+                    . Enter a higher number to raise your ceiling — the visible bid won’t change
+                    unless someone challenges you.
                   </>
                 ) : (
                   <>
-                    Raise your hidden ceiling. The visible bid won’t change
-                    unless someone challenges you.
+                    Raise your hidden ceiling. The visible bid won’t change unless someone
+                    challenges you.
                   </>
                 )}
               </p>
@@ -460,11 +437,11 @@ export default function AuctionBidModal({
           <div className="rounded-md border p-3 bg-muted/40 text-sm space-y-1">
             <div className="flex justify-between">
               <span className="text-muted-foreground">
-                {isRaisingMax
-                  ? 'If a challenger pushes you to this max'
-                  : 'If you win at this max'}
+                {isRaisingMax ? 'If a challenger pushes you to this max' : 'If you win at this max'}
               </span>
-              <span className="font-medium">${proxyMaxNumber > 0 ? proxyMaxNumber.toFixed(2) : '0.00'}</span>
+              <span className="font-medium">
+                ${proxyMaxNumber > 0 ? proxyMaxNumber.toFixed(2) : '0.00'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">
@@ -481,9 +458,8 @@ export default function AuctionBidModal({
               <span className="font-semibold">${feePreview.total.toFixed(2)}</span>
             </div>
             <p className="text-[11px] text-muted-foreground pt-1">
-              The actual winning bid is the lowest amount needed to beat the
-              next-highest proxy, so you may end up paying less than your max.
-              Shipping is included in the total above.
+              The actual winning bid is the lowest amount needed to beat the next-highest proxy, so
+              you may end up paying less than your max. Shipping is included in the total above.
             </p>
           </div>
 
