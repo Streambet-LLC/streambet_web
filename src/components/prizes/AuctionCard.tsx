@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Gavel, Clock, TrendingUp, ShieldCheck, ShieldAlert, Eye, Heart } from 'lucide-react';
+import { Gavel, Clock, TrendingUp, ShieldCheck, ShieldAlert, Eye, Heart, Pencil } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import FeaturedBetCard from '../FeaturedBetCard';
@@ -11,6 +12,7 @@ import AuctionBidModal from './AuctionBidModal';
 import useAuctionSocket from '@/hooks/useAuctionSocket';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
+import { useAuthContext } from '@/contexts/AuthContext';
 import type { AuctionSummary } from '@/types/prize';
 import type { Prize } from './PrizesByCategory';
 
@@ -55,6 +57,26 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
   const auction = auctionQuery.data ?? prize.auction;
   const [isBidOpen, setIsBidOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+
+  // Self-bid guard: sellers can't bid on their own item. Mirrors PrizeCard's
+  // owner detection — backend also enforces in placeBid().
+  const { session } = useAuthContext();
+  const sessionUserId = session?.user?.id || (session as { id?: string } | null)?.id || null;
+  const sessionUsername = (session?.user?.username || (session as { username?: string } | null)?.username || '')
+    .toString()
+    .toLowerCase();
+  const prizeCreatorId = prize.createdBy ?? null;
+  const prizeCreatorUsername = prize.createdByUsername?.toLowerCase() ?? null;
+  const isOwnItem =
+    !!sessionUserId &&
+    ((!!prizeCreatorId &&
+      prizeCreatorId !== 'cardcade' &&
+      prizeCreatorId === sessionUserId) ||
+      (!!sessionUsername &&
+        !!prizeCreatorUsername &&
+        prizeCreatorUsername !== 'cardcade' &&
+        prizeCreatorUsername === sessionUsername));
+  const editHref = `/seller/shop/manage?editItemId=${prize.id}`;
 
   useAuctionSocket({ auctionId: auction.id });
 
@@ -178,18 +200,31 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <Button
-          className="w-full"
-          disabled={isEnded || auction.status === 'cancelled'}
-          onClick={() => setIsBidOpen(true)}
-        >
-          <Gavel className="w-4 h-4 mr-2" />
-          {isEnded
-            ? 'Ended'
-            : auction.isLeader
-              ? 'Raise your max'
-              : 'Place a bid'}
-        </Button>
+        {isOwnItem ? (
+          <Button
+            asChild
+            variant="outline"
+            className="w-full gap-2 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+          >
+            <Link to={editHref} onClick={e => e.stopPropagation()}>
+              <Pencil className="w-4 h-4" />
+              Edit Item
+            </Link>
+          </Button>
+        ) : (
+          <Button
+            className="w-full"
+            disabled={isEnded || auction.status === 'cancelled'}
+            onClick={() => setIsBidOpen(true)}
+          >
+            <Gavel className="w-4 h-4 mr-2" />
+            {isEnded
+              ? 'Ended'
+              : auction.isLeader
+                ? 'Raise your max'
+                : 'Place a bid'}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
