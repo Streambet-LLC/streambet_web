@@ -90,6 +90,43 @@ export interface PrizeConfiguration {
   viewCount?: number;
   watcherCount?: number;
   isWatching?: boolean;
+  saleType?: PrizeSaleType;
+  auction?: AuctionSummary | null;
+}
+
+export type PrizeSaleType = 'fixed_price' | 'auction';
+
+export type AuctionStatus =
+  | 'scheduled'
+  | 'active'
+  | 'ended'
+  | 'paid'
+  | 'unsold'
+  | 'failed'
+  | 'cancelled';
+
+/**
+ * Public auction summary returned alongside a Prize when its saleType is
+ * `auction`. Reserve price is hidden — bidders only see `reserveMet`.
+ */
+export interface AuctionSummary {
+  id: string;
+  status: AuctionStatus;
+  startsAt: string;
+  endsAt: string;
+  durationDays: 1 | 3 | 5 | 7;
+  startingPriceUsd: number;
+  currentBidUsd: number | null;
+  /** Minimum increment for the next bid (dynamic by tier). */
+  minNextBidIncrement: number;
+  /** Minimum total amount required for the next bid. */
+  minNextBidUsd: number;
+  bidCount: number;
+  extensionCount: number;
+  /** null = no reserve set; true = reserve met; false = reserve not met. */
+  reserveMet: boolean | null;
+  isLeader: boolean;
+  isBidder: boolean;
 }
 
 export interface SellerShopSummary {
