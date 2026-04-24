@@ -10,6 +10,7 @@ import {
   SellerShopResponse,
   SellerShopSummary,
   PsaImportResult,
+  EbayListing,
   SubmitPrizeRedemptionRequest,
 } from '@/types/prize';
 import { PromotedBetsResponse } from '@/types/promo';
@@ -1485,6 +1486,19 @@ export const prizeAPI = {
       certNumber,
     });
     return response.data;
+  },
+
+  searchEbayListings: async (title: string, limit = 5): Promise<EbayListing[]> => {
+    const response = await apiClient.post('/seller/prizes/ebay/search', { title, limit });
+    return response.data?.listings ?? [];
+  },
+
+  searchEbayListingsByImage: async (imageBase64: string, limit = 5): Promise<EbayListing[]> => {
+    const response = await apiClient.post('/seller/prizes/ebay/search-by-image', {
+      imageBase64,
+      limit,
+    });
+    return response.data?.listings ?? [];
   },
 
   // Get seller's purchased orders

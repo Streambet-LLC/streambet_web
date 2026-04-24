@@ -53,6 +53,18 @@ export default function ShopDetail() {
   const brandFilterParam = searchParams.get('brand');
   const selectedBrands = brandFilterParam ? brandFilterParam.split(',') : [];
 
+  // Get product type filter from URL params (supports comma-separated values)
+  const categoryFilterParam = searchParams.get('category');
+  const validProductCategories = ['raw', 'slab', 'sealed', 'other'] as const;
+  const selectedProductCategories = categoryFilterParam
+    ? categoryFilterParam
+        .split(',')
+        .filter(
+          (category): category is (typeof validProductCategories)[number] =>
+            validProductCategories.includes(category as (typeof validProductCategories)[number])
+        )
+    : [];
+
   // Fetch seller shop and seller-specific inventory
   const { data: shopData, isLoading: isLoadingShop } = useQuery({
     queryKey: ['seller-shop-items', username],
@@ -150,6 +162,13 @@ export default function ShopDetail() {
   // Apply brand filter if any brands are selected
   if (selectedBrands.length > 0) {
     slabPrizes = slabPrizes.filter(prize => prize.brand && selectedBrands.includes(prize.brand));
+  }
+
+  // Apply product type filter if any categories are selected
+  if (selectedProductCategories.length > 0) {
+    slabPrizes = slabPrizes.filter(
+      prize => prize.category && selectedProductCategories.includes(prize.category)
+    );
   }
 
   // Apply search filter

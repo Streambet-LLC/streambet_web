@@ -4,6 +4,18 @@
 
 export type PrizeBrand = 'pokemon' | 'one_piece' | 'sports' | 'other';
 
+export interface EbayListing {
+  title: string | null;
+  price: number | null;
+  currency: string | null;
+  condition: string | null;
+  grade: string | null;
+  imageUrl: string | null;
+  itemWebUrl: string | null;
+  seller: string | null;
+  buyingOptions: string[];
+}
+
 export interface PsaImportResult {
   certNumber: string;
   title: string;
