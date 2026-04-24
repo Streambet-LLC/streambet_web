@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,17 +13,13 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { api } from '@/integrations/api/client';import { handleMutationError } from '@/lib/mutationHelpers';
+import { api } from '@/integrations/api/client';
+import { handleMutationError } from '@/lib/mutationHelpers';
 import { Loader2, Plus, Trash2, Edit, AlertCircle, GripVertical, Gavel } from 'lucide-react';
 import {
   PrizeConfiguration as PrizeTier,
@@ -81,12 +77,14 @@ const getPurchaseOptionBadge = (purchaseOption: 'both' | 'buy_only' | 'offers_on
     case 'buy_only':
       return {
         label: 'Buy Only',
-        className: 'bg-red-300 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 border-indigo-200',
+        className:
+          'bg-red-300 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100 border-indigo-200',
       };
     case 'offers_only':
       return {
         label: 'Make Offer Only',
-        className: 'bg-orange-300 text-orange-900 dark:bg-orange-900 dark:text-orange-100 border-orange-200',
+        className:
+          'bg-orange-300 text-orange-900 dark:bg-orange-900 dark:text-orange-100 border-orange-200',
       };
     default:
       // Fallback so an unrecognized value never returns undefined and
@@ -401,6 +399,15 @@ export const PrizeConfiguration = () => {
     shippingCostUsd: 5,
   });
 
+  // Single-flight guard for the Create flow. The createPrizeTier +
+  // createAuction sequence isn't atomic and isn't fully idempotent (the
+  // backend only dedupes the auction half via the prize_configuration_id
+  // unique constraint, not the prize tier). Once the user has clicked
+  // Create we lock the button until the dialog is dismissed or a success
+  // clears it, even if the request errors. This prevents the dup-create
+  // bug seen when scheduleAuctionJobs threw and re-enabled the mutation.
+  const isCreatingRef = useRef(false);
+
   const resetForm = () => {
     setFormData({
       amount: 500,
@@ -422,6 +429,7 @@ export const PrizeConfiguration = () => {
     setImageError(null);
     setUsdAmount('');
     resetAuctionConfig();
+    isCreatingRef.current = false;
   };
 
   // USD to Cadecoins conversion handlers (1 USD = 50 cadecoins)
@@ -494,6 +502,7 @@ export const PrizeConfiguration = () => {
       return created;
     },
     onSuccess: () => {
+      isCreatingRef.current = false;
       queryClient.invalidateQueries({ queryKey: ['adminPrizeTiers'] });
       queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
       queryClient.invalidateQueries({ queryKey: ['active-auctions'] });
@@ -504,7 +513,14 @@ export const PrizeConfiguration = () => {
       setIsCreateOpen(false);
       resetForm();
     },
-    onError: error => handleMutationError(error, 'Failed to create item'),
+    onError: error => {
+      // Keep the dialog open so the admin can fix + retry, but DO NOT
+      // clear the single-flight guard. The createPrizeTier half may have
+      // succeeded even though the auction half failed (or vice versa);
+      // re-clicking would create a duplicate prize tier. The user must
+      // explicitly Cancel + reopen to start fresh.
+      handleMutationError(error, 'Failed to create item');
+    },
   });
 
   // Update mutation
@@ -943,6 +959,7 @@ export const PrizeConfiguration = () => {
   };
 
   const handleCreate = async () => {
+    if (isCreatingRef.current) return;
     if (!formData.name.trim()) {
       setValidationError('Item name is required');
       return;
@@ -1001,6 +1018,7 @@ export const PrizeConfiguration = () => {
     try {
       const imagePayload = await resolveImagePayload();
 
+      isCreatingRef.current = true;
       createMutation.mutate({
         ...formData,
         imageUrl: imagePayload.coverImageUrl,
@@ -1077,8 +1095,7 @@ export const PrizeConfiguration = () => {
           : [];
 
     const existingCoverIndex =
-      tier.itemImages?.findIndex(image => image.isCover) ??
-      (existingImageUrls.length > 0 ? 0 : -1);
+      tier.itemImages?.findIndex(image => image.isCover) ?? (existingImageUrls.length > 0 ? 0 : -1);
 
     const mappedImages: ItemImageInput[] = existingImageUrls.map((imageUrl, index) => ({
       id: `existing-${tier.id}-${index}`,
@@ -1309,7 +1326,9 @@ export const PrizeConfiguration = () => {
               {/* Shop / Auctions Page - Combined List (No Category Separation) */}
               {(selectedPage === 'shop' || selectedPage === 'auctions') && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 text-primary">{selectedPage === 'auctions' ? 'All Auctions' : 'All Prizes'}</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-primary">
+                    {selectedPage === 'auctions' ? 'All Auctions' : 'All Prizes'}
+                  </h3>
                   {isEditingOrder ? (
                     <DndContext
                       sensors={sensors}
@@ -1945,9 +1964,7 @@ export const PrizeConfiguration = () => {
                 {editingTier.auction ? (
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <div className="text-muted-foreground">Status</div>
-                    <div className="font-medium capitalize">
-                      {editingTier.auction.status}
-                    </div>
+                    <div className="font-medium capitalize">{editingTier.auction.status}</div>
 
                     <div className="text-muted-foreground">Duration</div>
                     <div className="font-medium">
@@ -2017,9 +2034,7 @@ export const PrizeConfiguration = () => {
                     {editingAuctionDetails.winner ? (
                       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                         <div className="text-muted-foreground">Username</div>
-                        <div className="font-medium">
-                          {editingAuctionDetails.winner.username}
-                        </div>
+                        <div className="font-medium">{editingAuctionDetails.winner.username}</div>
                         <div className="text-muted-foreground">Email</div>
                         <div className="font-medium text-xs break-all">
                           {editingAuctionDetails.winner.email ?? '—'}
@@ -2027,16 +2042,12 @@ export const PrizeConfiguration = () => {
                         <div className="text-muted-foreground">Paid at</div>
                         <div className="font-medium text-xs">
                           {editingAuctionDetails.paidAt
-                            ? new Date(
-                                editingAuctionDetails.paidAt,
-                              ).toLocaleString()
+                            ? new Date(editingAuctionDetails.paidAt).toLocaleString()
                             : '—'}
                         </div>
                         {editingAuctionDetails.paymentIntentId && (
                           <>
-                            <div className="text-muted-foreground">
-                              Payment ID
-                            </div>
+                            <div className="text-muted-foreground">Payment ID</div>
                             <div className="font-mono text-[10px] break-all">
                               {editingAuctionDetails.paymentIntentId}
                             </div>
@@ -2045,8 +2056,8 @@ export const PrizeConfiguration = () => {
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground">
-                        No winner yet — auction is still active or closed
-                        without a successful charge.
+                        No winner yet — auction is still active or closed without a successful
+                        charge.
                       </p>
                     )}
 
@@ -2059,30 +2070,21 @@ export const PrizeConfiguration = () => {
                           {editingAuctionDetails.shippingAddress.firstName}{' '}
                           {editingAuctionDetails.shippingAddress.lastName}
                         </div>
-                        <div>
-                          {editingAuctionDetails.shippingAddress.addressLine1}
-                        </div>
+                        <div>{editingAuctionDetails.shippingAddress.addressLine1}</div>
                         {editingAuctionDetails.shippingAddress.addressLine2 && (
-                          <div>
-                            {
-                              editingAuctionDetails.shippingAddress
-                                .addressLine2
-                            }
-                          </div>
+                          <div>{editingAuctionDetails.shippingAddress.addressLine2}</div>
                         )}
                         <div>
                           {editingAuctionDetails.shippingAddress.city},{' '}
                           {editingAuctionDetails.shippingAddress.state}{' '}
                           {editingAuctionDetails.shippingAddress.zipCode}
                         </div>
-                        <div>
-                          {editingAuctionDetails.shippingAddress.country}
-                        </div>
+                        <div>{editingAuctionDetails.shippingAddress.country}</div>
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground">
-                        Shipping address is recorded with the prize order
-                        once the winner is charged.
+                        Shipping address is recorded with the prize order once the winner is
+                        charged.
                       </p>
                     )}
                   </div>
@@ -2090,8 +2092,8 @@ export const PrizeConfiguration = () => {
 
                 <p className="text-[11px] text-muted-foreground border-t border-primary/20 pt-2">
                   Auction timing and pricing are locked after creation. Use the{' '}
-                  <span className="text-primary font-medium">Auctions</span> tab
-                  to force close or cancel a live auction.
+                  <span className="text-primary font-medium">Auctions</span> tab to force close or
+                  cancel a live auction.
                 </p>
               </div>
             )}
@@ -2173,7 +2175,7 @@ export const PrizeConfiguration = () => {
               <Select
                 value={formData.category}
                 onValueChange={value => {
-                    setFormData({ ...formData, category: value as 'raw' | 'slab' | 'sealed' });
+                  setFormData({ ...formData, category: value as 'raw' | 'slab' | 'sealed' });
                   setValidationError('');
                 }}
               >
@@ -2283,7 +2285,10 @@ export const PrizeConfiguration = () => {
                   min="0"
                   value={formData.stock || ''}
                   onChange={e => {
-                    setFormData({ ...formData, stock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 });
+                    setFormData({
+                      ...formData,
+                      stock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0,
+                    });
                     setValidationError('');
                   }}
                   className="h-12 text-base"
@@ -2310,15 +2315,15 @@ export const PrizeConfiguration = () => {
                   const raw = e.target.value;
                   setFormData({
                     ...formData,
-                    shippingCostUsd:
-                      raw === '' ? undefined : Math.max(0, parseFloat(raw) || 0),
+                    shippingCostUsd: raw === '' ? undefined : Math.max(0, parseFloat(raw) || 0),
                   });
                 }}
                 className="h-12 text-base"
                 placeholder="5.00"
               />
               <p className="text-xs text-muted-foreground">
-                Charged to the buyer on top of the sale price (or winning bid for auctions). Defaults to $5.00.
+                Charged to the buyer on top of the sale price (or winning bid for auctions).
+                Defaults to $5.00.
               </p>
             </div>
             <div className="space-y-2.5">
@@ -2410,7 +2415,8 @@ export const PrizeConfiguration = () => {
                 isUploading ||
                 createMutation.isPending ||
                 updateMutation.isPending ||
-                itemImages.length === 0
+                itemImages.length === 0 ||
+                (!editingTier && isCreatingRef.current)
               }
               className="h-12 sm:h-10 text-base sm:text-sm"
             >
@@ -2523,4 +2529,3 @@ export const PrizeConfiguration = () => {
     </>
   );
 };
-
