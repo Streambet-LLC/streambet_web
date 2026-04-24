@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CreditCard, Gavel, Info } from 'lucide-react';
+import { Loader2, CreditCard, Gavel, Info, Truck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { api } from '@/integrations/api/client';
 import type { AuctionSummary } from '@/types/prize';
@@ -77,6 +77,70 @@ export default function AuctionBidModal({
     }
   }, [isOpen, auction.minNextBidUsd, isRaisingMax, raiseFloor]);
 
+  /**
+   * Shipping address — pre-filled from the bidder's profile and editable
+   * inline. The same address is what gets snapshotted onto the prize
+   * order at close time, so we require all fields before the bid can
+   * be placed. Edits go through the existing /users/me PATCH so the
+   * profile stays in sync (matches the cart/checkout pattern).
+   */
+  const addressQuery = useQuery({
+    queryKey: ['userAddress'],
+    queryFn: () => api.prize.getMyAddress(),
+    enabled: isOpen,
+    staleTime: 60_000,
+  });
+
+  const [address, setAddress] = useState({
+    firstName: '',
+    lastName: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'United States',
+  });
+  const [addressDirty, setAddressDirty] = useState(false);
+
+  useEffect(() => {
+    if (addressQuery.data && !addressDirty) {
+      setAddress({
+        firstName: addressQuery.data.firstName || '',
+        lastName: addressQuery.data.lastName || '',
+        addressLine1: addressQuery.data.address || '',
+        addressLine2: addressQuery.data.address2 || '',
+        city: addressQuery.data.city || '',
+        state: addressQuery.data.state || '',
+        zipCode: addressQuery.data.zipCode || '',
+        country: addressQuery.data.country || 'United States',
+      });
+    }
+  }, [addressQuery.data, addressDirty]);
+
+  // Reset dirty flag when the modal closes so the next open re-syncs
+  // from the server (e.g. user updated their profile elsewhere).
+  useEffect(() => {
+    if (!isOpen) setAddressDirty(false);
+  }, [isOpen]);
+
+  const updateAddressField = (
+    field: keyof typeof address,
+    value: string,
+  ) => {
+    setAddress(prev => ({ ...prev, [field]: value }));
+    setAddressDirty(true);
+  };
+
+  const addressComplete =
+    !!address.firstName.trim() &&
+    !!address.lastName.trim() &&
+    !!address.addressLine1.trim() &&
+    !!address.city.trim() &&
+    !!address.state.trim() &&
+    !!address.zipCode.trim() &&
+    !!address.country.trim();
+
   const cardsQuery = useQuery({
     queryKey: ['auction-saved-cards'],
     queryFn: () => api.auction.listSavedCards(),
@@ -103,10 +167,28 @@ export default function AuctionBidModal({
   });
 
   const placeBid = useMutation({
-    mutationFn: () =>
-      api.auction.placeBid(auction.id, {
+    mutationFn: async () => {
+      // Persist any address edits to the profile first so the order
+      // created at close has the right shipping snapshot. We always
+      // PATCH (cheap, idempotent) when fields are dirty rather than
+      // diffing — keeps the codepath simple.
+      if (addressDirty) {
+        await api.user.updateProfile({
+          firstName: address.firstName,
+          lastName: address.lastName,
+          address: address.addressLine1,
+          address2: address.addressLine2,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+          country: address.country,
+        });
+        queryClient.invalidateQueries({ queryKey: ['userAddress'] });
+      }
+      return api.auction.placeBid(auction.id, {
         proxyMaxUsd: Number(proxyMax),
-      }),
+      });
+    },
     onSuccess: next => {
       const raised = isRaisingMax && next.isLeader;
       toast({
@@ -139,7 +221,8 @@ export default function AuctionBidModal({
   const proxyMaxNumber = Number(proxyMax);
   const validBid =
     Number.isFinite(proxyMaxNumber) &&
-    proxyMaxNumber >= (isRaisingMax ? raiseFloor : auction.minNextBidUsd);
+    proxyMaxNumber >= (isRaisingMax ? raiseFloor : auction.minNextBidUsd) &&
+    addressComplete;
 
   /**
    * Buyer-facing fee preview for the amount the user typed. Auctions
@@ -253,6 +336,80 @@ export default function AuctionBidModal({
               </Button>
             </div>
           )}
+
+          {/*
+            Shipping address. Pre-filled from profile. Required for the
+            order created at close to have a valid ship-to. Edits are
+            persisted to /users/me when the bid is placed.
+          */}
+          <div className="rounded-md border p-3 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Truck className="w-4 h-4" /> Shipping address
+              {!addressComplete && (
+                <span className="ml-auto text-[11px] text-amber-300">
+                  Required
+                </span>
+              )}
+            </div>
+            {addressQuery.isLoading ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="w-3 h-3 animate-spin" /> Loading address…
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  placeholder="First name"
+                  value={address.firstName}
+                  onChange={e => updateAddressField('firstName', e.target.value)}
+                />
+                <Input
+                  placeholder="Last name"
+                  value={address.lastName}
+                  onChange={e => updateAddressField('lastName', e.target.value)}
+                />
+                <Input
+                  className="col-span-2"
+                  placeholder="Address line 1"
+                  value={address.addressLine1}
+                  onChange={e =>
+                    updateAddressField('addressLine1', e.target.value)
+                  }
+                />
+                <Input
+                  className="col-span-2"
+                  placeholder="Address line 2 (optional)"
+                  value={address.addressLine2}
+                  onChange={e =>
+                    updateAddressField('addressLine2', e.target.value)
+                  }
+                />
+                <Input
+                  placeholder="City"
+                  value={address.city}
+                  onChange={e => updateAddressField('city', e.target.value)}
+                />
+                <Input
+                  placeholder="State"
+                  value={address.state}
+                  onChange={e => updateAddressField('state', e.target.value)}
+                />
+                <Input
+                  placeholder="ZIP"
+                  value={address.zipCode}
+                  onChange={e => updateAddressField('zipCode', e.target.value)}
+                />
+                <Input
+                  placeholder="Country"
+                  value={address.country}
+                  onChange={e => updateAddressField('country', e.target.value)}
+                />
+              </div>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              We'll ship here if you win. Edits are saved to your profile
+              when you place the bid.
+            </p>
+          </div>
 
           <div className="space-y-1">
             <Label htmlFor="proxy-max">
