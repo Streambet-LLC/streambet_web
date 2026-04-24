@@ -27,6 +27,10 @@ interface OrderItemDetailDialogProps {
     paymentMethod?: string;
     status?: string;
     username?: string;
+    /** 'auction' for items sold through the auction flow. */
+    saleType?: string;
+    /** Total bid count when this item was an auction. Null otherwise. */
+    auctionBidCount?: number | null;
     prizeConfig?: {
       name?: string;
       category?: string;
@@ -165,6 +169,17 @@ const OrderItemDetailDialog = ({
                 {transaction.totalPrice?.toLocaleString()}
               </span>
             </div>
+
+            {/* Auction-only: show how many bids were placed on this item. */}
+            {transaction.saleType === 'auction' &&
+              typeof transaction.auctionBidCount === 'number' && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Bids</span>
+                  <span className="text-sm font-medium text-white">
+                    {transaction.auctionBidCount}
+                  </span>
+                </div>
+              )}
 
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Status</span>

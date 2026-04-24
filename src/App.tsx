@@ -55,6 +55,7 @@ import Shops from './pages/Shops';
 import SellerShopManage from './pages/SellerShopManage';
 import Inbox from './pages/Inbox';
 import Watchlist from './pages/Watchlist';
+import MyBids from './pages/MyBids';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 import CartPage from './pages/CartPage';
 
@@ -121,6 +122,7 @@ const App = () => {
                               <Route path="/daily-spin" element={<DailySpin />} />
                               <Route path="/inbox" element={<Inbox />} />
                               <Route path="/watchlist" element={<Watchlist />} />
+                              <Route path="/my-bids" element={<MyBids />} />
                             </Route>
 
                             {/* Public Routes */}
