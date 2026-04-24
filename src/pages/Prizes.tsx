@@ -227,10 +227,17 @@ export default function Prizes() {
     items: PrizeDisplay[];
     mode: 'auctions' | 'featured';
   }>(() => {
-    const isLiveAuction = (prize: PrizeDisplay) =>
-      prize.saleType === 'auction' &&
-      !!prize.auction &&
-      (prize.auction.status === 'active' || prize.auction.status === 'scheduled');
+    const isLiveAuction = (prize: PrizeDisplay) => {
+      if (prize.saleType !== 'auction' || !prize.auction) return false;
+      // Status check covers terminal states (ended/paid/unsold/failed/cancelled).
+      if (prize.auction.status !== 'active' && prize.auction.status !== 'scheduled') {
+        return false;
+      }
+      // The backend close job may take a few seconds to flip status to
+      // `ended`, so also exclude anything whose endsAt is already in
+      // the past so the strip doesn't show "ENDED" auctions.
+      return new Date(prize.auction.endsAt).getTime() > Date.now();
+    };
 
     const liveAuctions = allPrizes.filter(isLiveAuction).sort((a, b) => {
       if (!a.auction || !b.auction) return 0;

@@ -2125,7 +2125,92 @@ export const auctionAPI = {
     const response = await apiClient.post(`/admin/auctions/${id}/cancel`);
     return response.data;
   },
+
+  /**
+   * Force the close-flow to run for a given auction. Charges the winner
+   * and creates the order if applicable. Used by ops to recover stuck
+   * auctions where the BullMQ close job got out of sync with the DB.
+   */
+  forceClose: async (
+    id: string,
+  ): Promise<import('@/types/prize').AuctionSummary> => {
+    const response = await apiClient.post(`/admin/auctions/${id}/force-close`);
+    return response.data;
+  },
+
+  /** Admin listing of every auction (any status) with ops metadata. */
+  listAdmin: async (): Promise<AdminAuctionRow[]> => {
+    const response = await apiClient.get('/admin/auctions');
+    return response.data;
+  },
+
+  /**
+   * Per-auction admin detail: winner identity + shipping address from
+   * the linked PrizeOrder. Returns winner/shipping as null until the
+   * auction has resolved with a successful charge.
+   */
+  getAdminDetails: async (id: string): Promise<AdminAuctionDetails> => {
+    const response = await apiClient.get(`/admin/auctions/${id}/details`);
+    return response.data;
+  },
 };
+
+/** Shipping address shape stored on PrizeOrder.shippingAddress. */
+export interface AdminAuctionShippingAddress {
+  firstName: string;
+  lastName: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
+/** Shape returned by GET /admin/auctions/:id/details. */
+export interface AdminAuctionDetails {
+  id: string;
+  status: AdminAuctionRow['status'];
+  winnerUserId: string | null;
+  winner: { id: string; username: string; email: string | null } | null;
+  paidAt: string | null;
+  paymentIntentId: string | null;
+  prizeOrderId: string | null;
+  winningBidUsd: number | null;
+  shippingAddress: AdminAuctionShippingAddress | null;
+  orderStatus: string | null;
+}
+
+/**
+ * Row shape returned by GET /admin/auctions.
+ */
+export interface AdminAuctionRow {
+  id: string;
+  prizeConfigurationId: string;
+  prizeName: string;
+  status:
+    | 'scheduled'
+    | 'active'
+    | 'ended'
+    | 'paid'
+    | 'unsold'
+    | 'failed'
+    | 'cancelled';
+  startsAt: string;
+  endsAt: string;
+  durationDays: number;
+  startingPriceUsd: number;
+  reservePriceUsd: number | null;
+  currentBidUsd: number | null;
+  bidCount: number;
+  extensionCount: number;
+  winnerUserId: string | null;
+  winnerUsername: string | null;
+  paidAt: string | null;
+  prizeOrderId: string | null;
+  paymentIntentId: string | null;
+  isOverdue: boolean;
+}
 
 // Export a single API object with all the services
 export const api = {

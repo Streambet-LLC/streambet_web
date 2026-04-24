@@ -23,8 +23,7 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { api } from '@/integrations/api/client';
-import { handleMutationError } from '@/lib/mutationHelpers';
+import { api } from '@/integrations/api/client';import { handleMutationError } from '@/lib/mutationHelpers';
 import { Loader2, Plus, Trash2, Edit, AlertCircle, GripVertical, Gavel } from 'lucide-react';
 import {
   PrizeConfiguration as PrizeTier,
@@ -307,6 +306,21 @@ export const PrizeConfiguration = () => {
   const [imageError, setImageError] = useState<string | null>(null);
   const [itemImages, setItemImages] = useState<ItemImageInput[]>([]);
   const [coverImageIndex, setCoverImageIndex] = useState(0);
+
+  /**
+   * Admin auction details (winner + shipping address) for the item
+   * currently in the edit dialog. Only fires for auction items that
+   * have an associated auction record. Background-refetched every time
+   * the dialog opens so a freshly-paid auction's address shows up
+   * without a manual refresh.
+   */
+  const editingAuctionId = editingTier?.auction?.id ?? null;
+  const { data: editingAuctionDetails } = useQuery({
+    queryKey: ['adminAuctionDetails', editingAuctionId],
+    queryFn: () => api.auction.getAdminDetails(editingAuctionId as string),
+    enabled: !!editingAuctionId,
+    staleTime: 30 * 1000,
+  });
 
   // Display order editing state
   const [isEditingOrder, setIsEditingOrder] = useState(false);
@@ -1098,6 +1112,10 @@ export const PrizeConfiguration = () => {
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
     setImageError(null);
+    // Sync saleType from the tier so the edit dialog renders the right
+    // form sections — auction items hide the CadeCoin / stock / shop /
+    // purchase-option fields that don't apply to a 1-of-1 auction.
+    setSaleType(tier.saleType === 'auction' ? 'auction' : 'fixed_price');
     setEditingTier(tier);
   };
 
@@ -1899,6 +1917,174 @@ export const PrizeConfiguration = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/*
+              Read-only auction details when editing an auction item. The
+              auction config (duration, prices, schedule) is immutable
+              after bids start landing — admins manage live state from
+              the dedicated Auctions tab (force close / cancel).
+            */}
+            {saleType === 'auction' && editingTier && (
+              <div className="space-y-3 rounded-lg border border-primary/40 bg-primary/5 p-4 shadow-[0_0_18px_rgba(122,255,20,0.08)]">
+                <div className="flex items-center gap-2">
+                  <Gavel className="w-4 h-4 text-primary" />
+                  <span className="text-base font-semibold text-primary tracking-wide uppercase">
+                    Auction Details
+                  </span>
+                </div>
+                {editingTier.auction ? (
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div className="text-muted-foreground">Status</div>
+                    <div className="font-medium capitalize">
+                      {editingTier.auction.status}
+                    </div>
+
+                    <div className="text-muted-foreground">Duration</div>
+                    <div className="font-medium">
+                      {editingTier.auction.durationDays} day
+                      {editingTier.auction.durationDays === 1 ? '' : 's'}
+                    </div>
+
+                    <div className="text-muted-foreground">Starting price</div>
+                    <div className="font-medium">
+                      ${Number(editingTier.auction.startingPriceUsd).toFixed(2)}
+                    </div>
+
+                    <div className="text-muted-foreground">Current bid</div>
+                    <div className="font-medium">
+                      {editingTier.auction.currentBidUsd != null
+                        ? `$${Number(editingTier.auction.currentBidUsd).toFixed(2)}`
+                        : '—'}
+                    </div>
+
+                    <div className="text-muted-foreground">Bids</div>
+                    <div className="font-medium">
+                      {editingTier.auction.bidCount}
+                      {editingTier.auction.extensionCount > 0 && (
+                        <span className="text-muted-foreground">
+                          {' '}
+                          ({editingTier.auction.extensionCount} ext)
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-muted-foreground">Reserve</div>
+                    <div className="font-medium">
+                      {editingTier.auction.reserveMet === null
+                        ? 'None'
+                        : editingTier.auction.reserveMet
+                          ? 'Met'
+                          : 'Not met'}
+                    </div>
+
+                    <div className="text-muted-foreground">Starts</div>
+                    <div className="font-medium text-xs">
+                      {new Date(editingTier.auction.startsAt).toLocaleString()}
+                    </div>
+
+                    <div className="text-muted-foreground">Ends</div>
+                    <div className="font-medium text-xs">
+                      {new Date(editingTier.auction.endsAt).toLocaleString()}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    No auction record found for this item.
+                  </p>
+                )}
+
+                {/*
+                  Winner + shipping. Loaded from a dedicated admin
+                  endpoint so we can include the winner's email and the
+                  full address without leaking PII into the public
+                  auction summary used everywhere else.
+                */}
+                {editingAuctionDetails && (
+                  <div className="space-y-2 border-t border-primary/20 pt-3">
+                    <div className="text-xs font-semibold text-primary uppercase tracking-wide">
+                      Winner
+                    </div>
+                    {editingAuctionDetails.winner ? (
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                        <div className="text-muted-foreground">Username</div>
+                        <div className="font-medium">
+                          {editingAuctionDetails.winner.username}
+                        </div>
+                        <div className="text-muted-foreground">Email</div>
+                        <div className="font-medium text-xs break-all">
+                          {editingAuctionDetails.winner.email ?? '—'}
+                        </div>
+                        <div className="text-muted-foreground">Paid at</div>
+                        <div className="font-medium text-xs">
+                          {editingAuctionDetails.paidAt
+                            ? new Date(
+                                editingAuctionDetails.paidAt,
+                              ).toLocaleString()
+                            : '—'}
+                        </div>
+                        {editingAuctionDetails.paymentIntentId && (
+                          <>
+                            <div className="text-muted-foreground">
+                              Payment ID
+                            </div>
+                            <div className="font-mono text-[10px] break-all">
+                              {editingAuctionDetails.paymentIntentId}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        No winner yet — auction is still active or closed
+                        without a successful charge.
+                      </p>
+                    )}
+
+                    <div className="text-xs font-semibold text-primary uppercase tracking-wide pt-2">
+                      Shipping address
+                    </div>
+                    {editingAuctionDetails.shippingAddress ? (
+                      <div className="text-sm leading-snug bg-background/50 rounded border border-primary/20 p-2">
+                        <div className="font-medium">
+                          {editingAuctionDetails.shippingAddress.firstName}{' '}
+                          {editingAuctionDetails.shippingAddress.lastName}
+                        </div>
+                        <div>
+                          {editingAuctionDetails.shippingAddress.addressLine1}
+                        </div>
+                        {editingAuctionDetails.shippingAddress.addressLine2 && (
+                          <div>
+                            {
+                              editingAuctionDetails.shippingAddress
+                                .addressLine2
+                            }
+                          </div>
+                        )}
+                        <div>
+                          {editingAuctionDetails.shippingAddress.city},{' '}
+                          {editingAuctionDetails.shippingAddress.state}{' '}
+                          {editingAuctionDetails.shippingAddress.zipCode}
+                        </div>
+                        <div>
+                          {editingAuctionDetails.shippingAddress.country}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Shipping address is recorded with the prize order
+                        once the winner is charged.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <p className="text-[11px] text-muted-foreground border-t border-primary/20 pt-2">
+                  Auction timing and pricing are locked after creation. Use the{' '}
+                  <span className="text-primary font-medium">Auctions</span> tab
+                  to force close or cancel a live auction.
+                </p>
               </div>
             )}
 

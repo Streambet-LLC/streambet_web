@@ -14,6 +14,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from './ui/pagination';
+import TableLoader from './TableLoader';
 
 const CadeCoinHistory = () => {
   const isMobile = useIsMobile();
@@ -23,7 +24,7 @@ const CadeCoinHistory = () => {
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
 
-  const { data: result } = useQuery({
+  const { data: result, isLoading } = useQuery({
     queryKey: ['cadecoin-history', currentPage, searchQuery],
     queryFn: async () => {
       const data = await api.wallet.getTransactions({
@@ -71,7 +72,9 @@ const CadeCoinHistory = () => {
         </div>
       </div>
 
-      {isMobile ? (
+      {isLoading ? (
+        <TableLoader label="Loading transactions..." />
+      ) : isMobile ? (
         <div className="space-y-3 px-2 pt-2 pb-4">
           {transactions.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground text-base">

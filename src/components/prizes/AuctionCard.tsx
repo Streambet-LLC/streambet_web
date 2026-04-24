@@ -184,7 +184,11 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
           onClick={() => setIsBidOpen(true)}
         >
           <Gavel className="w-4 h-4 mr-2" />
-          {auction.isLeader ? 'Raise your max' : 'Place a bid'}
+          {isEnded
+            ? 'Ended'
+            : auction.isLeader
+              ? 'Raise your max'
+              : 'Place a bid'}
         </Button>
       </CardFooter>
     </Card>

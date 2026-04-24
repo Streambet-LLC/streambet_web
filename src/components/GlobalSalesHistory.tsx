@@ -15,6 +15,7 @@ import {
   PaginationPrevious,
 } from './ui/pagination';
 import OrderItemDetailDialog from './OrderItemDetailDialog';
+import TableLoader from './TableLoader';
 
 /** Map a global sale row to the shape OrderItemDetailDialog expects */
 const mapSaleToTransaction = (sale: any) => ({
@@ -24,6 +25,8 @@ const mapSaleToTransaction = (sale: any) => ({
   paymentMethod: sale.paymentMethod,
   status: sale.status,
   username: sale.buyerUsername,
+  saleType: sale.saleType,
+  auctionBidCount: sale.auctionBidCount,
   prizeConfig: {
     name: sale.itemName,
     category: sale.itemCategory,
@@ -42,7 +45,7 @@ const GlobalSalesHistory = () => {
 
   const rangeStart = (currentPage - 1) * itemsPerPage;
 
-  const { data: result } = useQuery({
+  const { data: result, isLoading } = useQuery({
     queryKey: ['global-sales', currentPage, searchQuery],
     queryFn: async () => {
       const data = await api.prize.getGlobalSales({
@@ -87,7 +90,9 @@ const GlobalSalesHistory = () => {
         </div>
       </div>
 
-      {isMobile ? (
+      {isLoading ? (
+        <TableLoader label="Loading sales..." />
+      ) : isMobile ? (
         <div className="space-y-3 px-2 pt-2 pb-4">
           {sales.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground text-base">No sales found</div>

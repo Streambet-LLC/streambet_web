@@ -9,6 +9,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow, Table } from '.
 import _ from 'lodash';
 import OrderItemDetailDialog from './OrderItemDetailDialog';
 import ReviewOrderButton from './reviews/ReviewOrderButton';
+import TableLoader from './TableLoader';
 import { ReviewableOrderSide } from '@/types/review';
 
 interface PurchaseTransactionHistoryProps {
@@ -22,7 +23,7 @@ const PurchaseTransactionHistory: React.FC<PurchaseTransactionHistoryProps> = ({
   const isMobile = useIsMobile();
   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
 
-  const { data: transactions, refetch: refetchTransactions } = useQuery({
+  const { data: transactions, refetch: refetchTransactions, isLoading } = useQuery({
     queryKey: ['prize-orders'],
     queryFn: async () => {
       const data = await api.prize.getMyOrders();
@@ -52,7 +53,9 @@ const PurchaseTransactionHistory: React.FC<PurchaseTransactionHistoryProps> = ({
         <h1 className={`text-lg font-medium ${isMobile ? 'pb-2' : ''}`}>Purchases</h1>
       </div>
       <>
-        {transactions?.length === 0 ? (
+        {isLoading ? (
+          <TableLoader label="Loading purchases..." />
+        ) : transactions?.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground text-base">
             No purchase history found matching
           </div>
