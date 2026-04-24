@@ -125,6 +125,10 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild className="cursor-pointer">
+          <Link to="/my-bids">My Bids</Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild className="cursor-pointer">
           <Link to="/daily-spin">Daily Spin</Link>
         </DropdownMenuItem>
 

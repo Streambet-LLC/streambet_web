@@ -41,6 +41,7 @@ import StreamPayoutReport from './StreamPayoutReport';
 import { PrizeConfiguration } from './PrizeConfiguration';
 import { PrizeRedemptions } from './PrizeRedemptions';
 import { PrizeOrders } from './PrizeOrders';
+import { AdminAuctions } from './AdminAuctions';
 import { ApplicationsTable } from './ApplicationsTable';
 import PendingOnboardingTable from './PendingOnboardingTable';
 import { AdminInboxPanel } from './AdminInboxPanel';
@@ -119,6 +120,7 @@ export const AdminManagement = ({
     { key: 'stream-payout', label: 'Stream Payout' },
     { key: 'prize-settings', label: 'Item Settings' },
     { key: 'prize-redemptions', label: 'Prize Redemptions' },
+    { key: 'auctions', label: 'Auctions' },
     { key: 'prize-offers', label: 'Prize Offers' },
     { key: 'support-inbox', label: 'Support Inbox' },
     { key: 'user-messages', label: 'User Messages' },
@@ -1741,6 +1743,12 @@ export const AdminManagement = ({
           {activeTab === 'prize-redemptions' && (
             <div className="space-y-4">
               <PrizeRedemptions />
+            </div>
+          )}
+
+          {activeTab === 'auctions' && (
+            <div className="space-y-4">
+              <AdminAuctions />
             </div>
           )}
 

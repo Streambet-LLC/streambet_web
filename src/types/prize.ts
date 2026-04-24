@@ -90,6 +90,67 @@ export interface PrizeConfiguration {
   viewCount?: number;
   watcherCount?: number;
   isWatching?: boolean;
+  saleType?: PrizeSaleType;
+  /** Per-item shipping fee in USD. Backfilled to $5 for legacy items. */
+  shippingCostUsd?: number;
+  auction?: AuctionSummary | null;
+}
+
+export type PrizeSaleType = 'fixed_price' | 'auction';
+
+export type AuctionStatus =
+  | 'scheduled'
+  | 'active'
+  | 'ended'
+  | 'paid'
+  | 'unsold'
+  | 'failed'
+  | 'cancelled';
+
+/**
+ * Public auction summary returned alongside a Prize when its saleType is
+ * `auction`. Reserve price is hidden — bidders only see `reserveMet`.
+ */
+export interface AuctionSummary {
+  id: string;
+  status: AuctionStatus;
+  startsAt: string;
+  endsAt: string;
+  durationDays: 1 | 3 | 5 | 7;
+  startingPriceUsd: number;
+  currentBidUsd: number | null;
+  /** Minimum increment for the next bid (dynamic by tier). */
+  minNextBidIncrement: number;
+  /** Minimum total amount required for the next bid. */
+  minNextBidUsd: number;
+  bidCount: number;
+  extensionCount: number;
+  /** null = no reserve set; true = reserve met; false = reserve not met. */
+  reserveMet: boolean | null;
+  isLeader: boolean;
+  isBidder: boolean;
+  /** Buyer processing fee percent applied on top of the bid (matches sales fee policy). */
+  buyerProcessingFeePercent: number;
+  /** Buyer processing fee in USD computed against currentBidUsd; null when no bids yet. */
+  buyerProcessingFeeUsd: number | null;
+  /** Total the winner would owe (bid + processing fee). null until the first bid. */
+  totalDueIfWonUsd: number | null;
+  /** Buyer fee for the minimum next bid — handy for the bid form preview. */
+  minNextBidProcessingFeeUsd: number;
+  /** Total the bidder would owe if they bid the minimum next amount. */
+  minNextBidTotalUsd: number;
+  /**
+   * The requesting user's own proxy max on this auction. Only populated
+   * when the viewer is the current leader so they can raise it. Null
+   * otherwise (proxy maxes are private from other bidders).
+   */
+  currentUserProxyMaxUsd: number | null;
+  /**
+   * Per-item shipping fee in USD. Added on top of the winning bid +
+   * buyer processing fee at close. Mirrors the parent prize's value
+   * so the bid modal can show the full "if I win" total.
+   */
+  shippingCostUsd: number;
 }
 
 export interface SellerShopSummary {
@@ -150,6 +211,10 @@ export interface CreatePrizeTierRequest {
   showOnShop?: boolean;
   createdBy?: string | null;
   isProOnly?: boolean;
+  /** Set to 'auction' to mark the new item as auction-eligible. After creation an admin must call api.auction.create. */
+  saleType?: PrizeSaleType;
+  /** Per-item shipping fee in USD. Defaults to $5 server-side if omitted. */
+  shippingCostUsd?: number;
 }
 
 /**
@@ -175,6 +240,8 @@ export interface UpdatePrizeTierRequest {
   showOnShop?: boolean;
   createdBy?: string | null;
   isProOnly?: boolean;
+  /** Per-item shipping fee in USD. */
+  shippingCostUsd?: number;
 }
 
 /**

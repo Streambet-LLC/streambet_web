@@ -23,9 +23,8 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { api } from '@/integrations/api/client';
-import { handleMutationError } from '@/lib/mutationHelpers';
-import { Loader2, Plus, Trash2, Edit, AlertCircle, GripVertical } from 'lucide-react';
+import { api } from '@/integrations/api/client';import { handleMutationError } from '@/lib/mutationHelpers';
+import { Loader2, Plus, Trash2, Edit, AlertCircle, GripVertical, Gavel } from 'lucide-react';
 import {
   PrizeConfiguration as PrizeTier,
   CreatePrizeTierRequest,
@@ -308,6 +307,21 @@ export const PrizeConfiguration = () => {
   const [itemImages, setItemImages] = useState<ItemImageInput[]>([]);
   const [coverImageIndex, setCoverImageIndex] = useState(0);
 
+  /**
+   * Admin auction details (winner + shipping address) for the item
+   * currently in the edit dialog. Only fires for auction items that
+   * have an associated auction record. Background-refetched every time
+   * the dialog opens so a freshly-paid auction's address shows up
+   * without a manual refresh.
+   */
+  const editingAuctionId = editingTier?.auction?.id ?? null;
+  const { data: editingAuctionDetails } = useQuery({
+    queryKey: ['adminAuctionDetails', editingAuctionId],
+    queryFn: () => api.auction.getAdminDetails(editingAuctionId as string),
+    enabled: !!editingAuctionId,
+    staleTime: 30 * 1000,
+  });
+
   // Display order editing state
   const [isEditingOrder, setIsEditingOrder] = useState(false);
   const [selectedPage, setSelectedPage] = useState<'shop' | 'redemptions'>('shop');
@@ -339,6 +353,36 @@ export const PrizeConfiguration = () => {
   const [validationError, setValidationError] = useState<string>('');
   const [usdAmount, setUsdAmount] = useState<string>('');
 
+  // Sale-type & auction sub-form state. Fixed-price keeps the legacy
+  // CadeCoin/USD flow; auction adds the auction setup payload that we
+  // POST to /admin/auctions immediately after the item is created.
+  type LocalSaleType = 'fixed_price' | 'auction';
+  const [saleType, setSaleType] = useState<LocalSaleType>('fixed_price');
+  const [auctionConfig, setAuctionConfig] = useState<{
+    durationDays: 1 | 3 | 5 | 7;
+    startingPriceUsd: string;
+    reservePriceUsd: string;
+    cardValueUsd: string;
+    startsAt: string;
+  }>({
+    durationDays: 3,
+    startingPriceUsd: '',
+    reservePriceUsd: '',
+    cardValueUsd: '',
+    startsAt: '',
+  });
+
+  const resetAuctionConfig = () => {
+    setSaleType('fixed_price');
+    setAuctionConfig({
+      durationDays: 3,
+      startingPriceUsd: '',
+      reservePriceUsd: '',
+      cardValueUsd: '',
+      startsAt: '',
+    });
+  };
+
   // Form state
   const [formData, setFormData] = useState<CreatePrizeTierRequest>({
     amount: 500,
@@ -352,6 +396,9 @@ export const PrizeConfiguration = () => {
     showOnRedemptions: false,
     showOnShop: true,
     createdBy: null,
+    // Per-item shipping fee. Server has DB default $5 but we mirror it
+    // here so the admin form shows a sensible value out of the box.
+    shippingCostUsd: 5,
   });
 
   const resetForm = () => {
@@ -367,12 +414,14 @@ export const PrizeConfiguration = () => {
       showOnRedemptions: false,
       showOnShop: true,
       createdBy: null,
+      shippingCostUsd: 5,
     });
     setValidationError('');
     setItemImages([]);
     setCoverImageIndex(0);
     setImageError(null);
     setUsdAmount('');
+    resetAuctionConfig();
   };
 
   // USD to Cadecoins conversion handlers (1 USD = 50 cadecoins)
@@ -414,10 +463,40 @@ export const PrizeConfiguration = () => {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (payload: CreatePrizeTierRequest) => api.prize.createPrizeTier(payload),
+    mutationFn: async (payload: CreatePrizeTierRequest) => {
+      const created = await api.prize.createPrizeTier(payload);
+      // If admin selected the Auction sale type, immediately create the
+      // matching auction record. The backend already enforces stock=1 +
+      // saleType=auction on the prize, so any failure here means the
+      // item exists but no auction was scheduled — surface that clearly.
+      if (payload.saleType === 'auction') {
+        const prizeId =
+          (created as { id?: string } | null)?.id ??
+          (created as { data?: { id?: string } } | null)?.data?.id;
+        if (!prizeId) {
+          throw new Error(
+            'Item was created but the response was missing an id, so the auction could not be scheduled.'
+          );
+        }
+        await api.auction.create({
+          prizeConfigurationId: prizeId,
+          durationDays: auctionConfig.durationDays,
+          startingPriceUsd: parseFloat(auctionConfig.startingPriceUsd) || 0,
+          reservePriceUsd: auctionConfig.reservePriceUsd
+            ? parseFloat(auctionConfig.reservePriceUsd)
+            : undefined,
+          cardValueUsd: auctionConfig.cardValueUsd
+            ? parseFloat(auctionConfig.cardValueUsd)
+            : undefined,
+          startsAt: auctionConfig.startsAt || undefined,
+        });
+      }
+      return created;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminPrizeTiers'] });
       queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
+      queryClient.invalidateQueries({ queryKey: ['active-auctions'] });
       toast({
         title: 'Success!',
         description: 'Item created successfully',
@@ -868,8 +947,13 @@ export const PrizeConfiguration = () => {
       return;
     }
 
-    // Validate amount for non-offers_only prizes
-    if (formData.purchaseOption !== 'offers_only' && (!formData.amount || formData.amount <= 0)) {
+    // Validate amount for non-offers_only prizes (skipped for auctions —
+    // auctions are priced in USD via the auction config block).
+    if (
+      saleType !== 'auction' &&
+      formData.purchaseOption !== 'offers_only' &&
+      (!formData.amount || formData.amount <= 0)
+    ) {
       setValidationError('Cadecoin amount is required for Buy Only and Both purchase options');
       return;
     }
@@ -889,6 +973,28 @@ export const PrizeConfiguration = () => {
       return;
     }
 
+    // Auction-specific validation: starting price > 0, reserve >= starting,
+    // exactly 1 in stock (the backend enforces this too but we want to
+    // surface a friendly error before the upload round-trips).
+    if (saleType === 'auction') {
+      const start = parseFloat(auctionConfig.startingPriceUsd);
+      if (!start || start < 1) {
+        setValidationError('Starting price (USD) must be at least $1 for auctions');
+        return;
+      }
+      if (auctionConfig.reservePriceUsd) {
+        const reserve = parseFloat(auctionConfig.reservePriceUsd);
+        if (reserve < start) {
+          setValidationError('Reserve price cannot be less than the starting price');
+          return;
+        }
+      }
+      if ((formData.stock ?? 0) !== 1) {
+        setValidationError('Auction items must have exactly 1 in stock');
+        return;
+      }
+    }
+
     setValidationError('');
 
     try {
@@ -899,6 +1005,7 @@ export const PrizeConfiguration = () => {
         imageUrl: imagePayload.coverImageUrl,
         imageUrls: imagePayload.imageUrls,
         coverImageIndex: imagePayload.coverImageIndex,
+        saleType,
       });
     } catch (error) {
       toast({
@@ -993,6 +1100,7 @@ export const PrizeConfiguration = () => {
       showOnRedemptions: tier.showOnRedemptions ?? true,
       showOnShop: tier.showOnShop ?? true,
       createdBy: tier.createdBy,
+      shippingCostUsd: tier.shippingCostUsd ?? 5,
     });
     // Calculate and display USD equivalent (amount is always in cadecoins)
     if (tier.amount && tier.amount > 0) {
@@ -1004,6 +1112,10 @@ export const PrizeConfiguration = () => {
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
     setImageError(null);
+    // Sync saleType from the tier so the edit dialog renders the right
+    // form sections — auction items hide the CadeCoin / stock / shop /
+    // purchase-option fields that don't apply to a 1-of-1 auction.
+    setSaleType(tier.saleType === 'auction' ? 'auction' : 'fixed_price');
     setEditingTier(tier);
   };
 
@@ -1640,57 +1752,397 @@ export const PrizeConfiguration = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-4">
-            <div className="space-y-2.5">
-              <Label htmlFor="usdAmount" className="text-base font-medium">
-                USD Amount
-                <span className="text-xs text-muted-foreground font-normal ml-2">
-                  ($1 = 50 cadecoins)
-                </span>
-              </Label>
-              <Input
-                id="usdAmount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={usdAmount}
-                onChange={e => handleUsdChange(e.target.value)}
-                className="h-12 text-base"
-                placeholder="Enter USD amount..."
-                disabled={formData.purchaseOption === 'offers_only'}
-              />
-              <p className="text-xs text-muted-foreground">
-                This will auto-calculate the cadecoin amount below
-              </p>
-            </div>
-            <div className="space-y-2.5">
-              <Label htmlFor="amount" className="text-base font-medium">
-                Cadecoin Amount{' '}
-                {formData.purchaseOption !== 'offers_only' && (
-                  <span className="text-destructive">*</span>
+            {!editingTier && (
+              <div className="space-y-2.5">
+                <Label htmlFor="saleType" className="text-base font-medium">
+                  Sale Type <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={saleType}
+                  onValueChange={value => {
+                    const next = value as LocalSaleType;
+                    setSaleType(next);
+                    // Auction items are 1-of-1, shop-only, CardCade-only.
+                    if (next === 'auction') {
+                      setFormData(prev => ({
+                        ...prev,
+                        stock: 1,
+                        showOnShop: true,
+                        showOnRedemptions: false,
+                        purchaseOption: 'buy_only',
+                        createdBy: null,
+                      }));
+                    }
+                    setValidationError('');
+                  }}
+                >
+                  <SelectTrigger id="saleType" className="h-12 text-base">
+                    <SelectValue placeholder="Select sale type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixed_price">Fixed Price (CadeCoins)</SelectItem>
+                    <SelectItem value="auction">Auction (USD bidding)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {saleType === 'auction' && (
+                  <p className="text-xs text-muted-foreground">
+                    Auction items are 1-of-1, shop-only, and excluded from CadeCoin redemptions.
+                  </p>
                 )}
-                {formData.purchaseOption === 'offers_only' && (
-                  <span className="text-xs text-muted-foreground font-normal">
-                    (optional - defaults to $0.02)
+              </div>
+            )}
+
+            {saleType === 'auction' && !editingTier && (
+              <div className="space-y-4 rounded-lg border border-primary/40 bg-primary/5 p-4 shadow-[0_0_18px_rgba(122,255,20,0.08)]">
+                <div className="flex items-center gap-2">
+                  <Gavel className="w-4 h-4 text-primary" />
+                  <span className="text-base font-semibold text-primary tracking-wide uppercase">
+                    Auction Setup
                   </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  <Label htmlFor="auctionDuration" className="text-sm font-medium">
+                    Duration <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={String(auctionConfig.durationDays)}
+                    onValueChange={value =>
+                      setAuctionConfig(prev => ({
+                        ...prev,
+                        durationDays: Number(value) as 1 | 3 | 5 | 7,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="auctionDuration" className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 day</SelectItem>
+                      <SelectItem value="3">3 days</SelectItem>
+                      <SelectItem value="5">5 days</SelectItem>
+                      <SelectItem value="7">7 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="startingPriceUsd" className="text-sm font-medium">
+                      Starting price (USD) <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="startingPriceUsd"
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={auctionConfig.startingPriceUsd}
+                      onChange={e =>
+                        setAuctionConfig(prev => ({
+                          ...prev,
+                          startingPriceUsd: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. 25"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reservePriceUsd" className="text-sm font-medium">
+                      Reserve price (USD)
+                    </Label>
+                    <Input
+                      id="reservePriceUsd"
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={auctionConfig.reservePriceUsd}
+                      onChange={e =>
+                        setAuctionConfig(prev => ({
+                          ...prev,
+                          reservePriceUsd: e.target.value,
+                        }))
+                      }
+                      placeholder="Hidden — optional"
+                      className="h-11"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Hidden from bidders. If unmet, auction marks as unsold.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="cardValueUsd" className="text-sm font-medium">
+                      Card value (USD)
+                    </Label>
+                    <Input
+                      id="cardValueUsd"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={auctionConfig.cardValueUsd}
+                      onChange={e =>
+                        setAuctionConfig(prev => ({
+                          ...prev,
+                          cardValueUsd: e.target.value,
+                        }))
+                      }
+                      placeholder="Internal — optional"
+                      className="h-11"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Internal only — never shown to bidders.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="auctionStartsAt" className="text-sm font-medium">
+                      Scheduled start
+                    </Label>
+                    <Input
+                      id="auctionStartsAt"
+                      type="datetime-local"
+                      value={auctionConfig.startsAt}
+                      onChange={e =>
+                        setAuctionConfig(prev => ({
+                          ...prev,
+                          startsAt: e.target.value,
+                        }))
+                      }
+                      className="h-11"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Leave blank to start immediately on save.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/*
+              Read-only auction details when editing an auction item. The
+              auction config (duration, prices, schedule) is immutable
+              after bids start landing — admins manage live state from
+              the dedicated Auctions tab (force close / cancel).
+            */}
+            {saleType === 'auction' && editingTier && (
+              <div className="space-y-3 rounded-lg border border-primary/40 bg-primary/5 p-4 shadow-[0_0_18px_rgba(122,255,20,0.08)]">
+                <div className="flex items-center gap-2">
+                  <Gavel className="w-4 h-4 text-primary" />
+                  <span className="text-base font-semibold text-primary tracking-wide uppercase">
+                    Auction Details
+                  </span>
+                </div>
+                {editingTier.auction ? (
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div className="text-muted-foreground">Status</div>
+                    <div className="font-medium capitalize">
+                      {editingTier.auction.status}
+                    </div>
+
+                    <div className="text-muted-foreground">Duration</div>
+                    <div className="font-medium">
+                      {editingTier.auction.durationDays} day
+                      {editingTier.auction.durationDays === 1 ? '' : 's'}
+                    </div>
+
+                    <div className="text-muted-foreground">Starting price</div>
+                    <div className="font-medium">
+                      ${Number(editingTier.auction.startingPriceUsd).toFixed(2)}
+                    </div>
+
+                    <div className="text-muted-foreground">Current bid</div>
+                    <div className="font-medium">
+                      {editingTier.auction.currentBidUsd != null
+                        ? `$${Number(editingTier.auction.currentBidUsd).toFixed(2)}`
+                        : '—'}
+                    </div>
+
+                    <div className="text-muted-foreground">Bids</div>
+                    <div className="font-medium">
+                      {editingTier.auction.bidCount}
+                      {editingTier.auction.extensionCount > 0 && (
+                        <span className="text-muted-foreground">
+                          {' '}
+                          ({editingTier.auction.extensionCount} ext)
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-muted-foreground">Reserve</div>
+                    <div className="font-medium">
+                      {editingTier.auction.reserveMet === null
+                        ? 'None'
+                        : editingTier.auction.reserveMet
+                          ? 'Met'
+                          : 'Not met'}
+                    </div>
+
+                    <div className="text-muted-foreground">Starts</div>
+                    <div className="font-medium text-xs">
+                      {new Date(editingTier.auction.startsAt).toLocaleString()}
+                    </div>
+
+                    <div className="text-muted-foreground">Ends</div>
+                    <div className="font-medium text-xs">
+                      {new Date(editingTier.auction.endsAt).toLocaleString()}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    No auction record found for this item.
+                  </p>
                 )}
-              </Label>
-              <Input
-                id="amount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.amount || ''}
-                onChange={e => handleCoinAmountChange(e.target.value)}
-                className="h-12 text-base"
-                placeholder={formData.purchaseOption === 'offers_only' ? 'Optional' : '0'}
-                disabled={formData.purchaseOption === 'offers_only'}
-              />
-              {formData.purchaseOption === 'offers_only' && (
-                <p className="text-xs text-muted-foreground">
-                  Price is not shown to users for offer-only items. They submit their own offer.
+
+                {/*
+                  Winner + shipping. Loaded from a dedicated admin
+                  endpoint so we can include the winner's email and the
+                  full address without leaking PII into the public
+                  auction summary used everywhere else.
+                */}
+                {editingAuctionDetails && (
+                  <div className="space-y-2 border-t border-primary/20 pt-3">
+                    <div className="text-xs font-semibold text-primary uppercase tracking-wide">
+                      Winner
+                    </div>
+                    {editingAuctionDetails.winner ? (
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                        <div className="text-muted-foreground">Username</div>
+                        <div className="font-medium">
+                          {editingAuctionDetails.winner.username}
+                        </div>
+                        <div className="text-muted-foreground">Email</div>
+                        <div className="font-medium text-xs break-all">
+                          {editingAuctionDetails.winner.email ?? '—'}
+                        </div>
+                        <div className="text-muted-foreground">Paid at</div>
+                        <div className="font-medium text-xs">
+                          {editingAuctionDetails.paidAt
+                            ? new Date(
+                                editingAuctionDetails.paidAt,
+                              ).toLocaleString()
+                            : '—'}
+                        </div>
+                        {editingAuctionDetails.paymentIntentId && (
+                          <>
+                            <div className="text-muted-foreground">
+                              Payment ID
+                            </div>
+                            <div className="font-mono text-[10px] break-all">
+                              {editingAuctionDetails.paymentIntentId}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        No winner yet — auction is still active or closed
+                        without a successful charge.
+                      </p>
+                    )}
+
+                    <div className="text-xs font-semibold text-primary uppercase tracking-wide pt-2">
+                      Shipping address
+                    </div>
+                    {editingAuctionDetails.shippingAddress ? (
+                      <div className="text-sm leading-snug bg-background/50 rounded border border-primary/20 p-2">
+                        <div className="font-medium">
+                          {editingAuctionDetails.shippingAddress.firstName}{' '}
+                          {editingAuctionDetails.shippingAddress.lastName}
+                        </div>
+                        <div>
+                          {editingAuctionDetails.shippingAddress.addressLine1}
+                        </div>
+                        {editingAuctionDetails.shippingAddress.addressLine2 && (
+                          <div>
+                            {
+                              editingAuctionDetails.shippingAddress
+                                .addressLine2
+                            }
+                          </div>
+                        )}
+                        <div>
+                          {editingAuctionDetails.shippingAddress.city},{' '}
+                          {editingAuctionDetails.shippingAddress.state}{' '}
+                          {editingAuctionDetails.shippingAddress.zipCode}
+                        </div>
+                        <div>
+                          {editingAuctionDetails.shippingAddress.country}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Shipping address is recorded with the prize order
+                        once the winner is charged.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <p className="text-[11px] text-muted-foreground border-t border-primary/20 pt-2">
+                  Auction timing and pricing are locked after creation. Use the{' '}
+                  <span className="text-primary font-medium">Auctions</span> tab
+                  to force close or cancel a live auction.
                 </p>
-              )}
-            </div>
+              </div>
+            )}
+
+            {saleType !== 'auction' && (
+              <>
+                <div className="space-y-2.5">
+                  <Label htmlFor="usdAmount" className="text-base font-medium">
+                    USD Amount
+                    <span className="text-xs text-muted-foreground font-normal ml-2">
+                      ($1 = 50 cadecoins)
+                    </span>
+                  </Label>
+                  <Input
+                    id="usdAmount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={usdAmount}
+                    onChange={e => handleUsdChange(e.target.value)}
+                    className="h-12 text-base"
+                    placeholder="Enter USD amount..."
+                    disabled={formData.purchaseOption === 'offers_only'}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This will auto-calculate the cadecoin amount below
+                  </p>
+                </div>
+                <div className="space-y-2.5">
+                  <Label htmlFor="amount" className="text-base font-medium">
+                    Cadecoin Amount{' '}
+                    {formData.purchaseOption !== 'offers_only' && (
+                      <span className="text-destructive">*</span>
+                    )}
+                    {formData.purchaseOption === 'offers_only' && (
+                      <span className="text-xs text-muted-foreground font-normal">
+                        (optional - defaults to $0.02)
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.amount || ''}
+                    onChange={e => handleCoinAmountChange(e.target.value)}
+                    className="h-12 text-base"
+                    placeholder={formData.purchaseOption === 'offers_only' ? 'Optional' : '0'}
+                    disabled={formData.purchaseOption === 'offers_only'}
+                  />
+                  {formData.purchaseOption === 'offers_only' && (
+                    <p className="text-xs text-muted-foreground">
+                      Price is not shown to users for offer-only items. They submit their own offer.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
             <div className="space-y-2.5">
               <Label htmlFor="name" className="text-base font-medium">
                 Prize Name <span className="text-destructive">*</span>
@@ -1727,30 +2179,32 @@ export const PrizeConfiguration = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2.5">
-              <Label htmlFor="purchaseOption" className="text-base font-medium">
-                Purchase Option <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={formData.purchaseOption}
-                onValueChange={value => {
-                  setFormData({
-                    ...formData,
-                    purchaseOption: value as 'offers_only' | 'buy_only' | 'both',
-                  });
-                  setValidationError('');
-                }}
-              >
-                <SelectTrigger id="purchaseOption" className="h-12 text-base">
-                  <SelectValue placeholder="Select purchase option" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="offers_only">Offers Only</SelectItem>
-                  <SelectItem value="buy_only">Buy Only</SelectItem>
-                  <SelectItem value="both">Both</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {saleType !== 'auction' && (
+              <div className="space-y-2.5">
+                <Label htmlFor="purchaseOption" className="text-base font-medium">
+                  Purchase Option <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.purchaseOption}
+                  onValueChange={value => {
+                    setFormData({
+                      ...formData,
+                      purchaseOption: value as 'offers_only' | 'buy_only' | 'both',
+                    });
+                    setValidationError('');
+                  }}
+                >
+                  <SelectTrigger id="purchaseOption" className="h-12 text-base">
+                    <SelectValue placeholder="Select purchase option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="offers_only">Offers Only</SelectItem>
+                    <SelectItem value="buy_only">Buy Only</SelectItem>
+                    <SelectItem value="both">Both</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2.5">
               <Label htmlFor="brand" className="text-base font-medium">
                 Card Type <span className="text-destructive">*</span>
@@ -1776,54 +2230,88 @@ export const PrizeConfiguration = () => {
                 </SelectContent>
               </Select>
             </div>
+            {saleType !== 'auction' && (
+              <div className="space-y-2.5">
+                <Label htmlFor="seller" className="text-base font-medium">
+                  Assign to Seller
+                  <span className="text-xs text-muted-foreground font-normal ml-2">(optional)</span>
+                </Label>
+                <Select
+                  value={formData.createdBy || '__none__'}
+                  onValueChange={value => {
+                    setFormData({
+                      ...formData,
+                      createdBy: value === '__none__' ? null : value,
+                    });
+                    setValidationError('');
+                  }}
+                >
+                  <SelectTrigger id="seller" className="h-12 text-base">
+                    <SelectValue placeholder="No seller (admin item)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No seller (admin item)</SelectItem>
+                    {sellers.map(seller => (
+                      <SelectItem key={seller.id} value={seller.id}>
+                        {seller.shopName || seller.username}
+                        {seller.name && ` (${seller.name})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Assign this prize to a seller's shop. Leave unassigned for admin-only items.
+                </p>
+              </div>
+            )}
+            {saleType !== 'auction' && (
+              <div className="space-y-2.5">
+                <Label htmlFor="stock" className="text-base font-medium">
+                  Stock Quantity
+                </Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  min="0"
+                  value={formData.stock || ''}
+                  onChange={e => {
+                    setFormData({ ...formData, stock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 });
+                    setValidationError('');
+                  }}
+                  className="h-12 text-base"
+                  placeholder="0 = unlimited"
+                />
+              </div>
+            )}
+            {/*
+              Per-item shipping fee. Applies to every sale type — fixed-price
+              checkout, offers, and auction close all add this on top of the
+              winner/buyer total. Backend defaults to $5 if omitted.
+            */}
             <div className="space-y-2.5">
-              <Label htmlFor="seller" className="text-base font-medium">
-                Assign to Seller
-                <span className="text-xs text-muted-foreground font-normal ml-2">(optional)</span>
-              </Label>
-              <Select
-                value={formData.createdBy || '__none__'}
-                onValueChange={value => {
-                  setFormData({
-                    ...formData,
-                    createdBy: value === '__none__' ? null : value,
-                  });
-                  setValidationError('');
-                }}
-              >
-                <SelectTrigger id="seller" className="h-12 text-base">
-                  <SelectValue placeholder="No seller (admin item)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">No seller (admin item)</SelectItem>
-                  {sellers.map(seller => (
-                    <SelectItem key={seller.id} value={seller.id}>
-                      {seller.shopName || seller.username}
-                      {seller.name && ` (${seller.name})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Assign this prize to a seller's shop. Leave unassigned for admin-only items.
-              </p>
-            </div>
-            <div className="space-y-2.5">
-              <Label htmlFor="stock" className="text-base font-medium">
-                Stock Quantity
+              <Label htmlFor="shippingCostUsd" className="text-base font-medium">
+                Shipping Cost (USD)
               </Label>
               <Input
-                id="stock"
+                id="shippingCostUsd"
                 type="number"
                 min="0"
-                value={formData.stock || ''}
+                step="0.01"
+                value={formData.shippingCostUsd ?? ''}
                 onChange={e => {
-                  setFormData({ ...formData, stock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 });
-                  setValidationError('');
+                  const raw = e.target.value;
+                  setFormData({
+                    ...formData,
+                    shippingCostUsd:
+                      raw === '' ? undefined : Math.max(0, parseFloat(raw) || 0),
+                  });
                 }}
                 className="h-12 text-base"
-                placeholder="0 = unlimited"
+                placeholder="5.00"
               />
+              <p className="text-xs text-muted-foreground">
+                Charged to the buyer on top of the sale price (or winning bid for auctions). Defaults to $5.00.
+              </p>
             </div>
             <div className="space-y-2.5">
               <Label htmlFor="description" className="text-base font-medium">
@@ -1839,33 +2327,35 @@ export const PrizeConfiguration = () => {
               />
             </div>
 
-            <div className="space-y-2.5">
-              <Label className="text-base font-medium">Page Visibility</Label>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="showOnShop"
-                    checked={formData.showOnShop ?? true}
-                    onCheckedChange={checked => setFormData({ ...formData, showOnShop: checked })}
-                  />
-                  <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
-                    Show in Shops
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="showOnRedemptions"
-                    checked={formData.showOnRedemptions ?? false}
-                    onCheckedChange={checked =>
-                      setFormData({ ...formData, showOnRedemptions: checked })
-                    }
-                  />
-                  <Label htmlFor="showOnRedemptions" className="font-medium cursor-pointer">
-                    Show on Redemptions Page
-                  </Label>
+            {saleType !== 'auction' && (
+              <div className="space-y-2.5">
+                <Label className="text-base font-medium">Page Visibility</Label>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="showOnShop"
+                      checked={formData.showOnShop ?? true}
+                      onCheckedChange={checked => setFormData({ ...formData, showOnShop: checked })}
+                    />
+                    <Label htmlFor="showOnShop" className="font-medium cursor-pointer">
+                      Show in Shops
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="showOnRedemptions"
+                      checked={formData.showOnRedemptions ?? false}
+                      onCheckedChange={checked =>
+                        setFormData({ ...formData, showOnRedemptions: checked })
+                      }
+                    />
+                    <Label htmlFor="showOnRedemptions" className="font-medium cursor-pointer">
+                      Show on Redemptions Page
+                    </Label>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-2.5">
               <Label className="text-base font-medium">Prize Image</Label>

@@ -1521,6 +1521,8 @@ export const prizeAPI = {
     stock?: number;
     purchaseOption?: 'offers_only' | 'buy_only' | 'both';
     brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
+    /** Per-item shipping fee in USD. Server defaults to $5 if omitted. */
+    shippingCostUsd?: number;
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/admin/prizes', payload);
     return response.data;
@@ -1544,6 +1546,8 @@ export const prizeAPI = {
       createdBy?: string | null;
       showOnShop?: boolean;
       showOnRedemptions?: boolean;
+      /** Per-item shipping fee in USD. */
+      shippingCostUsd?: number;
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/admin/prizes/${id}`, payload);
@@ -1698,6 +1702,17 @@ export const prizeAPI = {
   /** Get the current user's full watchlist (login required). */
   getWatchlist: async (): Promise<PrizeConfiguration[]> => {
     const response = await apiClient.get('/prizes/watchlist');
+    return response.data;
+  },
+
+  /**
+   * Get the prizes the current user has placed at least one bid on,
+   * ordered by most-recent bid (login required). Each item's `auction`
+   * summary includes `isLeader` and `currentUserProxyMaxUsd` for the
+   * requesting user.
+   */
+  getMyBids: async (): Promise<PrizeConfiguration[]> => {
+    const response = await apiClient.get('/prizes/my-bids');
     return response.data;
   },
 };
@@ -2034,6 +2049,169 @@ export const reviewAPI = {
   },
 };
 
+/**
+ * Auctions API.
+ *
+ * The auction lifecycle:
+ *  1. Admin creates an auction via `create()` (item must already exist
+ *     with `saleType === 'auction'`).
+ *  2. First-time bidder calls `createSetupIntent()`, then mounts Stripe
+ *     Elements to attach a card.
+ *  3. Subsequent bids call `placeBid()` directly using a saved card
+ *     (returned by `listSavedCards()`).
+ */
+export const auctionAPI = {
+  list: async (): Promise<import('@/types/prize').AuctionSummary[]> => {
+    const response = await apiClient.get('/auctions');
+    return response.data;
+  },
+
+  getById: async (id: string): Promise<import('@/types/prize').AuctionSummary> => {
+    const response = await apiClient.get(`/auctions/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Place a bid. Pass `proxyMaxUsd` (the bidder's max-willing-to-pay) and
+   * either an explicit `stripePaymentMethodId` (first bid after SetupIntent
+   * confirmation) or omit it to reuse the most recent saved card.
+   */
+  placeBid: async (
+    auctionId: string,
+    payload: { proxyMaxUsd: number; stripePaymentMethodId?: string }
+  ): Promise<import('@/types/prize').AuctionSummary> => {
+    const response = await apiClient.post(`/auctions/${auctionId}/bid`, payload);
+    return response.data;
+  },
+
+  /** Create a SetupIntent so the bidder can collect & save a card. */
+  createSetupIntent: async (): Promise<{ clientSecret: string; customerId: string }> => {
+    const response = await apiClient.post('/auctions/setup-intent');
+    return response.data;
+  },
+
+  /**
+   * Create a hosted Stripe Checkout setup session. Returns a URL the
+   * frontend should redirect to. On return the bidder's card is saved
+   * to their Stripe customer and they can place a bid.
+   */
+  createSetupCheckout: async (returnUrl: string): Promise<{ url: string }> => {
+    const response = await apiClient.post('/auctions/setup-checkout', { returnUrl });
+    return response.data;
+  },
+
+  /** List the bidder's saved cards (used for the "use saved card" chip). */
+  listSavedCards: async (): Promise<
+    Array<{ id: string; brand: string; last4: string; expMonth: number; expYear: number }>
+  > => {
+    const response = await apiClient.get('/auctions/me/cards');
+    return response.data;
+  },
+
+  // ── Admin ────────────────────────────────────────────────────────────
+  create: async (payload: {
+    prizeConfigurationId: string;
+    durationDays: 1 | 3 | 5 | 7;
+    startingPriceUsd: number;
+    reservePriceUsd?: number;
+    cardValueUsd?: number;
+    startsAt?: string;
+  }) => {
+    const response = await apiClient.post('/admin/auctions', payload);
+    return response.data;
+  },
+
+  cancel: async (id: string) => {
+    const response = await apiClient.post(`/admin/auctions/${id}/cancel`);
+    return response.data;
+  },
+
+  /**
+   * Force the close-flow to run for a given auction. Charges the winner
+   * and creates the order if applicable. Used by ops to recover stuck
+   * auctions where the BullMQ close job got out of sync with the DB.
+   */
+  forceClose: async (
+    id: string,
+  ): Promise<import('@/types/prize').AuctionSummary> => {
+    const response = await apiClient.post(`/admin/auctions/${id}/force-close`);
+    return response.data;
+  },
+
+  /** Admin listing of every auction (any status) with ops metadata. */
+  listAdmin: async (): Promise<AdminAuctionRow[]> => {
+    const response = await apiClient.get('/admin/auctions');
+    return response.data;
+  },
+
+  /**
+   * Per-auction admin detail: winner identity + shipping address from
+   * the linked PrizeOrder. Returns winner/shipping as null until the
+   * auction has resolved with a successful charge.
+   */
+  getAdminDetails: async (id: string): Promise<AdminAuctionDetails> => {
+    const response = await apiClient.get(`/admin/auctions/${id}/details`);
+    return response.data;
+  },
+};
+
+/** Shipping address shape stored on PrizeOrder.shippingAddress. */
+export interface AdminAuctionShippingAddress {
+  firstName: string;
+  lastName: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
+/** Shape returned by GET /admin/auctions/:id/details. */
+export interface AdminAuctionDetails {
+  id: string;
+  status: AdminAuctionRow['status'];
+  winnerUserId: string | null;
+  winner: { id: string; username: string; email: string | null } | null;
+  paidAt: string | null;
+  paymentIntentId: string | null;
+  prizeOrderId: string | null;
+  winningBidUsd: number | null;
+  shippingAddress: AdminAuctionShippingAddress | null;
+  orderStatus: string | null;
+}
+
+/**
+ * Row shape returned by GET /admin/auctions.
+ */
+export interface AdminAuctionRow {
+  id: string;
+  prizeConfigurationId: string;
+  prizeName: string;
+  status:
+    | 'scheduled'
+    | 'active'
+    | 'ended'
+    | 'paid'
+    | 'unsold'
+    | 'failed'
+    | 'cancelled';
+  startsAt: string;
+  endsAt: string;
+  durationDays: number;
+  startingPriceUsd: number;
+  reservePriceUsd: number | null;
+  currentBidUsd: number | null;
+  bidCount: number;
+  extensionCount: number;
+  winnerUserId: string | null;
+  winnerUsername: string | null;
+  paidAt: string | null;
+  prizeOrderId: string | null;
+  paymentIntentId: string | null;
+  isOverdue: boolean;
+}
+
 // Export a single API object with all the services
 export const api = {
   auth: authAPI,
@@ -2053,6 +2231,7 @@ export const api = {
   concierge: conciergeAPI,
   cart: cartAPI,
   review: reviewAPI,
+  auction: auctionAPI,
 };
 
 export default api;

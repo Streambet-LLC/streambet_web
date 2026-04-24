@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { MakeOfferModal } from './MakeOfferModal';
-import { PrizeBrand } from '@/types/prize';
+import { PrizeBrand, PrizeSaleType, AuctionSummary } from '@/types/prize';
 import PrizeCard from './PrizeCard';
+import AuctionCard from './AuctionCard';
 
 export type PrizeCategoryType = 'raw' | 'slab' | 'sealed' | 'other';
 
@@ -33,6 +34,10 @@ export interface Prize {
   viewCount?: number;
   watcherCount?: number;
   isWatching?: boolean;
+  /** When set to 'auction', render AuctionCard and use the `auction` field. */
+  saleType?: PrizeSaleType;
+  /** Live auction summary; required when saleType === 'auction'. */
+  auction?: AuctionSummary | null;
 }
 
 interface PrizesByCategoryProps {
@@ -73,6 +78,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   const [minViews, setMinViews] = useState<number | ''>('');
   const [minWatchers, setMinWatchers] = useState<number | ''>('');
   const [showPriceFilter, setShowPriceFilter] = useState(true);
+  const [saleTypeFilter, setSaleTypeFilter] = useState<'all' | 'fixed_price' | 'auction'>('all');
 
   const categories: Record<PrizeCategoryType, Prize[]> = {
     slab: [],
@@ -113,8 +119,25 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   const filterByPriceRange = (prizeList: Prize[]) => {
     let filtered = prizeList;
 
+    // Sale-type chip: all / fixed_price / auction.
+    if (saleTypeFilter !== 'all') {
+      filtered = filtered.filter(prize => {
+        const effective = prize.saleType ?? 'fixed_price';
+        return effective === saleTypeFilter;
+      });
+    }
+
     if (minPrice !== '' || maxPrice !== '') {
       filtered = filtered.filter(prize => {
+        // Auction items don't have a fixed CadeCoin price, so they are
+        // matched against the auction's current/starting USD bid.
+        if (prize.saleType === 'auction' && prize.auction) {
+          const usd = prize.auction.currentBidUsd ?? prize.auction.startingPriceUsd;
+          const min = minPrice === '' ? 0 : minPrice;
+          const max = maxPrice === '' ? Infinity : maxPrice;
+          return usd >= min && usd <= max;
+        }
+
         // Only show items with a buy price (not offers_only)
         if (prize.purchaseOption === 'offers_only' || !prize.amount) return false;
 
@@ -222,6 +245,33 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
 
               {/* Price Range Filter */}
               <div>
+                <h3 className="text-sm font-semibold mb-3">Sale Type:</h3>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button
+                    variant={saleTypeFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSaleTypeFilter('all')}
+                    className="rounded-full"
+                  >
+                    All
+                  </Button>
+                  <Button
+                    variant={saleTypeFilter === 'fixed_price' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSaleTypeFilter('fixed_price')}
+                    className="rounded-full"
+                  >
+                    Fixed Price
+                  </Button>
+                  <Button
+                    variant={saleTypeFilter === 'auction' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSaleTypeFilter('auction')}
+                    className="rounded-full"
+                  >
+                    Auctions
+                  </Button>
+                </div>
                 <h3 className="text-sm font-semibold mb-3">Filter by Price (USD):</h3>
                 <div className="flex gap-3 items-end">
                   <div className="flex flex-col gap-1">
@@ -375,18 +425,25 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                         : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
                     }
                   >
-                    {filterByPriceRange(items).map(prize => (
-                      <PrizeCard
-                        key={prize.id}
-                        prize={prize}
-                        variant={cardVariant}
-                        onClick={onPrizeClick ? () => onPrizeClick(prize) : () => {}}
-                        onOfferClick={prize => {
-                          setSelectedPrize(prize);
-                          setIsOfferModalOpen(true);
-                        }}
-                      />
-                    ))}
+                    {filterByPriceRange(items).map(prize =>
+                      prize.saleType === 'auction' && prize.auction ? (
+                        <AuctionCard
+                          key={prize.id}
+                          prize={prize as Prize & { auction: AuctionSummary }}
+                        />
+                      ) : (
+                        <PrizeCard
+                          key={prize.id}
+                          prize={prize}
+                          variant={cardVariant}
+                          onClick={onPrizeClick ? () => onPrizeClick(prize) : () => {}}
+                          onOfferClick={prize => {
+                            setSelectedPrize(prize);
+                            setIsOfferModalOpen(true);
+                          }}
+                        />
+                      )
+                    )}
                   </div>
                 </div>
               ) : null
