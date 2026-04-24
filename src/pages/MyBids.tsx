@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { Gavel } from 'lucide-react';
 
 import api from '@/integrations/api/client';
 import { MainLayout } from '@/components/layout';
@@ -9,15 +9,14 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { PrizesByCategory, type Prize } from '@/components/prizes/PrizesByCategory';
 import { Button } from '@/components/ui/button';
 import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
-import { useState } from 'react';
 
 /**
- * Authenticated user's saved/watched items.
- *
- * Re-uses the same `PrizesByCategory` grid the rest of the shop uses so
- * the cards look identical (heart, view count, etc. all "just work").
+ * Authenticated user's auction bid history grouped by item, with the
+ * most-recently-bid item first. Mirrors the Watchlist page so cards
+ * (with auction state, "Raise your max", etc.) render identically to
+ * the rest of the shop.
  */
-export default function Watchlist() {
+export default function MyBids() {
   const { session, isLoading: isSessionLoading } = useAuthContext();
   const navigate = useNavigate();
   const [checkoutPrize, setCheckoutPrize] = useState<Prize | null>(null);
@@ -28,8 +27,8 @@ export default function Watchlist() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['watchlist'],
-    queryFn: () => api.prize.getWatchlist(),
+    queryKey: ['my-bids'],
+    queryFn: () => api.prize.getMyBids(),
     enabled: !!session,
   });
 
@@ -50,16 +49,13 @@ export default function Watchlist() {
       createdBy: item.createdBy,
       createdByUsername: item.createdByUsername,
       createdByShopName: item.createdByShopName,
-      sellerDisplayName: item.createdByShopName ?? item.createdByUsername ?? null,
+      sellerDisplayName:
+        item.createdByShopName ?? item.createdByUsername ?? null,
       isProOnly: item.isProOnly ?? false,
       proEarlyAccessUntil: item.proEarlyAccessUntil ?? null,
       viewCount: item.viewCount ?? 0,
       watcherCount: item.watcherCount ?? 0,
-      // Items returned by /prizes/watchlist are by definition watched.
-      isWatching: item.isWatching ?? true,
-      // Auction items need saleType + auction passed through so the grid
-      // renders an AuctionCard (with timer + bid CTA) instead of the
-      // default fixed-price card.
+      isWatching: item.isWatching ?? false,
       saleType: item.saleType,
       auction: item.auction ?? null,
     }));
@@ -69,11 +65,11 @@ export default function Watchlist() {
     return (
       <MainLayout showFooter>
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Heart className="h-10 w-10 text-rose-500" />
-          <h2 className="text-2xl font-bold">Sign in to view your watchlist</h2>
+          <Gavel className="h-10 w-10 text-primary" />
+          <h2 className="text-2xl font-bold">Sign in to view your bids</h2>
           <p className="text-muted-foreground max-w-md">
-            Save items you love and we&apos;ll let you know when the price drops or
-            they sell out.
+            Track every auction you&apos;ve bid on, see who&apos;s leading,
+            and raise your max without losing your place.
           </p>
           <Button onClick={() => navigate('/login')}>Sign in</Button>
         </div>
@@ -87,12 +83,12 @@ export default function Watchlist() {
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col gap-1">
             <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Heart className="h-5 w-5 text-rose-500" />
-              My Watchlist
+              <Gavel className="h-5 w-5 text-primary" />
+              My Bids
             </h2>
             {!isLoading && prizes.length > 0 && (
               <span className="text-sm text-muted-foreground">
-                {prizes.length} {prizes.length === 1 ? 'item' : 'items'} saved
+                {prizes.length} {prizes.length === 1 ? 'auction' : 'auctions'}
               </span>
             )}
           </div>
@@ -101,14 +97,19 @@ export default function Watchlist() {
         {isLoading && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] rounded-lg bg-muted animate-pulse" />
+              <div
+                key={i}
+                className="aspect-[4/5] rounded-lg bg-muted animate-pulse"
+              />
             ))}
           </div>
         )}
 
         {!isLoading && isError && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground mb-3">We couldn&apos;t load your watchlist.</p>
+            <p className="text-muted-foreground mb-3">
+              We couldn&apos;t load your bids.
+            </p>
             <Button variant="outline" onClick={() => refetch()}>
               Try again
             </Button>
@@ -117,11 +118,11 @@ export default function Watchlist() {
 
         {!isLoading && !isError && prizes.length === 0 && (
           <div className="text-center py-16 flex flex-col items-center gap-3">
-            <Heart className="h-10 w-10 text-rose-500" />
-            <h3 className="text-lg font-semibold">No saved items yet</h3>
+            <Gavel className="h-10 w-10 text-primary" />
+            <h3 className="text-lg font-semibold">No bids yet</h3>
             <p className="text-muted-foreground max-w-md">
-              Tap the heart on any item to add it here. We&apos;ll notify you about price changes
-              and when items sell out.
+              When you place a bid on an auction it will show up here so you
+              can keep tabs on it and raise your max if needed.
             </p>
             <Button onClick={() => navigate('/shop')}>Browse the shop</Button>
           </div>
@@ -144,8 +145,6 @@ export default function Watchlist() {
             prizeName={checkoutPrize.name}
             prizeAmount={checkoutPrize.amount ?? 0}
             userCadeCoins={session?.cadeCoins ?? 0}
-            // CadeCoin payments are only valid for admin-owned (CardCade) items.
-            // Seller-owned items always have a creator id, so card-only.
             allowCadeCoins={!checkoutPrize.createdBy}
             isShopItem
           />

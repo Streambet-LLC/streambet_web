@@ -1700,6 +1700,17 @@ export const prizeAPI = {
     const response = await apiClient.get('/prizes/watchlist');
     return response.data;
   },
+
+  /**
+   * Get the prizes the current user has placed at least one bid on,
+   * ordered by most-recent bid (login required). Each item's `auction`
+   * summary includes `isLeader` and `currentUserProxyMaxUsd` for the
+   * requesting user.
+   */
+  getMyBids: async (): Promise<PrizeConfiguration[]> => {
+    const response = await apiClient.get('/prizes/my-bids');
+    return response.data;
+  },
 };
 
 // Inbox API

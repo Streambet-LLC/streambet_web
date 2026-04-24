@@ -49,13 +49,33 @@ export default function AuctionBidModal({
   onBidPlaced,
 }: AuctionBidModalProps) {
   const queryClient = useQueryClient();
+  // When the viewer is the current high bidder, the modal switches to
+  // "raise max" mode: they can't outbid themselves visibly, but they
+  // can lift their hidden proxy ceiling. The minimum acceptable value
+  // is one increment above their existing proxy (server enforces).
+  const isRaisingMax = auction.isLeader;
+  const existingProxy = auction.currentUserProxyMaxUsd ?? null;
+  const raiseFloor = useMemo(() => {
+    if (!isRaisingMax) return auction.minNextBidUsd;
+    const base = existingProxy ?? auction.currentBidUsd ?? auction.startingPriceUsd;
+    return +(base + auction.minNextBidIncrement).toFixed(2);
+  }, [
+    isRaisingMax,
+    existingProxy,
+    auction.currentBidUsd,
+    auction.startingPriceUsd,
+    auction.minNextBidIncrement,
+    auction.minNextBidUsd,
+  ]);
   const [proxyMax, setProxyMax] = useState<string>(() =>
-    auction.minNextBidUsd.toFixed(2)
+    (isRaisingMax ? raiseFloor : auction.minNextBidUsd).toFixed(2)
   );
 
   useEffect(() => {
-    if (isOpen) setProxyMax(auction.minNextBidUsd.toFixed(2));
-  }, [isOpen, auction.minNextBidUsd]);
+    if (isOpen) {
+      setProxyMax((isRaisingMax ? raiseFloor : auction.minNextBidUsd).toFixed(2));
+    }
+  }, [isOpen, auction.minNextBidUsd, isRaisingMax, raiseFloor]);
 
   const cardsQuery = useQuery({
     queryKey: ['auction-saved-cards'],
@@ -88,11 +108,18 @@ export default function AuctionBidModal({
         proxyMaxUsd: Number(proxyMax),
       }),
     onSuccess: next => {
+      const raised = isRaisingMax && next.isLeader;
       toast({
-        title: next.isLeader ? 'You are the high bidder!' : 'You were outbid',
-        description: next.isLeader
-          ? `Your max of $${Number(proxyMax).toFixed(2)} stands. Current bid: $${(next.currentBidUsd ?? 0).toFixed(2)}.`
-          : `Another bidder's saved max is higher. Current bid: $${(next.currentBidUsd ?? 0).toFixed(2)}.`,
+        title: raised
+          ? 'Max raised'
+          : next.isLeader
+            ? 'You are the high bidder!'
+            : 'You were outbid',
+        description: raised
+          ? `Your new max of $${Number(proxyMax).toFixed(2)} is locked in. Current bid still $${(next.currentBidUsd ?? 0).toFixed(2)}.`
+          : next.isLeader
+            ? `Your max of $${Number(proxyMax).toFixed(2)} stands. Current bid: $${(next.currentBidUsd ?? 0).toFixed(2)}.`
+            : `Another bidder's saved max is higher. Current bid: $${(next.currentBidUsd ?? 0).toFixed(2)}.`,
       });
       queryClient.invalidateQueries({ queryKey: ['shopItems'] });
       queryClient.invalidateQueries({ queryKey: ['auction', auction.id] });
@@ -112,7 +139,7 @@ export default function AuctionBidModal({
   const proxyMaxNumber = Number(proxyMax);
   const validBid =
     Number.isFinite(proxyMaxNumber) &&
-    proxyMaxNumber >= auction.minNextBidUsd;
+    proxyMaxNumber >= (isRaisingMax ? raiseFloor : auction.minNextBidUsd);
 
   /**
    * Buyer-facing fee preview for the amount the user typed. Auctions
@@ -224,21 +251,43 @@ export default function AuctionBidModal({
           )}
 
           <div className="space-y-1">
-            <Label htmlFor="proxy-max">Your max bid (USD)</Label>
+            <Label htmlFor="proxy-max">
+              {isRaisingMax ? 'Your new max bid (USD)' : 'Your max bid (USD)'}
+            </Label>
             <Input
               id="proxy-max"
               type="number"
               inputMode="decimal"
               step="0.01"
-              min={auction.minNextBidUsd}
+              min={isRaisingMax ? raiseFloor : auction.minNextBidUsd}
               value={proxyMax}
               onChange={e => setProxyMax(e.target.value)}
               disabled={!hasCard || placeBid.isPending}
             />
-            <p className="text-xs text-muted-foreground">
-              We bid for you up to this amount, in ${auction.minNextBidIncrement.toFixed(2)}{' '}
-              increments. You only pay the lowest amount needed to win.
-            </p>
+            {isRaisingMax ? (
+              <p className="text-xs text-muted-foreground">
+                {existingProxy !== null ? (
+                  <>
+                    Your current max is{' '}
+                    <span className="font-medium text-foreground">
+                      ${existingProxy.toFixed(2)}
+                    </span>
+                    . Enter a higher number to raise your ceiling — the
+                    visible bid won’t change unless someone challenges you.
+                  </>
+                ) : (
+                  <>
+                    Raise your hidden ceiling. The visible bid won’t change
+                    unless someone challenges you.
+                  </>
+                )}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                We bid for you up to this amount, in ${auction.minNextBidIncrement.toFixed(2)}{' '}
+                increments. You only pay the lowest amount needed to win.
+              </p>
+            )}
           </div>
 
           {/*
@@ -249,7 +298,11 @@ export default function AuctionBidModal({
           */}
           <div className="rounded-md border p-3 bg-muted/40 text-sm space-y-1">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">If you win at this max</span>
+              <span className="text-muted-foreground">
+                {isRaisingMax
+                  ? 'If a challenger pushes you to this max'
+                  : 'If you win at this max'}
+              </span>
               <span className="font-medium">${proxyMaxNumber > 0 ? proxyMaxNumber.toFixed(2) : '0.00'}</span>
             </div>
             <div className="flex justify-between">
@@ -282,7 +335,7 @@ export default function AuctionBidModal({
               ) : (
                 <Gavel className="w-4 h-4 mr-2" />
               )}
-              Place bid
+              {isRaisingMax ? 'Raise max' : 'Place bid'}
             </Button>
           </div>
         </div>

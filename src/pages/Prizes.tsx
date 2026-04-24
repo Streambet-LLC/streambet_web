@@ -223,7 +223,10 @@ export default function Prizes() {
   // Featured prizes: when any auctions are live we replace the curated
   // featured strip with those auctions (sorted by soonest endsAt).
   // Otherwise we fall back to the admin-curated featuredDisplayOrder list.
-  const featuredPrizes = useMemo(() => {
+  const featured = useMemo<{
+    items: PrizeDisplay[];
+    mode: 'auctions' | 'featured';
+  }>(() => {
     const isLiveAuction = (prize: PrizeDisplay) =>
       prize.saleType === 'auction' &&
       !!prize.auction &&
@@ -235,10 +238,10 @@ export default function Prizes() {
     });
 
     if (liveAuctions.length > 0) {
-      return liveAuctions;
+      return { items: liveAuctions, mode: 'auctions' };
     }
 
-    return allPrizes
+    const curated = allPrizes
       .filter(
         prize => prize.featuredDisplayOrder !== null && prize.featuredDisplayOrder !== undefined
       )
@@ -248,7 +251,9 @@ export default function Prizes() {
         if (orderA !== orderB) return orderA - orderB;
         return a.id.localeCompare(b.id);
       });
+    return { items: curated, mode: 'featured' };
   }, [allPrizes]);
+  const featuredPrizes = featured.items;
 
   // Filter by brand, category, and price
   const filteredPrizes = useMemo(() => {
@@ -390,7 +395,11 @@ export default function Prizes() {
             {/* Featured Items Carousel - Show for all users */}
             {featuredPrizes.length > 0 && (
               <>
-                {session && <h2 className="text-2xl font-bold px-2">Featured Items:</h2>}
+                {session && (
+                  <h2 className="text-2xl font-bold px-2">
+                    {featured.mode === 'auctions' ? 'Auctions:' : 'Featured Items:'}
+                  </h2>
+                )}
                 <div className="p-6 -mx-4">
                   <Carousel
                     className="flex-1 w-full"
@@ -433,12 +442,12 @@ export default function Prizes() {
                     </CarouselContent>
                     <div className="flex items-center justify-between pt-4">
                       <CarouselPrevious
-                        className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-primary"
+                        className={`relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-primary ${featuredPrizes.length <= 1 ? 'invisible' : ''}`}
                         size="lg"
                       />
-                      <CarouselDots className="relative" />
+                      {featuredPrizes.length > 1 && <CarouselDots className="relative" />}
                       <CarouselNext
-                        className="relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-primary"
+                        className={`relative top-0 left-0 translate-y-[unset] translate-x-[unset] border-primary ${featuredPrizes.length <= 1 ? 'invisible' : ''}`}
                         size="lg"
                       />
                     </div>

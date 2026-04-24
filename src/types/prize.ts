@@ -137,6 +137,12 @@ export interface AuctionSummary {
   minNextBidProcessingFeeUsd: number;
   /** Total the bidder would owe if they bid the minimum next amount. */
   minNextBidTotalUsd: number;
+  /**
+   * The requesting user's own proxy max on this auction. Only populated
+   * when the viewer is the current leader so they can raise it. Null
+   * otherwise (proxy maxes are private from other bidders).
+   */
+  currentUserProxyMaxUsd: number | null;
 }
 
 export interface SellerShopSummary {
