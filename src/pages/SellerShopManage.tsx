@@ -27,7 +27,7 @@ import {
   HeadphonesIcon,
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { PrizeBrand, PrizeConfiguration, type PsaImportResult } from '@/types/prize';
+import { PrizeBrand, PrizeConfiguration, type PsaImportResult, type EbayListing } from '@/types/prize';
 import { CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -40,11 +40,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { SellerOnboardingModal } from '@/components/seller/SellerOnboardingModal';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ItemImageGallery, type ItemImageInput } from '@/components/items/ItemImageGallery';
 import { getThumbnailUrl } from '@/utils/helper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ebayFeatureConfig } from '@/config/ebay-feature';
 
 interface SellerOfferOrder {
   id: string;
@@ -101,6 +103,9 @@ export default function SellerShopManage() {
 
   // CardCade mode: admins managing the CardCade virtual shop
   const isCardCadeMode = searchParams.get('shop') === 'cardcade' && session?.role === 'admin';
+  const canUseEbaySearch =
+    ebayFeatureConfig.enabled &&
+    (ebayFeatureConfig.accessMode === 'everyone' || session?.role === 'admin');
 
   const [isUploading, setIsUploading] = useState(false);
   const [itemImages, setItemImages] = useState<ItemImageInput[]>([]);
@@ -565,6 +570,214 @@ export default function SellerShopManage() {
       });
     },
   });
+
+  const [ebayListings, setEbayListings] = React.useState<EbayListing[]>([]);
+  const [selectedEbayListings, setSelectedEbayListings] = React.useState<Record<string, boolean>>({});
+  const [ebayFetchLimit, setEbayFetchLimit] = React.useState(5);
+  const [ebayRetryAfterSeconds, setEbayRetryAfterSeconds] = React.useState(0);
+  const [ebayImageFile, setEbayImageFile] = React.useState<File | null>(null);
+  const [ebayImagePreviewUrl, setEbayImagePreviewUrl] = React.useState<string | null>(null);
+  const ebayImageInputRef = React.useRef<HTMLInputElement>(null);
+  const ebayFetchLimitOptions = Array.from({ length: 10 }, (_, index) => (index + 1) * 5);
+  const getEbayListingKey = (listing: EbayListing, index: number): string =>
+    listing.itemWebUrl || `${listing.title || 'listing'}-${index}`;
+
+  const setListingsAndSelections = (listings: EbayListing[]): void => {
+    setEbayListings(listings);
+
+    const nextSelections: Record<string, boolean> = {};
+    listings.forEach((listing, index) => {
+      nextSelections[getEbayListingKey(listing, index)] = true;
+    });
+    setSelectedEbayListings(nextSelections);
+  };
+
+  const fileToBase64 = async (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = typeof reader.result === 'string' ? reader.result : '';
+        resolve(result.replace(/^data:image\/[a-zA-Z0-9.+-]+;base64,/, ''));
+      };
+      reader.onerror = () => reject(new Error('Failed to read image file.'));
+      reader.readAsDataURL(file);
+    });
+
+  useEffect(() => {
+    if (ebayRetryAfterSeconds <= 0) return;
+
+    const timeout = setTimeout(() => {
+      setEbayRetryAfterSeconds((seconds) => Math.max(seconds - 1, 0));
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [ebayRetryAfterSeconds]);
+
+  useEffect(() => {
+    if (!ebayImageFile) {
+      setEbayImagePreviewUrl(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(ebayImageFile);
+    setEbayImagePreviewUrl(previewUrl);
+
+    return () => {
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [ebayImageFile]);
+
+  const clearEbaySearchState = (): void => {
+    setEbayListings([]);
+    setSelectedEbayListings({});
+    setEbayImageFile(null);
+    if (ebayImageInputRef.current) {
+      ebayImageInputRef.current.value = '';
+    }
+  };
+
+  const selectedListings = ebayListings.filter((listing, index) => {
+    const listingKey = getEbayListingKey(listing, index);
+    return selectedEbayListings[listingKey] ?? true;
+  });
+
+  const selectedPricedListings = selectedListings.filter(
+    (listing): listing is EbayListing & { price: number } => listing.price !== null,
+  );
+
+  const selectedAveragePrice =
+    selectedPricedListings.length > 0
+      ? selectedPricedListings.reduce((sum, listing) => sum + listing.price, 0) /
+        selectedPricedListings.length
+      : null;
+
+  const highestFetchedPrice =
+    selectedPricedListings.length > 0
+      ? selectedPricedListings.reduce(
+          (max, listing) => Math.max(max, listing.price),
+          selectedPricedListings[0].price,
+        )
+      : null;
+
+  const lowestFetchedPrice =
+    selectedPricedListings.length > 0
+      ? selectedPricedListings.reduce(
+          (min, listing) => Math.min(min, listing.price),
+          selectedPricedListings[0].price,
+        )
+      : null;
+
+  const ebaySearchMutation = useMutation({
+    mutationFn: ({ title, limit }: { title: string; limit: number }) =>
+      api.prize.searchEbayListings(title, limit),
+    onSuccess: (listings) => {
+      setEbayRetryAfterSeconds(0);
+      setListingsAndSelections(listings);
+
+      if (listings.length === 0) {
+        toast({ title: 'No eBay listings found', description: 'Try a shorter or different title.' });
+      }
+    },
+    onError: (error: any) => {
+      const statusCode = error?.response?.status;
+      const retryAfterRaw =
+        error?.response?.data?.retryAfterSeconds ??
+        error?.response?.data?.message?.retryAfterSeconds;
+
+      if (statusCode === 429) {
+        const retryAfterSeconds = Math.max(1, Number(retryAfterRaw || 3));
+        setEbayRetryAfterSeconds(retryAfterSeconds);
+        toast({
+          title: 'eBay lookup cooldown active',
+          description: `Please retry in ${retryAfterSeconds} second${retryAfterSeconds === 1 ? '' : 's'}.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'eBay search failed',
+        description: error?.response?.data?.message || error?.message || 'Could not reach eBay.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const ebayImageSearchMutation = useMutation({
+    mutationFn: ({ imageBase64, limit }: { imageBase64: string; limit: number }) =>
+      api.prize.searchEbayListingsByImage(imageBase64, limit),
+    onSuccess: (listings) => {
+      setEbayRetryAfterSeconds(0);
+      setListingsAndSelections(listings);
+
+      if (listings.length === 0) {
+        toast({ title: 'No eBay listings found', description: 'Try a clearer card image.' });
+      }
+    },
+    onError: (error: any) => {
+      const statusCode = error?.response?.status;
+      const retryAfterRaw =
+        error?.response?.data?.retryAfterSeconds ??
+        error?.response?.data?.message?.retryAfterSeconds;
+
+      if (statusCode === 429) {
+        const retryAfterSeconds = Math.max(1, Number(retryAfterRaw || 3));
+        setEbayRetryAfterSeconds(retryAfterSeconds);
+        toast({
+          title: 'eBay lookup cooldown active',
+          description: `Please retry in ${retryAfterSeconds} second${retryAfterSeconds === 1 ? '' : 's'}.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'eBay image search failed',
+        description: error?.response?.data?.message || error?.message || 'Could not search by image.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleEbayImageSearch = async (): Promise<void> => {
+    if (!ebayImageFile) {
+      toast({ title: 'Image required', description: 'Upload an image before searching.' });
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(ebayImageFile.type)) {
+      toast({
+        title: 'Unsupported image type',
+        description: 'Use JPG, PNG, or WEBP.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const maxBytes = 3 * 1024 * 1024;
+    if (ebayImageFile.size > maxBytes) {
+      toast({
+        title: 'Image too large',
+        description: 'Use an image smaller than 3MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const imageBase64 = await fileToBase64(ebayImageFile);
+      setEbayListings([]);
+      setSelectedEbayListings({});
+      ebayImageSearchMutation.mutate({ imageBase64, limit: ebayFetchLimit });
+    } catch {
+      toast({
+        title: 'Image read failed',
+        description: 'Could not read the uploaded image. Try another file.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const counterOfferMutation = useMutation({
     mutationFn: (data: { orderId: string; counterOfferAmount: number; offerNotes?: string }) =>
@@ -1430,6 +1643,221 @@ export default function SellerShopManage() {
                       value={form.name}
                       onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                     />
+                    {canUseEbaySearch && (
+                      <>
+                        <div className="rounded-md border border-border/80 bg-muted/20 p-2 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Fetch</span>
+                            <Select
+                              value={String(ebayFetchLimit)}
+                              onValueChange={(value) => setEbayFetchLimit(Number(value))}
+                            >
+                              <SelectTrigger className="h-8 w-[84px] text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ebayFetchLimitOptions.map((value) => (
+                                  <SelectItem key={value} value={String(value)}>
+                                    {value}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {ebayListings.length > 0 && (
+                              <button
+                                type="button"
+                                className="text-xs text-muted-foreground hover:text-foreground"
+                                onClick={clearEbaySearchState}
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid gap-2 rounded-md border border-border/70 bg-background/70 p-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              Title Search
+                            </p>
+                            <button
+                              type="button"
+                              className="w-fit text-xs text-blue-500 hover:text-blue-400 disabled:opacity-50 flex items-center gap-1"
+                              disabled={
+                                ebaySearchMutation.isPending ||
+                                ebayImageSearchMutation.isPending ||
+                                ebayRetryAfterSeconds > 0 ||
+                                !form.name.trim()
+                              }
+                              onClick={() => {
+                                setEbayListings([]);
+                                setSelectedEbayListings({});
+                                ebaySearchMutation.mutate({
+                                  title: form.name.trim(),
+                                  limit: ebayFetchLimit,
+                                });
+                              }}
+                            >
+                              {ebaySearchMutation.isPending
+                                ? 'Searching active eBay listings...'
+                                : ebayRetryAfterSeconds > 0
+                                  ? `Retry in ${ebayRetryAfterSeconds}s`
+                                  : 'Search active eBay listings'}
+                            </button>
+
+                            {!form.name.trim() && (
+                              <p className="text-xs text-muted-foreground">
+                                Enter a name above to enable title search.
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid gap-2 rounded-md border border-border/70 bg-background/70 p-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              Image Search
+                            </p>
+                            <Input
+                              ref={ebayImageInputRef}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="h-8 max-w-[260px] text-xs"
+                              onChange={(e) => setEbayImageFile(e.target.files?.[0] || null)}
+                            />
+                            {ebayImageFile && (
+                              <div className="flex items-start gap-2 rounded-md border border-border/60 bg-muted/30 p-2">
+                                {ebayImagePreviewUrl ? (
+                                  <img
+                                    src={ebayImagePreviewUrl}
+                                    alt="Selected eBay search"
+                                    className="h-12 w-12 rounded object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-12 w-12 rounded bg-muted" />
+                                )}
+                                <div className="min-w-0">
+                                  <p className="text-xs font-medium text-foreground truncate">
+                                    {ebayImageFile.name}
+                                  </p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {(ebayImageFile.size / 1024 / 1024).toFixed(2)} MB
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              className="w-fit text-xs text-blue-500 hover:text-blue-400 disabled:opacity-50 flex items-center gap-1"
+                              disabled={
+                                ebayImageSearchMutation.isPending ||
+                                ebaySearchMutation.isPending ||
+                                ebayRetryAfterSeconds > 0 ||
+                                !ebayImageFile
+                              }
+                              onClick={() => {
+                                void handleEbayImageSearch();
+                              }}
+                            >
+                              {ebayImageSearchMutation.isPending
+                                ? 'Searching by image...'
+                                : ebayRetryAfterSeconds > 0
+                                  ? `Retry in ${ebayRetryAfterSeconds}s`
+                                  : 'Search by image'}
+                            </button>
+                          </div>
+                        </div>
+                        {ebayRetryAfterSeconds > 0 && (
+                          <p className="text-xs text-amber-400">
+                            Rate limit active to protect eBay API. You can search again in {ebayRetryAfterSeconds}s.
+                          </p>
+                        )}
+                      </>
+                    )}
+                    {canUseEbaySearch && ebayListings.length > 0 && (
+                      <div className="mt-1 space-y-2 rounded-md border border-border bg-muted/40 p-2">
+                        <div className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-xs text-muted-foreground">
+                          <div>
+                            Selected: <span className="font-medium text-foreground">{selectedListings.length}</span>
+                            {' / '}
+                            <span className="font-medium text-foreground">{ebayListings.length}</span>
+                          </div>
+                          <div className="mt-1">
+                            Highest selected:{' '}
+                            <span className="font-semibold text-[#FF5C8A]">
+                              {highestFetchedPrice != null ? `$${highestFetchedPrice.toFixed(2)}` : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="mt-1">
+                            Average price:{' '}
+                            <span className="font-semibold text-[#39FF14]">
+                              {selectedAveragePrice != null ? `$${selectedAveragePrice.toFixed(2)}` : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="mt-1">
+                            Lowest selected:{' '}
+                            <span className="font-semibold text-[#2ED3FF]">
+                              {lowestFetchedPrice != null ? `$${lowestFetchedPrice.toFixed(2)}` : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="mt-1">Uncheck incorrect listings to refine the average.</div>
+                        </div>
+
+                        <div className="max-h-[430px] overflow-y-auto pr-1">
+                          {ebayListings.map((listing, i) => {
+                            const listingKey = getEbayListingKey(listing, i);
+                            const isSelected = selectedEbayListings[listingKey] ?? true;
+
+                            return (
+                              <div
+                                key={listingKey}
+                                className={cn(
+                                  'flex items-start gap-3 rounded-md p-2 hover:bg-muted transition-colors',
+                                  !isSelected && 'opacity-60',
+                                )}
+                              >
+                                <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      setSelectedEbayListings((prev) => ({
+                                        ...prev,
+                                        [listingKey]: !!checked,
+                                      }));
+                                    }}
+                                    aria-label={`Select listing ${i + 1}`}
+                                  />
+                                </div>
+                                <a
+                                  href={listing.itemWebUrl ?? '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex gap-3 min-w-0 flex-1"
+                                >
+                                  {listing.imageUrl && (
+                                    <img
+                                      src={listing.imageUrl}
+                                      alt={listing.title ?? ''}
+                                      className="h-14 w-14 rounded object-cover flex-shrink-0"
+                                    />
+                                  )}
+                                  <div className="min-w-0 flex-1 text-xs">
+                                    <p className="font-medium leading-tight line-clamp-2">{listing.title}</p>
+                                    <p className="text-muted-foreground mt-0.5">
+                                      <span className="font-semibold text-[#39FF14]">
+                                        {listing.price != null
+                                          ? `$${listing.price.toFixed(2)} ${listing.currency ?? ''}`.trim()
+                                          : 'Price N/A'}
+                                      </span>
+                                      {(listing.grade || listing.condition)
+                                        ? ` · ${listing.grade || listing.condition}`
+                                        : ''}
+                                    </p>
+                                    <p className="text-muted-foreground">{listing.buyingOptions.join(' / ')}</p>
+                                  </div>
+                                </a>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
