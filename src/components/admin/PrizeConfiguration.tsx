@@ -144,7 +144,7 @@ interface SortablePrizeItemProps {
   onToggleFeatured: (id: string, featured: boolean) => void;
   onFeaturedOrderChange: (id: string, order: number) => void;
   hasDuplicateFeaturedOrder: boolean;
-  selectedPage: 'shop' | 'redemptions';
+  selectedPage: 'shop' | 'redemptions' | 'auctions';
   isSelected?: boolean;
   onSelectChange?: (id: string, selected: boolean) => void;
 }
@@ -324,7 +324,7 @@ export const PrizeConfiguration = () => {
 
   // Display order editing state
   const [isEditingOrder, setIsEditingOrder] = useState(false);
-  const [selectedPage, setSelectedPage] = useState<'shop' | 'redemptions'>('shop');
+  const [selectedPage, setSelectedPage] = useState<'shop' | 'redemptions' | 'auctions'>('shop');
   const [orderChanges, setOrderChanges] = useState<
     Map<
       string,
@@ -710,6 +710,7 @@ export const PrizeConfiguration = () => {
     prizes = prizes.filter(t => {
       if (selectedPage === 'shop') return t.showOnShop;
       if (selectedPage === 'redemptions') return t.showOnRedemptions;
+      if (selectedPage === 'auctions') return t.saleType === 'auction';
       return true;
     });
 
@@ -1190,6 +1191,13 @@ export const PrizeConfiguration = () => {
             >
               Redemptions
             </Button>
+            <Button
+              variant={selectedPage === 'auctions' ? 'default' : 'ghost'}
+              onClick={() => setSelectedPage('auctions')}
+              className="rounded-b-none"
+            >
+              Auctions
+            </Button>
           </div>
 
           {/* Search bar and sorting toggle */}
@@ -1298,10 +1306,10 @@ export const PrizeConfiguration = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Shop Page - Combined List (No Category Separation) */}
-              {selectedPage === 'shop' && (
+              {/* Shop / Auctions Page - Combined List (No Category Separation) */}
+              {(selectedPage === 'shop' || selectedPage === 'auctions') && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 text-primary">All Prizes</h3>
+                  <h3 className="text-lg font-semibold mb-4 text-primary">{selectedPage === 'auctions' ? 'All Auctions' : 'All Prizes'}</h3>
                   {isEditingOrder ? (
                     <DndContext
                       sensors={sensors}
@@ -1447,7 +1455,7 @@ export const PrizeConfiguration = () => {
               )}
 
               {/* Redemptions - Separate Category Sections */}
-              {selectedPage !== 'shop' && (
+              {selectedPage === 'redemptions' && (
                 <>
                   {/* Slab Category Section */}
                   {getSortedPrizes('slab').length > 0 && (

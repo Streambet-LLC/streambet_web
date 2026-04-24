@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Gavel, Clock, TrendingUp, ShieldCheck, ShieldAlert, Eye, Heart, Pencil } from 'lucide-react';
+import { Gavel, Clock, TrendingUp, ShieldCheck, ShieldAlert, Eye, Heart, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
@@ -90,7 +90,33 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
   const isEnded = msLeft <= 0 || ['ended', 'paid', 'unsold', 'failed', 'cancelled'].includes(auction.status);
   const isUrgent = !isEnded && msLeft <= 60 * 60 * 1000; // <1h
 
-  const coverUrl = prize.imageUrl ? getThumbnailUrl(prize.imageUrl) : undefined;
+  // Multi-image carousel: dedupe + thumbnail-normalize the prize's image list,
+  // falling back to the single `imageUrl` when `imageUrls` is empty.
+  const galleryUrls = useMemo<string[]>(() => {
+    const seen: string[] = [];
+    (prize.imageUrls || []).forEach(u => {
+      const trimmed = typeof u === 'string' ? u.trim() : '';
+      if (!trimmed) return;
+      const normalized = getThumbnailUrl(trimmed);
+      if (!seen.includes(normalized)) seen.push(normalized);
+    });
+    if (!seen.length && prize.imageUrl) seen.push(getThumbnailUrl(prize.imageUrl));
+    return seen;
+  }, [prize.imageUrls, prize.imageUrl]);
+  const hasMultipleImages = galleryUrls.length > 1;
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const safeIndex = galleryUrls.length
+    ? ((activeImageIndex % galleryUrls.length) + galleryUrls.length) % galleryUrls.length
+    : 0;
+  const activeImageUrl = galleryUrls[safeIndex];
+  const goToPreviousImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveImageIndex(i => (i - 1 + galleryUrls.length) % galleryUrls.length);
+  };
+  const goToNextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveImageIndex(i => (i + 1) % galleryUrls.length);
+  };
 
   const card = (
     <Card
@@ -100,12 +126,56 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
       )}
     >
       <div className="relative aspect-square bg-muted overflow-hidden">
-        {coverUrl ? (
-          <img src={coverUrl} alt={prize.name} className="w-full h-full object-cover" />
+        {activeImageUrl ? (
+          <img src={activeImageUrl} alt={prize.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
             <Gavel className="w-10 h-10" />
           </div>
+        )}
+        {hasMultipleImages && (
+          <>
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="absolute left-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 border border-[#7AFF14] md:inline-flex"
+              onClick={goToPreviousImage}
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="absolute right-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 border border-[#7AFF14] md:inline-flex"
+              onClick={goToNextImage}
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 rounded bg-black/65 px-2 py-0.5 text-[10px] font-semibold text-white">
+              {safeIndex + 1}/{galleryUrls.length}
+            </div>
+            <div className="absolute bottom-10 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/65 px-2 py-1">
+              {galleryUrls.map((_, index) => (
+                <button
+                  key={`${prize.id}-auction-dot-${index}`}
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setActiveImageIndex(index);
+                  }}
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full border border-[#7AFF14] transition-all',
+                    index === safeIndex ? 'bg-white' : 'bg-transparent'
+                  )}
+                  aria-label={`View image ${index + 1}`}
+                />
+              ))}
+            </div>
+          </>
         )}
         <Badge
           variant="secondary"
