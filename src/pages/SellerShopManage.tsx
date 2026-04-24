@@ -44,6 +44,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { SellerOnboardingModal } from '@/components/seller/SellerOnboardingModal';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ItemImageGallery, type ItemImageInput } from '@/components/items/ItemImageGallery';
+import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
 import { getThumbnailUrl } from '@/utils/helper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ebayFeatureConfig } from '@/config/ebay-feature';
@@ -2132,7 +2133,7 @@ export default function SellerShopManage() {
                       coverIndex={coverImageIndex}
                       onImagesChange={setItemImages}
                       onCoverIndexChange={setCoverImageIndex}
-                      maxImages={7}
+                      maxImages={IMAGE_UPLOAD_CONFIG.ITEM_MAX_IMAGES}
                       disabled={isUploading || createItem.isPending}
                     />
                     <p className="text-xs text-muted-foreground">
