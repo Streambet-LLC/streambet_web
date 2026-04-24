@@ -155,7 +155,7 @@ export function ItemImageGallery({
   onImagesChange,
   onCoverIndexChange,
   onError,
-  maxImages = 7,
+  maxImages = IMAGE_UPLOAD_CONFIG.ITEM_MAX_IMAGES,
   disabled = false,
 }: ItemImageGalleryProps) {
   const [cropQueue, setCropQueue] = useState<File[]>([]);

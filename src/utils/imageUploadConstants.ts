@@ -25,7 +25,7 @@ export const IMAGE_UPLOAD_CONFIG = {
   PRIZE_DOUBLE_SLAB_ASPECT_RATIO: 16 / 13,
 
   /** Max number of item photos allowed for a single listing */
-  ITEM_MAX_IMAGES: 7,
+  ITEM_MAX_IMAGES: 6,
   
   /** Maximum width in pixels after resize */
   MAX_WIDTH: 1920,

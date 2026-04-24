@@ -34,6 +34,7 @@ import {
   Seller,
 } from '@/types/prize';
 import { ItemImageGallery, type ItemImageInput } from '@/components/items/ItemImageGallery';
+import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
 import {
   Dialog,
   DialogContent,
@@ -1875,7 +1876,7 @@ export const PrizeConfiguration = () => {
                 onImagesChange={setItemImages}
                 onCoverIndexChange={setCoverImageIndex}
                 onError={setImageError}
-                maxImages={7}
+                maxImages={IMAGE_UPLOAD_CONFIG.ITEM_MAX_IMAGES}
                 disabled={isUploading || createMutation.isPending || updateMutation.isPending}
               />
               <p className="text-xs text-muted-foreground">
