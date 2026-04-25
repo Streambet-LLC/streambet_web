@@ -275,7 +275,7 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
   const card = (
     <Card
       className={cn(
-        'flex flex-col overflow-hidden transition-colors',
+        'h-full flex flex-col overflow-hidden transition-colors',
         isFeatured
           ? 'bg-transparent border-0 shadow-none'
           : 'bg-card border border-border hover:border-primary'
@@ -284,7 +284,7 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
       <div
         ref={inlineImageRef}
         className={cn(
-          'relative aspect-square bg-muted overflow-hidden touch-pan-y',
+          'relative aspect-[4/5] bg-muted overflow-hidden touch-pan-y',
           activeImageUrl && 'cursor-zoom-in'
         )}
         onClick={activeImageUrl ? handleOpenLightbox : undefined}
@@ -375,12 +375,12 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
         </div>
       </div>
 
-      <CardContent className="flex flex-col gap-2 p-4">
+      <CardContent className="flex-1 flex flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-semibold text-base leading-tight line-clamp-2">{prize.name}</h3>
         </div>
 
-        <div className="flex items-end justify-between gap-2">
+        <div className="mt-auto flex items-end justify-between gap-2">
           <div className="flex flex-col">
             <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
               {auction.currentBidUsd != null ? 'Current bid' : 'Starting at'}
