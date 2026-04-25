@@ -157,6 +157,11 @@ export default function SellerShopManage() {
     sellerDisplayOrderShop: 1,
     isProOnly: false,
     profileFeatured: false,
+    saleType: 'fixed_price' as 'fixed_price' | 'auction',
+    // Auction-only fields. Ignored unless saleType === 'auction'.
+    auctionDurationDays: 3 as 1 | 3 | 5 | 7,
+    auctionStartingPriceUsd: 0,
+    auctionReservePriceUsd: 0,
   });
 
   const normalizePsaBrand = (brand: string | null | undefined): PrizeBrand => {
@@ -414,9 +419,16 @@ export default function SellerShopManage() {
     mutationFn: async () => {
       const imagePayload = await resolveImagePayload();
 
-      // Convert USD to CadeCoins (50 coins = $1) before sending to API
-      const amountInCoins =
-        form.purchaseOption === 'offers_only'
+      const isAuction = form.saleType === 'auction';
+
+      // Auction listings always sell as a single 1-of-1; the listing price
+      // ("amount") is unused on the prize record itself because the price
+      // is determined by bids. We still need to send a value the API
+      // accepts, so we mirror the starting bid in CadeCoins for parity
+      // with the existing fixed-price/offers flow.
+      const amountInCoins = isAuction
+        ? Math.max(1, Math.round(form.auctionStartingPriceUsd * 50))
+        : form.purchaseOption === 'offers_only'
           ? Math.max(1, form.amount)
           : Math.round(form.amount * 50);
 
@@ -430,15 +442,45 @@ export default function SellerShopManage() {
         grade: form.grade || null,
         isProOnly: form.isProOnly,
         profileFeatured: form.profileFeatured,
+        // Auctions are always 1-of-1 and use the auction purchaseOption flow
+        ...(isAuction
+          ? {
+              stock: 1,
+              purchaseOption: 'buy_only' as const,
+              saleType: 'auction' as const,
+            }
+          : { saleType: 'fixed_price' as const }),
       };
 
+      // Strip the auction-only UI fields before sending — they aren't
+      // part of the prize DTO and would just be ignored, but keeping
+      // the wire payload clean helps when reading network logs.
+      delete (payload as any).auctionDurationDays;
+      delete (payload as any).auctionStartingPriceUsd;
+      delete (payload as any).auctionReservePriceUsd;
+
       if (editingItemId) {
-        // Update existing item
+        // Update existing item — auction lifecycle is not editable here.
         return api.prize.updateMyShopItem(editingItemId, payload);
-      } else {
-        // Create new item
-        return api.prize.createMyShopItem(payload);
       }
+
+      const created = await api.prize.createMyShopItem(payload);
+
+      // For auction-typed items we also need to create the actual
+      // Auction record. The backend gates this on the seller having
+      // `auctionsEnabled=true`, so a 403 here means the admin hasn't
+      // flipped the flag yet (we already hide the UI in that case).
+      if (isAuction) {
+        await api.auction.createAsSeller({
+          prizeConfigurationId: created.id,
+          durationDays: form.auctionDurationDays,
+          startingPriceUsd: form.auctionStartingPriceUsd,
+          reservePriceUsd:
+            form.auctionReservePriceUsd > 0 ? form.auctionReservePriceUsd : undefined,
+        });
+      }
+
+      return created;
     },
     onSuccess: () => {
       toast({
@@ -458,6 +500,10 @@ export default function SellerShopManage() {
         sellerDisplayOrderShop: 1,
         isProOnly: false,
         profileFeatured: false,
+        saleType: 'fixed_price',
+        auctionDurationDays: 3,
+        auctionStartingPriceUsd: 0,
+        auctionReservePriceUsd: 0,
       });
       setItemImages([]);
       setCoverImageIndex(0);
@@ -573,7 +619,9 @@ export default function SellerShopManage() {
   });
 
   const [ebayListings, setEbayListings] = React.useState<EbayListing[]>([]);
-  const [selectedEbayListings, setSelectedEbayListings] = React.useState<Record<string, boolean>>({});
+  const [selectedEbayListings, setSelectedEbayListings] = React.useState<Record<string, boolean>>(
+    {}
+  );
   const [ebayFetchLimit, setEbayFetchLimit] = React.useState(5);
   const [ebayRetryAfterSeconds, setEbayRetryAfterSeconds] = React.useState(0);
   const [ebayImageFile, setEbayImageFile] = React.useState<File | null>(null);
@@ -608,7 +656,7 @@ export default function SellerShopManage() {
     if (ebayRetryAfterSeconds <= 0) return;
 
     const timeout = setTimeout(() => {
-      setEbayRetryAfterSeconds((seconds) => Math.max(seconds - 1, 0));
+      setEbayRetryAfterSeconds(seconds => Math.max(seconds - 1, 0));
     }, 1000);
 
     return () => clearTimeout(timeout);
@@ -643,7 +691,7 @@ export default function SellerShopManage() {
   });
 
   const selectedPricedListings = selectedListings.filter(
-    (listing): listing is EbayListing & { price: number } => listing.price !== null,
+    (listing): listing is EbayListing & { price: number } => listing.price !== null
   );
 
   const selectedAveragePrice =
@@ -656,7 +704,7 @@ export default function SellerShopManage() {
     selectedPricedListings.length > 0
       ? selectedPricedListings.reduce(
           (max, listing) => Math.max(max, listing.price),
-          selectedPricedListings[0].price,
+          selectedPricedListings[0].price
         )
       : null;
 
@@ -664,19 +712,22 @@ export default function SellerShopManage() {
     selectedPricedListings.length > 0
       ? selectedPricedListings.reduce(
           (min, listing) => Math.min(min, listing.price),
-          selectedPricedListings[0].price,
+          selectedPricedListings[0].price
         )
       : null;
 
   const ebaySearchMutation = useMutation({
     mutationFn: ({ title, limit }: { title: string; limit: number }) =>
       api.prize.searchEbayListings(title, limit),
-    onSuccess: (listings) => {
+    onSuccess: listings => {
       setEbayRetryAfterSeconds(0);
       setListingsAndSelections(listings);
 
       if (listings.length === 0) {
-        toast({ title: 'No eBay listings found', description: 'Try a shorter or different title.' });
+        toast({
+          title: 'No eBay listings found',
+          description: 'Try a shorter or different title.',
+        });
       }
     },
     onError: (error: any) => {
@@ -707,7 +758,7 @@ export default function SellerShopManage() {
   const ebayImageSearchMutation = useMutation({
     mutationFn: ({ imageBase64, limit }: { imageBase64: string; limit: number }) =>
       api.prize.searchEbayListingsByImage(imageBase64, limit),
-    onSuccess: (listings) => {
+    onSuccess: listings => {
       setEbayRetryAfterSeconds(0);
       setListingsAndSelections(listings);
 
@@ -734,7 +785,8 @@ export default function SellerShopManage() {
 
       toast({
         title: 'eBay image search failed',
-        description: error?.response?.data?.message || error?.message || 'Could not search by image.',
+        description:
+          error?.response?.data?.message || error?.message || 'Could not search by image.',
         variant: 'destructive',
       });
     },
@@ -972,6 +1024,10 @@ export default function SellerShopManage() {
       sellerDisplayOrderShop: item.sellerDisplayOrderShop ?? item.displayOrderShop ?? 1,
       isProOnly: item.isProOnly ?? false,
       profileFeatured: item.profileFeatured ?? false,
+      saleType: ((item as any).saleType as 'fixed_price' | 'auction') || 'fixed_price',
+      auctionDurationDays: 3,
+      auctionStartingPriceUsd: 0,
+      auctionReservePriceUsd: 0,
     });
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
@@ -1003,6 +1059,10 @@ export default function SellerShopManage() {
       sellerDisplayOrderShop: 1,
       isProOnly: false,
       profileFeatured: false,
+      saleType: 'fixed_price',
+      auctionDurationDays: 3,
+      auctionStartingPriceUsd: 0,
+      auctionReservePriceUsd: 0,
     });
     setItemImages([]);
     setCoverImageIndex(0);
@@ -1651,13 +1711,13 @@ export default function SellerShopManage() {
                             <span className="text-xs text-muted-foreground">Fetch</span>
                             <Select
                               value={String(ebayFetchLimit)}
-                              onValueChange={(value) => setEbayFetchLimit(Number(value))}
+                              onValueChange={value => setEbayFetchLimit(Number(value))}
                             >
                               <SelectTrigger className="h-8 w-[84px] text-xs">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {ebayFetchLimitOptions.map((value) => (
+                                {ebayFetchLimitOptions.map(value => (
                                   <SelectItem key={value} value={String(value)}>
                                     {value}
                                   </SelectItem>
@@ -1720,7 +1780,7 @@ export default function SellerShopManage() {
                               type="file"
                               accept="image/jpeg,image/png,image/webp"
                               className="h-8 max-w-[260px] text-xs"
-                              onChange={(e) => setEbayImageFile(e.target.files?.[0] || null)}
+                              onChange={e => setEbayImageFile(e.target.files?.[0] || null)}
                             />
                             {ebayImageFile && (
                               <div className="flex items-start gap-2 rounded-md border border-border/60 bg-muted/30 p-2">
@@ -1766,7 +1826,8 @@ export default function SellerShopManage() {
                         </div>
                         {ebayRetryAfterSeconds > 0 && (
                           <p className="text-xs text-amber-400">
-                            Rate limit active to protect eBay API. You can search again in {ebayRetryAfterSeconds}s.
+                            Rate limit active to protect eBay API. You can search again in{' '}
+                            {ebayRetryAfterSeconds}s.
                           </p>
                         )}
                       </>
@@ -1775,29 +1836,42 @@ export default function SellerShopManage() {
                       <div className="mt-1 space-y-2 rounded-md border border-border bg-muted/40 p-2">
                         <div className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-xs text-muted-foreground">
                           <div>
-                            Selected: <span className="font-medium text-foreground">{selectedListings.length}</span>
+                            Selected:{' '}
+                            <span className="font-medium text-foreground">
+                              {selectedListings.length}
+                            </span>
                             {' / '}
-                            <span className="font-medium text-foreground">{ebayListings.length}</span>
+                            <span className="font-medium text-foreground">
+                              {ebayListings.length}
+                            </span>
                           </div>
                           <div className="mt-1">
                             Highest selected:{' '}
                             <span className="font-semibold text-[#FF5C8A]">
-                              {highestFetchedPrice != null ? `$${highestFetchedPrice.toFixed(2)}` : 'N/A'}
+                              {highestFetchedPrice != null
+                                ? `$${highestFetchedPrice.toFixed(2)}`
+                                : 'N/A'}
                             </span>
                           </div>
                           <div className="mt-1">
                             Average price:{' '}
                             <span className="font-semibold text-[#39FF14]">
-                              {selectedAveragePrice != null ? `$${selectedAveragePrice.toFixed(2)}` : 'N/A'}
+                              {selectedAveragePrice != null
+                                ? `$${selectedAveragePrice.toFixed(2)}`
+                                : 'N/A'}
                             </span>
                           </div>
                           <div className="mt-1">
                             Lowest selected:{' '}
                             <span className="font-semibold text-[#2ED3FF]">
-                              {lowestFetchedPrice != null ? `$${lowestFetchedPrice.toFixed(2)}` : 'N/A'}
+                              {lowestFetchedPrice != null
+                                ? `$${lowestFetchedPrice.toFixed(2)}`
+                                : 'N/A'}
                             </span>
                           </div>
-                          <div className="mt-1">Uncheck incorrect listings to refine the average.</div>
+                          <div className="mt-1">
+                            Uncheck incorrect listings to refine the average.
+                          </div>
                         </div>
 
                         <div className="max-h-[430px] overflow-y-auto pr-1">
@@ -1810,14 +1884,14 @@ export default function SellerShopManage() {
                                 key={listingKey}
                                 className={cn(
                                   'flex items-start gap-3 rounded-md p-2 hover:bg-muted transition-colors',
-                                  !isSelected && 'opacity-60',
+                                  !isSelected && 'opacity-60'
                                 )}
                               >
-                                <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+                                <div className="pt-0.5" onClick={e => e.stopPropagation()}>
                                   <Checkbox
                                     checked={isSelected}
-                                    onCheckedChange={(checked) => {
-                                      setSelectedEbayListings((prev) => ({
+                                    onCheckedChange={checked => {
+                                      setSelectedEbayListings(prev => ({
                                         ...prev,
                                         [listingKey]: !!checked,
                                       }));
@@ -1839,18 +1913,22 @@ export default function SellerShopManage() {
                                     />
                                   )}
                                   <div className="min-w-0 flex-1 text-xs">
-                                    <p className="font-medium leading-tight line-clamp-2">{listing.title}</p>
+                                    <p className="font-medium leading-tight line-clamp-2">
+                                      {listing.title}
+                                    </p>
                                     <p className="text-muted-foreground mt-0.5">
                                       <span className="font-semibold text-[#39FF14]">
                                         {listing.price != null
                                           ? `$${listing.price.toFixed(2)} ${listing.currency ?? ''}`.trim()
                                           : 'Price N/A'}
                                       </span>
-                                      {(listing.grade || listing.condition)
+                                      {listing.grade || listing.condition
                                         ? ` · ${listing.grade || listing.condition}`
                                         : ''}
                                     </p>
-                                    <p className="text-muted-foreground">{listing.buyingOptions.join(' / ')}</p>
+                                    <p className="text-muted-foreground">
+                                      {listing.buyingOptions.join(' / ')}
+                                    </p>
                                   </div>
                                 </a>
                               </div>
@@ -1861,65 +1939,165 @@ export default function SellerShopManage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  {/*
+                   * Sale Type — Auction option only shown for users that
+                   * an admin has flipped `auctionsEnabled` on for. When
+                   * an item is being edited we don't allow changing the
+                   * type (auctions are 1-of-1 and tied to an Auction row).
+                   */}
+                  {!editingItemId && session?.auctionsEnabled && (
                     <div className="grid gap-2">
                       <Label>
-                        Price (USD)
-                        {form.purchaseOption !== 'offers_only' && (
-                          <span className="text-red-500"> *</span>
-                        )}
+                        Sale Type <span className="text-red-500">*</span>
                       </Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        placeholder="0"
-                        value={form.amount || ''}
-                        onChange={e =>
-                          setForm(p => ({
-                            ...p,
-                            amount: e.target.value === '' ? 0 : Number(e.target.value),
-                          }))
+                      <Select
+                        value={form.saleType}
+                        onValueChange={(value: 'fixed_price' | 'auction') =>
+                          setForm(p => ({ ...p, saleType: value }))
                         }
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select sale type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed_price">Fixed Price / Offers</SelectItem>
+                          <SelectItem value="auction">Auction</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+                  )}
+
+                  {form.saleType === 'auction' ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label>
+                            Starting Bid (USD) <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            step="0.01"
+                            placeholder="0.00"
+                            value={form.auctionStartingPriceUsd || ''}
+                            onChange={e =>
+                              setForm(p => ({
+                                ...p,
+                                auctionStartingPriceUsd:
+                                  e.target.value === '' ? 0 : Number(e.target.value),
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>
+                            Duration <span className="text-red-500">*</span>
+                          </Label>
+                          <Select
+                            value={String(form.auctionDurationDays)}
+                            onValueChange={(value: string) =>
+                              setForm(p => ({
+                                ...p,
+                                auctionDurationDays: Number(value) as 1 | 3 | 5 | 7,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">1 day</SelectItem>
+                              <SelectItem value="3">3 days</SelectItem>
+                              <SelectItem value="5">5 days</SelectItem>
+                              <SelectItem value="7">7 days</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Reserve Price (USD, optional)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="Leave blank for no reserve"
+                          value={form.auctionReservePriceUsd || ''}
+                          onChange={e =>
+                            setForm(p => ({
+                              ...p,
+                              auctionReservePriceUsd:
+                                e.target.value === '' ? 0 : Number(e.target.value),
+                            }))
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          If the highest bid does not reach the reserve, the auction ends without a
+                          sale. Auctions list as 1-of-1.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>
+                          Price (USD)
+                          {form.purchaseOption !== 'offers_only' && (
+                            <span className="text-red-500"> *</span>
+                          )}
+                        </Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder="0"
+                          value={form.amount || ''}
+                          onChange={e =>
+                            setForm(p => ({
+                              ...p,
+                              amount: e.target.value === '' ? 0 : Number(e.target.value),
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Quantity</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="0 = unlimited"
+                          value={form.stock || ''}
+                          onChange={e =>
+                            setForm(p => ({
+                              ...p,
+                              stock: e.target.value === '' ? 0 : Number(e.target.value),
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {form.saleType !== 'auction' && (
                     <div className="grid gap-2">
-                      <Label>Quantity</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="0 = unlimited"
-                        value={form.stock || ''}
-                        onChange={e =>
-                          setForm(p => ({
-                            ...p,
-                            stock: e.target.value === '' ? 0 : Number(e.target.value),
-                          }))
+                      <Label>
+                        Purchase Option <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={form.purchaseOption}
+                        onValueChange={(value: 'buy_only' | 'offers_only' | 'both') =>
+                          setForm(p => ({ ...p, purchaseOption: value }))
                         }
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select purchase option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="buy_only">Buy Only</SelectItem>
+                          <SelectItem value="offers_only">Offers Only</SelectItem>
+                          <SelectItem value="both">Both</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>
-                      Purchase Option <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={form.purchaseOption}
-                      onValueChange={(value: 'buy_only' | 'offers_only' | 'both') =>
-                        setForm(p => ({ ...p, purchaseOption: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select purchase option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="buy_only">Buy Only</SelectItem>
-                        <SelectItem value="offers_only">Offers Only</SelectItem>
-                        <SelectItem value="both">Both</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
+                  )}
                   <div className="grid gap-2">
                     <Label>
                       Card Type <span className="text-red-500">*</span>
@@ -2150,7 +2328,9 @@ export default function SellerShopManage() {
                     disabled={
                       createItem.isPending ||
                       !form.name ||
-                      (form.purchaseOption !== 'offers_only' && form.amount <= 0) ||
+                      (form.saleType === 'auction'
+                        ? form.auctionStartingPriceUsd <= 0
+                        : form.purchaseOption !== 'offers_only' && form.amount <= 0) ||
                       itemImages.length === 0 ||
                       isUploading
                     }
