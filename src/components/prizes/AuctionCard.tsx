@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { Card, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -134,9 +134,125 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
     e?.stopPropagation?.();
     setActiveImageIndex(i => (i + 1) % galleryUrls.length);
   };
+
+  // Swipe-to-navigate on touch devices. The inline (in-card) gallery
+  // swipe is wired via NATIVE listeners further down (see inlineImageRef
+  // useEffect) so we can stopPropagation and prevent the parent embla
+  // carousel from initiating a slide drag. The modal/lightbox swipe still
+  // uses React handlers because there's no embla competitor inside it.
+  const SWIPE_THRESHOLD_PX = 40;
+  const SWIPE_SUPPRESS_LIGHTBOX_MS = 350;
+  const suppressLightboxRef = useRef(false);
+
+  const modalTouchStartXRef = useRef<number | null>(null);
+  const handleModalTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    modalTouchStartXRef.current = event.changedTouches[0]?.clientX ?? null;
+  };
+  const handleModalTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    if (!hasMultipleImages) {
+      modalTouchStartXRef.current = null;
+      return;
+    }
+    const startX = modalTouchStartXRef.current;
+    const endX = event.changedTouches[0]?.clientX;
+    modalTouchStartXRef.current = null;
+    if (startX === null || typeof endX !== 'number') return;
+    const deltaX = endX - startX;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) return;
+    if (deltaX > 0) goToPreviousImage();
+    else goToNextImage();
+  };
+  const handleModalTouchCancel = () => {
+    modalTouchStartXRef.current = null;
+  };
+
+  // Block embla (and any other ancestor pointer-drag handler) from
+  // hijacking horizontal swipes on the inline image, AND drive our own
+  // gallery-swipe gesture from the same native listeners. We MUST do
+  // both here: React 17+ delegates synthetic events at the root, so
+  // calling stopPropagation natively would also prevent React's
+  // onTouchStart/End handlers from firing — so the swipe logic itself
+  // lives in these native listeners.
+  const inlineImageRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const node = inlineImageRef.current;
+    if (!node) return;
+
+    let startX: number | null = null;
+    let startY: number | null = null;
+    let isHorizontal = false;
+
+    const onTouchStart = (e: globalThis.TouchEvent) => {
+      const t = e.changedTouches[0];
+      if (!t) return;
+      startX = t.clientX;
+      startY = t.clientY;
+      isHorizontal = false;
+      // Stop propagation so embla (which listens on its viewport) doesn't
+      // start a slide drag while we're swiping the gallery.
+      if (hasMultipleImages) e.stopPropagation();
+    };
+
+    const onTouchMove = (e: globalThis.TouchEvent) => {
+      if (startX === null || startY === null) return;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (!isHorizontal && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+        isHorizontal = true;
+      }
+      if (hasMultipleImages && isHorizontal) {
+        e.stopPropagation();
+      }
+    };
+
+    const onTouchEnd = (e: globalThis.TouchEvent) => {
+      const t = e.changedTouches[0];
+      if (startX === null || !t) {
+        startX = null;
+        startY = null;
+        return;
+      }
+      const dx = t.clientX - startX;
+      startX = null;
+      startY = null;
+      if (!hasMultipleImages) return;
+      if (Math.abs(dx) < SWIPE_THRESHOLD_PX) return;
+      e.stopPropagation();
+      suppressLightboxRef.current = true;
+      window.setTimeout(() => {
+        suppressLightboxRef.current = false;
+      }, SWIPE_SUPPRESS_LIGHTBOX_MS);
+      if (dx > 0) goToPreviousImage();
+      else goToNextImage();
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      // Stop embla from initiating a pointer-based drag on touch/pen.
+      if (hasMultipleImages && e.pointerType !== 'mouse') {
+        e.stopPropagation();
+      }
+    };
+
+    node.addEventListener('pointerdown', onPointerDown);
+    node.addEventListener('touchstart', onTouchStart, { passive: true });
+    node.addEventListener('touchmove', onTouchMove, { passive: true });
+    node.addEventListener('touchend', onTouchEnd);
+    node.addEventListener('touchcancel', onTouchEnd);
+    return () => {
+      node.removeEventListener('pointerdown', onPointerDown);
+      node.removeEventListener('touchstart', onTouchStart);
+      node.removeEventListener('touchmove', onTouchMove);
+      node.removeEventListener('touchend', onTouchEnd);
+      node.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [hasMultipleImages, galleryUrls.length]);
+
   const handleOpenLightbox = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!galleryUrls.length) return;
+    if (suppressLightboxRef.current) return;
     setIsLightboxOpen(true);
   };
 
@@ -166,8 +282,9 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
       )}
     >
       <div
+        ref={inlineImageRef}
         className={cn(
-          'relative aspect-square bg-muted overflow-hidden',
+          'relative aspect-square bg-muted overflow-hidden touch-pan-y',
           activeImageUrl && 'cursor-zoom-in'
         )}
         onClick={activeImageUrl ? handleOpenLightbox : undefined}
@@ -185,7 +302,7 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
               type="button"
               size="icon"
               variant="secondary"
-              className="absolute left-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 border border-[#7AFF14] md:inline-flex"
+              className="absolute left-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 border border-[#7AFF14]"
               onClick={goToPreviousImage}
               aria-label="Previous image"
             >
@@ -195,7 +312,7 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
               type="button"
               size="icon"
               variant="secondary"
-              className="absolute right-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 border border-[#7AFF14] md:inline-flex"
+              className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 border border-[#7AFF14]"
               onClick={goToNextImage}
               aria-label="Next image"
             >
@@ -373,13 +490,18 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
               <X className="h-6 w-6 text-white" />
             </button>
 
-            <div className="flex items-center justify-center gap-2 sm:gap-3">
+            <div
+              className="flex items-center justify-center gap-2 sm:gap-3"
+              onTouchStart={handleModalTouchStart}
+              onTouchEnd={handleModalTouchEnd}
+              onTouchCancel={handleModalTouchCancel}
+            >
               {hasMultipleImages && (
                 <Button
                   type="button"
                   size="icon"
                   variant="secondary"
-                  className="hidden h-9 w-9 shrink-0 border border-[#7AFF14] md:inline-flex md:h-10 md:w-10"
+                  className="inline-flex h-9 w-9 shrink-0 border border-[#7AFF14] md:h-10 md:w-10"
                   onClick={() => goToPreviousImage()}
                   aria-label="Previous image"
                 >
@@ -403,7 +525,7 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
                   type="button"
                   size="icon"
                   variant="secondary"
-                  className="hidden h-9 w-9 shrink-0 border border-[#7AFF14] md:inline-flex md:h-10 md:w-10"
+                  className="inline-flex h-9 w-9 shrink-0 border border-[#7AFF14] md:h-10 md:w-10"
                   onClick={() => goToNextImage()}
                   aria-label="Next image"
                 >
