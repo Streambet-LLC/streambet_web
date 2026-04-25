@@ -11,6 +11,7 @@ interface Session {
   maxCadeCoinsBet?: number;
   isSeller?: boolean;
   isProSubscriber?: boolean;
+  auctionsEnabled?: boolean;
   user?: {
     id: string;
     email: string;
