@@ -318,15 +318,19 @@ export default function Prizes() {
     searchQuery,
   ]);
 
-  // Group filtered prizes by category for per-section pagination
+  // Group filtered prizes by category for per-section pagination.
+  // When the featured strip is showing live auctions, exclude those same
+  // auction items from the category sections below to avoid duplicates.
   const prizesByCategory = useMemo(() => {
     const grouped: Record<string, PrizeDisplay[]> = { slab: [], sealed: [], raw: [], other: [] };
+    const hideAuctions = featured.mode === 'auctions';
     filteredPrizes.forEach(p => {
+      if (hideAuctions && p.saleType === 'auction') return;
       const cat = p.category || 'slab';
       if (grouped[cat]) grouped[cat].push(p);
     });
     return grouped;
-  }, [filteredPrizes]);
+  }, [filteredPrizes, featured.mode]);
 
   const handleOfferClick = (prize: PrizeDisplay) => {
     setSelectedPrizeForOffer(prize);

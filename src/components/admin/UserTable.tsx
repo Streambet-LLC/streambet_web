@@ -184,6 +184,29 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     },
   });
 
+  const toggleAuctionsEnabledMutation = useMutation({
+    mutationFn: async ({ userId, enabled }: { userId: string; enabled: boolean }) => {
+      return await api.admin.setAuctionsEnabled(userId, enabled);
+    },
+    onSuccess: (_data, variables) => {
+      refetchProfiles();
+      toast({
+        description: variables.enabled
+          ? 'Auctions enabled — notification email sent'
+          : 'Auctions disabled for user',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.message || 'Failed to update auctions flag',
+        variant: 'destructive',
+      });
+      refetchProfiles();
+    },
+  });
+
   const getDisplayedFee = (user: any) => {
     if (user?.effectiveSellerFeePercent !== null && user?.effectiveSellerFeePercent !== undefined) {
       return Number(user.effectiveSellerFeePercent);
@@ -399,6 +422,24 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     />
                   </div>
 
+                  {/* Auctions enabled */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Auctions:</span>
+                    <Switch
+                      checked={!!user.auctionsEnabled}
+                      disabled={toggleAuctionsEnabledMutation.isPending}
+                      style={{
+                        backgroundColor: user.auctionsEnabled ? '#7AFF14' : undefined,
+                      }}
+                      onCheckedChange={() => {
+                        toggleAuctionsEnabledMutation.mutate({
+                          userId: user.id,
+                          enabled: !user.auctionsEnabled,
+                        });
+                      }}
+                    />
+                  </div>
+
                   {/* Actions Row */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <AddTokens
@@ -453,13 +494,14 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 <TableHead>Profile</TableHead>
                 <TableHead>Creator</TableHead>
                 <TableHead>Pro</TableHead>
+                <TableHead>Auctions</TableHead>
                 <TableHead>Delete</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedUsers?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={16} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={17} className="text-center py-6 text-muted-foreground">
                     No users found matching
                   </TableCell>
                 </TableRow>
@@ -621,6 +663,21 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                           toggleProMutation.mutate({
                             userId: user.id,
                             isPro: !!user.isProSubscriber,
+                          });
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell className="cursor-pointer" title="Toggle Auctions for this user">
+                      <Switch
+                        checked={!!user.auctionsEnabled}
+                        disabled={toggleAuctionsEnabledMutation.isPending}
+                        style={{
+                          backgroundColor: user.auctionsEnabled ? '#7AFF14' : undefined,
+                        }}
+                        onCheckedChange={() => {
+                          toggleAuctionsEnabledMutation.mutate({
+                            userId: user.id,
+                            enabled: !user.auctionsEnabled,
                           });
                         }}
                       />

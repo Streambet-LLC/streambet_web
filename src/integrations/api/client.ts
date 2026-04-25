@@ -1185,6 +1185,12 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Auctions feature flag (per-user)
+  setAuctionsEnabled: async (userId: string, enabled: boolean) => {
+    const response = await apiClient.patch(`/admin/users/${userId}/auctions-enabled`, { enabled });
+    return response.data;
+  },
+
   // Discount Codes
   getDiscountCodes: async () => {
     const response = await apiClient.get('/admin/discount-codes');
@@ -1418,6 +1424,7 @@ export const prizeAPI = {
     brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
     sellerDisplayOrderShop?: number;
     profileFeatured?: boolean;
+    saleType?: 'fixed_price' | 'auction';
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/seller/prizes/items', payload);
     return response.data;
@@ -2135,6 +2142,23 @@ export const auctionAPI = {
     return response.data;
   },
 
+  /**
+   * Seller-facing auction creation. Backend verifies (a) the prize
+   * belongs to the caller and (b) the caller has `auctionsEnabled=true`
+   * (set by an admin via the Users tab). Returns 403 otherwise.
+   */
+  createAsSeller: async (payload: {
+    prizeConfigurationId: string;
+    durationDays: 1 | 3 | 5 | 7;
+    startingPriceUsd: number;
+    reservePriceUsd?: number;
+    cardValueUsd?: number;
+    startsAt?: string;
+  }) => {
+    const response = await apiClient.post('/seller/auctions', payload);
+    return response.data;
+  },
+
   cancel: async (id: string) => {
     const response = await apiClient.post(`/admin/auctions/${id}/cancel`);
     return response.data;
@@ -2145,9 +2169,7 @@ export const auctionAPI = {
    * and creates the order if applicable. Used by ops to recover stuck
    * auctions where the BullMQ close job got out of sync with the DB.
    */
-  forceClose: async (
-    id: string,
-  ): Promise<import('@/types/prize').AuctionSummary> => {
+  forceClose: async (id: string): Promise<import('@/types/prize').AuctionSummary> => {
     const response = await apiClient.post(`/admin/auctions/${id}/force-close`);
     return response.data;
   },
