@@ -12,7 +12,7 @@ export const infoCards: InfoCard[] = [
     trailWord: 'BUY',
     description: (
       <>
-        Buy cards on CardCade in an easier, friendlier, more transparent, more fun manner than anywhere else on the internet!
+        Buy trading cards in the easiest, friendliest, and cheapest manner on the internet.
       </>
     ),
   },
@@ -21,7 +21,7 @@ export const infoCards: InfoCard[] = [
     trailWord: 'SELL',
     description: (
       <>
-        List/sell cards on CardCade with lower fees, full security provisioning, and full support of our team.
+        Sell at the lowest fees around, with full security and our team's support.
       </>
     ),
   },
@@ -30,7 +30,7 @@ export const infoCards: InfoCard[] = [
     trailWord: 'FUN',
     description: (
       <>
-        Win prizes along the way by accumulating CadeCoins from buying, selling, and participating in predictions & games. The more you buy and sell, the higher your discount tier climbs. As you level up, your seller fee can drop from 4% to 2% so you keep more on every sale.
+        Earn CadeCoins (CCs) as you buy/sell/bid; CCs are redeemable for prizes and reduce seller fees.
       </>
     ),
   },
