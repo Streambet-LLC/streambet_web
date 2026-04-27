@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -18,7 +19,6 @@ import {
 import { Link } from 'react-router-dom';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
-import FeaturedBetCard from '../FeaturedBetCard';
 import WatchButton from './WatchButton';
 import ShareItemButton from './ShareItemButton';
 import AuctionBidModal from './AuctionBidModal';
@@ -59,7 +59,7 @@ const formatRemaining = (msLeft: number): string => {
  * Subscribes to live updates via useAuctionSocket so the bid amount and
  * countdown stay in sync without a refresh.
  */
-export default function AuctionCard({ prize, isFeatured = false }: AuctionCardProps) {
+export default function AuctionCard({ prize }: AuctionCardProps) {
   // Hydrate the auction summary from the live endpoint so we always have
   // up-to-date isLeader / isBidder fields for the current viewer.
   const auctionQuery = useQuery({
@@ -282,10 +282,12 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
   const card = (
     <Card
       className={cn(
-        'h-full flex flex-col overflow-hidden transition-colors',
-        isFeatured
-          ? 'bg-transparent border-0 shadow-none'
-          : 'bg-card border border-border hover:border-primary'
+        'h-full flex flex-col overflow-hidden transition-all duration-200',
+        // Match the in-shop PrizeCard styling so featured-strip auctions
+        // and shop-grid auctions look identical (border, subtle bg, and
+        // the same neon-green hover glow).
+        'relative bg-card-grid-bg border border-card-grid-border shadow-[0px_2px_8px_0px_rgba(0,0,0,0.5)]',
+        'hover:border-card-grid-border-hover hover:shadow-[0px_4px_16px_0px_rgba(189,255,0,0.1)]'
       )}
     >
       <div
@@ -481,7 +483,13 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
 
   return (
     <>
-      {isFeatured ? <FeaturedBetCard>{card}</FeaturedBetCard> : card}
+      <motion.div
+        whileHover={{ y: -2 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        className="group h-full"
+      >
+        {card}
+      </motion.div>
       <AuctionBidModal
         isOpen={isBidOpen}
         onClose={() => setIsBidOpen(false)}
