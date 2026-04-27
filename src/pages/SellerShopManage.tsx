@@ -1020,8 +1020,10 @@ export default function SellerShopManage() {
       name: item.name || '',
       description: item.description || '',
       imageUrl: item.imageUrl || '',
-      // Convert CadeCoins back to USD for display (50 coins = $1)
-      amount: item.amount ? Math.round(item.amount / 50) : 0,
+      // Convert CadeCoins back to USD for display (50 coins = $1).
+      // Round to whole cents only — `Math.round` to a whole dollar would
+      // strip cents and silently re-save listings at the wrong price.
+      amount: item.amount ? Math.round(item.amount * 2) / 100 : 0,
       stock: item.stock || 0,
       purchaseOption: item.purchaseOption || 'buy_only',
       brand: item.brand || 'pokemon',
@@ -2054,6 +2056,7 @@ export default function SellerShopManage() {
                         <Input
                           type="number"
                           min={1}
+                          step={0.01}
                           placeholder="0"
                           value={form.amount || ''}
                           onChange={e =>
@@ -2503,7 +2506,8 @@ export default function SellerShopManage() {
                       <div className="flex-1">
                         <div className="font-medium">{item.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          ${item.amount ? Math.round(item.amount / 50) : 0} USD • Stock {item.stock}
+                          ${item.amount ? (item.amount / 50).toFixed(2) : '0.00'} USD • Stock{' '}
+                          {item.stock}
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -2720,7 +2724,8 @@ export default function SellerShopManage() {
                       <div className="flex-1">
                         <div className="font-medium">{item.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          ${item.amount ? Math.round(item.amount / 50) : 0} USD • Stock {item.stock}
+                          ${item.amount ? (item.amount / 50).toFixed(2) : '0.00'} USD • Stock{' '}
+                          {item.stock}
                         </div>
                       </div>
                       <div className="flex gap-2">
