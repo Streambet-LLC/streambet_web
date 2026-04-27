@@ -461,6 +461,12 @@ export default function SellerShopManage() {
 
       if (editingItemId) {
         // Update existing item — auction lifecycle is not editable here.
+        // `saleType` is immutable after creation; the backend preserves
+        // the existing value and (with `forbidNonWhitelisted: true` on
+        // the global ValidationPipe) older API builds will 400 the
+        // entire request if we leave it in the body. Strip it to keep
+        // edits working for both fixed-price and auction listings.
+        delete (payload as any).saleType;
         return api.prize.updateMyShopItem(editingItemId, payload);
       }
 
