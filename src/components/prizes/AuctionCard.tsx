@@ -23,6 +23,7 @@ import WatchButton from './WatchButton';
 import AuctionBidModal from './AuctionBidModal';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import useAuctionSocket from '@/hooks/useAuctionSocket';
+import { useViewTracker } from '@/hooks/useViewTracker';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -94,6 +95,11 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
   const editHref = `/seller/shop/manage?editItemId=${prize.id}`;
 
   useAuctionSocket({ auctionId: auction.id });
+  const trackView = useViewTracker();
+  useEffect(() => {
+    trackView(prize.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prize.id]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -284,13 +290,18 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
       <div
         ref={inlineImageRef}
         className={cn(
-          'relative aspect-[4/5] bg-muted overflow-hidden touch-pan-y',
+          'relative aspect-[4/5] bg-black overflow-hidden touch-pan-y flex items-center justify-center',
           activeImageUrl && 'cursor-zoom-in'
         )}
         onClick={activeImageUrl ? handleOpenLightbox : undefined}
       >
         {activeImageUrl ? (
-          <img src={activeImageUrl} alt={prize.name} className="w-full h-full object-cover" />
+          <img
+            src={activeImageUrl}
+            alt={prize.name}
+            className="w-full h-full object-contain"
+            loading="lazy"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
             <Gavel className="w-10 h-10" />
@@ -413,28 +424,26 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
           </div>
         </div>
 
-        {prize.viewCount || prize.watcherCount ? (
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              <Eye className="w-3 h-3" />
-              {prize.viewCount ?? 0}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Heart className="w-3 h-3" />
-              {prize.watcherCount ?? 0}
-            </span>
-            {auction.isLeader && (
-              <Badge variant="default" className="ml-auto bg-emerald-600 hover:bg-emerald-600">
-                You're winning
-              </Badge>
-            )}
-            {!auction.isLeader && auction.isBidder && (
-              <Badge variant="outline" className="ml-auto border-red-500 text-red-500">
-                Outbid
-              </Badge>
-            )}
-          </div>
-        ) : null}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <Eye className="w-3 h-3" />
+            {prize.viewCount ?? 0}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Heart className="w-3 h-3" />
+            {prize.watcherCount ?? 0}
+          </span>
+          {auction.isLeader && (
+            <Badge variant="default" className="ml-auto bg-emerald-600 hover:bg-emerald-600">
+              You're winning
+            </Badge>
+          )}
+          {!auction.isLeader && auction.isBidder && (
+            <Badge variant="outline" className="ml-auto border-red-500 text-red-500">
+              Outbid
+            </Badge>
+          )}
+        </div>
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
