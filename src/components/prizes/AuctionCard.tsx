@@ -20,6 +20,7 @@ import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import FeaturedBetCard from '../FeaturedBetCard';
 import WatchButton from './WatchButton';
+import ShareItemButton from './ShareItemButton';
 import AuctionBidModal from './AuctionBidModal';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import useAuctionSocket from '@/hooks/useAuctionSocket';
@@ -376,7 +377,13 @@ export default function AuctionCard({ prize, isFeatured = false }: AuctionCardPr
             Reserve met
           </Badge>
         )}
-        <div className="absolute bottom-2 right-2">
+        <div className="absolute bottom-2 right-2 flex items-center gap-1.5 z-20">
+          <ShareItemButton
+            itemId={prize.id}
+            shopUsername={prize.createdByUsername ?? null}
+            overlay
+            size="sm"
+          />
           <WatchButton
             itemId={prize.id}
             initialIsWatching={prize.isWatching ?? false}

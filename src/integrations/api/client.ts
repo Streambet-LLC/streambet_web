@@ -1384,6 +1384,11 @@ export const prizeAPI = {
     return response.data;
   },
 
+  getShopItemById: async (id: string): Promise<PrizeConfiguration> => {
+    const response = await apiClient.get(`/prizes/shop-items/${id}`);
+    return response.data;
+  },
+
   // Get all public seller shops with active inventory
   getSellerShops: async (limit?: number): Promise<SellerShopSummary[]> => {
     const params = limit ? `?limit=${limit}` : '';

@@ -27,6 +27,7 @@ import { useAddToCart } from '@/hooks/useCart';
 import { useCountdown } from '@/hooks/use-countdown';
 import { useViewTracker } from '@/hooks/useViewTracker';
 import WatchButton from './WatchButton';
+import ShareItemButton from './ShareItemButton';
 
 interface PrizeCardProps {
   prize: Prize;
@@ -597,9 +598,15 @@ export default function PrizeCard({
                 </Badge>
               )}
 
-            {/* Watchlist heart (own items can't be watched) */}
-            {!isOwnItem && (
-              <div className="absolute bottom-2 right-2 z-20">
+            {/* Watchlist heart + share link (own items can't be watched but can still be shared) */}
+            <div className="absolute bottom-2 right-2 z-20 flex items-center gap-1.5">
+              <ShareItemButton
+                itemId={prize.id}
+                shopUsername={prize.createdByUsername ?? null}
+                overlay
+                size="sm"
+              />
+              {!isOwnItem && (
                 <WatchButton
                   itemId={prize.id}
                   initialIsWatching={!!prize.isWatching}
@@ -607,8 +614,8 @@ export default function PrizeCard({
                   overlay
                   size="sm"
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </CardHeader>
 

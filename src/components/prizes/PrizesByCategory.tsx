@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
@@ -79,6 +80,43 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
   const [minWatchers, setMinWatchers] = useState<number | ''>('');
   const [showPriceFilter, setShowPriceFilter] = useState(true);
   const [saleTypeFilter, setSaleTypeFilter] = useState<'all' | 'fixed_price' | 'auction'>('all');
+
+  // Direct-link highlight: when a share URL like `?highlight=<itemId>`
+  // is present, scroll the matching card into view and pulse its border
+  // for a few seconds so the user can spot it.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const highlightedItemId = searchParams.get('highlight');
+  const highlightedRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!highlightedItemId) return;
+    // Defer to allow images / cards to mount + lay out before scrolling.
+    const timer = window.setTimeout(() => {
+      highlightedRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 200);
+    // Strip the highlight param after the pulse animation finishes so a
+    // page refresh / reshare doesn't keep replaying it indefinitely.
+    const cleanup = window.setTimeout(() => {
+      setSearchParams(
+        prev => {
+          const next = new URLSearchParams(prev);
+          next.delete('highlight');
+          return next;
+        },
+        { replace: true }
+      );
+    }, 4000);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(cleanup);
+    };
+    // We intentionally only re-run when the highlighted id changes;
+    // setSearchParams is stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightedItemId]);
 
   const categories: Record<PrizeCategoryType, Prize[]> = {
     slab: [],
@@ -425,25 +463,35 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                         : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
                     }
                   >
-                    {filterByPriceRange(items).map(prize =>
-                      prize.saleType === 'auction' && prize.auction ? (
-                        <AuctionCard
+                    {filterByPriceRange(items).map(prize => {
+                      const isHighlighted = highlightedItemId === prize.id;
+                      return (
+                        <div
                           key={prize.id}
-                          prize={prize as Prize & { auction: AuctionSummary }}
-                        />
-                      ) : (
-                        <PrizeCard
-                          key={prize.id}
-                          prize={prize}
-                          variant={cardVariant}
-                          onClick={onPrizeClick ? () => onPrizeClick(prize) : () => {}}
-                          onOfferClick={prize => {
-                            setSelectedPrize(prize);
-                            setIsOfferModalOpen(true);
-                          }}
-                        />
-                      )
-                    )}
+                          id={`shop-item-${prize.id}`}
+                          ref={isHighlighted ? highlightedRef : undefined}
+                          className={
+                            isHighlighted
+                              ? 'rounded-2xl ring-4 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_24px_rgba(189,255,0,0.55)] transition-shadow animate-pulse'
+                              : 'transition-shadow'
+                          }
+                        >
+                          {prize.saleType === 'auction' && prize.auction ? (
+                            <AuctionCard prize={prize as Prize & { auction: AuctionSummary }} />
+                          ) : (
+                            <PrizeCard
+                              prize={prize}
+                              variant={cardVariant}
+                              onClick={onPrizeClick ? () => onPrizeClick(prize) : () => {}}
+                              onOfferClick={prize => {
+                                setSelectedPrize(prize);
+                                setIsOfferModalOpen(true);
+                              }}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ) : null
