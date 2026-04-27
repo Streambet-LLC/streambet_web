@@ -51,6 +51,7 @@ import Redemptions from './pages/Redemptions';
 import HowToPlay from './pages/HowToPlay';
 import { DailySpin } from './pages/DailySpin';
 import ShopDetail from './pages/ShopDetail';
+import ShopItemDetail from './pages/ShopItemDetail';
 import Shops from './pages/Shops';
 import SellerShopManage from './pages/SellerShopManage';
 import Inbox from './pages/Inbox';
@@ -136,6 +137,7 @@ const App = () => {
                             <Route path="/creators" element={<Creators />} />
                             <Route path="/shops" element={<Shops />} />
                             <Route path="/prizes" element={<Prizes />} />
+                            <Route path="/shop/item/:id" element={<ShopItemDetail />} />
                             <Route path="/shop/:username" element={<ShopDetail />} />
                             <Route path="/predictions" element={<Home />} />
                             <Route path="/how-to-play" element={<HowToPlay />} />

@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { AdminAuctionDetailDialog } from './AdminAuctionDetailDialog';
 
 /**
  * Admin → Auctions tab.
@@ -110,6 +111,7 @@ export const AdminAuctions = () => {
   const [pendingCancel, setPendingCancel] = useState<AdminAuctionRow | null>(
     null,
   );
+  const [activeRow, setActiveRow] = useState<AdminAuctionRow | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['adminAuctions'],
@@ -266,12 +268,16 @@ export const AdminAuctions = () => {
                     row.status === 'active' || row.status === 'scheduled';
                   const canCancel = canForceClose;
                   return (
-                    <TableRow key={row.id}>
+                    <TableRow
+                      key={row.id}
+                      onClick={() => setActiveRow(row)}
+                      className="cursor-pointer hover:bg-muted/40"
+                    >
                       <TableCell className="font-medium max-w-[260px]">
                         <div className="truncate" title={row.prizeName}>
                           {row.prizeName}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">
+                        <div className="text-xs text-muted-foreground truncate font-mono">
                           {row.id}
                         </div>
                       </TableCell>
@@ -294,22 +300,25 @@ export const AdminAuctions = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell className="text-xs whitespace-nowrap">
                         {formatDate(row.endsAt)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right whitespace-nowrap">
                         {formatUsd(row.currentBidUsd)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right tabular-nums">
                         {row.bidCount}
                       </TableCell>
                       <TableCell className="text-xs">
                         {row.winnerUsername ?? '—'}
                       </TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell className="text-xs whitespace-nowrap">
                         {formatDate(row.paidAt)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell
+                        className="text-right"
+                        onClick={e => e.stopPropagation()}
+                      >
                         <div className="flex justify-end gap-2">
                           <Button
                             size="sm"
@@ -331,10 +340,10 @@ export const AdminAuctions = () => {
                           </Button>
                           <Button
                             size="sm"
-                            variant="ghost"
+                            variant="outline"
                             disabled={!canCancel || cancelInFlight}
                             onClick={() => setPendingCancel(row)}
-                            className="text-red-400 hover:text-red-300"
+                            className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                           >
                             {cancelInFlight ? (
                               <Loader2 className="w-3 h-3 animate-spin" />
@@ -426,6 +435,13 @@ export const AdminAuctions = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Detail dialog: bid history + winner/shipping */}
+      <AdminAuctionDetailDialog
+        auction={activeRow}
+        open={!!activeRow}
+        onOpenChange={open => !open && setActiveRow(null)}
+      />
     </Card>
   );
 };
