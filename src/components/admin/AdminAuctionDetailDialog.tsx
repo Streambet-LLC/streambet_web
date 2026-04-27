@@ -36,11 +36,6 @@ const formatDate = (iso: string | null | undefined) =>
 const formatUsd = (n: number | null | undefined) =>
   n == null ? '—' : `$${n.toFixed(2)}`;
 
-/**
- * Admin auction detail dialog. Fetches both the admin details (winner +
- * shipping) and the full bid history in parallel and shows them side-by-side
- * so ops can see the complete context for an auction in one place.
- */
 export const AdminAuctionDetailDialog = ({
   auction,
   open,
