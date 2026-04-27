@@ -2345,7 +2345,13 @@ export default function SellerShopManage() {
                     {createItem.isPending || isUploading ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : null}
-                    {isUploading ? 'Uploading...' : editingItemId ? 'Update Item' : 'Add Item'}
+                    {isUploading
+                      ? 'Uploading...'
+                      : editingItemId
+                        ? 'Update Item'
+                        : form.saleType === 'auction'
+                          ? 'Start Auction'
+                          : 'Add Item'}
                   </Button>
                   <p className="text-xs text-muted-foreground">
                     Seller shop purchases are USD-only. CadeCoins are disabled for these items.
