@@ -165,7 +165,7 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
     { label: 'Shop', icon: undefined, path: '/' },
     { label: 'Redeem', icon: undefined, path: '/redemptions' },
     { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
-    { label: 'Predictions', icon: undefined, path: '/predictions' },
+    // { label: 'Predictions', icon: undefined, path: '/predictions' },
     { label: 'How To Play', icon: undefined, path: '/how-to-play' },
     (session?.role === 'admin' || session?.role === 'creator') && {
       label: session?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard',
