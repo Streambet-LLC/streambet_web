@@ -27,6 +27,7 @@ import { useAddToCart } from '@/hooks/useCart';
 import { useCountdown } from '@/hooks/use-countdown';
 import { useViewTracker } from '@/hooks/useViewTracker';
 import WatchButton from './WatchButton';
+import ShareItemButton from './ShareItemButton';
 
 interface PrizeCardProps {
   prize: Prize;
@@ -597,9 +598,15 @@ export default function PrizeCard({
                 </Badge>
               )}
 
-            {/* Watchlist heart (own items can't be watched) */}
-            {!isOwnItem && (
-              <div className="absolute bottom-2 right-2 z-20">
+            {/* Watchlist heart + share link (own items can't be watched but can still be shared) */}
+            <div className="absolute bottom-2 right-2 z-20 flex items-center gap-1.5">
+              <ShareItemButton
+                itemId={prize.id}
+                shopUsername={prize.createdByUsername ?? null}
+                overlay
+                size="sm"
+              />
+              {!isOwnItem && (
                 <WatchButton
                   itemId={prize.id}
                   initialIsWatching={!!prize.isWatching}
@@ -607,8 +614,8 @@ export default function PrizeCard({
                   overlay
                   size="sm"
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </CardHeader>
 
@@ -663,13 +670,13 @@ export default function PrizeCard({
           )}
         </CardContent>
 
-        <CardFooter className="p-3 pt-0 flex gap-2">
+        <CardFooter className="p-3 pt-0 flex flex-wrap gap-2">
           {!hideButtons && isOwnItem && (
             <Button
               asChild
               variant="outline"
               size="sm"
-              className="flex-1 h-8 text-xs gap-1.5 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+              className="flex-1 min-w-0 h-8 text-xs gap-1.5 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
             >
               <Link to={editHref} onClick={e => e.stopPropagation()}>
                 <Pencil className="w-3.5 h-3.5" />
@@ -682,7 +689,7 @@ export default function PrizeCard({
               variant="default"
               size="sm"
               className={cn(
-                'flex-1 h-8 text-xs',
+                'flex-1 min-w-0 h-8 text-xs whitespace-nowrap',
                 isProLocked
                   ? 'bg-yellow-500/80 text-black hover:bg-yellow-500/70'
                   : 'bg-primary text-black hover:bg-primary/90'
@@ -725,7 +732,15 @@ export default function PrizeCard({
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 gap-1.5 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00] h-8 text-xs"
+              className={cn(
+                // When the item supports both Buy Now AND Make Offer the
+                // top row is already full (Buy Now + cart icon), so the
+                // offer button takes its own full-width row beneath them.
+                // For offers-only listings we let it sit inline with the
+                // cart icon as before.
+                'gap-1.5 bg-transparent border-[#D4FF00] text-[#D4FF00] hover:bg-[#D4FF00]/10 hover:text-[#D4FF00] h-8 text-xs whitespace-nowrap',
+                canBuy ? 'basis-full w-full' : 'flex-1 min-w-0'
+              )}
               onClick={e => {
                 e.stopPropagation();
                 onOfferClick(prize);
