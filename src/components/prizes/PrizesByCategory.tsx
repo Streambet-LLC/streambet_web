@@ -153,6 +153,29 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
     });
   };
 
+  /**
+   * Surface auctions first within each category so shoppers immediately
+   * see live time-bound listings on a shop page. Active auctions float
+   * above scheduled (not-yet-started) ones, which float above any
+   * terminal-state auctions; fixed-price items keep their existing
+   * display order behind that. Stable: items in the same priority
+   * bucket retain their incoming order.
+   */
+  const surfaceAuctionsFirst = (prizeList: Prize[]) => {
+    const priority = (p: Prize): number => {
+      if (p.saleType !== 'auction' || !p.auction) return 3;
+      const status = p.auction.status;
+      const endsAt = new Date(p.auction.endsAt).getTime();
+      if (status === 'active' && endsAt > Date.now()) return 0;
+      if (status === 'scheduled') return 1;
+      return 2; // ended/paid/unsold/failed/cancelled
+    };
+    return [...prizeList]
+      .map((p, i) => ({ p, i, k: priority(p) }))
+      .sort((a, b) => a.k - b.k || a.i - b.i)
+      .map(({ p }) => p);
+  };
+
   // Filter prizes by price range (filters by USD price)
   const filterByPriceRange = (prizeList: Prize[]) => {
     let filtered = prizeList;
@@ -463,7 +486,7 @@ export const PrizesByCategory: React.FC<PrizesByCategoryProps> = ({
                         : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
                     }
                   >
-                    {filterByPriceRange(items).map(prize => {
+                    {surfaceAuctionsFirst(filterByPriceRange(items)).map(prize => {
                       const isHighlighted = highlightedItemId === prize.id;
                       return (
                         <div
