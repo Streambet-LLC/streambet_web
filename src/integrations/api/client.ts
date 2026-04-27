@@ -2194,6 +2194,15 @@ export const auctionAPI = {
     const response = await apiClient.get(`/admin/auctions/${id}/details`);
     return response.data;
   },
+
+  /**
+   * Full bid history (newest first) for an auction. Powers the bid
+   * history table inside the admin auction detail dialog.
+   */
+  listAdminBids: async (id: string): Promise<AdminAuctionBidRow[]> => {
+    const response = await apiClient.get(`/admin/auctions/${id}/bids`);
+    return response.data;
+  },
 };
 
 /** Shipping address shape stored on PrizeOrder.shippingAddress. */
@@ -2220,6 +2229,17 @@ export interface AdminAuctionDetails {
   winningBidUsd: number | null;
   shippingAddress: AdminAuctionShippingAddress | null;
   orderStatus: string | null;
+}
+
+/** A single row in the bid history (returned by GET /admin/auctions/:id/bids). */
+export interface AdminAuctionBidRow {
+  id: string;
+  userId: string;
+  username: string | null;
+  amountUsd: number;
+  proxyMaxUsd: number;
+  isProxyAuto: boolean;
+  createdAt: string;
 }
 
 /**

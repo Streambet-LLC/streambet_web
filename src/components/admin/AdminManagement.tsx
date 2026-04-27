@@ -80,7 +80,7 @@ export const AdminManagement = ({
   setSearchPromoQuery,
 }) => {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState('livestreams');
+  const [activeTab, setActiveTab] = useState('prize-settings');
   const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
   const [isCreateStream, setIsCreateStream] = useState(false);
@@ -109,23 +109,23 @@ export const AdminManagement = ({
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   const tabs = [
+    { key: 'prize-settings', label: 'Item Settings' },
+    { key: 'users', label: 'Users' },
+    { key: 'pending-onboarding', label: 'Seller Stripe Status' },
+    { key: 'auctions', label: 'Auctions' },
+    { key: 'support-inbox', label: 'Support Inbox' },
+    { key: 'user-messages', label: 'User Messages' },
+    { key: 'concierge', label: 'Concierge' },
+    { key: 'discount-codes', label: 'Discount Codes' },
+    { key: 'prize-redemptions', label: 'Prize Redemptions' },
+    { key: 'prize-offers', label: 'Prize Offers' },
+    { key: 'applications', label: 'Applications' },
+    { key: 'stream-payout', label: 'Stream Payout' },
     { key: 'livestreams', label: 'Live Streams' },
     { key: 'ended-streams', label: 'Ended Streams' },
     { key: 'non-video', label: 'Non Video' },
     { key: 'ended-non-video', label: 'Ended Non Video' },
     { key: 'promo-cards', label: 'Promo Cards' },
-    { key: 'users', label: 'Users' },
-    { key: 'applications', label: 'Applications' },
-    { key: 'pending-onboarding', label: 'Seller Stripe Status' },
-    { key: 'stream-payout', label: 'Stream Payout' },
-    { key: 'prize-settings', label: 'Item Settings' },
-    { key: 'prize-redemptions', label: 'Prize Redemptions' },
-    { key: 'auctions', label: 'Auctions' },
-    { key: 'prize-offers', label: 'Prize Offers' },
-    { key: 'support-inbox', label: 'Support Inbox' },
-    { key: 'user-messages', label: 'User Messages' },
-    { key: 'concierge', label: 'Concierge' },
-    { key: 'discount-codes', label: 'Discount Codes' },
   ];
 
   const createStreamMutation = useMutation({
