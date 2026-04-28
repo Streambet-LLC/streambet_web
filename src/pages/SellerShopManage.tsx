@@ -426,11 +426,22 @@ export default function SellerShopManage() {
       // is determined by bids. We still need to send a value the API
       // accepts, so we mirror the starting bid in CadeCoins for parity
       // with the existing fixed-price/offers flow.
+      //
+      // Convert USD → CadeCoins via integer cents to avoid floating-point
+      // drift (e.g. 79.98 * 50 = 3998.9999999999995 in IEEE-754).
+      // 1 CadeCoin = $0.02, so coins = round(cents / 2). Always returns
+      // a whole-coin integer, which keeps the stored decimal column
+      // clean and prevents fractional CadeCoin amounts from leaking in.
+      const usdToWholeCoins = (usd: number): number => {
+        const cents = Math.round((Number(usd) || 0) * 100);
+        return Math.round(cents / 2);
+      };
+
       const amountInCoins = isAuction
-        ? Math.max(1, Math.round(form.auctionStartingPriceUsd * 50))
+        ? Math.max(1, usdToWholeCoins(form.auctionStartingPriceUsd))
         : form.purchaseOption === 'offers_only'
           ? Math.max(1, form.amount)
-          : Math.round(form.amount * 50);
+          : usdToWholeCoins(form.amount);
 
       const payload = {
         ...form,
@@ -1021,9 +1032,27 @@ export default function SellerShopManage() {
       description: item.description || '',
       imageUrl: item.imageUrl || '',
       // Convert CadeCoins back to USD for display (50 coins = $1).
-      // Round to whole cents only — `Math.round` to a whole dollar would
-      // strip cents and silently re-save listings at the wrong price.
-      amount: item.amount ? Math.round(item.amount * 2) / 100 : 0,
+      //
+      // Self-heal legacy items whose stored coin value is one or two off
+      // from a clean whole-dollar price. Historically the seller form
+      // displayed `Math.round(amount / 50)` so a value of 3999 coins
+      // ($79.98) showed as "$80" and the seller assumed that's what was
+      // saved. After the rounding was tightened, the same item now
+      // honestly reads as $79.98, but if the seller intended $80 we
+      // should let them re-save the listing without having to retype
+      // the price. So: snap to the nearest whole dollar when the raw
+      // USD value is within $0.05 of one. Anything further away
+      // (e.g., $99.50) is treated as intentional and preserved at full
+      // cent precision.
+      amount: (() => {
+        if (!item.amount) return 0;
+        const usdRaw = Number(item.amount) / 50;
+        const usdRoundedDollar = Math.round(usdRaw);
+        if (Math.abs(usdRaw - usdRoundedDollar) <= 0.05) {
+          return usdRoundedDollar;
+        }
+        return Math.round(usdRaw * 100) / 100;
+      })(),
       stock: item.stock || 0,
       purchaseOption: item.purchaseOption || 'buy_only',
       brand: item.brand || 'pokemon',
