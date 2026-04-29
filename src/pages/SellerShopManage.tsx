@@ -1,6 +1,11 @@
 import { MainLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import OrderItemDetailDialog from '@/components/OrderItemDetailDialog';
+import ReviewOrderButton from '@/components/reviews/ReviewOrderButton';
+import LeaveReviewDialog from '@/components/reviews/LeaveReviewDialog';
+import StarRating from '@/components/reviews/StarRating';
+import { ReviewableOrderSide } from '@/types/review';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '@/integrations/api/client';
 import { useToast } from '@/hooks/use-toast';
@@ -25,9 +30,18 @@ import {
   X,
   Camera,
   HeadphonesIcon,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Receipt,
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { PrizeBrand, PrizeConfiguration, type PsaImportResult, type EbayListing } from '@/types/prize';
+import {
+  PrizeBrand,
+  PrizeConfiguration,
+  type PsaImportResult,
+  type EbayListing,
+} from '@/types/prize';
 import { CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -77,6 +91,16 @@ interface SellerPurchasedOrder {
   shippingCarrier?: string;
   shippedAt?: string;
   createdAt: string;
+  shippingAddress?: {
+    firstName?: string;
+    lastName?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+  };
   user?: {
     username: string;
     email: string;
@@ -138,6 +162,8 @@ export default function SellerShopManage() {
   const [shopProfileImageFile, setShopProfileImageFile] = useState<File | null>(null);
   const shopProfileImageInputRef = React.useRef<HTMLInputElement>(null);
   const ordersRef = React.useRef<HTMLDivElement>(null);
+  /** Per-Sold-Item refs so we can scroll directly to the requested order. */
+  const soldItemRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const itemFormRef = React.useRef<HTMLDivElement>(null);
   const [psaCertNumber, setPsaCertNumber] = useState('');
   const [psaImportResult, setPsaImportResult] = useState<PsaImportResult | null>(null);
@@ -259,6 +285,13 @@ export default function SellerShopManage() {
   const [selectedPurchasedOrder, setSelectedPurchasedOrder] = useState<SellerPurchasedOrder | null>(
     null
   );
+  /** Order whose full transaction details are being shown in OrderItemDetailDialog. */
+  const [selectedSaleTransaction, setSelectedSaleTransaction] =
+    useState<SellerPurchasedOrder | null>(null);
+  /** Order id to highlight (e.g. when arrived from /transactions or email). */
+  const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
+  /** Order id whose review dialog is currently open. */
+  const [reviewOrderId, setReviewOrderId] = useState<string | null>(null);
   const [isShipDialogOpen, setIsShipDialogOpen] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [shippingCarrier, setShippingCarrier] = useState('');
@@ -297,6 +330,80 @@ export default function SellerShopManage() {
     queryFn: () => api.prize.getMyShopOrders(),
     enabled: !!session?.isSeller && !isCardCadeMode,
   });
+
+  // Reviewable-orders for the Sold Items list (seller side only).
+  const { data: reviewableOrders } = useQuery({
+    queryKey: ['my-reviewable-orders'],
+    queryFn: () => api.review.getMyReviewable(),
+    enabled: !!session?.isSeller && !isCardCadeMode,
+    staleTime: 60_000,
+  });
+  const reviewSideByOrderId = useMemo(() => {
+    const map = new Map<string, ReviewableOrderSide>();
+    for (const s of reviewableOrders ?? []) {
+      if (s.myRole === 'seller') map.set(s.orderId, s);
+    }
+    return map;
+  }, [reviewableOrders]);
+
+  // Sold-Items search + pagination (5 per page)
+  const SOLD_ITEMS_PAGE_SIZE = 5;
+  const [soldItemsSearch, setSoldItemsSearch] = useState('');
+  const [soldItemsPage, setSoldItemsPage] = useState(1);
+
+  const filteredPurchasedOrders = useMemo(() => {
+    const q = soldItemsSearch.trim().toLowerCase();
+    if (!q) return purchasedOrders;
+    return purchasedOrders.filter(o => {
+      const itemName = o.prizeConfiguration?.name?.toLowerCase() ?? '';
+      const buyer =
+        `${o.user?.firstName ?? ''} ${o.user?.lastName ?? ''} ${o.user?.username ?? ''} ${o.user?.email ?? ''}`.toLowerCase();
+      const recipient =
+        `${o.shippingAddress?.firstName ?? ''} ${o.shippingAddress?.lastName ?? ''}`.toLowerCase();
+      const city = o.shippingAddress?.city?.toLowerCase() ?? '';
+      const state = o.shippingAddress?.state?.toLowerCase() ?? '';
+      const zip = o.shippingAddress?.zipCode?.toLowerCase() ?? '';
+      const tracking = o.trackingNumber?.toLowerCase() ?? '';
+      return (
+        itemName.includes(q) ||
+        buyer.includes(q) ||
+        recipient.includes(q) ||
+        city.includes(q) ||
+        state.includes(q) ||
+        zip.includes(q) ||
+        tracking.includes(q)
+      );
+    });
+  }, [purchasedOrders, soldItemsSearch]);
+
+  const soldItemsPageCount = Math.max(
+    1,
+    Math.ceil(filteredPurchasedOrders.length / SOLD_ITEMS_PAGE_SIZE)
+  );
+
+  // Reset to page 1 whenever the search changes or the underlying data shrinks.
+  useEffect(() => {
+    setSoldItemsPage(1);
+  }, [soldItemsSearch]);
+  useEffect(() => {
+    if (soldItemsPage > soldItemsPageCount) setSoldItemsPage(soldItemsPageCount);
+  }, [soldItemsPage, soldItemsPageCount]);
+
+  const paginatedPurchasedOrders = useMemo(() => {
+    const start = (soldItemsPage - 1) * SOLD_ITEMS_PAGE_SIZE;
+    return filteredPurchasedOrders.slice(start, start + SOLD_ITEMS_PAGE_SIZE);
+  }, [filteredPurchasedOrders, soldItemsPage]);
+
+  // When a specific order is highlighted (e.g. the user arrived from
+  // /transactions or an email link), jump to the page that contains it so
+  // the highlighted card is actually visible before we scroll to it.
+  useEffect(() => {
+    if (!highlightedOrderId) return;
+    const idx = filteredPurchasedOrders.findIndex(o => o.id === highlightedOrderId);
+    if (idx < 0) return;
+    const targetPage = Math.floor(idx / SOLD_ITEMS_PAGE_SIZE) + 1;
+    setSoldItemsPage(p => (p === targetPage ? p : targetPage));
+  }, [highlightedOrderId, filteredPurchasedOrders]);
 
   const { data: offersResponse, isLoading: isOffersLoading } = useQuery<{
     data: SellerOfferOrder[];
@@ -986,18 +1093,28 @@ export default function SellerShopManage() {
     setIsShipDialogOpen(true);
   };
 
-  // Auto-open ship dialog when arriving from email with orderId param
+  // Auto-open ship dialog when arriving from email with orderId param.
+  // Also highlight the matching order card and scroll to it. The ship
+  // dialog only auto-opens when the order is still pending shipment ('paid')
+  // — for already-shipped orders we just scroll/highlight (the seller can
+  // still click "View transaction" / "Edit shipping" themselves).
   const emailOrderId = searchParams.get('orderId');
   useEffect(() => {
-    if (emailOrderId && purchasedOrders.length > 0) {
-      const order = purchasedOrders.find(o => o.id === emailOrderId);
-      if (order) {
-        setTimeout(() => {
-          ordersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-        handleOpenShipDialog(order);
-      }
+    if (!emailOrderId || purchasedOrders.length === 0) return;
+    const order = purchasedOrders.find(o => o.id === emailOrderId);
+    if (!order) return;
+    setHighlightedOrderId(order.id);
+    setTimeout(() => {
+      const el = soldItemRefs.current.get(order.id);
+      (el ?? ordersRef.current)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    if (order.status === 'paid') {
+      handleOpenShipDialog(order);
     }
+    // Auto-clear the highlight after a few seconds so it acts as a
+    // pulse/hint rather than a permanent state.
+    const t = setTimeout(() => setHighlightedOrderId(null), 4000);
+    return () => clearTimeout(t);
   }, [emailOrderId, purchasedOrders]);
 
   const handleSubmitShip = () => {
@@ -2652,6 +2769,16 @@ export default function SellerShopManage() {
                   <p className="text-sm text-muted-foreground">
                     Items that have been purchased by buyers. Mark them as shipped once sent.
                   </p>
+                  <div className="relative pt-2">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      type="search"
+                      value={soldItemsSearch}
+                      onChange={e => setSoldItemsSearch(e.target.value)}
+                      placeholder="Search by item, buyer, address, or tracking..."
+                      className="pl-9"
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {isPurchasedOrdersLoading ? (
@@ -2660,79 +2787,214 @@ export default function SellerShopManage() {
                     </div>
                   ) : purchasedOrders.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No purchases yet.</p>
+                  ) : filteredPurchasedOrders.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No purchases match "{soldItemsSearch}".
+                    </p>
                   ) : (
-                    purchasedOrders.map(order => (
-                      <div key={order.id} className="border rounded-md p-3 space-y-3">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <div className="font-medium">
-                              {order.prizeConfiguration?.name || 'Shop Item'}
+                    <>
+                      {paginatedPurchasedOrders.map(order => {
+                        const ship = order.shippingAddress;
+                        const recipient = ship
+                          ? [ship.firstName, ship.lastName].filter(Boolean).join(' ').trim()
+                          : '';
+                        const cityStateZip = ship
+                          ? [ship.city, ship.state].filter(Boolean).join(', ') +
+                            (ship.zipCode ? ` ${ship.zipCode}` : '')
+                          : '';
+                        const reviewSide = reviewSideByOrderId.get(order.id);
+                        return (
+                          <div
+                            key={order.id}
+                            ref={el => {
+                              soldItemRefs.current.set(order.id, el);
+                            }}
+                            className={cn(
+                              'border rounded-md p-3 space-y-3 transition-shadow',
+                              highlightedOrderId === order.id &&
+                                'ring-2 ring-[#7AFF14]/60 border-[#7AFF14]/40 shadow-[0_0_0_1px_#7AFF14]'
+                            )}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="font-medium">
+                                  {order.prizeConfiguration?.name || 'Shop Item'}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Buyer:{' '}
+                                  {order.user?.firstName && order.user?.lastName
+                                    ? `${order.user.firstName} ${order.user.lastName} (${order.user?.username || 'Unknown'})`
+                                    : order.user?.username || 'Unknown'}{' '}
+                                  • Ordered: {new Date(order.createdAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                              <Badge className={cn('border', getOfferStatusClass(order.status))}>
+                                {order.status === 'paid'
+                                  ? 'Pending Shipment'
+                                  : order.status === 'shipped'
+                                    ? 'Shipped'
+                                    : 'Delivered'}
+                              </Badge>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              Buyer:{' '}
-                              {order.user?.firstName && order.user?.lastName
-                                ? `${order.user.firstName} ${order.user.lastName} (${order.user?.username || 'Unknown'})`
-                                : order.user?.username || 'Unknown'}{' '}
-                              • Ordered: {new Date(order.createdAt).toLocaleDateString()}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {order.user?.address && (
-                                <>
-                                  {order.user.address}
-                                  {order.user.city && `, ${order.user.city}`}
-                                  {order.user.state && ` ${order.user.state}`}
-                                </>
+
+                            {ship ? (
+                              order.status === 'paid' ? (
+                                <div className="rounded-md bg-muted/40 border border-border/50 p-2 text-xs space-y-0.5">
+                                  <div className="font-medium text-foreground">
+                                    Ship to{recipient ? `: ${recipient}` : ''}
+                                  </div>
+                                  {ship.addressLine1 && <div>{ship.addressLine1}</div>}
+                                  {ship.addressLine2 && <div>{ship.addressLine2}</div>}
+                                  {cityStateZip && <div>{cityStateZip}</div>}
+                                  {ship.country && <div>{ship.country}</div>}
+                                  {order.user?.email && (
+                                    <div className="text-muted-foreground pt-0.5">
+                                      Buyer email: {order.user.email}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="text-xs text-muted-foreground italic">
+                                  Shipping address hidden after shipment.
+                                </div>
+                              )
+                            ) : (
+                              <div className="text-xs italic text-muted-foreground">
+                                No shipping address on file.
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Total: </span>
+                                <span className="font-medium">
+                                  ${order.totalPrice?.toFixed(2) || '0.00'}
+                                </span>
+                              </div>
+                              {order.trackingNumber && (
+                                <div>
+                                  <span className="text-muted-foreground">Tracking: </span>
+                                  <span className="font-medium">{order.trackingNumber}</span>
+                                </div>
+                              )}
+                              {order.shippingCarrier && (
+                                <div className="col-span-2">
+                                  <span className="text-muted-foreground">Carrier: </span>
+                                  <span className="font-medium">{order.shippingCarrier}</span>
+                                </div>
                               )}
                             </div>
-                          </div>
-                          <Badge className={cn('border', getOfferStatusClass(order.status))}>
-                            {order.status === 'paid'
-                              ? 'Pending Shipment'
-                              : order.status === 'shipped'
-                                ? 'Shipped'
-                                : 'Delivered'}
-                          </Badge>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Total: </span>
-                            <span className="font-medium">
-                              ${order.totalPrice?.toFixed(2) || '0.00'}
-                            </span>
-                          </div>
-                          {order.trackingNumber && (
-                            <div>
-                              <span className="text-muted-foreground">Tracking: </span>
-                              <span className="font-medium">{order.trackingNumber}</span>
-                            </div>
-                          )}
-                          {order.shippingCarrier && (
-                            <div className="col-span-2">
-                              <span className="text-muted-foreground">Carrier: </span>
-                              <span className="font-medium">{order.shippingCarrier}</span>
-                            </div>
-                          )}
-                        </div>
+                            {reviewSide?.existingReview && (
+                              <div className="rounded-md border border-[#23272F] bg-[#0D0D0D]/40 p-2 space-y-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <StarRating
+                                      value={reviewSide.existingReview.rating}
+                                      size={14}
+                                    />
+                                    <span className="text-xs text-muted-foreground">
+                                      Review from buyer
+                                    </span>
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {new Date(
+                                      reviewSide.existingReview.updatedAt ??
+                                        reviewSide.existingReview.createdAt
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                {reviewSide.existingReview.comment && (
+                                  <p className="text-xs text-foreground/80 whitespace-pre-wrap">
+                                    {reviewSide.existingReview.comment}
+                                  </p>
+                                )}
+                              </div>
+                            )}
 
-                        {order.status === 'paid' ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handleOpenShipDialog(order)}
-                            className="w-full"
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            Mark as Shipped
-                          </Button>
-                        ) : (
-                          <div className="text-xs text-muted-foreground">
-                            {order.shippedAt && (
-                              <>Shipped on: {new Date(order.shippedAt).toLocaleDateString()}</>
+                            {order.status === 'paid' ? (
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleOpenShipDialog(order)}
+                                  className="w-full"
+                                >
+                                  <ShoppingCart className="w-4 h-4 mr-2" />
+                                  Mark as Shipped
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedSaleTransaction(order)}
+                                  className="w-full"
+                                >
+                                  <Receipt className="w-4 h-4 mr-2" />
+                                  View transaction
+                                </Button>
+                                {reviewSide && (
+                                  <ReviewOrderButton side={reviewSide} onOpen={setReviewOrderId} />
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="text-xs text-muted-foreground">
+                                  {order.shippedAt && (
+                                    <>
+                                      Shipped on: {new Date(order.shippedAt).toLocaleDateString()}
+                                    </>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {reviewSide && (
+                                    <ReviewOrderButton
+                                      side={reviewSide}
+                                      onOpen={setReviewOrderId}
+                                    />
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedSaleTransaction(order)}
+                                  >
+                                    <Receipt className="w-4 h-4 mr-2" />
+                                    View transaction
+                                  </Button>
+                                </div>
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    ))
+                        );
+                      })}
+
+                      {soldItemsPageCount > 1 && (
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="text-xs text-muted-foreground">
+                            Page {soldItemsPage} of {soldItemsPageCount} •{' '}
+                            {filteredPurchasedOrders.length} total
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSoldItemsPage(p => Math.max(1, p - 1))}
+                              disabled={soldItemsPage === 1}
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setSoldItemsPage(p => Math.min(soldItemsPageCount, p + 1))
+                              }
+                              disabled={soldItemsPage === soldItemsPageCount}
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -2921,6 +3183,26 @@ export default function SellerShopManage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            <OrderItemDetailDialog
+              open={!!selectedSaleTransaction}
+              onOpenChange={open => {
+                if (!open) setSelectedSaleTransaction(null);
+              }}
+              transaction={
+                selectedSaleTransaction as unknown as Parameters<
+                  typeof OrderItemDetailDialog
+                >[0]['transaction']
+              }
+              variant="sale"
+            />
+            <LeaveReviewDialog
+              open={!!reviewOrderId}
+              orderId={reviewOrderId}
+              onOpenChange={open => {
+                if (!open) setReviewOrderId(null);
+              }}
+              invalidateQueryKeys={[['my-reviewable-orders'], ['seller-shop-orders-manage']]}
+            />
           </>
         )}
       </div>

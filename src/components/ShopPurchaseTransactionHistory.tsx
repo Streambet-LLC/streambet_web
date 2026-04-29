@@ -1,7 +1,8 @@
 import { useIsMobile } from '@/hooks/use-mobile';
 import React, { useMemo, useState } from 'react';
 import { Input } from './ui/input';
-import { Search } from 'lucide-react';
+import { Search, Truck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { Card, CardContent } from './ui/card';
@@ -11,6 +12,7 @@ import OrderItemDetailDialog from './OrderItemDetailDialog';
 import ReviewOrderButton from './reviews/ReviewOrderButton';
 import TableLoader from './TableLoader';
 import { ReviewableOrderSide } from '@/types/review';
+import { Button } from './ui/button';
 
 interface ShopPurchaseTransactionHistoryProps {
   /** Called with an orderId when the user clicks the review button on a row. */
@@ -21,9 +23,14 @@ const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryPro
   onOpenReview,
 }) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
 
-  const { data: transactions, refetch: refetchTransactions, isLoading } = useQuery({
+  const {
+    data: transactions,
+    refetch: refetchTransactions,
+    isLoading,
+  } = useQuery({
     queryKey: ['shop-orders'],
     queryFn: async () => {
       const data = await api.prize.getShopOrders();
@@ -113,6 +120,21 @@ const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryPro
                             {_.startCase(transaction.status)}
                           </span>
                         </div>
+                        {['paid', 'shipped'].includes(transaction.status) && (
+                          <div className="flex justify-end pt-1" onClick={e => e.stopPropagation()}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs"
+                              onClick={() =>
+                                navigate(`/seller/shop/manage?orderId=${transaction.id}`)
+                              }
+                            >
+                              <Truck className="w-3.5 h-3.5 mr-1.5" />
+                              {transaction.status === 'paid' ? 'Mark as Shipped' : 'View shipping'}
+                            </Button>
+                          </div>
+                        )}
                         {onOpenReview && reviewSideByOrderId.get(transaction.id) && (
                           <div className="flex justify-between items-center pt-1">
                             <span className="text-xs text-muted-foreground">Review</span>
@@ -137,6 +159,7 @@ const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryPro
                       <TableHead className="text-left">Prize</TableHead>
                       <TableHead className="text-right">Purchase Amount</TableHead>
                       <TableHead className="text-right">Status</TableHead>
+                      <TableHead className="text-right">Manage</TableHead>
                       {onOpenReview && <TableHead className="text-right">Review</TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -171,6 +194,21 @@ const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryPro
                         </TableCell>
                         <TableCell className="text-right">
                           {_.startCase(transaction.status)}
+                        </TableCell>
+                        <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+                          {['paid', 'shipped'].includes(transaction.status) ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs"
+                              onClick={() =>
+                                navigate(`/seller/shop/manage?orderId=${transaction.id}`)
+                              }
+                            >
+                              <Truck className="w-3.5 h-3.5 mr-1.5" />
+                              {transaction.status === 'paid' ? 'Ship' : 'View'}
+                            </Button>
+                          ) : null}
                         </TableCell>
                         {onOpenReview && (
                           <TableCell className="text-right" onClick={e => e.stopPropagation()}>
