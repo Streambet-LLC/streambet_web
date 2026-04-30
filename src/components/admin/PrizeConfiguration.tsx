@@ -26,8 +26,20 @@ import {
   CreatePrizeTierRequest,
   UpdatePrizeTierRequest,
   PrizeBrand,
+  PsaImportResult,
   Seller,
 } from '@/types/prize';
+import {
+  PSA_RATE_LIMIT_MESSAGE,
+  PSA_RATE_LIMIT_UNTIL_KEY,
+  normalizePsaBrand,
+  resolvePsaBrandFromImport,
+  parsePsaSlabGrade,
+  activatePsaRateLimitCooldown,
+  clearPsaRateLimitCooldown,
+  getStoredPsaRateLimitUntil,
+  isPsaRateLimitActive,
+} from '@/utils/psa-helpers';
 import { ItemImageGallery, type ItemImageInput } from '@/components/items/ItemImageGallery';
 import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
 import {
@@ -306,6 +318,12 @@ export const PrizeConfiguration = () => {
   const [itemImages, setItemImages] = useState<ItemImageInput[]>([]);
   const [coverImageIndex, setCoverImageIndex] = useState(0);
 
+  // PSA autofill state
+  const [psaCertNumber, setPsaCertNumber] = useState('');
+  const [psaImportResult, setPsaImportResult] = useState<PsaImportResult | null>(null);
+  const [psaRateLimitedUntil, setPsaRateLimitedUntil] = useState<number | null>(null);
+  const [isGradeAutofillFailed, setIsGradeAutofillFailed] = useState(false);
+
   /**
    * Admin auction details (winner + shipping address) for the item
    * currently in the edit dialog. Only fires for auction items that
@@ -431,7 +449,35 @@ export const PrizeConfiguration = () => {
     setUsdAmount('');
     resetAuctionConfig();
     isCreatingRef.current = false;
+    resetPsaState();
   };
+
+  // Reset PSA state
+  const resetPsaState = () => {
+    setPsaCertNumber('');
+    setPsaImportResult(null);
+    setIsGradeAutofillFailed(false);
+  };
+
+  // Initialize PSA rate limit from localStorage on mount
+  useEffect(() => {
+    const stored = getStoredPsaRateLimitUntil();
+    if (stored) {
+      setPsaRateLimitedUntil(stored);
+    }
+  }, []);
+
+  // Monitor PSA rate limit expiration
+  useEffect(() => {
+    if (!psaRateLimitedUntil) {
+      return;
+    }
+
+    if (Date.now() >= psaRateLimitedUntil) {
+      setPsaRateLimitedUntil(null);
+      clearPsaRateLimitCooldown();
+    }
+  }, [psaRateLimitedUntil]);
 
   // USD to Cadecoins conversion handlers (1 USD = 50 cadecoins)
   const handleUsdChange = (value: string) => {
@@ -554,6 +600,88 @@ export const PrizeConfiguration = () => {
       setDeletingTier(null);
     },
     onError: error => handleMutationError(error, 'Failed to delete item'),
+  });
+
+  // PSA autofill mutation
+  const psaImportMutation = useMutation({
+    mutationFn: (certNumber: string) => api.prize.importPsaCert(certNumber),
+    onSuccess: (result: PsaImportResult) => {
+      if (result.rateLimitedUntilTomorrow) {
+        const until = activatePsaRateLimitCooldown(result.rateLimitedUntil);
+        setPsaRateLimitedUntil(until);
+        toast({
+          title: 'PSA import limited',
+          description: PSA_RATE_LIMIT_MESSAGE,
+          variant: 'destructive',
+        });
+      }
+
+      setPsaImportResult(result);
+      const parsedSlabGrade = parsePsaSlabGrade(result);
+
+      const importedImages = result.imageUrls.map((imageUrl, index) => ({
+        id: `psa-${result.certNumber}-${index}`,
+        imageUrl,
+        isNew: false,
+      }));
+
+      const brand = resolvePsaBrandFromImport(result);
+
+      setFormData(prev => ({
+        ...prev,
+        name: result.title || prev.name,
+        // Leave description blank (don't auto-fill with title)
+        brand,
+        category: 'slab',
+        grade: parsedSlabGrade ?? prev.grade,
+      }));
+
+      if (parsedSlabGrade) {
+        setIsGradeAutofillFailed(false);
+      } else {
+        setIsGradeAutofillFailed(true);
+        toast({
+          title: 'PSA grade not auto-selected',
+          description:
+            'We could not parse this PSA grade. Your current grade was kept. Please confirm or update the slab grade.',
+          variant: 'destructive',
+        });
+      }
+
+      if (importedImages.length > 0) {
+        setItemImages(importedImages);
+        setCoverImageIndex(Math.min(result.coverImageIndex, importedImages.length - 1));
+      }
+
+      toast({
+        title: 'PSA import complete',
+        description: result.hasImages
+          ? 'Title, details, and images were filled from PSA.'
+          : 'Title and details were filled from PSA. No images were available for this cert.',
+      });
+    },
+    onError: (error: any) => {
+      const statusCode = error?.response?.status;
+      const errorCode = error?.response?.data?.errorCode;
+
+      if (statusCode === 429 || errorCode === 'PSA_RATE_LIMITED') {
+        const until = activatePsaRateLimitCooldown(error?.response?.data?.rateLimitedUntil);
+        setPsaRateLimitedUntil(until);
+        toast({
+          title: 'PSA import limited',
+          description: PSA_RATE_LIMIT_MESSAGE,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'PSA import failed',
+        description:
+          error?.response?.data?.message || error?.message || 'Unable to import PSA cert data.',
+        variant: 'destructive',
+      });
+    },
   });
 
   // Bulk update display order mutation
@@ -1136,6 +1264,7 @@ export const PrizeConfiguration = () => {
     // purchase-option fields that don't apply to a 1-of-1 auction.
     setSaleType(tier.saleType === 'auction' ? 'auction' : 'fixed_price');
     setEditingTier(tier);
+    resetPsaState();
   };
 
   if (isLoading) {
@@ -2169,6 +2298,99 @@ export const PrizeConfiguration = () => {
                 placeholder="e.g., PSA 10 Charizard Slab"
               />
             </div>
+
+            {/* PSA Autofill Section */}
+            <div className="space-y-2.5">
+              <Label htmlFor="psaCertNumber" className="text-base font-medium">
+                PSA Cert Number
+              </Label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  id="psaCertNumber"
+                  placeholder="Enter PSA cert number"
+                  value={psaCertNumber}
+                  onChange={e => setPsaCertNumber(e.target.value)}
+                  disabled={isPsaRateLimitActive(psaRateLimitedUntil)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => psaImportMutation.mutate(psaCertNumber)}
+                  disabled={
+                    psaImportMutation.isPending ||
+                    !psaCertNumber.trim() ||
+                    isPsaRateLimitActive(psaRateLimitedUntil)
+                  }
+                >
+                  {psaImportMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : null}
+                  Autofill from PSA
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Pulls the title, grade, and available PSA images into the listing form.
+              </p>
+              {isPsaRateLimitActive(psaRateLimitedUntil) && (
+                <p className="text-xs text-destructive">{PSA_RATE_LIMIT_MESSAGE}</p>
+              )}
+
+              {psaImportResult && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground space-y-2">
+                  <div className="font-semibold text-foreground">PSA Import Summary</div>
+                  <div>
+                    Population ({psaImportResult.cardGrade ? `PSA ${psaImportResult.cardGrade}` : 'this grade'}):{' '}
+                    {psaImportResult.psaPopulation?.gradePopulation !== null &&
+                    psaImportResult.psaPopulation?.gradePopulation !== undefined
+                      ? new Intl.NumberFormat().format(psaImportResult.psaPopulation.gradePopulation)
+                      : 'N/A'}
+                  </div>
+                  <div>
+                    <a
+                      href={
+                        psaImportResult.psaCertUrl ||
+                        `https://www.psacard.com/cert/${encodeURIComponent(psaImportResult.certNumber)}/psa`
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary underline underline-offset-2"
+                    >
+                      View on PSA
+                    </a>
+                  </div>
+
+                  <div className="pt-1">
+                    <div className="font-semibold text-foreground">Item Information</div>
+                    <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                      <div className="text-foreground">
+                        <span className="text-muted-foreground">Cert Number:</span>{' '}
+                        {psaImportResult.itemInformation?.certNumber || 'N/A'}
+                      </div>
+                      <div className="text-foreground">
+                        <span className="text-muted-foreground">Item Grade:</span>{' '}
+                        {psaImportResult.itemInformation?.itemGrade ?? 'N/A'}
+                      </div>
+                      <div className="text-foreground">
+                        <span className="text-muted-foreground">Brand/Title:</span>{' '}
+                        {psaImportResult.itemInformation?.brandTitle ?? 'N/A'}
+                      </div>
+                      <div className="text-foreground">
+                        <span className="text-muted-foreground">Subject:</span>{' '}
+                        {psaImportResult.itemInformation?.subject ?? 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {isGradeAutofillFailed && (
+                <p className="text-xs text-destructive border-l-2 border-destructive pl-2">
+                  PSA grade could not be automatically parsed. Please review and set the grade
+                  manually.
+                </p>
+              )}
+            </div>
+
             <div className="space-y-2.5">
               <Label htmlFor="category" className="text-base font-medium">
                 Item Category <span className="text-destructive">*</span>
