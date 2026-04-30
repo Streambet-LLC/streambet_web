@@ -96,6 +96,8 @@ export interface PrizeConfiguration {
   createdBy: string | null;
   createdByUsername: string | null;
   createdByShopName: string | null;
+  /** True if the seller has approved crypto (USDC) payments. */
+  sellerCryptoEnabled?: boolean;
   updatedBy: string | null;
   isProOnly: boolean;
   proEarlyAccessUntil: string | null;
@@ -277,7 +279,7 @@ export const SHIPPING_CARRIERS = [
   'Other',
 ] as const;
 
-export type ShippingCarrier = typeof SHIPPING_CARRIERS[number];
+export type ShippingCarrier = (typeof SHIPPING_CARRIERS)[number];
 
 export interface ShippingAddress {
   firstName: string;
@@ -376,7 +378,7 @@ export interface UserAddress {
 export interface PrizePurchaseRequest {
   prizeConfigId: string;
   shippingAddress: ShippingAddress;
-  paymentMethod: 'coins' | 'usd' | 'combined';
+  paymentMethod: 'coins' | 'usd' | 'combined' | 'crypto';
   coinsAmount: number; // Amount of coins to use (0 for USD-only)
   usdAmount: number; // Amount in USD (0 for coins-only)
   totalPrice: number; // Total price in USD (coins converted to USD)
@@ -388,7 +390,7 @@ export interface PrizeOrder {
   userId: string;
   prizeConfigId: string;
   shippingAddress: ShippingAddress;
-  paymentMethod: 'coins' | 'usd' | 'combined';
+  paymentMethod: 'coins' | 'usd' | 'combined' | 'crypto';
   coinsDeducted: number;
   usdCharged: number;
   totalPrice: number;

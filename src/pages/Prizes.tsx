@@ -54,6 +54,7 @@ export default function Prizes() {
     name: string;
     amount: number;
     createdBy: string | null;
+    sellerCryptoEnabled: boolean;
   } | null>(null);
   const [selectedPrizeForOffer, setSelectedPrizeForOffer] = useState<PrizeDisplay | null>(null);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
@@ -192,6 +193,10 @@ export default function Prizes() {
           createdBy: prize.createdBy || 'cardcade',
           createdByUsername: prize.createdByUsername || 'cardcade',
           sellerDisplayName: prize.createdByShopName || prize.createdByUsername || 'CardCade Shop',
+          // Forward the seller's crypto-enabled flag so the checkout modal
+          // launched from the global shop page can show the USDC option.
+          sellerCryptoEnabled:
+            (prize as { sellerCryptoEnabled?: boolean }).sellerCryptoEnabled ?? false,
           isProOnly: prize.isProOnly ?? false,
           proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
           viewCount: prize.viewCount ?? 0,
@@ -318,7 +323,6 @@ export default function Prizes() {
     searchQuery,
   ]);
 
-
   const prizesByCategory = useMemo(() => {
     const grouped: Record<string, PrizeDisplay[]> = { slab: [], sealed: [], raw: [], other: [] };
     filteredPrizes.forEach(p => {
@@ -426,7 +430,11 @@ export default function Prizes() {
                         >
                           {prize.saleType === 'auction' && prize.auction ? (
                             <AuctionCard
-                              prize={prize as PrizeDisplay & { auction: NonNullable<PrizeDisplay['auction']> }}
+                              prize={
+                                prize as PrizeDisplay & {
+                                  auction: NonNullable<PrizeDisplay['auction']>;
+                                }
+                              }
                               isFeatured
                             />
                           ) : (
@@ -438,6 +446,9 @@ export default function Prizes() {
                                   name: prize.name,
                                   amount: prize.amount ?? 0,
                                   createdBy: prize.createdBy ?? null,
+                                  sellerCryptoEnabled:
+                                    (prize as { sellerCryptoEnabled?: boolean })
+                                      .sellerCryptoEnabled ?? false,
                                 })
                               }
                               onOfferClick={handleOfferClick}
@@ -846,6 +857,9 @@ export default function Prizes() {
                                       name: prize.name,
                                       amount: prize.amount ?? 0,
                                       createdBy: (fullPrize as any)?.createdBy ?? null,
+                                      sellerCryptoEnabled:
+                                        (fullPrize as { sellerCryptoEnabled?: boolean })
+                                          ?.sellerCryptoEnabled ?? false,
                                     });
                                   }}
                                   onOfferClick={handleOfferClick}
@@ -892,6 +906,7 @@ export default function Prizes() {
           userCadeCoins={userCadeCoins}
           allowCadeCoins={!selectedPrizeForCheckout.createdBy}
           isShopItem={!!selectedPrizeForCheckout.createdBy}
+          sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
         />
       )}
 

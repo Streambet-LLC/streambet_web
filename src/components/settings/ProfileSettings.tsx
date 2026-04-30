@@ -10,6 +10,7 @@ import { NotificationSettings } from './NotificationSettings';
 import { SubscriptionSettings } from './SubscriptionSettings';
 import { useAuthContext } from '@/contexts/AuthContext';
 import ReferralSettings from './ReferralSettings';
+import { CryptoSettings } from './CryptoSettings';
 
 const formSchema = z.object({
   avatar: z.any().optional(),
@@ -42,6 +43,7 @@ export const ProfileSettings = () => {
     { key: 'subscription', label: 'CardCade Pro' },
     { key: 'referrals', label: 'Referrals' },
     { key: 'notifications', label: 'Notifications' },
+    { key: 'crypto', label: 'Crypto' },
   ];
 
   return (
@@ -59,6 +61,7 @@ export const ProfileSettings = () => {
       {activeTab === 'notifications' && <NotificationSettings />}
       {activeTab === 'referrals' && <ReferralSettings />}
       {activeTab === 'subscription' && <SubscriptionSettings />}
+      {activeTab === 'crypto' && <CryptoSettings />}
     </div>
   );
 };

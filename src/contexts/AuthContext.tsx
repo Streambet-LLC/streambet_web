@@ -12,6 +12,8 @@ interface Session {
   isSeller?: boolean;
   isProSubscriber?: boolean;
   auctionsEnabled?: boolean;
+  cryptoPaymentsEnabled?: boolean;
+  solanaWallet?: string | null;
   user?: {
     id: string;
     email: string;

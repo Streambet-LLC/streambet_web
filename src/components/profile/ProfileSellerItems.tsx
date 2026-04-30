@@ -34,6 +34,7 @@ export default function ProfileSellerItems({
     id: string;
     name: string;
     amount: number;
+    sellerCryptoEnabled: boolean;
   } | null>(null);
   const [showFeaturedModal, setShowFeaturedModal] = useState(false);
 
@@ -72,6 +73,8 @@ export default function ProfileSellerItems({
         brand: prize.brand,
         displayOrder: prize.sellerDisplayOrderShop ?? prize.displayOrderShop ?? 999,
         createdBy: prize.createdBy ?? null,
+        sellerCryptoEnabled:
+          (prize as { sellerCryptoEnabled?: boolean }).sellerCryptoEnabled ?? false,
         isProOnly: prize.isProOnly ?? false,
         proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
         viewCount: prize.viewCount ?? 0,
@@ -105,9 +108,7 @@ export default function ProfileSellerItems({
     featuredIds = new Set(displayItems.map(i => i.id));
   } else {
     // Non-PRO: show all items, no featured badges
-    displayItems = [...allItems].sort(
-      (a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999)
-    );
+    displayItems = [...allItems].sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
     featuredIds = new Set();
   }
 
@@ -136,10 +137,7 @@ export default function ProfileSellerItems({
     featuredIds?: Set<string>;
     onItemClick: (prize: PrizeDisplay) => void;
   }) => (
-    <Carousel
-      opts={{ align: 'start', loop: false, skipSnaps: true }}
-      className="w-full"
-    >
+    <Carousel opts={{ align: 'start', loop: false, skipSnaps: true }} className="w-full">
       <CarouselContent className="-ml-3">
         {items.map(item => {
           const imageUrl = item.imageUrls?.[item.coverImageIndex ?? 0] || item.imageUrl || null;
@@ -211,9 +209,7 @@ export default function ProfileSellerItems({
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <Store className="w-5 h-5" />
           Shop Items
-          <span className="text-sm font-normal text-muted-foreground">
-            ({displayItems.length})
-          </span>
+          <span className="text-sm font-normal text-muted-foreground">({displayItems.length})</span>
         </h2>
         <div className="flex items-center gap-3">
           {isOwnProfile && isProSubscriber && (
@@ -244,6 +240,8 @@ export default function ProfileSellerItems({
             id: prize.id,
             name: prize.name,
             amount: prize.amount ?? 0,
+            sellerCryptoEnabled:
+              (prize as { sellerCryptoEnabled?: boolean }).sellerCryptoEnabled ?? false,
           })
         }
       />
@@ -259,15 +257,13 @@ export default function ProfileSellerItems({
           userCadeCoins={userCadeCoins}
           allowCadeCoins={false}
           isShopItem={true}
+          sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
         />
       )}
 
       {/* Featured Items Management Modal */}
       {isOwnProfile && isProSubscriber && (
-        <FeaturedItemsModal
-          open={showFeaturedModal}
-          onClose={() => setShowFeaturedModal(false)}
-        />
+        <FeaturedItemsModal open={showFeaturedModal} onClose={() => setShowFeaturedModal(false)} />
       )}
     </div>
   );
