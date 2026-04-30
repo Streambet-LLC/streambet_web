@@ -62,6 +62,19 @@ import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
 import { getThumbnailUrl } from '@/utils/helper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ebayFeatureConfig } from '@/config/ebay-feature';
+import {
+  PSA_RATE_LIMIT_MESSAGE,
+  PSA_RATE_LIMIT_UNTIL_KEY,
+  normalizePsaBrand,
+  resolvePsaBrandFromImport,
+  normalizeSlabGradeValue,
+  parsePsaSlabGrade,
+  getTomorrowStartMs,
+  activatePsaRateLimitCooldown,
+  clearPsaRateLimitCooldown,
+  getStoredPsaRateLimitUntil,
+  isPsaRateLimitActive,
+} from '@/utils/psa-helpers';
 
 interface SellerOfferOrder {
   id: string;
@@ -118,8 +131,6 @@ interface SellerPurchasedOrder {
 }
 
 export default function SellerShopManage() {
-  const PSA_RATE_LIMIT_MESSAGE = 'PSA is rate-limiting requests right now. Try again tomorrow.';
-  const PSA_RATE_LIMIT_UNTIL_KEY = 'sellerShopManage.psaRateLimitedUntil';
 
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
@@ -176,7 +187,7 @@ export default function SellerShopManage() {
     imageUrl: '',
     amount: 0,
     stock: 1,
-    purchaseOption: 'buy_only' as 'buy_only' | 'offers_only' | 'both',
+    purchaseOption: 'both' as 'buy_only' | 'offers_only' | 'both',
     brand: 'pokemon' as PrizeBrand,
     category: 'slab' as 'raw' | 'slab' | 'sealed' | 'other',
     grade: '' as string,
@@ -190,86 +201,13 @@ export default function SellerShopManage() {
     auctionReservePriceUsd: 0,
   });
 
-  const normalizePsaBrand = (brand: string | null | undefined): PrizeBrand => {
-    const normalized = (brand || '').toLowerCase().trim();
-    if (normalized.includes('pokemon')) return 'pokemon';
-    if (normalized.includes('one piece')) return 'one_piece';
-    if (normalized.includes('sports')) return 'sports';
-    return 'other';
-  };
-
-  const normalizeSlabGradeValue = (raw: number): string => {
-    const clamped = Math.min(10, Math.max(1, raw));
-    const normalized = Number.isInteger(clamped)
-      ? clamped
-      : Math.min(9.5, Math.floor(clamped) + 0.5);
-    return String(normalized);
-  };
-
-  const parsePsaSlabGrade = (result: PsaImportResult): string | null => {
-    const candidates = [
-      result.cardGrade,
-      result.itemInformation?.itemGrade,
-      result.gradeDescription,
-    ].filter((value): value is string => Boolean(value && value.trim()));
-
-    for (const candidate of candidates) {
-      const trimmed = candidate.trim();
-      const direct = Number(trimmed);
-      if (Number.isFinite(direct)) {
-        return normalizeSlabGradeValue(direct);
-      }
-
-      // Handles values like "GEM MT 10", "MINT 9Q", "8.5".
-      const match = trimmed.match(/(\d+(?:\.\d+)?)(?:\s*[Qq])?\s*$/);
-      if (!match) {
-        continue;
-      }
-
-      const parsed = Number(match[1]);
-      if (Number.isFinite(parsed)) {
-        return normalizeSlabGradeValue(parsed);
-      }
-    }
-
-    return null;
-  };
-
-  const getTomorrowStartMs = () => {
-    const tomorrow = new Date();
-    tomorrow.setHours(24, 0, 0, 0);
-    return tomorrow.getTime();
-  };
-
-  const clearPsaRateLimitCooldown = () => {
-    setPsaRateLimitedUntil(null);
-    localStorage.removeItem(PSA_RATE_LIMIT_UNTIL_KEY);
-  };
-
-  const activatePsaRateLimitCooldown = (untilIso?: string | null) => {
-    const parsed = untilIso ? Date.parse(untilIso) : NaN;
-    const fallback = getTomorrowStartMs();
-    const until = Number.isFinite(parsed) ? Math.max(parsed, Date.now()) : fallback;
-
-    setPsaRateLimitedUntil(until);
-    localStorage.setItem(PSA_RATE_LIMIT_UNTIL_KEY, String(until));
-  };
-
-  const isPsaRateLimited = Boolean(psaRateLimitedUntil && Date.now() < psaRateLimitedUntil);
-
   useEffect(() => {
-    const stored = localStorage.getItem(PSA_RATE_LIMIT_UNTIL_KEY);
+    const stored = getStoredPsaRateLimitUntil();
     if (!stored) {
       return;
     }
 
-    const until = Number(stored);
-    if (!Number.isFinite(until) || Date.now() >= until) {
-      localStorage.removeItem(PSA_RATE_LIMIT_UNTIL_KEY);
-      return;
-    }
-
-    setPsaRateLimitedUntil(until);
+    setPsaRateLimitedUntil(stored);
   }, []);
 
   useEffect(() => {
@@ -278,6 +216,7 @@ export default function SellerShopManage() {
     }
 
     if (Date.now() >= psaRateLimitedUntil) {
+      setPsaRateLimitedUntil(null);
       clearPsaRateLimitCooldown();
     }
   }, [psaRateLimitedUntil]);
@@ -669,7 +608,8 @@ export default function SellerShopManage() {
     mutationFn: (certNumber: string) => api.prize.importPsaCert(certNumber),
     onSuccess: (result: PsaImportResult) => {
       if (result.rateLimitedUntilTomorrow) {
-        activatePsaRateLimitCooldown(result.rateLimitedUntil);
+        const until = activatePsaRateLimitCooldown(result.rateLimitedUntil);
+        setPsaRateLimitedUntil(until);
         toast({
           title: 'PSA import limited',
           description: PSA_RATE_LIMIT_MESSAGE,
@@ -686,11 +626,13 @@ export default function SellerShopManage() {
         isNew: false,
       }));
 
+      const brand = resolvePsaBrandFromImport(result);
+
       setForm(prev => ({
         ...prev,
         name: result.title || prev.name,
-        description: result.description || result.title || prev.description,
-        brand: normalizePsaBrand(result.brand),
+        description: prev.description,
+        brand,
         category: 'slab',
         grade: parsedSlabGrade ?? prev.grade,
       }));
@@ -724,7 +666,8 @@ export default function SellerShopManage() {
       const errorCode = error?.response?.data?.errorCode;
 
       if (statusCode === 429 || errorCode === 'PSA_RATE_LIMITED') {
-        activatePsaRateLimitCooldown(error?.response?.data?.rateLimitedUntil);
+        const until = activatePsaRateLimitCooldown(error?.response?.data?.rateLimitedUntil);
+        setPsaRateLimitedUntil(until);
         toast({
           title: 'PSA import limited',
           description: PSA_RATE_LIMIT_MESSAGE,
@@ -1206,7 +1149,7 @@ export default function SellerShopManage() {
       imageUrl: '',
       amount: 0,
       stock: 1,
-      purchaseOption: 'buy_only',
+      purchaseOption: 'both',
       brand: 'pokemon',
       category: 'slab',
       grade: '',
@@ -1747,14 +1690,14 @@ export default function SellerShopManage() {
                         placeholder="Enter PSA cert number"
                         value={psaCertNumber}
                         onChange={e => setPsaCertNumber(e.target.value)}
-                        disabled={isPsaRateLimited}
+                         disabled={isPsaRateLimitActive(psaRateLimitedUntil)}
                       />
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => psaImportMutation.mutate(psaCertNumber)}
                         disabled={
-                          psaImportMutation.isPending || !psaCertNumber.trim() || isPsaRateLimited
+                            psaImportMutation.isPending || !psaCertNumber.trim() || isPsaRateLimitActive(psaRateLimitedUntil)
                         }
                       >
                         {psaImportMutation.isPending ? (
@@ -1766,7 +1709,7 @@ export default function SellerShopManage() {
                     <p className="text-xs text-muted-foreground">
                       Pulls the title, grade, and available PSA images into the listing form.
                     </p>
-                    {isPsaRateLimited && (
+                      {isPsaRateLimitActive(psaRateLimitedUntil) && (
                       <p className="text-xs text-destructive">{PSA_RATE_LIMIT_MESSAGE}</p>
                     )}
 
