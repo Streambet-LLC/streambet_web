@@ -404,7 +404,7 @@ export default function Prizes() {
             {featuredPrizes.length > 0 && (
               <>
                 {session && (
-                  <h2 className="text-2xl font-bold px-2">
+                  <h2 className="text-4xl font-bold px-2">
                     {featured.mode === 'auctions' ? 'Auctions:' : 'Featured Items:'}
                   </h2>
                 )}
