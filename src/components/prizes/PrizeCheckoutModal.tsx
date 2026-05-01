@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Info, Check, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { prizeAPI } from '@/integrations/api/client';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
@@ -20,6 +21,11 @@ import { useValidateDiscountCode } from '@/hooks/useCart';
 import type { PrizePurchaseRequest } from '@/types/prize';
 import type { ValidateDiscountCodeResponse } from '@/types/cart';
 import { CryptoCheckoutButton } from '@/components/crypto/CryptoCheckoutButton';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { PublicKey } from '@solana/web3.js';
+import { buyerWaiverPda } from '@/integrations/solana/pdas';
+import { cryptoAPI } from '@/integrations/api/cryptoAPI';
 
 type PaymentMethod = 'coins' | 'usd' | 'combined' | 'crypto';
 
@@ -40,6 +46,10 @@ const SHIPPING_FEE_USD = 5; // $5 shipping fee
 const SHIPPING_FEE_COINS = SHIPPING_FEE_USD * COINS_TO_USD; // 250 coins
 const SHIPPING_FEE_CENTS = SHIPPING_FEE_USD * 100;
 const BUYER_FEE_PERCENT = 3; // 3% buyer service fee on USD payments
+// On-chain buyer fee charged by the marketplace contract (basis points).
+// Mirrors `BUYER_FEE_BPS` in cardcade-contracts (default 50 = 0.5%).
+// Waivable per-buyer via `grant_buyer_waiver` (admin-only PDA).
+const CRYPTO_BUYER_FEE_BPS = 50;
 
 export default function PrizeCheckoutModal({
   isOpen,
@@ -53,6 +63,34 @@ export default function PrizeCheckoutModal({
   sellerCryptoEnabled = false,
 }: PrizeCheckoutModalProps) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { publicKey: walletPublicKey, disconnect: disconnectWallet } = useWallet();
+  const { connection } = useConnection();
+  const cryptoWalletConnected = !!walletPublicKey;
+
+  // Fetch the marketplace program id once so we can derive the buyer-waiver
+  // PDA. Cheap (single GET) and cached across modal opens.
+  const { data: cryptoConfig } = useQuery({
+    queryKey: ['cryptoConfig'],
+    queryFn: cryptoAPI.config,
+    staleTime: 60 * 60 * 1000,
+  });
+
+  // Check on-chain whether the connected wallet has a BuyerWaiver PDA. If it
+  // does, the contract charges 0% buyer fee for this user; otherwise the
+  // standard 0.5% applies.
+  const { data: cryptoBuyerFeeWaived = false } = useQuery({
+    queryKey: ['cryptoBuyerWaiver', walletPublicKey?.toBase58(), cryptoConfig?.programId],
+    enabled: !!walletPublicKey && !!cryptoConfig?.programId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      if (!walletPublicKey || !cryptoConfig?.programId) return false;
+      const programId = new PublicKey(cryptoConfig.programId);
+      const [waiver] = buyerWaiverPda(programId, walletPublicKey);
+      const info = await connection.getAccountInfo(waiver);
+      return !!info;
+    },
+  });
 
   // Amount is always in CadeCoins (50 coins = $1 USD)
   const prizeAmountInCoins = prizeAmount;
@@ -67,6 +105,16 @@ export default function PrizeCheckoutModal({
     const buyerFeeCents = Math.round(itemSubtotalCents * (BUYER_FEE_PERCENT / 100));
     return buyerFeeCents / 100;
   };
+
+  // Crypto total in USDC: item + shipping + on-chain buyer fee (0.5% on the
+  // item price only, mirroring `pay_invoice` in the marketplace contract).
+  // If the buyer holds a `BuyerWaiver` PDA, the fee is 0.
+  const cryptoItemUsd = (totalAmount - SHIPPING_FEE_COINS) / COINS_TO_USD;
+  const cryptoShippingUsd = SHIPPING_FEE_USD;
+  const cryptoBuyerFeeUsd = cryptoBuyerFeeWaived
+    ? 0
+    : Math.round(cryptoItemUsd * 100 * (CRYPTO_BUYER_FEE_BPS / 10000)) / 100;
+  const cryptoTotalUsd = cryptoItemUsd + cryptoShippingUsd + cryptoBuyerFeeUsd;
 
   const { data: userAddress, isLoading: isLoadingAddress } = useQuery({
     queryKey: ['userAddress'],
@@ -124,13 +172,16 @@ export default function PrizeCheckoutModal({
 
     setCoinsAmount(0);
     setCombinedCoinsAmount(0);
-    setPaymentMethod('usd');
+    // Don't clobber a crypto selection — only force USD on initial mount
+    // when no method has been picked yet.
+    setPaymentMethod(prev => (prev === 'crypto' ? prev : 'usd'));
     setUsdAmount(parseFloat((totalAmount / COINS_TO_USD).toFixed(2)));
   }, [allowCadeCoins, totalAmount]);
 
   useEffect(() => {
     if (!allowCadeCoins) {
-      setPaymentMethod('usd');
+      // Shop item path: USD or crypto are both valid, leave the user's
+      // selection alone. Just keep `usdAmount` in sync for display.
       setCombinedCoinsAmount(0);
       setUsdAmount(parseFloat((totalAmount / COINS_TO_USD).toFixed(2)));
       return;
@@ -309,8 +360,20 @@ export default function PrizeCheckoutModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={handleClose} modal={false}>
+      {/*
+        modal={false} so the Solana wallet-adapter portal (Phantom/MetaMask
+        picker) stays clickable. Manual dim overlay below preserves the
+        modal look. We intentionally do NOT make it close-on-click so
+        clicks bubbling up from the wallet picker don't dismiss checkout.
+        Use the X button or Escape to close.
+      */}
+      {isOpen && <div className="fixed inset-0 z-40 bg-black/80" aria-hidden="true" />}
+      <DialogContent
+        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto z-50"
+        onInteractOutside={e => e.preventDefault()}
+        onPointerDownOutside={e => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="text-2xl">{prizeName} - Checkout</DialogTitle>
           <DialogDescription>
@@ -501,13 +564,62 @@ export default function PrizeCheckoutModal({
                   <div className="flex-1">
                     <div className="font-medium">Pay with USDC (Solana)</div>
                     <div className="text-sm text-muted-foreground">
-                      ~${(totalAmount / COINS_TO_USD).toFixed(2)} USDC + on-chain buyer fee
+                      ${cryptoTotalUsd.toFixed(2)} USDC
+                      {cryptoBuyerFeeWaived && (
+                        <span className="ml-1 text-emerald-500">(buyer fee waived)</span>
+                      )}
                     </div>
                   </div>
                 </label>
               )}
             </div>
           </div>
+
+          {paymentMethod === 'crypto' && !cryptoWalletConnected && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="space-y-2">
+                <p className="text-sm">
+                  Connect a Solana wallet (Phantom, Solflare, etc.) to pay with USDC.
+                </p>
+                <WalletMultiButton />
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {paymentMethod === 'crypto' && cryptoWalletConnected && !cryptoOrderId && (
+            <Alert>
+              <Check className="h-4 w-4" />
+              <AlertDescription className="space-y-2">
+                <div>
+                  Wallet connected:{' '}
+                  <span className="font-mono text-xs">
+                    {walletPublicKey?.toBase58().slice(0, 6)}…
+                    {walletPublicKey?.toBase58().slice(-6)}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">Wrong wallet?</span>
+                  <button
+                    type="button"
+                    className="underline hover:text-primary"
+                    onClick={async () => {
+                      try {
+                        await disconnectWallet();
+                      } catch {
+                        /* ignore */
+                      }
+                    }}
+                  >
+                    Disconnect
+                  </button>
+                  <span className="text-muted-foreground">
+                    or switch accounts inside your wallet extension, then click Pay with USDC again.
+                  </span>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {paymentMethod === 'combined' && (
             <div className="space-y-3 p-4 bg-muted rounded-lg">
@@ -688,7 +800,9 @@ export default function PrizeCheckoutModal({
                       : paymentMethod === 'usd'
                         ? `Total: $${(totalPrice + getBuyerFeeUsd(usdAmount)).toFixed(2)} • Pay via card`
                         : paymentMethod === 'crypto'
-                          ? `Total: ~$${usdAmount.toFixed(2)} USDC • on-chain buyer fee added by contract`
+                          ? `Total: $${cryptoTotalUsd.toFixed(2)} USDC${
+                              cryptoBuyerFeeWaived ? ' (buyer fee waived)' : ''
+                            }`
                           : paymentMethod === 'combined'
                             ? `Total: ${roundDownCoinAmount(combinedCoinsAmount).toLocaleString()} coins + $${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} card`
                             : ''}
@@ -708,7 +822,8 @@ export default function PrizeCheckoutModal({
                     !formData.state ||
                     !formData.zipCode ||
                     !formData.country ||
-                    (paymentMethod === 'coins' && !hasEnoughCoins)
+                    (paymentMethod === 'coins' && !hasEnoughCoins) ||
+                    (paymentMethod === 'crypto' && !cryptoWalletConnected)
                   }
                 >
                   {createOrderMutation.isPending ? (
@@ -725,8 +840,10 @@ export default function PrizeCheckoutModal({
                   ) : paymentMethod === 'crypto' ? (
                     cryptoOrderId ? (
                       'Order created — pay below'
+                    ) : !cryptoWalletConnected ? (
+                      'Connect a Solana wallet to continue'
                     ) : (
-                      `Create Order - ~$${usdAmount.toFixed(2)} USDC`
+                      `Create Order - $${cryptoTotalUsd.toFixed(2)} USDC`
                     )
                   ) : (
                     `Complete Purchase - $${(combinedCoinsAmount / COINS_TO_USD + usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)}`
@@ -745,11 +862,12 @@ export default function PrizeCheckoutModal({
                         queryClient.invalidateQueries({ queryKey: ['userOrders'] });
                         queryClient.invalidateQueries({ queryKey: ['userProfile'] });
                         queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
-                        toast({
-                          title: 'Payment confirmed',
-                          description: `Your ${prizeName} order has been paid.`,
-                        });
+                        queryClient.invalidateQueries({ queryKey: ['userAddress'] });
+                        const targetOrderId = cryptoOrderId;
                         handleClose();
+                        if (targetOrderId) {
+                          navigate(`/purchase-success?orderId=${targetOrderId}&source=crypto`);
+                        }
                       }}
                       className="w-full"
                     />

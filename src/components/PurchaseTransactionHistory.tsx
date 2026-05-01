@@ -12,6 +12,30 @@ import ReviewOrderButton from './reviews/ReviewOrderButton';
 import TableLoader from './TableLoader';
 import { ReviewableOrderSide } from '@/types/review';
 
+/**
+ * Map an order's `paymentMethod` to a user-friendly currency label.
+ * 'crypto' is rendered as 'USDC' since that's the only supported on-chain
+ * currency today.
+ */
+function formatPaymentLabel(method?: string): string {
+  if (!method) return '';
+  if (method === 'crypto') return 'USDC';
+  return method.toUpperCase();
+}
+
+/**
+ * Format the right-side "Purchase Amount" cell. Crypto/USD use 2 decimals;
+ * coins/combined fall back to integer formatting.
+ */
+function formatPurchaseAmount(method: string | undefined, total: number | undefined): string {
+  const label = formatPaymentLabel(method);
+  if (total == null) return label;
+  if (method === 'crypto' || method === 'usd' || method === 'combined') {
+    return `${label} ${total.toFixed(2)}`;
+  }
+  return `${label} ${total.toLocaleString()}`;
+}
+
 interface PurchaseTransactionHistoryProps {
   /** Called with an orderId when the user clicks the review button on a row. */
   onOpenReview?: (orderId: string) => void;
@@ -97,8 +121,10 @@ const PurchaseTransactionHistory: React.FC<PurchaseTransactionHistoryProps> = ({
                               color: '#7AFF14',
                             }}
                           >
-                            {transaction.paymentMethod.toUpperCase()}{' '}
-                            {transaction.totalPrice.toLocaleString()}
+                            {formatPurchaseAmount(
+                              transaction.paymentMethod,
+                              transaction.totalPrice
+                            )}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -158,8 +184,10 @@ const PurchaseTransactionHistory: React.FC<PurchaseTransactionHistoryProps> = ({
                             color: '#7AFF14',
                           }}
                         >
-                          {transaction.paymentMethod.toUpperCase()}{' '}
-                          {transaction.totalPrice.toLocaleString()}
+                          {formatPurchaseAmount(
+                            transaction.paymentMethod,
+                            transaction.totalPrice
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           {_.startCase(transaction.status)}
