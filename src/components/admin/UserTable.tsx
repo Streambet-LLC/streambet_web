@@ -29,6 +29,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { EditUserDialog } from './EditUserDialog';
 import { roundDownCoinAmount } from '@/utils/format';
 import { CurrencyType } from '@/utils/currency';
+import { cryptoAPI } from '@/integrations/api/cryptoAPI';
 
 interface Props {
   searchUserQuery: string;
@@ -168,9 +169,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     onSuccess: (_data, variables) => {
       refetchProfiles();
       toast({
-        description: variables.isPro
-          ? 'Pro subscription revoked'
-          : 'Pro subscription granted',
+        description: variables.isPro ? 'Pro subscription revoked' : 'Pro subscription granted',
         variant: 'default',
       });
     },
@@ -206,6 +205,75 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
       refetchProfiles();
     },
   });
+
+  const toggleCryptoMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      enable,
+      sellerWallet,
+    }: {
+      userId: string;
+      enable: boolean;
+      sellerWallet: string | null;
+    }) => {
+      if (enable) {
+        // Approval-only flow: no wallet needed. Backend emails the seller and
+        // they connect their Solana wallet on next login (which will then
+        // automatically grant the on-chain allowance).
+        return await cryptoAPI.approveSeller(userId);
+      }
+      // Disable still needs the wallet to revoke the on-chain PDA, when one
+      // exists. If the seller never linked a wallet, just clear the DB flag
+      // by passing an empty string — backend will short-circuit on-chain.
+      return await cryptoAPI.disableSeller(userId, sellerWallet ?? '');
+    },
+    onSuccess: (
+      data: {
+        txSignature?: string | null;
+        alreadyOnChain?: boolean;
+        removedOnChain?: boolean;
+        emailSent?: boolean;
+        hasWalletOnFile?: boolean;
+      },
+      vars
+    ) => {
+      refetchProfiles();
+      if (vars.enable) {
+        const desc = data?.hasWalletOnFile
+          ? data?.alreadyOnChain
+            ? 'Crypto approved (wallet already on-chain).'
+            : `Crypto approved • on-chain tx ${String(data?.txSignature ?? '').slice(0, 8)}…`
+          : data?.emailSent
+            ? 'Approval email sent. Seller must connect their Solana wallet on next login.'
+            : 'Crypto already approved.';
+        toast({ description: desc, variant: 'default' });
+      } else {
+        toast({
+          description: data?.removedOnChain
+            ? `Crypto disabled • tx ${String(data?.txSignature ?? '').slice(0, 8)}…`
+            : 'Crypto disabled.',
+          variant: 'default',
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Crypto toggle failed',
+        description: error?.response?.data?.message || error?.message || 'Unknown error',
+        variant: 'destructive',
+      });
+      refetchProfiles();
+    },
+  });
+
+  const handleToggleCrypto = (user: any) => {
+    const isEnabled = !!user.cryptoPaymentsEnabled;
+    toggleCryptoMutation.mutate({
+      userId: user.id,
+      enable: !isEnabled,
+      sellerWallet: user.solanaWallet ?? null,
+    });
+  };
 
   const getDisplayedFee = (user: any) => {
     if (user?.effectiveSellerFeePercent !== null && user?.effectiveSellerFeePercent !== undefined) {
@@ -440,6 +508,19 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     />
                   </div>
 
+                  {/* Crypto payments */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Crypto (USDC):</span>
+                    <Switch
+                      checked={!!user.cryptoPaymentsEnabled}
+                      disabled={toggleCryptoMutation.isPending}
+                      style={{
+                        backgroundColor: user.cryptoPaymentsEnabled ? '#7AFF14' : undefined,
+                      }}
+                      onCheckedChange={() => handleToggleCrypto(user)}
+                    />
+                  </div>
+
                   {/* Actions Row */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <AddTokens
@@ -495,13 +576,14 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 <TableHead>Creator</TableHead>
                 <TableHead>Pro</TableHead>
                 <TableHead>Auctions</TableHead>
+                <TableHead>Crypto</TableHead>
                 <TableHead>Delete</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedUsers?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={17} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={18} className="text-center py-6 text-muted-foreground">
                     No users found matching
                   </TableCell>
                 </TableRow>
@@ -680,6 +762,19 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                             enabled: !user.auctionsEnabled,
                           });
                         }}
+                      />
+                    </TableCell>
+                    <TableCell
+                      className="cursor-pointer"
+                      title="Toggle crypto payments (USDC) for this seller"
+                    >
+                      <Switch
+                        checked={!!user.cryptoPaymentsEnabled}
+                        disabled={toggleCryptoMutation.isPending}
+                        style={{
+                          backgroundColor: user.cryptoPaymentsEnabled ? '#7AFF14' : undefined,
+                        }}
+                        onCheckedChange={() => handleToggleCrypto(user)}
                       />
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Delete">

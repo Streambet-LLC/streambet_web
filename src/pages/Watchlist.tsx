@@ -148,6 +148,7 @@ export default function Watchlist() {
             // Seller-owned items always have a creator id, so card-only.
             allowCadeCoins={!checkoutPrize.createdBy}
             isShopItem
+            sellerCryptoEnabled={checkoutPrize.sellerCryptoEnabled ?? false}
           />
         )}
       </div>

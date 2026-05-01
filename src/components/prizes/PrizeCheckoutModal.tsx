@@ -19,6 +19,9 @@ import { roundDownCoinAmount } from '@/utils/format';
 import { useValidateDiscountCode } from '@/hooks/useCart';
 import type { PrizePurchaseRequest } from '@/types/prize';
 import type { ValidateDiscountCodeResponse } from '@/types/cart';
+import { CryptoCheckoutButton } from '@/components/crypto/CryptoCheckoutButton';
+
+type PaymentMethod = 'coins' | 'usd' | 'combined' | 'crypto';
 
 interface PrizeCheckoutModalProps {
   isOpen: boolean;
@@ -29,6 +32,7 @@ interface PrizeCheckoutModalProps {
   userCadeCoins: number;
   allowCadeCoins?: boolean;
   isShopItem?: boolean; // If true, prizeAmount is in USD; if false/undefined, prizeAmount is in coins
+  sellerCryptoEnabled?: boolean; // If true, show 'Pay with USDC' option
 }
 
 const COINS_TO_USD = 50; // 50 coins = $1
@@ -46,6 +50,7 @@ export default function PrizeCheckoutModal({
   userCadeCoins,
   allowCadeCoins = true,
   isShopItem = false,
+  sellerCryptoEnabled = false,
 }: PrizeCheckoutModalProps) {
   const queryClient = useQueryClient();
 
@@ -72,9 +77,10 @@ export default function PrizeCheckoutModal({
     enabled: isOpen,
   });
 
-  const [paymentMethod, setPaymentMethod] = useState<'coins' | 'usd' | 'combined'>(
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     allowCadeCoins ? 'coins' : 'usd'
   );
+  const [cryptoOrderId, setCryptoOrderId] = useState<string | null>(null);
   const [coinsAmount, setCoinsAmount] = useState(
     allowCadeCoins && userCadeCoins >= totalAmount ? totalAmount : 0
   );
@@ -133,7 +139,7 @@ export default function PrizeCheckoutModal({
     const method = paymentMethod as string;
     if (method === 'coins') {
       setUsdAmount(0);
-    } else if (method === 'usd') {
+    } else if (method === 'usd' || method === 'crypto') {
       setUsdAmount(parseFloat((totalAmount / COINS_TO_USD).toFixed(2)));
     } else if (method === 'combined') {
       const maxCoins = Math.min(userCadeCoins, totalAmount);
@@ -209,6 +215,13 @@ export default function PrizeCheckoutModal({
 
       if (response.stripeSessionUrl) {
         window.location.href = response.stripeSessionUrl;
+      } else if (response.order?.paymentMethod === 'crypto') {
+        // Switch the modal into 'awaiting on-chain payment' mode.
+        setCryptoOrderId(response.order.id);
+        toast({
+          title: 'Order created',
+          description: 'Complete the payment with your Solana wallet below.',
+        });
       } else {
         toast({
           title: 'Success!',
@@ -409,7 +422,7 @@ export default function PrizeCheckoutModal({
                     type="radio"
                     value="coins"
                     checked={paymentMethod === 'coins'}
-                    onChange={e => setPaymentMethod(e.target.value as 'coins' | 'usd' | 'combined')}
+                    onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
                     className="mr-3"
                   />
                   <div className="flex-1">
@@ -435,7 +448,7 @@ export default function PrizeCheckoutModal({
                   type="radio"
                   value="usd"
                   checked={paymentMethod === 'usd'}
-                  onChange={e => setPaymentMethod(e.target.value as 'coins' | 'usd' | 'combined')}
+                  onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
                   className="mr-3"
                 />
                 <div className="flex-1">
@@ -458,13 +471,37 @@ export default function PrizeCheckoutModal({
                     type="radio"
                     value="combined"
                     checked={paymentMethod === 'combined'}
-                    onChange={e => setPaymentMethod(e.target.value as 'coins' | 'usd' | 'combined')}
+                    onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
                     className="mr-3"
                   />
                   <div className="flex-1">
                     <div className="font-medium">CadeCoins + Card</div>
                     <div className="text-sm text-muted-foreground">
                       Split payment between coins and USD
+                    </div>
+                  </div>
+                </label>
+              )}
+
+              {sellerCryptoEnabled && (
+                <label
+                  className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                  style={{
+                    borderColor:
+                      paymentMethod === 'crypto' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    value="crypto"
+                    checked={paymentMethod === 'crypto'}
+                    onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
+                    className="mr-3"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">Pay with USDC (Solana)</div>
+                    <div className="text-sm text-muted-foreground">
+                      ~${(totalAmount / COINS_TO_USD).toFixed(2)} USDC + on-chain buyer fee
                     </div>
                   </div>
                 </label>
@@ -650,9 +687,11 @@ export default function PrizeCheckoutModal({
                       ? `Total: ${roundDownCoinAmount(coinsAmount).toLocaleString()} CadeCoins`
                       : paymentMethod === 'usd'
                         ? `Total: $${(totalPrice + getBuyerFeeUsd(usdAmount)).toFixed(2)} • Pay via card`
-                        : paymentMethod === 'combined'
-                          ? `Total: ${roundDownCoinAmount(combinedCoinsAmount).toLocaleString()} coins + $${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} card`
-                          : ''}
+                        : paymentMethod === 'crypto'
+                          ? `Total: ~$${usdAmount.toFixed(2)} USDC • on-chain buyer fee added by contract`
+                          : paymentMethod === 'combined'
+                            ? `Total: ${roundDownCoinAmount(combinedCoinsAmount).toLocaleString()} coins + $${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} card`
+                            : ''}
                   </AlertDescription>
                 </Alert>
 
@@ -661,6 +700,7 @@ export default function PrizeCheckoutModal({
                   className="w-full"
                   disabled={
                     createOrderMutation.isPending ||
+                    !!cryptoOrderId ||
                     !formData.firstName ||
                     !formData.lastName ||
                     !formData.addressLine1 ||
@@ -682,10 +722,39 @@ export default function PrizeCheckoutModal({
                     `Complete Purchase - ${roundDownCoinAmount(coinsAmount).toLocaleString()} CadeCoins`
                   ) : paymentMethod === 'usd' ? (
                     `Complete Purchase - $${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)}`
+                  ) : paymentMethod === 'crypto' ? (
+                    cryptoOrderId ? (
+                      'Order created — pay below'
+                    ) : (
+                      `Create Order - ~$${usdAmount.toFixed(2)} USDC`
+                    )
                   ) : (
                     `Complete Purchase - $${(combinedCoinsAmount / COINS_TO_USD + usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)}`
                   )}
                 </Button>
+
+                {paymentMethod === 'crypto' && cryptoOrderId && (
+                  <div className="space-y-2 pt-2 border-t">
+                    <Label className="text-base font-semibold">Complete Payment</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Connect your Solana wallet (Phantom recommended) and approve the USDC payment.
+                    </p>
+                    <CryptoCheckoutButton
+                      orderId={cryptoOrderId}
+                      onPaid={() => {
+                        queryClient.invalidateQueries({ queryKey: ['userOrders'] });
+                        queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+                        queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
+                        toast({
+                          title: 'Payment confirmed',
+                          description: `Your ${prizeName} order has been paid.`,
+                        });
+                        handleClose();
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </form>
             )}
           </div>

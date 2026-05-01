@@ -44,6 +44,8 @@ import { DepositProvider } from './contexts/DepositContext';
 import Deposit from './components/deposit/Deposit';
 import Leaderboard from './pages/Leaderboard';
 import { CookiesProvider } from 'react-cookie';
+import { SolanaWalletProvider } from '@/integrations/solana/WalletProvider';
+import { RequireWalletConnectModal } from '@/components/crypto/RequireWalletConnectModal';
 import CreatorApplication from './pages/CreatorApplication';
 import SellerApplication from './pages/SellerApplication';
 import Prizes from './pages/Prizes';
@@ -77,90 +79,96 @@ const App = () => {
         <LocationRestrictionProvider>
           <CurrencyProvider>
             <CookiesProvider>
-              <AuthProvider>
-                <BettingStatusProvider>
-                  <BettingProvider>
-                    <DepositProvider>
-                      <BrowserRouter>
-                        <TooltipProvider>
-                          <Toaster />
-                          <Sonner />
-                          <CoinflowPurchaseProtection
-                            coinflowEnv={getCoinFlowEnv()}
-                            merchantId={getChargebackProtectionMerchantId()}
-                          />
-                          <LogoutEventHandlers />
-                          <Deposit />
-                          <Routes>
-                            {/* Auth Routes */}
-                            <Route element={<RouteGroup auth />}>
-                              <Route path="/login" element={<Login />} />
-                              <Route path="/signup" element={<SignUp />} />
-                            </Route>
+              <SolanaWalletProvider>
+                <AuthProvider>
+                  <BettingStatusProvider>
+                    <BettingProvider>
+                      <DepositProvider>
+                        <BrowserRouter>
+                          <TooltipProvider>
+                            <Toaster />
+                            <Sonner />
+                            <CoinflowPurchaseProtection
+                              coinflowEnv={getCoinFlowEnv()}
+                              merchantId={getChargebackProtectionMerchantId()}
+                            />
+                            <LogoutEventHandlers />
+                            <Deposit />
+                            <RequireWalletConnectModal />
+                            <Routes>
+                              {/* Auth Routes */}
+                              <Route element={<RouteGroup auth />}>
+                                <Route path="/login" element={<Login />} />
+                                <Route path="/signup" element={<SignUp />} />
+                              </Route>
 
-                            {/* Guarded Routes */}
-                            <Route element={<RouteGroup guard />}>
-                              <Route path="/admin" element={<Admin />} />
-                              <Route path="/creator" element={<Creator />} />
-                              <Route path="/withdraw" element={<Redeem />} />
-                              <Route path="/withdraw/verification" element={<Kyc />} />
-                              <Route
-                                path="/transactions"
-                                element={<Transactions key="transactions" />}
-                              />
-                              <Route
-                                path="/betting-history"
-                                element={<Transactions key="betting-redirect" />}
-                              />
-                              <Route
-                                path="/creator-payouts-history"
-                                element={<CreatorPayoutsHistoryPage />}
-                              />
-                              <Route path="/settings" element={<Settings />} />
-                              <Route path="/creator-application" element={<CreatorApplication />} />
-                              <Route path="/seller-application" element={<SellerApplication />} />
-                              <Route path="/seller/shop/manage" element={<SellerShopManage />} />
-                              <Route path="/daily-spin" element={<DailySpin />} />
-                              <Route path="/inbox" element={<Inbox />} />
-                              <Route path="/watchlist" element={<Watchlist />} />
-                              <Route path="/my-bids" element={<MyBids />} />
-                            </Route>
+                              {/* Guarded Routes */}
+                              <Route element={<RouteGroup guard />}>
+                                <Route path="/admin" element={<Admin />} />
+                                <Route path="/creator" element={<Creator />} />
+                                <Route path="/withdraw" element={<Redeem />} />
+                                <Route path="/withdraw/verification" element={<Kyc />} />
+                                <Route
+                                  path="/transactions"
+                                  element={<Transactions key="transactions" />}
+                                />
+                                <Route
+                                  path="/betting-history"
+                                  element={<Transactions key="betting-redirect" />}
+                                />
+                                <Route
+                                  path="/creator-payouts-history"
+                                  element={<CreatorPayoutsHistoryPage />}
+                                />
+                                <Route path="/settings" element={<Settings />} />
+                                <Route
+                                  path="/creator-application"
+                                  element={<CreatorApplication />}
+                                />
+                                <Route path="/seller-application" element={<SellerApplication />} />
+                                <Route path="/seller/shop/manage" element={<SellerShopManage />} />
+                                <Route path="/daily-spin" element={<DailySpin />} />
+                                <Route path="/inbox" element={<Inbox />} />
+                                <Route path="/watchlist" element={<Watchlist />} />
+                                <Route path="/my-bids" element={<MyBids />} />
+                              </Route>
 
-                            {/* Public Routes */}
-                            <Route path="/:username" element={<Profile />} />
-                            <Route path="/users/:username/reviews" element={<Reviews />} />
-                            <Route path="/stream/:id" element={<Stream />} />
-                            <Route path="/nonvideo/:id" element={<NonVideo />} />
-                            <Route path="/privacy" element={<Privacy />} />
-                            <Route path="/terms" element={<Terms />} />
-                            <Route path="/compliance" element={<Compliance />} />
-                            <Route path="/creators" element={<Creators />} />
-                            <Route path="/shops" element={<Shops />} />
-                            <Route path="/prizes" element={<Prizes />} />
-                            <Route path="/shop/item/:id" element={<ShopItemDetail />} />
-                            <Route path="/shop/:username" element={<ShopDetail />} />
-                            <Route path="/predictions" element={<Home />} />
-                            <Route path="/how-to-play" element={<HowToPlay />} />
-                            <Route path="/leaderboard" element={<Leaderboard />} />
-                            <Route path="/faq" element={<FAQ />} />
-                            <Route path="/auth/verify-email" element={<VerifyEmail />} />
-                            <Route path="/forgot-password" element={<ForgotPassword />} />
-                            <Route path="/reset-password" element={<ResetPassword />} />
-                            <Route path="/auth/google-callback" element={<GoogleCallback />} />
-                            <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
-                            <Route path="/purchase-success" element={<PurchaseSuccess />} />
-                            <Route path="/cart" element={<CartPage />} />
-                            <Route path="/shop" element={<Prizes />} />
-                            <Route path="/redemptions" element={<Redemptions />} />
-                            <Route path="/" element={<Prizes />} />
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </TooltipProvider>
-                      </BrowserRouter>
-                    </DepositProvider>
-                  </BettingProvider>
-                </BettingStatusProvider>
-              </AuthProvider>
+                              {/* Public Routes */}
+                              <Route path="/:username" element={<Profile />} />
+                              <Route path="/users/:username/reviews" element={<Reviews />} />
+                              <Route path="/stream/:id" element={<Stream />} />
+                              <Route path="/nonvideo/:id" element={<NonVideo />} />
+                              <Route path="/privacy" element={<Privacy />} />
+                              <Route path="/terms" element={<Terms />} />
+                              <Route path="/compliance" element={<Compliance />} />
+                              <Route path="/creators" element={<Creators />} />
+                              <Route path="/shops" element={<Shops />} />
+                              <Route path="/prizes" element={<Prizes />} />
+                              <Route path="/shop/item/:id" element={<ShopItemDetail />} />
+                              <Route path="/shop/:username" element={<ShopDetail />} />
+                              <Route path="/predictions" element={<Home />} />
+                              <Route path="/how-to-play" element={<HowToPlay />} />
+                              <Route path="/leaderboard" element={<Leaderboard />} />
+                              <Route path="/faq" element={<FAQ />} />
+                              <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                              <Route path="/forgot-password" element={<ForgotPassword />} />
+                              <Route path="/reset-password" element={<ResetPassword />} />
+                              <Route path="/auth/google-callback" element={<GoogleCallback />} />
+                              <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
+                              <Route path="/purchase-success" element={<PurchaseSuccess />} />
+                              <Route path="/cart" element={<CartPage />} />
+                              <Route path="/shop" element={<Prizes />} />
+                              <Route path="/redemptions" element={<Redemptions />} />
+                              <Route path="/" element={<Prizes />} />
+                              <Route path="*" element={<NotFound />} />
+                            </Routes>
+                          </TooltipProvider>
+                        </BrowserRouter>
+                      </DepositProvider>
+                    </BettingProvider>
+                  </BettingStatusProvider>
+                </AuthProvider>
+              </SolanaWalletProvider>
             </CookiesProvider>
           </CurrencyProvider>
         </LocationRestrictionProvider>
