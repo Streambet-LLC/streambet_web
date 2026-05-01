@@ -4,6 +4,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Solana wallet-adapter modal portal fix.
+ *
+ * Radix Dialog (used by our PrizeCheckoutModal, RequireWalletConnectModal,
+ * etc.) installs a focus trap + pointer-events: none on body siblings while
+ * open. The wallet-adapter renders its picker into a portal *outside* our
+ * Dialog tree, so without these rules its overlay/buttons are unclickable.
+ *
+ * IMPORTANT: do NOT raise z-index on `.wallet-adapter-modal-overlay`. The
+ * overlay is the dim backdrop and its built-in z-index keeps it BEHIND the
+ * picker (`.wallet-adapter-modal-wrapper` z-1050). If you raise the
+ * overlay above the wrapper, every click hits the backdrop and the picker
+ * dismisses immediately.
+ */
+.wallet-adapter-modal,
+.wallet-adapter-modal * {
+  pointer-events: auto !important;
+}
+.wallet-adapter-modal {
+  z-index: 9999 !important;
+}
+.wallet-adapter-dropdown,
+.wallet-adapter-dropdown-list {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+
 /* CRT Color Enhancement */
 .crt-colors {
   filter: saturate(1.3) contrast(1.1);

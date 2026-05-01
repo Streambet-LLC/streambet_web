@@ -103,10 +103,16 @@ export async function buildPayInvoiceTx(
   const sellerAta = await getAssociatedTokenAddress(paymentMint, seller);
   const treasuryAta = new PublicKey(quote.treasuryAta);
 
-  // Pre-create seller ATA if missing (buyer pays the rent ~0.002 SOL).
-  // Buyer ATA is assumed to exist (otherwise they have no USDC anyway).
+  // Pre-create buyer/seller ATAs if missing (buyer pays the rent ~0.002 SOL
+  // each). Without these, the SPL token transfer in the program reverts.
   const tx = new Transaction();
-  const sellerAtaInfo = await connection.getAccountInfo(sellerAta);
+  const [buyerAtaInfo, sellerAtaInfo] = await Promise.all([
+    connection.getAccountInfo(buyerAta),
+    connection.getAccountInfo(sellerAta),
+  ]);
+  if (!buyerAtaInfo) {
+    tx.add(createAssociatedTokenAccountInstruction(buyer, buyerAta, buyer, paymentMint));
+  }
   if (!sellerAtaInfo) {
     tx.add(createAssociatedTokenAccountInstruction(buyer, sellerAta, seller, paymentMint));
   }
@@ -123,17 +129,16 @@ export async function buildPayInvoiceTx(
       buyer,
       seller,
       marketplace,
+      paymentMint,
+      buyerPaymentAccount: buyerAta,
+      sellerPaymentAccount: sellerAta,
+      treasuryPaymentAccount: treasuryAta,
       sellerProfile: profile,
       sellerGroup: groupAddr,
       buyerWaiver: waiver,
       cryptoSellerAllowance: allowance,
       invoice,
-      paymentMint,
-      buyerAta,
-      sellerAta,
-      treasuryAta,
       tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
     })
     .instruction();

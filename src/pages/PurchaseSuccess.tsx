@@ -30,6 +30,9 @@ export default function PurchaseSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const orderId = searchParams.get('orderId');
+  // Crypto orders are confirmed on-chain via `cryptoAPI.confirm()` before
+  // the user lands here, so we must NOT fire the Stripe-only webhook backup.
+  const isCrypto = searchParams.get('source') === 'crypto';
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
@@ -40,14 +43,19 @@ export default function PurchaseSuccess() {
       return;
     }
 
-    // Confirm the order (client-side backup to server-side webhook)
-    prizeAPI
-      .confirmPrizeOrder(orderId)
-      .then(() => setConfirmed(true))
-      .catch(() => {
-        // Server-side webhook may have already confirmed it — that's fine
-        setConfirmed(true);
-      });
+    if (isCrypto) {
+      // Already confirmed on-chain; skip the Stripe webhook backup.
+      setConfirmed(true);
+    } else {
+      // Confirm the order (client-side backup to server-side webhook)
+      prizeAPI
+        .confirmPrizeOrder(orderId)
+        .then(() => setConfirmed(true))
+        .catch(() => {
+          // Server-side webhook may have already confirmed it — that's fine
+          setConfirmed(true);
+        });
+    }
 
     // Fetch order details for display
     prizeAPI
@@ -63,7 +71,7 @@ export default function PurchaseSuccess() {
         });
         setLoading(false);
       });
-  }, [orderId]);
+  }, [orderId, isCrypto]);
 
   if (loading) {
     return (

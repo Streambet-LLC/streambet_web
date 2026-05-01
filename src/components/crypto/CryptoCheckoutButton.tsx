@@ -48,6 +48,25 @@ export function CryptoCheckoutButton({
         quote
       );
 
+      // Simulate first so we can surface the actual program error
+      // (Phantom only shows a generic "reverted during simulation" toast).
+      // No signers passed → simulator skips signature verification.
+      try {
+        const sim = await connection.simulateTransaction(tx);
+        if (sim.value.err) {
+          const logs = (sim.value.logs ?? []).join('\n');
+          // eslint-disable-next-line no-console
+          console.error('[crypto] simulate failed', sim.value.err, '\n', logs);
+          const programLine =
+            sim.value.logs?.find(l => l.includes('Error') || l.includes('failed')) ||
+            JSON.stringify(sim.value.err);
+          throw new Error(`Simulation reverted: ${programLine}`);
+        }
+      } catch (simErr) {
+        // Re-throw with the program log so the user toast is informative.
+        throw simErr;
+      }
+
       const sig = await sendTransaction(tx, connection, { skipPreflight: false });
 
       toast({
