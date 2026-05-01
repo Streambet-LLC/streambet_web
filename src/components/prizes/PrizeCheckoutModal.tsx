@@ -60,8 +60,14 @@ export default function PrizeCheckoutModal({
   userCadeCoins,
   allowCadeCoins = true,
   isShopItem = false,
-  sellerCryptoEnabled = false,
+  sellerCryptoEnabled: sellerCryptoEnabledProp = false,
 }: PrizeCheckoutModalProps) {
+  // Crypto / USDC purchases are temporarily disabled while we're on devnet.
+  // Flip this back to `sellerCryptoEnabledProp` once the contract is on
+  // mainnet and we want users transacting with real funds.
+  const sellerCryptoEnabled = false;
+  void sellerCryptoEnabledProp;
+
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { publicKey: walletPublicKey, disconnect: disconnectWallet } = useWallet();
