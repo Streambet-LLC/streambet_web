@@ -46,6 +46,7 @@ export default function ShopDetail() {
     id: string;
     name: string;
     amount: number;
+    sellerCryptoEnabled: boolean;
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -59,9 +60,8 @@ export default function ShopDetail() {
   const selectedProductCategories = categoryFilterParam
     ? categoryFilterParam
         .split(',')
-        .filter(
-          (category): category is (typeof validProductCategories)[number] =>
-            validProductCategories.includes(category as (typeof validProductCategories)[number])
+        .filter((category): category is (typeof validProductCategories)[number] =>
+          validProductCategories.includes(category as (typeof validProductCategories)[number])
         )
     : [];
 
@@ -127,6 +127,7 @@ export default function ShopDetail() {
         displayOrder: prize.sellerDisplayOrderShop ?? prize.displayOrderShop ?? 999,
         createdBy: prize.createdBy ?? null,
         createdByUsername: (prize as any).createdByUsername ?? username ?? null,
+        sellerCryptoEnabled: (prize as any).sellerCryptoEnabled ?? false,
         isProOnly: prize.isProOnly ?? false,
         proEarlyAccessUntil: prize.proEarlyAccessUntil ?? null,
         viewCount: prize.viewCount ?? 0,
@@ -341,6 +342,7 @@ export default function ShopDetail() {
               id: prize.id,
               name: prize.name,
               amount: prize.amount ?? 0,
+              sellerCryptoEnabled: prize.sellerCryptoEnabled ?? false,
             })
           }
           showFilters={true}
@@ -369,6 +371,7 @@ export default function ShopDetail() {
           userCadeCoins={userCadeCoins}
           allowCadeCoins={false}
           isShopItem={true}
+          sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
         />
       )}
     </MainLayout>

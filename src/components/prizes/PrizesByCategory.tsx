@@ -30,6 +30,7 @@ export interface Prize {
   createdByUsername?: string | null;
   createdByShopName?: string | null;
   sellerDisplayName?: string | null;
+  sellerCryptoEnabled?: boolean;
   isProOnly?: boolean;
   proEarlyAccessUntil?: string | null;
   viewCount?: number;

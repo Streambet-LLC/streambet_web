@@ -97,19 +97,14 @@ export default function MyBids() {
         {isLoading && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-[4/5] rounded-lg bg-muted animate-pulse"
-              />
+              <div key={i} className="aspect-[4/5] rounded-lg bg-muted animate-pulse" />
             ))}
           </div>
         )}
 
         {!isLoading && isError && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground mb-3">
-              We couldn&apos;t load your bids.
-            </p>
+            <p className="text-muted-foreground mb-3">We couldn&apos;t load your bids.</p>
             <Button variant="outline" onClick={() => refetch()}>
               Try again
             </Button>
@@ -121,8 +116,8 @@ export default function MyBids() {
             <Gavel className="h-10 w-10 text-primary" />
             <h3 className="text-lg font-semibold">No bids yet</h3>
             <p className="text-muted-foreground max-w-md">
-              When you place a bid on an auction it will show up here so you
-              can keep tabs on it and raise your max if needed.
+              When you place a bid on an auction it will show up here so you can keep tabs on it and
+              raise your max if needed.
             </p>
             <Button onClick={() => navigate('/shop')}>Browse the shop</Button>
           </div>
@@ -147,6 +142,7 @@ export default function MyBids() {
             userCadeCoins={session?.cadeCoins ?? 0}
             allowCadeCoins={!checkoutPrize.createdBy}
             isShopItem
+            sellerCryptoEnabled={checkoutPrize.sellerCryptoEnabled ?? false}
           />
         )}
       </div>

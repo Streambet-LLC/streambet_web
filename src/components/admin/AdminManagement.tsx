@@ -44,6 +44,7 @@ import { PrizeOrders } from './PrizeOrders';
 import { AdminAuctions } from './AdminAuctions';
 import { ApplicationsTable } from './ApplicationsTable';
 import PendingOnboardingTable from './PendingOnboardingTable';
+import { CryptoSellersAdmin } from './CryptoSellersAdmin';
 import { AdminInboxPanel } from './AdminInboxPanel';
 import { ConciergePanel } from './ConciergePanel';
 import { DiscountCodesPanel } from './DiscountCodesPanel';
@@ -126,6 +127,7 @@ export const AdminManagement = ({
     { key: 'non-video', label: 'Non Video' },
     { key: 'ended-non-video', label: 'Ended Non Video' },
     { key: 'promo-cards', label: 'Promo Cards' },
+    { key: 'crypto-sellers', label: 'Crypto Sellers' },
   ];
 
   const createStreamMutation = useMutation({
@@ -1719,6 +1721,12 @@ export const AdminManagement = ({
           {activeTab === 'users' && (
             <div className="space-y-4">
               <UserTable searchUserQuery={searchUserQuery} />
+            </div>
+          )}
+
+          {activeTab === 'crypto-sellers' && (
+            <div className="space-y-4">
+              <CryptoSellersAdmin />
             </div>
           )}
 
