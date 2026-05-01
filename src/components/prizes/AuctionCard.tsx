@@ -497,7 +497,13 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
         auction={auction}
       />
 
-      {/* Fullscreen image lightbox — mirrors PrizeCard's behavior */}
+      {/* Fullscreen image lightbox — mirrors PrizeCard's behavior. The
+          DialogContent uses `pointer-events-none` so taps outside the image
+          fall through to nothing, which on mobile previously left users
+          stuck (no close X, no swipe handler). We now mirror PrizeCard:
+          - Always-visible close button (also on mobile).
+          - framer-motion drag-to-dismiss (swipe down to close).
+          - Visible "Swipe down to close" hint on small screens. */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
         <DialogTitle className="sr-only">Auction Image</DialogTitle>
         <DialogContent
@@ -505,10 +511,31 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
           aria-describedby={undefined}
           hideCloseButton
         >
-          <div className="relative pointer-events-auto">
+          <motion.div
+            className="relative pointer-events-auto"
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            whileTap={{ cursor: 'grabbing' }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onDragEnd={(_e, info) => {
+              if (info.offset.y > 100) setIsLightboxOpen(false);
+            }}
+          >
+            {/* Mobile-only swipe affordance. */}
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-60 md:hidden">
+              <div className="w-12 h-1 bg-white rounded-full" />
+              <span className="text-xs text-white">Swipe down to close</span>
+            </div>
+
+            {/* Close button — visible on every breakpoint so mobile users
+                always have an explicit dismiss control. */}
             <button
               onClick={() => setIsLightboxOpen(false)}
-              className="absolute -top-3 -right-3 z-50 hidden rounded-full border border-[#7AFF14] bg-black/80 p-2 transition-colors hover:bg-black focus:outline-none focus:ring-2 focus:ring-white md:block"
+              className="absolute -top-3 -right-3 z-50 rounded-full border border-[#7AFF14] bg-black/80 p-2 transition-colors hover:bg-black focus:outline-none focus:ring-2 focus:ring-white"
               aria-label="Close image"
             >
               <X className="h-6 w-6 text-white" />
@@ -574,7 +601,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
                 ))}
               </div>
             )}
-          </div>
+          </motion.div>
         </DialogContent>
       </Dialog>
     </>

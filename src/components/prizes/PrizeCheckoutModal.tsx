@@ -9,6 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Loader2, Info, Check, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -60,14 +67,8 @@ export default function PrizeCheckoutModal({
   userCadeCoins,
   allowCadeCoins = true,
   isShopItem = false,
-  sellerCryptoEnabled: sellerCryptoEnabledProp = false,
+  sellerCryptoEnabled = false,
 }: PrizeCheckoutModalProps) {
-  // Crypto / USDC purchases are temporarily disabled while we're on devnet.
-  // Flip this back to `sellerCryptoEnabledProp` once the contract is on
-  // mainnet and we want users transacting with real funds.
-  const sellerCryptoEnabled = false;
-  void sellerCryptoEnabledProp;
-
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { publicKey: walletPublicKey, disconnect: disconnectWallet } = useWallet();
@@ -80,7 +81,16 @@ export default function PrizeCheckoutModal({
     queryKey: ['cryptoConfig'],
     queryFn: cryptoAPI.config,
     staleTime: 60 * 60 * 1000,
+    // Re-poll every minute while the modal is open so a freshly-paused
+    // marketplace closes off the option without forcing a hard refresh.
+    refetchInterval: isOpen ? 60_000 : false,
   });
+
+  // Marketplace-wide pause flag (admin-toggled). When true, the contract
+  // rejects every pay_invoice; we hide / disable the crypto option here so
+  // buyers don't get stuck in a wallet popup loop.
+  const cryptoPaused = !!cryptoConfig?.paused;
+  const cryptoAvailable = sellerCryptoEnabled && !cryptoPaused;
 
   // Check on-chain whether the connected wallet has a BuyerWaiver PDA. If it
   // does, the contract charges 0% buyer fee for this user; otherwise the
@@ -169,6 +179,12 @@ export default function PrizeCheckoutModal({
       }));
     }
   }, [userAddress]);
+
+  useEffect(() => {
+    if (cryptoPaused && paymentMethod === 'crypto') {
+      setPaymentMethod(allowCadeCoins ? 'coins' : 'usd');
+    }
+  }, [cryptoPaused, paymentMethod, allowCadeCoins]);
 
   useEffect(() => {
     if (allowCadeCoins) {
@@ -408,6 +424,20 @@ export default function PrizeCheckoutModal({
                   </span>
                 </div>
               )}
+              {paymentMethod === 'crypto' && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Service Fee ({(CRYPTO_BUYER_FEE_BPS / 100).toFixed(2)}%):
+                  </span>
+                  <span className="text-muted-foreground">
+                    {cryptoBuyerFeeWaived ? (
+                      <span className="text-emerald-500">Waived</span>
+                    ) : (
+                      `$${cryptoBuyerFeeUsd.toFixed(2)}`
+                    )}
+                  </span>
+                </div>
+              )}
               {discountCents > 0 && (
                 <div className="flex justify-between text-sm text-green-500">
                   <span>Discount:</span>
@@ -420,8 +450,11 @@ export default function PrizeCheckoutModal({
                   $
                   {(paymentMethod === 'usd' || paymentMethod === 'combined'
                     ? totalAmount / COINS_TO_USD + getBuyerFeeUsd(usdAmount) - discountUsd
-                    : totalAmount / COINS_TO_USD - discountUsd
+                    : paymentMethod === 'crypto'
+                      ? cryptoTotalUsd - discountUsd
+                      : totalAmount / COINS_TO_USD - discountUsd
                   ).toFixed(2)}
+                  {paymentMethod === 'crypto' && ' USDC'}
                 </span>
               </div>
             </div>
@@ -478,7 +511,64 @@ export default function PrizeCheckoutModal({
 
           <div className="space-y-3">
             <Label className="text-base font-semibold">Payment Method</Label>
-            <div className="grid grid-cols-1 gap-3">
+            {sellerCryptoEnabled && cryptoPaused && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  USDC checkout is temporarily unavailable while crypto sales
+                  are paused. Please use a card or CadeCoins.
+                </AlertDescription>
+              </Alert>
+            )}
+            {cryptoAvailable ? (
+              // When crypto is on the available method count grows to 3-4,
+              // which makes the stacked-radio layout dominate the modal.
+              // Collapse it into a single dropdown so the rest of the
+              // checkout (totals, wallet hint, CTA) stays above the fold.
+              <Select
+                value={paymentMethod}
+                onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+              >
+                <SelectTrigger className="w-full cursor-pointer">
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allowCadeCoins && (
+                    <SelectItem
+                      value="coins"
+                      disabled={!hasEnoughCoins}
+                      className="cursor-pointer"
+                    >
+                      <span className="font-medium">CadeCoins Only</span>
+                      <span className="text-muted-foreground ml-2">
+                        · {roundDownCoinAmount(coinsAmount).toLocaleString('en-US')} CC
+                        {!hasEnoughCoins && ' (insufficient)'}
+                      </span>
+                    </SelectItem>
+                  )}
+                  <SelectItem value="usd" className="cursor-pointer">
+                    <span className="font-medium">Credit/Debit Card (USD)</span>
+                    <span className="text-muted-foreground ml-2">
+                      · ${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)}
+                    </span>
+                  </SelectItem>
+                  {allowCadeCoins && (
+                    <SelectItem value="combined" className="cursor-pointer">
+                      <span className="font-medium">CadeCoins + Card</span>
+                      <span className="text-muted-foreground ml-2">· split</span>
+                    </SelectItem>
+                  )}
+                  <SelectItem value="crypto" className="cursor-pointer">
+                    <span className="font-medium">Pay with USDC (Solana)</span>
+                    <span className="text-muted-foreground ml-2">
+                      · ${cryptoTotalUsd.toFixed(2)} USDC
+                      {cryptoBuyerFeeWaived && ' (fee waived)'}
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
               {allowCadeCoins && (
                 <label
                   className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
@@ -552,33 +642,9 @@ export default function PrizeCheckoutModal({
                 </label>
               )}
 
-              {sellerCryptoEnabled && (
-                <label
-                  className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
-                  style={{
-                    borderColor:
-                      paymentMethod === 'crypto' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    value="crypto"
-                    checked={paymentMethod === 'crypto'}
-                    onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
-                    className="mr-3"
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium">Pay with USDC (Solana)</div>
-                    <div className="text-sm text-muted-foreground">
-                      ${cryptoTotalUsd.toFixed(2)} USDC
-                      {cryptoBuyerFeeWaived && (
-                        <span className="ml-1 text-emerald-500">(buyer fee waived)</span>
-                      )}
-                    </div>
-                  </div>
-                </label>
-              )}
+              {sellerCryptoEnabled && null /* handled by dropdown branch above */}
             </div>
+            )}
           </div>
 
           {paymentMethod === 'crypto' && !cryptoWalletConnected && (

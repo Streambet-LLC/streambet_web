@@ -1285,7 +1285,7 @@ export const PrizeConfiguration = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Item Settings</CardTitle>
+              <CardTitle>Listings</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Manage items in the shop and redemptions
               </p>
@@ -2464,37 +2464,65 @@ export const PrizeConfiguration = () => {
               </Select>
             </div>
             {saleType !== 'auction' && (
-              <div className="space-y-2.5">
-                <Label htmlFor="seller" className="text-base font-medium">
-                  Assign to Seller
-                  <span className="text-xs text-muted-foreground font-normal ml-2">(optional)</span>
-                </Label>
-                <Select
-                  value={formData.createdBy || '__none__'}
-                  onValueChange={value => {
-                    setFormData({
-                      ...formData,
-                      createdBy: value === '__none__' ? null : value,
-                    });
-                    setValidationError('');
-                  }}
-                >
-                  <SelectTrigger id="seller" className="h-12 text-base">
-                    <SelectValue placeholder="No seller (admin item)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">No seller (admin item)</SelectItem>
-                    {sellers.map(seller => (
-                      <SelectItem key={seller.id} value={seller.id}>
-                        {seller.shopName || seller.username}
-                        {seller.name && ` (${seller.name})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Assign this prize to a seller's shop. Leave unassigned for admin-only items.
-                </p>
+              <div className="space-y-3 rounded-lg border border-border p-4 bg-muted/30">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <Label htmlFor="sellAsCardcade" className="text-base font-medium">
+                      Sell as CardCade
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      When on, this item lives in the CardCade shop with no seller. Buyers see the
+                      &ldquo;Pay with USDC&rdquo; option (controlled by the CardCade Shop Settings).
+                      Turn off only to assign the item to a real seller&rsquo;s shop.
+                    </p>
+                  </div>
+                  <Switch
+                    id="sellAsCardcade"
+                    checked={!formData.createdBy}
+                    onCheckedChange={checked => {
+                      setFormData({
+                        ...formData,
+                        createdBy: checked ? null : formData.createdBy,
+                      });
+                      setValidationError('');
+                    }}
+                  />
+                </div>
+
+                {formData.createdBy && (
+                  <div className="space-y-2.5 pt-2 border-t border-border">
+                    <Label htmlFor="seller" className="text-base font-medium">
+                      Assign to Seller
+                    </Label>
+                    <Select
+                      value={formData.createdBy || '__none__'}
+                      onValueChange={value => {
+                        setFormData({
+                          ...formData,
+                          createdBy: value === '__none__' ? null : value,
+                        });
+                        setValidationError('');
+                      }}
+                    >
+                      <SelectTrigger id="seller" className="h-12 text-base">
+                        <SelectValue placeholder="No seller (admin item)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">No seller (CardCade item)</SelectItem>
+                        {sellers.map(seller => (
+                          <SelectItem key={seller.id} value={seller.id}>
+                            {seller.shopName || seller.username}
+                            {seller.name && ` (${seller.name})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      USDC checkout will only show if this seller has connected a Solana wallet and
+                      been approved.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
             {saleType !== 'auction' && (
