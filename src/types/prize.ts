@@ -396,6 +396,8 @@ export interface PrizeOrder {
   totalPrice: number;
   stripePriceId?: string; // For USD payment via Stripe
   stripeSessionId?: string;
+  /** Solana transaction signature when paymentMethod === 'crypto'. */
+  cryptoTxSignature?: string;
   status:
     | 'pending'
     | 'buy_attempted'

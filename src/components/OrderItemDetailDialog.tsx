@@ -16,6 +16,7 @@ import {
 import _ from 'lodash';
 import { getThumbnailUrl } from '@/utils/helper';
 import { Link } from 'react-router-dom';
+import { getSolscanTxUrl } from '@/integrations/solana/cluster';
 
 interface OrderItemDetailDialogProps {
   open: boolean;
@@ -25,6 +26,8 @@ interface OrderItemDetailDialogProps {
     createdAt?: string;
     totalPrice?: number;
     paymentMethod?: string;
+    /** Solana transaction signature when paymentMethod === 'crypto'. */
+    cryptoTxSignature?: string;
     status?: string;
     username?: string;
     /** 'auction' for items sold through the auction flow. */
@@ -84,10 +87,7 @@ const OrderItemDetailDialog = ({
           {/* Item image(s) */}
           {resolvedImages.length > 0 ? (
             hasMultipleImages ? (
-              <Carousel
-                opts={{ loop: true }}
-                className="w-full"
-              >
+              <Carousel opts={{ loop: true }} className="w-full">
                 <CarouselContent className="ml-0">
                   {resolvedImages.map((url, idx) => (
                     <CarouselItem key={idx} className="pl-0">
@@ -165,10 +165,33 @@ const OrderItemDetailDialog = ({
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Amount</span>
               <span className="text-sm font-semibold" style={{ color: '#7AFF14' }}>
-                {transaction.paymentMethod?.toUpperCase()}{' '}
-                {transaction.totalPrice?.toLocaleString()}
+                {transaction.paymentMethod === 'crypto'
+                  ? `USDC ${(transaction.totalPrice ?? 0).toFixed(2)}`
+                  : transaction.paymentMethod === 'usd' || transaction.paymentMethod === 'combined'
+                    ? `${transaction.paymentMethod.toUpperCase()} ${(
+                        transaction.totalPrice ?? 0
+                      ).toFixed(2)}`
+                    : `${transaction.paymentMethod?.toUpperCase() ?? ''} ${
+                        transaction.totalPrice?.toLocaleString() ?? ''
+                      }`}
               </span>
             </div>
+
+            {transaction.cryptoTxSignature && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">On-chain tx</span>
+                <a
+                  href={getSolscanTxUrl(transaction.cryptoTxSignature)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-[#7AFF14] hover:underline"
+                  title={transaction.cryptoTxSignature}
+                >
+                  {transaction.cryptoTxSignature.slice(0, 6)}…
+                  {transaction.cryptoTxSignature.slice(-6)}
+                </a>
+              </div>
+            )}
 
             {/* Auction-only: show how many bids were placed on this item. */}
             {transaction.saleType === 'auction' &&
