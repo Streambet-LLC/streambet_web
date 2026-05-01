@@ -166,7 +166,7 @@ const OrderItemDetailDialog = ({
               <span className="text-sm text-muted-foreground">Amount</span>
               <span className="text-sm font-semibold" style={{ color: '#7AFF14' }}>
                 {transaction.paymentMethod === 'crypto'
-                  ? `USDC ${(transaction.totalPrice ?? 0).toFixed(2)}`
+                  ? `${(transaction.totalPrice ?? 0).toFixed(2)} USDC`
                   : transaction.paymentMethod === 'usd' || transaction.paymentMethod === 'combined'
                     ? `${transaction.paymentMethod.toUpperCase()} ${(
                         transaction.totalPrice ?? 0

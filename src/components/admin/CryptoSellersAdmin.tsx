@@ -1,10 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { adminAPI } from '@/integrations/api/client';
 import { cryptoAPI } from '@/integrations/api/cryptoAPI';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 
 interface AdminUser {
@@ -15,6 +21,14 @@ interface AdminUser {
   cryptoPaymentsEnabled?: boolean;
   cryptoOverrideFeeBps?: number | null;
   isSeller?: boolean;
+  // On-chain fee snapshot (null when no wallet linked or RPC failed).
+  onChainGroupId?: number | null;
+  onChainGroupLabel?: string | null;
+  onChainGroupFeeBps?: number | null;
+  onChainOverrideFeeBps?: number | null;
+  onChainEffectiveFeeBps?: number | null;
+  onChainProfileExists?: boolean;
+  onChainIsDefaultGroup?: boolean | null;
 }
 
 /**
@@ -34,12 +48,19 @@ export function CryptoSellersAdmin() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'crypto', 'users', search],
-    queryFn: () => adminAPI.getUsers({ search, limit: 100 }),
+    queryFn: () => cryptoAPI.listSellers(search || undefined),
   });
 
+  // List of on-chain groups so we can render a "Move to group" dropdown
+  // per seller row. Sourced from the same admin endpoint as the Groups card.
+  const groupsQuery = useQuery({
+    queryKey: ['admin', 'crypto', 'groups'],
+    queryFn: cryptoAPI.listGroups,
+  });
+  const groups = groupsQuery.data?.data ?? [];
+
   const users: AdminUser[] = useMemo(() => {
-    const list = (data?.data ?? data?.users ?? data ?? []) as AdminUser[];
-    return list.filter(u => !!u.solanaWallet);
+    return (data?.data ?? []) as AdminUser[];
   }, [data]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['admin', 'crypto'] });
@@ -121,6 +142,29 @@ export function CryptoSellersAdmin() {
     }
   };
 
+  const setGroup = async (u: AdminUser, groupIdRaw: string) => {
+    if (!u.solanaWallet) return;
+    const groupId = Number(groupIdRaw);
+    if (!Number.isInteger(groupId)) return;
+    setPendingId(u.id);
+    try {
+      const r = await cryptoAPI.setSellerGroup(u.id, u.solanaWallet, groupId);
+      toast({
+        title: `Moved to group ${groupId}`,
+        description: `tx: ${String(r.txSignature).slice(0, 8)}…`,
+      });
+      refresh();
+    } catch (e: unknown) {
+      toast({
+        title: 'Move failed',
+        description: e instanceof Error ? e.message : 'Unknown',
+        variant: 'destructive',
+      });
+    } finally {
+      setPendingId(null);
+    }
+  };
+
   return (
     <Card className="p-4 space-y-4">
       <div className="flex items-center gap-2">
@@ -141,6 +185,7 @@ export function CryptoSellersAdmin() {
               <th className="py-2 pr-4">User</th>
               <th className="py-2 pr-4">Solana wallet</th>
               <th className="py-2 pr-4">Status</th>
+              <th className="py-2 pr-4">Group</th>
               <th className="py-2 pr-4">Fee override (bps)</th>
               <th className="py-2 pr-4">Actions</th>
             </tr>
@@ -158,6 +203,59 @@ export function CryptoSellersAdmin() {
                     <span className="text-green-600">enabled</span>
                   ) : (
                     <span className="text-muted-foreground">disabled</span>
+                  )}
+                </td>
+                <td className="py-2 pr-4">
+                  {u.onChainEffectiveFeeBps != null ? (
+                    <div className="flex flex-col gap-1">
+                      <Select
+                        value={String(u.onChainGroupId ?? 0)}
+                        onValueChange={v => setGroup(u, v)}
+                        disabled={pendingId === u.id || !u.solanaWallet}
+                      >
+                        <SelectTrigger className="h-8 cursor-pointer w-[180px]">
+                          <SelectValue
+                            placeholder={
+                              u.onChainGroupLabel ||
+                              (u.onChainIsDefaultGroup
+                                ? 'default'
+                                : `group ${u.onChainGroupId}`)
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {groups.map(g => (
+                            <SelectItem
+                              key={g.groupId}
+                              value={String(g.groupId)}
+                              className="cursor-pointer"
+                            >
+                              {(g.label || (g.groupId === 0 ? 'default' : `group ${g.groupId}`))}
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                {(g.feeBps / 100).toFixed(2)}%
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-xs text-muted-foreground">
+                        {(u.onChainEffectiveFeeBps / 100).toFixed(2)}%
+                        {u.onChainOverrideFeeBps != null ? (
+                          <span className="ml-1 text-amber-500">(override)</span>
+                        ) : (
+                          <span className="ml-1">
+                            (group {(u.onChainGroupFeeBps! / 100).toFixed(2)}%)
+                          </span>
+                        )}
+                        {!u.onChainProfileExists && (
+                          <span className="ml-1 text-[10px] uppercase">
+                            (implicit)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="py-2 pr-4">
@@ -205,7 +303,7 @@ export function CryptoSellersAdmin() {
             ))}
             {users.length === 0 && !isLoading && (
               <tr>
-                <td colSpan={5} className="py-6 text-center text-muted-foreground">
+                <td colSpan={6} className="py-6 text-center text-muted-foreground">
                   No users with linked Solana wallets found.
                 </td>
               </tr>

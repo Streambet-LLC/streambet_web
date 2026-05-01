@@ -30,7 +30,11 @@ function formatPaymentLabel(method?: string): string {
 function formatPurchaseAmount(method: string | undefined, total: number | undefined): string {
   const label = formatPaymentLabel(method);
   if (total == null) return label;
-  if (method === 'crypto' || method === 'usd' || method === 'combined') {
+  if (method === 'crypto') {
+    // Crypto reads naturally as "15.00 USDC" rather than "USDC 15.00".
+    return `${total.toFixed(2)} USDC`;
+  }
+  if (method === 'usd' || method === 'combined') {
     return `${label} ${total.toFixed(2)}`;
   }
   return `${label} ${total.toLocaleString()}`;

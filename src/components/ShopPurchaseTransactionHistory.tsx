@@ -110,8 +110,9 @@ const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryPro
                               color: '#7AFF14',
                             }}
                           >
-                            {transaction.paymentMethod.toUpperCase()}{' '}
-                            {transaction.totalPrice.toLocaleString()}
+                            {transaction.paymentMethod === 'crypto'
+                              ? `${transaction.totalPrice.toLocaleString()} USDC`
+                              : `${transaction.paymentMethod.toUpperCase()} ${transaction.totalPrice.toLocaleString()}`}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -189,8 +190,9 @@ const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryPro
                             color: '#7AFF14',
                           }}
                         >
-                          {transaction.paymentMethod.toUpperCase()}{' '}
-                          {transaction.totalPrice.toLocaleString()}
+                          {transaction.paymentMethod === 'crypto'
+                            ? `${transaction.totalPrice.toLocaleString()} USDC`
+                            : `${transaction.paymentMethod.toUpperCase()} ${transaction.totalPrice.toLocaleString()}`}
                         </TableCell>
                         <TableCell className="text-right">
                           {_.startCase(transaction.status)}

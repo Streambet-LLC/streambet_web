@@ -166,6 +166,12 @@ export default function SellerShopManage() {
   const [city, setCity] = useState(() => session?.city || '');
   const [state, setState] = useState(() => session?.state || '');
   const [country, setCountry] = useState(() => session?.country || '');
+  // CardCade-only: platform-level crypto payout configuration. Backed by
+  // shop_settings.crypto_payments_enabled / crypto_wallet_address. Lets
+  // admins enable USDC checkout on CardCade items, which have no creator
+  // user to read these flags from.
+  const [cardcadeCryptoEnabled, setCardcadeCryptoEnabled] = useState(false);
+  const [cardcadeCryptoWallet, setCardcadeCryptoWallet] = useState('');
   const [isEditingShopName, setIsEditingShopName] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -374,6 +380,8 @@ export default function SellerShopManage() {
       setCountry(cardcadeSettings?.country || '');
       setShopProfileImageUrl(cardcadeSettings?.profileImageUrl || null);
       setShopProfileImageFile(null);
+      setCardcadeCryptoEnabled(!!cardcadeSettings?.cryptoPaymentsEnabled);
+      setCardcadeCryptoWallet(cardcadeSettings?.cryptoWalletAddress || '');
       return; // Never fall through to session data in CardCade mode
     }
     if (session?.user) {
@@ -968,6 +976,8 @@ export default function SellerShopManage() {
       state?: string;
       country?: string;
       profileImageUrl?: string | null;
+      cryptoPaymentsEnabled?: boolean;
+      cryptoWalletAddress?: string | null;
     }) => {
       if (isCardCadeMode) {
         // Upload profile image first if a new file was selected
@@ -1571,6 +1581,54 @@ export default function SellerShopManage() {
                     </div>
                   </div>
 
+                  {isCardCadeMode && (
+                    <div className="grid gap-3 rounded-md border border-border/60 bg-muted/30 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="grid gap-1">
+                          <Label className="text-sm font-semibold">
+                            Accept USDC payments (Solana)
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            When enabled, buyers will see a “Pay with USDC”
+                            option at checkout for CardCade items. Funds settle
+                            directly to the treasury wallet below.
+                          </p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-4 w-4 cursor-pointer"
+                          checked={cardcadeCryptoEnabled}
+                          onChange={e =>
+                            setCardcadeCryptoEnabled(e.target.checked)
+                          }
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-xs">
+                          Treasury wallet address (Solana)
+                        </Label>
+                        <Input
+                          placeholder="e.g., 5jCkjBbs2or7v7gnM1XjK32fs99kC2R2f5jPuvU2K4ab"
+                          value={cardcadeCryptoWallet}
+                          onChange={e => setCardcadeCryptoWallet(e.target.value)}
+                          spellCheck={false}
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Base58 Solana address that will receive USDC for
+                          CardCade orders. Required when the toggle above is on.
+                        </p>
+                      </div>
+                      {cardcadeCryptoEnabled && !cardcadeCryptoWallet.trim() && (
+                        <p className="text-xs text-destructive">
+                          Add a wallet address before enabling USDC checkout —
+                          buyers won’t see the option until both are set.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex gap-2 justify-end">
                     <Button
                       variant="outline"
@@ -1593,6 +1651,12 @@ export default function SellerShopManage() {
                           setCity(cardcadeSettings.city || '');
                           setState(cardcadeSettings.state || '');
                           setCountry(cardcadeSettings.country || '');
+                          setCardcadeCryptoEnabled(
+                            !!cardcadeSettings.cryptoPaymentsEnabled
+                          );
+                          setCardcadeCryptoWallet(
+                            cardcadeSettings.cryptoWalletAddress || ''
+                          );
                         } else {
                           // Try to get shop name from multiple sources
                           let displayNameValue = '';
@@ -1632,7 +1696,12 @@ export default function SellerShopManage() {
                           state,
                           country,
                           ...(isCardCadeMode
-                            ? { profileImageUrl: shopProfileImageUrl ?? undefined }
+                            ? {
+                                profileImageUrl: shopProfileImageUrl ?? undefined,
+                                cryptoPaymentsEnabled: cardcadeCryptoEnabled,
+                                cryptoWalletAddress:
+                                  cardcadeCryptoWallet.trim() || null,
+                              }
                             : {}),
                         })
                       }
