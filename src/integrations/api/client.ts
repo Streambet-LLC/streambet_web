@@ -1622,6 +1622,8 @@ export const prizeAPI = {
       city?: string;
       state?: string;
       country?: string;
+      cryptoPaymentsEnabled?: boolean;
+      cryptoWalletAddress?: string | null;
     }
   ) => {
     const response = await apiClient.patch(`/admin/prizes/shop-settings/${shopKey}`, payload);
