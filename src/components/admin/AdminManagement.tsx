@@ -46,6 +46,7 @@ import { ApplicationsTable } from './ApplicationsTable';
 import PendingOnboardingTable from './PendingOnboardingTable';
 import { CryptoSellersAdmin } from './CryptoSellersAdmin';
 import { CryptoMarketplaceAdmin } from './CryptoMarketplaceAdmin';
+import SalesHistoryAdmin from './SalesHistoryAdmin';
 import { AdminInboxPanel } from './AdminInboxPanel';
 import { ConciergePanel } from './ConciergePanel';
 import { DiscountCodesPanel } from './DiscountCodesPanel';
@@ -115,6 +116,7 @@ export const AdminManagement = ({
     { key: 'users', label: 'Users' },
     { key: 'pending-onboarding', label: 'Seller Stripe Status' },
     { key: 'crypto-sellers', label: 'Crypto' },
+    { key: 'sales-history', label: 'Sales History' },
     { key: 'auctions', label: 'Auctions' },
     { key: 'support-inbox', label: 'Support Inbox' },
     { key: 'user-messages', label: 'User Messages' },
@@ -1729,6 +1731,12 @@ export const AdminManagement = ({
             <div className="space-y-4">
               <CryptoMarketplaceAdmin />
               <CryptoSellersAdmin />
+            </div>
+          )}
+
+          {activeTab === 'sales-history' && (
+            <div className="space-y-4">
+              <SalesHistoryAdmin />
             </div>
           )}
 

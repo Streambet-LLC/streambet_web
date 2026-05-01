@@ -951,6 +951,70 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Sales history (admin) -- paginated transactions across the whole platform
+  getSalesHistory: async (params?: {
+    from?: string;
+    to?: string;
+    paymentMethod?: 'crypto' | 'noncrypto' | 'all';
+    range?: string;
+    q?: string;
+  }) => {
+    const response = await apiClient.get('/admin/prizes/sales-history', { params });
+    return response.data as {
+      data: Array<{
+        id: string;
+        createdAt: string;
+        itemName: string;
+        totalPrice: number;
+        usdCharged: number;
+        coinsDeducted: number;
+        paymentMethod: 'coins' | 'usd' | 'combined' | 'crypto';
+        status: string;
+        buyerUsername: string;
+        buyerEmail: string | null;
+        sellerUsername: string;
+        cryptoTxSignature: string | null;
+        cryptoBuyerWallet: string | null;
+      }>;
+      total: number;
+    };
+  },
+
+  // Sales summary (admin) -- monthly aggregate with crypto vs non-crypto split
+  getSalesSummary: async (params?: { months?: number }) => {
+    const response = await apiClient.get('/admin/prizes/sales-summary', { params });
+    return response.data as {
+      months: Array<{
+        month: string;
+        totalRevenue: number;
+        cryptoRevenue: number;
+        nonCryptoRevenue: number;
+        platformFees: number;
+        cryptoPlatformFees: number;
+        nonCryptoPlatformFees: number;
+        orderCount: number;
+        cryptoOrderCount: number;
+        nonCryptoOrderCount: number;
+      }>;
+      totals: {
+        totalRevenue: number;
+        cryptoRevenue: number;
+        nonCryptoRevenue: number;
+        platformFees: number;
+        cryptoPlatformFees: number;
+        nonCryptoPlatformFees: number;
+        orderCount: number;
+        cryptoOrderCount: number;
+        nonCryptoOrderCount: number;
+      };
+      feeAssumptions: {
+        nonCryptoBuyerFeePercent: number;
+        nonCryptoSellerFeePercent: number;
+        cryptoCombinedBps: number;
+      };
+    };
+  },
+
   // Update stream
   updateStream: async (streamId: string, streamData: any) => {
     const response = await apiClient.patch(`/admin/streams/${streamId}`, streamData);
