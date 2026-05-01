@@ -112,7 +112,7 @@ export const AdminManagement = ({
   const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   const tabs = [
-    { key: 'prize-settings', label: 'Item Settings' },
+    { key: 'prize-settings', label: 'Listings' },
     { key: 'users', label: 'Users' },
     { key: 'pending-onboarding', label: 'Seller Stripe Status' },
     { key: 'crypto-sellers', label: 'Crypto' },

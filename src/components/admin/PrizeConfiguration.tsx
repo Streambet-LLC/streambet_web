@@ -1156,7 +1156,7 @@ export const PrizeConfiguration = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Item Settings</CardTitle>
+              <CardTitle>Listings</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 Manage items in the shop and redemptions
               </p>
@@ -2249,11 +2249,9 @@ export const PrizeConfiguration = () => {
                       Sell as CardCade
                     </Label>
                     <p className="text-xs text-muted-foreground mt-1">
-                      When on, this item lives in the CardCade shop with no
-                      seller. Buyers see the &ldquo;Pay with USDC&rdquo;
-                      option (controlled by the CardCade Shop Settings).
-                      Turn off only to assign the item to a real seller&rsquo;s
-                      shop.
+                      When on, this item lives in the CardCade shop with no seller. Buyers see the
+                      &ldquo;Pay with USDC&rdquo; option (controlled by the CardCade Shop Settings).
+                      Turn off only to assign the item to a real seller&rsquo;s shop.
                     </p>
                   </div>
                   <Switch
@@ -2298,8 +2296,8 @@ export const PrizeConfiguration = () => {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      USDC checkout will only show if this seller has
-                      connected a Solana wallet and been approved.
+                      USDC checkout will only show if this seller has connected a Solana wallet and
+                      been approved.
                     </p>
                   </div>
                 )}
