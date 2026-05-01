@@ -81,7 +81,16 @@ export default function PrizeCheckoutModal({
     queryKey: ['cryptoConfig'],
     queryFn: cryptoAPI.config,
     staleTime: 60 * 60 * 1000,
+    // Re-poll every minute while the modal is open so a freshly-paused
+    // marketplace closes off the option without forcing a hard refresh.
+    refetchInterval: isOpen ? 60_000 : false,
   });
+
+  // Marketplace-wide pause flag (admin-toggled). When true, the contract
+  // rejects every pay_invoice; we hide / disable the crypto option here so
+  // buyers don't get stuck in a wallet popup loop.
+  const cryptoPaused = !!cryptoConfig?.paused;
+  const cryptoAvailable = sellerCryptoEnabled && !cryptoPaused;
 
   // Check on-chain whether the connected wallet has a BuyerWaiver PDA. If it
   // does, the contract charges 0% buyer fee for this user; otherwise the
@@ -170,6 +179,12 @@ export default function PrizeCheckoutModal({
       }));
     }
   }, [userAddress]);
+
+  useEffect(() => {
+    if (cryptoPaused && paymentMethod === 'crypto') {
+      setPaymentMethod(allowCadeCoins ? 'coins' : 'usd');
+    }
+  }, [cryptoPaused, paymentMethod, allowCadeCoins]);
 
   useEffect(() => {
     if (allowCadeCoins) {
@@ -496,7 +511,16 @@ export default function PrizeCheckoutModal({
 
           <div className="space-y-3">
             <Label className="text-base font-semibold">Payment Method</Label>
-            {sellerCryptoEnabled ? (
+            {sellerCryptoEnabled && cryptoPaused && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  USDC checkout is temporarily unavailable while crypto sales
+                  are paused. Please use a card or CadeCoins.
+                </AlertDescription>
+              </Alert>
+            )}
+            {cryptoAvailable ? (
               // When crypto is on the available method count grows to 3-4,
               // which makes the stacked-radio layout dominate the modal.
               // Collapse it into a single dropdown so the rest of the

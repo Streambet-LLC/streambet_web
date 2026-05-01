@@ -45,6 +45,7 @@ import { AdminAuctions } from './AdminAuctions';
 import { ApplicationsTable } from './ApplicationsTable';
 import PendingOnboardingTable from './PendingOnboardingTable';
 import { CryptoSellersAdmin } from './CryptoSellersAdmin';
+import { CryptoMarketplaceAdmin } from './CryptoMarketplaceAdmin';
 import { AdminInboxPanel } from './AdminInboxPanel';
 import { ConciergePanel } from './ConciergePanel';
 import { DiscountCodesPanel } from './DiscountCodesPanel';
@@ -113,6 +114,7 @@ export const AdminManagement = ({
     { key: 'prize-settings', label: 'Item Settings' },
     { key: 'users', label: 'Users' },
     { key: 'pending-onboarding', label: 'Seller Stripe Status' },
+    { key: 'crypto-sellers', label: 'Crypto' },
     { key: 'auctions', label: 'Auctions' },
     { key: 'support-inbox', label: 'Support Inbox' },
     { key: 'user-messages', label: 'User Messages' },
@@ -127,7 +129,6 @@ export const AdminManagement = ({
     { key: 'non-video', label: 'Non Video' },
     { key: 'ended-non-video', label: 'Ended Non Video' },
     { key: 'promo-cards', label: 'Promo Cards' },
-    { key: 'crypto-sellers', label: 'Crypto Sellers' },
   ];
 
   const createStreamMutation = useMutation({
@@ -1726,6 +1727,7 @@ export const AdminManagement = ({
 
           {activeTab === 'crypto-sellers' && (
             <div className="space-y-4">
+              <CryptoMarketplaceAdmin />
               <CryptoSellersAdmin />
             </div>
           )}
