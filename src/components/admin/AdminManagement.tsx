@@ -1799,6 +1799,7 @@ export const AdminManagement = ({
               <DiscountCodesPanel />
             </div>
           )}
+
         </>
       )}
 

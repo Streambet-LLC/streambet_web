@@ -11,6 +11,10 @@ import {
   SellerShopSummary,
   PsaImportResult,
   EbayListing,
+  EbayMarketSummary,
+  EbayMarketHistory,
+  AdminEbaySoldListing,
+  AdminReportedEbaySoldListing,
   SubmitPrizeRedemptionRequest,
 } from '@/types/prize';
 import { PromotedBetsResponse } from '@/types/promo';
@@ -1015,6 +1019,102 @@ export const adminAPI = {
     };
   },
 
+  // eBay sold listing moderation queue
+  getReportedEbaySoldListings: async (
+    limit: number = 240
+  ): Promise<AdminReportedEbaySoldListing[]> => {
+    const response = await apiClient.get('/admin/prizes/ebay-sold-listings/reported', {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  moderateEbaySoldListing: async (
+    listingId: string,
+    payload: { isInaccurate: boolean; reason?: string }
+  ) => {
+    const response = await apiClient.patch(
+      `/admin/prizes/ebay-sold-listings/${listingId}/moderation`,
+      payload
+    );
+    return response.data;
+  },
+
+  deleteEbaySoldListing: async (
+    listingId: string
+  ): Promise<{ success: true; listingId: string }> => {
+    const response = await apiClient.delete(`/admin/prizes/ebay-sold-listings/${listingId}`);
+    return response.data;
+  },
+
+  approveEbaySoldListingReport: async (
+    listingId: string,
+    reason?: string
+  ) => {
+    const response = await apiClient.post(
+      `/admin/prizes/ebay-sold-listings/${listingId}/report/approve`,
+      { reason }
+    );
+    return response.data;
+  },
+
+  rejectEbaySoldListingReports: async (
+    listingId: string,
+    reason?: string
+  ): Promise<{ success: true; rejectedCount: number }> => {
+    const response = await apiClient.post(
+      `/admin/prizes/ebay-sold-listings/${listingId}/report/reject`,
+      { reason }
+    );
+    return response.data;
+  },
+
+  getItemEbaySoldListings: async (
+    itemId: string,
+    limit: number = 240
+  ): Promise<AdminEbaySoldListing[]> => {
+    const response = await apiClient.get(`/admin/prizes/items/${itemId}/ebay-sold-listings`, {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  updateItemEbaySearchQuery: async (
+    itemId: string,
+    ebaySearchQuery: string | null
+  ): Promise<{ id: string; ebaySearchQuery: string | null }> => {
+    const response = await apiClient.patch(
+      `/admin/prizes/items/${itemId}/ebay-search-query`,
+      { ebaySearchQuery }
+    );
+    return response.data;
+  },
+
+  deleteAllItemEbaySoldListings: async (
+    itemId: string
+  ): Promise<{ deleted: number }> => {
+    const response = await apiClient.delete(`/admin/prizes/items/${itemId}/ebay-sold-listings`);
+    return response.data;
+  },
+
+  bulkDeleteEbaySoldListings: async (
+    listingIds: string[]
+  ): Promise<{ deleted: number }> => {
+    const response = await apiClient.delete('/admin/prizes/ebay-sold-listings/bulk', {
+      data: { listingIds },
+    });
+    return response.data;
+  },
+
+  syncAllEbayData: async (): Promise<{
+    alreadyRunning: boolean;
+    queued: number;
+    itemIds: string[];
+  }> => {
+    const response = await apiClient.post('/admin/ebay-market/sync-all');
+    return response.data;
+  },
+
   // Update stream
   updateStream: async (streamId: string, streamData: any) => {
     const response = await apiClient.patch(`/admin/streams/${streamId}`, streamData);
@@ -1450,6 +1550,40 @@ export const prizeAPI = {
 
   getShopItemById: async (id: string): Promise<PrizeConfiguration> => {
     const response = await apiClient.get(`/prizes/shop-items/${id}`);
+    return response.data;
+  },
+
+  getEbayMarketSummary: async (id: string): Promise<EbayMarketSummary> => {
+    const response = await apiClient.get(`/prizes/shop-items/${id}/ebay-market-summary`);
+    return response.data;
+  },
+
+  getEbayMarketHistory: async (id: string, limit: number = 120): Promise<EbayMarketHistory> => {
+    const response = await apiClient.get(`/prizes/shop-items/${id}/ebay-market-history`, {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  reportEbaySoldListing: async (
+    listingId: string,
+    payload?: { reason?: string }
+  ): Promise<{ success: true; listingId: string }> => {
+    const response = await apiClient.post(`/prizes/ebay-sold-listings/${listingId}/report`, payload);
+    return response.data;
+  },
+
+  syncEbaySoldListingsNow: async (
+    itemId: string
+  ): Promise<{
+    itemId: string;
+    fetched: number;
+    inserted: number;
+    deduped: number;
+    query: string;
+    calculatedAt: string;
+  }> => {
+    const response = await apiClient.patch(`/admin/ebay-market/items/${itemId}/sync-now`, {});
     return response.data;
   },
 

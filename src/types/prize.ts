@@ -99,6 +99,8 @@ export interface PrizeConfiguration {
   /** True if the seller has approved crypto (USDC) payments. */
   sellerCryptoEnabled?: boolean;
   updatedBy: string | null;
+  ebaySearchQuery?: string | null;
+  ebayMarketLastCalculatedAt?: string | null;
   isProOnly: boolean;
   proEarlyAccessUntil: string | null;
   viewCount?: number;
@@ -108,6 +110,59 @@ export interface PrizeConfiguration {
   /** Per-item shipping fee in USD. Backfilled to $5 for legacy items. */
   shippingCostUsd?: number;
   auction?: AuctionSummary | null;
+}
+
+export interface EbayMarketWindowAverage {
+  window: '7d' | '30d' | '90d' | '180d' | '365d' | 'all';
+  averagePrice: number | null;
+  soldCount: number;
+}
+
+export interface EbayMarketSummary {
+  itemId: string;
+  listingPrice: number | null;
+  averagePrice: number | null;
+  soldCountUsed: number;
+  percentDifference: number | null;
+  lastCalculatedAt: string | null;
+  totalValidSoldCount: number;
+  windows: EbayMarketWindowAverage[];
+}
+
+export interface EbayMarketSoldListing {
+  id: string;
+  providerItemId: string | null;
+  soldTitle: string;
+  salePrice: number;
+  currencySymbol: string | null;
+  dateSold: string | null;
+  imageUrl: string | null;
+  listingUrl: string | null;
+  itemCondition: string | null;
+  buyingFormat: string | null;
+  shippingPrice: number | null;
+}
+
+export interface AdminEbaySoldListing extends EbayMarketSoldListing {
+  searchQuery: string | null;
+  isInaccurate: boolean;
+  inaccurateReason: string | null;
+  inaccurateFlaggedByUserId: string | null;
+  inaccurateFlaggedAt: string | null;
+}
+
+export interface AdminReportedEbaySoldListing extends AdminEbaySoldListing {
+  itemId: string;
+  itemName: string;
+  itemImageUrl: string | null;
+  flaggedByUsername: string | null;
+  flaggedByEmail: string | null;
+}
+
+export interface EbayMarketHistory {
+  itemId: string;
+  summary: EbayMarketSummary;
+  listings: EbayMarketSoldListing[];
 }
 
 export type PrizeSaleType = 'fixed_price' | 'auction';

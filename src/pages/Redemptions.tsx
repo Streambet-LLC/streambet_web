@@ -136,6 +136,7 @@ export default function Redemptions() {
           viewCount: prize.viewCount ?? 0,
           watcherCount: prize.watcherCount ?? 0,
           isWatching: prize.isWatching ?? false,
+          ebayMarketLastCalculatedAt: prize.ebayMarketLastCalculatedAt ?? null,
         };
       });
 

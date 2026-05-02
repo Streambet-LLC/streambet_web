@@ -133,6 +133,7 @@ export default function ShopDetail() {
         viewCount: prize.viewCount ?? 0,
         watcherCount: prize.watcherCount ?? 0,
         isWatching: prize.isWatching ?? false,
+        ebayMarketLastCalculatedAt: prize.ebayMarketLastCalculatedAt ?? null,
         // Auction support: forward saleType + auction summary so
         // PrizesByCategory can render an AuctionCard instead of a fixed-
         // price PrizeCard for these items.
