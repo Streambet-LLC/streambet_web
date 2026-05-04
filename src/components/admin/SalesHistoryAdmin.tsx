@@ -36,8 +36,17 @@ const fmtUSD = (n: number) =>
   }).format(n || 0);
 
 const fmtMonth = (iso: string) => {
+  // The API returns each bucket as a UTC midnight on the 1st of the month
+  // (e.g. "2026-04-01T00:00:00.000Z" = April 2026 in UTC). Formatting that
+  // with the browser's LOCAL timezone shifts the label back a day for any
+  // admin west of UTC, which made every row appear one month early. Always
+  // format using UTC parts so the label matches the underlying bucket.
   const d = new Date(iso);
-  return d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+  return d.toLocaleString('en-US', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
 };
 
 const fmtDate = (iso: string) => {
