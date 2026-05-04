@@ -543,7 +543,9 @@ export const PrizeConfiguration = () => {
           cardValueUsd: auctionConfig.cardValueUsd
             ? parseFloat(auctionConfig.cardValueUsd)
             : undefined,
-          startsAt: auctionConfig.startsAt || undefined,
+          startsAt: auctionConfig.startsAt
+            ? new Date(auctionConfig.startsAt).toISOString()
+            : undefined,
         });
       }
       return created;
@@ -2054,8 +2056,25 @@ export const PrizeConfiguration = () => {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="auctionStartsAt" className="text-sm font-medium">
-                      Scheduled start
+                    <Label
+                      htmlFor="auctionStartsAt"
+                      className="text-sm font-medium flex items-center gap-2"
+                    >
+                      <span>Scheduled start</span>
+                      <span className="text-[10px] font-mono uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        {(() => {
+                          // Short abbreviation (e.g. "EST", "PST", "GMT+2") for the
+                          // admin's current timezone — surfaced inline so they
+                          // can confirm at a glance which zone the picker uses.
+                          const parts = new Intl.DateTimeFormat(undefined, {
+                            timeZoneName: 'short',
+                          }).formatToParts(new Date());
+                          return (
+                            parts.find(p => p.type === 'timeZoneName')?.value ??
+                            Intl.DateTimeFormat().resolvedOptions().timeZone
+                          );
+                        })()}
+                      </span>
                     </Label>
                     <Input
                       id="auctionStartsAt"
@@ -2070,7 +2089,8 @@ export const PrizeConfiguration = () => {
                       className="h-11"
                     />
                     <p className="text-[11px] text-muted-foreground">
-                      Leave blank to start immediately on save.
+                      Leave blank to start immediately on save. Time is in your local timezone (
+                      {Intl.DateTimeFormat().resolvedOptions().timeZone}).
                     </p>
                   </div>
                 </div>
@@ -2339,10 +2359,14 @@ export const PrizeConfiguration = () => {
                 <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground space-y-2">
                   <div className="font-semibold text-foreground">PSA Import Summary</div>
                   <div>
-                    Population ({psaImportResult.cardGrade ? `PSA ${psaImportResult.cardGrade}` : 'this grade'}):{' '}
+                    Population (
+                    {psaImportResult.cardGrade ? `PSA ${psaImportResult.cardGrade}` : 'this grade'}
+                    ):{' '}
                     {psaImportResult.psaPopulation?.gradePopulation !== null &&
                     psaImportResult.psaPopulation?.gradePopulation !== undefined
-                      ? new Intl.NumberFormat().format(psaImportResult.psaPopulation.gradePopulation)
+                      ? new Intl.NumberFormat().format(
+                          psaImportResult.psaPopulation.gradePopulation
+                        )
                       : 'N/A'}
                   </div>
                   <div>

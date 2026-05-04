@@ -16,7 +16,7 @@ import {
   ChevronRight,
   X,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import WatchButton from './WatchButton';
@@ -60,6 +60,8 @@ const formatRemaining = (msLeft: number): string => {
  * countdown stay in sync without a refresh.
  */
 export default function AuctionCard({ prize }: AuctionCardProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   // Hydrate the auction summary from the live endpoint so we always have
   // up-to-date isLeader / isBidder fields for the current viewer.
   const auctionQuery = useQuery({
@@ -94,6 +96,15 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
         prizeCreatorUsername !== 'cardcade' &&
         prizeCreatorUsername === sessionUsername));
   const editHref = `/seller/shop/manage?editItemId=${prize.id}`;
+
+  const handleBidClick = () => {
+    if (!session) {
+      const redirect = `${location.pathname}${location.search}${location.hash}`;
+      navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
+      return;
+    }
+    setIsBidOpen(true);
+  };
 
   useAuctionSocket({ auctionId: auction.id });
   const trackView = useViewTracker();
@@ -471,7 +482,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
           <Button
             className="w-full"
             disabled={isEnded || auction.status === 'cancelled'}
-            onClick={() => setIsBidOpen(true)}
+            onClick={handleBidClick}
           >
             <Gavel className="w-4 h-4 mr-2" />
             {isEnded ? 'Ended' : auction.isLeader ? 'Raise your max' : 'Place a bid'}
