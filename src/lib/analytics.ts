@@ -3,8 +3,7 @@ export function initGoogleAnalytics(): void {
     return;
   }
 
-  const isProd = import.meta?.env?.VITE_BUGSNAG_SERVER === 'prod';
-  if (!isProd) {
+  if (window.location.hostname !== 'cardcade.fun') {
     return;
   }
 
@@ -39,8 +38,7 @@ export function initHotjar(): void {
     return;
   }
 
-  const isProd = import.meta?.env?.VITE_BUGSNAG_SERVER === 'prod';
-  if (!isProd) {
+  if (window.location.hostname !== 'cardcade.fun') {
     return;
   }
 
