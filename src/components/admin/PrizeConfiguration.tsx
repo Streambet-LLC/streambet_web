@@ -419,6 +419,9 @@ export const PrizeConfiguration = () => {
     // Per-item shipping fee. Server has DB default $5 but we mirror it
     // here so the admin form shows a sensible value out of the box.
     shippingCostUsd: 5,
+    // In-person pickup. When true the buyer is not asked for a
+    // shipping address and shipping defaults to $0.
+    isInPerson: false,
   });
 
   // Single-flight guard for the Create flow. The createPrizeTier +
@@ -444,6 +447,7 @@ export const PrizeConfiguration = () => {
       showOnShop: true,
       createdBy: null,
       shippingCostUsd: 5,
+      isInPerson: false,
     });
     setValidationError('');
     setItemImages([]);
@@ -1265,6 +1269,7 @@ export const PrizeConfiguration = () => {
       showOnShop: tier.showOnShop ?? true,
       createdBy: tier.createdBy,
       shippingCostUsd: tier.shippingCostUsd ?? 5,
+      isInPerson: (tier as any).isInPerson ?? false,
     });
     // Calculate and display USD equivalent (amount is always in cadecoins)
     if (tier.amount && tier.amount > 0) {
@@ -2600,6 +2605,30 @@ export const PrizeConfiguration = () => {
                 />
               </div>
             )}
+            {/*
+              In-person pickup. Toggling this on forces shipping to $0
+              (still editable below) and the checkout/offer flow skips
+              collecting a shipping address from the buyer.
+            */}
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="space-y-0.5">
+                <Label className="text-base font-medium">In-Person Pickup</Label>
+                <p className="text-xs text-muted-foreground">
+                  Buyer picks up locally. No shipping address is collected and shipping defaults
+                  to $0 (you can still override the cost below).
+                </p>
+              </div>
+              <Switch
+                checked={!!formData.isInPerson}
+                onCheckedChange={(checked: boolean) =>
+                  setFormData({
+                    ...formData,
+                    isInPerson: checked,
+                    shippingCostUsd: checked ? 0 : formData.shippingCostUsd,
+                  })
+                }
+              />
+            </div>
             {/*
               Per-item shipping fee. Applies to every sale type — fixed-price
               checkout, offers, and auction close all add this on top of the

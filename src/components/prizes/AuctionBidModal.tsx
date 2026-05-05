@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 interface AuctionBidModalProps {
   isOpen: boolean;
   onClose: () => void;
-  prize: { id: string; name: string; imageUrl?: string };
+  prize: { id: string; name: string; imageUrl?: string; isInPerson?: boolean };
   auction: AuctionSummary;
   /** Optional: callback to refresh parent listings after a successful bid. */
   onBidPlaced?: (next: AuctionSummary) => void;
@@ -133,13 +133,14 @@ export default function AuctionBidModal({
   };
 
   const addressComplete =
-    !!address.firstName.trim() &&
-    !!address.lastName.trim() &&
-    !!address.addressLine1.trim() &&
-    !!address.city.trim() &&
-    !!address.state.trim() &&
-    !!address.zipCode.trim() &&
-    !!address.country.trim();
+    prize.isInPerson ||
+    (!!address.firstName.trim() &&
+      !!address.lastName.trim() &&
+      !!address.addressLine1.trim() &&
+      !!address.city.trim() &&
+      !!address.state.trim() &&
+      !!address.zipCode.trim() &&
+      !!address.country.trim());
 
   const cardsQuery = useQuery({
     queryKey: ['auction-saved-cards'],
@@ -171,8 +172,9 @@ export default function AuctionBidModal({
       // Persist any address edits to the profile first so the order
       // created at close has the right shipping snapshot. We always
       // PATCH (cheap, idempotent) when fields are dirty rather than
-      // diffing — keeps the codepath simple.
-      if (addressDirty) {
+      // diffing — keeps the codepath simple. Skipped for in-person
+      // pickup auctions since no address is collected.
+      if (addressDirty && !prize.isInPerson) {
         await api.user.updateProfile({
           firstName: address.firstName,
           lastName: address.lastName,
@@ -238,11 +240,13 @@ export default function AuctionBidModal({
     const fee = +((safeBid * pct) / 100).toFixed(2);
     // Per-item shipping fee. Defaults to $5 to match the legacy hard-coded
     // SHIPPING_FEE so callers without the new field still see the same
-    // total they did before. Backend is the source of truth at close.
-    const shipping = +(auction.shippingCostUsd ?? 5).toFixed(2);
+    // total they did before. In-person pickup auctions always preview $0.
+    const shipping = prize.isInPerson
+      ? 0
+      : +(auction.shippingCostUsd ?? 5).toFixed(2);
     const total = +(safeBid + fee + shipping).toFixed(2);
     return { pct, fee, shipping, total };
-  }, [auction.buyerProcessingFeePercent, auction.shippingCostUsd, proxyMaxNumber]);
+  }, [auction.buyerProcessingFeePercent, auction.shippingCostUsd, proxyMaxNumber, prize.isInPerson]);
 
   const reserveBadge = useMemo(() => {
     if (auction.reserveMet === null) return null;
@@ -326,8 +330,18 @@ export default function AuctionBidModal({
           {/*
             Shipping address. Pre-filled from profile. Required for the
             order created at close to have a valid ship-to. Edits are
-            persisted to /users/me when the bid is placed.
+            persisted to /users/me when the bid is placed. Skipped
+            entirely for in-person pickup auctions.
           */}
+          {prize.isInPerson ? (
+            <div className="rounded-md border p-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-foreground font-medium mb-1">
+                <Truck className="w-4 h-4" /> In-Person Pickup
+              </div>
+              No shipping address required. The seller will reach out to coordinate the hand-off
+              if you win.
+            </div>
+          ) : (
           <div className="rounded-md border p-3 space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Truck className="w-4 h-4" /> Shipping address
@@ -389,6 +403,7 @@ export default function AuctionBidModal({
               We'll ship here if you win. Edits are saved to your profile when you place the bid.
             </p>
           </div>
+          )}
 
           <div className="space-y-1 rounded-md border-2 border-yellow-500/70 bg-yellow-500/5 p-3 shadow-[0_0_0_1px_rgba(234,179,8,0.15)]">
             <Label htmlFor="proxy-max" className="text-yellow-400 font-semibold tracking-wide">
@@ -452,7 +467,13 @@ export default function AuctionBidModal({
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping</span>
-              <span>${feePreview.shipping.toFixed(2)}</span>
+              {prize.isInPerson ? (
+                <span className="text-emerald-500 font-medium">In-Person Pickup</span>
+              ) : feePreview.shipping === 0 ? (
+                <span className="text-emerald-500 font-medium">Free Shipping</span>
+              ) : (
+                <span>${feePreview.shipping.toFixed(2)}</span>
+              )}
             </div>
             <div className="flex justify-between border-t pt-1 mt-1">
               <span className="text-muted-foreground">Total charged to your card</span>

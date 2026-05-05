@@ -41,6 +41,10 @@ export interface Prize {
   saleType?: PrizeSaleType;
   /** Live auction summary; required when saleType === 'auction'. */
   auction?: AuctionSummary | null;
+  /** Per-item shipping fee in USD. Forwarded into the checkout modal. */
+  shippingCostUsd?: number;
+  /** When true, item is in-person pickup (forces $0 shipping, hides address). */
+  isInPerson?: boolean;
 }
 
 interface PrizesByCategoryProps {

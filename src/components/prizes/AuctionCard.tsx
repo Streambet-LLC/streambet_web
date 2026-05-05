@@ -504,7 +504,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
       <AuctionBidModal
         isOpen={isBidOpen}
         onClose={() => setIsBidOpen(false)}
-        prize={{ id: prize.id, name: prize.name, imageUrl: prize.imageUrl }}
+        prize={{ id: prize.id, name: prize.name, imageUrl: prize.imageUrl, isInPerson: prize.isInPerson }}
         auction={auction}
       />
 

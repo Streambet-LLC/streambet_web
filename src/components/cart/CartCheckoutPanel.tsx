@@ -145,11 +145,17 @@ export default function CartCheckoutPanel({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
               Shipping
-              <span className="block text-xs">
-                ({sellerCount} {sellerCount === 1 ? 'seller' : 'sellers'} × $5.00)
-              </span>
+              {cartTotals.shippingCents > 0 && (
+                <span className="block text-xs">
+                  ({sellerCount} {sellerCount === 1 ? 'seller' : 'sellers'})
+                </span>
+              )}
             </span>
-            <span>{formatCents(cartTotals.shippingCents)}</span>
+            {cartTotals.shippingCents === 0 ? (
+              <span className="text-emerald-500 font-medium">Free Shipping</span>
+            ) : (
+              <span>{formatCents(cartTotals.shippingCents)}</span>
+            )}
           </div>
           {cartTotals.buyerFeeCents > 0 && (
             <div className="flex justify-between text-sm">

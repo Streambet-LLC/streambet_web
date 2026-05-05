@@ -35,6 +35,8 @@ export default function ProfileSellerItems({
     name: string;
     amount: number;
     sellerCryptoEnabled: boolean;
+    shippingCostUsd?: number;
+    isInPerson?: boolean;
   } | null>(null);
   const [showFeaturedModal, setShowFeaturedModal] = useState(false);
 
@@ -81,6 +83,8 @@ export default function ProfileSellerItems({
         watcherCount: prize.watcherCount ?? 0,
         isWatching: prize.isWatching ?? false,
         featuredDisplayOrder: prize.profileFeatured ? 1 : null,
+        shippingCostUsd: prize.shippingCostUsd,
+        isInPerson: prize.isInPerson,
       };
     });
 
@@ -242,6 +246,8 @@ export default function ProfileSellerItems({
             amount: prize.amount ?? 0,
             sellerCryptoEnabled:
               (prize as { sellerCryptoEnabled?: boolean }).sellerCryptoEnabled ?? false,
+            shippingCostUsd: (prize as { shippingCostUsd?: number }).shippingCostUsd,
+            isInPerson: (prize as { isInPerson?: boolean }).isInPerson,
           })
         }
       />
@@ -258,6 +264,8 @@ export default function ProfileSellerItems({
           allowCadeCoins={false}
           isShopItem={true}
           sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
+          shippingCostUsd={selectedPrizeForCheckout.shippingCostUsd}
+          isInPerson={selectedPrizeForCheckout.isInPerson}
         />
       )}
 

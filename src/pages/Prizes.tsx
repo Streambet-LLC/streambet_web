@@ -55,6 +55,8 @@ export default function Prizes() {
     amount: number;
     createdBy: string | null;
     sellerCryptoEnabled: boolean;
+    shippingCostUsd?: number;
+    isInPerson?: boolean;
   } | null>(null);
   const [selectedPrizeForOffer, setSelectedPrizeForOffer] = useState<PrizeDisplay | null>(null);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
@@ -204,6 +206,8 @@ export default function Prizes() {
           isWatching: prize.isWatching ?? false,
           saleType: prize.saleType,
           auction: prize.auction ?? null,
+          shippingCostUsd: prize.shippingCostUsd,
+          isInPerson: prize.isInPerson,
         };
       });
 
@@ -449,6 +453,8 @@ export default function Prizes() {
                                   sellerCryptoEnabled:
                                     (prize as { sellerCryptoEnabled?: boolean })
                                       .sellerCryptoEnabled ?? false,
+                                  shippingCostUsd: prize.shippingCostUsd,
+                                  isInPerson: prize.isInPerson,
                                 })
                               }
                               onOfferClick={handleOfferClick}
@@ -860,6 +866,12 @@ export default function Prizes() {
                                       sellerCryptoEnabled:
                                         (fullPrize as { sellerCryptoEnabled?: boolean })
                                           ?.sellerCryptoEnabled ?? false,
+                                      shippingCostUsd:
+                                        (fullPrize as { shippingCostUsd?: number })
+                                          ?.shippingCostUsd ?? prize.shippingCostUsd,
+                                      isInPerson:
+                                        (fullPrize as { isInPerson?: boolean })?.isInPerson ??
+                                        prize.isInPerson,
                                     });
                                   }}
                                   onOfferClick={handleOfferClick}
@@ -907,6 +919,8 @@ export default function Prizes() {
           allowCadeCoins={!selectedPrizeForCheckout.createdBy}
           isShopItem={!!selectedPrizeForCheckout.createdBy}
           sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
+          shippingCostUsd={selectedPrizeForCheckout.shippingCostUsd}
+          isInPerson={selectedPrizeForCheckout.isInPerson}
         />
       )}
 
