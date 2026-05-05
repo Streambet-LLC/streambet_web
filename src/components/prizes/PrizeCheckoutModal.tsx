@@ -82,9 +82,11 @@ export default function PrizeCheckoutModal({
   shippingCostUsd,
   isInPerson = false,
 }: PrizeCheckoutModalProps) {
-  // In-person pickup overrides any per-item shipping cost: the buyer
-  // is collecting locally so we never charge a delivery fee.
-  const effectiveShippingCostUsd = isInPerson ? 0 : shippingCostUsd;
+  // In-person pickup no longer auto-zeros the shipping cost — sellers can
+  // optionally charge a delivery / hand-off fee on pickup items, so we use
+  // whatever value the seller saved on the prize. The `isInPerson` flag
+  // only governs whether we collect a shipping address.
+  const effectiveShippingCostUsd = shippingCostUsd;
   // Resolve the per-item shipping fee. Anything < 0 is clamped to 0 so
   // a misconfigured caller can never accidentally credit the buyer.
   // Negative or NaN values fall back to the legacy $5 default.
@@ -449,7 +451,9 @@ export default function PrizeCheckoutModal({
                   }
                 >
                   {isInPerson
-                    ? 'In-Person Pickup'
+                    ? isFreeShipping
+                      ? 'In-Person Pickup'
+                      : `In-Person Pickup • $${SHIPPING_FEE_USD.toFixed(2)}`
                     : isFreeShipping
                       ? 'Free Shipping'
                       : `$${SHIPPING_FEE_USD.toFixed(2)}`}

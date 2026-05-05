@@ -559,10 +559,25 @@ export default function SellerShopManage() {
 
       return created;
     },
-    onSuccess: () => {
+    onSuccess: (saved: any) => {
+      // Echo the just-saved shipping configuration in the toast so the
+      // seller has explicit confirmation that their shipping/in-person
+      // changes persisted. Without this confirmation the form reset
+      // (below) makes it look like the value reverted to the $5 default
+      // when in fact the DB row was updated correctly.
+      const savedShipping = saved?.shippingCostUsd;
+      const savedInPerson = saved?.isInPerson;
+      const shippingPart =
+        savedInPerson === true
+          ? ' — In-Person Pickup (no shipping)'
+          : typeof savedShipping === 'number'
+            ? ` — Shipping: $${savedShipping.toFixed(2)}`
+            : '';
       toast({
         title: 'Success',
-        description: editingItemId ? 'Item updated successfully.' : 'Item added to your shop.',
+        description:
+          (editingItemId ? 'Item updated successfully.' : 'Item added to your shop.') +
+          shippingPart,
       });
       setForm({
         name: '',

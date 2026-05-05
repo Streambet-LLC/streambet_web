@@ -23,6 +23,8 @@ export default function Redemptions() {
     id: string;
     name: string;
     amount: number;
+    shippingCostUsd?: number;
+    isInPerson?: boolean;
   } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedBrand = (searchParams.get('brand')?.split(',')[0] as PrizeBrand) ?? null;
@@ -137,6 +139,8 @@ export default function Redemptions() {
           watcherCount: prize.watcherCount ?? 0,
           isWatching: prize.isWatching ?? false,
           ebayMarketLastCalculatedAt: prize.ebayMarketLastCalculatedAt ?? null,
+          shippingCostUsd: prize.shippingCostUsd,
+          isInPerson: prize.isInPerson,
         };
       });
 
@@ -201,6 +205,8 @@ export default function Redemptions() {
                   id: prize.id,
                   name: prize.name,
                   amount: prize.amount ?? 0,
+                  shippingCostUsd: prize.shippingCostUsd,
+                  isInPerson: prize.isInPerson,
                 })
               }
             />

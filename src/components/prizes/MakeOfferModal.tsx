@@ -158,15 +158,19 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                   <div className="flex justify-between">
                     <span>Shipping:</span>
                     {(() => {
-                      if (prize.isInPerson) {
-                        return (
-                          <span className="text-emerald-500 font-medium">In-Person Pickup</span>
-                        );
-                      }
                       const shipping =
                         prize.shippingCostUsd != null && prize.shippingCostUsd >= 0
                           ? prize.shippingCostUsd
                           : 5;
+                      if (prize.isInPerson) {
+                        return shipping === 0 ? (
+                          <span className="text-emerald-500 font-medium">In-Person Pickup</span>
+                        ) : (
+                          <span className="text-emerald-500 font-medium">
+                            In-Person Pickup • ${shipping.toFixed(2)}
+                          </span>
+                        );
+                      }
                       return shipping === 0 ? (
                         <span className="text-emerald-500 font-medium">Free Shipping</span>
                       ) : (

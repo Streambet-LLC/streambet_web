@@ -47,6 +47,8 @@ export default function ShopDetail() {
     name: string;
     amount: number;
     sellerCryptoEnabled: boolean;
+    shippingCostUsd?: number;
+    isInPerson?: boolean;
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -139,6 +141,8 @@ export default function ShopDetail() {
         // price PrizeCard for these items.
         saleType: prize.saleType,
         auction: prize.auction ?? null,
+        shippingCostUsd: prize.shippingCostUsd,
+        isInPerson: prize.isInPerson,
         // Don't show shop link in shop detail - user is already in the shop
       };
     });
@@ -344,6 +348,8 @@ export default function ShopDetail() {
               name: prize.name,
               amount: prize.amount ?? 0,
               sellerCryptoEnabled: prize.sellerCryptoEnabled ?? false,
+              shippingCostUsd: prize.shippingCostUsd,
+              isInPerson: prize.isInPerson,
             })
           }
           showFilters={true}
