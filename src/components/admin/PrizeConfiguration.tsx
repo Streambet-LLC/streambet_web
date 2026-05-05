@@ -78,6 +78,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { EbayDataPanel } from './EbayDataPanel';
 
 // Helper function to get purchase option badge styling
 const getPurchaseOptionBadge = (purchaseOption: 'both' | 'buy_only' | 'offers_only') => {
@@ -341,7 +342,9 @@ export const PrizeConfiguration = () => {
 
   // Display order editing state
   const [isEditingOrder, setIsEditingOrder] = useState(false);
-  const [selectedPage, setSelectedPage] = useState<'shop' | 'redemptions' | 'auctions'>('shop');
+  const [selectedPage, setSelectedPage] = useState<
+    'shop' | 'redemptions' | 'auctions' | 'ebay-data'
+  >('shop');
   const [orderChanges, setOrderChanges] = useState<
     Map<
       string,
@@ -802,8 +805,14 @@ export const PrizeConfiguration = () => {
 
   // Handle toggle change for purchase option sorting
   const handleToggleSortChange = async (checked: boolean) => {
+    if (selectedPage !== 'shop' && selectedPage !== 'redemptions') {
+      return;
+    }
+
+    const selectedSortPage = selectedPage;
+
     // Update local state immediately for instant UI feedback
-    setSortByPurchaseOption(prev => ({ ...prev, [selectedPage]: checked }));
+    setSortByPurchaseOption(prev => ({ ...prev, [selectedSortPage]: checked }));
 
     // Prepare field name for API
     const fieldMap = {
@@ -827,7 +836,7 @@ export const PrizeConfiguration = () => {
       await bulkUpdateOrderMutation.mutateAsync(updates);
     } catch (error) {
       // Revert state on error
-      setSortByPurchaseOption(prev => ({ ...prev, [selectedPage]: !checked }));
+      setSortByPurchaseOption(prev => ({ ...prev, [selectedSortPage]: !checked }));
       toast({
         title: 'Error',
         description: 'Failed to update sorting preference',
@@ -890,7 +899,10 @@ export const PrizeConfiguration = () => {
         }
 
         // Apply purchase option sorting if enabled for current page
-        if (sortByPurchaseOption[selectedPage]) {
+        if (
+          (selectedPage === 'shop' && sortByPurchaseOption.shop) ||
+          (selectedPage === 'redemptions' && sortByPurchaseOption.redemptions)
+        ) {
           // Primary sort: purchaseOption (both=0, buy_only=1, offers_only=2)
           const purchaseOrder = { both: 0, buy_only: 1, offers_only: 2 };
           const aPurchase = purchaseOrder[a.purchaseOption] ?? 3;
@@ -934,7 +946,10 @@ export const PrizeConfiguration = () => {
     const fullSortedList = getSortedPrizes(category, false);
 
     // Validate drag if purchase option sorting is enabled
-    if (sortByPurchaseOption[selectedPage]) {
+    if (
+      (selectedPage === 'shop' && sortByPurchaseOption.shop) ||
+      (selectedPage === 'redemptions' && sortByPurchaseOption.redemptions)
+    ) {
       const draggedPrize = fullSortedList.find(p => p.id === active.id);
       const targetPrize = fullSortedList.find(p => p.id === over.id);
 
@@ -1280,6 +1295,7 @@ export const PrizeConfiguration = () => {
   }
 
   const activeTiers = tiers?.filter(t => t.isActive) || [];
+  const isEbayDataPage = selectedPage === 'ebay-data';
 
   return (
     <>
@@ -1293,7 +1309,7 @@ export const PrizeConfiguration = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              {isEditingOrder ? (
+              {!isEbayDataPage && isEditingOrder ? (
                 <>
                   <Button variant="outline" onClick={cancelEditMode}>
                     Cancel
@@ -1308,7 +1324,7 @@ export const PrizeConfiguration = () => {
                     )}
                   </Button>
                 </>
-              ) : (
+              ) : !isEbayDataPage ? (
                 <>
                   <Button variant="outline" onClick={enterEditMode}>
                     <Edit className="w-4 h-4" />
@@ -1319,7 +1335,7 @@ export const PrizeConfiguration = () => {
                     <span className="hidden sm:inline ml-2">Add Item</span>
                   </Button>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
         </CardHeader>
@@ -1347,10 +1363,17 @@ export const PrizeConfiguration = () => {
             >
               Auctions
             </Button>
+            <Button
+              variant={selectedPage === 'ebay-data' ? 'default' : 'ghost'}
+              onClick={() => setSelectedPage('ebay-data')}
+              className="rounded-b-none"
+            >
+              eBay Data
+            </Button>
           </div>
 
           {/* Search bar and sorting toggle */}
-          {activeTiers.length > 0 && (
+          {!isEbayDataPage && activeTiers.length > 0 && (
             <div className="mb-6 flex items-center justify-between gap-4">
               {/* Left side: Search */}
               <div className="flex-1">
@@ -1367,7 +1390,11 @@ export const PrizeConfiguration = () => {
               {isEditingOrder && (
                 <div className="flex items-center gap-2 whitespace-nowrap">
                   <Switch
-                    checked={sortByPurchaseOption[selectedPage]}
+                    checked={
+                      selectedPage === 'shop'
+                        ? sortByPurchaseOption.shop
+                        : sortByPurchaseOption.redemptions
+                    }
                     onCheckedChange={handleToggleSortChange}
                     id="sort-toggle"
                   />
@@ -1393,7 +1420,7 @@ export const PrizeConfiguration = () => {
           )}
 
           {/* Bulk action toolbar */}
-          {selectedItems.size > 0 && (
+          {!isEbayDataPage && selectedItems.size > 0 && (
             <div className="mb-6 p-4 bg-slate-900 dark:bg-slate-800 border border-blue-500 dark:border-blue-600 rounded-lg flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <span className="font-semibold text-sm text-white">
@@ -1445,7 +1472,9 @@ export const PrizeConfiguration = () => {
             </div>
           )}
 
-          {activeTiers.length === 0 ? (
+          {isEbayDataPage ? (
+            <EbayDataPanel />
+          ) : activeTiers.length === 0 ? (
             <div className="text-center py-12">
               <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">No active prize tiers</p>
