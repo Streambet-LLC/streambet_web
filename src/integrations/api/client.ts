@@ -1391,6 +1391,34 @@ export const adminAPI = {
     const response = await apiClient.patch(`/admin/discount-codes/${id}`, data);
     return response.data;
   },
+
+  // Promo Codes (signup-bonus coin codes)
+  getPromoCodes: async () => {
+    const response = await apiClient.get('/admin/promo-codes');
+    return response.data;
+  },
+
+  createPromoCode: async (data: {
+    code: string;
+    amount: number;
+    isActive?: boolean;
+    expiresAt?: string;
+  }) => {
+    const response = await apiClient.post('/admin/promo-codes', data);
+    return response.data;
+  },
+
+  updatePromoCode: async (
+    id: string,
+    data: {
+      amount?: number;
+      isActive?: boolean;
+      expiresAt?: string | null;
+    }
+  ) => {
+    const response = await apiClient.patch(`/admin/promo-codes/${id}`, data);
+    return response.data;
+  },
 };
 
 // Creator API

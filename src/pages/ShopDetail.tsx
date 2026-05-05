@@ -221,7 +221,7 @@ export default function ShopDetail() {
                 {slabPrizes.length > 0 && (
                   <span className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Package className="w-3.5 h-3.5" />
-                    {slabPrizes.length} {slabPrizes.length === 1 ? 'item' : 'items'}
+                    {slabPrizes.length} {slabPrizes.length === 1 ? 'item' : 'items'} listed
                   </span>
                 )}
                 {username && <RatingSummary username={username} side="as_seller" size="sm" />}
