@@ -2,6 +2,9 @@ import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
 import { Button } from '../ui/button';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
+import { Label } from '../ui/label';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Textarea } from '../ui/textarea';
 import { motion } from 'framer-motion';
 import {
   ShoppingCart,
@@ -15,6 +18,7 @@ import {
   Pencil,
   Eye,
   Heart,
+  AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Prize } from './PrizesByCategory';
@@ -28,6 +32,9 @@ import { useCountdown } from '@/hooks/use-countdown';
 import { useViewTracker } from '@/hooks/useViewTracker';
 import WatchButton from './WatchButton';
 import ShareItemButton from './ShareItemButton';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { prizeAPI } from '@/integrations/api/client';
+import { toast } from '@/hooks/use-toast';
 
 interface PrizeCardProps {
   prize: Prize;
@@ -41,6 +48,20 @@ interface PrizeCardProps {
 
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_SUPPRESS_CLICK_MS = 350;
+
+const PRICE_CHART_WIDTH = 620;
+const PRICE_CHART_HEIGHT = 220;
+const PRICE_CHART_PADDING = { top: 12, right: 12, bottom: 28, left: 52 };
+
+const REPORT_REASON_OPTIONS = [
+  { value: 'wrong-item', label: 'Wrong item' },
+  { value: 'wrong-condition', label: 'Wrong condition/grade' },
+  { value: 'title-mismatch', label: 'Title/description mismatch' },
+  { value: 'image-mismatch', label: 'Image does not match listing' },
+  { value: 'price-issue', label: 'Suspicious or unrealistic price' },
+  { value: 'duplicate', label: 'Duplicate listing' },
+  { value: 'other', label: 'Other' },
+] as const;
 
 const normalizePrizeImageUrls = (prize: Prize): string[] => {
   const uniqueUrls: string[] = [];
@@ -85,6 +106,48 @@ const getSafeImageIndex = (index: number, imageCount: number): number => {
   return index;
 };
 
+const formatShortDate = (dateValue: string | null): string => {
+  if (!dateValue) {
+    return 'n/a';
+  }
+
+  const parsed = new Date(dateValue);
+  if (Number.isNaN(parsed.getTime())) {
+    return 'n/a';
+  }
+
+  return parsed.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const formatChartPrice = (value: number): string => `$${value.toFixed(2)}`;
+
+const resolveEbayFullResolutionImageUrl = (imageUrl: string): string => {
+  try {
+    const parsed = new URL(imageUrl);
+    const isEbayImageHost = parsed.hostname.toLowerCase().includes('ebayimg.com');
+    if (!isEbayImageHost) {
+      return imageUrl;
+    }
+
+    const resizedPath = parsed.pathname.replace(
+      /\/s-l\d+(\.[a-z0-9]+)?$/i,
+      (_match, extension = '') => `/s-l1600${extension}`,
+    );
+
+    if (resizedPath === parsed.pathname) {
+      return imageUrl;
+    }
+
+    parsed.pathname = resizedPath;
+    return parsed.toString();
+  } catch {
+    return imageUrl;
+  }
+};
+
 export default function PrizeCard({
   prize,
   onClick,
@@ -94,9 +157,30 @@ export default function PrizeCard({
   hideButtons = false,
 }: PrizeCardProps) {
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showMarketModal, setShowMarketModal] = useState(false);
+  const [soldListingPreview, setSoldListingPreview] = useState<{
+    activeUrl: string;
+    thumbnailUrl: string;
+    fullResolutionUrl: string;
+    soldTitle: string;
+  } | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [modalImageIndex, setModalImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [reportingListingId, setReportingListingId] = useState<string | null>(null);
+  const [reportDialogTarget, setReportDialogTarget] = useState<{
+    listingId: string;
+    soldTitle: string;
+    imageUrl: string | null;
+    salePrice: number;
+    dateSold: string | null;
+  } | null>(null);
+  const [selectedReportReason, setSelectedReportReason] = useState<string>('');
+  const [reportReasonDetails, setReportReasonDetails] = useState('');
+  const [syncingMarketData, setSyncingMarketData] = useState(false);
+  const [chartWindow, setChartWindow] = useState<'7d' | '30d'>('30d');
+  const [activeChartPointId, setActiveChartPointId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const inlineTouchStartXRef = useRef<number | null>(null);
   const modalTouchStartXRef = useRef<number | null>(null);
   const suppressNextInlineOpenRef = useRef(false);
@@ -309,6 +393,7 @@ export default function PrizeCard({
   const { session } = useAuthContext();
   const addToCart = useAddToCart();
   const isProUser = !!session?.isProSubscriber;
+  const isAdminUser = session?.role === 'admin';
   // Owner detection: if the current user is the seller of this item, show an Edit
   // shortcut instead of Buy/Make Offer buttons (you can't buy your own item).
   // The session shape is inconsistent across the app: sometimes the current user's
@@ -344,6 +429,218 @@ export default function PrizeCard({
   const earlyAccessDate = !prize.isProOnly ? prize.proEarlyAccessUntil : null;
   const { timeLeft: earlyAccessTimeLeft } = useCountdown(earlyAccessDate);
   const hasEarlyAccessTimer = !!earlyAccessTimeLeft;
+
+  const marketSummaryQuery = useQuery({
+    queryKey: ['ebay-market-summary', prize.id],
+    queryFn: () => prizeAPI.getEbayMarketSummary(prize.id),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const marketHistoryQuery = useQuery({
+    queryKey: ['ebay-market-history', prize.id],
+    queryFn: () => prizeAPI.getEbayMarketHistory(prize.id, 120),
+    enabled: showMarketModal,
+    staleTime: 1000 * 60 * 2,
+    retry: 1,
+  });
+
+  const marketSummary = marketSummaryQuery.data;
+  const latestAvg = marketSummary?.averagePrice ?? null;
+  const latestPercentDiff = marketSummary?.percentDifference ?? null;
+  const cardLastCalculated =
+    marketSummary?.lastCalculatedAt || prize.ebayMarketLastCalculatedAt || null;
+
+  const chartData = useMemo(() => {
+    const allRows = (marketHistoryQuery.data?.listings ?? [])
+      .slice()
+      .reverse()
+      .filter((row) => Number.isFinite(row.salePrice));
+
+    if (!allRows.length) {
+      return null;
+    }
+
+    const now = Date.now();
+    const days = chartWindow === '7d' ? 7 : 30;
+    const windowMs = days * 24 * 60 * 60 * 1000;
+
+    const filteredRows = allRows.filter((row) => {
+      if (!row.dateSold) {
+        return true;
+      }
+      const soldTs = new Date(row.dateSold).getTime();
+      return Number.isFinite(soldTs) && now - soldTs <= windowMs;
+    });
+
+    const rows = filteredRows.length ? filteredRows : allRows;
+    if (!rows.length) {
+      return null;
+    }
+
+    const values = rows.map((row) => row.salePrice);
+    const minY = Math.min(...values);
+    const maxY = Math.max(...values);
+    const sortedValues = [...values].sort((a, b) => a - b);
+    const medianY =
+      sortedValues.length % 2 === 0
+        ? (sortedValues[sortedValues.length / 2 - 1] + sortedValues[sortedValues.length / 2]) / 2
+        : sortedValues[Math.floor(sortedValues.length / 2)];
+
+    const innerWidth = PRICE_CHART_WIDTH - PRICE_CHART_PADDING.left - PRICE_CHART_PADDING.right;
+    const innerHeight = PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.top - PRICE_CHART_PADDING.bottom;
+    const yRange = maxY - minY || 1;
+    const xRange = Math.max(rows.length - 1, 1);
+
+    const points = rows.map((row, index) => {
+      const x = PRICE_CHART_PADDING.left + (index / xRange) * innerWidth;
+      const y =
+        PRICE_CHART_PADDING.top +
+        innerHeight -
+        ((row.salePrice - minY) / yRange) * innerHeight;
+      return {
+        id: row.id,
+        x,
+        y,
+        row,
+      };
+    });
+
+    return {
+      points,
+      polyline: points.map((point) => `${point.x},${point.y}`).join(' '),
+      minY,
+      maxY,
+      medianY,
+      oldestLabel: formatShortDate(rows[0]?.dateSold ?? null),
+      newestLabel: formatShortDate(rows[rows.length - 1]?.dateSold ?? null),
+      latestPoint: points[points.length - 1],
+    };
+  }, [marketHistoryQuery.data?.listings, chartWindow]);
+
+  const activeChartPoint = useMemo(() => {
+    if (!chartData) {
+      return null;
+    }
+    return chartData.points.find((point) => point.id === activeChartPointId) ?? null;
+  }, [chartData, activeChartPointId]);
+
+  useEffect(() => {
+    setActiveChartPointId(null);
+  }, [chartWindow, marketHistoryQuery.data?.listings]);
+
+  const closeReportDialog = () => {
+    setReportDialogTarget(null);
+    setSelectedReportReason('');
+    setReportReasonDetails('');
+  };
+
+  const handleOpenReportDialog = (listing: {
+    id: string;
+    soldTitle: string;
+    imageUrl: string | null;
+    salePrice: number;
+    dateSold: string | null;
+  }) => {
+    if (!session) {
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in to report inaccurate market data.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setReportDialogTarget({
+      listingId: listing.id,
+      soldTitle: listing.soldTitle,
+      imageUrl: listing.imageUrl,
+      salePrice: listing.salePrice,
+      dateSold: listing.dateSold,
+    });
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportDialogTarget || !selectedReportReason) {
+      return;
+    }
+
+    const selectedOption = REPORT_REASON_OPTIONS.find(
+      option => option.value === selectedReportReason,
+    );
+    const details = reportReasonDetails.trim();
+    const reason = details
+      ? `${selectedOption?.label ?? 'Other'}: ${details}`
+      : selectedOption?.label;
+
+    setReportingListingId(reportDialogTarget.listingId);
+    try {
+      await prizeAPI.reportEbaySoldListing(reportDialogTarget.listingId, {
+        reason: reason || undefined,
+      });
+      toast({
+        title: 'Reported',
+        description: 'Thanks! This listing will be hidden from your results while pending admin review.',
+      });
+      closeReportDialog();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['ebay-market-summary', prize.id] }),
+        queryClient.invalidateQueries({ queryKey: ['ebay-market-history', prize.id] }),
+      ]);
+    } catch (error) {
+      toast({
+        title: 'Unable to report listing',
+        description: 'Please try again in a moment.',
+        variant: 'destructive',
+      });
+    } finally {
+      setReportingListingId(null);
+    }
+  };
+
+  const handleManualMarketSync = async () => {
+    if (!isAdminUser) {
+      return;
+    }
+
+    setSyncingMarketData(true);
+    try {
+      const result = await prizeAPI.syncEbaySoldListingsNow(prize.id);
+      toast({
+        title: 'Sold data refreshed',
+        description: `Fetched ${result.fetched}, inserted ${result.inserted}, deduped ${result.deduped}`,
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['ebay-market-summary', prize.id] }),
+        queryClient.invalidateQueries({ queryKey: ['ebay-market-history', prize.id] }),
+      ]);
+      if (!showMarketModal) {
+        setShowMarketModal(true);
+      }
+    } catch (_error) {
+      toast({
+        title: 'Sync failed',
+        description: 'Unable to refresh sold listings right now.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncingMarketData(false);
+    }
+  };
+
+  const handleOpenSoldListingPreview = (imageUrl: string | null, soldTitle: string) => {
+    if (!imageUrl) {
+      return;
+    }
+
+    const fullResolutionUrl = resolveEbayFullResolutionImageUrl(imageUrl);
+    setSoldListingPreview({
+      activeUrl: fullResolutionUrl,
+      thumbnailUrl: imageUrl,
+      fullResolutionUrl,
+      soldTitle,
+    });
+  };
 
   // ── Redemption variant (prod-style landscape card) ───────────────────────
   if (variant === 'redemption') {
@@ -423,6 +720,59 @@ export default function PrizeCard({
             <p className="text-sm text-muted-foreground mb-2">
               {prize.amount.toLocaleString('en-US')} coins • ${(prize.amount / 50).toFixed(2)} USD
             </p>
+          )}
+          <button
+            type="button"
+            className="w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
+            onClick={e => {
+              e.stopPropagation();
+              setShowMarketModal(true);
+            }}
+          >
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
+            {marketSummaryQuery.isLoading ? (
+              <div className="mt-1 text-xs text-muted-foreground">Loading market data...</div>
+            ) : latestAvg !== null ? (
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
+                <span
+                  className={cn(
+                    'text-xs font-semibold',
+                    latestPercentDiff === null
+                      ? 'text-muted-foreground'
+                      : latestPercentDiff >= 0
+                        ? 'text-orange-400'
+                        : 'text-emerald-400'
+                  )}
+                >
+                  {latestPercentDiff === null
+                    ? 'n/a'
+                    : `${latestPercentDiff >= 0 ? '+' : ''}${latestPercentDiff.toFixed(2)}%`}
+                </span>
+              </div>
+            ) : (
+              <div className="mt-1 text-xs text-muted-foreground">0 sold listings</div>
+            )}
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              {cardLastCalculated
+                ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
+                : ''}
+            </div>
+          </button>
+          {isAdminUser && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
+              disabled={syncingMarketData}
+              onClick={e => {
+                e.stopPropagation();
+                void handleManualMarketSync();
+              }}
+            >
+              {syncingMarketData ? 'Fetching sold data...' : 'Fetch Sold Data Now'}
+            </Button>
           )}
           {typeof prize.stock === 'number' && (
             <p className="text-xs text-muted-foreground mb-4">
@@ -648,6 +998,60 @@ export default function PrizeCard({
             )}
           </div>
 
+          <button
+            type="button"
+            className="mt-1 rounded-md border border-[#2A2F3A] bg-[#11151d] px-2.5 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
+            onClick={e => {
+              e.stopPropagation();
+              setShowMarketModal(true);
+            }}
+          >
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
+            {marketSummaryQuery.isLoading ? (
+              <div className="mt-1 text-[11px] text-muted-foreground">Loading market data...</div>
+            ) : latestAvg !== null ? (
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
+                <span
+                  className={cn(
+                    'text-[11px] font-semibold',
+                    latestPercentDiff === null
+                      ? 'text-muted-foreground'
+                      : latestPercentDiff >= 0
+                        ? 'text-orange-400'
+                        : 'text-emerald-400'
+                  )}
+                >
+                  {latestPercentDiff === null
+                    ? 'n/a'
+                    : `${latestPercentDiff >= 0 ? '+' : ''}${latestPercentDiff.toFixed(2)}%`}
+                </span>
+              </div>
+            ) : (
+              <div className="mt-1 text-[11px] text-muted-foreground">0 sold listings</div>
+            )}
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              {cardLastCalculated
+                ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
+                : ''}
+            </div>
+          </button>
+          {isAdminUser && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
+              disabled={syncingMarketData}
+              onClick={e => {
+                e.stopPropagation();
+                void handleManualMarketSync();
+              }}
+            >
+              {syncingMarketData ? 'Fetching sold data...' : 'Fetch Sold Data Now'}
+            </Button>
+          )}
+
           {/* Stock Count */}
           {typeof prize.stock === 'number' && (
             <p className="text-[10px] text-muted-foreground">
@@ -855,6 +1259,444 @@ export default function PrizeCard({
               </div>
             )}
           </motion.div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Market Data Modal */}
+      <Dialog open={showMarketModal} onOpenChange={setShowMarketModal}>
+        <DialogContent className="max-w-3xl bg-[#0D0D0D] border-[#1E242E]">
+          <DialogTitle className="text-white">Market Data: {prize.name}</DialogTitle>
+
+          <div className="space-y-4 max-h-[78vh] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
+                <div className="text-[11px] text-muted-foreground uppercase">Last 10 Sold Avg</div>
+                <div className="mt-1 text-lg font-semibold text-[#7AFF14]">
+                  {marketSummary?.averagePrice != null ? `$${marketSummary.averagePrice.toFixed(2)}` : '—'}
+                </div>
+              </div>
+              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
+                <div className="text-[11px] text-muted-foreground uppercase">Diff vs Listing</div>
+                <div
+                  className={cn(
+                    'mt-1 text-lg font-semibold',
+                    marketSummary?.percentDifference == null
+                      ? 'text-muted-foreground'
+                      : marketSummary.percentDifference >= 0
+                        ? 'text-orange-400'
+                        : 'text-emerald-400'
+                  )}
+                >
+                  {marketSummary?.percentDifference == null
+                    ? '—'
+                    : `${marketSummary.percentDifference >= 0 ? '+' : ''}${marketSummary.percentDifference.toFixed(2)}%`}
+                </div>
+              </div>
+              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
+                <div className="text-[11px] text-muted-foreground uppercase">Last Calculated</div>
+                <div className="mt-1 text-sm font-medium text-white">
+                  {cardLastCalculated ? new Date(cardLastCalculated).toLocaleString() : '—'}
+                </div>
+              </div>
+            </div>
+
+            {marketSummary?.windows?.length ? (
+              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
+                <div className="text-sm font-semibold text-white mb-2">Window Averages</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  {marketSummary.windows.map((w) => (
+                    <div key={w.window} className="rounded border border-[#2A2F3A] p-2">
+                      <div className="text-muted-foreground uppercase">{w.window}</div>
+                      <div className="text-white font-medium mt-1">
+                        {w.averagePrice != null ? `$${w.averagePrice.toFixed(2)}` : '—'}
+                      </div>
+                      <div className="text-muted-foreground">{w.soldCount} sold</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="text-sm font-semibold text-white">Price Over Time</div>
+                <div className="flex items-center gap-2">
+                  <div className="inline-flex rounded-md border border-[#2A2F3A] bg-[#0B1018] p-0.5">
+                    {(['7d', '30d'] as const).map((windowKey) => (
+                      <button
+                        key={windowKey}
+                        type="button"
+                        onClick={() => setChartWindow(windowKey)}
+                        className={cn(
+                          'rounded px-2 py-1 text-[11px] font-medium transition-colors',
+                          chartWindow === windowKey
+                            ? 'bg-[#7AFF14] text-black'
+                            : 'text-muted-foreground hover:text-white'
+                        )}
+                      >
+                        {windowKey.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                  {isAdminUser && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
+                      disabled={syncingMarketData}
+                      onClick={() => {
+                        void handleManualMarketSync();
+                      }}
+                    >
+                      {syncingMarketData ? 'Fetching...' : 'Fetch Sold Data Now'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {marketHistoryQuery.isLoading ? (
+                <div className="text-sm text-muted-foreground">Loading history...</div>
+              ) : chartData ? (
+                <div className="relative">
+                  <svg
+                    viewBox={`0 0 ${PRICE_CHART_WIDTH} ${PRICE_CHART_HEIGHT}`}
+                    className="w-full h-48 rounded bg-[#0B1018] border border-[#1F2531]"
+                    onMouseLeave={() => setActiveChartPointId(null)}
+                  >
+                    <line
+                      x1={PRICE_CHART_PADDING.left}
+                      y1={PRICE_CHART_PADDING.top}
+                      x2={PRICE_CHART_WIDTH - PRICE_CHART_PADDING.right}
+                      y2={PRICE_CHART_PADDING.top}
+                      stroke="#2A2F3A"
+                      strokeDasharray="3 3"
+                    />
+                    <line
+                      x1={PRICE_CHART_PADDING.left}
+                      y1={(PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom + PRICE_CHART_PADDING.top) / 2}
+                      x2={PRICE_CHART_WIDTH - PRICE_CHART_PADDING.right}
+                      y2={(PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom + PRICE_CHART_PADDING.top) / 2}
+                      stroke="#2A2F3A"
+                      strokeDasharray="3 3"
+                    />
+                    <line
+                      x1={PRICE_CHART_PADDING.left}
+                      y1={PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom}
+                      x2={PRICE_CHART_WIDTH - PRICE_CHART_PADDING.right}
+                      y2={PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom}
+                      stroke="#2A2F3A"
+                      strokeDasharray="3 3"
+                    />
+
+                    <text x="6" y={PRICE_CHART_PADDING.top + 4} fill="#9CA3AF" fontSize="11">
+                      {formatChartPrice(chartData.maxY)}
+                    </text>
+                    <text
+                      x="6"
+                      y={(PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom + PRICE_CHART_PADDING.top) / 2 + 4}
+                      fill="#9CA3AF"
+                      fontSize="11"
+                    >
+                      {formatChartPrice(chartData.medianY)}
+                    </text>
+                    <text
+                      x="6"
+                      y={PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom + 4}
+                      fill="#9CA3AF"
+                      fontSize="11"
+                    >
+                      {formatChartPrice(chartData.minY)}
+                    </text>
+
+                    <polyline
+                      fill="none"
+                      stroke="#7AFF14"
+                      strokeWidth="2.5"
+                      points={chartData.polyline}
+                    />
+
+                    {chartData.points.map((point) => (
+                      <g key={`chart-point-${point.id}`}>
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r="10"
+                          fill="transparent"
+                          onMouseEnter={() => setActiveChartPointId(point.id)}
+                          onClick={() => setActiveChartPointId(point.id)}
+                        />
+                      </g>
+                    ))}
+
+                    <circle
+                      cx={chartData.latestPoint.x}
+                      cy={chartData.latestPoint.y}
+                      r="4.5"
+                      fill="#7AFF14"
+                      stroke="#0B1018"
+                      strokeWidth="2"
+                    />
+
+                    <text
+                      x={PRICE_CHART_PADDING.left}
+                      y={PRICE_CHART_HEIGHT - 6}
+                      fill="#9CA3AF"
+                      fontSize="11"
+                    >
+                      {chartData.oldestLabel}
+                    </text>
+                    <text
+                      x={PRICE_CHART_WIDTH - PRICE_CHART_PADDING.right}
+                      y={PRICE_CHART_HEIGHT - 6}
+                      fill="#9CA3AF"
+                      fontSize="11"
+                      textAnchor="end"
+                    >
+                      {chartData.newestLabel}
+                    </text>
+                  </svg>
+
+                  <div
+                    className="pointer-events-none absolute rounded-md border border-[#7AFF14]/50 bg-black/85 px-2 py-1 text-[11px] text-white"
+                    style={{
+                      left: `${Math.min(94, Math.max(8, (chartData.latestPoint.x / PRICE_CHART_WIDTH) * 100))}%`,
+                      top: `${Math.min(80, Math.max(8, (chartData.latestPoint.y / PRICE_CHART_HEIGHT) * 100 - 14))}%`,
+                      transform: 'translate(-50%, -100%)',
+                    }}
+                  >
+                    Latest {formatChartPrice(chartData.latestPoint.row.salePrice)}
+                  </div>
+
+                  {activeChartPoint && (
+                    <div
+                      className="absolute z-20 min-w-[210px] rounded-md border border-[#2A2F3A] bg-[#0B1018] p-2 text-[11px] text-white shadow-lg"
+                      style={{
+                        left: `${Math.min(92, Math.max(10, (activeChartPoint.x / PRICE_CHART_WIDTH) * 100))}%`,
+                        top: `${Math.min(84, Math.max(10, (activeChartPoint.y / PRICE_CHART_HEIGHT) * 100 - 10))}%`,
+                        transform: 'translate(-50%, -100%)',
+                      }}
+                    >
+                      <div className="font-semibold text-[#7AFF14]">
+                        {formatChartPrice(activeChartPoint.row.salePrice)}
+                      </div>
+                      <div className="text-muted-foreground">
+                        {activeChartPoint.row.dateSold
+                          ? new Date(activeChartPoint.row.dateSold).toLocaleDateString()
+                          : 'Date unavailable'}
+                        {activeChartPoint.row.itemCondition
+                          ? ` • ${activeChartPoint.row.itemCondition}`
+                          : ''}
+                      </div>
+                      <div className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">
+                        {activeChartPoint.row.soldTitle}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No sold listings to chart yet.</div>
+              )}
+            </div>
+
+            <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
+              <div className="text-sm font-semibold text-white mb-2">Sold Listings History</div>
+              {marketHistoryQuery.isLoading ? (
+                <div className="text-sm text-muted-foreground">Loading sold listings...</div>
+              ) : marketHistoryQuery.data?.listings?.length ? (
+                <div className="space-y-2">
+                  {marketHistoryQuery.data.listings.slice(0, 40).map((row) => (
+                    <div key={row.id} className="rounded border border-[#2A2F3A] p-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          {row.imageUrl ? (
+                            <button
+                              type="button"
+                              className="group relative h-14 w-14 shrink-0 overflow-hidden rounded border border-[#2A2F3A] bg-[#0B1018]"
+                              onClick={() => handleOpenSoldListingPreview(row.imageUrl, row.soldTitle)}
+                              aria-label={`Open full image for ${row.soldTitle}`}
+                            >
+                              <img
+                                src={row.imageUrl}
+                                alt={row.soldTitle}
+                                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                loading="lazy"
+                              />
+                              <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-200 group-hover:bg-black/40 group-hover:opacity-100">
+                                <Expand className="h-4 w-4 text-white" aria-hidden="true" />
+                              </span>
+                            </button>
+                          ) : (
+                            <div className="h-14 w-14 shrink-0 rounded border border-[#2A2F3A] bg-[#0B1018]" />
+                          )}
+                          <div className="min-w-0">
+                          <div className="text-sm text-white line-clamp-2">{row.soldTitle}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            ${row.salePrice.toFixed(2)}
+                            {row.dateSold
+                              ? ` • ${new Date(row.dateSold).toLocaleDateString()}`
+                              : ''}
+                            {row.itemCondition ? ` • ${row.itemCondition}` : ''}
+                          </div>
+                        </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {row.listingUrl ? (
+                            <a
+                              href={row.listingUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[#7AFF14] hover:underline"
+                            >
+                              View
+                            </a>
+                          ) : null}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-xs border-orange-400/40 text-orange-300 hover:bg-orange-500/10"
+                            disabled={reportingListingId === row.id}
+                            onClick={() => handleOpenReportDialog(row)}
+                          >
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            {reportingListingId === row.id ? 'Reporting...' : 'Report'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No sold listings found.</div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sold Listing Image Modal */}
+      <Dialog open={!!soldListingPreview} onOpenChange={() => setSoldListingPreview(null)}>
+        <DialogTitle className="sr-only">Sold Listing Image Preview</DialogTitle>
+        <DialogContent
+          className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent flex items-center justify-center"
+          aria-describedby={undefined}
+        >
+          {soldListingPreview && (
+            <img
+              src={soldListingPreview.activeUrl}
+              alt={soldListingPreview.soldTitle}
+              className="block max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain rounded-lg"
+              onError={() => {
+                setSoldListingPreview(prev => {
+                  if (!prev || prev.activeUrl === prev.thumbnailUrl) {
+                    return prev;
+                  }
+
+                  return {
+                    ...prev,
+                    activeUrl: prev.thumbnailUrl,
+                  };
+                });
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Listing Modal */}
+      <Dialog open={!!reportDialogTarget} onOpenChange={(open) => !open && closeReportDialog()}>
+        <DialogTitle className="sr-only">Report Sold Listing</DialogTitle>
+        <DialogContent className="max-w-lg bg-[#0D0D0D] border-[#1E242E] text-white">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-base font-semibold">Report Sold Listing</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                This listing will be hidden from your view while admin reviews your report.
+              </p>
+            </div>
+
+            {reportDialogTarget ? (
+              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
+                <div className="flex items-start gap-3">
+                  {reportDialogTarget.imageUrl ? (
+                    <img
+                      src={reportDialogTarget.imageUrl}
+                      alt={reportDialogTarget.soldTitle}
+                      className="h-12 w-12 rounded border border-[#2A2F3A] object-cover"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded border border-[#2A2F3A] bg-[#0B1018]" />
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium line-clamp-2">{reportDialogTarget.soldTitle}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      ${reportDialogTarget.salePrice.toFixed(2)}
+                      {reportDialogTarget.dateSold
+                        ? ` • ${new Date(reportDialogTarget.dateSold).toLocaleDateString()}`
+                        : ''}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Reason</Label>
+              <RadioGroup
+                value={selectedReportReason}
+                onValueChange={setSelectedReportReason}
+                className="space-y-2"
+              >
+                {REPORT_REASON_OPTIONS.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex items-center gap-2 rounded-md border border-[#2A2F3A] bg-[#121722] px-3 py-2 text-sm cursor-pointer"
+                  >
+                    <RadioGroupItem value={option.value} id={`report-reason-${option.value}`} />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="report-reason-details" className="text-sm font-medium">
+                Additional Details (optional)
+              </Label>
+              <Textarea
+                id="report-reason-details"
+                value={reportReasonDetails}
+                onChange={(event) => setReportReasonDetails(event.target.value)}
+                placeholder="Add context for admins (max 500 characters)"
+                maxLength={500}
+                className="min-h-[88px] bg-[#121722] border-[#2A2F3A]"
+              />
+              <div className="text-[11px] text-muted-foreground text-right">
+                {reportReasonDetails.length}/500
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-[#2A2F3A]"
+                onClick={closeReportDialog}
+                disabled={!!reportingListingId}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="bg-orange-500 text-white hover:bg-orange-500/90"
+                onClick={() => {
+                  void handleSubmitReport();
+                }}
+                disabled={!selectedReportReason || !!reportingListingId}
+              >
+                {reportingListingId ? 'Reporting...' : 'Submit Report'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </motion.div>
