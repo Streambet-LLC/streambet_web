@@ -40,16 +40,28 @@ jobs:
         run: |
           # 2. Fetch SSM Parameters
           REF="${{ github.ref_name }}"
-          export VITE_API_URL=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_API_URL" --with-decryption --query "Parameter.Value" --output text)
-          export VITE_APP_HOST_URL=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_APP_HOST_URL" --with-decryption --query "Parameter.Value" --output text)
-          export VITE_BUGSNAG_KEY=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_BUGSNAG_KEY" --with-decryption --query "Parameter.Value" --output text)
-          export VITE_BUGSNAG_SERVER=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_BUGSNAG_SERVER" --with-decryption --query "Parameter.Value" --output text)
-          export VITE_COINFLOW_API_URL=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_API_URL" --with-decryption --query "Parameter.Value" --output text)
-          export VITE_COINFLOW_BLOCKCHAIN=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_BLOCKCHAIN" --with-decryption --query "Parameter.Value" --output text)
-          export VITE_COINFLOW_CHARGEBACK_PROTECTION_MERCHANT_ID=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_CHARGEBACK_PROTECTION_MERCHANT_ID" --with-decryption --query "Parameter.Value" --output text)
-          export VITE_COINFLOW_ENV=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_ENV" --with-decryption --query "Parameter.Value" --output text)
-          export VITE_COINFLOW_MERCHANT_ID=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_COINFLOW_MERCHANT_ID" --with-decryption --query "Parameter.Value" --output text)
-          export VITE_S3_BASE_URL=$(aws ssm get-parameter --name "/cardcade/$REF/VITE_S3_BASE_URL" --with-decryption --query "Parameter.Value" --output text)
+          PARAMS=(
+            VITE_API_URL
+            VITE_APP_HOST_URL
+            VITE_BUGSNAG_KEY
+            VITE_BUGSNAG_SERVER
+            VITE_COINFLOW_API_URL
+            VITE_COINFLOW_BLOCKCHAIN
+            VITE_COINFLOW_CHARGEBACK_PROTECTION_MERCHANT_ID
+            VITE_COINFLOW_ENV
+            VITE_COINFLOW_MERCHANT_ID
+            VITE_S3_BASE_URL
+            VITE_SOLANA_RPC_URL
+          )
+          for name in "${PARAMS[@]}"; do
+            full="/cardcade/$REF/$name"
+            if ! value=$(aws ssm get-parameter --name "$full" --with-decryption --query "Parameter.Value" --output text 2>/tmp/ssm_err); then
+              echo "::error::Missing SSM parameter: $full"
+              cat /tmp/ssm_err
+              exit 1
+            fi
+            export "$name=$value"
+          done
 
           # 3. Build
           npm ci && npm run build
