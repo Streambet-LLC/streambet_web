@@ -208,6 +208,9 @@ export default function SellerShopManage() {
     // Per-item shipping fee in USD. Defaults to $5 to match the
     // legacy hardcoded value; a value of 0 means Free Shipping.
     shippingCostUsd: 5,
+    // In-person pickup. When true the item ships $0 and the buyer
+    // is not asked for a shipping address at checkout/offer time.
+    isInPerson: false,
   });
 
   useEffect(() => {
@@ -579,6 +582,7 @@ export default function SellerShopManage() {
         auctionStartingPriceUsd: 0,
         auctionReservePriceUsd: 0,
         shippingCostUsd: 5,
+        isInPerson: false,
       });
       setItemImages([]);
       setCoverImageIndex(0);
@@ -1141,6 +1145,7 @@ export default function SellerShopManage() {
       auctionReservePriceUsd: 0,
       shippingCostUsd:
         (item as any).shippingCostUsd != null ? Number((item as any).shippingCostUsd) : 5,
+      isInPerson: (item as any).isInPerson ?? false,
     });
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
@@ -1177,6 +1182,7 @@ export default function SellerShopManage() {
       auctionStartingPriceUsd: 0,
       auctionReservePriceUsd: 0,
       shippingCostUsd: 5,
+      isInPerson: false,
     });
     setItemImages([]);
     setCoverImageIndex(0);
@@ -1596,24 +1602,19 @@ export default function SellerShopManage() {
                             Accept USDC payments (Solana)
                           </Label>
                           <p className="text-xs text-muted-foreground">
-                            When enabled, buyers will see a “Pay with USDC”
-                            option at checkout for CardCade items. Funds settle
-                            directly to the treasury wallet below.
+                            When enabled, buyers will see a “Pay with USDC” option at checkout for
+                            CardCade items. Funds settle directly to the treasury wallet below.
                           </p>
                         </div>
                         <input
                           type="checkbox"
                           className="mt-1 h-4 w-4 cursor-pointer"
                           checked={cardcadeCryptoEnabled}
-                          onChange={e =>
-                            setCardcadeCryptoEnabled(e.target.checked)
-                          }
+                          onChange={e => setCardcadeCryptoEnabled(e.target.checked)}
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label className="text-xs">
-                          Treasury wallet address (Solana)
-                        </Label>
+                        <Label className="text-xs">Treasury wallet address (Solana)</Label>
                         <Input
                           placeholder="e.g., 5jCkjBbs2or7v7gnM1XjK32fs99kC2R2f5jPuvU2K4ab"
                           value={cardcadeCryptoWallet}
@@ -1623,14 +1624,14 @@ export default function SellerShopManage() {
                           autoCapitalize="off"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Base58 Solana address that will receive USDC for
-                          CardCade orders. Required when the toggle above is on.
+                          Base58 Solana address that will receive USDC for CardCade orders. Required
+                          when the toggle above is on.
                         </p>
                       </div>
                       {cardcadeCryptoEnabled && !cardcadeCryptoWallet.trim() && (
                         <p className="text-xs text-destructive">
-                          Add a wallet address before enabling USDC checkout —
-                          buyers won’t see the option until both are set.
+                          Add a wallet address before enabling USDC checkout — buyers won’t see the
+                          option until both are set.
                         </p>
                       )}
                     </div>
@@ -1658,12 +1659,8 @@ export default function SellerShopManage() {
                           setCity(cardcadeSettings.city || '');
                           setState(cardcadeSettings.state || '');
                           setCountry(cardcadeSettings.country || '');
-                          setCardcadeCryptoEnabled(
-                            !!cardcadeSettings.cryptoPaymentsEnabled
-                          );
-                          setCardcadeCryptoWallet(
-                            cardcadeSettings.cryptoWalletAddress || ''
-                          );
+                          setCardcadeCryptoEnabled(!!cardcadeSettings.cryptoPaymentsEnabled);
+                          setCardcadeCryptoWallet(cardcadeSettings.cryptoWalletAddress || '');
                         } else {
                           // Try to get shop name from multiple sources
                           let displayNameValue = '';
@@ -1706,8 +1703,7 @@ export default function SellerShopManage() {
                             ? {
                                 profileImageUrl: shopProfileImageUrl ?? undefined,
                                 cryptoPaymentsEnabled: cardcadeCryptoEnabled,
-                                cryptoWalletAddress:
-                                  cardcadeCryptoWallet.trim() || null,
+                                cryptoWalletAddress: cardcadeCryptoWallet.trim() || null,
                               }
                             : {}),
                         })
@@ -1766,14 +1762,16 @@ export default function SellerShopManage() {
                         placeholder="Enter PSA cert number"
                         value={psaCertNumber}
                         onChange={e => setPsaCertNumber(e.target.value)}
-                         disabled={isPsaRateLimitActive(psaRateLimitedUntil)}
+                        disabled={isPsaRateLimitActive(psaRateLimitedUntil)}
                       />
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => psaImportMutation.mutate(psaCertNumber)}
                         disabled={
-                            psaImportMutation.isPending || !psaCertNumber.trim() || isPsaRateLimitActive(psaRateLimitedUntil)
+                          psaImportMutation.isPending ||
+                          !psaCertNumber.trim() ||
+                          isPsaRateLimitActive(psaRateLimitedUntil)
                         }
                       >
                         {psaImportMutation.isPending ? (
@@ -1785,7 +1783,7 @@ export default function SellerShopManage() {
                     <p className="text-xs text-muted-foreground">
                       Pulls the title, grade, and available PSA images into the listing form.
                     </p>
-                      {isPsaRateLimitActive(psaRateLimitedUntil) && (
+                    {isPsaRateLimitActive(psaRateLimitedUntil) && (
                       <p className="text-xs text-destructive">{PSA_RATE_LIMIT_MESSAGE}</p>
                     )}
 
@@ -2251,6 +2249,37 @@ export default function SellerShopManage() {
                   )}
 
                   {/*
+                   * In-Person Pickup. When toggled on, shipping is forced
+                   * to $0 (we still show the editable input below in case
+                   * the seller wants to override) AND the buyer is not
+                   * asked for a shipping address at checkout / offer time.
+                   */}
+                  <div className="grid gap-2">
+                    <div className="flex items-center justify-between rounded-md border p-3">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">In-Person Pickup</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Buyer picks up locally. No shipping address is collected and shipping
+                          defaults to $0 (you can still override the cost below).
+                        </p>
+                      </div>
+                      <Switch
+                        checked={form.isInPerson}
+                        onCheckedChange={(checked: boolean) =>
+                          setForm(p => ({
+                            ...p,
+                            isInPerson: checked,
+                            // Toggling ON drops shipping to $0 by default;
+                            // the seller can still raise it manually if
+                            // they want to charge a delivery fee.
+                            shippingCostUsd: checked ? 0 : p.shippingCostUsd,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/*
                    * Per-item shipping fee. Applies to every sale type —
                    * fixed-price checkout, offers, and auction close all add
                    * this on top of the buyer total. Defaults to $5; setting
@@ -2270,14 +2299,13 @@ export default function SellerShopManage() {
                         const raw = e.target.value;
                         setForm(p => ({
                           ...p,
-                          shippingCostUsd:
-                            raw === '' ? 0 : Math.max(0, parseFloat(raw) || 0),
+                          shippingCostUsd: raw === '' ? 0 : Math.max(0, parseFloat(raw) || 0),
                         }));
                       }}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Charged to the buyer on top of the sale price (or winning bid for
-                      auctions). Defaults to $5.00. Enter 0 to offer Free Shipping.
+                      Charged to the buyer on top of the sale price (or winning bid for auctions).
+                      Defaults to $5.00. Enter 0 to offer Free Shipping.
                     </p>
                   </div>
 

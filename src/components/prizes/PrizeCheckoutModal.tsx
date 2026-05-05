@@ -53,6 +53,12 @@ interface PrizeCheckoutModalProps {
    * instead of a dollar amount and won’t add anything to the buyer total).
    */
   shippingCostUsd?: number;
+  /**
+   * When true, this item is in-person pickup. The modal hides the
+   * shipping address form, sends empty address fields, and forces
+   * shipping to $0 regardless of `shippingCostUsd`.
+   */
+  isInPerson?: boolean;
 }
 
 const COINS_TO_USD = 50; // 50 coins = $1
@@ -74,13 +80,19 @@ export default function PrizeCheckoutModal({
   isShopItem = false,
   sellerCryptoEnabled = false,
   shippingCostUsd,
+  isInPerson = false,
 }: PrizeCheckoutModalProps) {
+  // In-person pickup overrides any per-item shipping cost: the buyer
+  // is collecting locally so we never charge a delivery fee.
+  const effectiveShippingCostUsd = isInPerson ? 0 : shippingCostUsd;
   // Resolve the per-item shipping fee. Anything < 0 is clamped to 0 so
   // a misconfigured caller can never accidentally credit the buyer.
   // Negative or NaN values fall back to the legacy $5 default.
   const SHIPPING_FEE_USD =
-    shippingCostUsd != null && Number.isFinite(shippingCostUsd) && shippingCostUsd >= 0
-      ? shippingCostUsd
+    effectiveShippingCostUsd != null &&
+    Number.isFinite(effectiveShippingCostUsd) &&
+    effectiveShippingCostUsd >= 0
+      ? effectiveShippingCostUsd
       : DEFAULT_SHIPPING_FEE_USD;
   const isFreeShipping = SHIPPING_FEE_USD === 0;
   const SHIPPING_FEE_COINS = Math.round(SHIPPING_FEE_USD * COINS_TO_USD);
@@ -334,12 +346,13 @@ export default function PrizeCheckoutModal({
     e.preventDefault();
 
     if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.addressLine1 ||
-      !formData.city ||
-      !formData.state ||
-      !formData.zipCode
+      !isInPerson &&
+      (!formData.firstName ||
+        !formData.lastName ||
+        !formData.addressLine1 ||
+        !formData.city ||
+        !formData.state ||
+        !formData.zipCode)
     ) {
       toast({
         title: 'Error',
@@ -430,8 +443,16 @@ export default function PrizeCheckoutModal({
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping:</span>
-                <span className={isFreeShipping ? 'text-emerald-500 font-medium' : 'text-muted-foreground'}>
-                  {isFreeShipping ? 'Free Shipping' : `$${SHIPPING_FEE_USD.toFixed(2)}`}
+                <span
+                  className={
+                    isFreeShipping ? 'text-emerald-500 font-medium' : 'text-muted-foreground'
+                  }
+                >
+                  {isInPerson
+                    ? 'In-Person Pickup'
+                    : isFreeShipping
+                      ? 'Free Shipping'
+                      : `$${SHIPPING_FEE_USD.toFixed(2)}`}
                 </span>
               </div>
               {(paymentMethod === 'usd' || paymentMethod === 'combined') && usdAmount > 0 && (
@@ -533,8 +554,8 @@ export default function PrizeCheckoutModal({
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  USDC checkout is temporarily unavailable while crypto sales
-                  are paused. Please use a card or CadeCoins.
+                  USDC checkout is temporarily unavailable while crypto sales are paused. Please use
+                  a card or CadeCoins.
                 </AlertDescription>
               </Alert>
             )}
@@ -545,18 +566,14 @@ export default function PrizeCheckoutModal({
               // checkout (totals, wallet hint, CTA) stays above the fold.
               <Select
                 value={paymentMethod}
-                onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                onValueChange={v => setPaymentMethod(v as PaymentMethod)}
               >
                 <SelectTrigger className="w-full cursor-pointer">
                   <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
                 <SelectContent>
                   {allowCadeCoins && (
-                    <SelectItem
-                      value="coins"
-                      disabled={!hasEnoughCoins}
-                      className="cursor-pointer"
-                    >
+                    <SelectItem value="coins" disabled={!hasEnoughCoins} className="cursor-pointer">
                       <span className="font-medium">CadeCoins Only</span>
                       <span className="text-muted-foreground ml-2">
                         · {roundDownCoinAmount(coinsAmount).toLocaleString('en-US')} CC
@@ -587,81 +604,81 @@ export default function PrizeCheckoutModal({
               </Select>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-              {allowCadeCoins && (
+                {allowCadeCoins && (
+                  <label
+                    className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                    style={{
+                      borderColor:
+                        paymentMethod === 'coins' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      value="coins"
+                      checked={paymentMethod === 'coins'}
+                      onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium">CadeCoins Only</div>
+                      <div className="text-sm text-muted-foreground">
+                        {roundDownCoinAmount(coinsAmount).toLocaleString('en-US')} CadeCoins
+                        {!hasEnoughCoins && (
+                          <span className="text-red-500 ml-2">(Insufficient balance)</span>
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                )}
+
                 <label
                   className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
                   style={{
                     borderColor:
-                      paymentMethod === 'coins' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                      paymentMethod === 'usd' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
                   }}
                 >
                   <input
                     type="radio"
-                    value="coins"
-                    checked={paymentMethod === 'coins'}
+                    value="usd"
+                    checked={paymentMethod === 'usd'}
                     onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
                     className="mr-3"
                   />
                   <div className="flex-1">
-                    <div className="font-medium">CadeCoins Only</div>
+                    <div className="font-medium">Credit/Debit Card (USD)</div>
                     <div className="text-sm text-muted-foreground">
-                      {roundDownCoinAmount(coinsAmount).toLocaleString('en-US')} CadeCoins
-                      {!hasEnoughCoins && (
-                        <span className="text-red-500 ml-2">(Insufficient balance)</span>
-                      )}
+                      ${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} USD
                     </div>
                   </div>
                 </label>
-              )}
 
-              <label
-                className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
-                style={{
-                  borderColor:
-                    paymentMethod === 'usd' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                }}
-              >
-                <input
-                  type="radio"
-                  value="usd"
-                  checked={paymentMethod === 'usd'}
-                  onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="font-medium">Credit/Debit Card (USD)</div>
-                  <div className="text-sm text-muted-foreground">
-                    ${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} USD
-                  </div>
-                </div>
-              </label>
-
-              {allowCadeCoins && (
-                <label
-                  className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
-                  style={{
-                    borderColor:
-                      paymentMethod === 'combined' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                  }}
-                >
-                  <input
-                    type="radio"
-                    value="combined"
-                    checked={paymentMethod === 'combined'}
-                    onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
-                    className="mr-3"
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium">CadeCoins + Card</div>
-                    <div className="text-sm text-muted-foreground">
-                      Split payment between coins and USD
+                {allowCadeCoins && (
+                  <label
+                    className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-accent transition-colors"
+                    style={{
+                      borderColor:
+                        paymentMethod === 'combined' ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      value="combined"
+                      checked={paymentMethod === 'combined'}
+                      onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium">CadeCoins + Card</div>
+                      <div className="text-sm text-muted-foreground">
+                        Split payment between coins and USD
+                      </div>
                     </div>
-                  </div>
-                </label>
-              )}
+                  </label>
+                )}
 
-              {sellerCryptoEnabled && null /* handled by dropdown branch above */}
-            </div>
+                {sellerCryptoEnabled && null /* handled by dropdown branch above */}
+              </div>
             )}
           </div>
 
@@ -781,9 +798,63 @@ export default function PrizeCheckoutModal({
           )}
 
           <div className="space-y-4">
-            <Label className="text-base font-semibold">Shipping Address</Label>
+            <Label className="text-base font-semibold">
+              {isInPerson ? 'Pickup Details' : 'Shipping Address'}
+            </Label>
 
-            {isLoadingAddress ? (
+            {isInPerson ? (
+              // In-person pickup: skip the address form entirely. The
+              // seller will coordinate hand-off with the buyer directly
+              // (e.g. via the post-purchase chat / order detail page).
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    This item is in-person pickup. No shipping address is required — the seller
+                    will reach out to coordinate the hand-off after checkout.
+                  </AlertDescription>
+                </Alert>
+
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    {paymentMethod === 'coins'
+                      ? `Total: ${roundDownCoinAmount(coinsAmount).toLocaleString()} CadeCoins`
+                      : paymentMethod === 'usd'
+                        ? `Total: $${(totalPrice + getBuyerFeeUsd(usdAmount)).toFixed(2)} • Pay via card`
+                        : paymentMethod === 'crypto'
+                          ? `Total: $${cryptoTotalUsd.toFixed(2)} USDC${
+                              cryptoBuyerFeeWaived ? ' (buyer fee waived)' : ''
+                            }`
+                          : paymentMethod === 'combined'
+                            ? `Total: ${roundDownCoinAmount(combinedCoinsAmount).toLocaleString()} coins + $${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} card`
+                            : ''}
+                  </AlertDescription>
+                </Alert>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={
+                    createOrderMutation.isPending ||
+                    !!cryptoOrderId ||
+                    (paymentMethod === 'coins' && !hasEnoughCoins) ||
+                    (paymentMethod === 'crypto' && !cryptoWalletConnected)
+                  }
+                >
+                  {createOrderMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : paymentMethod === 'coins' && !hasEnoughCoins ? (
+                    `Need ${roundDownCoinAmount(coinsAmount - userCadeCoins)} more CadeCoins!`
+                  ) : (
+                    'Complete Purchase'
+                  )}
+                </Button>
+              </form>
+            ) : isLoadingAddress ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin" />
                 <span className="ml-2">Loading address...</span>
@@ -905,13 +976,14 @@ export default function PrizeCheckoutModal({
                   disabled={
                     createOrderMutation.isPending ||
                     !!cryptoOrderId ||
-                    !formData.firstName ||
-                    !formData.lastName ||
-                    !formData.addressLine1 ||
-                    !formData.city ||
-                    !formData.state ||
-                    !formData.zipCode ||
-                    !formData.country ||
+                    (!isInPerson &&
+                      (!formData.firstName ||
+                        !formData.lastName ||
+                        !formData.addressLine1 ||
+                        !formData.city ||
+                        !formData.state ||
+                        !formData.zipCode ||
+                        !formData.country)) ||
                     (paymentMethod === 'coins' && !hasEnoughCoins) ||
                     (paymentMethod === 'crypto' && !cryptoWalletConnected)
                   }

@@ -1597,7 +1597,10 @@ export const prizeAPI = {
     listingId: string,
     payload?: { reason?: string }
   ): Promise<{ success: true; listingId: string }> => {
-    const response = await apiClient.post(`/prizes/ebay-sold-listings/${listingId}/report`, payload);
+    const response = await apiClient.post(
+      `/prizes/ebay-sold-listings/${listingId}/report`,
+      payload
+    );
     return response.data;
   },
 
@@ -1658,6 +1661,8 @@ export const prizeAPI = {
     saleType?: 'fixed_price' | 'auction';
     /** Per-item shipping fee in USD. Server defaults to $5 if omitted. 0 = Free Shipping. */
     shippingCostUsd?: number;
+    /** When true, item is in-person pickup (forces shipping to $0, skips address). */
+    isInPerson?: boolean;
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/seller/prizes/items', payload);
     return response.data;
@@ -1682,6 +1687,8 @@ export const prizeAPI = {
       profileFeatured?: boolean;
       /** Per-item shipping fee in USD. 0 = Free Shipping. */
       shippingCostUsd?: number;
+      /** When true, item is in-person pickup. */
+      isInPerson?: boolean;
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/seller/prizes/items/${id}`, payload);
@@ -1779,6 +1786,8 @@ export const prizeAPI = {
     brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
     /** Per-item shipping fee in USD. Server defaults to $5 if omitted. */
     shippingCostUsd?: number;
+    /** When true, item is in-person pickup. */
+    isInPerson?: boolean;
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/admin/prizes', payload);
     return response.data;
@@ -1804,6 +1813,8 @@ export const prizeAPI = {
       showOnRedemptions?: boolean;
       /** Per-item shipping fee in USD. */
       shippingCostUsd?: number;
+      /** When true, item is in-person pickup. */
+      isInPerson?: boolean;
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/admin/prizes/${id}`, payload);

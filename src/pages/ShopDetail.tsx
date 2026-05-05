@@ -374,6 +374,7 @@ export default function ShopDetail() {
           isShopItem={true}
           sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
           shippingCostUsd={selectedPrizeForCheckout.shippingCostUsd}
+          isInPerson={selectedPrizeForCheckout.isInPerson}
         />
       )}
     </MainLayout>

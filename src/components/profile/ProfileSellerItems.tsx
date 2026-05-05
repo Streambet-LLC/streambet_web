@@ -259,6 +259,7 @@ export default function ProfileSellerItems({
           isShopItem={true}
           sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
           shippingCostUsd={selectedPrizeForCheckout.shippingCostUsd}
+          isInPerson={selectedPrizeForCheckout.isInPerson}
         />
       )}
 

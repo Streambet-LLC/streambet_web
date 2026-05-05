@@ -150,6 +150,7 @@ export default function Watchlist() {
             isShopItem
             sellerCryptoEnabled={checkoutPrize.sellerCryptoEnabled ?? false}
             shippingCostUsd={checkoutPrize.shippingCostUsd}
+            isInPerson={checkoutPrize.isInPerson}
           />
         )}
       </div>

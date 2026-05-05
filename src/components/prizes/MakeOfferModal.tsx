@@ -28,6 +28,8 @@ interface Prize {
   createdBy?: string | null;
   /** Per-item shipping fee in USD. Defaults to $5 server-side; 0 = Free Shipping. */
   shippingCostUsd?: number;
+  /** When true, item is in-person pickup (no address collected, $0 shipping). */
+  isInPerson?: boolean;
 }
 
 interface ShippingAddress {
@@ -156,6 +158,11 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                   <div className="flex justify-between">
                     <span>Shipping:</span>
                     {(() => {
+                      if (prize.isInPerson) {
+                        return (
+                          <span className="text-emerald-500 font-medium">In-Person Pickup</span>
+                        );
+                      }
                       const shipping =
                         prize.shippingCostUsd != null && prize.shippingCostUsd >= 0
                           ? prize.shippingCostUsd
@@ -209,6 +216,14 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
               <p className="text-xs text-muted-foreground">{offerNotes.length}/500</p>
             </div>
 
+            {prize.isInPerson ? (
+              // In-person pickup: no shipping address collected. Seller
+              // will coordinate hand-off after the offer is accepted.
+              <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                This item is in-person pickup. No shipping address is required — the seller will
+                reach out to coordinate the hand-off if your offer is accepted.
+              </div>
+            ) : (
             <div className="space-y-4">
               <Label className="text-base font-semibold">Shipping Address</Label>
 
@@ -316,6 +331,7 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                 </p>
               </div>
             </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (

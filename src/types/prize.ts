@@ -109,6 +109,12 @@ export interface PrizeConfiguration {
   saleType?: PrizeSaleType;
   /** Per-item shipping fee in USD. Backfilled to $5 for legacy items. */
   shippingCostUsd?: number;
+  /**
+   * When true, this item is sold as in-person pickup. Shipping is
+   * always $0 and the checkout/offer flow skips collecting a shipping
+   * address.
+   */
+  isInPerson?: boolean;
   auction?: AuctionSummary | null;
 }
 
@@ -284,6 +290,8 @@ export interface CreatePrizeTierRequest {
   saleType?: PrizeSaleType;
   /** Per-item shipping fee in USD. Defaults to $5 server-side if omitted. */
   shippingCostUsd?: number;
+  /** When true, item is in-person pickup (shipping forced to $0, no address collected). */
+  isInPerson?: boolean;
 }
 
 /**
@@ -311,6 +319,8 @@ export interface UpdatePrizeTierRequest {
   isProOnly?: boolean;
   /** Per-item shipping fee in USD. */
   shippingCostUsd?: number;
+  /** When true, item is in-person pickup. */
+  isInPerson?: boolean;
 }
 
 /**

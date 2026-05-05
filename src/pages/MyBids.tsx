@@ -144,6 +144,7 @@ export default function MyBids() {
             isShopItem
             sellerCryptoEnabled={checkoutPrize.sellerCryptoEnabled ?? false}
             shippingCostUsd={checkoutPrize.shippingCostUsd}
+            isInPerson={checkoutPrize.isInPerson}
           />
         )}
       </div>

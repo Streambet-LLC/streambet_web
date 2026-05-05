@@ -908,6 +908,7 @@ export default function Prizes() {
           isShopItem={!!selectedPrizeForCheckout.createdBy}
           sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
           shippingCostUsd={selectedPrizeForCheckout.shippingCostUsd}
+          isInPerson={selectedPrizeForCheckout.isInPerson}
         />
       )}
 
