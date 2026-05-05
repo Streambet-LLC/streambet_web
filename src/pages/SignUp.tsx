@@ -688,7 +688,7 @@ export default function SignUp() {
                 again at checkout to get the discount.
               </span>
               <span className="block text-white/60 text-xs pt-1">
-                Discount codes work on Buy Now purchases — they do not apply to
+                Discount codes work on Buy Now purchases only — they do not apply to
                 auctions.
               </span>
             </DialogDescription>
