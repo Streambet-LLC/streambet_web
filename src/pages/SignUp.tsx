@@ -6,6 +6,14 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { api } from '@/integrations/api/client';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
@@ -43,6 +51,10 @@ export default function SignUp() {
   const [userNameCheck, setUserNameCheck] = useState('');
   const [avatarInputKey, setAvatarInputKey] = useState(0);
   const { locationResult, isCheckingLocation } = useLocationRestriction();
+  const [discountReminder, setDiscountReminder] = useState<{
+    code: string;
+    description: string;
+  } | null>(null);
 
   const signupSchema = z.object({
     name: z.string().optional(),
@@ -100,11 +112,24 @@ export default function SignUp() {
 
       return await api.auth.register(userData);
     },
-    onSuccess: () => {
+    onSuccess: response => {
       toast({
         title: 'Account created!',
         description: 'Your account has been successfully created. Please verify mail to login.',
       });
+
+      // If the code the user entered is also a cart discount code, show a
+      // modal they have to dismiss so they don't miss it. Discount codes
+      // work on Buy Now (and other shop purchases) but not on auctions.
+      const discountInfo = response?.data?.discountCodeAlsoAvailable;
+      if (discountInfo?.code) {
+        setDiscountReminder({
+          code: discountInfo.code,
+          description: discountInfo.description,
+        });
+        return;
+      }
+
       navigate('/verify-email-notice');
     },
     onError: (error: any) => {
@@ -504,6 +529,11 @@ export default function SignUp() {
                   {errors.promoCode && (
                     <p className="text-destructive text-sm">{errors.promoCode}</p>
                   )}
+                  <p className="text-xs text-white/50">
+                    Some promo codes also work as discount codes at checkout (Buy Now only,
+                    not auctions). If yours does, you'll be reminded after signup to apply it
+                    again at checkout.
+                  </p>
                 </motion.div>
                 {/* <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="refLink">Referal Code (Optional)</Label>
@@ -625,6 +655,57 @@ export default function SignUp() {
           </CardFooter>
         </Card>
       </motion.div>
+
+      <Dialog
+        open={!!discountReminder}
+        onOpenChange={open => {
+          if (!open && discountReminder) {
+            setDiscountReminder(null);
+            navigate('/verify-email-notice');
+          }
+        }}
+      >
+        <DialogContent
+          className="sm:max-w-[460px] border-2 border-[#7AFF14] text-white"
+          style={{ background: '#0D0D0D' }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {discountReminder?.code} is also a discount code
+            </DialogTitle>
+            <DialogDescription className="text-gray-300 pt-2 space-y-2">
+              <span className="block">
+                <span className="text-[#BDFF00] font-semibold">
+                  Get {discountReminder?.description}
+                </span>
+                .
+              </span>
+              <span className="block">
+                Be sure to apply{' '}
+                <span className="font-mono font-semibold text-[#BDFF00]">
+                  {discountReminder?.code}
+                </span>{' '}
+                again at checkout to get the discount.
+              </span>
+              <span className="block text-white/60 text-xs pt-1">
+                Discount codes work on Buy Now purchases — they do not apply to
+                auctions.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setDiscountReminder(null);
+                navigate('/verify-email-notice');
+              }}
+              className="bg-electric-lime text-black font-bold rounded-md hover:bg-electric-lime-hover w-full sm:w-auto"
+            >
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AuthLayout>
   );
 }
