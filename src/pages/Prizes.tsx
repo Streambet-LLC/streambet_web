@@ -907,6 +907,7 @@ export default function Prizes() {
           allowCadeCoins={!selectedPrizeForCheckout.createdBy}
           isShopItem={!!selectedPrizeForCheckout.createdBy}
           sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
+          shippingCostUsd={selectedPrizeForCheckout.shippingCostUsd}
         />
       )}
 

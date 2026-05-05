@@ -205,6 +205,9 @@ export default function SellerShopManage() {
     auctionDurationDays: 3 as 1 | 3 | 5 | 7,
     auctionStartingPriceUsd: 0,
     auctionReservePriceUsd: 0,
+    // Per-item shipping fee in USD. Defaults to $5 to match the
+    // legacy hardcoded value; a value of 0 means Free Shipping.
+    shippingCostUsd: 5,
   });
 
   useEffect(() => {
@@ -575,6 +578,7 @@ export default function SellerShopManage() {
         auctionDurationDays: 3,
         auctionStartingPriceUsd: 0,
         auctionReservePriceUsd: 0,
+        shippingCostUsd: 5,
       });
       setItemImages([]);
       setCoverImageIndex(0);
@@ -1135,6 +1139,8 @@ export default function SellerShopManage() {
       auctionDurationDays: 3,
       auctionStartingPriceUsd: 0,
       auctionReservePriceUsd: 0,
+      shippingCostUsd:
+        (item as any).shippingCostUsd != null ? Number((item as any).shippingCostUsd) : 5,
     });
     setItemImages(mappedImages);
     setCoverImageIndex(existingCoverIndex >= 0 ? existingCoverIndex : 0);
@@ -1170,6 +1176,7 @@ export default function SellerShopManage() {
       auctionDurationDays: 3,
       auctionStartingPriceUsd: 0,
       auctionReservePriceUsd: 0,
+      shippingCostUsd: 5,
     });
     setItemImages([]);
     setCoverImageIndex(0);
@@ -2242,6 +2249,37 @@ export default function SellerShopManage() {
                       </div>
                     </div>
                   )}
+
+                  {/*
+                   * Per-item shipping fee. Applies to every sale type —
+                   * fixed-price checkout, offers, and auction close all add
+                   * this on top of the buyer total. Defaults to $5; setting
+                   * it to 0 advertises Free Shipping on the storefront.
+                   */}
+                  <div className="grid gap-2">
+                    <Label>
+                      Shipping Cost (USD) <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="5.00"
+                      value={form.shippingCostUsd ?? ''}
+                      onChange={e => {
+                        const raw = e.target.value;
+                        setForm(p => ({
+                          ...p,
+                          shippingCostUsd:
+                            raw === '' ? 0 : Math.max(0, parseFloat(raw) || 0),
+                        }));
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Charged to the buyer on top of the sale price (or winning bid for
+                      auctions). Defaults to $5.00. Enter 0 to offer Free Shipping.
+                    </p>
+                  </div>
 
                   {form.saleType !== 'auction' && (
                     <div className="grid gap-2">

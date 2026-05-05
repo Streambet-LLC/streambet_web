@@ -26,6 +26,8 @@ interface Prize {
   stock?: number;
   purchaseOption?: 'offers_only' | 'buy_only' | 'both';
   createdBy?: string | null;
+  /** Per-item shipping fee in USD. Defaults to $5 server-side; 0 = Free Shipping. */
+  shippingCostUsd?: number;
 }
 
 interface ShippingAddress {
@@ -153,7 +155,17 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                   )}
                   <div className="flex justify-between">
                     <span>Shipping:</span>
-                    <span>$5.00</span>
+                    {(() => {
+                      const shipping =
+                        prize.shippingCostUsd != null && prize.shippingCostUsd >= 0
+                          ? prize.shippingCostUsd
+                          : 5;
+                      return shipping === 0 ? (
+                        <span className="text-emerald-500 font-medium">Free Shipping</span>
+                      ) : (
+                        <span>${shipping.toFixed(2)}</span>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

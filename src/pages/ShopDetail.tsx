@@ -373,6 +373,7 @@ export default function ShopDetail() {
           allowCadeCoins={false}
           isShopItem={true}
           sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
+          shippingCostUsd={selectedPrizeForCheckout.shippingCostUsd}
         />
       )}
     </MainLayout>

@@ -452,7 +452,11 @@ export default function AuctionBidModal({
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping</span>
-              <span>${feePreview.shipping.toFixed(2)}</span>
+              {feePreview.shipping === 0 ? (
+                <span className="text-emerald-500 font-medium">Free Shipping</span>
+              ) : (
+                <span>${feePreview.shipping.toFixed(2)}</span>
+              )}
             </div>
             <div className="flex justify-between border-t pt-1 mt-1">
               <span className="text-muted-foreground">Total charged to your card</span>

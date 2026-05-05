@@ -258,6 +258,7 @@ export default function ProfileSellerItems({
           allowCadeCoins={false}
           isShopItem={true}
           sellerCryptoEnabled={selectedPrizeForCheckout.sellerCryptoEnabled ?? false}
+          shippingCostUsd={selectedPrizeForCheckout.shippingCostUsd}
         />
       )}
 

@@ -1656,6 +1656,8 @@ export const prizeAPI = {
     sellerDisplayOrderShop?: number;
     profileFeatured?: boolean;
     saleType?: 'fixed_price' | 'auction';
+    /** Per-item shipping fee in USD. Server defaults to $5 if omitted. 0 = Free Shipping. */
+    shippingCostUsd?: number;
   }): Promise<PrizeConfiguration> => {
     const response = await apiClient.post('/seller/prizes/items', payload);
     return response.data;
@@ -1678,6 +1680,8 @@ export const prizeAPI = {
       brand?: 'pokemon' | 'one_piece' | 'sports' | 'other';
       sellerDisplayOrderShop?: number;
       profileFeatured?: boolean;
+      /** Per-item shipping fee in USD. 0 = Free Shipping. */
+      shippingCostUsd?: number;
     }
   ): Promise<PrizeConfiguration> => {
     const response = await apiClient.put(`/seller/prizes/items/${id}`, payload);

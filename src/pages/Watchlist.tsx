@@ -149,6 +149,7 @@ export default function Watchlist() {
             allowCadeCoins={!checkoutPrize.createdBy}
             isShopItem
             sellerCryptoEnabled={checkoutPrize.sellerCryptoEnabled ?? false}
+            shippingCostUsd={checkoutPrize.shippingCostUsd}
           />
         )}
       </div>

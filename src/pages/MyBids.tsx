@@ -143,6 +143,7 @@ export default function MyBids() {
             allowCadeCoins={!checkoutPrize.createdBy}
             isShopItem
             sellerCryptoEnabled={checkoutPrize.sellerCryptoEnabled ?? false}
+            shippingCostUsd={checkoutPrize.shippingCostUsd}
           />
         )}
       </div>

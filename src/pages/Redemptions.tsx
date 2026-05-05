@@ -217,6 +217,7 @@ export default function Redemptions() {
           prizeName={selectedPrizeForCheckout.name}
           prizeAmount={selectedPrizeForCheckout.amount}
           userCadeCoins={userCadeCoins}
+          shippingCostUsd={selectedPrizeForCheckout.shippingCostUsd}
         />
       )}
     </MainLayout>

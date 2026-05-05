@@ -46,12 +46,17 @@ interface PrizeCheckoutModalProps {
   allowCadeCoins?: boolean;
   isShopItem?: boolean; // If true, prizeAmount is in USD; if false/undefined, prizeAmount is in coins
   sellerCryptoEnabled?: boolean; // If true, show 'Pay with USDC' option
+  /**
+   * Per-item shipping fee in USD. Defaults to $5 to preserve the legacy
+   * behaviour for callers that haven't been updated yet. Pass 0 to mark
+   * the item as Free Shipping (the modal will display “Free Shipping”
+   * instead of a dollar amount and won’t add anything to the buyer total).
+   */
+  shippingCostUsd?: number;
 }
 
 const COINS_TO_USD = 50; // 50 coins = $1
-const SHIPPING_FEE_USD = 5; // $5 shipping fee
-const SHIPPING_FEE_COINS = SHIPPING_FEE_USD * COINS_TO_USD; // 250 coins
-const SHIPPING_FEE_CENTS = SHIPPING_FEE_USD * 100;
+const DEFAULT_SHIPPING_FEE_USD = 5; // Legacy default when caller doesn't override.
 const BUYER_FEE_PERCENT = 3; // 3% buyer service fee on USD payments
 // On-chain buyer fee charged by the marketplace contract (basis points).
 // Mirrors `BUYER_FEE_BPS` in cardcade-contracts (default 50 = 0.5%).
@@ -68,7 +73,18 @@ export default function PrizeCheckoutModal({
   allowCadeCoins = true,
   isShopItem = false,
   sellerCryptoEnabled = false,
+  shippingCostUsd,
 }: PrizeCheckoutModalProps) {
+  // Resolve the per-item shipping fee. Anything < 0 is clamped to 0 so
+  // a misconfigured caller can never accidentally credit the buyer.
+  // Negative or NaN values fall back to the legacy $5 default.
+  const SHIPPING_FEE_USD =
+    shippingCostUsd != null && Number.isFinite(shippingCostUsd) && shippingCostUsd >= 0
+      ? shippingCostUsd
+      : DEFAULT_SHIPPING_FEE_USD;
+  const isFreeShipping = SHIPPING_FEE_USD === 0;
+  const SHIPPING_FEE_COINS = Math.round(SHIPPING_FEE_USD * COINS_TO_USD);
+  const SHIPPING_FEE_CENTS = Math.round(SHIPPING_FEE_USD * 100);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { publicKey: walletPublicKey, disconnect: disconnectWallet } = useWallet();
@@ -414,7 +430,9 @@ export default function PrizeCheckoutModal({
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping:</span>
-                <span className="text-muted-foreground">${SHIPPING_FEE_USD.toFixed(2)}</span>
+                <span className={isFreeShipping ? 'text-emerald-500 font-medium' : 'text-muted-foreground'}>
+                  {isFreeShipping ? 'Free Shipping' : `$${SHIPPING_FEE_USD.toFixed(2)}`}
+                </span>
               </div>
               {(paymentMethod === 'usd' || paymentMethod === 'combined') && usdAmount > 0 && (
                 <div className="flex justify-between text-sm">

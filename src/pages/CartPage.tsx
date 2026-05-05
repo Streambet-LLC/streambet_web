@@ -593,7 +593,11 @@ const SellerGroupCard = ({
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Shipping</span>
-            <span>{formatCents(group.shippingCents)}</span>
+            {group.shippingCents === 0 ? (
+              <span className="text-emerald-500 font-medium">Free Shipping</span>
+            ) : (
+              <span>{formatCents(group.shippingCents)}</span>
+            )}
           </div>
           {group.buyerFeeCents > 0 && (
             <div className="flex justify-between text-sm">
