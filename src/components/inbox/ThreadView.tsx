@@ -41,6 +41,12 @@ export const ThreadView = ({ conversationId, currentUserId, onBack }: ThreadView
   const scrollRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  // Snapshot of the user's lastReadAt timestamp captured the FIRST time we
+  // see the conversation in this mount. We freeze it on purpose so that
+  // calling markAsRead (which advances lastReadAt to now) doesn't
+  // immediately erase the unread indicator on the messages the user just
+  // opened the thread to see.
+  const initialLastReadAtRef = useRef<string | null | undefined>(undefined);
 
   const { data, isLoading } = useQuery({
     queryKey: ['inbox-messages', conversationId],
@@ -61,14 +67,31 @@ export const ThreadView = ({ conversationId, currentUserId, onBack }: ThreadView
   });
 
   useEffect(() => {
+    // New thread opened — reset the unread snapshot so it gets recaptured
+    // from the next data payload, and re-arm auto-scroll to the bottom.
+    initialLastReadAtRef.current = undefined;
+    setShouldAutoScroll(true);
     markReadMutation.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages. The radix <ScrollArea> wraps its
+  // children in an inner viewport element — mutating scrollTop on the outer
+  // wrapper has no visible effect, which is why scroll-on-open felt broken.
+  // We query the viewport via its data attribute and scroll that instead.
   useEffect(() => {
-    if (shouldAutoScroll && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (!shouldAutoScroll) return;
+    const root = scrollRef.current;
+    if (!root) return;
+    const viewport = root.querySelector<HTMLElement>(
+      '[data-radix-scroll-area-viewport]',
+    );
+    const target = viewport ?? root;
+    // Defer one frame so freshly-rendered messages are measured before we
+    // jump to the bottom; otherwise scrollHeight is the pre-render value.
+    requestAnimationFrame(() => {
+      target.scrollTop = target.scrollHeight;
+    });
   }, [data?.data, shouldAutoScroll]);
 
   // Block user mutation
@@ -128,6 +151,17 @@ export const ThreadView = ({ conversationId, currentUserId, onBack }: ThreadView
   // replies, so we hide the compose box and show a notice instead.
   const isSystemBotThread =
     !isSupport && (otherParticipant?.user?.username || '').toLowerCase() === 'cardcade';
+
+  // Capture the user's lastReadAt ONCE per thread mount so that the unread
+  // dots remain visible on messages that were unread when the thread
+  // opened, even after our markAsRead call advances the server-side cursor.
+  const myParticipant = conversation?.participants.find(
+    p => String(p.userId ?? p.user?.id) === String(currentUserId),
+  );
+  if (conversation && initialLastReadAtRef.current === undefined) {
+    initialLastReadAtRef.current = myParticipant?.lastReadAt ?? null;
+  }
+  const initialLastReadAt = initialLastReadAtRef.current;
 
   if (isLoading) {
     return (
@@ -229,6 +263,16 @@ export const ThreadView = ({ conversationId, currentUserId, onBack }: ThreadView
               new Date(message.createdAt).toDateString() !==
                 new Date(messages[index - 1].createdAt).toDateString();
 
+            // An incoming message is "unread" (visually) if it was created
+            // after the last-read cursor we snapshotted on mount. Own
+            // messages never get the dot.
+            const isUnread =
+              !isOwn &&
+              (initialLastReadAt === null ||
+                (initialLastReadAt !== undefined &&
+                  new Date(message.createdAt).getTime() >
+                    new Date(initialLastReadAt).getTime()));
+
             return (
               <div key={message.id}>
                 {showDateSeparator && (
@@ -242,6 +286,7 @@ export const ThreadView = ({ conversationId, currentUserId, onBack }: ThreadView
                   message={message}
                   isOwn={isOwn}
                   currentUserId={currentUserId}
+                  isUnread={isUnread}
                   onImageClick={setLightboxImage}
                 />
               </div>
@@ -290,12 +335,20 @@ interface MessageBubbleProps {
   message: Message;
   isOwn: boolean;
   currentUserId?: string;
+  isUnread?: boolean;
   onImageClick?: (url: string) => void;
 }
 
-const MessageBubble = ({ message, isOwn, currentUserId, onImageClick }: MessageBubbleProps) => {
+const MessageBubble = ({ message, isOwn, currentUserId, isUnread, onImageClick }: MessageBubbleProps) => {
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex items-start gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+      {/* Unread dot — only on incoming messages the user hasn't seen yet. */}
+      {!isOwn && isUnread && (
+        <span
+          aria-label="Unread message"
+          className="mt-3 h-2 w-2 shrink-0 rounded-full bg-primary shadow-[0_0_6px_rgba(189,255,0,0.7)]"
+        />
+      )}
       <div
         className={`max-w-[75%] ${
           isOwn
