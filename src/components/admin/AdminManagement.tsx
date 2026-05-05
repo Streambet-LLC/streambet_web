@@ -50,6 +50,7 @@ import SalesHistoryAdmin from './SalesHistoryAdmin';
 import { AdminInboxPanel } from './AdminInboxPanel';
 import { ConciergePanel } from './ConciergePanel';
 import { DiscountCodesPanel } from './DiscountCodesPanel';
+import { PromoCodesPanel } from './PromoCodesPanel';
 
 export const AdminManagement = ({
   session,
@@ -122,6 +123,7 @@ export const AdminManagement = ({
     { key: 'user-messages', label: 'User Messages' },
     { key: 'concierge', label: 'Concierge' },
     { key: 'discount-codes', label: 'Discount Codes' },
+    { key: 'promo-codes', label: 'Promo Codes' },
     { key: 'prize-redemptions', label: 'Prize Redemptions' },
     { key: 'prize-offers', label: 'Prize Offers' },
     { key: 'applications', label: 'Applications' },
@@ -1797,6 +1799,12 @@ export const AdminManagement = ({
           {activeTab === 'discount-codes' && (
             <div className="space-y-4">
               <DiscountCodesPanel />
+            </div>
+          )}
+
+          {activeTab === 'promo-codes' && (
+            <div className="space-y-4">
+              <PromoCodesPanel />
             </div>
           )}
         </>
