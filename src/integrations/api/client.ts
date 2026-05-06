@@ -1586,6 +1586,14 @@ export const prizeAPI = {
     return response.data;
   },
 
+  getEbayFeatureFlags: async (): Promise<{
+    ebaySoldAvgEnabled: boolean;
+    ebayManualSyncEnabled: boolean;
+  }> => {
+    const response = await apiClient.get('/prizes/ebay-feature-flags');
+    return response.data;
+  },
+
   getEbayMarketHistory: async (id: string, limit: number = 120): Promise<EbayMarketHistory> => {
     const response = await apiClient.get(`/prizes/shop-items/${id}/ebay-market-history`, {
       params: { limit },

@@ -425,6 +425,16 @@ export default function PrizeCard({
   }, [isProUser, prize.isProOnly, prize.proEarlyAccessUntil]);
   const isDisabled = isOutOfStock || isProLocked;
 
+  const ebayFeatureFlagsQuery = useQuery({
+    queryKey: ['ebay-feature-flags'],
+    queryFn: () => prizeAPI.getEbayFeatureFlags(),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const ebaySoldAvgEnabled = ebayFeatureFlagsQuery.data?.ebaySoldAvgEnabled ?? true;
+  const ebayManualSyncEnabled = ebayFeatureFlagsQuery.data?.ebayManualSyncEnabled ?? true;
+
   // Early-access countdown: only for items with a timed window (not permanently pro-only)
   const earlyAccessDate = !prize.isProOnly ? prize.proEarlyAccessUntil : null;
   const { timeLeft: earlyAccessTimeLeft } = useCountdown(earlyAccessDate);
@@ -433,6 +443,7 @@ export default function PrizeCard({
   const marketSummaryQuery = useQuery({
     queryKey: ['ebay-market-summary', prize.id],
     queryFn: () => prizeAPI.getEbayMarketSummary(prize.id),
+    enabled: ebaySoldAvgEnabled || showMarketModal || (isAdminUser && ebayManualSyncEnabled),
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
@@ -721,45 +732,47 @@ export default function PrizeCard({
               {prize.amount.toLocaleString('en-US')} coins • ${(prize.amount / 50).toFixed(2)} USD
             </p>
           )}
-          <button
-            type="button"
-            className="w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
-            onClick={e => {
-              e.stopPropagation();
-              setShowMarketModal(true);
-            }}
-          >
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
-            {marketSummaryQuery.isLoading ? (
-              <div className="mt-1 text-xs text-muted-foreground">Loading market data...</div>
-            ) : latestAvg !== null ? (
-              <div className="mt-1 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
-                <span
-                  className={cn(
-                    'text-xs font-semibold',
-                    latestPercentDiff === null
-                      ? 'text-muted-foreground'
-                      : latestPercentDiff >= 0
-                        ? 'text-orange-400'
-                        : 'text-emerald-400'
-                  )}
-                >
-                  {latestPercentDiff === null
-                    ? 'n/a'
-                    : `${latestPercentDiff >= 0 ? '+' : ''}${latestPercentDiff.toFixed(2)}%`}
-                </span>
+          {ebaySoldAvgEnabled && (
+            <button
+              type="button"
+              className="w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
+              onClick={e => {
+                e.stopPropagation();
+                setShowMarketModal(true);
+              }}
+            >
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
+              {marketSummaryQuery.isLoading ? (
+                <div className="mt-1 text-xs text-muted-foreground">Loading market data...</div>
+              ) : latestAvg !== null ? (
+                <div className="mt-1 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
+                  <span
+                    className={cn(
+                      'text-xs font-semibold',
+                      latestPercentDiff === null
+                        ? 'text-muted-foreground'
+                        : latestPercentDiff >= 0
+                          ? 'text-orange-400'
+                          : 'text-emerald-400'
+                    )}
+                  >
+                    {latestPercentDiff === null
+                      ? 'n/a'
+                      : `${latestPercentDiff >= 0 ? '+' : ''}${latestPercentDiff.toFixed(2)}%`}
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-1 text-xs text-muted-foreground">0 sold listings</div>
+              )}
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                {cardLastCalculated
+                  ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
+                  : ''}
               </div>
-            ) : (
-              <div className="mt-1 text-xs text-muted-foreground">0 sold listings</div>
-            )}
-            <div className="mt-1 text-[10px] text-muted-foreground">
-              {cardLastCalculated
-                ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
-                : ''}
-            </div>
-          </button>
-          {isAdminUser && (
+            </button>
+          )}
+          {isAdminUser && ebayManualSyncEnabled && (
             <Button
               type="button"
               variant="outline"
@@ -998,45 +1011,47 @@ export default function PrizeCard({
             )}
           </div>
 
-          <button
-            type="button"
-            className="mt-1 rounded-md border border-[#2A2F3A] bg-[#11151d] px-2.5 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
-            onClick={e => {
-              e.stopPropagation();
-              setShowMarketModal(true);
-            }}
-          >
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
-            {marketSummaryQuery.isLoading ? (
-              <div className="mt-1 text-[11px] text-muted-foreground">Loading market data...</div>
-            ) : latestAvg !== null ? (
-              <div className="mt-1 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
-                <span
-                  className={cn(
-                    'text-[11px] font-semibold',
-                    latestPercentDiff === null
-                      ? 'text-muted-foreground'
-                      : latestPercentDiff >= 0
-                        ? 'text-orange-400'
-                        : 'text-emerald-400'
-                  )}
-                >
-                  {latestPercentDiff === null
-                    ? 'n/a'
-                    : `${latestPercentDiff >= 0 ? '+' : ''}${latestPercentDiff.toFixed(2)}%`}
-                </span>
+          {ebaySoldAvgEnabled && (
+            <button
+              type="button"
+              className="mt-1 rounded-md border border-[#2A2F3A] bg-[#11151d] px-2.5 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
+              onClick={e => {
+                e.stopPropagation();
+                setShowMarketModal(true);
+              }}
+            >
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
+              {marketSummaryQuery.isLoading ? (
+                <div className="mt-1 text-[11px] text-muted-foreground">Loading market data...</div>
+              ) : latestAvg !== null ? (
+                <div className="mt-1 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
+                  <span
+                    className={cn(
+                      'text-[11px] font-semibold',
+                      latestPercentDiff === null
+                        ? 'text-muted-foreground'
+                        : latestPercentDiff >= 0
+                          ? 'text-orange-400'
+                          : 'text-emerald-400'
+                    )}
+                  >
+                    {latestPercentDiff === null
+                      ? 'n/a'
+                      : `${latestPercentDiff >= 0 ? '+' : ''}${latestPercentDiff.toFixed(2)}%`}
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-1 text-[11px] text-muted-foreground">0 sold listings</div>
+              )}
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                {cardLastCalculated
+                  ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
+                  : ''}
               </div>
-            ) : (
-              <div className="mt-1 text-[11px] text-muted-foreground">0 sold listings</div>
-            )}
-            <div className="mt-1 text-[10px] text-muted-foreground">
-              {cardLastCalculated
-                ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
-                : ''}
-            </div>
-          </button>
-          {isAdminUser && (
+            </button>
+          )}
+          {isAdminUser && ebayManualSyncEnabled && (
             <Button
               type="button"
               variant="outline"
@@ -1338,7 +1353,7 @@ export default function PrizeCard({
                       </button>
                     ))}
                   </div>
-                  {isAdminUser && (
+                  {isAdminUser && ebayManualSyncEnabled && (
                     <Button
                       type="button"
                       variant="outline"
