@@ -183,6 +183,20 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
     },
   });
 
+  const { data: auctions = [] } = useQuery({
+    queryKey: ['sidebar-live-auctions-count'],
+    queryFn: async () => {
+      return await api.auction.list();
+    },
+    enabled: isShopPage,
+    refetchInterval: 30_000,
+  });
+
+  const liveAuctionCount = auctions.filter(auction => {
+    if (auction.status !== 'active' && auction.status !== 'scheduled') return false;
+    return new Date(auction.endsAt).getTime() > Date.now();
+  }).length;
+
   const { data: sellerShops = [] } = useQuery({
     queryKey: ['seller-shops-sidebar'],
     queryFn: async () => {
@@ -236,7 +250,11 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
             {controls.open && !controls.isMobile && (
               <div className="flex items-center gap-1.5 pl-2">
                 <Flame className="h-4 w-4 text-live-hot" />
-                <span className="text-sm font-semibold">Live Now</span>
+                <span className="text-sm font-semibold">
+                  {isShopPage
+                    ? `${liveAuctionCount} ${liveAuctionCount === 1 ? 'Auction' : 'Auctions'} Live`
+                    : 'Live Now'}
+                </span>
               </div>
             )}
             {!controls.isMobile ? (

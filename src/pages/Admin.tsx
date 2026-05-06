@@ -32,10 +32,6 @@ const Admin = () => {
     searchEndedNonVideoQuery,
     setSearchEndedNonVideQuery,
     setSearchNonVideoQuery,
-    promoStreams,
-    handlePromoRefetchStreams,
-    searchPromoQuery,
-    setSearchPromoQuery,
   } = useStreamManagement();
   const queryClient = useQueryClient();
   const [resetKey, setResetKey] = useState(0);
@@ -144,10 +140,6 @@ const Admin = () => {
         refetchEndedNonVideoStreams={range => handleEndedNonVideoRefetchStreams(range)}
         searchEndedNonVideoQuery={searchEndedNonVideoQuery}
         setSearchEndedNonVideoQuery={setSearchEndedNonVideQuery}
-        promoStreams={promoStreams}
-        refetchPromoStreams={range => handlePromoRefetchStreams(range)}
-        searchPromoQuery={searchPromoQuery}
-        setSearchPromoQuery={setSearchPromoQuery}
       />
     </AdminLayout>
   );

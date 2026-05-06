@@ -38,7 +38,6 @@ interface Props {
   currentPage: number;
   setCurrentPage: (page: number) => void;
   setStreamAnalyticsId: (id: string) => void;
-  isPromoTab?: boolean;
   pickStatusFilters?: string[];
   setPickStatusFilters?: (statuses: string[]) => void;
 }
@@ -139,7 +138,6 @@ export const StreamTable: React.FC<Props> = ({
   currentPage,
   setCurrentPage,
   setStreamAnalyticsId,
-  isPromoTab = false,
   pickStatusFilters = [],
   setPickStatusFilters,
 }) => {
@@ -250,8 +248,8 @@ export const StreamTable: React.FC<Props> = ({
 
   return (
     <div>
-      {/* Pick Status Filters - only show on livestreams and non-video tabs, not on promo tab */}
-      {!isPromoTab && setPickStatusFilters && (
+      {/* Pick Status Filters - only show on livestreams and non-video tabs */}
+      {setPickStatusFilters && (
         <PickStatusFilter
           selectedStatuses={pickStatusFilters}
           onStatusChange={setPickStatusFilters}
@@ -279,28 +277,22 @@ export const StreamTable: React.FC<Props> = ({
                   </div>
 
                   {/* Stream Status */}
-                  {!isPromoTab && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Stream Status:</span>
-                      <StreamStatusBadge status={stream?.streamStatus} />
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Stream Status:</span>
+                    <StreamStatusBadge status={stream?.streamStatus} />
+                  </div>
 
                   {/* Betting Status */}
-                  {!isPromoTab && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Picks Status:</span>
-                      <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Picks Status:</span>
+                    <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
+                  </div>
 
                   {/* Users */}
-                  {!isPromoTab && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Users:</span>
-                      <span className="text-sm font-medium">{stream?.userBetCount || '0'}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Users:</span>
+                    <span className="text-sm font-medium">{stream?.userBetCount || '0'}</span>
+                  </div>
 
                   {/* Promoted - Only show for admins */}
                   {isAdmin && (
@@ -317,18 +309,16 @@ export const StreamTable: React.FC<Props> = ({
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <span className="text-sm text-muted-foreground">Actions:</span>
                     <div className="flex gap-3">
-                      {!isPromoTab && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Eye
-                              size={16}
-                              className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
-                              onClick={() => setViewStreamId(stream?.id)}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent>View stream</TooltipContent>
-                        </Tooltip>
-                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Eye
+                            size={16}
+                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                            onClick={() => setViewStreamId(stream?.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>View stream</TooltipContent>
+                      </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Pen
@@ -350,18 +340,16 @@ export const StreamTable: React.FC<Props> = ({
                         </TooltipTrigger>
                         <TooltipContent>Manage stream</TooltipContent>
                       </Tooltip>
-                      {!isPromoTab && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ChartNoAxesColumnIncreasing
-                              size={16}
-                              className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
-                              onClick={() => setStreamAnalyticsId(stream?.id)}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent>Stream analytics</TooltipContent>
-                        </Tooltip>
-                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <ChartNoAxesColumnIncreasing
+                            size={16}
+                            className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                            onClick={() => setStreamAnalyticsId(stream?.id)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>Stream analytics</TooltipContent>
+                      </Tooltip>
                       {/* <Lock color="#FFFFFFBF" size={16} className="cursor-pointer" />
                        <Play color="#FFFFFFBF" size={16} className="cursor-pointer" /> */}
                       {stream?.streamStatus === StreamStatus.SCHEDULED && (
@@ -389,11 +377,11 @@ export const StreamTable: React.FC<Props> = ({
           <Table className="bg-[#0D0D0D]">
             <TableHeader>
               <TableRow>
-                <TableHead>{isPromoTab ? 'Promo Card Title' : 'Stream Title'}</TableHead>
-                {!isPromoTab && <TableHead>Stream Status</TableHead>}
-                <TableHead>{isPromoTab ? 'Tagged Creator' : 'Stream Creator'}</TableHead>
-                {!isPromoTab && <TableHead>Pick Status</TableHead>}
-                {!isPromoTab && <TableHead>Users</TableHead>}
+                <TableHead>Stream Title</TableHead>
+                <TableHead>Stream Status</TableHead>
+                <TableHead>Stream Creator</TableHead>
+                <TableHead>Pick Status</TableHead>
+                <TableHead>Users</TableHead>
                 <TableHead>Actions</TableHead>
                 {isAdmin && <TableHead>Promoted</TableHead>}
               </TableRow>
@@ -403,32 +391,26 @@ export const StreamTable: React.FC<Props> = ({
                 streams?.data?.map(stream => (
                   <TableRow key={stream?.id}>
                     <TableCell className="font-medium">{stream?.streamName}</TableCell>
-                    {!isPromoTab && (
-                      <TableCell>
-                        <StreamStatusBadge status={stream?.streamStatus} />
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      <StreamStatusBadge status={stream?.streamStatus} />
+                    </TableCell>
                     <TableCell>{stream?.creator}</TableCell>
-                    {!isPromoTab && (
-                      <TableCell>
-                        <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
-                      </TableCell>
-                    )}
-                    {!isPromoTab && <TableCell>{stream?.userBetCount}</TableCell>}
+                    <TableCell>
+                      <BettingStatusBadge status={stream?.bettingRoundStatus || 'N/A'} />
+                    </TableCell>
+                    <TableCell>{stream?.userBetCount}</TableCell>
                     <TableCell>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        {!isPromoTab && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Eye
-                                size={18}
-                                className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
-                                onClick={() => setViewStreamId(stream?.id)}
-                              />
-                            </TooltipTrigger>
-                            <TooltipContent>View stream</TooltipContent>
-                          </Tooltip>
-                        )}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Eye
+                              size={18}
+                              className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                              onClick={() => setViewStreamId(stream?.id)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>View stream</TooltipContent>
+                        </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Pen
@@ -450,18 +432,16 @@ export const StreamTable: React.FC<Props> = ({
                           </TooltipTrigger>
                           <TooltipContent>Manage stream</TooltipContent>
                         </Tooltip>
-                        {!isPromoTab && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <ChartNoAxesColumnIncreasing
-                                size={18}
-                                className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
-                                onClick={() => setStreamAnalyticsId(stream?.id)}
-                              />
-                            </TooltipTrigger>
-                            <TooltipContent>Stream analytics</TooltipContent>
-                          </Tooltip>
-                        )}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <ChartNoAxesColumnIncreasing
+                              size={18}
+                              className="cursor-pointer transition-colors text-[#FFFFFFBF] hover:text-[#BDFF00]"
+                              onClick={() => setStreamAnalyticsId(stream?.id)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>Stream analytics</TooltipContent>
+                        </Tooltip>
                         {/* <Lock color="#FFFFFFBF" size={18} />
                        <Play color="#FFFFFFBF" size={18} /> */}
                         {stream?.streamStatus === StreamStatus.SCHEDULED && (

@@ -140,7 +140,7 @@ export default function HomeBets({
         <div
           className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
           role="tablist"
-          aria-label="Betting types"
+          aria-label="Pick types"
         >
           <Button
             variant="outline"
@@ -179,7 +179,7 @@ export default function HomeBets({
         <div
           className={`flex gap-2 pb-2 scrollbar-hide ${isMobile ? 'w-full flex-wrap' : 'justify-center overflow-x-auto'}`}
           role="tablist"
-          aria-label="Betting categories"
+          aria-label="Pick categories"
         >
           <Button
             variant="outline"
@@ -226,7 +226,7 @@ export default function HomeBets({
         })()}
       >
         {!isLoading && displayedBets.length === 0 && (
-          <div className="mx-auto text-weak">No bets found.</div>
+          <div className="mx-auto text-weak">No picks found.</div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {isLoading

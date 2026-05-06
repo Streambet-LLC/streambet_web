@@ -53,20 +53,9 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  {profile?.isCreator ? (
-                    <p className="truncate">
-                      <Link
-                        to={`/${profile?.username}`}
-                        className="text-sm text-[#7AFF14] font-medium"
-                      >
-                        {profile?.username || 'User'}
-                      </Link>
-                    </p>
-                  ) : (
-                    <p className="text-sm font-medium leading-none truncate max-w-[180px] cursor-help">
-                      {profile?.username || 'User'}
-                    </p>
-                  )}
+                  <p className="text-sm font-medium leading-none truncate max-w-[180px] cursor-help">
+                    {profile?.username || 'User'}
+                  </p>
                 </TooltipTrigger>
               </Tooltip>
             </TooltipProvider>
@@ -90,19 +79,6 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           </div>
         </DropdownMenuItem> */}
         {/* <DropdownMenuSeparator /> */}
-        {profile?.isCreator && (
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <div className="flex gap-1 group">
-              <Plus className="h-4 w-4 text-[#B4FF39] group-hover:text-black transition-colors" />
-              <Link
-                to="/creator?createStream=true"
-                className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors"
-              >
-                Create Pick
-              </Link>
-            </div>
-          </DropdownMenuItem>
-        )}
         {profile?.isSeller && (
           <DropdownMenuItem asChild className="cursor-pointer">
             <div className="flex gap-1 group">

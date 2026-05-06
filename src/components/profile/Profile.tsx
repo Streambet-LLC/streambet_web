@@ -121,7 +121,7 @@ export default function Profile() {
                         <AvatarImage src={getImageLink(profile.profileImageUrl)} alt={username} />
                         <AvatarFallback>{username[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      {profile.isCreator && profile.badgeLevel !== 'none' && (
+                      {profile.badgeLevel !== 'none' && (
                         <div
                           className={cn(
                             'absolute -bottom-2 left-1/2 -translate-x-1/2',
@@ -146,96 +146,18 @@ export default function Profile() {
                       <div className="text-xs text-gray-400 mt-2">
                         Date joined: {format(profile.accountCreationDate.toString(), 'MMMM d, yyy')}
                       </div>
-                      {!profile.isCreator && profile.badgeLevel !== 'none' && (
-                        <div
-                          className={cn(
-                            'mt-2 px-3 py-1.5 rounded-full text-xs font-bold w-fit',
-                            'bg-background border-2',
-                            getPrizeColor(parseInt(profile.badgeLevel, 10), 'border'),
-                            getPrizeColor(parseInt(profile.badgeLevel, 10), 'text')
-                          )}
+                      {profile.isSeller && typeof profile.listedItemCount === 'number' && (
+                        <Link
+                          to={`/shop/${profile.username}`}
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-3"
                         >
-                          {profile.title}
-                        </div>
+                          <Store className="w-3.5 h-3.5" />
+                          {profile.listedItemCount}{' '}
+                          {profile.listedItemCount === 1 ? 'item' : 'items'} listed
+                        </Link>
                       )}
-                      {profile.isCreator && profile.socials && (
-                        <div className="flex flex-col mt-3 gap-1">
-                          <p className="text-xs text-gray-100">
-                            {profile.followers} Follower{profile.followers > 1 && 's'}
-                          </p>
-                          {session && (
-                            <Button variant="outline" size="sm" onClick={handleFollow}>
-                              {isFollowed ? 'Unfollow' : 'Follow'}
-                            </Button>
-                          )}
-                          {profile.isSeller && typeof profile.listedItemCount === 'number' && (
-                            <Link
-                              to={`/shop/${profile.username}`}
-                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1"
-                            >
-                              <Store className="w-3.5 h-3.5" />
-                              {profile.listedItemCount}{' '}
-                              {profile.listedItemCount === 1 ? 'item' : 'items'} listed
-                            </Link>
-                          )}
-                          {socialsOrder.map(social => {
-                            const profileSocial = profile.socials[social];
-
-                            if (!profileSocial) return null;
-
-                            const isJoshCapoInstagram =
-                              social === 'instagram' &&
-                              username === 'joshcapopashot' &&
-                              profileSocial ===
-                                'https://www.instagram.com/joshcapopashot?igsh=eWtsb2p4ZWxqZ3Jk&utm_source=qr';
-
-                            return (
-                              <div
-                                key={social}
-                                className="flex gap-1 text-white items-center text-sm"
-                              >
-                                {socialsMapping[social].icon}{' '}
-                                <a
-                                  href={formatUrl(profileSocial)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-muted-foreground hover:text-foreground transition-colors"
-                                  title={social}
-                                >
-                                  {socialsMapping[social].label}
-                                </a>
-                                {isJoshCapoInstagram && (
-                                  <span className="text-muted-foreground"> &lt;-- Live Here</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      {!profile.isCreator &&
-                        profile.isSeller &&
-                        typeof profile.listedItemCount === 'number' && (
-                          <Link
-                            to={`/shop/${profile.username}`}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-3"
-                          >
-                            <Store className="w-3.5 h-3.5" />
-                            {profile.listedItemCount}{' '}
-                            {profile.listedItemCount === 1 ? 'item' : 'items'} listed
-                          </Link>
-                        )}
                     </div>
                   </div>
-                  {session?.isCreator && profile.username === session?.username && (
-                    <Link to="/creator?createStream=true">
-                      <button
-                        type="button"
-                        className="ml-auto self-end bg-primary text-black text-sm font-bold px-4 py-2 rounded-full hover:bg-opacity-90 transition-colors h-fit w-full md:w-fit"
-                      >
-                        Create Pick
-                      </button>
-                    </Link>
-                  )}
                 </div>
 
                 {/* Prize Progress Section - Shows for all users */}

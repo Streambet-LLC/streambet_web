@@ -157,12 +157,8 @@ export function ApplicationsTable() {
     }
   };
 
-  const getTypeBadge = (type: string) => {
-    return type === 'creator' ? (
-      <Badge className="bg-blue-500 hover:bg-blue-600">Creator</Badge>
-    ) : (
-      <Badge className="bg-green-500 hover:bg-green-600">Seller</Badge>
-    );
+  const getTypeBadge = (_type: string) => {
+    return <Badge className="bg-green-500 hover:bg-green-600">Seller</Badge>;
   };
 
   const applications = data?.data || [];

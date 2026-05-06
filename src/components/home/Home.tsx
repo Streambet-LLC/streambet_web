@@ -1,5 +1,4 @@
 import { MainLayout } from '@/components/layout';
-// import HomePromotedBets from './HomePromotedBets';
 import HomeBets from './HomeBets';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { useState, useEffect, useRef } from 'react';
@@ -89,7 +88,6 @@ export default function Home() {
           </div>
         </div>
         {/* <LiveFeedUpdate /> */}
-        {/* <HomePromotedBets /> */}
         {/* Search filter moved to navigation bar for better UX. HomeBetsFilters preserved for potential future sorting/filtering features. */}
         {/* <HomeBetsFilters onChange={setFilters} /> */}
         <HomeBets
