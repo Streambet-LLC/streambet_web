@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { verifyUserLocation } from '@/integrations/api/geolocation';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { AvatarUploadField } from '@/components/AvatarUploadField';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -40,6 +40,7 @@ export default function SignUp() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [promoCode, setPromoCode] = useState(cookies['promo-code'] ? cookies['promo-code'] : '');
   const [refLink, setRefLink] = useState(cookies['referral-link'] ? cookies['referral-link'] : '');
   const [name, setName] = useState('');
@@ -487,15 +488,25 @@ export default function SignUp() {
                 </motion.div>
                 <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    placeholder="Enter your password"
-                    onChange={e => setPassword(e.target.value)}
-                    className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
-                    disabled={false}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      placeholder="Enter your password"
+                      onChange={e => setPassword(e.target.value)}
+                      className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 pr-10`}
+                      disabled={false}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
                   <p className="text-muted-foreground text-sm">
                     Password must be at least 8 characters and include uppercase, lowercase, number,
@@ -530,9 +541,9 @@ export default function SignUp() {
                     <p className="text-destructive text-sm">{errors.promoCode}</p>
                   )}
                   <p className="text-xs text-white/50">
-                    Some promo codes also work as discount codes at checkout (Buy Now only,
-                    not auctions). If yours does, you'll be reminded after signup to apply it
-                    again at checkout.
+                    Some promo codes also work as discount codes at checkout (Buy Now only, not
+                    auctions). If yours does, you'll be reminded after signup to apply it again at
+                    checkout.
                   </p>
                 </motion.div>
                 {/* <motion.div variants={itemVariants} className="space-y-2">
@@ -670,9 +681,7 @@ export default function SignUp() {
           style={{ background: '#0D0D0D' }}
         >
           <DialogHeader>
-            <DialogTitle>
-              {discountReminder?.code} is also a discount code
-            </DialogTitle>
+            <DialogTitle>{discountReminder?.code} is also a discount code</DialogTitle>
             <DialogDescription className="text-gray-300 pt-2 space-y-2">
               <span className="block">
                 <span className="text-[#BDFF00] font-semibold">
@@ -688,8 +697,7 @@ export default function SignUp() {
                 again at checkout to get the discount.
               </span>
               <span className="block text-white/60 text-xs pt-1">
-                Discount codes work on Buy Now purchases only — they do not apply to
-                auctions.
+                Discount codes work on Buy Now purchases only — they do not apply to auctions.
               </span>
             </DialogDescription>
           </DialogHeader>

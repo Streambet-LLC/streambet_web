@@ -19,6 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { AuthLayout } from '@/components/layout';
+import { Eye, EyeOff } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email/Username is required'),
@@ -32,6 +33,7 @@ export default function Login() {
   const redirectParam = searchParams.get('redirect');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [rememberMe, setRememberMe] = useState(false);
   const { locationResult } = useLocationRestriction();
@@ -217,14 +219,24 @@ export default function Login() {
                 </motion.div>
                 <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="password" className='pb-2'>Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder='Enter your password'
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className={`bg-[#272727]/80 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 h-[44px]`}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder='Enter your password'
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className={`bg-[#272727]/80 text-white placeholder:text-gray-400 ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 h-[44px] pr-10`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {errors.password && (
                     <p className="text-destructive text-sm">{errors.password}</p>
                   )}
