@@ -433,7 +433,14 @@ export default function PrizeCard({
   });
 
   const ebaySoldAvgEnabled = ebayFeatureFlagsQuery.data?.ebaySoldAvgEnabled ?? true;
+  const ebaySoldAvgAdminOnly = ebayFeatureFlagsQuery.data?.ebaySoldAvgAdminOnly ?? false;
   const ebayManualSyncEnabled = ebayFeatureFlagsQuery.data?.ebayManualSyncEnabled ?? true;
+
+  // Determine if current user should see the eBay sold avg
+  // Show if: (public mode enabled) OR (admin-only mode enabled AND user is admin)
+  const shouldShowEbaySoldAvg = 
+    (ebaySoldAvgEnabled && !ebaySoldAvgAdminOnly) ||
+    (ebaySoldAvgAdminOnly && isAdminUser);
 
   // Early-access countdown: only for items with a timed window (not permanently pro-only)
   const earlyAccessDate = !prize.isProOnly ? prize.proEarlyAccessUntil : null;
@@ -443,7 +450,7 @@ export default function PrizeCard({
   const marketSummaryQuery = useQuery({
     queryKey: ['ebay-market-summary', prize.id],
     queryFn: () => prizeAPI.getEbayMarketSummary(prize.id),
-    enabled: ebaySoldAvgEnabled || showMarketModal || (isAdminUser && ebayManualSyncEnabled),
+    enabled: shouldShowEbaySoldAvg || showMarketModal || (isAdminUser && ebayManualSyncEnabled),
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
@@ -732,7 +739,7 @@ export default function PrizeCard({
               {prize.amount.toLocaleString('en-US')} coins • ${(prize.amount / 50).toFixed(2)} USD
             </p>
           )}
-          {ebaySoldAvgEnabled && (
+          {shouldShowEbaySoldAvg && (
             <button
               type="button"
               className="w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
@@ -1011,7 +1018,7 @@ export default function PrizeCard({
             )}
           </div>
 
-          {ebaySoldAvgEnabled && (
+          {shouldShowEbaySoldAvg && (
             <button
               type="button"
               className="mt-1 rounded-md border border-[#2A2F3A] bg-[#11151d] px-2.5 py-2 text-left transition-colors hover:border-[#7AFF14]/50"

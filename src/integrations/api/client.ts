@@ -1588,6 +1588,7 @@ export const prizeAPI = {
 
   getEbayFeatureFlags: async (): Promise<{
     ebaySoldAvgEnabled: boolean;
+    ebaySoldAvgAdminOnly: boolean;
     ebayManualSyncEnabled: boolean;
   }> => {
     const response = await apiClient.get('/prizes/ebay-feature-flags');

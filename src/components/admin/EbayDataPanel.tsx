@@ -41,6 +41,7 @@ export const EbayDataPanel = () => {
   };
 
   const ebaySoldAvgEnabled = parseFlag(socials._ff_ebaySoldAvg, true);
+  const ebaySoldAvgAdminOnly = parseFlag(socials._ff_ebaySoldAvgAdminOnly, false);
   const ebayManualSyncEnabled = parseFlag(socials._ff_ebayManualSync, true);
 
   const updateSettingsMutation = useMutation({
@@ -50,6 +51,7 @@ export const EbayDataPanel = () => {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cardcade-shop-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['ebay-feature-flags'] });
       toast({ title: 'Saved', description: 'eBay feature controls updated.' });
     },
     onError: () => {
@@ -61,7 +63,7 @@ export const EbayDataPanel = () => {
     },
   });
 
-  const setFlag = (key: '_ff_ebaySoldAvg' | '_ff_ebayManualSync', value: boolean) => {
+  const setFlag = (key: '_ff_ebaySoldAvg' | '_ff_ebaySoldAvgAdminOnly' | '_ff_ebayManualSync', value: boolean) => {
     const baseSocials = (cardcadeSettings?.socials ?? {}) as Record<string, string>;
     const nextSocials: Record<string, string> = {
       ...baseSocials,
@@ -88,6 +90,20 @@ export const EbayDataPanel = () => {
             <Switch
               checked={ebaySoldAvgEnabled}
               onCheckedChange={(checked) => setFlag('_ff_ebaySoldAvg', checked)}
+              disabled={updateSettingsMutation.isPending}
+            />
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div className="space-y-1 pr-3">
+              <Label className="text-sm font-medium">Admin-Only eBay Sold Avg Visibility</Label>
+              <p className="text-xs text-muted-foreground">
+                When enabled, only admins can see the eBay sold average on item cards (requires main toggle to be ON).
+              </p>
+            </div>
+            <Switch
+              checked={ebaySoldAvgAdminOnly}
+              onCheckedChange={(checked) => setFlag('_ff_ebaySoldAvgAdminOnly', checked)}
               disabled={updateSettingsMutation.isPending}
             />
           </div>
