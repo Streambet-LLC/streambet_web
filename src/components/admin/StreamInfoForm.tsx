@@ -182,10 +182,6 @@ export const StreamInfoForm = ({
               value: 'non-video',
               label: 'Non Video',
             },
-            {
-              value: 'promo',
-              label: 'Promo Card',
-            },
           ]}
           value={initialValues.eventType}
           isSearchable={false}

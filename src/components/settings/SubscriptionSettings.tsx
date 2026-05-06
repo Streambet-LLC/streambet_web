@@ -11,7 +11,7 @@ import type { Subscription } from '@/types/subscription';
 const benefits = [
   {
     icon: Clock,
-    title: '48-Hour Early Access',
+    title: '24-Hour Early Access',
     description: 'Be first to shop all new items before anyone else',
   },
   {

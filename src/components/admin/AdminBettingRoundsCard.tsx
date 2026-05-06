@@ -10,10 +10,9 @@ import {
 } from '@/components/ui/carousel';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { BetRoundType, BettingRoundStatus, CurrencyType } from '@/enums';
+import { BetRoundType, BettingRoundStatus } from '@/enums';
 import { getImageLink, getMessage } from '@/utils/helper';
 import { roundDownCoinAmount } from '@/utils/format';
-import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import api from '@/integrations/api/client';
 import { BettingRounds, validateRounds, ValidationError } from './BettingRounds';
 import { ArrowLeft } from 'lucide-react';
@@ -79,8 +78,6 @@ export const AdminBettingRoundsCard = ({
   const [rounds, setRounds] = useState([]);
   const [selectedOption, setSelectedOption] = useState({}); // { [roundId]: optionId }
   const [statusMap, setStatusMap] = useState({});
-  const { currency } = useCurrencyContext();
-  const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
   const [editableRounds, setEditableRounds] = useState([]);
   const [bettingErrorRounds, setBettingErrorRounds] = useState([]);
   const [showBettingValidation, setShowBettingValidation] = useState(false);
@@ -422,36 +419,17 @@ export const AdminBettingRoundsCard = ({
                                     <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
                                     <span>
                                       {bettingUpdate
-                                        ? bettingUpdate?.totalGoldCoinBet
-                                        : streamInfo?.totalGoldCoinBet}{' '}
-                                      gold(s)
+                                        ? bettingUpdate?.totalCadeCoinBet
+                                        : streamInfo?.totalCadeCoinBet}{' '}
+                                      CadeCoin Pick(s)
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
                                     <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
                                     <span>
                                       {bettingUpdate
-                                        ? bettingUpdate?.totalBetsGoldCoinAmount
-                                        : streamInfo?.totalGoldCoinAmount}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className=" items-center gap-2">
-                                  <div className="flex items-center gap-1 mb-2 text-white text-sm font-medium">
-                                    <img src="/icons/Users.svg" alt="Users" className="w-4 h-4" />
-                                    <span>
-                                      {bettingUpdate
-                                        ? bettingUpdate?.totalSweepCoinBet
-                                        : streamInfo?.totalSweepCoinBet}{' '}
-                                      Stream Coin(s)
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1 text-yellow-400 text-sm font-medium">
-                                    <img src="/icons/coin.svg" alt="Coins" className="w-4 h-4" />
-                                    <span>
-                                      {bettingUpdate
-                                        ? bettingUpdate?.totalBetsSweepCoinAmount
-                                        : streamInfo?.totalSweepCoinAmount}
+                                        ? bettingUpdate?.totalBetsCadeCoinAmount
+                                        : streamInfo?.totalCadeCoinAmount}
                                     </span>
                                   </div>
                                 </div>
@@ -606,19 +584,13 @@ export const AdminBettingRoundsCard = ({
                           {isWinner && (
                             <div className="flex flex-col items-center w-full mt-2">
                               {/* Winner label: Avatar + username in a horizontal scrollable row */}
-                              {round.winners &&
-                              (isSweepCoins
-                                ? round.winners.sweepCoins?.length > 0
-                                : round.winners.goldCoins?.length > 0) ? (
+                              {round.winners && round.winners.cadeCoins?.length > 0 ? (
                                 <div className="flex flex-col items-center w-full">
                                   <div
                                     className="flex flex-row gap-4 overflow-x-auto pb-2 w-full max-w-full winner-scrollbar px-2"
                                     style={{ maxWidth: '100%', scrollbarWidth: 'thin' }}
                                   >
-                                    {(isSweepCoins
-                                      ? round.winners.sweepCoins
-                                      : round.winners.goldCoins
-                                    )?.map((winner: any, idx: number) => (
+                                    {round.winners.cadeCoins?.map((winner: any, idx: number) => (
                                       <div
                                         key={idx}
                                         className="flex flex-col items-center min-w-[70px]"
@@ -650,15 +622,9 @@ export const AdminBettingRoundsCard = ({
                                     <span className="text-white ml-1">won</span>
                                     <span
                                       className="text-white ml-1 truncate max-w-[120px]"
-                                      title={
-                                        isSweepCoins
-                                          ? `${roundDownCoinAmount(round?.winnerAmount?.sweepCoins || 0).toLocaleString('en-US')} Stream Coins`
-                                          : `${roundDownCoinAmount(round?.winnerAmount?.goldCoins || 0).toLocaleString('en-US')} gold coins`
-                                      }
+                                      title={`${roundDownCoinAmount(round?.winnerAmount?.cadeCoins || 0).toLocaleString('en-US')} CadeCoins`}
                                     >
-                                      {isSweepCoins
-                                        ? `${roundDownCoinAmount(round?.winnerAmount?.sweepCoins || 0).toLocaleString('en-US')} Stream Coins`
-                                        : `${roundDownCoinAmount(round?.winnerAmount?.goldCoins || 0).toLocaleString('en-US')} gold coins`}
+                                      {`${roundDownCoinAmount(round?.winnerAmount?.cadeCoins || 0).toLocaleString('en-US')} CadeCoins`}
                                     </span>
                                   </div>
                                 </div>

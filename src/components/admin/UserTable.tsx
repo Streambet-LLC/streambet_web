@@ -28,7 +28,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { EditUserDialog } from './EditUserDialog';
 import { roundDownCoinAmount } from '@/utils/format';
-import { CurrencyType } from '@/utils/currency';
 import { cryptoAPI } from '@/integrations/api/cryptoAPI';
 
 interface Props {
@@ -80,7 +79,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
     }: {
       userId: string;
       amount: number;
-      currencyType: CurrencyType;
+      currencyType: 'cade_coins';
     }) => {
       return await api.admin.updateUserCurrency({ userId, amount, currencyType });
     },
@@ -94,27 +93,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
         description: error?.response?.data?.message || 'Failed to update currency balance',
         variant: 'destructive',
       });
-    },
-  });
-
-  const updateCreatorStatusMutation = useMutation({
-    mutationFn: async ({ userId, isCreator }: { userId: string; isCreator: boolean }) => {
-      return await api.admin.updateUserCreatorStatus({ userId, isCreator });
-    },
-    onSuccess: () => {
-      refetchProfiles();
-      toast({
-        description: 'User role updated successfully',
-        variant: 'default',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Error',
-        description: error?.response?.data?.message || 'Failed to update user role',
-        variant: 'destructive',
-      });
-      refetchProfiles();
     },
   });
 
@@ -334,12 +312,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                           Admin
                         </Badge>
                       )}
-
-                      {user.role === 'creator' && (
-                        <Badge variant="secondary" className="text-xs">
-                          Creator
-                        </Badge>
-                      )}
                     </div>
                     <Switch
                       checked={user.isActive}
@@ -348,16 +320,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                         mutation.mutate({ userId: user.id, userStatus: !user.isActive });
                       }}
                     />
-                  </div>
-
-                  {/* Gold Coin Balance */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Gold Balance:</span>
-                    <span className="font-medium">
-                      {user?.wallet?.goldCoins
-                        ? roundDownCoinAmount(user?.wallet?.goldCoins).toLocaleString('en-US')
-                        : '-'}
-                    </span>
                   </div>
 
                   {/* CadeCoins Balance */}
@@ -459,21 +421,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     </span>
                   </div>
 
-                  {/* Creator */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Creator:</span>
-                    <Checkbox
-                      checked={user?.role === 'creator'}
-                      disabled={user?.role === 'admin'}
-                      onCheckedChange={() => {
-                        updateCreatorStatusMutation.mutate({
-                          userId: user.id,
-                          isCreator: user?.role !== 'creator',
-                        });
-                      }}
-                    />
-                  </div>
-
                   {/* Pro */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Pro:</span>
@@ -524,16 +471,8 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                   {/* Actions Row */}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-800">
                     <AddTokens
-                      goldCoinsBalance={user?.wallet?.goldCoins}
                       cadeCoinsBalance={user?.wallet?.cadeCoins}
                       username={user.username}
-                      onSaveGold={newBalance => {
-                        mutationCurrency.mutate({
-                          userId: user.id,
-                          amount: newBalance,
-                          currencyType: 'gold_coins',
-                        });
-                      }}
                       onSaveCade={newBalance => {
                         mutationCurrency.mutate({
                           userId: user.id,
@@ -561,8 +500,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead>Gold Coins</TableHead>
-                <TableHead>Stream Coins</TableHead>
                 <TableHead>CadeCoins</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
@@ -573,7 +510,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                 <TableHead>Active</TableHead>
                 <TableHead>Wallet</TableHead>
                 <TableHead>Profile</TableHead>
-                <TableHead>Creator</TableHead>
                 <TableHead>Pro</TableHead>
                 <TableHead>Auctions</TableHead>
                 <TableHead>Crypto</TableHead>
@@ -583,7 +519,7 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
             <TableBody>
               {paginatedUsers?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={18} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={16} className="text-center py-6 text-muted-foreground">
                     No users found matching
                   </TableCell>
                 </TableRow>
@@ -598,22 +534,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                           Admin
                         </span>
                       )}
-
-                      {user.role === 'creator' && (
-                        <span className="bg-[Grays] font-medium text-white text-xs border border-[#FFFFFF] px-2 py-[4px] rounded-md ml-2">
-                          Creator
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user?.wallet?.goldCoins
-                        ? roundDownCoinAmount(user?.wallet?.goldCoins).toLocaleString('en-US')
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {user?.wallet?.sweepCoins
-                        ? roundDownCoinAmount(user?.wallet?.sweepCoins).toLocaleString('en-US')
-                        : '-'}
                     </TableCell>
                     <TableCell>
                       {user?.wallet?.cadeCoins
@@ -702,16 +622,8 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Edit Wallet Balances">
                       <AddTokens
-                        goldCoinsBalance={user?.wallet?.goldCoins}
                         cadeCoinsBalance={user?.wallet?.cadeCoins}
                         username={user.username}
-                        onSaveGold={newBalance => {
-                          mutationCurrency.mutate({
-                            userId: user.id,
-                            amount: newBalance,
-                            currencyType: 'gold_coins',
-                          });
-                        }}
                         onSaveCade={newBalance => {
                           mutationCurrency.mutate({
                             userId: user.id,
@@ -723,18 +635,6 @@ export const UserTable: React.FC<Props> = ({ searchUserQuery }) => {
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Edit User Profile">
                       <EditUserDialog profile={user} onUpdate={handleEditUser} />
-                    </TableCell>
-                    <TableCell className="cursor-pointer" title="Toggle Creator Role">
-                      <Checkbox
-                        checked={user?.role === 'creator'}
-                        disabled={user?.role === 'admin'}
-                        onCheckedChange={() => {
-                          updateCreatorStatusMutation.mutate({
-                            userId: user.id,
-                            isCreator: user?.role !== 'creator',
-                          });
-                        }}
-                      />
                     </TableCell>
                     <TableCell className="cursor-pointer" title="Toggle Pro Subscription">
                       <Switch

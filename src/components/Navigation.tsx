@@ -167,9 +167,9 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
     { label: 'Leaderboard', icon: undefined, path: '/leaderboard' },
     // { label: 'Predictions', icon: undefined, path: '/predictions' },
     { label: 'How To Play', icon: undefined, path: '/how-to-play' },
-    (session?.role === 'admin' || session?.role === 'creator') && {
-      label: session?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard',
-      path: session?.role === 'admin' ? '/admin' : '/creator',
+    session?.role === 'admin' && {
+      label: 'Admin Dashboard',
+      path: '/admin',
     },
     // { label: 'Streams', icon: undefined, path: '/stream' },
     // { label: 'Rewards', icon: undefined, path: '/rewards' },

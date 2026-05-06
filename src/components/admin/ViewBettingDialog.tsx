@@ -53,12 +53,12 @@ const ViewBettingDialog = ({ betRound }) => {
     <Dialog>
       <DialogTrigger asChild>
         <Button className="rounded-full font-bold w-1/2" style={{ height: '30px' }}>
-          View Bets
+          View Picks
         </Button>
       </DialogTrigger>
       <DialogContent className="border border-primary max-w-fit">
         <DialogHeader>
-          <DialogTitle>Round Bets</DialogTitle>
+          <DialogTitle>Round Picks</DialogTitle>
         </DialogHeader>
         <SearchInput
           id="search"
