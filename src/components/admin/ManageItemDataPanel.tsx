@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Trash2,
   ExternalLink,
+  Search,
 } from 'lucide-react';
 import { adminAPI } from '@/integrations/api/client';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
@@ -69,6 +70,17 @@ interface ItemListViewProps {
 const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
   const queryClient = useQueryClient();
   const { data: items = [], isLoading } = useAdminPrizeTiers();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const query = searchQuery.toLowerCase();
+    return items.filter(item =>
+      item.name.toLowerCase().includes(query) ||
+      item.ebaySearchQuery?.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query)
+    );
+  }, [items, searchQuery]);
 
   const syncAllMutation = useMutation({
     mutationFn: () => adminAPI.syncAllEbayData(),
@@ -101,10 +113,18 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-muted-foreground">
-          {items.length} item{items.length !== 1 ? 's' : ''}. Click an item to view and manage its eBay sold data.
-        </p>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex-1 max-w-md">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search items by name, query, or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
         <Button
           onClick={handleSyncAll}
           disabled={syncAllMutation.isPending}
@@ -120,8 +140,12 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
         </Button>
       </div>
 
+      <p className="text-sm text-muted-foreground mb-4">
+        Showing {filteredItems.length} of {items.length} item{items.length !== 1 ? 's' : ''}. Click an item to view and manage its eBay sold data.
+      </p>
+
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {items.map((item) => (
+        {filteredItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onSelectItem(item)}
@@ -213,7 +237,7 @@ const ListingCard = ({ listing, selected, onToggle, onImageClick }: ListingCardP
       )}
 
       <div className="p-2 space-y-0.5">
-        <p className="text-xs font-medium line-clamp-2 leading-tight">{listing.soldTitle}</p>
+        <p className="text-xs font-medium leading-tight">{listing.soldTitle}</p>
         <p className="text-xs font-bold">
           {listing.currencySymbol ?? '$'}{listing.salePrice.toFixed(2)}
         </p>
@@ -263,6 +287,7 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
   const [confirmDropAll, setConfirmDropAll] = useState(false);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [showFlagged, setShowFlagged] = useState(false);
+  const [sortBy, setSortBy] = useState<'date' | 'price-high' | 'price-low'>('date');
   const [soldListingPreview, setSoldListingPreview] = useState<{
     activeUrl: string;
     thumbnailUrl: string;
@@ -314,10 +339,25 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
   });
 
   const flaggedCount = useMemo(() => listings.filter((l) => l.isInaccurate).length, [listings]);
-  const displayedListings = useMemo(
-    () => (showFlagged ? listings : listings.filter((l) => !l.isInaccurate)),
-    [listings, showFlagged],
-  );
+  const displayedListings = useMemo(() => {
+    let filtered = showFlagged ? listings : listings.filter((l) => !l.isInaccurate);
+    
+    // Sort listings
+    const sorted = [...filtered];
+    if (sortBy === 'date') {
+      sorted.sort((a, b) => {
+        const dateA = a.dateSold ? new Date(a.dateSold).getTime() : 0;
+        const dateB = b.dateSold ? new Date(b.dateSold).getTime() : 0;
+        return dateB - dateA; // Most recent first
+      });
+    } else if (sortBy === 'price-high') {
+      sorted.sort((a, b) => b.salePrice - a.salePrice);
+    } else if (sortBy === 'price-low') {
+      sorted.sort((a, b) => a.salePrice - b.salePrice);
+    }
+    
+    return sorted;
+  }, [listings, showFlagged, sortBy]);
 
   const handleOpenLightbox = (listing: AdminEbaySoldListing) => {
     if (!listing.imageUrl) return;
@@ -424,6 +464,35 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
             <span className="text-sm text-muted-foreground">
               {displayedListings.length}{displayedListings.length !== listings.length ? ` of ${listings.length}` : ''} listing{listings.length !== 1 ? 's' : ''}
             </span>
+          </div>
+          <div className="inline-flex rounded-md border border-[#2A2F3A] bg-[#0B1018] p-0.5">
+            <button
+              type="button"
+              onClick={() => setSortBy('date')}
+              className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                sortBy === 'date' ? 'bg-[#7AFF14] text-black' : 'text-muted-foreground hover:text-white'
+              }`}
+            >
+              Date
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortBy('price-high')}
+              className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                sortBy === 'price-high' ? 'bg-[#7AFF14] text-black' : 'text-muted-foreground hover:text-white'
+              }`}
+            >
+              $ High
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortBy('price-low')}
+              className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                sortBy === 'price-low' ? 'bg-[#7AFF14] text-black' : 'text-muted-foreground hover:text-white'
+              }`}
+            >
+              $ Low
+            </button>
           </div>
           {flaggedCount > 0 && (
             <Button
