@@ -626,7 +626,7 @@ export default function PrizeCard({
       const result = await prizeAPI.syncEbaySoldListingsNow(prize.id);
       toast({
         title: 'Sold data refreshed',
-        description: `Fetched ${result.fetched}, inserted ${result.inserted}, deduped ${result.deduped}`,
+        description: `Fetched ${result.fetched}, inserted ${result.inserted}, deduped ${result.deduped}, auto-flagged ${result.autoFlagged}`,
       });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['ebay-market-summary', prize.id] }),
@@ -752,22 +752,24 @@ export default function PrizeCard({
               {marketSummaryQuery.isLoading ? (
                 <div className="mt-1 text-xs text-muted-foreground">Loading market data...</div>
               ) : latestAvg !== null ? (
-                <div className="mt-1 flex items-center justify-between">
+                <div className="mt-1">
                   <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
-                  <span
-                    className={cn(
-                      'text-xs font-semibold',
-                      latestPercentDiff === null
-                        ? 'text-muted-foreground'
-                        : latestPercentDiff >= 0
-                          ? 'text-orange-400'
-                          : 'text-emerald-400'
-                    )}
-                  >
-                    {latestPercentDiff === null
-                      ? 'n/a'
-                      : `${latestPercentDiff >= 0 ? '+' : ''}${latestPercentDiff.toFixed(2)}%`}
-                  </span>
+                  {marketSummary?.listingPrice != null && (
+                    <div
+                      className={cn(
+                        'text-[10px] font-medium mt-0.5',
+                        latestPercentDiff === null
+                          ? 'text-muted-foreground'
+                          : latestPercentDiff >= 0
+                            ? 'text-orange-400'
+                            : 'text-emerald-400'
+                      )}
+                    >
+                      {latestPercentDiff === null
+                        ? 'n/a'
+                        : `Listed $${Math.abs(marketSummary.listingPrice - latestAvg).toFixed(2)} ${latestPercentDiff >= 0 ? 'above' : 'below'} eBay market`}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="mt-1 text-xs text-muted-foreground">0 sold listings</div>
@@ -1031,22 +1033,24 @@ export default function PrizeCard({
               {marketSummaryQuery.isLoading ? (
                 <div className="mt-1 text-[11px] text-muted-foreground">Loading market data...</div>
               ) : latestAvg !== null ? (
-                <div className="mt-1 flex items-center justify-between">
+                <div className="mt-1">
                   <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
-                  <span
-                    className={cn(
-                      'text-[11px] font-semibold',
-                      latestPercentDiff === null
-                        ? 'text-muted-foreground'
-                        : latestPercentDiff >= 0
-                          ? 'text-orange-400'
-                          : 'text-emerald-400'
-                    )}
-                  >
-                    {latestPercentDiff === null
-                      ? 'n/a'
-                      : `${latestPercentDiff >= 0 ? '+' : ''}${latestPercentDiff.toFixed(2)}%`}
-                  </span>
+                  {marketSummary?.listingPrice != null && (
+                    <div
+                      className={cn(
+                        'text-[10px] font-medium mt-0.5',
+                        latestPercentDiff === null
+                          ? 'text-muted-foreground'
+                          : latestPercentDiff >= 0
+                            ? 'text-orange-400'
+                            : 'text-emerald-400'
+                      )}
+                    >
+                      {latestPercentDiff === null
+                        ? 'n/a'
+                        : `Listed $${Math.abs(marketSummary.listingPrice - latestAvg).toFixed(2)} ${latestPercentDiff >= 0 ? 'above' : 'below'} eBay market`}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="mt-1 text-[11px] text-muted-foreground">0 sold listings</div>
@@ -1301,7 +1305,7 @@ export default function PrizeCard({
                 <div className="text-[11px] text-muted-foreground uppercase">Diff vs Listing</div>
                 <div
                   className={cn(
-                    'mt-1 text-lg font-semibold',
+                    'mt-1 text-sm font-semibold leading-snug',
                     marketSummary?.percentDifference == null
                       ? 'text-muted-foreground'
                       : marketSummary.percentDifference >= 0
@@ -1309,9 +1313,9 @@ export default function PrizeCard({
                         : 'text-emerald-400'
                   )}
                 >
-                  {marketSummary?.percentDifference == null
+                  {marketSummary?.percentDifference == null || marketSummary?.listingPrice == null || marketSummary?.averagePrice == null
                     ? '—'
-                    : `${marketSummary.percentDifference >= 0 ? '+' : ''}${marketSummary.percentDifference.toFixed(2)}%`}
+                    : `Listed $${Math.abs(marketSummary.listingPrice - marketSummary.averagePrice).toFixed(2)} ${marketSummary.percentDifference >= 0 ? 'above' : 'below'} eBay market`}
                 </div>
               </div>
               <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
