@@ -1115,6 +1115,16 @@ export const adminAPI = {
     return response.data;
   },
 
+  migratePsaGradeFlags: async (): Promise<{
+    totalListings: number;
+    flaggedCount: number;
+    unflaggedCount: number;
+    unchangedCount: number;
+  }> => {
+    const response = await apiClient.post('/admin/ebay-market/migrate-psa-grade-flags');
+    return response.data;
+  },
+
   // Update stream
   updateStream: async (streamId: string, streamData: any) => {
     const response = await apiClient.patch(`/admin/streams/${streamId}`, streamData);
@@ -1620,6 +1630,7 @@ export const prizeAPI = {
     fetched: number;
     inserted: number;
     deduped: number;
+    autoFlagged: number;
     query: string;
     calculatedAt: string;
   }> => {

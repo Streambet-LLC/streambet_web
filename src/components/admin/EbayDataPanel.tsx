@@ -7,6 +7,8 @@ import { api } from '@/integrations/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const EBAY_DATA_TABS = [
@@ -73,6 +75,25 @@ export const EbayDataPanel = () => {
     updateSettingsMutation.mutate(nextSocials);
   };
 
+  const migratePsaFlagsMutation = useMutation({
+    mutationFn: () => api.admin.migratePsaGradeFlags(),
+    onSuccess: (result) => {
+      toast({
+        title: 'Migration complete',
+        description: `Processed ${result.totalListings} listings: ${result.flaggedCount} newly flagged, ${result.unflaggedCount} newly unflagged, ${result.unchangedCount} unchanged.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['ebay-market-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['ebay-market-history'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Migration failed',
+        description: 'Unable to complete PSA grade, card number & year migration right now.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return (
     <div className="space-y-4">
       <Card>
@@ -120,6 +141,30 @@ export const EbayDataPanel = () => {
               onCheckedChange={(checked) => setFlag('_ff_ebayManualSync', checked)}
               disabled={updateSettingsMutation.isPending}
             />
+          </div>
+
+          <div className="pt-2 border-t">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">PSA Grade, Card Number & Year Migration</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                One-time migration to retroactively apply PSA grade, card number, and year filtering to all existing sold listings. This will flag listings where PSA grades, card numbers, or years don't match the item.
+              </p>
+              <Button
+                onClick={() => migratePsaFlagsMutation.mutate()}
+                disabled={migratePsaFlagsMutation.isPending}
+                variant="outline"
+                size="sm"
+              >
+                {migratePsaFlagsMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Migrating...
+                  </>
+                ) : (
+                  'Run PSA Grade, Card # & Year Migration'
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
