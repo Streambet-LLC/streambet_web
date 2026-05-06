@@ -19,7 +19,7 @@ export default function HideBetRoundOnLanding({
   const updateRoundMutation = useMutation({
     mutationFn: (isHidden: boolean) => api.admin.updateBetRoundLandingPageVisibility(betRoundId, isHidden),
     onSuccess: () => {
-      toast({ title: 'Success', description: 'Bet round landing visiblity updated' });
+      toast({ title: 'Success', description: 'Pick round landing visibility updated' });
     },
     onError: (error: any, newState: boolean) => {
       toast({

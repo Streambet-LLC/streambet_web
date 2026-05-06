@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { StreamPlayer } from '@/components/StreamPlayer';
 import { AdminBettingRoundsCard } from './AdminBettingRoundsCard';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,6 @@ import { useImageCropper, type UseImageCropperReturn } from '@/hooks/useImageCro
 import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
 import PhotoCropper from '../PhotoCropper';
 import { validateStreamTitle, validateStreamDescription } from '@/utils/streamValidation';
-import Chat from '../stream/Chat';
 import { useNavigate } from 'react-router-dom';
 import { useBettingStatusContext } from '@/contexts/BettingStatusContext';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -556,7 +554,9 @@ export const AdminStreamContent = ({
                   </div>
                 </div>
               ) : (
-                <StreamPlayer streamId={streamId} />
+                <div className="flex items-center justify-center h-full w-full bg-black border border-primary rounded-lg text-white/60 text-sm p-4">
+                  Live video playback has been removed.
+                </div>
               )}
             </div>
           )}
@@ -687,16 +687,7 @@ export const AdminStreamContent = ({
               </div>
             </DialogContent>
           </Dialog>
-          <div className="flex-1 min-h-0 flex flex-col h-full">
-            <div className="h-full w-full md:max-w-[320px]">
-              <Chat
-                sendMessageSocket={sendMessageSocket}
-                newSocketMessage={messageList}
-                session={session}
-                streamId={streamId}
-              />
-            </div>
-          </div>
+
         </div>
       </div>
 

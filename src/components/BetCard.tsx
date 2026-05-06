@@ -499,7 +499,7 @@ export default function BetCard(props: BetCardType) {
       </motion.div>
 
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-        <DialogTitle className="sr-only">Bet Image</DialogTitle>
+        <DialogTitle className="sr-only">Pick Image</DialogTitle>
         <DialogContent
           className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent"
           aria-describedby={undefined}

@@ -100,17 +100,16 @@ const formatDate = (iso: string | null) =>
 const formatUsd = (n: number | null) =>
   n == null ? '—' : `$${n.toFixed(2)}`;
 
-export const AdminAuctions = () => {
+export const AdminAuctions = ({
+  mode = 'live',
+}: {
+  mode?: 'live' | 'completed';
+} = {}) => {
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<StatusKey | 'all' | 'overdue'>(
-    'all',
-  );
+  const [statusFilter, setStatusFilter] = useState<StatusKey | 'all' | 'overdue'>('all');
   const [search, setSearch] = useState('');
-  const [pendingForceClose, setPendingForceClose] =
-    useState<AdminAuctionRow | null>(null);
-  const [pendingCancel, setPendingCancel] = useState<AdminAuctionRow | null>(
-    null,
-  );
+  const [pendingForceClose, setPendingForceClose] = useState<AdminAuctionRow | null>(null);
+  const [pendingCancel, setPendingCancel] = useState<AdminAuctionRow | null>(null);
   const [activeRow, setActiveRow] = useState<AdminAuctionRow | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -121,13 +120,14 @@ export const AdminAuctions = () => {
   const rows = useMemo(() => {
     const all = data ?? [];
     const lowered = search.trim().toLowerCase();
+    const COMPLETED_STATUSES: StatusKey[] = ['paid', 'unsold'];
     return all.filter(row => {
+      // Mode partition: "live" = everything still actionable or in-flight,
+      // "completed" = terminal sold/unsold outcomes (those belong under Orders).
+      if (mode === 'completed' && !COMPLETED_STATUSES.includes(row.status)) return false;
+      if (mode === 'live' && COMPLETED_STATUSES.includes(row.status)) return false;
       if (statusFilter === 'overdue' && !row.isOverdue) return false;
-      if (
-        statusFilter !== 'all' &&
-        statusFilter !== 'overdue' &&
-        row.status !== statusFilter
-      ) {
+      if (statusFilter !== 'all' && statusFilter !== 'overdue' && row.status !== statusFilter) {
         return false;
       }
       if (!lowered) return true;
@@ -137,11 +137,11 @@ export const AdminAuctions = () => {
         (row.winnerUsername ?? '').toLowerCase().includes(lowered)
       );
     });
-  }, [data, statusFilter, search]);
+  }, [data, statusFilter, search, mode]);
 
   const overdueCount = useMemo(
-    () => (data ?? []).filter(r => r.isOverdue).length,
-    [data],
+    () => (mode === 'live' ? (data ?? []).filter(r => r.isOverdue).length : 0),
+    [data, mode]
   );
 
   const forceCloseMutation = useMutation({
@@ -190,12 +190,9 @@ export const AdminAuctions = () => {
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Gavel className="w-5 h-5 text-primary" />
-          <CardTitle>Auctions</CardTitle>
+          <CardTitle>{mode === 'completed' ? 'Completed Auctions' : 'Auctions'}</CardTitle>
           {overdueCount > 0 && (
-            <Badge
-              variant="outline"
-              className="border-amber-500 bg-amber-500/10 text-amber-300"
-            >
+            <Badge variant="outline" className="border-amber-500 bg-amber-500/10 text-amber-300">
               <AlertTriangle className="w-3 h-3 mr-1" />
               {overdueCount} overdue
             </Badge>
@@ -210,23 +207,28 @@ export const AdminAuctions = () => {
           />
           <Select
             value={statusFilter}
-            onValueChange={value =>
-              setStatusFilter(value as StatusKey | 'all' | 'overdue')
-            }
+            onValueChange={value => setStatusFilter(value as StatusKey | 'all' | 'overdue')}
           >
             <SelectTrigger className="w-full sm:w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="overdue">Overdue only</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="ended">Ended</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="unsold">Unsold</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+              {mode === 'live' ? (
+                <>
+                  <SelectItem value="overdue">Overdue only</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="ended">Ended</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </>
+              ) : (
+                <>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="unsold">Unsold</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -252,20 +254,17 @@ export const AdminAuctions = () => {
                   <TableHead className="text-right">Bids</TableHead>
                   <TableHead>Winner</TableHead>
                   <TableHead>Paid at</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {mode === 'live' && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map(row => {
                   const badge = STATUS_BADGE[row.status];
                   const inFlight =
-                    forceCloseMutation.isPending &&
-                    forceCloseMutation.variables === row.id;
+                    forceCloseMutation.isPending && forceCloseMutation.variables === row.id;
                   const cancelInFlight =
-                    cancelMutation.isPending &&
-                    cancelMutation.variables === row.id;
-                  const canForceClose =
-                    row.status === 'active' || row.status === 'scheduled';
+                    cancelMutation.isPending && cancelMutation.variables === row.id;
+                  const canForceClose = row.status === 'active' || row.status === 'scheduled';
                   const canCancel = canForceClose;
                   return (
                     <TableRow
@@ -283,10 +282,7 @@ export const AdminAuctions = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1 items-start">
-                          <Badge
-                            variant="outline"
-                            className={cn('text-xs', badge.className)}
-                          >
+                          <Badge variant="outline" className={cn('text-xs', badge.className)}>
                             {badge.label}
                           </Badge>
                           {row.isOverdue && (
@@ -306,54 +302,49 @@ export const AdminAuctions = () => {
                       <TableCell className="text-right whitespace-nowrap">
                         {formatUsd(row.currentBidUsd)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {row.bidCount}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {row.winnerUsername ?? '—'}
-                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{row.bidCount}</TableCell>
+                      <TableCell className="text-xs">{row.winnerUsername ?? '—'}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">
                         {formatDate(row.paidAt)}
                       </TableCell>
-                      <TableCell
-                        className="text-right"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!canForceClose || inFlight}
-                            onClick={() => setPendingForceClose(row)}
-                            title={
-                              canForceClose
-                                ? 'Run the close flow now'
-                                : 'Only active or scheduled auctions can be closed'
-                            }
-                          >
-                            {inFlight ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <PlayCircle className="w-3 h-3" />
-                            )}
-                            <span className="ml-1">Force close</span>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!canCancel || cancelInFlight}
-                            onClick={() => setPendingCancel(row)}
-                            className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                          >
-                            {cancelInFlight ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <XCircle className="w-3 h-3" />
-                            )}
-                            <span className="ml-1">Cancel</span>
-                          </Button>
-                        </div>
-                      </TableCell>
+                      {mode === 'live' && (
+                        <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!canForceClose || inFlight}
+                              onClick={() => setPendingForceClose(row)}
+                              title={
+                                canForceClose
+                                  ? 'Run the close flow now'
+                                  : 'Only active or scheduled auctions can be closed'
+                              }
+                            >
+                              {inFlight ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <PlayCircle className="w-3 h-3" />
+                              )}
+                              <span className="ml-1">Force close</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!canCancel || cancelInFlight}
+                              onClick={() => setPendingCancel(row)}
+                              className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                            >
+                              {cancelInFlight ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <XCircle className="w-3 h-3" />
+                              )}
+                              <span className="ml-1">Cancel</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
@@ -374,16 +365,11 @@ export const AdminAuctions = () => {
             <AlertDialogDescription>
               {pendingForceClose && (
                 <>
-                  This runs the close flow for{' '}
-                  <strong>{pendingForceClose.prizeName}</strong> immediately. If
-                  there&apos;s a winning bid the buyer&apos;s saved card will be
-                  charged for{' '}
-                  <strong>
-                    {formatUsd(pendingForceClose.currentBidUsd)}
-                  </strong>{' '}
-                  (plus fees & shipping) and a prize order will be created. If
-                  reserve isn&apos;t met or there are no bids the auction will
-                  be marked unsold.
+                  This runs the close flow for <strong>{pendingForceClose.prizeName}</strong>{' '}
+                  immediately. If there&apos;s a winning bid the buyer&apos;s saved card will be
+                  charged for <strong>{formatUsd(pendingForceClose.currentBidUsd)}</strong> (plus
+                  fees & shipping) and a prize order will be created. If reserve isn&apos;t met or
+                  there are no bids the auction will be marked unsold.
                 </>
               )}
             </AlertDialogDescription>
@@ -404,20 +390,16 @@ export const AdminAuctions = () => {
       </AlertDialog>
 
       {/* Confirm: cancel. Marks status=cancelled and removes queue jobs. */}
-      <AlertDialog
-        open={!!pendingCancel}
-        onOpenChange={open => !open && setPendingCancel(null)}
-      >
+      <AlertDialog open={!!pendingCancel} onOpenChange={open => !open && setPendingCancel(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel this auction?</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingCancel && (
                 <>
-                  This marks <strong>{pendingCancel.prizeName}</strong> as
-                  cancelled and removes its scheduled close job. Existing bids
-                  are kept for audit but no charge will occur. This action
-                  cannot be undone.
+                  This marks <strong>{pendingCancel.prizeName}</strong> as cancelled and removes its
+                  scheduled close job. Existing bids are kept for audit but no charge will occur.
+                  This action cannot be undone.
                 </>
               )}
             </AlertDialogDescription>

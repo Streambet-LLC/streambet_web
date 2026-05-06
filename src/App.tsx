@@ -3,8 +3,6 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Index from './pages/OldIndex';
-import Stream from './pages/Stream';
 import NonVideo from './pages/NonVideo';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -37,16 +35,12 @@ import Profile from './pages/Profile';
 import Reviews from './pages/Reviews';
 import 'react-image-crop/dist/ReactCrop.css';
 import Home from './pages/Home';
-import Creator from './pages/Creator';
-import Creators from './components/creators/Creators';
-import CreatorPayoutsHistoryPage from './pages/CreatorPayoutsHistory';
 import { DepositProvider } from './contexts/DepositContext';
 import Deposit from './components/deposit/Deposit';
 import Leaderboard from './pages/Leaderboard';
 import { CookiesProvider } from 'react-cookie';
 import { SolanaWalletProvider } from '@/integrations/solana/WalletProvider';
 import { RequireWalletConnectModal } from '@/components/crypto/RequireWalletConnectModal';
-import CreatorApplication from './pages/CreatorApplication';
 import SellerApplication from './pages/SellerApplication';
 import Prizes from './pages/Prizes';
 import Redemptions from './pages/Redemptions';
@@ -105,7 +99,6 @@ const App = () => {
                               {/* Guarded Routes */}
                               <Route element={<RouteGroup guard />}>
                                 <Route path="/admin" element={<Admin />} />
-                                <Route path="/creator" element={<Creator />} />
                                 <Route path="/withdraw" element={<Redeem />} />
                                 <Route path="/withdraw/verification" element={<Kyc />} />
                                 <Route
@@ -116,15 +109,7 @@ const App = () => {
                                   path="/betting-history"
                                   element={<Transactions key="betting-redirect" />}
                                 />
-                                <Route
-                                  path="/creator-payouts-history"
-                                  element={<CreatorPayoutsHistoryPage />}
-                                />
                                 <Route path="/settings" element={<Settings />} />
-                                <Route
-                                  path="/creator-application"
-                                  element={<CreatorApplication />}
-                                />
                                 <Route path="/seller-application" element={<SellerApplication />} />
                                 <Route path="/seller/shop/manage" element={<SellerShopManage />} />
                                 <Route path="/daily-spin" element={<DailySpin />} />
@@ -136,12 +121,10 @@ const App = () => {
                               {/* Public Routes */}
                               <Route path="/:username" element={<Profile />} />
                               <Route path="/users/:username/reviews" element={<Reviews />} />
-                              <Route path="/stream/:id" element={<Stream />} />
                               <Route path="/nonvideo/:id" element={<NonVideo />} />
                               <Route path="/privacy" element={<Privacy />} />
                               <Route path="/terms" element={<Terms />} />
                               <Route path="/compliance" element={<Compliance />} />
-                              <Route path="/creators" element={<Creators />} />
                               <Route path="/shops" element={<Shops />} />
                               <Route path="/prizes" element={<Prizes />} />
                               <Route path="/shop/item/:id" element={<ShopItemDetail />} />

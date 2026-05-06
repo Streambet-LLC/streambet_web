@@ -590,7 +590,7 @@ const renderCancelSave = () => (
             />
           </div>
           {renderCancelSave()}
-          <div className={cn("space-y-4", !session.isCreator && "hidden")}>
+          <div className={cn("space-y-4 hidden")}>
             <Separator className="bg-gray-900" />
             <div>
               <h2 className="text-md font-light text-white">Socials</h2>

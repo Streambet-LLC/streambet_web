@@ -25,9 +25,8 @@ import { TabSwitch } from '../navigation/TabSwitch';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BettingRounds, ValidationError, validateRounds } from './BettingRounds';
 import { AdminStreamContent } from './AdminStreamContent';
-import { BettingRoundStatus, BettingCategory, CurrencyType, StreamStatus } from '@/enums';
+import { BettingRoundStatus, BettingCategory, StreamStatus } from '@/enums';
 import { StreamInfoForm } from './StreamInfoForm';
-import { useCurrencyContext } from '@/contexts/CurrencyContext';
 import Bugsnag from '@bugsnag/js';
 import {
   cleanTemporaryIds,
@@ -37,7 +36,6 @@ import {
   BettingOption,
 } from '@/utils/bettingRoundsUtils';
 import { cn } from '@/lib/utils';
-import StreamPayoutReport from './StreamPayoutReport';
 import { PrizeConfiguration } from './PrizeConfiguration';
 import { PrizeRedemptions } from './PrizeRedemptions';
 import { PrizeOrders } from './PrizeOrders';
@@ -77,14 +75,14 @@ export const AdminManagement = ({
   refetchEndedNonVideoStreams,
   searchEndedNonVideoQuery,
   setSearchEndedNonVideoQuery,
-
-  promoStreams,
-  refetchPromoStreams,
-  searchPromoQuery,
-  setSearchPromoQuery,
 }) => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('prize-settings');
+  const [pickStatusTab, setPickStatusTab] = useState<'active' | 'ended'>('active');
+  const [ordersSubTab, setOrdersSubTab] = useState<'auctions' | 'redemptions' | 'offers'>(
+    'auctions'
+  );
+  const [listingsSubTab, setListingsSubTab] = useState<'items' | 'auctions'>('items');
   const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
   const [isCreateStream, setIsCreateStream] = useState(false);
@@ -109,8 +107,6 @@ export const AdminManagement = ({
   const [showBettingValidation, setShowBettingValidation] = useState(false);
 
   const [bettingValidationErrors, setBettingValidationErrors] = useState<ValidationError[]>([]);
-  const { currency } = useCurrencyContext();
-  const isSweepCoins = currency === CurrencyType.SWEEP_COINS;
 
   const tabs = [
     { key: 'prize-settings', label: 'Listings' },
@@ -118,21 +114,14 @@ export const AdminManagement = ({
     { key: 'pending-onboarding', label: 'Seller Stripe Status' },
     { key: 'crypto-sellers', label: 'Crypto' },
     { key: 'sales-history', label: 'Sales History' },
-    { key: 'auctions', label: 'Auctions' },
+    { key: 'orders', label: 'Orders' },
     { key: 'support-inbox', label: 'Support Inbox' },
     { key: 'user-messages', label: 'User Messages' },
     { key: 'concierge', label: 'Concierge' },
     { key: 'discount-codes', label: 'Discount Codes' },
     { key: 'promo-codes', label: 'Promo Codes' },
-    { key: 'prize-redemptions', label: 'Prize Redemptions' },
-    { key: 'prize-offers', label: 'Prize Offers' },
     { key: 'applications', label: 'Applications' },
-    { key: 'stream-payout', label: 'Stream Payout' },
-    { key: 'livestreams', label: 'Live Streams' },
-    { key: 'ended-streams', label: 'Ended Streams' },
-    { key: 'non-video', label: 'Non Video' },
-    { key: 'ended-non-video', label: 'Ended Non Video' },
-    { key: 'promo-cards', label: 'Promo Cards' },
+    { key: 'picks', label: 'Picks' },
   ];
 
   const createStreamMutation = useMutation({
@@ -535,7 +524,7 @@ export const AdminManagement = ({
 
       // Set event type based on stream data
       if (streamData.streamType) {
-        let label = 'Non Video';
+        let label = 'Pick';
         if (streamData.streamType === 'stream') {
           label = 'Livestream';
         } else if (streamData.streamType === 'promo') {
@@ -723,12 +712,6 @@ export const AdminManagement = ({
       return;
     }
 
-    // Promo cards don't need betting rounds - create directly
-    if (eventType.value === 'promo') {
-      await handleCreateStream();
-      return;
-    }
-
     // Auto-populate first round with 2 options if empty
     if (bettingRounds.length === 0) {
       const firstRound: BettingRound = {
@@ -763,7 +746,6 @@ export const AdminManagement = ({
   const [nonVideoPage, setNonVideoPage] = useState(1);
   const [endStreamCurrentPage, setEndStreamCurrentPage] = useState(1);
   const [endedNonVideoCurrentPage, setEndedNonVideoCurrentPage] = useState(1);
-  const [promoPage, setPromoPage] = useState(1);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -788,10 +770,6 @@ export const AdminManagement = ({
   useEffect(() => {
     setEndedNonVideoCurrentPage(1);
   }, [searchEndedNonVideoQuery]);
-
-  useEffect(() => {
-    setPromoPage(1);
-  }, [searchPromoQuery]);
 
   // Add useEffect for validation
   useEffect(() => {
@@ -907,11 +885,7 @@ export const AdminManagement = ({
                       ></path>
                     </svg>
                   ) : (
-                    (
-                      (isSweepCoins
-                        ? streamAnalytics?.totalBetValue?.sweepCoins
-                        : streamAnalytics?.totalBetValue?.goldCoins) || 0
-                    )?.toLocaleString('en-US')
+                    (streamAnalytics?.totalBetValue?.cadeCoins || 0).toLocaleString('en-US')
                   )}
                 </span>
               </div>
@@ -1325,7 +1299,7 @@ export const AdminManagement = ({
                 </span>
               )}
             </div>
-            {/* Active Streams Card */}
+            {/* Monthly Fees Earned Card */}
             <div
               className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
               style={{ minHeight: 109, height: 109, padding: 24 }}
@@ -1338,7 +1312,7 @@ export const AdminManagement = ({
                   textAlign: 'left',
                 }}
               >
-                Active Streams
+                Monthly Fees Earned
               </span>
               {isAdminAnalyticsLoading ? (
                 <svg
@@ -1370,11 +1344,15 @@ export const AdminManagement = ({
                     textAlign: 'left',
                   }}
                 >
-                  {adminAnalytics?.totalLiveStreams}
+                  {(adminAnalytics?.monthlyFeesEarned ?? 0).toLocaleString('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    maximumFractionDigits: 2,
+                  })}
                 </span>
               )}
             </div>
-            {/* Active Bets Card */}
+            {/* Total Cards Listed Card */}
             <div
               className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
               style={{ minHeight: 109, height: 109, padding: 24 }}
@@ -1387,7 +1365,7 @@ export const AdminManagement = ({
                   textAlign: 'left',
                 }}
               >
-                Active Picks
+                Total Cards Listed
               </span>
               {isAdminAnalyticsLoading ? (
                 <svg
@@ -1419,11 +1397,11 @@ export const AdminManagement = ({
                     textAlign: 'left',
                   }}
                 >
-                  {adminAnalytics?.totalActiveBets}
+                  {adminAnalytics?.totalCardsListed ?? 0}
                 </span>
               )}
             </div>
-            {/* Time Live Card */}
+            {/* Concierge Requests Card */}
             <div
               className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
               style={{ minHeight: 109, height: 109, padding: 24 }}
@@ -1436,7 +1414,7 @@ export const AdminManagement = ({
                   textAlign: 'left',
                 }}
               >
-                Time Live
+                Concierge Requests
               </span>
               {isAdminAnalyticsLoading ? (
                 <svg
@@ -1468,7 +1446,7 @@ export const AdminManagement = ({
                     textAlign: 'left',
                   }}
                 >
-                  {adminAnalytics?.totalLiveTime}
+                  {adminAnalytics?.totalConciergeRequests ?? 0}
                 </span>
               )}
             </div>
@@ -1488,79 +1466,65 @@ export const AdminManagement = ({
           <Separator className="!mt-1" />
 
           {/* Search and Action Buttons - Below Separator */}
-          {activeTab !== 'stream-payout' && (
-            <div className={`w-full mb-4 mt-4 ${isMobile ? 'px-4' : 'px-4'}`}>
-              {activeTab === 'users' && (
-                <SearchInput
-                  id="search-users"
-                  placeholder="Search users..."
-                  value={searchUserQuery}
-                  onChange={setSearchUserQuery}
-                  width="lg"
-                />
-              )}
+          <div className={`w-full mb-4 mt-4 ${isMobile ? 'px-4' : 'px-4'}`}>
+            {activeTab === 'users' && (
+              <SearchInput
+                id="search-users"
+                placeholder="Search users..."
+                value={searchUserQuery}
+                onChange={setSearchUserQuery}
+                width="lg"
+              />
+            )}
 
-              {activeTab === 'ended-streams' && (
-                <SearchInput
-                  id="search-ended-streams"
-                  placeholder="Search ended streams..."
-                  value={searchEndedStreamQuery}
-                  onChange={setSearchEndedStreamQuery}
-                  width="lg"
-                />
-              )}
-
-              {activeTab === 'livestreams' && (
-                <div
-                  className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center'} w-full`}
-                >
-                  <SearchInput
-                    id="search-streams"
-                    placeholder="Search streams..."
-                    value={searchStreamQuery}
-                    onChange={setSearchStreamQuery}
-                    width="md"
-                    className={isMobile ? '' : 'mr-2'}
-                  />
+            {activeTab === 'picks' && (
+              <div
+                className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center gap-2'} w-full`}
+              >
+                <div className="inline-flex rounded-full border border-border bg-card overflow-hidden">
                   <button
                     type="button"
-                    className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
-                    onClick={() => {
-                      resetForm();
-                      setIsCreateStream(true);
-                      setEditStreamId('');
-                      setViewStreamId('');
-                      setCreateStep('info');
-                      setBettingRounds([]);
-                      setErrors({
-                        title: '',
-                        description: '',
-                        embeddedUrl: '',
-                        thumbnail: '',
-                        startDate: '',
-                      });
-                      setBettingErrorRounds([]);
-                      setBettingValidationErrors([]);
-                      setShowBettingValidation(false);
-                    }}
+                    className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                      pickStatusTab === 'active'
+                        ? 'bg-primary text-black'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => setPickStatusTab('active')}
                   >
-                    Create Pick
+                    Active
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                      pickStatusTab === 'ended'
+                        ? 'bg-primary text-black'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => setPickStatusTab('ended')}
+                  >
+                    Ended
                   </button>
                 </div>
-              )}
-
-              {activeTab === 'non-video' && (
-                <div
-                  className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center'} w-full`}
-                >
+                {pickStatusTab === 'active' ? (
                   <SearchInput
-                    id="search-non-video"
-                    placeholder="Search Non-Video..."
+                    id="search-picks-active"
+                    placeholder="Search picks..."
                     value={searchNonVideoQuery}
                     onChange={setSearchNonVideoQuery}
                     width="md"
                     className={isMobile ? '' : 'mr-2'}
                   />
+                ) : (
+                  <SearchInput
+                    id="search-picks-ended"
+                    placeholder="Search ended picks..."
+                    value={searchEndedNonVideoQuery}
+                    onChange={setSearchEndedNonVideoQuery}
+                    width="md"
+                    className={isMobile ? '' : 'mr-2'}
+                  />
+                )}
+                {pickStatusTab === 'active' && (
                   <button
                     type="button"
                     className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
@@ -1585,94 +1549,14 @@ export const AdminManagement = ({
                   >
                     Create Pick
                   </button>
-                </div>
-              )}
-
-              {activeTab === 'ended-non-video' && (
-                <SearchInput
-                  id="search-ended-non-video"
-                  placeholder="Search ended non-videos..."
-                  value={searchEndedNonVideoQuery}
-                  onChange={setSearchEndedNonVideoQuery}
-                  width="lg"
-                />
-              )}
-
-              {activeTab === 'promo-cards' && (
-                <div
-                  className={`${isMobile ? 'flex flex-col space-y-3' : 'flex items-center'} w-full`}
-                >
-                  <SearchInput
-                    id="search-promo"
-                    placeholder="Search Promo Cards..."
-                    value={searchPromoQuery}
-                    onChange={setSearchPromoQuery}
-                    width="md"
-                    className={isMobile ? '' : 'mr-2'}
-                  />
-                  <button
-                    type="button"
-                    className={`bg-primary text-black font-bold px-6 py-2 rounded-full hover:bg-opacity-90 transition-colors ${isMobile ? 'w-full' : ''}`}
-                    onClick={() => {
-                      resetForm();
-                      setIsCreateStream(true);
-                      setEditStreamId('');
-                      setViewStreamId('');
-                      setCreateStep('info');
-                      setEventType({ value: 'promo', label: 'Promo Card' });
-                      setBettingRounds([]);
-                      setErrors({
-                        title: '',
-                        description: '',
-                        embeddedUrl: '',
-                        thumbnail: '',
-                        startDate: '',
-                      });
-                      setBettingErrorRounds([]);
-                      setBettingValidationErrors([]);
-                      setShowBettingValidation(false);
-                    }}
-                  >
-                    Create Promo Card
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Tab Content */}
 
-          {activeTab === 'livestreams' && (
-            <div className="space-y-4">
-              <StreamTable
-                streams={streams}
-                setStreamAnalyticsId={setStreamAnalyticsId}
-                refetchStreams={refetchStreams}
-                setViewStreamId={setViewStreamId}
-                setEditStreamId={setEditStreamId}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-                pickStatusFilters={pickStatusFiltersLiveStream}
-                setPickStatusFilters={setPickStatusFiltersLiveStream}
-              />
-            </div>
-          )}
-
-          {activeTab === 'ended-streams' && (
-            <div className="space-y-4">
-              <StreamTable
-                streams={endedStreams}
-                setStreamAnalyticsId={setStreamAnalyticsId}
-                refetchStreams={refetchEndedStreams}
-                setViewStreamId={setViewStreamId}
-                setEditStreamId={setEditStreamId}
-                currentPage={endStreamCurrentPage}
-                setCurrentPage={setEndStreamCurrentPage}
-              />
-            </div>
-          )}
-
-          {activeTab === 'non-video' && (
+          {activeTab === 'picks' && pickStatusTab === 'active' && (
             <div className="space-y-4">
               <StreamTable
                 streams={nonVideoStreams}
@@ -1688,7 +1572,7 @@ export const AdminManagement = ({
             </div>
           )}
 
-          {activeTab === 'ended-non-video' && (
+          {activeTab === 'picks' && pickStatusTab === 'ended' && (
             <div className="space-y-4">
               <StreamTable
                 streams={endedNonVideoStreams}
@@ -1699,27 +1583,6 @@ export const AdminManagement = ({
                 currentPage={endedNonVideoCurrentPage}
                 setCurrentPage={setEndedNonVideoCurrentPage}
               />
-            </div>
-          )}
-
-          {activeTab === 'promo-cards' && (
-            <div className="space-y-4">
-              <StreamTable
-                streams={promoStreams}
-                setStreamAnalyticsId={setStreamAnalyticsId}
-                refetchStreams={refetchPromoStreams}
-                setViewStreamId={setViewStreamId}
-                setEditStreamId={setEditStreamId}
-                currentPage={promoPage}
-                setCurrentPage={setPromoPage}
-                isPromoTab={true}
-              />
-            </div>
-          )}
-
-          {activeTab === 'stream-payout' && (
-            <div className="space-y-4">
-              <StreamPayoutReport />
             </div>
           )}
 
@@ -1756,25 +1619,75 @@ export const AdminManagement = ({
 
           {activeTab === 'prize-settings' && (
             <div className="space-y-4">
-              <PrizeConfiguration />
+              <div className="inline-flex rounded-full border border-border bg-card overflow-hidden">
+                <button
+                  type="button"
+                  className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    listingsSubTab === 'items'
+                      ? 'bg-primary text-black'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setListingsSubTab('items')}
+                >
+                  Items
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    listingsSubTab === 'auctions'
+                      ? 'bg-primary text-black'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setListingsSubTab('auctions')}
+                >
+                  Auctions
+                </button>
+              </div>
+              {listingsSubTab === 'items' && <PrizeConfiguration />}
+              {listingsSubTab === 'auctions' && <AdminAuctions mode="live" />}
             </div>
           )}
 
-          {activeTab === 'prize-redemptions' && (
+          {activeTab === 'orders' && (
             <div className="space-y-4">
-              <PrizeRedemptions />
-            </div>
-          )}
-
-          {activeTab === 'auctions' && (
-            <div className="space-y-4">
-              <AdminAuctions />
-            </div>
-          )}
-
-          {activeTab === 'prize-offers' && (
-            <div className="space-y-4">
-              <PrizeOrders />
+              <div className="inline-flex rounded-full border border-border bg-card overflow-hidden">
+                <button
+                  type="button"
+                  className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    ordersSubTab === 'auctions'
+                      ? 'bg-primary text-black'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setOrdersSubTab('auctions')}
+                >
+                  Auctions
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    ordersSubTab === 'redemptions'
+                      ? 'bg-primary text-black'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setOrdersSubTab('redemptions')}
+                >
+                  Redemptions
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    ordersSubTab === 'offers'
+                      ? 'bg-primary text-black'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setOrdersSubTab('offers')}
+                >
+                  Offers
+                </button>
+              </div>
+              {ordersSubTab === 'auctions' && <AdminAuctions mode="completed" />}
+              {ordersSubTab === 'redemptions' && <PrizeRedemptions />}
+              {ordersSubTab === 'offers' && <PrizeOrders />}
             </div>
           )}
 
@@ -1817,20 +1730,11 @@ export const AdminManagement = ({
           onClose={thumbnailUpload.cancelCrop}
           onCrop={thumbnailUpload.handleCropComplete}
           cropperProps={{
-            aspect:
-              eventType?.value === 'promo'
-                ? IMAGE_UPLOAD_CONFIG.PROMO_ASPECT_RATIO
-                : IMAGE_UPLOAD_CONFIG.ASPECT_RATIO,
+            aspect: IMAGE_UPLOAD_CONFIG.ASPECT_RATIO,
           }}
           resizerProps={{
-            maxWidth:
-              eventType?.value === 'promo'
-                ? IMAGE_UPLOAD_CONFIG.PROMO_MAX_WIDTH
-                : IMAGE_UPLOAD_CONFIG.MAX_WIDTH,
-            maxHeight:
-              eventType?.value === 'promo'
-                ? IMAGE_UPLOAD_CONFIG.PROMO_MAX_HEIGHT
-                : IMAGE_UPLOAD_CONFIG.MAX_HEIGHT,
+            maxWidth: IMAGE_UPLOAD_CONFIG.MAX_WIDTH,
+            maxHeight: IMAGE_UPLOAD_CONFIG.MAX_HEIGHT,
             compressFormat: 'JPEG',
             quality: IMAGE_UPLOAD_CONFIG.QUALITY,
           }}
