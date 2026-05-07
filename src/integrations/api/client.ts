@@ -1116,12 +1116,23 @@ export const adminAPI = {
   },
 
   migratePsaGradeFlags: async (): Promise<{
-    totalListings: number;
-    flaggedCount: number;
-    unflaggedCount: number;
-    unchangedCount: number;
+    jobId: string;
+    message: string;
+    estimatedItems: number;
   }> => {
     const response = await apiClient.post('/admin/ebay-market/migrate-psa-grade-flags');
+    return response.data;
+  },
+
+  getMigratePsaGradeFlagsStatus: async (jobId: string): Promise<{
+    jobId: string;
+    state: string;
+    progress: number;
+    processedItems: number;
+    totalItems: number;
+    result?: any;
+  }> => {
+    const response = await apiClient.get(`/admin/ebay-market/migrate-psa-grade-flags/${jobId}/status`);
     return response.data;
   },
 

@@ -1115,6 +1115,12 @@ export const PrizeConfiguration = () => {
       return;
     }
 
+    // Validate seller selection
+    if (formData.createdBy === '__select_seller__') {
+      setValidationError('Please select a seller or switch back to CardCade mode');
+      return;
+    }
+
     // Validate amount for non-offers_only prizes (skipped for auctions —
     // auctions are priced in USD via the auction config block).
     if (
@@ -1189,6 +1195,12 @@ export const PrizeConfiguration = () => {
     if (!editingTier) return;
     if (!formData.name.trim()) {
       setValidationError('Item name is required');
+      return;
+    }
+
+    // Validate seller selection
+    if (formData.createdBy === '__select_seller__') {
+      setValidationError('Please select a seller or switch back to CardCade mode');
       return;
     }
 
@@ -2540,7 +2552,9 @@ export const PrizeConfiguration = () => {
                     onCheckedChange={checked => {
                       setFormData({
                         ...formData,
-                        createdBy: checked ? null : formData.createdBy,
+                        // When ON (checked=true): null = CardCade mode
+                        // When OFF (checked=false): use placeholder to force dropdown to show
+                        createdBy: checked ? null : (sellers.length > 0 ? '__select_seller__' : null),
                       });
                       setValidationError('');
                     }}
@@ -2563,10 +2577,15 @@ export const PrizeConfiguration = () => {
                       }}
                     >
                       <SelectTrigger id="seller" className="h-12 text-base">
-                        <SelectValue placeholder="No seller (admin item)" />
+                        <SelectValue placeholder="Select a seller..." />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">No seller (CardCade item)</SelectItem>
+                        {formData.createdBy === '__select_seller__' && (
+                          <SelectItem value="__select_seller__" disabled>
+                            -- Select a seller --
+                          </SelectItem>
+                        )}
                         {sellers.map(seller => (
                           <SelectItem key={seller.id} value={seller.id}>
                             {seller.shopName || seller.username}

@@ -21,6 +21,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Prize } from './PrizesByCategory';
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
@@ -178,10 +179,14 @@ export default function PrizeCard({
   const [selectedReportReason, setSelectedReportReason] = useState<string>('');
   const [reportReasonDetails, setReportReasonDetails] = useState('');
   const [syncingMarketData, setSyncingMarketData] = useState(false);
-  const [chartWindow, setChartWindow] = useState<'7d' | '30d'>('30d');
+  const [chartWindow, setChartWindow] = useState<'7d' | '30d' | 'all'>('30d');
   const [activeChartPointId, setActiveChartPointId] = useState<string | null>(null);
+  const [highlightedListingId, setHighlightedListingId] = useState<string | null>(null);
+  const [listingsSortBy, setListingsSortBy] = useState<'date' | 'price-high' | 'price-low'>('date');
+  const [displayedListingsCount, setDisplayedListingsCount] = useState(20);
   const queryClient = useQueryClient();
   const inlineTouchStartXRef = useRef<number | null>(null);
+  const soldListingsHistoryRef = useRef<HTMLDivElement>(null);
   const modalTouchStartXRef = useRef<number | null>(null);
   const suppressNextInlineOpenRef = useRef(false);
 
@@ -479,19 +484,23 @@ export default function PrizeCard({
       return null;
     }
 
-    const now = Date.now();
-    const days = chartWindow === '7d' ? 7 : 30;
-    const windowMs = days * 24 * 60 * 60 * 1000;
+    let rows = allRows;
+    
+    if (chartWindow !== 'all') {
+      const now = Date.now();
+      const days = chartWindow === '7d' ? 7 : 30;
+      const windowMs = days * 24 * 60 * 60 * 1000;
 
-    const filteredRows = allRows.filter((row) => {
-      if (!row.dateSold) {
-        return true;
-      }
-      const soldTs = new Date(row.dateSold).getTime();
-      return Number.isFinite(soldTs) && now - soldTs <= windowMs;
-    });
+      const filteredRows = allRows.filter((row) => {
+        if (!row.dateSold) {
+          return true;
+        }
+        const soldTs = new Date(row.dateSold).getTime();
+        return Number.isFinite(soldTs) && now - soldTs <= windowMs;
+      });
 
-    const rows = filteredRows.length ? filteredRows : allRows;
+      rows = filteredRows.length ? filteredRows : allRows;
+    }
     if (!rows.length) {
       return null;
     }
@@ -543,9 +552,58 @@ export default function PrizeCard({
     return chartData.points.find((point) => point.id === activeChartPointId) ?? null;
   }, [chartData, activeChartPointId]);
 
+  const sortedListings = useMemo(() => {
+    const listings = marketHistoryQuery.data?.listings ?? [];
+    const sorted = [...listings];
+    
+    if (listingsSortBy === 'date') {
+      sorted.sort((a, b) => {
+        const dateA = a.dateSold ? new Date(a.dateSold).getTime() : 0;
+        const dateB = b.dateSold ? new Date(b.dateSold).getTime() : 0;
+        return dateB - dateA; // Most recent first
+      });
+    } else if (listingsSortBy === 'price-high') {
+      sorted.sort((a, b) => b.salePrice - a.salePrice);
+    } else if (listingsSortBy === 'price-low') {
+      sorted.sort((a, b) => a.salePrice - b.salePrice);
+    }
+    
+    return sorted;
+  }, [marketHistoryQuery.data?.listings, listingsSortBy]);
+
   useEffect(() => {
     setActiveChartPointId(null);
+    setDisplayedListingsCount(20); // Reset display count when data changes
   }, [chartWindow, marketHistoryQuery.data?.listings]);
+
+  const handleChartPointClick = (pointId: string) => {
+    setHighlightedListingId(pointId);
+    
+    // Check if the clicked listing is beyond the current display count
+    const listingIndex = sortedListings.findIndex(listing => listing.id === pointId);
+    if (listingIndex !== -1 && listingIndex >= displayedListingsCount) {
+      // Auto-expand to include the clicked listing
+      setDisplayedListingsCount(listingIndex + 1);
+    }
+    
+    // Scroll to the sold listings history section
+    setTimeout(() => {
+      soldListingsHistoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      
+      // Find the specific listing element and scroll it into view
+      const listingElement = document.getElementById(`sold-listing-${pointId}`);
+      if (listingElement) {
+        setTimeout(() => {
+          listingElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+    }, 100);
+    
+    // Clear highlight after 3 seconds
+    setTimeout(() => {
+      setHighlightedListingId(null);
+    }, 3000);
+  };
 
   const closeReportDialog = () => {
     setReportDialogTarget(null);
@@ -1333,7 +1391,7 @@ export default function PrizeCard({
                   {marketSummary.windows.map((w) => (
                     <div key={w.window} className="rounded border border-[#2A2F3A] p-2">
                       <div className="text-muted-foreground uppercase">{w.window}</div>
-                      <div className="text-white font-medium mt-1">
+                      <div className="text-[#7AFF14] font-medium mt-1">
                         {w.averagePrice != null ? `$${w.averagePrice.toFixed(2)}` : '—'}
                       </div>
                       <div className="text-muted-foreground">{w.soldCount} sold</div>
@@ -1348,7 +1406,7 @@ export default function PrizeCard({
                 <div className="text-sm font-semibold text-white">Price Over Time</div>
                 <div className="flex items-center gap-2">
                   <div className="inline-flex rounded-md border border-[#2A2F3A] bg-[#0B1018] p-0.5">
-                    {(['7d', '30d'] as const).map((windowKey) => (
+                    {(['7d', '30d', 'all'] as const).map((windowKey) => (
                       <button
                         key={windowKey}
                         type="button"
@@ -1443,13 +1501,24 @@ export default function PrizeCard({
 
                     {chartData.points.map((point) => (
                       <g key={`chart-point-${point.id}`}>
+                        {/* Visible dot */}
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r="3"
+                          fill="#7AFF14"
+                          className="transition-all duration-200"
+                        />
+                        {/* Larger invisible hit area for better interaction */}
                         <circle
                           cx={point.x}
                           cy={point.y}
                           r="10"
                           fill="transparent"
+                          className="cursor-pointer"
                           onMouseEnter={() => setActiveChartPointId(point.id)}
-                          onClick={() => setActiveChartPointId(point.id)}
+                          onMouseLeave={() => setActiveChartPointId(null)}
+                          onClick={() => handleChartPointClick(point.id)}
                         />
                       </g>
                     ))}
@@ -1493,45 +1562,115 @@ export default function PrizeCard({
                     Latest {formatChartPrice(chartData.latestPoint.row.salePrice)}
                   </div>
 
-                  {activeChartPoint && (
-                    <div
-                      className="absolute z-20 min-w-[210px] rounded-md border border-[#2A2F3A] bg-[#0B1018] p-2 text-[11px] text-white shadow-lg"
-                      style={{
-                        left: `${Math.min(92, Math.max(10, (activeChartPoint.x / PRICE_CHART_WIDTH) * 100))}%`,
-                        top: `${Math.min(84, Math.max(10, (activeChartPoint.y / PRICE_CHART_HEIGHT) * 100 - 10))}%`,
-                        transform: 'translate(-50%, -100%)',
-                      }}
-                    >
-                      <div className="font-semibold text-[#7AFF14]">
-                        {formatChartPrice(activeChartPoint.row.salePrice)}
+                  {activeChartPoint && (() => {
+                    const xPercent = (activeChartPoint.x / PRICE_CHART_WIDTH) * 100;
+                    const yPercent = (activeChartPoint.y / PRICE_CHART_HEIGHT) * 100;
+                    
+                    // Determine positioning based on location in chart
+                    let leftPos = xPercent;
+                    let topPos = yPercent;
+                    let transformX = '-50%'; // default: center horizontally
+                    let transformY = '-100%'; // default: position above point
+                    
+                    // Adjust horizontal positioning to keep within bounds
+                    if (xPercent < 25) {
+                      // Near left edge - align left of tooltip with point
+                      leftPos = xPercent;
+                      transformX = '0%';
+                    } else if (xPercent > 75) {
+                      // Near right edge - align right of tooltip with point
+                      leftPos = xPercent;
+                      transformX = '-100%';
+                    }
+                    
+                    // Adjust vertical positioning to keep within bounds
+                    if (yPercent < 30) {
+                      // Near top edge - position below point instead
+                      topPos = yPercent;
+                      transformY = '10%';
+                    }
+                    
+                    return (
+                      <div
+                        className="absolute z-20 min-w-[210px] max-w-[250px] rounded-md border border-[#2A2F3A] bg-[#0B1018] p-2 text-[11px] text-white shadow-lg"
+                        style={{
+                          left: `${leftPos}%`,
+                          top: `${topPos}%`,
+                          transform: `translate(${transformX}, ${transformY})`,
+                        }}
+                      >
+                        <div className="font-semibold text-[#7AFF14]">
+                          {formatChartPrice(activeChartPoint.row.salePrice)}
+                        </div>
+                        <div className="text-muted-foreground">
+                          {activeChartPoint.row.dateSold
+                            ? new Date(activeChartPoint.row.dateSold).toLocaleDateString()
+                            : 'Date unavailable'}
+                          {activeChartPoint.row.itemCondition
+                            ? ` • ${activeChartPoint.row.itemCondition}`
+                            : ''}
+                        </div>
+                        <div className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">
+                          {activeChartPoint.row.soldTitle}
+                        </div>
                       </div>
-                      <div className="text-muted-foreground">
-                        {activeChartPoint.row.dateSold
-                          ? new Date(activeChartPoint.row.dateSold).toLocaleDateString()
-                          : 'Date unavailable'}
-                        {activeChartPoint.row.itemCondition
-                          ? ` • ${activeChartPoint.row.itemCondition}`
-                          : ''}
-                      </div>
-                      <div className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">
-                        {activeChartPoint.row.soldTitle}
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground">No sold listings to chart yet.</div>
               )}
             </div>
 
-            <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
-              <div className="text-sm font-semibold text-white mb-2">Sold Listings History</div>
+            <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3" ref={soldListingsHistoryRef}>
+              <div className="text-sm font-semibold text-white mb-2 flex items-center justify-between">
+                <span>Sold Listings History</span>
+                <div className="inline-flex rounded-md border border-[#2A2F3A] bg-[#0B1018] p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setListingsSortBy('date')}
+                    className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                      listingsSortBy === 'date' ? 'bg-[#7AFF14] text-black' : 'text-muted-foreground hover:text-white'
+                    }`}
+                  >
+                    Date
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setListingsSortBy('price-high')}
+                    className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                      listingsSortBy === 'price-high' ? 'bg-[#7AFF14] text-black' : 'text-muted-foreground hover:text-white'
+                    }`}
+                  >
+                    $ High
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setListingsSortBy('price-low')}
+                    className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                      listingsSortBy === 'price-low' ? 'bg-[#7AFF14] text-black' : 'text-muted-foreground hover:text-white'
+                    }`}
+                  >
+                    $ Low
+                  </button>
+                </div>
+              </div>
               {marketHistoryQuery.isLoading ? (
                 <div className="text-sm text-muted-foreground">Loading sold listings...</div>
-              ) : marketHistoryQuery.data?.listings?.length ? (
-                <div className="space-y-2">
-                  {marketHistoryQuery.data.listings.slice(0, 40).map((row) => (
-                    <div key={row.id} className="rounded border border-[#2A2F3A] p-2">
+              ) : sortedListings.length ? (
+                <>
+                  <div className="space-y-2">
+                    {sortedListings.slice(0, displayedListingsCount).map((row) => (
+                    <div 
+                      key={row.id} 
+                      id={`sold-listing-${row.id}`}
+                      className={cn(
+                        "rounded border p-2 transition-all duration-300",
+                        highlightedListingId === row.id
+                          ? "border-[#7AFF14] bg-[#7AFF14]/10 shadow-lg shadow-[#7AFF14]/20"
+                          : "border-[#2A2F3A]"
+                      )}
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3 min-w-0">
                           {row.imageUrl ? (
@@ -1557,7 +1696,7 @@ export default function PrizeCard({
                           <div className="min-w-0">
                           <div className="text-sm text-white line-clamp-2">{row.soldTitle}</div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            ${row.salePrice.toFixed(2)}
+                            <span className="text-[#7AFF14] font-semibold">${row.salePrice.toFixed(2)}</span>
                             {row.dateSold
                               ? ` • ${new Date(row.dateSold).toLocaleDateString()}`
                               : ''}
@@ -1576,21 +1715,52 @@ export default function PrizeCard({
                               View
                             </a>
                           ) : null}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs border-orange-400/40 text-orange-300 hover:bg-orange-500/10"
-                            disabled={reportingListingId === row.id}
-                            onClick={() => handleOpenReportDialog(row)}
-                          >
-                            <AlertTriangle className="w-3 h-3 mr-1" />
-                            {reportingListingId === row.id ? 'Reporting...' : 'Report'}
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs border-orange-400/40 text-orange-300 hover:bg-orange-500/10"
+                                  disabled={reportingListingId === row.id}
+                                  onClick={() => handleOpenReportDialog(row)}
+                                >
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  {reportingListingId === row.id ? 'Removing...' : 'Remove'}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">This listing will be removed from your results and averages will be recalculated</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                  
+                  {displayedListingsCount < sortedListings.length && (
+                    <div className="flex items-center gap-2 mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 border-[#2A2F3A] bg-[#0B1018] hover:bg-[#1A1F2E] text-white"
+                        onClick={() => setDisplayedListingsCount(prev => Math.min(prev + 20, sortedListings.length))}
+                      >
+                        Show More ({Math.min(20, sortedListings.length - displayedListingsCount)} more)
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-muted-foreground hover:text-white"
+                        onClick={() => setDisplayedListingsCount(sortedListings.length)}
+                      >
+                        Show All ({sortedListings.length})
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-sm text-muted-foreground">No sold listings found.</div>
               )}
@@ -1603,27 +1773,61 @@ export default function PrizeCard({
       <Dialog open={!!soldListingPreview} onOpenChange={() => setSoldListingPreview(null)}>
         <DialogTitle className="sr-only">Sold Listing Image Preview</DialogTitle>
         <DialogContent
-          className="max-w-[95vw] max-h-[95vh] p-0 border-0 bg-transparent flex items-center justify-center"
+          className="max-w-[95vw] max-h-[95vh] p-4 border-0 bg-transparent flex items-center justify-center pointer-events-none"
           aria-describedby={undefined}
+          hideCloseButton={true}
         >
           {soldListingPreview && (
-            <img
-              src={soldListingPreview.activeUrl}
-              alt={soldListingPreview.soldTitle}
-              className="block max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain rounded-lg"
-              onError={() => {
-                setSoldListingPreview(prev => {
-                  if (!prev || prev.activeUrl === prev.thumbnailUrl) {
-                    return prev;
-                  }
-
-                  return {
-                    ...prev,
-                    activeUrl: prev.thumbnailUrl,
-                  };
-                });
+            <motion.div
+              className="relative pointer-events-auto"
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.2}
+              whileTap={{ cursor: 'grabbing' }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onDragEnd={(e, info) => {
+                // Close modal if dragged down more than 100px
+                if (info.offset.y > 100) {
+                  setSoldListingPreview(null);
+                }
               }}
-            />
+            >
+              {/* Drag Indicator - subtle hint for mobile users */}
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-60 md:hidden">
+                <div className="w-12 h-1 bg-white rounded-full" />
+                <span className="text-xs text-white">Swipe down to close</span>
+              </div>
+
+              {/* Custom Close Button - positioned on image */}
+              <button
+                onClick={() => setSoldListingPreview(null)}
+                className="absolute -top-3 -right-3 z-50 hidden rounded-full border border-[#7AFF14] bg-black/80 p-2 transition-colors hover:bg-black focus:outline-none focus:ring-2 focus:ring-white md:block"
+                aria-label="Close image"
+              >
+                <X className="h-6 w-6 text-white" />
+              </button>
+
+              <img
+                src={soldListingPreview.activeUrl}
+                alt={soldListingPreview.soldTitle}
+                className="block max-h-[90vh] max-w-full object-contain rounded-lg select-none"
+                onError={() => {
+                  setSoldListingPreview(prev => {
+                    if (!prev || prev.activeUrl === prev.thumbnailUrl) {
+                      return prev;
+                    }
+
+                    return {
+                      ...prev,
+                      activeUrl: prev.thumbnailUrl,
+                    };
+                  });
+                }}
+              />
+            </motion.div>
           )}
         </DialogContent>
       </Dialog>
