@@ -183,19 +183,25 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
     },
   });
 
-  const { data: auctions = [] } = useQuery({
-    queryKey: ['sidebar-live-auctions-count'],
+  const { data: shopItems = [] } = useQuery({
+    queryKey: ['shopItems'],
     queryFn: async () => {
-      return await api.auction.list();
+      return api.prize.getAllShopItems();
     },
     enabled: isShopPage,
-    refetchInterval: 30_000,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const liveAuctionCount = auctions.filter(auction => {
-    if (auction.status !== 'active' && auction.status !== 'scheduled') return false;
-    return new Date(auction.endsAt).getTime() > Date.now();
-  }).length;
+  const liveAuctionCount = isShopPage
+    ? shopItems.filter(prize => {
+        if (prize.stock <= 0 || prize.showOnShop === false) return false;
+        if (prize.saleType !== 'auction' || !prize.auction) return false;
+        if (prize.auction.status !== 'active' && prize.auction.status !== 'scheduled') {
+          return false;
+        }
+        return new Date(prize.auction.endsAt).getTime() > Date.now();
+      }).length
+    : 0;
 
   const { data: sellerShops = [] } = useQuery({
     queryKey: ['seller-shops-sidebar'],
