@@ -332,7 +332,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
           <img
             src={activeImageUrl}
             alt={prize.name}
-            className="w-full h-full object-contain"
+            className="max-w-[90%] max-h-full object-contain"
             loading="lazy"
           />
         ) : (

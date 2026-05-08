@@ -23,7 +23,9 @@ export const SellerOnboardingBanner = () => {
     setLoading(true);
     try {
       const data = await api.creator.generateAccountLink();
-      window.location.replace(data.data);
+      const url = typeof data === 'string' ? data : (data?.data ?? data?.url);
+      if (!url) throw new Error('No onboarding URL returned');
+      window.location.replace(url);
     } catch {
       toast({
         title: 'Unable to start onboarding',

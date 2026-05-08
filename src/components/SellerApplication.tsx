@@ -46,13 +46,25 @@ export default function SellerApplication() {
   const [submitting, setSubmitting] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
-  const { data: application, isLoading, refetch } = useQuery({
-    queryKey: ["seller-application"],
+  const {
+    data: application,
+    isLoading,
+    refetch,
+  } = useQuery({
+    // Include the current user id in the cache key so switching accounts
+    // never shows a stale application from a previously-signed-in user.
+    queryKey: ['seller-application', session?.id ?? null],
+    enabled: !!session?.id,
+    staleTime: 0,
+    gcTime: 0,
     queryFn: async () => {
-      const data = await api.creator.getCreatorApplication();
-      // Only return if it's a seller application
-      if (data.data && data.data.applicationType === 'seller') {
-        return data.data;
+      // The API returns the application entity directly (not wrapped in
+      // a `data` envelope). Accept either shape so we don't silently fall
+      // back to "no application" on submit/refresh.
+      const response = await api.creator.getCreatorApplication();
+      const application = response?.data ?? response;
+      if (application && application.applicationType === 'seller') {
+        return application;
       }
       return null;
     },
@@ -61,13 +73,13 @@ export default function SellerApplication() {
   const form = useForm<SellerApplicationFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      socials: "",
-      collectorBackground: "",
-      cityState: "",
-      cardsCollected: "",
+      firstName: '',
+      lastName: '',
+      email: '',
+      socials: '',
+      collectorBackground: '',
+      cityState: '',
+      cardsCollected: '',
       cardPreference: undefined,
       agree: false,
     },
@@ -87,13 +99,16 @@ export default function SellerApplication() {
 
       const requestPayload = {
         ...payload,
-        applicationType: 'seller'
+        applicationType: 'seller',
       };
 
       await api.creator.createCreatorApplication(requestPayload);
       toast({ title: 'Success', description: 'Seller application submitted.' });
 
-      await queryClient.invalidateQueries({ queryKey: ["seller-application"] });
+      await queryClient.invalidateQueries({ queryKey: ['seller-application'] });
+
+      // Hard refresh so the user immediately sees the pending state.
+      window.location.reload();
     } catch (err) {
       toast({
         title: 'Error',

@@ -54,8 +54,7 @@ export function ApplicationsTable() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('pending');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -63,17 +62,13 @@ export function ApplicationsTable() {
   const itemsPerPage = 25;
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['applications', typeFilter, statusFilter, currentPage],
+    queryKey: ['applications', statusFilter, currentPage],
     queryFn: async () => {
       const params: any = {
         page: currentPage,
         limit: itemsPerPage,
       };
-      
-      if (typeFilter !== 'all') {
-        params.applicationType = typeFilter;
-      }
-      
+
       if (statusFilter !== 'all') {
         params.status = statusFilter;
       }
@@ -170,30 +165,16 @@ export function ApplicationsTable() {
         {/* Filters */}
         <div className="flex gap-4 items-center">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-white">Type:</label>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[150px] bg-[#272727] border-[#272727] text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="creator">Creator</SelectItem>
-                <SelectItem value="seller">Seller</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-2">
             <label className="text-sm text-white">Status:</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[150px] bg-[#272727] border-[#272727] text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="all">All</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -207,9 +188,7 @@ export function ApplicationsTable() {
                 <Loader2 className="w-6 h-6 animate-spin text-white" />
               </div>
             ) : applications.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                No applications found
-              </div>
+              <div className="text-center py-8 text-gray-400">No applications found</div>
             ) : (
               <>
                 <Table>
@@ -259,8 +238,12 @@ export function ApplicationsTable() {
                       <PaginationContent>
                         <PaginationItem>
                           <PaginationPrevious
-                            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            className={
+                              currentPage === 1
+                                ? 'pointer-events-none opacity-50'
+                                : 'cursor-pointer'
+                            }
                           />
                         </PaginationItem>
                         <PaginationItem>
@@ -270,8 +253,12 @@ export function ApplicationsTable() {
                         </PaginationItem>
                         <PaginationItem>
                           <PaginationNext
-                            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            className={
+                              currentPage === totalPages
+                                ? 'pointer-events-none opacity-50'
+                                : 'cursor-pointer'
+                            }
                           />
                         </PaginationItem>
                       </PaginationContent>
