@@ -55,8 +55,16 @@ export default function AuctionRetryPayment() {
     refetchInterval: query => {
       const data = query.state.data as PaymentStatus | undefined;
       // After a successful Stripe redirect, poll briefly until the
-      // webhook flips the auction to PAID.
-      if (retryFlag === 'success' && data && data.status !== 'PAID') {
+      // webhook flips the auction to PAID. Server returns the enum
+      // value lowercased (`'paid'`), so compare case-insensitively
+      // — otherwise polling never stops and the success branch below
+      // never matches, leaving the user on the misleading "no longer
+      // waiting on you" screen.
+      if (
+        retryFlag === 'success' &&
+        data &&
+        data.status?.toLowerCase() !== 'paid'
+      ) {
         return 3000;
       }
       return false;
@@ -110,8 +118,9 @@ export default function AuctionRetryPayment() {
   }, [retryFlag, searchParams, setSearchParams]);
 
   // Once the webhook flips status to PAID, clear the polling flag.
+  // Status is lowercased on the wire, so normalise before comparing.
   useEffect(() => {
-    if (retryFlag === 'success' && status?.status === 'PAID') {
+    if (retryFlag === 'success' && status?.status?.toLowerCase() === 'paid') {
       const next = new URLSearchParams(searchParams);
       next.delete('auction_retry');
       setSearchParams(next, { replace: true });
@@ -171,7 +180,12 @@ export default function AuctionRetryPayment() {
   }
 
   // Already paid — show success and route the winner to their orders.
-  if (status.status === 'PAID') {
+  // The API returns the AuctionStatus enum value as-is (lowercase
+  // `'paid'`), so we normalise before comparing. Without this the page
+  // falls through to the `!canRetry` branch and shows the misleading
+  // "This auction is no longer waiting on you" screen even though the
+  // charge succeeded.
+  if (status.status?.toLowerCase() === 'paid') {
     return (
       <MainLayout>
         <div className="max-w-lg mx-auto px-4 py-12">
