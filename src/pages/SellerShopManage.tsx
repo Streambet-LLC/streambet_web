@@ -2561,6 +2561,7 @@ export default function SellerShopManage() {
                       onCoverIndexChange={setCoverImageIndex}
                       maxImages={IMAGE_UPLOAD_CONFIG.ITEM_MAX_IMAGES}
                       disabled={isUploading || createItem.isPending}
+                      category={form.category}
                     />
                     <p className="text-xs text-muted-foreground">
                       Drag to reorder photos. Use the star button to choose cover photo.

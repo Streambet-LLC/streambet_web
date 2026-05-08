@@ -2554,7 +2554,7 @@ export const PrizeConfiguration = () => {
                         ...formData,
                         // When ON (checked=true): null = CardCade mode
                         // When OFF (checked=false): use placeholder to force dropdown to show
-                        createdBy: checked ? null : (sellers.length > 0 ? '__select_seller__' : null),
+                        createdBy: checked ? null : sellers.length > 0 ? '__select_seller__' : null,
                       });
                       setValidationError('');
                     }}
@@ -2633,8 +2633,8 @@ export const PrizeConfiguration = () => {
               <div className="space-y-0.5">
                 <Label className="text-base font-medium">In-Person Pickup</Label>
                 <p className="text-xs text-muted-foreground">
-                  Buyer picks up locally. No shipping address is collected and shipping defaults
-                  to $0 (you can still override the cost below).
+                  Buyer picks up locally. No shipping address is collected and shipping defaults to
+                  $0 (you can still override the cost below).
                 </p>
               </div>
               <Switch
@@ -2732,6 +2732,7 @@ export const PrizeConfiguration = () => {
                 onError={setImageError}
                 maxImages={IMAGE_UPLOAD_CONFIG.ITEM_MAX_IMAGES}
                 disabled={isUploading || createMutation.isPending || updateMutation.isPending}
+                category={formData.category as 'raw' | 'slab' | 'sealed' | 'other'}
               />
               <p className="text-xs text-muted-foreground">
                 Drag to reorder photos. Use the star button to choose cover photo.

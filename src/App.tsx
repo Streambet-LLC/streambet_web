@@ -55,6 +55,7 @@ import Watchlist from './pages/Watchlist';
 import MyBids from './pages/MyBids';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 import CartPage from './pages/CartPage';
+import AuctionRetryPayment from './pages/AuctionRetryPayment';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -116,6 +117,10 @@ const App = () => {
                                 <Route path="/inbox" element={<Inbox />} />
                                 <Route path="/watchlist" element={<Watchlist />} />
                                 <Route path="/my-bids" element={<MyBids />} />
+                                <Route
+                                  path="/auctions/:auctionId/retry-payment"
+                                  element={<AuctionRetryPayment />}
+                                />
                               </Route>
 
                               {/* Public Routes */}

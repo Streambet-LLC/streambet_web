@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
-import PhotoCropper from '@/components/PhotoCropper';
+import PhotoCropper, { type CropPreset } from '@/components/PhotoCropper';
 import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
 import { getThumbnailUrl } from '@/utils/helper';
 import { GripVertical, Loader2, Star, Trash2, Upload } from 'lucide-react';
@@ -29,6 +29,8 @@ export interface ItemImageInput {
   isNew?: boolean;
 }
 
+export type ItemImageCategory = 'raw' | 'slab' | 'sealed' | 'other';
+
 interface ItemImageGalleryProps {
   images: ItemImageInput[];
   coverIndex: number;
@@ -37,6 +39,13 @@ interface ItemImageGalleryProps {
   onError?: (error: string | null) => void;
   maxImages?: number;
   disabled?: boolean;
+  /**
+   * Item category — drives the default crop preset. Sealed products
+   * default to "Original" (no crop) so boxes/slabs/etc. keep their
+   * native aspect ratio; slabs/raw/other default to the 8:13 single-slab
+   * crop. The user can always switch presets per-photo from the cropper.
+   */
+  category?: ItemImageCategory;
 }
 
 interface SortableImageCardProps {
@@ -48,8 +57,7 @@ interface SortableImageCardProps {
   onRemove: (index: number) => void;
 }
 
-const createImageId = () =>
-  `item-image-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+const createImageId = () => `item-image-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 const isBlobPreview = (image: ItemImageInput) =>
   !!image.isNew && image.imageUrl.startsWith('blob:');
@@ -157,6 +165,7 @@ export function ItemImageGallery({
   onError,
   maxImages = IMAGE_UPLOAD_CONFIG.ITEM_MAX_IMAGES,
   disabled = false,
+  category,
 }: ItemImageGalleryProps) {
   const [cropQueue, setCropQueue] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
@@ -174,13 +183,49 @@ export function ItemImageGallery({
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    })
   );
 
-  const acceptedTypes = useMemo(
-    () => IMAGE_UPLOAD_CONFIG.ACCEPTED_IMAGE_TYPES.join(','),
-    [],
+  const acceptedTypes = useMemo(() => IMAGE_UPLOAD_CONFIG.ACCEPTED_IMAGE_TYPES.join(','), []);
+
+  // Crop presets exposed in the PhotoCropper. Sealed products default to
+  // "Original" so boxes/booster bricks aren't squashed into a slab crop;
+  // slabs/raw/other default to the 8:13 single-slab crop the marketplace
+  // historically used. The cropper renders these as chips so users can
+  // override per photo.
+  const cropPresets = useMemo<CropPreset[]>(
+    () => [
+      {
+        id: 'slab',
+        label: 'Slab (8:13)',
+        aspect: IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_ASPECT_RATIO,
+        maxWidth: IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_MAX_WIDTH,
+        maxHeight: IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_MAX_HEIGHT,
+        compressFormat: 'JPEG',
+        quality: IMAGE_UPLOAD_CONFIG.QUALITY,
+      },
+      {
+        id: 'square',
+        label: 'Square (1:1)',
+        aspect: 1,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        compressFormat: 'JPEG',
+        quality: IMAGE_UPLOAD_CONFIG.QUALITY,
+      },
+      {
+        id: 'original',
+        label: 'Original (no crop)',
+        aspect: null,
+        maxWidth: 2400,
+        maxHeight: 2400,
+        compressFormat: 'JPEG',
+        quality: IMAGE_UPLOAD_CONFIG.QUALITY,
+      },
+    ],
+    []
   );
+  const defaultPresetId = category === 'sealed' ? 'original' : 'slab';
 
   const setGalleryError = (nextError: string | null) => {
     setError(nextError);
@@ -190,7 +235,7 @@ export function ItemImageGallery({
   const validateFiles = (files: File[]): File[] => {
     const validFiles: File[] = [];
 
-    files.forEach((file) => {
+    files.forEach(file => {
       if (!(IMAGE_UPLOAD_CONFIG.ACCEPTED_IMAGE_TYPES as readonly string[]).includes(file.type)) {
         setGalleryError('Please upload JPEG, PNG, or WebP images only.');
         return;
@@ -227,10 +272,12 @@ export function ItemImageGallery({
 
     const filesToQueue = validFiles.slice(0, availableSlots);
     if (filesToQueue.length < validFiles.length) {
-      setGalleryError(`Only ${availableSlots} image(s) were added due to the ${maxImages}-image limit.`);
+      setGalleryError(
+        `Only ${availableSlots} image(s) were added due to the ${maxImages}-image limit.`
+      );
     }
 
-    setCropQueue((prev) => [...prev, ...filesToQueue]);
+    setCropQueue(prev => [...prev, ...filesToQueue]);
   };
 
   const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -261,11 +308,11 @@ export function ItemImageGallery({
       }
     }
 
-    setCropQueue((prev) => prev.slice(1));
+    setCropQueue(prev => prev.slice(1));
   };
 
   const handleCropCancel = () => {
-    setCropQueue((prev) => prev.slice(1));
+    setCropQueue(prev => prev.slice(1));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -275,8 +322,8 @@ export function ItemImageGallery({
       return;
     }
 
-    const oldIndex = images.findIndex((img) => img.id === active.id);
-    const newIndex = images.findIndex((img) => img.id === over.id);
+    const oldIndex = images.findIndex(img => img.id === active.id);
+    const newIndex = images.findIndex(img => img.id === over.id);
 
     if (oldIndex < 0 || newIndex < 0) {
       return;
@@ -320,9 +367,9 @@ export function ItemImageGallery({
 
   useEffect(() => {
     const previousImages = previousImagesRef.current;
-    const currentIds = new Set(images.map((img) => img.id));
+    const currentIds = new Set(images.map(img => img.id));
 
-    previousImages.forEach((img) => {
+    previousImages.forEach(img => {
       if (!currentIds.has(img.id)) {
         revokeImagePreview(img);
       }
@@ -333,7 +380,7 @@ export function ItemImageGallery({
 
   useEffect(() => {
     return () => {
-      previousImagesRef.current.forEach((img) => revokeImagePreview(img));
+      previousImagesRef.current.forEach(img => revokeImagePreview(img));
     };
   }, []);
 
@@ -351,17 +398,17 @@ export function ItemImageGallery({
           dragActive ? 'border-primary bg-primary/5' : 'border-border'
         } ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:border-primary/50'}`}
         onClick={() => !disabled && inputRef.current?.click()}
-        onDragOver={(event) => {
+        onDragOver={event => {
           event.preventDefault();
           if (!disabled) {
             setDragActive(true);
           }
         }}
-        onDragLeave={(event) => {
+        onDragLeave={event => {
           event.preventDefault();
           setDragActive(false);
         }}
-        onDrop={(event) => {
+        onDrop={event => {
           event.preventDefault();
           setDragActive(false);
           if (disabled) {
@@ -383,7 +430,10 @@ export function ItemImageGallery({
         <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
         <p className="text-sm font-medium text-primary">Click to upload or drag and drop</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Up to {maxImages} photos. Images are cropped to 8:13 ratio.
+          Up to {maxImages} photos. Choose a crop preset (Slab, Square, or Original) per photo.
+          {category === 'sealed'
+            ? ' Sealed items default to "Original" so boxes keep their full shape.'
+            : ''}
         </p>
       </div>
 
@@ -404,7 +454,7 @@ export function ItemImageGallery({
 
       {images.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={images.map((img) => img.id)} strategy={rectSortingStrategy}>
+          <SortableContext items={images.map(img => img.id)} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {images.map((image, index) => (
                 <SortableImageCard
@@ -428,15 +478,9 @@ export function ItemImageGallery({
           file={currentCropFile}
           onClose={handleCropCancel}
           onCrop={handleCropComplete}
-          cropperProps={{
-            aspect: IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_ASPECT_RATIO,
-          }}
-          resizerProps={{
-            maxWidth: IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_MAX_WIDTH,
-            maxHeight: IMAGE_UPLOAD_CONFIG.PRIZE_SINGLE_SLAB_MAX_HEIGHT,
-            compressFormat: 'JPEG',
-            quality: IMAGE_UPLOAD_CONFIG.QUALITY,
-          }}
+          title="Crop item photo"
+          presets={cropPresets}
+          defaultPresetId={defaultPresetId}
         />
       )}
     </div>

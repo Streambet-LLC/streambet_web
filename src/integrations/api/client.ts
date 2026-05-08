@@ -2363,6 +2363,44 @@ export const auctionAPI = {
     return response.data;
   },
 
+  /**
+   * Read-only summary of an auction the current user won, used by the
+   * retry-payment page when the autopay charge declined. Returns 403
+   * if the caller is not the winner.
+   */
+  getPaymentStatus: async (
+    auctionId: string
+  ): Promise<{
+    auctionId: string;
+    status: string;
+    canRetry: boolean;
+    itemName: string;
+    prizeConfigurationId: string;
+    winningBidUsd: number;
+    buyerProcessingFeeUsd: number;
+    shippingUsd: number;
+    totalDueUsd: number;
+    graceDeadline: string | null;
+    paymentIntentId: string | null;
+  }> => {
+    const response = await apiClient.get(`/auctions/${auctionId}/payment-status`);
+    return response.data;
+  },
+
+  /**
+   * Build a hosted Stripe Checkout (mode=payment) URL the winner can
+   * redirect to in order to retry the failed auction charge or pay
+   * with a different card. Saved cards on the customer record are
+   * surfaced inside the Stripe-hosted page; new cards are saved for
+   * future auctions automatically.
+   */
+  createRetryCheckout: async (auctionId: string, returnUrl: string): Promise<{ url: string }> => {
+    const response = await apiClient.post(`/auctions/${auctionId}/retry-checkout`, {
+      returnUrl,
+    });
+    return response.data;
+  },
+
   // ── Admin ────────────────────────────────────────────────────────────
   create: async (payload: {
     prizeConfigurationId: string;

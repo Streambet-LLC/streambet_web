@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { PixelCrop } from 'react-image-crop'
 import { Loader2, X } from "lucide-react";
 import Resizer from "react-image-file-resizer";
+import { cn } from '@/lib/utils';
 
 const TO_RADIANS = Math.PI / 180;
 
@@ -16,7 +17,25 @@ type ResizerProps = {
   rotate?: number;
   minWidth?: number;
   minHeight?: number;
-}
+};
+
+/**
+ * A single crop "preset" surfaced as a chip above the cropper. When
+ * `aspect` is null, the cropper hides the ReactCrop UI entirely and just
+ * resizes the source file as-is (used for sealed/box photos where the
+ * native aspect ratio matters).
+ */
+export type CropPreset = {
+  id: string;
+  label: string;
+  /** Aspect ratio (w/h) for ReactCrop, or null for "original / no crop". */
+  aspect: number | null;
+  /** Resizer bounds. Larger images are downscaled to fit. */
+  maxWidth: number;
+  maxHeight: number;
+  compressFormat?: 'JPEG' | 'PNG' | 'WEBP';
+  quality?: number;
+};
 
 export default function PhotoCropper({
   file,
@@ -24,12 +43,21 @@ export default function PhotoCropper({
   onCrop,
   cropperProps,
   resizerProps,
-} : {
+  presets,
+  defaultPresetId,
+  title,
+}: {
   file: File;
   onClose: () => void;
   onCrop: (file: File) => void;
   cropperProps?: Partial<ReactCropProps>;
   resizerProps?: ResizerProps;
+  /** Optional preset chips. When provided, supersedes `cropperProps.aspect`. */
+  presets?: CropPreset[];
+  /** Which preset id to activate by default. Falls back to the first preset. */
+  defaultPresetId?: string;
+  /** Dialog title override (defaults to "Set Avatar"). */
+  title?: string;
 }) {
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
@@ -39,13 +67,37 @@ export default function PhotoCropper({
   const activeCropJobRef = useRef(0);
   const [croppedImageFile, setCroppedImageFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [activePresetId, setActivePresetId] = useState<string | null>(
+    presets && presets.length
+      ? defaultPresetId && presets.some(p => p.id === defaultPresetId)
+        ? defaultPresetId
+        : presets[0].id
+      : null
+  );
+  const activePreset = useMemo<CropPreset | null>(() => {
+    if (!presets || !presets.length) return null;
+    return presets.find(p => p.id === activePresetId) ?? presets[0];
+  }, [presets, activePresetId]);
+  const isOriginalMode = !!activePreset && activePreset.aspect === null;
+  const effectiveAspect = activePreset?.aspect ?? cropperProps?.aspect ?? 1;
+  const effectiveResizer = useMemo<ResizerProps>(() => {
+    if (activePreset) {
+      return {
+        maxWidth: activePreset.maxWidth,
+        maxHeight: activePreset.maxHeight,
+        compressFormat: activePreset.compressFormat ?? 'JPEG',
+        quality: activePreset.quality ?? 90,
+      };
+    }
+    return resizerProps ?? {};
+  }, [activePreset, resizerProps]);
 
   const generateCroppedImageUrl = async (
     nextCrop: PixelCrop,
     image: HTMLImageElement,
     sourceFile: File,
     scale?: number,
-    rotate?: number,
+    rotate?: number
   ) => {
     const cropJobId = ++activeCropJobRef.current;
     setProcessing(true);
@@ -56,10 +108,7 @@ export default function PhotoCropper({
       const scaleX = image.naturalWidth / image.width;
       const scaleY = image.naturalHeight / image.height;
 
-      const canvas = new OffscreenCanvas(
-        nextCrop.width * scaleX,
-        nextCrop.height * scaleY,
-      );
+      const canvas = new OffscreenCanvas(nextCrop.width * scaleX, nextCrop.height * scaleY);
 
       const ctx = canvas.getContext('2d');
 
@@ -98,7 +147,7 @@ export default function PhotoCropper({
         0,
         0,
         image.naturalWidth,
-        image.naturalHeight,
+        image.naturalHeight
       );
 
       const blob = await canvas.convertToBlob({
@@ -109,16 +158,16 @@ export default function PhotoCropper({
         return;
       }
 
-      const croppedFile = new File([blob], sourceFile.name, { type: "image/png" });
+      const croppedFile = new File([blob], sourceFile.name, { type: 'image/png' });
 
       Resizer.imageFileResizer(
         croppedFile,
-        isNaN(resizerProps?.maxWidth) ? 140 : resizerProps?.maxWidth,
-        isNaN(resizerProps?.maxHeight) ? 140 : resizerProps?.maxHeight,
-        resizerProps?.compressFormat || "PNG",
-        isNaN(resizerProps?.quality) ? 100 : resizerProps?.quality,
+        isNaN(effectiveResizer?.maxWidth) ? 140 : effectiveResizer?.maxWidth,
+        isNaN(effectiveResizer?.maxHeight) ? 140 : effectiveResizer?.maxHeight,
+        effectiveResizer?.compressFormat || 'PNG',
+        isNaN(effectiveResizer?.quality) ? 100 : effectiveResizer?.quality,
         0,
-        (nextFile) => {
+        nextFile => {
           if (cropJobId !== activeCropJobRef.current) {
             return;
           }
@@ -126,7 +175,7 @@ export default function PhotoCropper({
           setCroppedImageFile(nextFile as File);
           setProcessing(false);
         },
-        "file",
+        'file'
       );
     } catch {
       if (cropJobId === activeCropJobRef.current) {
@@ -140,7 +189,7 @@ export default function PhotoCropper({
 
     const height = imageRef.current.height;
     const width = imageRef.current.width;
-    const aspect = cropperProps?.aspect || 1;
+    const aspect = effectiveAspect || 1;
 
     let cropWidth: number;
     let cropHeight: number;
@@ -154,7 +203,7 @@ export default function PhotoCropper({
     } else {
       // Non-square aspect ratio (e.g., 16:9)
       const imageAspect = width / height;
-      
+
       if (imageAspect > aspect) {
         // Image is wider than desired aspect - constrain by height
         cropHeight = height;
@@ -171,7 +220,7 @@ export default function PhotoCropper({
     const y = (height - cropHeight) / 2;
 
     setCrop({
-      unit: "px",
+      unit: 'px',
       x,
       y,
       width: cropWidth,
@@ -191,9 +240,43 @@ export default function PhotoCropper({
   useEffect(() => {
     if (!completedCrop || !imageRef.current) return;
     if (completedCrop.width <= 0 || completedCrop.height <= 0) return;
+    if (isOriginalMode) return;
 
     void generateCroppedImageUrl(completedCrop, imageRef.current, file);
-  }, [completedCrop, fileToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedCrop, fileToken, isOriginalMode]);
+
+  // When the user switches to "Original" we resize the source file directly.
+  // When they switch back to a crop preset we clear the previous result so
+  // the Done button stays disabled until they pick a new crop area.
+  useEffect(() => {
+    if (!isOriginalMode) {
+      setCroppedImageFile(null);
+      setCrop(undefined);
+      setCompletedCrop(undefined);
+      return;
+    }
+
+    const jobId = ++activeCropJobRef.current;
+    setProcessing(true);
+    setCroppedImageFile(null);
+
+    Resizer.imageFileResizer(
+      file,
+      isNaN(effectiveResizer?.maxWidth) ? 2400 : effectiveResizer?.maxWidth,
+      isNaN(effectiveResizer?.maxHeight) ? 2400 : effectiveResizer?.maxHeight,
+      effectiveResizer?.compressFormat || 'JPEG',
+      isNaN(effectiveResizer?.quality) ? 90 : effectiveResizer?.quality,
+      0,
+      nextFile => {
+        if (jobId !== activeCropJobRef.current) return;
+        setCroppedImageFile(nextFile as File);
+        setProcessing(false);
+      },
+      'file'
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOriginalMode, fileToken, activePresetId]);
 
   useEffect(() => {
     return () => {
@@ -223,32 +306,66 @@ export default function PhotoCropper({
               </Button>
             </DialogClose>
             <DialogHeader className="flex flex-row items-center justify-center p-4">
-              <DialogTitle className="text-white">Set Avatar</DialogTitle>
+              <DialogTitle className="text-white">{title || 'Set Avatar'}</DialogTitle>
             </DialogHeader>
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 pb-4">
+            {presets && presets.length > 1 && (
+              <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
+                {presets.map(preset => {
+                  const isActive = preset.id === activePreset?.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setActivePresetId(preset.id)}
+                      className={cn(
+                        'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                        isActive
+                          ? 'border-[#7AFF14] bg-[#7AFF14]/15 text-[#7AFF14]'
+                          : 'border-white/20 text-white/70 hover:border-white/40 hover:text-white'
+                      )}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <div className="mx-auto w-fit">
-              <ReactCrop
-                crop={crop}
-                onChange={nextCrop => {
-                  setCrop(nextCrop);
-                  setCroppedImageFile(null);
-                }}
-                aspect={cropperProps?.aspect || 1}
-                minWidth={64}
-                minHeight={64}
-                keepSelection
-                onComplete={setCompletedCrop}
-                {...cropperProps}
-              >
+              {isOriginalMode ? (
                 <img
                   ref={imageRef}
                   src={imageUrl}
-                  onLoad={handleImageLoad}
-                  className="max-h-[62vh] w-auto"
+                  alt="Original photo preview"
+                  className="max-h-[62vh] w-auto rounded"
                 />
-              </ReactCrop>
+              ) : (
+                <ReactCrop
+                  crop={crop}
+                  onChange={nextCrop => {
+                    setCrop(nextCrop);
+                    setCroppedImageFile(null);
+                  }}
+                  aspect={effectiveAspect}
+                  minWidth={64}
+                  minHeight={64}
+                  keepSelection
+                  onComplete={setCompletedCrop}
+                  {...cropperProps}
+                  // Re-key on preset change so ReactCrop recomputes the
+                  // initial selection rectangle for the new aspect ratio.
+                  key={activePreset?.id ?? 'default'}
+                >
+                  <img
+                    ref={imageRef}
+                    src={imageUrl}
+                    onLoad={handleImageLoad}
+                    className="max-h-[62vh] w-auto"
+                  />
+                </ReactCrop>
+              )}
             </div>
           </div>
 
