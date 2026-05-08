@@ -9,6 +9,7 @@ import {
   TrendingUp,
   ShieldCheck,
   ShieldAlert,
+  CreditCard,
   Eye,
   Heart,
   Pencil,
@@ -62,6 +63,7 @@ const formatRemaining = (msLeft: number): string => {
 export default function AuctionCard({ prize }: AuctionCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isMyBidsPage = location.pathname === '/my-bids';
   // Hydrate the auction summary from the live endpoint so we always have
   // up-to-date isLeader / isBidder fields for the current viewer.
   const auctionQuery = useQuery({
@@ -123,6 +125,23 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
   const isEnded =
     msLeft <= 0 || ['ended', 'paid', 'unsold', 'failed', 'cancelled'].includes(auction.status);
   const isUrgent = !isEnded && msLeft <= 60 * 60 * 1000; // <1h
+  const shouldCheckRetryPayment =
+    isMyBidsPage &&
+    !isOwnItem &&
+    isEnded &&
+    auction.bidCount > 0 &&
+    !['unsold', 'cancelled', 'paid'].includes(auction.status);
+
+  const retryPaymentQuery = useQuery({
+    queryKey: ['auction-payment-status', auction.id],
+    queryFn: () => api.auction.getPaymentStatus(auction.id),
+    enabled: shouldCheckRetryPayment,
+    retry: false,
+    staleTime: 30_000,
+  });
+
+  const canRetryPayment =
+    retryPaymentQuery.data?.canRetry === true && retryPaymentQuery.data?.status !== 'PAID';
 
   // Multi-image carousel: dedupe + thumbnail-normalize the prize's image list,
   // falling back to the single `imageUrl` when `imageUrls` is empty.
@@ -463,6 +482,11 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
               Outbid
             </Badge>
           )}
+          {canRetryPayment && (
+            <Badge variant="outline" className="ml-auto border-amber-500 text-amber-500">
+              Payment retry available
+            </Badge>
+          )}
         </div>
       </CardContent>
 
@@ -477,6 +501,11 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
               <Pencil className="w-4 h-4" />
               Edit Item
             </Link>
+          </Button>
+        ) : canRetryPayment ? (
+          <Button className="w-full" onClick={() => navigate(`/auctions/${auction.id}/retry-payment`)}>
+            <CreditCard className="w-4 h-4 mr-2" />
+            Retry payment
           </Button>
         ) : (
           <Button
