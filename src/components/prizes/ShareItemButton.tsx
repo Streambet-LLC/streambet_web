@@ -26,8 +26,7 @@ export default function ShareItemButton({
 
     const origin =
       typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
-    const isSellerShop = !!shopUsername && shopUsername.toLowerCase() !== 'cardcade';
-    const path = isSellerShop ? `/shop/${shopUsername}` : '/shop';
+    const path = shopUsername ? `/shop/${encodeURIComponent(shopUsername)}` : '/shop';
     const url = `${origin}${path}?highlight=${encodeURIComponent(itemId)}`;
 
     let ok = false;

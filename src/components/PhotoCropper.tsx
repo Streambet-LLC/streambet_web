@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { PixelCrop } from 'react-image-crop'
 import { Loader2, X } from "lucide-react";
 import Resizer from "react-image-file-resizer";
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 const TO_RADIANS = Math.PI / 180;
 
@@ -17,7 +17,7 @@ type ResizerProps = {
   rotate?: number;
   minWidth?: number;
   minHeight?: number;
-}
+};
 
 /**
  * A single crop "preset" surfaced as a chip above the cropper. When
@@ -46,7 +46,7 @@ export default function PhotoCropper({
   presets,
   defaultPresetId,
   title,
-} : {
+}: {
   file: File;
   onClose: () => void;
   onCrop: (file: File) => void;
@@ -69,10 +69,10 @@ export default function PhotoCropper({
   const [processing, setProcessing] = useState(false);
   const [activePresetId, setActivePresetId] = useState<string | null>(
     presets && presets.length
-      ? (defaultPresetId && presets.some(p => p.id === defaultPresetId)
-          ? defaultPresetId
-          : presets[0].id)
-      : null,
+      ? defaultPresetId && presets.some(p => p.id === defaultPresetId)
+        ? defaultPresetId
+        : presets[0].id
+      : null
   );
   const activePreset = useMemo<CropPreset | null>(() => {
     if (!presets || !presets.length) return null;
@@ -97,7 +97,7 @@ export default function PhotoCropper({
     image: HTMLImageElement,
     sourceFile: File,
     scale?: number,
-    rotate?: number,
+    rotate?: number
   ) => {
     const cropJobId = ++activeCropJobRef.current;
     setProcessing(true);
@@ -108,10 +108,7 @@ export default function PhotoCropper({
       const scaleX = image.naturalWidth / image.width;
       const scaleY = image.naturalHeight / image.height;
 
-      const canvas = new OffscreenCanvas(
-        nextCrop.width * scaleX,
-        nextCrop.height * scaleY,
-      );
+      const canvas = new OffscreenCanvas(nextCrop.width * scaleX, nextCrop.height * scaleY);
 
       const ctx = canvas.getContext('2d');
 
@@ -150,7 +147,7 @@ export default function PhotoCropper({
         0,
         0,
         image.naturalWidth,
-        image.naturalHeight,
+        image.naturalHeight
       );
 
       const blob = await canvas.convertToBlob({
@@ -161,16 +158,16 @@ export default function PhotoCropper({
         return;
       }
 
-      const croppedFile = new File([blob], sourceFile.name, { type: "image/png" });
+      const croppedFile = new File([blob], sourceFile.name, { type: 'image/png' });
 
       Resizer.imageFileResizer(
         croppedFile,
         isNaN(effectiveResizer?.maxWidth) ? 140 : effectiveResizer?.maxWidth,
         isNaN(effectiveResizer?.maxHeight) ? 140 : effectiveResizer?.maxHeight,
-        effectiveResizer?.compressFormat || "PNG",
+        effectiveResizer?.compressFormat || 'PNG',
         isNaN(effectiveResizer?.quality) ? 100 : effectiveResizer?.quality,
         0,
-        (nextFile) => {
+        nextFile => {
           if (cropJobId !== activeCropJobRef.current) {
             return;
           }
@@ -178,7 +175,7 @@ export default function PhotoCropper({
           setCroppedImageFile(nextFile as File);
           setProcessing(false);
         },
-        "file",
+        'file'
       );
     } catch {
       if (cropJobId === activeCropJobRef.current) {
@@ -206,7 +203,7 @@ export default function PhotoCropper({
     } else {
       // Non-square aspect ratio (e.g., 16:9)
       const imageAspect = width / height;
-      
+
       if (imageAspect > aspect) {
         // Image is wider than desired aspect - constrain by height
         cropHeight = height;
@@ -223,7 +220,7 @@ export default function PhotoCropper({
     const y = (height - cropHeight) / 2;
 
     setCrop({
-      unit: "px",
+      unit: 'px',
       x,
       y,
       width: cropWidth,
@@ -271,12 +268,12 @@ export default function PhotoCropper({
       effectiveResizer?.compressFormat || 'JPEG',
       isNaN(effectiveResizer?.quality) ? 90 : effectiveResizer?.quality,
       0,
-      (nextFile) => {
+      nextFile => {
         if (jobId !== activeCropJobRef.current) return;
         setCroppedImageFile(nextFile as File);
         setProcessing(false);
       },
-      'file',
+      'file'
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOriginalMode, fileToken, activePresetId]);
@@ -327,7 +324,7 @@ export default function PhotoCropper({
                         'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
                         isActive
                           ? 'border-[#7AFF14] bg-[#7AFF14]/15 text-[#7AFF14]'
-                          : 'border-white/20 text-white/70 hover:border-white/40 hover:text-white',
+                          : 'border-white/20 text-white/70 hover:border-white/40 hover:text-white'
                       )}
                     >
                       {preset.label}
