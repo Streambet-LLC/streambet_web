@@ -49,10 +49,13 @@ export default function SellerApplication() {
   const { data: application, isLoading, refetch } = useQuery({
     queryKey: ["seller-application"],
     queryFn: async () => {
-      const data = await api.creator.getCreatorApplication();
-      // Only return if it's a seller application
-      if (data.data && data.data.applicationType === 'seller') {
-        return data.data;
+      // The API returns the application entity directly (not wrapped in
+      // a `data` envelope). Accept either shape so we don't silently fall
+      // back to "no application" on submit/refresh.
+      const response = await api.creator.getCreatorApplication();
+      const application = response?.data ?? response;
+      if (application && application.applicationType === 'seller') {
+        return application;
       }
       return null;
     },
