@@ -137,30 +137,21 @@ export default function SalesHistoryAdmin() {
         {summaryQuery.isError ? (
           <div className="text-sm text-red-400">
             Failed to load summary:{' '}
-            {summaryQuery.error instanceof Error
-              ? summaryQuery.error.message
-              : 'Unknown error'}
+            {summaryQuery.error instanceof Error ? summaryQuery.error.message : 'Unknown error'}
           </div>
         ) : totals ? (
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Stat
-                label="Platform fees (estimated)"
+                label="Platform fees"
                 value={fmtUSD(totals.platformFees)}
                 sub={`Crypto ${fmtUSD(
-                  totals.cryptoPlatformFees,
+                  totals.cryptoPlatformFees
                 )} · Non-crypto ${fmtUSD(totals.nonCryptoPlatformFees)}`}
                 highlight
               />
-              <Stat
-                label="Total revenue (GMV)"
-                value={fmtUSD(totals.totalRevenue)}
-              />
-              <Stat
-                label="Total orders"
-                value={String(totals.orderCount)}
-                sub="completed only"
-              />
+              <Stat label="Total revenue (GMV)" value={fmtUSD(totals.totalRevenue)} />
+              <Stat label="Total orders" value={String(totals.orderCount)} sub="completed only" />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
               <Stat
@@ -176,13 +167,7 @@ export default function SalesHistoryAdmin() {
             </div>
             {summary?.feeAssumptions && (
               <p className="text-xs text-muted-foreground">
-                Fee estimate uses{' '}
-                {summary.feeAssumptions.nonCryptoBuyerFeePercent}% buyer +{' '}
-                {summary.feeAssumptions.nonCryptoSellerFeePercent}% seller on
-                non-crypto subtotals, and{' '}
-                {(summary.feeAssumptions.cryptoCombinedBps / 100).toFixed(2)}%
-                combined on crypto totals. Per-seller overrides are not
-                applied.
+                Includes buyer + seller platform fees across crypto and non-crypto orders.
               </p>
             )}
           </div>
@@ -196,8 +181,8 @@ export default function SalesHistoryAdmin() {
         <div className="px-6 py-4 border-b border-[#191D24]">
           <h2 className="text-lg font-medium">Monthly breakdown</h2>
           <p className="text-xs text-muted-foreground">
-            Revenue is gross merchandise value (USD). Includes only orders in
-            paid / shipped / delivered status.
+            Revenue is gross merchandise value (USD). Includes only orders in paid / shipped /
+            delivered status.
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -216,10 +201,7 @@ export default function SalesHistoryAdmin() {
             <TableBody>
               {months.length === 0 && !summaryQuery.isLoading ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center text-muted-foreground py-6"
-                  >
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
                     No sales data yet
                   </TableCell>
                 </TableRow>
@@ -230,19 +212,13 @@ export default function SalesHistoryAdmin() {
                     <TableCell className="text-right font-medium">
                       {fmtUSD(m.totalRevenue)}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {fmtUSD(m.cryptoRevenue)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {fmtUSD(m.nonCryptoRevenue)}
-                    </TableCell>
+                    <TableCell className="text-right">{fmtUSD(m.cryptoRevenue)}</TableCell>
+                    <TableCell className="text-right">{fmtUSD(m.nonCryptoRevenue)}</TableCell>
                     <TableCell className="text-right text-emerald-300 font-medium">
                       {fmtUSD(m.platformFees)}
                     </TableCell>
                     <TableCell className="text-right">{m.orderCount}</TableCell>
-                    <TableCell className="text-right">
-                      {m.cryptoOrderCount}
-                    </TableCell>
+                    <TableCell className="text-right">{m.cryptoOrderCount}</TableCell>
                   </TableRow>
                 ))
               )}
@@ -256,9 +232,7 @@ export default function SalesHistoryAdmin() {
         <div className="px-6 py-4 border-b border-[#191D24] space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium">Transactions</h2>
-            <span className="text-xs text-muted-foreground">
-              {total.toLocaleString()} matching
-            </span>
+            <span className="text-xs text-muted-foreground">{total.toLocaleString()} matching</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
@@ -285,9 +259,7 @@ export default function SalesHistoryAdmin() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                Payment method
-              </Label>
+              <Label className="text-xs text-muted-foreground">Payment method</Label>
               <Select
                 value={paymentMethod}
                 onValueChange={v => {
@@ -346,10 +318,7 @@ export default function SalesHistoryAdmin() {
               <TableBody>
                 {txs.length === 0 ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="text-center text-muted-foreground py-6"
-                    >
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                       No transactions match these filters
                     </TableCell>
                   </TableRow>
@@ -359,16 +328,12 @@ export default function SalesHistoryAdmin() {
                       <TableCell className="whitespace-nowrap text-xs">
                         {fmtDate(t.createdAt)}
                       </TableCell>
-                      <TableCell className="max-w-[260px] truncate">
-                        {t.itemName}
-                      </TableCell>
+                      <TableCell className="max-w-[260px] truncate">{t.itemName}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span>{t.buyerUsername}</span>
                           {t.buyerEmail && (
-                            <span className="text-xs text-muted-foreground">
-                              {t.buyerEmail}
-                            </span>
+                            <span className="text-xs text-muted-foreground">{t.buyerEmail}</span>
                           )}
                         </div>
                       </TableCell>
@@ -391,9 +356,7 @@ export default function SalesHistoryAdmin() {
                             {t.cryptoTxSignature.slice(0, 8)}…
                           </a>
                         ) : (
-                          <span className="text-xs text-muted-foreground">
-                            —
-                          </span>
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -412,9 +375,7 @@ export default function SalesHistoryAdmin() {
                   <PaginationPrevious
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     aria-disabled={page <= 1}
-                    className={
-                      page <= 1 ? 'pointer-events-none opacity-50' : ''
-                    }
+                    className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
                   />
                 </PaginationItem>
                 <PaginationItem>
@@ -426,11 +387,7 @@ export default function SalesHistoryAdmin() {
                   <PaginationNext
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     aria-disabled={page >= totalPages}
-                    className={
-                      page >= totalPages
-                        ? 'pointer-events-none opacity-50'
-                        : ''
-                    }
+                    className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}
                   />
                 </PaginationItem>
               </PaginationContent>

@@ -146,16 +146,18 @@ export default function Profile() {
                       <div className="text-xs text-gray-400 mt-2">
                         Date joined: {format(profile.accountCreationDate.toString(), 'MMMM d, yyy')}
                       </div>
-                      {profile.isSeller && typeof profile.listedItemCount === 'number' && (
-                        <Link
-                          to={`/shop/${profile.username}`}
-                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-3"
-                        >
-                          <Store className="w-3.5 h-3.5" />
-                          {profile.listedItemCount}{' '}
-                          {profile.listedItemCount === 1 ? 'item' : 'items'} listed
-                        </Link>
-                      )}
+                      {profile.isSeller &&
+                        profile.username &&
+                        typeof profile.listedItemCount === 'number' && (
+                          <Link
+                            to={`/shop/${profile.username}`}
+                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-3"
+                          >
+                            <Store className="w-3.5 h-3.5" />
+                            {profile.listedItemCount}{' '}
+                            {profile.listedItemCount === 1 ? 'item' : 'items'} listed
+                          </Link>
+                        )}
                     </div>
                   </div>
                 </div>

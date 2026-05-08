@@ -947,7 +947,7 @@ export default function PrizeCard({
             <img
               src={activeImageUrl}
               alt={prize.name}
-              className={`w-full h-full object-contain transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+              className={`max-w-[90%] max-h-full object-contain transition-opacity duration-200 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               loading="lazy"
               onLoad={() => setImageLoaded(true)}
             />

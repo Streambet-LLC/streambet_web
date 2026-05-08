@@ -79,12 +79,12 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
           </div>
         </DropdownMenuItem> */}
         {/* <DropdownMenuSeparator /> */}
-        {profile?.isSeller && (
+        {profile?.isSeller && profile?.username && (
           <DropdownMenuItem asChild className="cursor-pointer">
             <div className="flex gap-1 group">
               <ShoppingCart className="h-4 w-4 text-[#B4FF39] group-hover:text-black transition-colors" />
               <Link
-                to={`/shop/${profile?.username}`}
+                to={`/shop/${profile.username}`}
                 className="w-full font-semibold text-[#B4FF39] group-hover:text-black transition-colors"
               >
                 My Shop

@@ -1279,7 +1279,9 @@ export default function SellerShopManage() {
       window.open('https://dashboard.stripe.com', '_blank');
     } else {
       const data = await api.creator.generateAccountLink();
-      window.location.replace(data.data);
+      const url = typeof data === 'string' ? data : (data?.data ?? data?.url);
+      if (!url) throw new Error('No onboarding URL returned');
+      window.location.replace(url);
     }
   };
 
@@ -3151,7 +3153,7 @@ export default function SellerShopManage() {
               onOpenChange={setShowOnboardingModal}
               onComplete={() => {
                 setShowOnboardingModal(false);
-                queryClient.invalidateQueries({ queryKey: ['auth-context'] });
+                queryClient.invalidateQueries({ queryKey: ['session'] });
               }}
             />
 
