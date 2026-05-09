@@ -1275,13 +1275,25 @@ export default function SellerShopManage() {
   };
 
   const handleGenerateAccountLink = async () => {
-    if (session.stripeAccountConnected) {
-      window.open('https://dashboard.stripe.com', '_blank');
-    } else {
+    try {
+      if (session.stripeAccountConnected) {
+        window.open('https://dashboard.stripe.com', '_blank');
+        return;
+      }
       const data = await api.creator.generateAccountLink();
       const url = typeof data === 'string' ? data : (data?.data ?? data?.url);
       if (!url) throw new Error('No onboarding URL returned');
       window.location.replace(url);
+    } catch (err: any) {
+      console.error('[Stripe Onboarding] Failed:', err);
+      toast({
+        title: 'Unable to start onboarding',
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          'Could not generate Stripe onboarding link. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -3140,10 +3152,20 @@ export default function SellerShopManage() {
             </Card>
           </>
         ) : !isCardCadeMode ? (
-          <p className="text-red-500">
-            Please complete Stripe Onboarding and wait for your account to be verified before you
-            can add products. This usually occurs within 1 hour after onboarding.
-          </p>
+          <div className="flex flex-col items-start gap-3">
+            <p className="text-red-500">
+              Please complete Stripe Onboarding and wait for your account to be verified before you
+              can add products. This usually occurs within 1 hour after onboarding.
+            </p>
+            <Button
+              onClick={handleGenerateAccountLink}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+            >
+              {session?.stripeAccountConnected
+                ? 'Manage Stripe Account'
+                : 'Complete Stripe Onboarding'}
+            </Button>
+          </div>
         ) : null}
 
         {!isCardCadeMode && (

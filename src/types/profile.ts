@@ -16,4 +16,8 @@ export interface PublicUserProfile {
   isProSubscriber?: boolean;
   isSeller?: boolean;
   listedItemCount?: number;
+  city?: string;
+  state?: string;
+  country?: string;
+  collectionPreferences?: string[];
 }

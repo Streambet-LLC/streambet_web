@@ -1312,7 +1312,7 @@ export const AdminManagement = ({
                   textAlign: 'left',
                 }}
               >
-                Monthly Fees Earned
+                Month-To-Date Fees Earned
               </span>
               {isAdminAnalyticsLoading ? (
                 <svg
