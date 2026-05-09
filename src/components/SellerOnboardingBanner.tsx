@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AlertTriangle, ExternalLink, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -8,11 +9,20 @@ import { toast } from '@/hooks/use-toast';
 /**
  * Banner shown to approved sellers who haven't completed Stripe onboarding.
  * Displays at the top of every page via MainLayout.
+ *
+ * Dismissal is per-route only: the banner re-appears every time the user
+ * navigates to a new page, ensuring they can't permanently miss it.
  */
 export const SellerOnboardingBanner = () => {
   const { session } = useAuthContext();
+  const location = useLocation();
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Reset dismissal on every route change so the user keeps seeing it
+  useEffect(() => {
+    setDismissed(false);
+  }, [location.pathname]);
 
   // Only show for approved sellers who haven't finished Stripe onboarding
   if (!session || !session.isSeller || session.sellerOnboardingCompleted || dismissed) {
