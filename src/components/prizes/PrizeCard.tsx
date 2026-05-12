@@ -33,6 +33,7 @@ import { useCountdown } from '@/hooks/use-countdown';
 import { useViewTracker } from '@/hooks/useViewTracker';
 import WatchButton from './WatchButton';
 import ShareItemButton from './ShareItemButton';
+import MessageSellerButton from './MessageSellerButton';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { prizeAPI } from '@/integrations/api/client';
 import { toast } from '@/hooks/use-toast';
@@ -1028,7 +1029,7 @@ export default function PrizeCard({
                 </Badge>
               )}
 
-            {/* Watchlist heart + share link (own items can't be watched but can still be shared) */}
+            {/* Watchlist heart + share link + message seller (own items can't be watched/messaged but can still be shared) */}
             <div className="absolute bottom-2 right-2 z-20 flex items-center gap-1.5">
               <ShareItemButton
                 itemId={prize.id}
@@ -1036,6 +1037,17 @@ export default function PrizeCard({
                 overlay
                 size="sm"
               />
+              {!isOwnItem && prize.createdBy && (
+                <MessageSellerButton
+                  itemId={prize.id}
+                  itemName={prize.name}
+                  sellerId={prize.createdBy}
+                  sellerName={prize.sellerDisplayName ?? prize.createdByUsername ?? null}
+                  shopUsername={prize.createdByUsername ?? null}
+                  overlay
+                  size="sm"
+                />
+              )}
               {!isOwnItem && (
                 <WatchButton
                   itemId={prize.id}

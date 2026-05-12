@@ -25,6 +25,8 @@ interface NewConversationDialogProps {
   onConversationCreated: (conversationId: string) => void;
   preselectedSellerId?: string;
   preselectedSellerName?: string;
+  preselectedSubject?: string;
+  preselectedMessage?: string;
 }
 
 export const NewConversationDialog = ({
@@ -33,6 +35,8 @@ export const NewConversationDialog = ({
   onConversationCreated,
   preselectedSellerId,
   preselectedSellerName,
+  preselectedSubject,
+  preselectedMessage,
 }: NewConversationDialogProps) => {
   const queryClient = useQueryClient();
   const [type, setType] = useState<'direct' | 'support'>(
@@ -46,8 +50,8 @@ export const NewConversationDialog = ({
     preselectedSellerName || ''
   );
   const [selectedSellerImage, setSelectedSellerImage] = useState<string | null>(null);
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
+  const [subject, setSubject] = useState(preselectedSubject || '');
+  const [message, setMessage] = useState(preselectedMessage || '');
   const [showDropdown, setShowDropdown] = useState(false);
 
   // Fetch all sellers
@@ -113,14 +117,15 @@ export const NewConversationDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="p-0 gap-0 max-w-full w-screen h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-[640px] sm:rounded-lg flex flex-col overflow-hidden">
+        <DialogHeader className="p-6 pb-4 shrink-0">
           <DialogTitle>New Message</DialogTitle>
           <DialogDescription>
             Start a conversation with a seller or contact support.
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
         <Tabs
           value={type}
           onValueChange={(v) => setType(v as 'direct' | 'support')}
@@ -253,22 +258,26 @@ export const NewConversationDialog = ({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your message..."
-              rows={4}
+              rows={6}
               maxLength={5000}
+              className="min-h-[140px]"
             />
           </div>
         </div>
+        </div>
 
-        <Button
-          onClick={() => createMutation.mutate()}
-          disabled={!canSubmit || createMutation.isPending}
-          className="w-full"
-        >
-          {createMutation.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : null}
-          Send Message
-        </Button>
+        <div className="p-6 pt-4 shrink-0 border-t border-border/40">
+          <Button
+            onClick={() => createMutation.mutate()}
+            disabled={!canSubmit || createMutation.isPending}
+            className="w-full"
+          >
+            {createMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : null}
+            Send Message
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
