@@ -208,6 +208,9 @@ export default function Prizes() {
           auction: prize.auction ?? null,
           shippingCostUsd: prize.shippingCostUsd,
           isInPerson: prize.isInPerson,
+          ebaySearchQuery: prize.ebaySearchQuery ?? null,
+          ebayMarketLastCalculatedAt: prize.ebayMarketLastCalculatedAt ?? null,
+          showEbayAvgPublicly: prize.showEbayAvgPublicly ?? false,
         };
       });
 

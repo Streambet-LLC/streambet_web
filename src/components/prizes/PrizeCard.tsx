@@ -442,11 +442,15 @@ export default function PrizeCard({
   const ebaySoldAvgAdminOnly = ebayFeatureFlagsQuery.data?.ebaySoldAvgAdminOnly ?? false;
   const ebayManualSyncEnabled = ebayFeatureFlagsQuery.data?.ebayManualSyncEnabled ?? true;
 
-  // Determine if current user should see the eBay sold avg
-  // Show if: (public mode enabled) OR (admin-only mode enabled AND user is admin)
-  const shouldShowEbaySoldAvg = 
-    (ebaySoldAvgEnabled && !ebaySoldAvgAdminOnly) ||
-    (ebaySoldAvgAdminOnly && isAdminUser);
+  // Determine if eBay box should render (for layout consistency)
+  const shouldShowEbayBox = isAdminUser
+    ? ebaySoldAvgEnabled
+    : (ebaySoldAvgEnabled && !ebaySoldAvgAdminOnly);
+
+  // Determine if actual eBay data should be displayed (vs "Coming Soon")
+  const canShowEbayData = isAdminUser
+    ? true
+    : (prize.showEbayAvgPublicly ?? false);
 
   // Early-access countdown: only for items with a timed window (not permanently pro-only)
   const earlyAccessDate = !prize.isProOnly ? prize.proEarlyAccessUntil : null;
@@ -456,7 +460,7 @@ export default function PrizeCard({
   const marketSummaryQuery = useQuery({
     queryKey: ['ebay-market-summary', prize.id],
     queryFn: () => prizeAPI.getEbayMarketSummary(prize.id),
-    enabled: shouldShowEbaySoldAvg || showMarketModal || (isAdminUser && ebayManualSyncEnabled),
+    enabled: shouldShowEbayBox || showMarketModal || (isAdminUser && ebayManualSyncEnabled),
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
@@ -798,19 +802,21 @@ export default function PrizeCard({
               {prize.amount.toLocaleString('en-US')} coins • ${(prize.amount / 50).toFixed(2)} USD
             </p>
           )}
-          {shouldShowEbaySoldAvg && (
+          {shouldShowEbayBox && (
             <button
               type="button"
               className="w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
               onClick={e => {
                 e.stopPropagation();
-                setShowMarketModal(true);
+                if (canShowEbayData) {
+                  setShowMarketModal(true);
+                }
               }}
             >
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
               {marketSummaryQuery.isLoading ? (
                 <div className="mt-1 text-xs text-muted-foreground">Loading market data...</div>
-              ) : latestAvg !== null ? (
+              ) : canShowEbayData && latestAvg !== null ? (
                 <div className="mt-1">
                   <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
                   {marketSummary?.listingPrice != null && (
@@ -831,10 +837,10 @@ export default function PrizeCard({
                   )}
                 </div>
               ) : (
-                <div className="mt-1 text-xs text-muted-foreground">0 sold listings</div>
+                <div className="mt-1 text-sm font-medium text-muted-foreground">Coming Soon</div>
               )}
               <div className="mt-1 text-[10px] text-muted-foreground">
-                {cardLastCalculated
+                {canShowEbayData && cardLastCalculated
                   ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
                   : ''}
               </div>
@@ -1082,7 +1088,7 @@ export default function PrizeCard({
           )}
 
           {/* Price */}
-          <div className="mt-auto pt-1">
+          <div className="mt-1">
             {canBuy ? (
               <span className="text-xl font-bold text-primary">${priceInUSD}</span>
             ) : (
@@ -1090,19 +1096,21 @@ export default function PrizeCard({
             )}
           </div>
 
-          {shouldShowEbaySoldAvg && (
+          {shouldShowEbayBox && (
             <button
               type="button"
               className="mt-1 rounded-md border border-[#2A2F3A] bg-[#11151d] px-2.5 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
               onClick={e => {
                 e.stopPropagation();
-                setShowMarketModal(true);
+                if (canShowEbayData) {
+                  setShowMarketModal(true);
+                }
               }}
             >
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
               {marketSummaryQuery.isLoading ? (
                 <div className="mt-1 text-[11px] text-muted-foreground">Loading market data...</div>
-              ) : latestAvg !== null ? (
+              ) : canShowEbayData && latestAvg !== null ? (
                 <div className="mt-1">
                   <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
                   {marketSummary?.listingPrice != null && (
@@ -1123,10 +1131,10 @@ export default function PrizeCard({
                   )}
                 </div>
               ) : (
-                <div className="mt-1 text-[11px] text-muted-foreground">0 sold listings</div>
+                <div className="mt-1 text-sm font-medium text-muted-foreground">Coming Soon</div>
               )}
               <div className="mt-1 text-[10px] text-muted-foreground">
-                {cardLastCalculated
+                {canShowEbayData && cardLastCalculated
                   ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
                   : ''}
               </div>
@@ -1147,6 +1155,9 @@ export default function PrizeCard({
               {syncingMarketData ? 'Fetching sold data...' : 'Fetch Sold Data Now'}
             </Button>
           )}
+
+          {/* Spacer to push stock/engagement stats to bottom */}
+          <div className="flex-1" />
 
           {/* Stock Count */}
           {typeof prize.stock === 'number' && (

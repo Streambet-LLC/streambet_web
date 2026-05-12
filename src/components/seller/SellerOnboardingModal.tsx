@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useImageCropper } from '@/hooks/useImageCropper';
 import PhotoCropper from '@/components/PhotoCropper';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { getImageLink } from '@/utils/helper';
 
 interface SellerOnboardingModalProps {
   open: boolean;
@@ -23,25 +24,52 @@ interface SellerOnboardingModalProps {
   onComplete: () => void;
 }
 
+interface SellerOnboardingFormProps {
+  onComplete: () => void;
+  /** When true (default), renders inside Dialog chrome (no header/title). */
+  embedded?: boolean;
+}
+
 export function SellerOnboardingModal({
   open,
   onOpenChange,
   onComplete,
 }: SellerOnboardingModalProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader>
+          <DialogTitle>Welcome to Your Shop!</DialogTitle>
+          <DialogDescription>
+            Let's get your seller profile set up.
+          </DialogDescription>
+        </DialogHeader>
+        <SellerOnboardingForm onComplete={onComplete} embedded />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function SellerOnboardingForm({
+  onComplete,
+  embedded = false,
+}: SellerOnboardingFormProps) {
   const { session } = useAuthContext();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [location, setLocation] = useState('');
-  const [tradingExperience, setTradingExperience] = useState('');
-  const [shopName, setShopName] = useState('');
-  const [socials, setSocials] = useState({
-    instagram: '',
-    twitter: '',
-    youtube: '',
-    tiktok: '',
-  });
+  const [location, setLocation] = useState(() => session?.country || '');
+  const [tradingExperience, setTradingExperience] = useState(
+    () => session?.sellerTradingExperience || ''
+  );
+  const [shopName, setShopName] = useState(() => session?.shopName || '');
+  const [socials, setSocials] = useState(() => ({
+    instagram: session?.socials?.instagram || '',
+    twitter: session?.socials?.twitter || '',
+    youtube: session?.socials?.youtube || '',
+    tiktok: session?.socials?.tiktok || '',
+  }));
 
   const imageUpload = useImageCropper({
     checkNSFW: false,
@@ -78,7 +106,9 @@ export function SellerOnboardingModal({
         }
       }
 
-      // Save all onboarding data
+      // Save all onboarding data. Setting sellerProfileCompleted=true also
+      // flips is_seller server-side, so the user is a seller from this
+      // point on — even if they bail before finishing Stripe.
       await api.user.updateProfile({
         country: location,
         shopName,
@@ -89,14 +119,34 @@ export function SellerOnboardingModal({
           youtube: socials.youtube,
           tiktok: socials.tiktok,
         },
-        sellerOnboardingCompleted: true,
+        sellerProfileCompleted: true,
         ...(profileImageUrl && { profileImageUrl }),
       });
 
       toast({
-        title: 'Success',
-        description: 'Onboarding completed!',
+        title: 'Welcome aboard!',
+        description: "Redirecting you to Stripe to set up payouts…",
       });
+
+      // Kick off Stripe Connect onboarding right away. If the user bails on
+      // Stripe, the SellerOnboardingBanner will keep prompting them.
+      try {
+        const data = await api.creator.generateAccountLink();
+        const url =
+          typeof data === 'string' ? data : (data?.data ?? data?.url);
+        if (url) {
+          window.location.replace(url);
+          return;
+        }
+      } catch (stripeErr) {
+        console.error('Stripe onboarding redirect failed:', stripeErr);
+        toast({
+          title: 'Profile saved',
+          description:
+            "We couldn't open Stripe right now. You can finish payout setup from your shop.",
+          variant: 'destructive',
+        });
+      }
 
       onComplete();
     } catch (error) {
@@ -112,16 +162,30 @@ export function SellerOnboardingModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>Welcome to Your Shop!</DialogTitle>
-          <DialogDescription>
-            Let's get your seller profile set up. Step {step} of 3
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4 overflow-y-auto flex-1 px-2">
+    <div className={embedded ? 'flex flex-col flex-1 overflow-hidden' : 'flex flex-col'}>
+      {/* Step indicator */}
+      <div className={embedded ? 'px-2' : 'mb-2'}>
+        <div className="flex items-center gap-2">
+          {[1, 2, 3].map(n => (
+            <div
+              key={n}
+              className={`h-1.5 flex-1 rounded-full transition-colors ${
+                n <= step ? 'bg-primary' : 'bg-muted'
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Step {step} of 3
+        </p>
+      </div>
+      <div
+        className={
+          embedded
+            ? 'space-y-6 py-4 overflow-y-auto flex-1 px-2'
+            : 'space-y-6 py-6'
+        }
+      >
           {/* Step 1: Location */}
           {step === 1 && (
             <div className="space-y-4">
@@ -198,7 +262,7 @@ export function SellerOnboardingModal({
                     <div className="space-y-3 mb-4">
                       <p className="text-sm text-muted-foreground">Current picture:</p>
                       <img
-                        src={session.profileImageUrl}
+                        src={getImageLink(session.profileImageUrl)}
                         alt="Current Profile"
                         className="w-32 h-32 rounded-lg object-cover"
                       />
@@ -303,7 +367,13 @@ export function SellerOnboardingModal({
           )}
         </div>
 
-        <div className="flex justify-between gap-3 pt-4 border-t mt-4 flex-shrink-0">
+        <div
+          className={
+            embedded
+              ? 'flex justify-between gap-3 pt-4 border-t mt-4 flex-shrink-0'
+              : 'flex justify-between gap-3 pt-6 mt-2'
+          }
+        >
           <Button
             variant="outline"
             onClick={() => setStep(Math.max(1, step - 1))}
@@ -336,7 +406,6 @@ export function SellerOnboardingModal({
             </Button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+    </div>
   );
 }

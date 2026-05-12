@@ -114,7 +114,7 @@ export const UserDropdown = ({ profile, onLogout }: UserDropdownProps) => {
 
         {!profile?.isSeller && (
           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link to={`/seller-application`} rel="noopener noreferrer">
+            <Link to={`/seller/shop/manage`} rel="noopener noreferrer">
               Become a Seller
             </Link>
           </DropdownMenuItem>
