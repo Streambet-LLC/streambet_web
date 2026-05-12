@@ -43,7 +43,6 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [promoCode, setPromoCode] = useState(cookies['promo-code'] ? cookies['promo-code'] : '');
   const [refLink, setRefLink] = useState(cookies['referral-link'] ? cookies['referral-link'] : '');
-  const [name, setName] = useState('');
   const [tosAccepted, setTosAccepted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -58,7 +57,6 @@ export default function SignUp() {
   } | null>(null);
 
   const signupSchema = z.object({
-    name: z.string().optional(),
     username: z
       .string()
       .min(3, 'Username must be at least 3 characters')
@@ -83,7 +81,6 @@ export default function SignUp() {
   const form = useForm({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      name: '',
       username: '',
       email: '',
       password: '',
@@ -96,15 +93,15 @@ export default function SignUp() {
 
   const signupMutation = useMutation({
     mutationFn: async (userData: {
-      name?: string;
       email: string;
       password: string;
       username: string;
+      tosAccepted: boolean;
       lastKnownIp: string;
       redirect?: string;
       promoCode?: string;
       refLink?: string;
-      profileImageUrl?: string;
+      profileImageUrl: string;
     }) => {
       // const locationResult = await verifyUserLocation();
       // if (!locationResult.allowed) {
@@ -299,7 +296,6 @@ export default function SignUp() {
     }
 
     signupMutation.mutate({
-      name,
       username,
       email,
       password,
@@ -514,19 +510,6 @@ export default function SignUp() {
                   </p>
                 </motion.div>
                 <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="name">Name (Optional)</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    placeholder="Name"
-                    onChange={e => setName(e.target.value)}
-                    className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.name ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
-                    disabled={false}
-                  />
-                  {errors.name && <p className="text-destructive text-sm">{errors.name}</p>}
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="promoCode">Promo Code (Optional)</Label>
                   <Input
                     id="promoCode"
@@ -571,11 +554,11 @@ export default function SignUp() {
                     <Link to="/terms" target="_blank" className="text-primary hover:underline">
                       Terms of Use
                     </Link>
-                    {', '}
+                    {' and '}
                     <Link to="/privacy" target="_blank" className="text-primary hover:underline">
                       Privacy Policy
                     </Link>
-                    {', and Sweepstakes Rules.'}
+                    {'.'}
                   </Label>
                   {errors.tosAccepted && (
                     <p className="text-destructive text-sm">{errors.tosAccepted}</p>
