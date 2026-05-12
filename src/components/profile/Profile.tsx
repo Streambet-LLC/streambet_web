@@ -17,7 +17,6 @@ import RatingSummary from '@/components/reviews/RatingSummary';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { PublicUserProfile } from '@/types/profile';
-import ProfilePrizeProgress from './ProfilePrizeProgress';
 import { getBadgeRingColor, getPrizeColor } from '@/utils/prizeColors';
 import { ProBadge } from '@/components/pro/ProBadge';
 import ProfileSellerItems from './ProfileSellerItems';
@@ -70,8 +69,9 @@ export default function Profile() {
         return response?.data;
       } catch (error) {
         if (error && error.response && error.response.status === 404) {
-          return undefined;
+          return null;
         }
+        throw error;
       }
     },
   });
@@ -122,14 +122,14 @@ export default function Profile() {
                       <Avatar
                         className={cn(
                           'h-28 w-28 transition-all',
-                          profile.badgeLevel !== 'none' &&
+                          profile.badgeLevel && profile.badgeLevel !== 'none' &&
                             `ring-4 ${getBadgeRingColor(profile.badgeLevel)} shadow-lg`
                         )}
                       >
                         <AvatarImage src={getImageLink(profile.profileImageUrl)} alt={username} />
                         <AvatarFallback>{username[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      {profile.badgeLevel !== 'none' && (
+                      {profile.badgeLevel && profile.badgeLevel !== 'none' && profile.title && (
                         <div
                           className={cn(
                             'absolute -bottom-2 left-1/2 -translate-x-1/2',
@@ -158,14 +158,22 @@ export default function Profile() {
                       {profile.isSeller &&
                         profile.username &&
                         typeof profile.listedItemCount === 'number' && (
-                          <Link
-                            to={`/shop/${profile.username}`}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-3"
-                          >
-                            <Store className="w-3.5 h-3.5" />
-                            {profile.listedItemCount}{' '}
-                            {profile.listedItemCount === 1 ? 'item' : 'items'} listed
-                          </Link>
+                          <div className="flex items-center gap-3 mt-3">
+                            <Link
+                              to={`/shop/${profile.username}`}
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Store className="w-3.5 h-3.5" />
+                              {profile.listedItemCount}{' '}
+                              {profile.listedItemCount === 1 ? 'item' : 'items'} listed
+                            </Link>
+                            {profile.username === session?.username &&
+                              profile.effectiveSellerFeePercent !== undefined && (
+                                <span className="px-2 py-0.5 bg-primary/10 border border-primary/40 rounded text-primary text-xs font-medium">
+                                  Platform fee: {profile.effectiveSellerFeePercent}%
+                                </span>
+                              )}
+                          </div>
                         )}
                     </div>
                   </div>
@@ -239,14 +247,6 @@ export default function Profile() {
                       </Button>
                     </div>
                   )}
-                </div>
-
-                {/* Prize Progress Section - Shows for all users */}
-                <div className="mt-6">
-                  <ProfilePrizeProgress
-                    currentCadeCoins={profile.currentCadeCoins}
-                    lifetimeCadeCoins={profile.lifetimeCadeCoins}
-                  />
                 </div>
 
                 {/* Edit Form - Shows when user clicks Edit */}
