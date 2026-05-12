@@ -10,8 +10,8 @@ export interface PublicUserProfile {
   followers: number;
   currentCadeCoins: number;
   lifetimeCadeCoins: number;
-  title: string;
-  badgeLevel: string;
+  title?: string;
+  badgeLevel?: string;
   isCreator?: boolean;
   isProSubscriber?: boolean;
   isSeller?: boolean;
@@ -20,4 +20,5 @@ export interface PublicUserProfile {
   state?: string;
   country?: string;
   collectionPreferences?: string[];
+  effectiveSellerFeePercent?: number;
 }
