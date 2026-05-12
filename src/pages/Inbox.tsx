@@ -20,6 +20,8 @@ const Inbox = () => {
   );
   const preselectedSellerId = searchParams.get('seller') || undefined;
   const preselectedSellerName = searchParams.get('sellerName') || undefined;
+  const preselectedSubject = searchParams.get('subject') || undefined;
+  const preselectedMessage = searchParams.get('message') || undefined;
   const [showNewConversation, setShowNewConversation] = useState(!!preselectedSellerId);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -136,12 +138,16 @@ const Inbox = () => {
           if (!open && preselectedSellerId) {
             searchParams.delete('seller');
             searchParams.delete('sellerName');
+            searchParams.delete('subject');
+            searchParams.delete('message');
             setSearchParams(searchParams);
           }
         }}
         onConversationCreated={handleSelectConversation}
         preselectedSellerId={preselectedSellerId}
         preselectedSellerName={preselectedSellerName}
+        preselectedSubject={preselectedSubject}
+        preselectedMessage={preselectedMessage}
       />
       <InboxSettingsDialog open={showSettings} onOpenChange={setShowSettings} />
     </MainLayout>
