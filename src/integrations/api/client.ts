@@ -760,9 +760,7 @@ export const socketAPI = {
   // Connect to WebSocket
   connect: (withAuth = true) => {
     const token = localStorage.getItem('refreshToken');
-    console.log('socket connection iniiated');
     if (!token && withAuth) return null;
-    console.log('socket connected confirmed');
     // Only create a new socket if one does not already exist or is disconnected
     if (!socket || (socket && socket.disconnected)) {
       socket = io(API_URL.replace(/\/api(?!.*\/api)/, ''), {
@@ -1103,6 +1101,36 @@ export const adminAPI = {
     const response = await apiClient.delete('/admin/prizes/ebay-sold-listings/bulk', {
       data: { listingIds },
     });
+    return response.data;
+  },
+
+  bulkModerateEbaySoldListings: async (
+    listingIds: string[],
+    isInaccurate: boolean,
+    reason?: string
+  ): Promise<{ updated: number }> => {
+    const response = await apiClient.patch('/admin/prizes/ebay-sold-listings/bulk-moderate', {
+      listingIds,
+      isInaccurate,
+      reason,
+    });
+    return response.data;
+  },
+
+  bulkUpdateEbayPublicVisibility: async (
+    itemIds: string[],
+    showPublicly: boolean
+  ): Promise<{ updated: number }> => {
+    console.log('[API Client] bulkUpdateEbayPublicVisibility request:', {
+      endpoint: '/admin/prizes/items/bulk-update-ebay-visibility',
+      itemIds,
+      showPublicly,
+    });
+    const response = await apiClient.patch('/admin/prizes/items/bulk-update-ebay-visibility', {
+      itemIds,
+      showPublicly,
+    });
+    console.log('[API Client] bulkUpdateEbayPublicVisibility response:', response.data);
     return response.data;
   },
 
@@ -1558,8 +1586,18 @@ export const prizeAPI = {
   },
 
   getEbayMarketSummary: async (id: string): Promise<EbayMarketSummary> => {
-    const response = await apiClient.get(`/prizes/shop-items/${id}/ebay-market-summary`);
-    return response.data;
+    try {
+      const response = await apiClient.get(`/prizes/shop-items/${id}/ebay-market-summary`);
+      return response.data;
+    } catch (error: any) {
+      console.error('[API Client] getEbayMarketSummary error:', {
+        itemId: id,
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        fullError: error,
+      });
+      throw error;
+    }
   },
 
   getEbayFeatureFlags: async (): Promise<{

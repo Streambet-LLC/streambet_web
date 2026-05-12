@@ -101,6 +101,7 @@ export interface PrizeConfiguration {
   updatedBy: string | null;
   ebaySearchQuery?: string | null;
   ebayMarketLastCalculatedAt?: string | null;
+  showEbayAvgPublicly?: boolean;
   isProOnly: boolean;
   proEarlyAccessUntil: string | null;
   viewCount?: number;
