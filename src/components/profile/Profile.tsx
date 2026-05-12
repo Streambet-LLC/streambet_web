@@ -158,14 +158,22 @@ export default function Profile() {
                       {profile.isSeller &&
                         profile.username &&
                         typeof profile.listedItemCount === 'number' && (
-                          <Link
-                            to={`/shop/${profile.username}`}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-3"
-                          >
-                            <Store className="w-3.5 h-3.5" />
-                            {profile.listedItemCount}{' '}
-                            {profile.listedItemCount === 1 ? 'item' : 'items'} listed
-                          </Link>
+                          <div className="flex items-center gap-3 mt-3">
+                            <Link
+                              to={`/shop/${profile.username}`}
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Store className="w-3.5 h-3.5" />
+                              {profile.listedItemCount}{' '}
+                              {profile.listedItemCount === 1 ? 'item' : 'items'} listed
+                            </Link>
+                            {profile.username === session?.username &&
+                              profile.effectiveSellerFeePercent !== undefined && (
+                                <span className="px-2 py-0.5 bg-primary/10 border border-primary/40 rounded text-primary text-xs font-medium">
+                                  Platform fee: {profile.effectiveSellerFeePercent}%
+                                </span>
+                              )}
+                          </div>
                         )}
                     </div>
                   </div>

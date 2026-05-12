@@ -20,4 +20,5 @@ export interface PublicUserProfile {
   state?: string;
   country?: string;
   collectionPreferences?: string[];
+  effectiveSellerFeePercent?: number;
 }
