@@ -17,7 +17,6 @@ import RatingSummary from '@/components/reviews/RatingSummary';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { PublicUserProfile } from '@/types/profile';
-import ProfilePrizeProgress from './ProfilePrizeProgress';
 import { getBadgeRingColor, getPrizeColor } from '@/utils/prizeColors';
 import { ProBadge } from '@/components/pro/ProBadge';
 import ProfileSellerItems from './ProfileSellerItems';
@@ -70,8 +69,9 @@ export default function Profile() {
         return response?.data;
       } catch (error) {
         if (error && error.response && error.response.status === 404) {
-          return undefined;
+          return null;
         }
+        throw error;
       }
     },
   });
@@ -122,14 +122,14 @@ export default function Profile() {
                       <Avatar
                         className={cn(
                           'h-28 w-28 transition-all',
-                          profile.badgeLevel !== 'none' &&
+                          profile.badgeLevel && profile.badgeLevel !== 'none' &&
                             `ring-4 ${getBadgeRingColor(profile.badgeLevel)} shadow-lg`
                         )}
                       >
                         <AvatarImage src={getImageLink(profile.profileImageUrl)} alt={username} />
                         <AvatarFallback>{username[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      {profile.badgeLevel !== 'none' && (
+                      {profile.badgeLevel && profile.badgeLevel !== 'none' && profile.title && (
                         <div
                           className={cn(
                             'absolute -bottom-2 left-1/2 -translate-x-1/2',
@@ -239,14 +239,6 @@ export default function Profile() {
                       </Button>
                     </div>
                   )}
-                </div>
-
-                {/* Prize Progress Section - Shows for all users */}
-                <div className="mt-6">
-                  <ProfilePrizeProgress
-                    currentCadeCoins={profile.currentCadeCoins}
-                    lifetimeCadeCoins={profile.lifetimeCadeCoins}
-                  />
                 </div>
 
                 {/* Edit Form - Shows when user clicks Edit */}
