@@ -410,6 +410,18 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
             >
               {session ? (
                 <>
+                  {!session?.isSeller && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="hidden md:inline-flex items-center gap-1.5 text-[#B4FF39] hover:text-[#B4FF39] hover:bg-[#B4FF39]/10 px-3 py-2 font-medium"
+                      onClick={() => navigate('/seller/shop/manage')}
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                      <span className="text-sm">Become a Seller</span>
+                    </Button>
+                  )}
+
                   {session?.isProSubscriber ? (
                     <Button
                       variant="ghost"

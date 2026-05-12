@@ -40,7 +40,6 @@ import { PrizeConfiguration } from './PrizeConfiguration';
 import { PrizeRedemptions } from './PrizeRedemptions';
 import { PrizeOrders } from './PrizeOrders';
 import { AdminAuctions } from './AdminAuctions';
-import { ApplicationsTable } from './ApplicationsTable';
 import PendingOnboardingTable from './PendingOnboardingTable';
 import { CryptoSellersAdmin } from './CryptoSellersAdmin';
 import { CryptoMarketplaceAdmin } from './CryptoMarketplaceAdmin';
@@ -120,7 +119,6 @@ export const AdminManagement = ({
     { key: 'concierge', label: 'Concierge' },
     { key: 'discount-codes', label: 'Discount Codes' },
     { key: 'promo-codes', label: 'Promo Codes' },
-    { key: 'applications', label: 'Applications' },
     { key: 'picks', label: 'Picks' },
   ];
 
@@ -1605,11 +1603,7 @@ export const AdminManagement = ({
             </div>
           )}
 
-          {activeTab === 'applications' && (
-            <div className="space-y-4">
-              <ApplicationsTable />
-            </div>
-          )}
+          {activeTab === 'applications' && null}
 
           {activeTab === 'pending-onboarding' && (
             <div className="space-y-4">
