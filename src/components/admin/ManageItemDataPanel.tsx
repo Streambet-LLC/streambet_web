@@ -5,11 +5,13 @@ import {
   ChevronLeft,
   Eye,
   EyeOff,
+  Flag,
   Loader2,
   RefreshCw,
   Trash2,
   ExternalLink,
   Search,
+  CheckCircle2,
 } from 'lucide-react';
 import { adminAPI } from '@/integrations/api/client';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
@@ -19,6 +21,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -59,6 +68,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
+const BRAND_LABELS: Record<string, string> = {
+  pokemon: 'Pokémon',
+  one_piece: 'One Piece',
+  sports: 'Sports',
+  other: 'Other',
+};
+
 // ---------------------------------------------------------------------------
 // Item list view
 // ---------------------------------------------------------------------------
@@ -71,16 +87,29 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
   const queryClient = useQueryClient();
   const { data: items = [], isLoading } = useAdminPrizeTiers();
   const [searchQuery, setSearchQuery] = useState('');
+  const [brandFilter, setBrandFilter] = useState<string>('all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return items;
-    const query = searchQuery.toLowerCase();
-    return items.filter(item =>
-      item.name.toLowerCase().includes(query) ||
-      item.ebaySearchQuery?.toLowerCase().includes(query) ||
-      item.category.toLowerCase().includes(query)
-    );
-  }, [items, searchQuery]);
+    let result = items;
+    
+    // Apply brand filter
+    if (brandFilter !== 'all') {
+      result = result.filter(item => item.brand === brandFilter);
+    }
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.ebaySearchQuery?.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
+  }, [items, searchQuery, brandFilter]);
 
   const syncAllMutation = useMutation({
     mutationFn: () => adminAPI.syncAllEbayData(),
@@ -99,8 +128,69 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
     },
   });
 
+  const bulkUpdateVisibilityMutation = useMutation({
+    mutationFn: async ({ itemIds, showPublicly }: { itemIds: string[]; showPublicly: boolean }) => {
+      // Batch requests in chunks of 200 to respect backend validation
+      const batchSize = 200;
+      let totalUpdated = 0;
+      
+      for (let i = 0; i < itemIds.length; i += batchSize) {
+        const batch = itemIds.slice(i, i + batchSize);
+        const result = await adminAPI.bulkUpdateEbayPublicVisibility(batch, showPublicly);
+        totalUpdated += result.updated;
+      }
+      
+      return { updated: totalUpdated };
+    },
+    onSuccess: (result, { showPublicly, itemIds }) => {
+      toast({
+        title: 'Success',
+        description: `${result.updated} item${result.updated !== 1 ? 's' : ''} ${showPublicly ? 'now show' : 'no longer show'} eBay avg publicly.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['adminPrizeTiers'] });
+      setSelectedIds(new Set());
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to update visibility.', variant: 'destructive' });
+    },
+  });
+
   const handleSyncAll = () => {
     syncAllMutation.mutate();
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.size === filteredItems.length && filteredItems.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredItems.map(item => item.id)));
+    }
+  };
+
+  const handleToggleItem = (itemId: string) => {
+    const newSelection = new Set(selectedIds);
+    if (newSelection.has(itemId)) {
+      newSelection.delete(itemId);
+    } else {
+      newSelection.add(itemId);
+    }
+    setSelectedIds(newSelection);
+  };
+
+  const handleShowPublicly = () => {
+    if (selectedIds.size === 0) return;
+    bulkUpdateVisibilityMutation.mutate({
+      itemIds: Array.from(selectedIds),
+      showPublicly: true,
+    });
+  };
+
+  const handleHideFromPublic = () => {
+    if (selectedIds.size === 0) return;
+    bulkUpdateVisibilityMutation.mutate({
+      itemIds: Array.from(selectedIds),
+      showPublicly: false,
+    });
   };
 
   if (isLoading) {
@@ -111,11 +201,14 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
     );
   }
 
+  const allSelected = filteredItems.length > 0 && selectedIds.size === filteredItems.length;
+  const someSelected = selectedIds.size > 0;
+
   return (
     <div>
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div className="flex-1 max-w-md">
-          <div className="relative">
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex-1 flex items-center gap-3">
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search items by name, query, or category..."
@@ -124,6 +217,18 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
               className="pl-9"
             />
           </div>
+          <Select value={brandFilter} onValueChange={setBrandFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by brand" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Brands</SelectItem>
+              <SelectItem value="pokemon">Pokémon</SelectItem>
+              <SelectItem value="one_piece">One Piece</SelectItem>
+              <SelectItem value="sports">Sports</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <Button
           onClick={handleSyncAll}
@@ -140,46 +245,126 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
         </Button>
       </div>
 
+      {/* Selection and visibility controls */}
+      <div className="flex items-center justify-between gap-4 mb-4 p-3 border border-[#2D343E] rounded-lg bg-[#1a1a1a]">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="select-all"
+              checked={allSelected}
+              onCheckedChange={handleToggleSelectAll}
+            />
+            <Label htmlFor="select-all" className="cursor-pointer">
+              {allSelected ? 'Deselect All' : 'Select All'}
+            </Label>
+          </div>
+          {someSelected && (
+            <span className="text-sm text-muted-foreground">
+              {selectedIds.size} item{selectedIds.size !== 1 ? 's' : ''} selected
+            </span>
+          )}
+        </div>
+        {someSelected && (
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleShowPublicly}
+              disabled={bulkUpdateVisibilityMutation.isPending}
+              variant="default"
+              size="sm"
+            >
+              {bulkUpdateVisibilityMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Eye className="w-4 h-4 mr-2" />
+              )}
+              Show eBay Avg Publicly
+            </Button>
+            <Button
+              onClick={handleHideFromPublic}
+              disabled={bulkUpdateVisibilityMutation.isPending}
+              variant="outline"
+              size="sm"
+            >
+              <EyeOff className="w-4 h-4 mr-2" />
+              Hide eBay Avg
+            </Button>
+          </div>
+        )}
+      </div>
+
       <p className="text-sm text-muted-foreground mb-4">
         Showing {filteredItems.length} of {items.length} item{items.length !== 1 ? 's' : ''}. Click an item to view and manage its eBay sold data.
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        {filteredItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onSelectItem(item)}
-            className="text-left border border-[#2D343E] rounded-lg p-3 hover:bg-[#1f1f1f] transition-colors"
-          >
-            {item.imageUrl ? (
-              <img
-                src={item.imageUrl}
-                alt={item.name}
-                className="w-full aspect-square object-cover rounded mb-2"
-              />
-            ) : (
-              <div className="w-full aspect-square bg-muted rounded mb-2 flex items-center justify-center text-xs text-muted-foreground">
-                No image
+        {filteredItems.map((item) => {
+          const isSelected = selectedIds.has(item.id);
+          const isPublic = (item as any).showEbayAvgPublicly ?? false;
+          
+          return (
+            <div
+              key={item.id}
+              className={`relative border rounded-lg p-3 transition-colors ${
+                isSelected ? 'border-primary bg-[#1f1f1f]' : 'border-[#2D343E]'
+              }`}
+            >
+              {/* Selection checkbox */}
+              <div className="absolute top-2 left-2 z-10">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => handleToggleItem(item.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-background border-2"
+                />
               </div>
-            )}
-            <p className="font-medium text-sm leading-tight line-clamp-2 mb-1">{item.name}</p>
-            <Badge variant="outline" className="text-xs mb-1">
-              {CATEGORY_LABELS[item.category] ?? item.category}
-            </Badge>
-            {item.ebaySearchQuery ? (
-              <p className="text-xs text-muted-foreground mt-1 truncate" title={item.ebaySearchQuery}>
-                Query: {item.ebaySearchQuery}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground mt-1 italic">Using item name</p>
-            )}
-            {item.ebayMarketLastCalculatedAt && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Updated {format(new Date(item.ebayMarketLastCalculatedAt), 'MMM d')}
-              </p>
-            )}
-          </button>
-        ))}
+              
+              {/* Public visibility indicator */}
+              {isPublic && (
+                <div className="absolute top-2 right-2 z-10">
+                  <CheckCircle2 className="w-5 h-5 text-green-500" title="Visible to public" />
+                </div>
+              )}
+              
+              <button
+                onClick={() => onSelectItem(item)}
+                className="text-left w-full hover:opacity-80 transition-opacity"
+              >
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="w-full aspect-square object-cover rounded mb-2"
+                  />
+                ) : (
+                  <div className="w-full aspect-square bg-muted rounded mb-2 flex items-center justify-center text-xs text-muted-foreground">
+                    No image
+                  </div>
+                )}
+                <p className="font-medium text-sm leading-tight line-clamp-2 mb-1">{item.name}</p>
+                <div className="flex gap-1 mb-1">
+                  <Badge variant="outline" className="text-xs">
+                    {CATEGORY_LABELS[item.category] ?? item.category}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {BRAND_LABELS[item.brand] ?? item.brand}
+                  </Badge>
+                </div>
+                {item.ebaySearchQuery ? (
+                  <p className="text-xs text-muted-foreground mt-1 truncate" title={item.ebaySearchQuery}>
+                    Query: {item.ebaySearchQuery}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1 italic">Using item name</p>
+                )}
+                {item.ebayMarketLastCalculatedAt && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Updated {format(new Date(item.ebayMarketLastCalculatedAt), 'MMM d')}
+                  </p>
+                )}
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -285,7 +470,9 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
   const [searchQueryInput, setSearchQueryInput] = useState(item.ebaySearchQuery ?? '');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmDropAll, setConfirmDropAll] = useState(false);
-  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [confirmFlagSelected, setConfirmFlagSelected] = useState(false);
+  const [confirmUnflagSelected, setConfirmUnflagSelected] = useState(false);
+  const [confirmFlagAllButSelected, setConfirmFlagAllButSelected] = useState(false);
   const [showFlagged, setShowFlagged] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'price-high' | 'price-low'>('date');
   const [soldListingPreview, setSoldListingPreview] = useState<{
@@ -326,15 +513,56 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
     },
   });
 
-  const bulkDeleteMutation = useMutation({
-    mutationFn: (ids: string[]) => adminAPI.bulkDeleteEbaySoldListings(ids),
-    onSuccess: (result) => {
-      toast({ title: 'Deleted', description: `Removed ${result.deleted} listing${result.deleted !== 1 ? 's' : ''}.` });
+  const bulkModerateMutation = useMutation({
+    mutationFn: async ({ ids, isInaccurate, reason }: { 
+      ids: string[]; 
+      isInaccurate: boolean; 
+      reason?: string;
+    }) => {
+      const BATCH_SIZE = 200;
+      const batches: string[][] = [];
+      
+      // Split into batches of 200
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        batches.push(ids.slice(i, i + BATCH_SIZE));
+      }
+      
+      let totalUpdated = 0;
+      
+      // Process batches sequentially
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        const result = await adminAPI.bulkModerateEbaySoldListings(batch, isInaccurate, reason);
+        totalUpdated += result.updated;
+        
+        // Show progress for multi-batch operations
+        if (batches.length > 1) {
+          const action = isInaccurate ? 'Flagging' : 'Unflagging';
+          toast({ 
+            title: `${action}...`, 
+            description: `Processed ${totalUpdated} of ${ids.length} listings (batch ${i + 1}/${batches.length})` 
+          });
+        }
+      }
+      
+      return { updated: totalUpdated };
+    },
+    onSuccess: (result, variables) => {
+      const action = variables.isInaccurate ? 'Flagged' : 'Unflagged';
+      toast({ 
+        title: 'Completed', 
+        description: `${action} ${result.updated} listing${result.updated !== 1 ? 's' : ''}.` 
+      });
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: listingsQueryKey });
     },
-    onError: () => {
-      toast({ title: 'Error', description: 'Failed to delete listings.', variant: 'destructive' });
+    onError: (_, variables) => {
+      const action = variables.isInaccurate ? 'flag' : 'unflag';
+      toast({ 
+        title: 'Error', 
+        description: `Failed to ${action} listings.`, 
+        variant: 'destructive' 
+      });
     },
   });
 
@@ -498,7 +726,10 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowFlagged((v) => !v)}
+              onClick={() => {
+                setShowFlagged((v) => !v);
+                setSelectedIds(new Set()); // Clear selection when toggling view
+              }}
             >
               {showFlagged ? (
                 <><EyeOff className="w-3 h-3 mr-1" />Hide flagged ({flaggedCount})</>
@@ -508,19 +739,53 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
             </Button>
           )}
           {selectedIds.size > 0 && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setConfirmBulkDelete(true)}
-              disabled={bulkDeleteMutation.isPending}
-            >
-              {bulkDeleteMutation.isPending ? (
-                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              ) : (
-                <Trash2 className="w-3 h-3 mr-1" />
+            <>
+              {!showFlagged && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmFlagSelected(true)}
+                    disabled={bulkModerateMutation.isPending}
+                  >
+                    {bulkModerateMutation.isPending ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <Flag className="w-3 h-3 mr-1" />
+                    )}
+                    Flag Selected ({selectedIds.size})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmFlagAllButSelected(true)}
+                    disabled={bulkModerateMutation.isPending || selectedIds.size === displayedListings.length}
+                  >
+                    {bulkModerateMutation.isPending ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <Flag className="w-3 h-3 mr-1" />
+                    )}
+                    Flag All But Selected
+                  </Button>
+                </>
               )}
-              Delete Selected ({selectedIds.size})
-            </Button>
+              {showFlagged && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConfirmUnflagSelected(true)}
+                  disabled={bulkModerateMutation.isPending}
+                >
+                  {bulkModerateMutation.isPending ? (
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  ) : (
+                    <Flag className="w-3 h-3 mr-1" />
+                  )}
+                  Unflag Selected ({selectedIds.size})
+                </Button>
+              )}
+            </>
           )}
         </div>
         <Button
@@ -590,25 +855,85 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk delete confirm */}
-      <AlertDialog open={confirmBulkDelete} onOpenChange={setConfirmBulkDelete}>
+      {/* Flag selected confirm */}
+      <AlertDialog open={confirmFlagSelected} onOpenChange={setConfirmFlagSelected}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedIds.size} listing{selectedIds.size !== 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogTitle>Flag {selectedIds.size} listing{selectedIds.size !== 1 ? 's' : ''}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the selected {selectedIds.size} listing{selectedIds.size !== 1 ? 's' : ''}. This cannot be undone.
+              This will mark the selected {selectedIds.size} listing{selectedIds.size !== 1 ? 's' : ''} as inaccurate. {selectedIds.size !== 1 ? 'They' : 'It'} will be excluded from market data calculations.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
-                setConfirmBulkDelete(false);
-                bulkDeleteMutation.mutate([...selectedIds]);
+                setConfirmFlagSelected(false);
+                bulkModerateMutation.mutate({
+                  ids: [...selectedIds],
+                  isInaccurate: true,
+                  reason: 'Flagged by admin',
+                });
               }}
             >
-              Delete
+              Flag
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unflag selected confirm */}
+      <AlertDialog open={confirmUnflagSelected} onOpenChange={setConfirmUnflagSelected}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unflag {selectedIds.size} listing{selectedIds.size !== 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will restore the selected {selectedIds.size} listing{selectedIds.size !== 1 ? 's' : ''} as accurate. {selectedIds.size !== 1 ? 'They' : 'It'} will be included in market data calculations again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmUnflagSelected(false);
+                bulkModerateMutation.mutate({
+                  ids: [...selectedIds],
+                  isInaccurate: false,
+                });
+              }}
+            >
+              Unflag
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Flag all but selected confirm */}
+      <AlertDialog open={confirmFlagAllButSelected} onOpenChange={setConfirmFlagAllButSelected}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Flag all except {selectedIds.size} selected?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will flag {displayedListings.length - selectedIds.size} listing{displayedListings.length - selectedIds.size !== 1 ? 's' : ''} as inaccurate.
+              The {selectedIds.size} selected listing{selectedIds.size !== 1 ? 's' : ''} will remain unmarked (accurate).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const idsToFlag = displayedListings
+                  .filter((l) => !selectedIds.has(l.id))
+                  .map((l) => l.id);
+                setConfirmFlagAllButSelected(false);
+                bulkModerateMutation.mutate({
+                  ids: idsToFlag,
+                  isInaccurate: true,
+                  reason: 'Bulk flagged by admin (kept selected accurate listings)',
+                });
+              }}
+            >
+              Flag {displayedListings.length - selectedIds.size}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

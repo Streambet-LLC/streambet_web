@@ -74,7 +74,6 @@ export const EbayDataPanel = () => {
       ...baseSocials,
       [key]: String(value),
     };
-
     updateSettingsMutation.mutate(nextSocials);
   };
 

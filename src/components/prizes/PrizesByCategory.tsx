@@ -37,6 +37,7 @@ export interface Prize {
   watcherCount?: number;
   isWatching?: boolean;
   ebayMarketLastCalculatedAt?: string | null;
+  showEbayAvgPublicly?: boolean;
   /** When set to 'auction', render AuctionCard and use the `auction` field. */
   saleType?: PrizeSaleType;
   /** Live auction summary; required when saleType === 'auction'. */
