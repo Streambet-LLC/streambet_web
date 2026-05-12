@@ -41,7 +41,6 @@ import Leaderboard from './pages/Leaderboard';
 import { CookiesProvider } from 'react-cookie';
 import { SolanaWalletProvider } from '@/integrations/solana/WalletProvider';
 import { RequireWalletConnectModal } from '@/components/crypto/RequireWalletConnectModal';
-import SellerApplication from './pages/SellerApplication';
 import Prizes from './pages/Prizes';
 import Redemptions from './pages/Redemptions';
 import HowToPlay from './pages/HowToPlay';
@@ -111,7 +110,6 @@ const App = () => {
                                   element={<Transactions key="betting-redirect" />}
                                 />
                                 <Route path="/settings" element={<Settings />} />
-                                <Route path="/seller-application" element={<SellerApplication />} />
                                 <Route path="/seller/shop/manage" element={<SellerShopManage />} />
                                 <Route path="/daily-spin" element={<DailySpin />} />
                                 <Route path="/inbox" element={<Inbox />} />

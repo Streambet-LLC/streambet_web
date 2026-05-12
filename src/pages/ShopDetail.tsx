@@ -17,6 +17,9 @@ import { PublicUserProfile } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 import { ProBadge } from '@/components/pro/ProBadge';
 import RatingSummary from '@/components/reviews/RatingSummary';
+import { toast } from '@/hooks/use-toast';
+import { useStripeStatus, isStripePending } from '@/hooks/useStripeStatus';
+import { Clock } from 'lucide-react';
 
 const shopSocialsMapping = {
   instagram: {
@@ -105,6 +108,12 @@ export default function ShopDetail() {
     (isOwnShop ? (session?.socials ?? null) : null);
 
   const isCardCadeShop = username?.toLowerCase() === 'cardcade';
+
+  const [isGeneratingStripeLink, setIsGeneratingStripeLink] = useState(false);
+  const { data: stripeStatus } = useStripeStatus(
+    !!isOwnShop && !isCardCadeShop && !session?.sellerOnboardingCompleted
+  );
+  const stripePending = isStripePending(stripeStatus);
 
   // Filter to only show slabs and sealed with stock
   // CardCade shop items come from redemptions, so don't filter by showOnShop
@@ -248,6 +257,51 @@ export default function ShopDetail() {
               >
                 <Mail className="h-4 w-4" />
                 <span className="hidden md:inline">Message</span>
+              </Button>
+            )}
+
+            {/* Complete Stripe Onboarding — own shop only, until Stripe is verified */}
+            {isOwnShop && !isCardCadeShop && !session?.sellerOnboardingCompleted && (
+              <Button
+                onClick={async () => {
+                  if (isGeneratingStripeLink) return;
+                  setIsGeneratingStripeLink(true);
+                  try {
+                    const data = await api.creator.generateAccountLink();
+                    const url = typeof data === 'string' ? data : (data?.data ?? data?.url);
+                    if (!url) throw new Error('No onboarding URL returned');
+                    window.location.replace(url);
+                  } catch (err: any) {
+                    console.error('[Stripe Onboarding] Failed:', err);
+                    toast({
+                      title: 'Unable to start onboarding',
+                      description:
+                        err?.response?.data?.message ||
+                        err?.message ||
+                        'Please try again or contact support.',
+                      variant: 'destructive',
+                    });
+                    setIsGeneratingStripeLink(false);
+                  }
+                }}
+                disabled={isGeneratingStripeLink}
+                size="sm"
+                className="flex items-center gap-2 whitespace-nowrap md:px-4 bg-yellow-500 text-black hover:bg-yellow-400"
+              >
+                {isGeneratingStripeLink ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : stripePending ? (
+                  <Clock className="h-4 w-4" />
+                ) : (
+                  <ExternalLink className="h-4 w-4" />
+                )}
+                <span className="hidden md:inline">
+                  {isGeneratingStripeLink
+                    ? 'Redirecting…'
+                    : stripePending
+                      ? 'Pending Stripe Review'
+                      : 'Complete Onboarding'}
+                </span>
               </Button>
             )}
 

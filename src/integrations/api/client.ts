@@ -1047,10 +1047,7 @@ export const adminAPI = {
     return response.data;
   },
 
-  approveEbaySoldListingReport: async (
-    listingId: string,
-    reason?: string
-  ) => {
+  approveEbaySoldListingReport: async (listingId: string, reason?: string) => {
     const response = await apiClient.post(
       `/admin/prizes/ebay-sold-listings/${listingId}/report/approve`,
       { reason }
@@ -1083,23 +1080,18 @@ export const adminAPI = {
     itemId: string,
     ebaySearchQuery: string | null
   ): Promise<{ id: string; ebaySearchQuery: string | null }> => {
-    const response = await apiClient.patch(
-      `/admin/prizes/items/${itemId}/ebay-search-query`,
-      { ebaySearchQuery }
-    );
+    const response = await apiClient.patch(`/admin/prizes/items/${itemId}/ebay-search-query`, {
+      ebaySearchQuery,
+    });
     return response.data;
   },
 
-  deleteAllItemEbaySoldListings: async (
-    itemId: string
-  ): Promise<{ deleted: number }> => {
+  deleteAllItemEbaySoldListings: async (itemId: string): Promise<{ deleted: number }> => {
     const response = await apiClient.delete(`/admin/prizes/items/${itemId}/ebay-sold-listings`);
     return response.data;
   },
 
-  bulkDeleteEbaySoldListings: async (
-    listingIds: string[]
-  ): Promise<{ deleted: number }> => {
+  bulkDeleteEbaySoldListings: async (listingIds: string[]): Promise<{ deleted: number }> => {
     const response = await apiClient.delete('/admin/prizes/ebay-sold-listings/bulk', {
       data: { listingIds },
     });
@@ -1124,7 +1116,9 @@ export const adminAPI = {
     return response.data;
   },
 
-  getMigratePsaGradeFlagsStatus: async (jobId: string): Promise<{
+  getMigratePsaGradeFlagsStatus: async (
+    jobId: string
+  ): Promise<{
     jobId: string;
     state: string;
     progress: number;
@@ -1132,7 +1126,9 @@ export const adminAPI = {
     totalItems: number;
     result?: any;
   }> => {
-    const response = await apiClient.get(`/admin/ebay-market/migrate-psa-grade-flags/${jobId}/status`);
+    const response = await apiClient.get(
+      `/admin/ebay-market/migrate-psa-grade-flags/${jobId}/status`
+    );
     return response.data;
   },
 
@@ -1315,24 +1311,23 @@ export const adminAPI = {
   },
 
   // Application Management
-  getAllApplications: async (params?: {
+  getAllApplications: async (_params?: {
     applicationType?: 'creator' | 'seller';
     status?: 'pending' | 'approved' | 'rejected';
     page?: number;
     limit?: number;
   }) => {
-    const response = await apiClient.get('/admin/applications', { params });
-    return response.data;
+    // Endpoint removed when sellers became self-serve. Stub kept so any
+    // stale callers compile but get an empty result.
+    return { data: [], total: 0, page: 1, limit: 0, totalPages: 0 };
   },
 
-  approveApplication: async (id: string) => {
-    const response = await apiClient.patch(`/admin/applications/${id}/approve`);
-    return response.data;
+  approveApplication: async (_id: string) => {
+    return null;
   },
 
-  rejectApplication: async (id: string) => {
-    const response = await apiClient.patch(`/admin/applications/${id}/reject`);
-    return response.data;
+  rejectApplication: async (_id: string) => {
+    return null;
   },
 
   getPendingOnboardingSellers: async () => {
@@ -1435,31 +1430,15 @@ export const adminAPI = {
   },
 };
 
-// Creator API (seller application + Stripe connect only — creator role removed)
+// Creator API (Stripe Connect link only — seller application + creator role removed)
 export const creatorAPI = {
   generateAccountLink: async () => {
     const response = await apiClient.post('/creator/create-connect-link');
 
     return response.data;
   },
-
-  createCreatorApplication: async (payload: any) => {
-    const response = await apiClient.post(`/creator/application`, payload);
-    return response.data;
-  },
-
-  updateCreatorApplication: async (payload: any) => {
-    const response = await apiClient.patch(`/creator/application`, payload);
-    return response.data;
-  },
-
-  getCreatorApplication: async () => {
-    const response = await apiClient.get(`/creator/application`);
-    return response.data;
-  },
-
-  cancelCreatorApplication: async () => {
-    const response = await apiClient.delete(`/creator/application`);
+  getMyStripeStatus: async () => {
+    const response = await apiClient.get('/creator/stripe-status');
     return response.data;
   },
 };

@@ -1,33 +1,76 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { AlertTriangle, ExternalLink, X, Loader2 } from 'lucide-react';
+import { AlertTriangle, ExternalLink, X, Loader2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthContext } from '@/contexts/AuthContext';
 import api from '@/integrations/api/client';
 import { toast } from '@/hooks/use-toast';
+import { useStripeStatus, isStripePending } from '@/hooks/useStripeStatus';
 
 /**
  * Banner shown to approved sellers who haven't completed Stripe onboarding.
  * Displays at the top of every page via MainLayout.
  *
- * Dismissal is per-route only: the banner re-appears every time the user
- * navigates to a new page, ensuring they can't permanently miss it.
+ * Dismissal is persisted in localStorage keyed by the current onboarding
+ * status (e.g. "none" vs "pending"). When the underlying status changes
+ * — for example, the user finally submits Stripe details and moves from
+ * "none" to "pending" — the banner re-appears so we can announce the new
+ * state, but we won't nag them about the same state twice.
  */
+const DISMISS_STORAGE_KEY = 'sellerOnboardingBannerDismissed';
+
+type BannerStatus = 'none' | 'pending';
+
 export const SellerOnboardingBanner = () => {
   const { session } = useAuthContext();
-  const location = useLocation();
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissedKey, setDismissedKey] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return window.localStorage.getItem(DISMISS_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(false);
 
-  // Reset dismissal on every route change so the user keeps seeing it
-  useEffect(() => {
-    setDismissed(false);
-  }, [location.pathname]);
+  // Live Stripe status — lets us show "Pending Stripe Review" instead of
+  // "Complete Onboarding" when the user has submitted their details but
+  // Stripe hasn't fully enabled charges/payouts yet.
+  const isCandidate = !!session && !!session.isSeller && !session.sellerOnboardingCompleted;
+  const { data: stripeStatus } = useStripeStatus(isCandidate);
+  const pending = isStripePending(stripeStatus);
 
-  // Only show for approved sellers who haven't finished Stripe onboarding
-  if (!session || !session.isSeller || session.sellerOnboardingCompleted || dismissed) {
+  const status: BannerStatus = pending ? 'pending' : 'none';
+  const dismissKey = session?.id ? `${session.id}:${status}` : null;
+  const isDismissed = !!dismissKey && dismissedKey === dismissKey;
+
+  // If the status changed since the user last dismissed (e.g. they
+  // submitted Stripe details and moved from "none" -> "pending"), clear
+  // the stored dismissal so the banner shows the new state.
+  useEffect(() => {
+    if (!dismissKey) return;
+    if (dismissedKey && dismissedKey !== dismissKey) {
+      try {
+        window.localStorage.removeItem(DISMISS_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+      setDismissedKey(null);
+    }
+  }, [dismissKey, dismissedKey]);
+
+  if (!isCandidate || isDismissed) {
     return null;
   }
+
+  const handleDismiss = () => {
+    if (!dismissKey) return;
+    try {
+      window.localStorage.setItem(DISMISS_STORAGE_KEY, dismissKey);
+    } catch {
+      /* ignore quota / privacy-mode errors */
+    }
+    setDismissedKey(dismissKey);
+  };
 
   const handleStartOnboarding = async () => {
     setLoading(true);
@@ -52,9 +95,13 @@ export const SellerOnboardingBanner = () => {
         <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 shrink-0" />
 
         <p className="flex-1 text-xs sm:text-sm text-yellow-200 min-w-0">
-          <span className="font-semibold">Finish setting up your shop!</span>{' '}
+          <span className="font-semibold">
+            {pending ? 'Stripe is reviewing your account.' : 'Finish setting up your shop!'}
+          </span>{' '}
           <span className="hidden sm:inline">
-            Complete Stripe onboarding to start accepting payments from buyers.
+            {pending
+              ? "We'll enable payments as soon as Stripe finishes verification. You can check status or update info anytime."
+              : 'Complete Stripe onboarding to start accepting payments from buyers.'}
           </span>
         </p>
 
@@ -67,14 +114,16 @@ export const SellerOnboardingBanner = () => {
         >
           {loading ? (
             <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+          ) : pending ? (
+            <Clock className="mr-1.5 h-3.5 w-3.5" />
           ) : (
             <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
           )}
-          {loading ? 'Redirecting…' : 'Complete Onboarding'}
+          {loading ? 'Redirecting…' : pending ? 'Pending Stripe Review' : 'Complete Onboarding'}
         </Button>
 
         <button
-          onClick={() => setDismissed(true)}
+          onClick={handleDismiss}
           className="p-1 rounded-md text-yellow-400/60 hover:text-yellow-300 hover:bg-yellow-500/10 transition-colors shrink-0"
           aria-label="Dismiss banner"
         >

@@ -20,6 +20,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '@/integrations/api/client';
+import { useStripeStatus, isStripePending } from '@/hooks/useStripeStatus';
 import { useToast } from '@/hooks/use-toast';
 import {
   Loader2,
@@ -55,7 +56,10 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { SellerOnboardingModal } from '@/components/seller/SellerOnboardingModal';
+import {
+  SellerOnboardingModal,
+  SellerOnboardingForm,
+} from '@/components/seller/SellerOnboardingModal';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { ItemImageGallery, type ItemImageInput } from '@/components/items/ItemImageGallery';
 import { IMAGE_UPLOAD_CONFIG } from '@/utils/imageUploadConstants';
@@ -131,7 +135,6 @@ interface SellerPurchasedOrder {
 }
 
 export default function SellerShopManage() {
-
   const { session } = useAuthContext();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -424,12 +427,19 @@ export default function SellerShopManage() {
     }
   }, [session, shopData, items, isEditingShopName, isCardCadeMode, cardcadeSettings]);
 
-  // Show onboarding modal if seller hasn't completed onboarding
+  // Show the onboarding modal whenever the user hasn't finished the
+  // in-app questionnaire yet. Covers two cases:
+  //   1. New aspiring sellers landing here from the "Become a Seller" CTA
+  //      (is_seller is still false — the modal flips it once submitted).
+  //   2. Existing sellers who somehow never completed the profile.
+  // CardCade-mode admins manage the platform shop, not their own, so skip.
   useEffect(() => {
-    if (session?.isSeller && !session?.sellerOnboardingCompleted) {
+    if (!session) return;
+    if (isCardCadeMode) return;
+    if (!session.sellerProfileCompleted) {
       setShowOnboardingModal(true);
     }
-  }, [session?.isSeller, session?.sellerOnboardingCompleted]);
+  }, [session, session?.sellerProfileCompleted, isCardCadeMode]);
 
   const resolveImagePayload = async (): Promise<{
     imageUrls: string[];
@@ -1274,10 +1284,17 @@ export default function SellerShopManage() {
     }
   };
 
+  const [isGeneratingStripeLink, setIsGeneratingStripeLink] = useState(false);
+  const { data: stripeStatus } = useStripeStatus(
+    !!session?.isSeller && !session?.sellerOnboardingCompleted && !isCardCadeMode
+  );
+  const stripePending = isStripePending(stripeStatus);
   const handleGenerateAccountLink = async () => {
+    setIsGeneratingStripeLink(true);
     try {
       if (session.stripeAccountConnected) {
         window.open('https://dashboard.stripe.com', '_blank');
+        setIsGeneratingStripeLink(false);
         return;
       }
       const data = await api.creator.generateAccountLink();
@@ -1294,6 +1311,7 @@ export default function SellerShopManage() {
           'Could not generate Stripe onboarding link. Please try again.',
         variant: 'destructive',
       });
+      setIsGeneratingStripeLink(false);
     }
   };
 
@@ -1322,17 +1340,34 @@ export default function SellerShopManage() {
       ? getThumbnailUrl(form.imageUrl)
       : '';
 
-  if (!session?.isSeller && !isCardCadeMode) {
+  // Non-sellers landing here come from the "Become a Seller" CTA. Render
+  // the onboarding form inline (no modal) so the only path forward is to
+  // complete the questionnaire, which flips is_seller server-side and
+  // then bounces them straight into Stripe Connect.
+  // Show the inline "Become a Seller" form only when the user has NOT
+  // yet completed the in-app questionnaire. Once they submit it, we flip
+  // both `sellerProfileCompleted` and `isSeller` server-side, so even if
+  // they bail on Stripe and come back, they land on the real shop manage
+  // page (with the Stripe banner) instead of being asked to fill the
+  // questionnaire all over again.
+  if (!session?.sellerProfileCompleted && !isCardCadeMode) {
     return (
       <MainLayout>
-        <Card>
-          <CardHeader>
-            <CardTitle>Seller shop access required</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Your account is not approved as a seller yet.
-          </CardContent>
-        </Card>
+        <div className="max-w-3xl mx-auto py-8 space-y-8">
+          <header className="space-y-3">
+            <h1 className="text-3xl font-bold tracking-tight">Become a Seller</h1>
+            <p className="text-base text-muted-foreground">
+              Tell us a little about yourself to open your shop. We'll then send you to Stripe to
+              set up payouts.
+            </p>
+          </header>
+
+          <SellerOnboardingForm
+            onComplete={() => {
+              queryClient.invalidateQueries({ queryKey: ['session'] });
+            }}
+          />
+        </div>
       </MainLayout>
     );
   }
@@ -3153,17 +3188,24 @@ export default function SellerShopManage() {
           </>
         ) : !isCardCadeMode ? (
           <div className="flex flex-col items-start gap-3">
-            <p className="text-red-500">
-              Please complete Stripe Onboarding and wait for your account to be verified before you
-              can add products. This usually occurs within 1 hour after onboarding.
+            <p className={stripePending ? 'text-yellow-500' : 'text-red-500'}>
+              {stripePending
+                ? "Stripe is reviewing your account. We'll enable product listings as soon as verification finishes — usually within an hour. You can check status or update your info from Stripe anytime."
+                : 'Please complete Stripe Onboarding and wait for your account to be verified before you can add products. This usually occurs within 1 hour after onboarding.'}
             </p>
             <Button
               onClick={handleGenerateAccountLink}
+              disabled={isGeneratingStripeLink}
               className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
             >
-              {session?.stripeAccountConnected
-                ? 'Manage Stripe Account'
-                : 'Complete Stripe Onboarding'}
+              {isGeneratingStripeLink && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {isGeneratingStripeLink
+                ? 'Redirecting…'
+                : session?.stripeAccountConnected
+                  ? 'Manage Stripe Account'
+                  : stripePending
+                    ? 'Pending Stripe Review'
+                    : 'Complete Stripe Onboarding'}
             </Button>
           </div>
         ) : null}
