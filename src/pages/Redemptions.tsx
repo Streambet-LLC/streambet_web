@@ -1,7 +1,7 @@
 import { MainLayout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePrizeTiers } from '@/hooks/usePrizeConfig';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Info } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -169,14 +169,45 @@ export default function Redemptions() {
 
   return (
     <MainLayout>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-semibold">Redemptions</h2>
-          <h2 className="text-sm text-gray-500">
-            Redeem your cadecoins for sealed wax! Use coins, USD, or a mix of both!
-          </h2>
-        </div>
-      </div>
+      {/* Info Banner */}
+      <Card className="mb-6 bg-[#11151d] border-[#2A2F3A]">
+        <CardContent className="p-6">
+          <div className="flex gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Info className="w-5 h-5 text-primary" />
+              </div>
+            </div>
+            <div className="flex-1 space-y-3">
+              <h3 className="text-lg font-semibold text-white">How Prizes Work</h3>
+              <div className="space-y-2 text-sm text-[#FFFFFFBF]">
+                <p>
+                  You've earned CadeCoins by playing! Now redeem them for sealed wax and trading
+                  card products.
+                </p>
+                <p>
+                  You can pay with 100% CadeCoins, 100% USD, or any mix of both. All items ship
+                  directly to you.
+                </p>
+              </div>
+              {session && (
+                <div className="mt-4 pt-4 border-t border-[#2A2F3A]">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-[#FFFFFFBF]">Your Balance:</span>
+                    <span className="font-bold text-primary">
+                      {userCadeCoins.toLocaleString()} CadeCoins
+                    </span>
+                    <span className="text-green-500 font-semibold">
+                      = ${(userCadeCoins / 50).toFixed(2)} USD
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {isLoading ? (
         <Card>
           <CardContent className="flex items-center justify-center py-12">

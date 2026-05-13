@@ -3,8 +3,6 @@ import { Button } from '../ui/button';
 import { getThumbnailUrl } from '@/utils/helper';
 import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Textarea } from '../ui/textarea';
 import { motion } from 'framer-motion';
 import {
   ShoppingCart,
@@ -18,7 +16,6 @@ import {
   Pencil,
   Eye,
   Heart,
-  AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
@@ -50,20 +47,6 @@ interface PrizeCardProps {
 
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_SUPPRESS_CLICK_MS = 350;
-
-const PRICE_CHART_WIDTH = 620;
-const PRICE_CHART_HEIGHT = 220;
-const PRICE_CHART_PADDING = { top: 12, right: 12, bottom: 28, left: 52 };
-
-const REPORT_REASON_OPTIONS = [
-  { value: 'wrong-item', label: 'Wrong item' },
-  { value: 'wrong-condition', label: 'Wrong condition/grade' },
-  { value: 'title-mismatch', label: 'Title/description mismatch' },
-  { value: 'image-mismatch', label: 'Image does not match listing' },
-  { value: 'price-issue', label: 'Suspicious or unrealistic price' },
-  { value: 'duplicate', label: 'Duplicate listing' },
-  { value: 'other', label: 'Other' },
-] as const;
 
 const normalizePrizeImageUrls = (prize: Prize): string[] => {
   const uniqueUrls: string[] = [];
@@ -107,24 +90,6 @@ const getSafeImageIndex = (index: number, imageCount: number): number => {
 
   return index;
 };
-
-const formatShortDate = (dateValue: string | null): string => {
-  if (!dateValue) {
-    return 'n/a';
-  }
-
-  const parsed = new Date(dateValue);
-  if (Number.isNaN(parsed.getTime())) {
-    return 'n/a';
-  }
-
-  return parsed.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-const formatChartPrice = (value: number): string => `$${value.toFixed(2)}`;
 
 const resolveEbayFullResolutionImageUrl = (imageUrl: string): string => {
   try {
@@ -170,24 +135,9 @@ export default function PrizeCard({
   const [modalImageIndex, setModalImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [reportingListingId, setReportingListingId] = useState<string | null>(null);
-  const [reportDialogTarget, setReportDialogTarget] = useState<{
-    listingId: string;
-    soldTitle: string;
-    imageUrl: string | null;
-    salePrice: number;
-    dateSold: string | null;
-  } | null>(null);
-  const [selectedReportReason, setSelectedReportReason] = useState<string>('');
-  const [reportReasonDetails, setReportReasonDetails] = useState('');
   const [syncingMarketData, setSyncingMarketData] = useState(false);
-  const [chartWindow, setChartWindow] = useState<'7d' | '30d' | 'all'>('30d');
-  const [activeChartPointId, setActiveChartPointId] = useState<string | null>(null);
-  const [highlightedListingId, setHighlightedListingId] = useState<string | null>(null);
-  const [listingsSortBy, setListingsSortBy] = useState<'date' | 'price-high' | 'price-low'>('date');
-  const [displayedListingsCount, setDisplayedListingsCount] = useState(20);
   const queryClient = useQueryClient();
   const inlineTouchStartXRef = useRef<number | null>(null);
-  const soldListingsHistoryRef = useRef<HTMLDivElement>(null);
   const modalTouchStartXRef = useRef<number | null>(null);
   const suppressNextInlineOpenRef = useRef(false);
 
@@ -467,217 +417,13 @@ export default function PrizeCard({
 
   const marketHistoryQuery = useQuery({
     queryKey: ['ebay-market-history', prize.id],
-    queryFn: () => prizeAPI.getEbayMarketHistory(prize.id, 120),
+    queryFn: () => prizeAPI.getEbayMarketHistory(prize.id, 5),
     enabled: showMarketModal,
     staleTime: 1000 * 60 * 2,
     retry: 1,
   });
 
   const marketSummary = marketSummaryQuery.data;
-  const latestAvg = marketSummary?.averagePrice ?? null;
-  const latestPercentDiff = marketSummary?.percentDifference ?? null;
-  const cardLastCalculated =
-    marketSummary?.lastCalculatedAt || prize.ebayMarketLastCalculatedAt || null;
-
-  const chartData = useMemo(() => {
-    const allRows = (marketHistoryQuery.data?.listings ?? [])
-      .slice()
-      .reverse()
-      .filter((row) => Number.isFinite(row.salePrice));
-
-    if (!allRows.length) {
-      return null;
-    }
-
-    let rows = allRows;
-    
-    if (chartWindow !== 'all') {
-      const now = Date.now();
-      const days = chartWindow === '7d' ? 7 : 30;
-      const windowMs = days * 24 * 60 * 60 * 1000;
-
-      const filteredRows = allRows.filter((row) => {
-        if (!row.dateSold) {
-          return true;
-        }
-        const soldTs = new Date(row.dateSold).getTime();
-        return Number.isFinite(soldTs) && now - soldTs <= windowMs;
-      });
-
-      rows = filteredRows.length ? filteredRows : allRows;
-    }
-    if (!rows.length) {
-      return null;
-    }
-
-    const values = rows.map((row) => row.salePrice);
-    const minY = Math.min(...values);
-    const maxY = Math.max(...values);
-    const sortedValues = [...values].sort((a, b) => a - b);
-    const medianY =
-      sortedValues.length % 2 === 0
-        ? (sortedValues[sortedValues.length / 2 - 1] + sortedValues[sortedValues.length / 2]) / 2
-        : sortedValues[Math.floor(sortedValues.length / 2)];
-
-    const innerWidth = PRICE_CHART_WIDTH - PRICE_CHART_PADDING.left - PRICE_CHART_PADDING.right;
-    const innerHeight = PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.top - PRICE_CHART_PADDING.bottom;
-    const yRange = maxY - minY || 1;
-    const xRange = Math.max(rows.length - 1, 1);
-
-    const points = rows.map((row, index) => {
-      const x = PRICE_CHART_PADDING.left + (index / xRange) * innerWidth;
-      const y =
-        PRICE_CHART_PADDING.top +
-        innerHeight -
-        ((row.salePrice - minY) / yRange) * innerHeight;
-      return {
-        id: row.id,
-        x,
-        y,
-        row,
-      };
-    });
-
-    return {
-      points,
-      polyline: points.map((point) => `${point.x},${point.y}`).join(' '),
-      minY,
-      maxY,
-      medianY,
-      oldestLabel: formatShortDate(rows[0]?.dateSold ?? null),
-      newestLabel: formatShortDate(rows[rows.length - 1]?.dateSold ?? null),
-      latestPoint: points[points.length - 1],
-    };
-  }, [marketHistoryQuery.data?.listings, chartWindow]);
-
-  const activeChartPoint = useMemo(() => {
-    if (!chartData) {
-      return null;
-    }
-    return chartData.points.find((point) => point.id === activeChartPointId) ?? null;
-  }, [chartData, activeChartPointId]);
-
-  const sortedListings = useMemo(() => {
-    const listings = marketHistoryQuery.data?.listings ?? [];
-    const sorted = [...listings];
-    
-    if (listingsSortBy === 'date') {
-      sorted.sort((a, b) => {
-        const dateA = a.dateSold ? new Date(a.dateSold).getTime() : 0;
-        const dateB = b.dateSold ? new Date(b.dateSold).getTime() : 0;
-        return dateB - dateA; // Most recent first
-      });
-    } else if (listingsSortBy === 'price-high') {
-      sorted.sort((a, b) => b.salePrice - a.salePrice);
-    } else if (listingsSortBy === 'price-low') {
-      sorted.sort((a, b) => a.salePrice - b.salePrice);
-    }
-    
-    return sorted;
-  }, [marketHistoryQuery.data?.listings, listingsSortBy]);
-
-  useEffect(() => {
-    setActiveChartPointId(null);
-    setDisplayedListingsCount(20); // Reset display count when data changes
-  }, [chartWindow, marketHistoryQuery.data?.listings]);
-
-  const handleChartPointClick = (pointId: string) => {
-    setHighlightedListingId(pointId);
-    
-    // Check if the clicked listing is beyond the current display count
-    const listingIndex = sortedListings.findIndex(listing => listing.id === pointId);
-    if (listingIndex !== -1 && listingIndex >= displayedListingsCount) {
-      // Auto-expand to include the clicked listing
-      setDisplayedListingsCount(listingIndex + 1);
-    }
-    
-    // Scroll to the sold listings history section
-    setTimeout(() => {
-      soldListingsHistoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      
-      // Find the specific listing element and scroll it into view
-      const listingElement = document.getElementById(`sold-listing-${pointId}`);
-      if (listingElement) {
-        setTimeout(() => {
-          listingElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-      }
-    }, 100);
-    
-    // Clear highlight after 3 seconds
-    setTimeout(() => {
-      setHighlightedListingId(null);
-    }, 3000);
-  };
-
-  const closeReportDialog = () => {
-    setReportDialogTarget(null);
-    setSelectedReportReason('');
-    setReportReasonDetails('');
-  };
-
-  const handleOpenReportDialog = (listing: {
-    id: string;
-    soldTitle: string;
-    imageUrl: string | null;
-    salePrice: number;
-    dateSold: string | null;
-  }) => {
-    if (!session) {
-      toast({
-        title: 'Sign in required',
-        description: 'Please sign in to report inaccurate market data.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setReportDialogTarget({
-      listingId: listing.id,
-      soldTitle: listing.soldTitle,
-      imageUrl: listing.imageUrl,
-      salePrice: listing.salePrice,
-      dateSold: listing.dateSold,
-    });
-  };
-
-  const handleSubmitReport = async () => {
-    if (!reportDialogTarget || !selectedReportReason) {
-      return;
-    }
-
-    const selectedOption = REPORT_REASON_OPTIONS.find(
-      option => option.value === selectedReportReason,
-    );
-    const details = reportReasonDetails.trim();
-    const reason = details
-      ? `${selectedOption?.label ?? 'Other'}: ${details}`
-      : selectedOption?.label;
-
-    setReportingListingId(reportDialogTarget.listingId);
-    try {
-      await prizeAPI.reportEbaySoldListing(reportDialogTarget.listingId, {
-        reason: reason || undefined,
-      });
-      toast({
-        title: 'Reported',
-        description: 'Thanks! This listing will be hidden from your results while pending admin review.',
-      });
-      closeReportDialog();
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['ebay-market-summary', prize.id] }),
-        queryClient.invalidateQueries({ queryKey: ['ebay-market-history', prize.id] }),
-      ]);
-    } catch (error) {
-      toast({
-        title: 'Unable to report listing',
-        description: 'Please try again in a moment.',
-        variant: 'destructive',
-      });
-    } finally {
-      setReportingListingId(null);
-    }
-  };
 
   const handleManualMarketSync = async () => {
     if (!isAdminUser) {
@@ -798,14 +544,24 @@ export default function PrizeCard({
             <p className="text-sm text-muted-foreground mb-2">{prize.description}</p>
           )}
           {typeof prize.amount === 'number' && canBuy && (
-            <p className="text-sm text-muted-foreground mb-2">
-              {prize.amount.toLocaleString('en-US')} coins • ${(prize.amount / 50).toFixed(2)} USD
+            <p className="text-sm mb-2">
+              <span className="text-primary font-semibold">
+                {prize.amount.toLocaleString('en-US')} CadeCoins
+              </span>
+              <span className="text-muted-foreground"> • </span>
+              <span className="text-green-500 font-semibold">
+                ${(prize.amount / 50).toFixed(2)} USD
+              </span>
             </p>
           )}
           {shouldShowEbayBox && (
             <button
               type="button"
-              className="w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
+              className={`w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-center transition-colors ${
+                canShowEbayData && !marketSummaryQuery.isLoading
+                  ? 'hover:border-[#7AFF14]/50 cursor-pointer'
+                  : 'cursor-not-allowed opacity-75'
+              }`}
               onClick={e => {
                 e.stopPropagation();
                 if (canShowEbayData) {
@@ -813,36 +569,14 @@ export default function PrizeCard({
                 }
               }}
             >
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
-              {marketSummaryQuery.isLoading ? (
-                <div className="mt-1 text-xs text-muted-foreground">Loading market data...</div>
-              ) : canShowEbayData && latestAvg !== null ? (
-                <div className="mt-1">
-                  <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
-                  {marketSummary?.listingPrice != null && (
-                    <div
-                      className={cn(
-                        'text-[10px] font-medium mt-0.5',
-                        latestPercentDiff === null
-                          ? 'text-muted-foreground'
-                          : latestPercentDiff >= 0
-                            ? 'text-orange-400'
-                            : 'text-emerald-400'
-                      )}
-                    >
-                      {latestPercentDiff === null
-                        ? 'n/a'
-                        : `Listed $${Math.abs(marketSummary.listingPrice - latestAvg).toFixed(2)} ${latestPercentDiff >= 0 ? 'above' : 'below'} eBay market`}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="mt-1 text-sm font-medium text-muted-foreground">Coming Soon</div>
-              )}
-              <div className="mt-1 text-[10px] text-muted-foreground">
-                {canShowEbayData && cardLastCalculated
-                  ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
-                  : ''}
+              <div className="text-sm font-medium text-white">
+                {marketSummaryQuery.isLoading ? (
+                  <span className="text-muted-foreground">Loading eBay sales...</span>
+                ) : canShowEbayData ? (
+                  "See recent eBay sales"
+                ) : (
+                  <span className="text-muted-foreground">eBay data coming soon</span>
+                )}
               </div>
             </button>
           )}
@@ -1099,7 +833,11 @@ export default function PrizeCard({
           {shouldShowEbayBox && (
             <button
               type="button"
-              className="mt-1 rounded-md border border-[#2A2F3A] bg-[#11151d] px-2.5 py-2 text-left transition-colors hover:border-[#7AFF14]/50"
+              className={`mt-1 rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-center transition-colors ${
+                canShowEbayData && !marketSummaryQuery.isLoading
+                  ? 'hover:border-[#7AFF14]/50 cursor-pointer'
+                  : 'cursor-not-allowed opacity-75'
+              }`}
               onClick={e => {
                 e.stopPropagation();
                 if (canShowEbayData) {
@@ -1107,36 +845,14 @@ export default function PrizeCard({
                 }
               }}
             >
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">eBay sold avg (latest 10)</div>
-              {marketSummaryQuery.isLoading ? (
-                <div className="mt-1 text-[11px] text-muted-foreground">Loading market data...</div>
-              ) : canShowEbayData && latestAvg !== null ? (
-                <div className="mt-1">
-                  <span className="text-sm font-semibold text-[#7AFF14]">${latestAvg.toFixed(2)}</span>
-                  {marketSummary?.listingPrice != null && (
-                    <div
-                      className={cn(
-                        'text-[10px] font-medium mt-0.5',
-                        latestPercentDiff === null
-                          ? 'text-muted-foreground'
-                          : latestPercentDiff >= 0
-                            ? 'text-orange-400'
-                            : 'text-emerald-400'
-                      )}
-                    >
-                      {latestPercentDiff === null
-                        ? 'n/a'
-                        : `Listed $${Math.abs(marketSummary.listingPrice - latestAvg).toFixed(2)} ${latestPercentDiff >= 0 ? 'above' : 'below'} eBay market`}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="mt-1 text-sm font-medium text-muted-foreground">Coming Soon</div>
-              )}
-              <div className="mt-1 text-[10px] text-muted-foreground">
-                {canShowEbayData && cardLastCalculated
-                  ? `Updated ${new Date(cardLastCalculated).toLocaleString()}`
-                  : ''}
+              <div className="text-sm font-medium text-white">
+                {marketSummaryQuery.isLoading ? (
+                  <span className="text-muted-foreground">Loading eBay sales...</span>
+                ) : canShowEbayData ? (
+                  "See recent eBay sales"
+                ) : (
+                  <span className="text-muted-foreground">eBay data coming soon</span>
+                )}
               </div>
             </button>
           )}
@@ -1371,335 +1087,83 @@ export default function PrizeCard({
 
       {/* Market Data Modal */}
       <Dialog open={showMarketModal} onOpenChange={setShowMarketModal}>
-        <DialogContent className="max-w-3xl bg-[#0D0D0D] border-[#1E242E]">
-          <DialogTitle className="text-white">Market Data: {prize.name}</DialogTitle>
+        <DialogContent className="max-w-2xl bg-[#0D0D0D] border-[#1E242E]">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-white">Recent eBay Sales: {prize.name}</DialogTitle>
+            {isAdminUser && ebayManualSyncEnabled && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
+                disabled={syncingMarketData}
+                onClick={() => {
+                  void handleManualMarketSync();
+                }}
+              >
+                {syncingMarketData ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Fetching...
+                  </>
+                ) : (
+                  'Fetch Sold Data Now'
+                )}
+              </Button>
+            )}
+          </div>
 
-          <div className="space-y-4 max-h-[78vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
-                <div className="text-[11px] text-muted-foreground uppercase">Last 10 Sold Avg</div>
-                <div className="mt-1 text-lg font-semibold text-[#7AFF14]">
-                  {marketSummary?.averagePrice != null ? `$${marketSummary.averagePrice.toFixed(2)}` : '—'}
-                </div>
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+            {marketHistoryQuery.isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-[#7AFF14]" />
+                <span className="ml-2 text-sm text-muted-foreground">Loading sold listings...</span>
               </div>
-              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
-                <div className="text-[11px] text-muted-foreground uppercase">Diff vs Listing</div>
-                <div
-                  className={cn(
-                    'mt-1 text-sm font-semibold leading-snug',
-                    marketSummary?.percentDifference == null
-                      ? 'text-muted-foreground'
-                      : marketSummary.percentDifference >= 0
-                        ? 'text-orange-400'
-                        : 'text-emerald-400'
-                  )}
-                >
-                  {marketSummary?.percentDifference == null || marketSummary?.listingPrice == null || marketSummary?.averagePrice == null
-                    ? '—'
-                    : `Listed $${Math.abs(marketSummary.listingPrice - marketSummary.averagePrice).toFixed(2)} ${marketSummary.percentDifference >= 0 ? 'above' : 'below'} eBay market`}
-                </div>
-              </div>
-              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
-                <div className="text-[11px] text-muted-foreground uppercase">Last Calculated</div>
-                <div className="mt-1 text-sm font-medium text-white">
-                  {cardLastCalculated ? new Date(cardLastCalculated).toLocaleString() : '—'}
-                </div>
-              </div>
-            </div>
-
-            {marketSummary?.windows?.length ? (
-              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
-                <div className="text-sm font-semibold text-white mb-2">Window Averages</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                  {marketSummary.windows.map((w) => (
-                    <div key={w.window} className="rounded border border-[#2A2F3A] p-2">
-                      <div className="text-muted-foreground uppercase">{w.window}</div>
-                      <div className="text-[#7AFF14] font-medium mt-1">
-                        {w.averagePrice != null ? `$${w.averagePrice.toFixed(2)}` : '—'}
+            ) : (marketHistoryQuery.data?.listings?.length ?? 0) > 0 ? (
+              <>
+                {/* High/Avg/Low Price Summary */}
+                {(() => {
+                  const listings = marketHistoryQuery.data?.listings ?? [];
+                  const prices = listings.map(l => l.salePrice).filter(p => Number.isFinite(p));
+                  const highPrice = prices.length > 0 ? Math.max(...prices) : null;
+                  const lowPrice = prices.length > 0 ? Math.min(...prices) : null;
+                  const avgPrice = prices.length > 0 ? prices.reduce((sum, p) => sum + p, 0) / prices.length : null;
+                  
+                  return prices.length > 0 ? (
+                    <div className="rounded-md border border-[#2A2F3A] bg-[#121722] px-4 py-3">
+                      <div className="flex items-center justify-center gap-6 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">High: </span>
+                          <span className="font-semibold text-[#7AFF14]">${highPrice?.toFixed(2)}</span>
+                        </div>
+                        <div className="text-muted-foreground">•</div>
+                        <div>
+                          <span className="text-muted-foreground">Avg: </span>
+                          <span className="font-semibold text-[#7AFF14]">${avgPrice?.toFixed(2)}</span>
+                        </div>
+                        <div className="text-muted-foreground">•</div>
+                        <div>
+                          <span className="text-muted-foreground">Low: </span>
+                          <span className="font-semibold text-[#7AFF14]">${lowPrice?.toFixed(2)}</span>
+                        </div>
                       </div>
-                      <div className="text-muted-foreground">{w.soldCount} sold</div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
+                  ) : null;
+                })()}
 
-            <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="text-sm font-semibold text-white">Price Over Time</div>
-                <div className="flex items-center gap-2">
-                  <div className="inline-flex rounded-md border border-[#2A2F3A] bg-[#0B1018] p-0.5">
-                    {(['7d', '30d', 'all'] as const).map((windowKey) => (
-                      <button
-                        key={windowKey}
-                        type="button"
-                        onClick={() => setChartWindow(windowKey)}
-                        className={cn(
-                          'rounded px-2 py-1 text-[11px] font-medium transition-colors',
-                          chartWindow === windowKey
-                            ? 'bg-[#7AFF14] text-black'
-                            : 'text-muted-foreground hover:text-white'
-                        )}
-                      >
-                        {windowKey.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                  {isAdminUser && ebayManualSyncEnabled && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-2 text-xs border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
-                      disabled={syncingMarketData}
-                      onClick={() => {
-                        void handleManualMarketSync();
-                      }}
-                    >
-                      {syncingMarketData ? 'Fetching...' : 'Fetch Sold Data Now'}
-                    </Button>
-                  )}
-                </div>
-              </div>
-              {marketHistoryQuery.isLoading ? (
-                <div className="text-sm text-muted-foreground">Loading history...</div>
-              ) : chartData ? (
-                <div className="relative">
-                  <svg
-                    viewBox={`0 0 ${PRICE_CHART_WIDTH} ${PRICE_CHART_HEIGHT}`}
-                    className="w-full h-48 rounded bg-[#0B1018] border border-[#1F2531]"
-                    onMouseLeave={() => setActiveChartPointId(null)}
-                  >
-                    <line
-                      x1={PRICE_CHART_PADDING.left}
-                      y1={PRICE_CHART_PADDING.top}
-                      x2={PRICE_CHART_WIDTH - PRICE_CHART_PADDING.right}
-                      y2={PRICE_CHART_PADDING.top}
-                      stroke="#2A2F3A"
-                      strokeDasharray="3 3"
-                    />
-                    <line
-                      x1={PRICE_CHART_PADDING.left}
-                      y1={(PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom + PRICE_CHART_PADDING.top) / 2}
-                      x2={PRICE_CHART_WIDTH - PRICE_CHART_PADDING.right}
-                      y2={(PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom + PRICE_CHART_PADDING.top) / 2}
-                      stroke="#2A2F3A"
-                      strokeDasharray="3 3"
-                    />
-                    <line
-                      x1={PRICE_CHART_PADDING.left}
-                      y1={PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom}
-                      x2={PRICE_CHART_WIDTH - PRICE_CHART_PADDING.right}
-                      y2={PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom}
-                      stroke="#2A2F3A"
-                      strokeDasharray="3 3"
-                    />
-
-                    <text x="6" y={PRICE_CHART_PADDING.top + 4} fill="#9CA3AF" fontSize="11">
-                      {formatChartPrice(chartData.maxY)}
-                    </text>
-                    <text
-                      x="6"
-                      y={(PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom + PRICE_CHART_PADDING.top) / 2 + 4}
-                      fill="#9CA3AF"
-                      fontSize="11"
-                    >
-                      {formatChartPrice(chartData.medianY)}
-                    </text>
-                    <text
-                      x="6"
-                      y={PRICE_CHART_HEIGHT - PRICE_CHART_PADDING.bottom + 4}
-                      fill="#9CA3AF"
-                      fontSize="11"
-                    >
-                      {formatChartPrice(chartData.minY)}
-                    </text>
-
-                    <polyline
-                      fill="none"
-                      stroke="#7AFF14"
-                      strokeWidth="2.5"
-                      points={chartData.polyline}
-                    />
-
-                    {chartData.points.map((point) => (
-                      <g key={`chart-point-${point.id}`}>
-                        {/* Visible dot */}
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r="3"
-                          fill="#7AFF14"
-                          className="transition-all duration-200"
-                        />
-                        {/* Larger invisible hit area for better interaction */}
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r="10"
-                          fill="transparent"
-                          className="cursor-pointer"
-                          onMouseEnter={() => setActiveChartPointId(point.id)}
-                          onMouseLeave={() => setActiveChartPointId(null)}
-                          onClick={() => handleChartPointClick(point.id)}
-                        />
-                      </g>
-                    ))}
-
-                    <circle
-                      cx={chartData.latestPoint.x}
-                      cy={chartData.latestPoint.y}
-                      r="4.5"
-                      fill="#7AFF14"
-                      stroke="#0B1018"
-                      strokeWidth="2"
-                    />
-
-                    <text
-                      x={PRICE_CHART_PADDING.left}
-                      y={PRICE_CHART_HEIGHT - 6}
-                      fill="#9CA3AF"
-                      fontSize="11"
-                    >
-                      {chartData.oldestLabel}
-                    </text>
-                    <text
-                      x={PRICE_CHART_WIDTH - PRICE_CHART_PADDING.right}
-                      y={PRICE_CHART_HEIGHT - 6}
-                      fill="#9CA3AF"
-                      fontSize="11"
-                      textAnchor="end"
-                    >
-                      {chartData.newestLabel}
-                    </text>
-                  </svg>
-
-                  <div
-                    className="pointer-events-none absolute rounded-md border border-[#7AFF14]/50 bg-black/85 px-2 py-1 text-[11px] text-white"
-                    style={{
-                      left: `${Math.min(94, Math.max(8, (chartData.latestPoint.x / PRICE_CHART_WIDTH) * 100))}%`,
-                      top: `${Math.min(80, Math.max(8, (chartData.latestPoint.y / PRICE_CHART_HEIGHT) * 100 - 14))}%`,
-                      transform: 'translate(-50%, -100%)',
-                    }}
-                  >
-                    Latest {formatChartPrice(chartData.latestPoint.row.salePrice)}
-                  </div>
-
-                  {activeChartPoint && (() => {
-                    const xPercent = (activeChartPoint.x / PRICE_CHART_WIDTH) * 100;
-                    const yPercent = (activeChartPoint.y / PRICE_CHART_HEIGHT) * 100;
-                    
-                    // Determine positioning based on location in chart
-                    let leftPos = xPercent;
-                    let topPos = yPercent;
-                    let transformX = '-50%'; // default: center horizontally
-                    let transformY = '-100%'; // default: position above point
-                    
-                    // Adjust horizontal positioning to keep within bounds
-                    if (xPercent < 25) {
-                      // Near left edge - align left of tooltip with point
-                      leftPos = xPercent;
-                      transformX = '0%';
-                    } else if (xPercent > 75) {
-                      // Near right edge - align right of tooltip with point
-                      leftPos = xPercent;
-                      transformX = '-100%';
-                    }
-                    
-                    // Adjust vertical positioning to keep within bounds
-                    if (yPercent < 30) {
-                      // Near top edge - position below point instead
-                      topPos = yPercent;
-                      transformY = '10%';
-                    }
-                    
-                    return (
-                      <div
-                        className="absolute z-20 min-w-[210px] max-w-[250px] rounded-md border border-[#2A2F3A] bg-[#0B1018] p-2 text-[11px] text-white shadow-lg"
-                        style={{
-                          left: `${leftPos}%`,
-                          top: `${topPos}%`,
-                          transform: `translate(${transformX}, ${transformY})`,
-                        }}
-                      >
-                        <div className="font-semibold text-[#7AFF14]">
-                          {formatChartPrice(activeChartPoint.row.salePrice)}
-                        </div>
-                        <div className="text-muted-foreground">
-                          {activeChartPoint.row.dateSold
-                            ? new Date(activeChartPoint.row.dateSold).toLocaleDateString()
-                            : 'Date unavailable'}
-                          {activeChartPoint.row.itemCondition
-                            ? ` • ${activeChartPoint.row.itemCondition}`
-                            : ''}
-                        </div>
-                        <div className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">
-                          {activeChartPoint.row.soldTitle}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">No sold listings to chart yet.</div>
-              )}
-            </div>
-
-            <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3" ref={soldListingsHistoryRef}>
-              <div className="text-sm font-semibold text-white mb-2 flex items-center justify-between">
-                <span>Sold Listings History</span>
-                <div className="inline-flex rounded-md border border-[#2A2F3A] bg-[#0B1018] p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setListingsSortBy('date')}
-                    className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
-                      listingsSortBy === 'date' ? 'bg-[#7AFF14] text-black' : 'text-muted-foreground hover:text-white'
-                    }`}
-                  >
-                    Date
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setListingsSortBy('price-high')}
-                    className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
-                      listingsSortBy === 'price-high' ? 'bg-[#7AFF14] text-black' : 'text-muted-foreground hover:text-white'
-                    }`}
-                  >
-                    $ High
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setListingsSortBy('price-low')}
-                    className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
-                      listingsSortBy === 'price-low' ? 'bg-[#7AFF14] text-black' : 'text-muted-foreground hover:text-white'
-                    }`}
-                  >
-                    $ Low
-                  </button>
-                </div>
-              </div>
-              {marketHistoryQuery.isLoading ? (
-                <div className="text-sm text-muted-foreground">Loading sold listings...</div>
-              ) : sortedListings.length ? (
-                <>
-                  <div className="space-y-2">
-                    {sortedListings.slice(0, displayedListingsCount).map((row) => (
+                {/* Sold Listings */}
+                <div className="space-y-2">
+                  {(marketHistoryQuery.data?.listings ?? []).map((row) => (
                     <div 
                       key={row.id} 
-                      id={`sold-listing-${row.id}`}
-                      className={cn(
-                        "rounded border p-2 transition-all duration-300",
-                        highlightedListingId === row.id
-                          ? "border-[#7AFF14] bg-[#7AFF14]/10 shadow-lg shadow-[#7AFF14]/20"
-                          : "border-[#2A2F3A]"
-                      )}
+                      className="rounded border border-[#2A2F3A] p-3"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 min-w-0">
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
                           {row.imageUrl ? (
                             <button
                               type="button"
-                              className="group relative h-14 w-14 shrink-0 overflow-hidden rounded border border-[#2A2F3A] bg-[#0B1018]"
+                              className="group relative h-16 w-16 shrink-0 overflow-hidden rounded border border-[#2A2F3A] bg-[#0B1018]"
                               onClick={() => handleOpenSoldListingPreview(row.imageUrl, row.soldTitle)}
                               aria-label={`Open full image for ${row.soldTitle}`}
                             >
@@ -1714,80 +1178,39 @@ export default function PrizeCard({
                               </span>
                             </button>
                           ) : (
-                            <div className="h-14 w-14 shrink-0 rounded border border-[#2A2F3A] bg-[#0B1018]" />
+                            <div className="h-16 w-16 shrink-0 rounded border border-[#2A2F3A] bg-[#0B1018]" />
                           )}
-                          <div className="min-w-0">
-                          <div className="text-sm text-white line-clamp-2">{row.soldTitle}</div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            <span className="text-[#7AFF14] font-semibold">${row.salePrice.toFixed(2)}</span>
-                            {row.dateSold
-                              ? ` • ${new Date(row.dateSold).toLocaleDateString()}`
-                              : ''}
-                            {row.itemCondition ? ` • ${row.itemCondition}` : ''}
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm text-white line-clamp-2 mb-1">{row.soldTitle}</div>
+                            <div className="text-xs text-muted-foreground">
+                              <span className="text-[#7AFF14] font-semibold">${row.salePrice.toFixed(2)}</span>
+                              {row.dateSold
+                                ? ` • ${new Date(row.dateSold).toLocaleDateString()}`
+                                : ''}
+                              {row.itemCondition ? ` • ${row.itemCondition}` : ''}
+                            </div>
                           </div>
                         </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {row.listingUrl ? (
-                            <a
-                              href={row.listingUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-[#7AFF14] hover:underline"
-                            >
-                              View
-                            </a>
-                          ) : null}
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 px-2 text-xs border-orange-400/40 text-orange-300 hover:bg-orange-500/10"
-                                  disabled={reportingListingId === row.id}
-                                  onClick={() => handleOpenReportDialog(row)}
-                                >
-                                  <AlertTriangle className="w-3 h-3 mr-1" />
-                                  {reportingListingId === row.id ? 'Removing...' : 'Remove'}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="text-xs">This listing will be removed from your results and averages will be recalculated</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
+                        {row.listingUrl && (
+                          <a
+                            href={row.listingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 text-xs text-[#7AFF14] hover:underline font-medium"
+                          >
+                            View
+                          </a>
+                        )}
                       </div>
                     </div>
                   ))}
-                  </div>
-                  
-                  {displayedListingsCount < sortedListings.length && (
-                    <div className="flex items-center gap-2 mt-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 border-[#2A2F3A] bg-[#0B1018] hover:bg-[#1A1F2E] text-white"
-                        onClick={() => setDisplayedListingsCount(prev => Math.min(prev + 20, sortedListings.length))}
-                      >
-                        Show More ({Math.min(20, sortedListings.length - displayedListingsCount)} more)
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs text-muted-foreground hover:text-white"
-                        onClick={() => setDisplayedListingsCount(sortedListings.length)}
-                      >
-                        Show All ({sortedListings.length})
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-sm text-muted-foreground">No sold listings found.</div>
-              )}
-            </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-sm text-muted-foreground">
+                No recent eBay sales found
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -1852,104 +1275,6 @@ export default function PrizeCard({
               />
             </motion.div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Report Listing Modal */}
-      <Dialog open={!!reportDialogTarget} onOpenChange={(open) => !open && closeReportDialog()}>
-        <DialogTitle className="sr-only">Report Sold Listing</DialogTitle>
-        <DialogContent className="max-w-lg bg-[#0D0D0D] border-[#1E242E] text-white">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold">Report Sold Listing</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                This listing will be hidden from your view while admin reviews your report.
-              </p>
-            </div>
-
-            {reportDialogTarget ? (
-              <div className="rounded-md border border-[#2A2F3A] bg-[#121722] p-3">
-                <div className="flex items-start gap-3">
-                  {reportDialogTarget.imageUrl ? (
-                    <img
-                      src={reportDialogTarget.imageUrl}
-                      alt={reportDialogTarget.soldTitle}
-                      className="h-12 w-12 rounded border border-[#2A2F3A] object-cover"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded border border-[#2A2F3A] bg-[#0B1018]" />
-                  )}
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium line-clamp-2">{reportDialogTarget.soldTitle}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      ${reportDialogTarget.salePrice.toFixed(2)}
-                      {reportDialogTarget.dateSold
-                        ? ` • ${new Date(reportDialogTarget.dateSold).toLocaleDateString()}`
-                        : ''}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Reason</Label>
-              <RadioGroup
-                value={selectedReportReason}
-                onValueChange={setSelectedReportReason}
-                className="space-y-2"
-              >
-                {REPORT_REASON_OPTIONS.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center gap-2 rounded-md border border-[#2A2F3A] bg-[#121722] px-3 py-2 text-sm cursor-pointer"
-                  >
-                    <RadioGroupItem value={option.value} id={`report-reason-${option.value}`} />
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </RadioGroup>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="report-reason-details" className="text-sm font-medium">
-                Additional Details (optional)
-              </Label>
-              <Textarea
-                id="report-reason-details"
-                value={reportReasonDetails}
-                onChange={(event) => setReportReasonDetails(event.target.value)}
-                placeholder="Add context for admins (max 500 characters)"
-                maxLength={500}
-                className="min-h-[88px] bg-[#121722] border-[#2A2F3A]"
-              />
-              <div className="text-[11px] text-muted-foreground text-right">
-                {reportReasonDetails.length}/500
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="border-[#2A2F3A]"
-                onClick={closeReportDialog}
-                disabled={!!reportingListingId}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                className="bg-orange-500 text-white hover:bg-orange-500/90"
-                onClick={() => {
-                  void handleSubmitReport();
-                }}
-                disabled={!selectedReportReason || !!reportingListingId}
-              >
-                {reportingListingId ? 'Reporting...' : 'Submit Report'}
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </motion.div>

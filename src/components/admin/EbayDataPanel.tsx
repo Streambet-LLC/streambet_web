@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { TabSwitch } from '@/components/navigation/TabSwitch';
-import { ReportedEbayListingsPanel } from './ReportedEbayListingsPanel';
 import { ManageItemDataPanel } from './ManageItemDataPanel';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
@@ -14,7 +13,6 @@ import { toast } from '@/hooks/use-toast';
 
 const EBAY_DATA_TABS = [
   { key: 'manage-item-data', label: 'Manage Item Data' },
-  { key: 'reported-listings', label: 'Reported eBay Listings' },
   { key: 'feature-controls', label: 'Feature Controls' },
 ];
 
@@ -136,7 +134,6 @@ export const EbayDataPanel = () => {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
-      {activeTab === 'reported-listings' && <ReportedEbayListingsPanel />}
       {activeTab === 'manage-item-data' && <ManageItemDataPanel />}
       {activeTab === 'feature-controls' && (
         <Card>
