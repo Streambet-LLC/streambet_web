@@ -604,7 +604,11 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
         {shouldShowEbayBox && (
           <button
             type="button"
-            className="w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-center transition-colors hover:border-[#7AFF14]/50 mt-2"
+            className={`w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-center transition-colors mt-2 ${
+              canShowEbayData && !marketSummaryQuery.isLoading
+                ? 'hover:border-[#7AFF14]/50 cursor-pointer'
+                : 'cursor-not-allowed opacity-75'
+            }`}
             onClick={e => {
               e.stopPropagation();
               if (canShowEbayData) {
@@ -618,7 +622,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
               ) : canShowEbayData ? (
                 "See recent eBay sales"
               ) : (
-                <span className="text-muted-foreground">Coming Soon</span>
+                <span className="text-muted-foreground">eBay data coming soon</span>
               )}
             </div>
           </button>

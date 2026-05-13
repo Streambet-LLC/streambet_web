@@ -557,7 +557,11 @@ export default function PrizeCard({
           {shouldShowEbayBox && (
             <button
               type="button"
-              className="w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-center transition-colors hover:border-[#7AFF14]/50"
+              className={`w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-center transition-colors ${
+                canShowEbayData && !marketSummaryQuery.isLoading
+                  ? 'hover:border-[#7AFF14]/50 cursor-pointer'
+                  : 'cursor-not-allowed opacity-75'
+              }`}
               onClick={e => {
                 e.stopPropagation();
                 if (canShowEbayData) {
@@ -571,7 +575,7 @@ export default function PrizeCard({
                 ) : canShowEbayData ? (
                   "See recent eBay sales"
                 ) : (
-                  <span className="text-muted-foreground">Coming Soon</span>
+                  <span className="text-muted-foreground">eBay data coming soon</span>
                 )}
               </div>
             </button>
@@ -829,7 +833,11 @@ export default function PrizeCard({
           {shouldShowEbayBox && (
             <button
               type="button"
-              className="mt-1 rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-center transition-colors hover:border-[#7AFF14]/50"
+              className={`mt-1 rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-center transition-colors ${
+                canShowEbayData && !marketSummaryQuery.isLoading
+                  ? 'hover:border-[#7AFF14]/50 cursor-pointer'
+                  : 'cursor-not-allowed opacity-75'
+              }`}
               onClick={e => {
                 e.stopPropagation();
                 if (canShowEbayData) {
@@ -843,7 +851,7 @@ export default function PrizeCard({
                 ) : canShowEbayData ? (
                   "See recent eBay sales"
                 ) : (
-                  <span className="text-muted-foreground">Coming Soon</span>
+                  <span className="text-muted-foreground">eBay data coming soon</span>
                 )}
               </div>
             </button>
