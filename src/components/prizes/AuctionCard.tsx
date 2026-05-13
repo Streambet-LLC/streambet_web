@@ -139,11 +139,6 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
     ? ebaySoldAvgEnabled
     : (ebaySoldAvgEnabled && !ebaySoldAvgAdminOnly);
 
-  // Determine if actual eBay data should be displayed (vs "Coming Soon")
-  const canShowEbayData = isAdminUser
-    ? true
-    : (prize.showEbayAvgPublicly ?? false);
-
   // eBay market data
   const marketSummaryQuery = useQuery({
     queryKey: ['ebay-market-summary', prize.id],
@@ -152,6 +147,13 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
+
+  // Determine if actual eBay data should be displayed (vs "Coming Soon")
+  // Check both configuration AND if there's actual data available
+  const canShowEbayData = isAdminUser
+    ? true
+    : (prize.showEbayAvgPublicly ?? false) && 
+      (marketSummaryQuery.data?.totalValidSoldCount ?? 0) > 0;
 
   const marketHistoryQuery = useQuery({
     queryKey: ['ebay-market-history', prize.id],
@@ -538,7 +540,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
 
       <CardContent className="flex-1 flex flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-base leading-tight line-clamp-2">{prize.name}</h3>
+          <h3 className="font-semibold text-base leading-tight line-clamp-2 min-h-[40px]">{prize.name}</h3>
         </div>
 
 

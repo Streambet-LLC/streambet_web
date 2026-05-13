@@ -397,11 +397,6 @@ export default function PrizeCard({
     ? ebaySoldAvgEnabled
     : (ebaySoldAvgEnabled && !ebaySoldAvgAdminOnly);
 
-  // Determine if actual eBay data should be displayed (vs "Coming Soon")
-  const canShowEbayData = isAdminUser
-    ? true
-    : (prize.showEbayAvgPublicly ?? false);
-
   // Early-access countdown: only for items with a timed window (not permanently pro-only)
   const earlyAccessDate = !prize.isProOnly ? prize.proEarlyAccessUntil : null;
   const { timeLeft: earlyAccessTimeLeft } = useCountdown(earlyAccessDate);
@@ -424,6 +419,13 @@ export default function PrizeCard({
   });
 
   const marketSummary = marketSummaryQuery.data;
+
+  // Determine if actual eBay data should be displayed (vs "Coming Soon")
+  // Check both configuration AND if there's actual data available
+  const canShowEbayData = isAdminUser
+    ? true
+    : (prize.showEbayAvgPublicly ?? false) && 
+      (marketSummaryQuery.data?.totalValidSoldCount ?? 0) > 0;
 
   const handleManualMarketSync = async () => {
     if (!isAdminUser) {
@@ -803,7 +805,7 @@ export default function PrizeCard({
 
         <CardContent className="p-3 flex-1 flex flex-col gap-1.5">
           {/* Prize Name */}
-          <h3 className="font-semibold text-sm line-clamp-2 leading-tight">{prize.name}</h3>
+          <h3 className="font-semibold text-sm line-clamp-2 leading-tight min-h-[38px]">{prize.name}</h3>
 
           {/* Description */}
           {prize.description && (
