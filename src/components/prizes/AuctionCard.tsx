@@ -149,11 +149,10 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
   });
 
   // Determine if actual eBay data should be displayed (vs "Coming Soon")
-  // Check both configuration AND if there's actual data available
-  const canShowEbayData = isAdminUser
-    ? true
-    : (prize.showEbayAvgPublicly ?? false) && 
-      (marketSummaryQuery.data?.totalValidSoldCount ?? 0) > 0;
+  // "Hide eBay avg" overrides everything (even for admins)
+  const canShowEbayData = (prize.showEbayAvgPublicly ?? false) && (
+    isAdminUser || (marketSummaryQuery.data?.totalValidSoldCount ?? 0) > 0
+  );
 
   const marketHistoryQuery = useQuery({
     queryKey: ['ebay-market-history', prize.id],
