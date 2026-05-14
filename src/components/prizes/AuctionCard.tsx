@@ -233,10 +233,30 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
   }, []);
 
   const endsAtMs = new Date(auction.endsAt).getTime();
+  const startsAtMs = new Date(auction.startsAt).getTime();
   const msLeft = endsAtMs - now;
+  const msUntilStart = startsAtMs - now;
+  // Scheduled means: backend hasn't flipped to ACTIVE yet AND startsAt
+  // is still in the future. Once startsAt passes, the first bid attempt
+  // will self-heal SCHEDULED → ACTIVE on the API side, so we treat the
+  // post-startsAt window as already-live for UX purposes.
+  const isScheduled = auction.status === 'scheduled' && msUntilStart > 0;
   const isEnded =
     msLeft <= 0 || ['ended', 'paid', 'unsold', 'failed', 'cancelled'].includes(auction.status);
-  const isUrgent = !isEnded && msLeft <= 60 * 60 * 1000; // <1h
+  const isUrgent = !isEnded && !isScheduled && msLeft <= 60 * 60 * 1000; // <1h
+  // Localized "starts at" string. Uses the viewer's browser timezone +
+  // locale (no explicit timeZone arg → defaults to local). Falls back
+  // to a plain ISO render if Intl is unavailable.
+  const startsAtLocalized = (() => {
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(auction.startsAt));
+    } catch {
+      return new Date(auction.startsAt).toLocaleString();
+    }
+  })();
   const shouldCheckRetryPayment =
     isMyBidsPage &&
     !isOwnItem &&
@@ -501,9 +521,9 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
           className="absolute top-2 left-2 bg-amber-500/90 text-black border-amber-600 font-semibold flex items-center gap-1"
         >
           <Gavel className="w-3 h-3" />
-          Auction
+          {isScheduled ? 'Scheduled' : 'Auction'}
         </Badge>
-        {auction.reserveMet === false && (
+        {!isScheduled && auction.reserveMet === false && (
           <Badge
             variant="outline"
             className="absolute top-2 right-2 bg-background/80 backdrop-blur border-amber-500 text-amber-500 flex items-center gap-1"
@@ -512,7 +532,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
             Reserve not met
           </Badge>
         )}
-        {auction.reserveMet === true && (
+        {!isScheduled && auction.reserveMet === true && (
           <Badge
             variant="outline"
             className="absolute top-2 right-2 bg-background/80 backdrop-blur border-emerald-500 text-emerald-500 flex items-center gap-1"
@@ -539,9 +559,10 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
 
       <CardContent className="flex-1 flex flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-base leading-tight line-clamp-2 min-h-[40px]">{prize.name}</h3>
+          <h3 className="font-semibold text-base leading-tight line-clamp-2 min-h-[40px]">
+            {prize.name}
+          </h3>
         </div>
-
 
         <div className="flex items-end justify-between gap-2">
           <div className="flex flex-col">
@@ -560,7 +581,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
           <div className="flex flex-col items-end">
             <span className="text-[11px] uppercase tracking-wide text-muted-foreground inline-flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {isEnded ? 'Ended' : 'Ends in'}
+              {isEnded ? 'Ended' : isScheduled ? 'Starts in' : 'Ends in'}
             </span>
             <span
               className={cn(
@@ -568,11 +589,24 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
                 isUrgent && !isEnded ? 'text-red-500' : 'text-foreground'
               )}
             >
-              {isEnded ? '—' : formatRemaining(msLeft)}
+              {isEnded
+                ? '—'
+                : isScheduled
+                  ? formatRemaining(msUntilStart)
+                  : formatRemaining(msLeft)}
             </span>
-            <span className="text-xs text-muted-foreground mt-1">
-              {auction.bidCount} {auction.bidCount === 1 ? 'bid' : 'bids'}
-            </span>
+            {isScheduled ? (
+              <span
+                className="text-[11px] text-muted-foreground mt-1"
+                title={new Date(auction.startsAt).toISOString()}
+              >
+                {startsAtLocalized}
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground mt-1">
+                {auction.bidCount} {auction.bidCount === 1 ? 'bid' : 'bids'}
+              </span>
+            )}
           </div>
         </div>
 
@@ -621,7 +655,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
               {marketSummaryQuery.isLoading ? (
                 <span className="text-muted-foreground">Loading eBay sales...</span>
               ) : canShowEbayData ? (
-                "See recent eBay sales"
+                'See recent eBay sales'
               ) : (
                 <span className="text-muted-foreground">eBay data coming soon</span>
               )}
@@ -643,18 +677,27 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
             </Link>
           </Button>
         ) : canRetryPayment ? (
-          <Button className="w-full" onClick={() => navigate(`/auctions/${auction.id}/retry-payment`)}>
+          <Button
+            className="w-full"
+            onClick={() => navigate(`/auctions/${auction.id}/retry-payment`)}
+          >
             <CreditCard className="w-4 h-4 mr-2" />
             Retry payment
           </Button>
         ) : (
           <Button
             className="w-full"
-            disabled={isEnded || auction.status === 'cancelled'}
+            disabled={isEnded || isScheduled || auction.status === 'cancelled'}
             onClick={handleBidClick}
           >
             <Gavel className="w-4 h-4 mr-2" />
-            {isEnded ? 'Ended' : auction.isLeader ? 'Raise your max' : 'Place a bid'}
+            {isEnded
+              ? 'Ended'
+              : isScheduled
+                ? `Starts ${startsAtLocalized}`
+                : auction.isLeader
+                  ? 'Raise your max'
+                  : 'Place a bid'}
           </Button>
         )}
       </CardFooter>
