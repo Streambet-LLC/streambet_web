@@ -13,7 +13,6 @@ import {
   Prize as PrizeDisplay,
 } from '@/components/prizes/PrizesByCategory';
 import PrizeCheckoutModal from '@/components/prizes/PrizeCheckoutModal';
-import { PrizeBrand } from '@/types/prize';
 import { resolvePrizeImages } from '@/components/prizes/prizeImageUtils';
 
 export default function Redemptions() {
@@ -26,8 +25,7 @@ export default function Redemptions() {
     shippingCostUsd?: number;
     isInPerson?: boolean;
   } | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const selectedBrand = (searchParams.get('brand')?.split(',')[0] as PrizeBrand) ?? null;
+  const [searchParams] = useSearchParams();
 
   const userCadeCoins = session?.walletBalanceCadeCoin || 0;
 
@@ -163,10 +161,6 @@ export default function Redemptions() {
     }
   }, [tiers]);
 
-  const displayPrizes = selectedBrand
-    ? allPrizes.filter(prize => prize.brand === selectedBrand)
-    : allPrizes;
-
   return (
     <MainLayout>
       {/* Info Banner */}
@@ -182,12 +176,10 @@ export default function Redemptions() {
               <h3 className="text-lg font-semibold text-white">How Prizes Work</h3>
               <div className="space-y-2 text-sm text-[#FFFFFFBF]">
                 <p>
-                  You've earned CadeCoins by playing! Now redeem them for sealed wax and trading
-                  card products.
+                  Congrats! You've earned Cadecoins.
                 </p>
                 <p>
-                  You can pay with 100% CadeCoins, 100% USD, or any mix of both. All items ship
-                  directly to you.
+                  Redeem them here for cards and sealed product, and we'll get them shipped out STAT!
                 </p>
               </div>
               {session && (
@@ -195,7 +187,7 @@ export default function Redemptions() {
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-[#FFFFFFBF]">Your Balance:</span>
                     <span className="font-bold text-primary">
-                      {userCadeCoins.toLocaleString()} CadeCoins
+                      {Math.floor(userCadeCoins).toLocaleString()} CadeCoins
                     </span>
                     <span className="text-green-500 font-semibold">
                       = ${(userCadeCoins / 50).toFixed(2)} USD
@@ -216,21 +208,16 @@ export default function Redemptions() {
         </Card>
       ) : (
         <>
-          {displayPrizes.length === 0 && selectedBrand === null ? (
+          {allPrizes.length === 0 ? (
             <div className="text-center py-12">
               <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Coming soon!</p>
             </div>
           ) : (
             <PrizesByCategory
-              prizes={displayPrizes}
+              prizes={allPrizes}
               cardVariant="redemption"
-              selectedBrand={selectedBrand}
-              onBrandChange={brand => {
-                const p = new URLSearchParams(searchParams);
-                brand ? p.set('brand', brand) : p.delete('brand');
-                setSearchParams(p);
-              }}
+              showFilters={false}
               onPrizeClick={prize =>
                 setSelectedPrizeForCheckout({
                   id: prize.id,
