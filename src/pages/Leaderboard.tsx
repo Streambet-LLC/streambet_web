@@ -46,7 +46,7 @@ const Leaderboard = () => {
               </h3>
               <div className="space-y-2 text-sm text-white/90">
                 <p>
-                  The leaderboard shows the top players ranked by current CadeCoins balance.
+                  The leaderboard shows the top CadeCoin earners, by:
                 </p>
                 <ul className="space-y-1 ml-4">
                   <li className="flex items-start gap-2">
@@ -69,7 +69,7 @@ const Leaderboard = () => {
                     className="underline hover:no-underline transition-all"
                     style={{ color: 'var(--electric-lime)', textShadow: '0 0 5px rgba(189, 255, 0, 0.3)' }}
                   >
-                    making purchases
+                    buying
                   </Link>
                   ,{' '}
                   <Link 
@@ -77,7 +77,7 @@ const Leaderboard = () => {
                     className="underline hover:no-underline transition-all"
                     style={{ color: 'var(--electric-lime)', textShadow: '0 0 5px rgba(189, 255, 0, 0.3)' }}
                   >
-                    selling items
+                    selling
                   </Link>
                   , and spinning the{' '}
                   <Link 
@@ -87,7 +87,15 @@ const Leaderboard = () => {
                   >
                     daily spin
                   </Link>
-                  !
+                  ! Then go over to{' '}
+                  <Link 
+                    to="/redemptions" 
+                    className="underline hover:no-underline transition-all"
+                    style={{ color: 'var(--electric-lime)', textShadow: '0 0 5px rgba(189, 255, 0, 0.3)' }}
+                  >
+                    Prizes
+                  </Link>
+                  {' '}to redeem! We also do a monthly giveaway for the highest coin earner of the month
                 </p>
               </div>
             </div>
