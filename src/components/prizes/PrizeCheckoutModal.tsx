@@ -814,8 +814,8 @@ export default function PrizeCheckoutModal({
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    This item is in-person pickup. No shipping address is required — the seller
-                    will reach out to coordinate the hand-off after checkout.
+                    This item is in-person pickup. No shipping address is required — the seller will
+                    reach out to coordinate the hand-off after checkout.
                   </AlertDescription>
                 </Alert>
 
@@ -853,10 +853,38 @@ export default function PrizeCheckoutModal({
                     </>
                   ) : paymentMethod === 'coins' && !hasEnoughCoins ? (
                     `Need ${roundDownCoinAmount(coinsAmount - userCadeCoins)} more CadeCoins!`
+                  ) : paymentMethod === 'crypto' && cryptoOrderId ? (
+                    'Order created — pay below'
+                  ) : paymentMethod === 'crypto' && !cryptoWalletConnected ? (
+                    'Connect a Solana wallet to continue'
                   ) : (
                     'Complete Purchase'
                   )}
                 </Button>
+
+                {paymentMethod === 'crypto' && cryptoOrderId && (
+                  <div className="space-y-2 pt-2 border-t">
+                    <Label className="text-base font-semibold">Complete Payment</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Connect your Solana wallet (Phantom recommended) and approve the USDC payment.
+                    </p>
+                    <CryptoCheckoutButton
+                      orderId={cryptoOrderId}
+                      onPaid={() => {
+                        queryClient.invalidateQueries({ queryKey: ['userOrders'] });
+                        queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+                        queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
+                        queryClient.invalidateQueries({ queryKey: ['userAddress'] });
+                        const targetOrderId = cryptoOrderId;
+                        handleClose();
+                        if (targetOrderId) {
+                          navigate(`/purchase-success?orderId=${targetOrderId}&source=crypto`);
+                        }
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </form>
             ) : isLoadingAddress ? (
               <div className="flex items-center justify-center py-8">
