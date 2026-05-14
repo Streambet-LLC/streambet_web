@@ -1583,6 +1583,7 @@ export const prizeAPI = {
     ebaySoldAvgEnabled: boolean;
     ebaySoldAvgAdminOnly: boolean;
     ebayManualSyncEnabled: boolean;
+    ebayItemCardButtonPublic: boolean;
   }> => {
     const response = await apiClient.get('/prizes/ebay-feature-flags');
     return response.data;
