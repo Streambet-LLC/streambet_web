@@ -79,15 +79,15 @@ const Leaderboard = () => {
                   >
                     selling
                   </Link>
-                  , and spinning the{' '}
+                  , and {' '}
                   <Link 
                     to="/daily-spin" 
                     className="underline hover:no-underline transition-all"
                     style={{ color: 'var(--electric-lime)', textShadow: '0 0 5px rgba(189, 255, 0, 0.3)' }}
                   >
-                    daily spin
+                    spinning
                   </Link>
-                  ! Then go over to{' '}
+                  ! Then go to{' '}
                   <Link 
                     to="/redemptions" 
                     className="underline hover:no-underline transition-all"
@@ -95,7 +95,7 @@ const Leaderboard = () => {
                   >
                     Prizes
                   </Link>
-                  {' '}to redeem! We also do a monthly giveaway for the highest coin earner of the month
+                  {' '}to redeem! We also do monthly giveaways for the highest coin earner of the month
                 </p>
               </div>
             </div>

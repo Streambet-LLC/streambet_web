@@ -176,7 +176,7 @@ export default function Redemptions() {
               <h3 className="text-lg font-semibold text-white">How Prizes Work</h3>
               <div className="space-y-2 text-sm text-[#FFFFFFBF]">
                 <p>
-                  Congrats! You've earned Cadecoins.
+                  Congrats! You've earned Cadecoins!
                 </p>
                 <p>
                   Redeem them here for cards and sealed product, and we'll get them shipped out STAT!
