@@ -182,8 +182,8 @@ export default function Redemptions() {
               <h3 className="text-lg font-semibold text-white">How Prizes Work</h3>
               <div className="space-y-2 text-sm text-[#FFFFFFBF]">
                 <p>
-                  You've earned CadeCoins by playing! Now redeem them for sealed wax and trading
-                  card products.
+                  You've earned CadeCoins from spending or selling! Now redeem them for sealed wax
+                  and trading card products.
                 </p>
                 <p>
                   You can pay with 100% CadeCoins, 100% USD, or any mix of both. All items ship

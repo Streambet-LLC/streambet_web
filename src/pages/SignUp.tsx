@@ -21,9 +21,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { verifyUserLocation } from '@/integrations/api/geolocation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { AvatarUploadField } from '@/components/AvatarUploadField';
-import { useForm, FormProvider } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useDebounce } from '@/lib/utils';
 import { getMessage } from '@/utils/helper';
 import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
@@ -46,10 +43,8 @@ export default function SignUp() {
   const [tosAccepted, setTosAccepted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [isGoogleLogin, setIsGoogleLogin] = useState(false);
   const [userNameCheck, setUserNameCheck] = useState('');
-  const [avatarInputKey, setAvatarInputKey] = useState(0);
   const { locationResult, isCheckingLocation } = useLocationRestriction();
   const [discountReminder, setDiscountReminder] = useState<{
     code: string;
@@ -76,19 +71,6 @@ export default function SignUp() {
     }),
     promoCode: z.string().optional(),
     refLink: z.string().optional(),
-  });
-
-  const form = useForm({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      username: '',
-      email: '',
-      password: '',
-      promoCode: '',
-      refLink: '',
-      tosAccepted: false,
-      avatar: null,
-    },
   });
 
   const signupMutation = useMutation({
@@ -264,43 +246,11 @@ export default function SignUp() {
       return;
     }
 
-    // Check for avatar validation errors
-    const avatarError = form.formState.errors.avatar;
-    if (avatarError) {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Profile Picture',
-        description: (avatarError.message as string) || 'Please upload a valid profile picture.',
-      });
-      return;
-    }
-
-    const avatar = form.getValues('avatar');
-    let profileImageUrl = '';
-
-    if (avatar) {
-      try {
-        setIsUploading(true);
-        const response = await api.auth.uploadImage(avatar);
-        profileImageUrl = response?.data?.Key;
-        setIsUploading(false);
-      } catch (error) {
-        Bugsnag.notify(error);
-        toast({
-          variant: 'destructive',
-          title: 'Error uploading profile picture',
-          description: getMessage(error) || 'Failed to upload profile picture. Please try again.',
-        });
-        setIsUploading(false);
-      }
-    }
-
     signupMutation.mutate({
       username,
       email,
       password,
       tosAccepted,
-      profileImageUrl: profileImageUrl || undefined,
       lastKnownIp: locationResult?.ip_address,
       redirect: redirectParam || undefined,
       promoCode: promoCode || undefined,
@@ -389,19 +339,7 @@ export default function SignUp() {
         <Card className="bg-transparent border-0 p-0">
           <CardContent className="p-0">
             {renderLocationWarning()}
-            <FormProvider {...form}>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Label htmlFor="avatar">Profile Picture</Label>
-                <div className="flex justify-center space-y-2">
-                  <AvatarUploadField
-                    form={form}
-                    name="avatar"
-                    label=""
-                    disabled={isUploading}
-                    size="lg"
-                    key={avatarInputKey}
-                  />
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="username">Username</Label>
                   <div className="relative">
@@ -570,11 +508,11 @@ export default function SignUp() {
                     <Button
                       type="submit"
                       className="w-full"
-                      disabled={signupMutation.isPending || isUploading || false || false}
+                      disabled={signupMutation.isPending || false || false}
                     >
                       {false
                         ? 'Verifying location...'
-                        : signupMutation.isPending || isUploading
+                        : signupMutation.isPending
                           ? 'Creating account...'
                           : 'Sign Up'}
                     </Button>
@@ -625,11 +563,10 @@ export default function SignUp() {
                         </defs>
                       </svg>
                     </span>
-                    Sign in with Google
+                    Sign Up with Google
                   </Button>
                 </motion.div>
-              </form>
-            </FormProvider>
+            </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
             <motion.div

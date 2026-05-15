@@ -338,71 +338,71 @@ export default function AuctionBidModal({
               <div className="flex items-center gap-2 text-foreground font-medium mb-1">
                 <Truck className="w-4 h-4" /> In-Person Pickup
               </div>
-              No shipping address required. The seller will reach out to coordinate the hand-off
-              if you win.
+              No shipping address required. The seller will reach out to coordinate the hand-off if
+              you win.
             </div>
           ) : (
-          <div className="rounded-md border p-3 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Truck className="w-4 h-4" /> Shipping address
-              {!addressComplete && (
-                <span className="ml-auto text-[11px] text-amber-300">Required</span>
+            <div className="rounded-md border p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Truck className="w-4 h-4" /> Shipping address
+                {!addressComplete && (
+                  <span className="ml-auto text-[11px] text-amber-300">Required</span>
+                )}
+              </div>
+              {addressQuery.isLoading ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Loading address…
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="First name"
+                    value={address.firstName}
+                    onChange={e => updateAddressField('firstName', e.target.value)}
+                  />
+                  <Input
+                    placeholder="Last name"
+                    value={address.lastName}
+                    onChange={e => updateAddressField('lastName', e.target.value)}
+                  />
+                  <Input
+                    className="col-span-2"
+                    placeholder="Address line 1"
+                    value={address.addressLine1}
+                    onChange={e => updateAddressField('addressLine1', e.target.value)}
+                  />
+                  <Input
+                    className="col-span-2"
+                    placeholder="Address line 2 (optional)"
+                    value={address.addressLine2}
+                    onChange={e => updateAddressField('addressLine2', e.target.value)}
+                  />
+                  <Input
+                    placeholder="City"
+                    value={address.city}
+                    onChange={e => updateAddressField('city', e.target.value)}
+                  />
+                  <Input
+                    placeholder="State"
+                    value={address.state}
+                    onChange={e => updateAddressField('state', e.target.value)}
+                  />
+                  <Input
+                    placeholder="ZIP"
+                    value={address.zipCode}
+                    onChange={e => updateAddressField('zipCode', e.target.value)}
+                  />
+                  <Input
+                    placeholder="Country"
+                    value={address.country}
+                    onChange={e => updateAddressField('country', e.target.value)}
+                  />
+                </div>
               )}
+              <p className="text-[11px] text-muted-foreground">
+                We'll ship here if you win. Edits are saved to your profile when you place the bid.
+              </p>
             </div>
-            {addressQuery.isLoading ? (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="w-3 h-3 animate-spin" /> Loading address…
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  placeholder="First name"
-                  value={address.firstName}
-                  onChange={e => updateAddressField('firstName', e.target.value)}
-                />
-                <Input
-                  placeholder="Last name"
-                  value={address.lastName}
-                  onChange={e => updateAddressField('lastName', e.target.value)}
-                />
-                <Input
-                  className="col-span-2"
-                  placeholder="Address line 1"
-                  value={address.addressLine1}
-                  onChange={e => updateAddressField('addressLine1', e.target.value)}
-                />
-                <Input
-                  className="col-span-2"
-                  placeholder="Address line 2 (optional)"
-                  value={address.addressLine2}
-                  onChange={e => updateAddressField('addressLine2', e.target.value)}
-                />
-                <Input
-                  placeholder="City"
-                  value={address.city}
-                  onChange={e => updateAddressField('city', e.target.value)}
-                />
-                <Input
-                  placeholder="State"
-                  value={address.state}
-                  onChange={e => updateAddressField('state', e.target.value)}
-                />
-                <Input
-                  placeholder="ZIP"
-                  value={address.zipCode}
-                  onChange={e => updateAddressField('zipCode', e.target.value)}
-                />
-                <Input
-                  placeholder="Country"
-                  value={address.country}
-                  onChange={e => updateAddressField('country', e.target.value)}
-                />
-              </div>
-            )}
-            <p className="text-[11px] text-muted-foreground">
-              We'll ship here if you win. Edits are saved to your profile when you place the bid.
-            </p>
-          </div>
           )}
 
           <div className="space-y-1 rounded-md border-2 border-yellow-500/70 bg-yellow-500/5 p-3 shadow-[0_0_0_1px_rgba(234,179,8,0.15)]">
@@ -478,6 +478,10 @@ export default function AuctionBidModal({
             <div className="flex justify-between border-t pt-1 mt-1">
               <span className="text-muted-foreground">Total charged to your card</span>
               <span className="font-semibold">${feePreview.total.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-1 mt-1 text-green-500">
+              <span>Bid reward</span>
+              <span>+10 CadeCoins</span>
             </div>
             <p className="text-[11px] text-muted-foreground pt-1">
               The actual winning bid is the lowest amount needed to beat the next-highest proxy, so

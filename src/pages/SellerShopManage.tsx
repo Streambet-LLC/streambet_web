@@ -1381,8 +1381,14 @@ export default function SellerShopManage() {
         >
           {/* Shop Settings Card */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between gap-4">
               <CardTitle>{isCardCadeMode ? 'CardCade Shop Settings' : 'Shop Settings'}</CardTitle>
+              {!isEditingShopName && (
+                <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Customize Shop Profile
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {!isEditingShopName ? (
@@ -1486,10 +1492,6 @@ export default function SellerShopManage() {
                       )}
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setIsEditingShopName(true)}>
-                    <Pencil className="w-4 h-4 mr-2" />
-                    Customize
-                  </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
