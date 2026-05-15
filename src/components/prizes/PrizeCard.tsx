@@ -101,7 +101,7 @@ const resolveEbayFullResolutionImageUrl = (imageUrl: string): string => {
 
     const resizedPath = parsed.pathname.replace(
       /\/s-l\d+(\.[a-z0-9]+)?$/i,
-      (_match, extension = '') => `/s-l1600${extension}`,
+      (_match, extension = '') => `/s-l1600${extension}`
     );
 
     if (resizedPath === parsed.pathname) {
@@ -397,11 +397,13 @@ export default function PrizeCard({
   const ebaySoldAvgEnabled = ebayFeatureFlagsQuery.data?.ebaySoldAvgEnabled ?? true;
   const ebaySoldAvgAdminOnly = ebayFeatureFlagsQuery.data?.ebaySoldAvgAdminOnly ?? false;
   const ebayManualSyncEnabled = ebayFeatureFlagsQuery.data?.ebayManualSyncEnabled ?? true;
+  const ebayItemCardButtonPublic = ebayFeatureFlagsQuery.data?.ebayItemCardButtonPublic ?? false;
 
   // Determine if eBay box should render (for layout consistency)
+  // For item cards (non-auction), users need the itemCardButtonPublic flag enabled
   const shouldShowEbayBox = isAdminUser
     ? ebaySoldAvgEnabled
-    : ebaySoldAvgEnabled && !ebaySoldAvgAdminOnly;
+    : ebaySoldAvgEnabled && !ebaySoldAvgAdminOnly && ebayItemCardButtonPublic;
 
   // Early-access countdown: only for items with a timed window (not permanently pro-only)
   const earlyAccessDate = !prize.isProOnly ? prize.proEarlyAccessUntil : null;

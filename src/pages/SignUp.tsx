@@ -340,134 +340,132 @@ export default function SignUp() {
           <CardContent className="p-0">
             {renderLocationWarning()}
             <form onSubmit={handleSubmit} className="space-y-4">
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <div className="relative">
-                    <Input
-                      id="username"
-                      placeholder="Enter your username"
-                      value={username}
-                      onChange={e => setUsername(e.target.value)}
-                      className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.username ? 'border-destructive' : ''} ${username.length >= 3 && !username.includes(' ') ? 'pr-10' : ''} border-0 focus:border-0 focus:ring-0`}
-                      disabled={false || false}
-                    />
-                    {username.length >= 3 && !username.includes(' ') && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        {isUserAvailabilityFetching ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        ) : userAvailabilityData?.is_available ? (
-                          <svg
-                            className="h-4 w-4 text-green-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        ) : userAvailabilityData?.is_available === false ? (
-                          <svg
-                            className="h-4 w-4 text-destructive"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        ) : null}
-                      </div>
-                    )}
-                  </div>
-                  {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <div className="relative">
+                  <Input
+                    id="username"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.username ? 'border-destructive' : ''} ${username.length >= 3 && !username.includes(' ') ? 'pr-10' : ''} border-0 focus:border-0 focus:ring-0`}
+                    disabled={false || false}
+                  />
                   {username.length >= 3 && !username.includes(' ') && (
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       {isUserAvailabilityFetching ? (
-                        <span className="text-muted-foreground">
-                          Checking username availability...
-                        </span>
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       ) : userAvailabilityData?.is_available ? (
-                        <span className="text-green-500">Username is available</span>
+                        <svg
+                          className="h-4 w-4 text-green-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
                       ) : userAvailabilityData?.is_available === false ? (
-                        <span>
-                          <span className="text-destructive">
-                            Username is not available. Suggested username:{' '}
-                          </span>
-                          <span className="text-green-500">{userAvailabilityData?.suggestion}</span>
-                        </span>
+                        <svg
+                          className="h-4 w-4 text-destructive"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
                       ) : null}
                     </div>
                   )}
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.email ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
-                    disabled={false || isGoogleLogin || false}
-                  />
-                  {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      placeholder="Enter your password"
-                      onChange={e => setPassword(e.target.value)}
-                      className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 pr-10`}
-                      disabled={false}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(prev => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
+                </div>
+                {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
+                {username.length >= 3 && !username.includes(' ') && (
+                  <div className="flex items-center gap-2 text-sm">
+                    {isUserAvailabilityFetching ? (
+                      <span className="text-muted-foreground">
+                        Checking username availability...
+                      </span>
+                    ) : userAvailabilityData?.is_available ? (
+                      <span className="text-green-500">Username is available</span>
+                    ) : userAvailabilityData?.is_available === false ? (
+                      <span>
+                        <span className="text-destructive">
+                          Username is not available. Suggested username:{' '}
+                        </span>
+                        <span className="text-green-500">{userAvailabilityData?.suggestion}</span>
+                      </span>
+                    ) : null}
                   </div>
-                  {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
-                  <p className="text-muted-foreground text-sm">
-                    Password must be at least 8 characters and include uppercase, lowercase, number,
-                    and special character.
-                  </p>
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="promoCode">Promo Code (Optional)</Label>
+                )}
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.email ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
+                  disabled={false || isGoogleLogin || false}
+                />
+                {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
                   <Input
-                    id="promoCode"
-                    type="text"
-                    value={promoCode}
-                    placeholder="Enter promo code (optional)"
-                    onChange={e => setPromoCode(e.target.value)}
-                    className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.promoCode ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    placeholder="Enter your password"
+                    onChange={e => setPassword(e.target.value)}
+                    className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.password ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0 pr-10`}
                     disabled={false}
                   />
-                  {errors.promoCode && (
-                    <p className="text-destructive text-sm">{errors.promoCode}</p>
-                  )}
-                  <p className="text-xs text-white/50">
-                    Some promo codes also work as discount codes at checkout (Buy Now only, not
-                    auctions). If yours does, you'll be reminded after signup to apply it again at
-                    checkout.
-                  </p>
-                </motion.div>
-                {/* <motion.div variants={itemVariants} className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
+                <p className="text-muted-foreground text-sm">
+                  Password must be at least 8 characters and include uppercase, lowercase, number,
+                  and special character.
+                </p>
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label htmlFor="promoCode">Promo Code (Optional)</Label>
+                <Input
+                  id="promoCode"
+                  type="text"
+                  value={promoCode}
+                  placeholder="Enter promo code (optional)"
+                  onChange={e => setPromoCode(e.target.value)}
+                  className={`bg-[#272727]/80 text-white placeholder:rgba(255, 255, 255, 1) ${errors.promoCode ? 'border-destructive' : ''} border-0 focus:border-0 focus:ring-0`}
+                  disabled={false}
+                />
+                {errors.promoCode && <p className="text-destructive text-sm">{errors.promoCode}</p>}
+                <p className="text-xs text-white/50">
+                  Some promo codes also work as discount codes at checkout (Buy Now only, not
+                  auctions). If yours does, you'll be reminded after signup to apply it again at
+                  checkout.
+                </p>
+              </motion.div>
+              {/* <motion.div variants={itemVariants} className="space-y-2">
                   <Label htmlFor="refLink">Referal Code (Optional)</Label>
                   <Input
                     id="refLink"
@@ -480,92 +478,92 @@ export default function SignUp() {
                   />
                   {errors.refLink && <p className="text-destructive text-sm">{errors.refLink}</p>}
                 </motion.div> */}
-                <motion.div variants={itemVariants} className="flex items-center space-x-2">
-                  <Checkbox
-                    id="tosAccepted"
-                    checked={tosAccepted}
-                    onCheckedChange={checked => setTosAccepted(checked as boolean)}
-                    disabled={false}
-                  />
-                  <Label htmlFor="tosAccepted" className="text-sm pt-2 pb-2">
-                    I accept the{' '}
-                    <Link to="/terms" target="_blank" className="text-primary hover:underline">
-                      Terms of Use
-                    </Link>
-                    {' and '}
-                    <Link to="/privacy" target="_blank" className="text-primary hover:underline">
-                      Privacy Policy
-                    </Link>
-                    {'.'}
-                  </Label>
-                  {errors.tosAccepted && (
-                    <p className="text-destructive text-sm">{errors.tosAccepted}</p>
-                  )}
-                </motion.div>
-                {/* Sign Up button */}
-                <div className="relative">
-                  <motion.div variants={itemVariants}>
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={signupMutation.isPending || false || false}
-                    >
-                      {false
-                        ? 'Verifying location...'
-                        : signupMutation.isPending
-                          ? 'Creating account...'
-                          : 'Sign Up'}
-                    </Button>
-                  </motion.div>
-                </div>
+              <motion.div variants={itemVariants} className="flex items-center space-x-2">
+                <Checkbox
+                  id="tosAccepted"
+                  checked={tosAccepted}
+                  onCheckedChange={checked => setTosAccepted(checked as boolean)}
+                  disabled={false}
+                />
+                <Label htmlFor="tosAccepted" className="text-sm pt-2 pb-2">
+                  I accept the{' '}
+                  <Link to="/terms" target="_blank" className="text-primary hover:underline">
+                    Terms of Use
+                  </Link>
+                  {' and '}
+                  <Link to="/privacy" target="_blank" className="text-primary hover:underline">
+                    Privacy Policy
+                  </Link>
+                  {'.'}
+                </Label>
+                {errors.tosAccepted && (
+                  <p className="text-destructive text-sm">{errors.tosAccepted}</p>
+                )}
+              </motion.div>
+              {/* Sign Up button */}
+              <div className="relative">
                 <motion.div variants={itemVariants}>
                   <Button
-                    type="button"
-                    className="w-full flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
-                    onClick={handleGoogleLogin}
-                    disabled={googleLoginMutation.isPending || false || false}
+                    type="submit"
+                    className="w-full"
+                    disabled={signupMutation.isPending || false || false}
                   >
-                    <span className="mr-2">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <g clipPath="url(#clip0_17_40)">
-                          <path
-                            d="M19.805 10.2305C19.805 9.55078 19.7484 8.90078 19.6484 8.27344H10.2V12.0563H15.6016C15.36 13.2813 14.6016 14.2938 13.5234 14.9938V17.2438H16.6016C18.3984 15.5938 19.805 13.1875 19.805 10.2305Z"
-                            fill="#4285F4"
-                          />
-                          <path
-                            d="M10.2 20C12.7 20 14.7734 19.1688 16.6016 17.2438L13.5234 14.9938C12.5234 15.6688 11.2734 16.0813 10.2 16.0813C7.80156 16.0813 5.77344 14.4063 5.04844 12.2438H1.85156V14.5563C3.67031 17.7313 6.70156 20 10.2 20Z"
-                            fill="#34A853"
-                          />
-                          <path
-                            d="M5.04844 12.2438C4.85156 11.6688 4.73594 11.0563 4.73594 10.4188C4.73594 9.78125 4.85156 9.16875 5.04844 8.59375V6.28125H1.85156C1.15625 7.55625 0.75 8.93125 0.75 10.4188C0.75 11.9063 1.15625 13.2813 1.85156 14.5563L5.04844 12.2438Z"
-                            fill="#FBBC05"
-                          />
-                          <path
-                            d="M10.2 4.75625C11.3984 4.75625 12.4766 5.16875 13.3047 5.95625L16.6641 2.59375C14.7734 0.84375 12.7 0 10.2 0C6.70156 0 3.67031 2.26875 1.85156 5.44375L5.04844 7.75625C5.77344 5.59375 7.80156 4.75625 10.2 4.75625Z"
-                            fill="#EA4335"
-                          />
-                        </g>
-                        <defs>
-                          <clipPath id="clip0_17_40">
-                            <rect
-                              width="19.0556"
-                              height="20"
-                              fill="white"
-                              transform="translate(0.75)"
-                            />
-                          </clipPath>
-                        </defs>
-                      </svg>
-                    </span>
-                    Sign Up with Google
+                    {false
+                      ? 'Verifying location...'
+                      : signupMutation.isPending
+                        ? 'Creating account...'
+                        : 'Sign Up'}
                   </Button>
                 </motion.div>
+              </div>
+              <motion.div variants={itemVariants}>
+                <Button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 bg-[#f5fbe7] border border-[#dbe7b3] text-[#3c3c3c] font-medium rounded-lg shadow-sm hover:bg-[#eaf7d1] transition-colors"
+                  onClick={handleGoogleLogin}
+                  disabled={googleLoginMutation.isPending || false || false}
+                >
+                  <span className="mr-2">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <g clipPath="url(#clip0_17_40)">
+                        <path
+                          d="M19.805 10.2305C19.805 9.55078 19.7484 8.90078 19.6484 8.27344H10.2V12.0563H15.6016C15.36 13.2813 14.6016 14.2938 13.5234 14.9938V17.2438H16.6016C18.3984 15.5938 19.805 13.1875 19.805 10.2305Z"
+                          fill="#4285F4"
+                        />
+                        <path
+                          d="M10.2 20C12.7 20 14.7734 19.1688 16.6016 17.2438L13.5234 14.9938C12.5234 15.6688 11.2734 16.0813 10.2 16.0813C7.80156 16.0813 5.77344 14.4063 5.04844 12.2438H1.85156V14.5563C3.67031 17.7313 6.70156 20 10.2 20Z"
+                          fill="#34A853"
+                        />
+                        <path
+                          d="M5.04844 12.2438C4.85156 11.6688 4.73594 11.0563 4.73594 10.4188C4.73594 9.78125 4.85156 9.16875 5.04844 8.59375V6.28125H1.85156C1.15625 7.55625 0.75 8.93125 0.75 10.4188C0.75 11.9063 1.15625 13.2813 1.85156 14.5563L5.04844 12.2438Z"
+                          fill="#FBBC05"
+                        />
+                        <path
+                          d="M10.2 4.75625C11.3984 4.75625 12.4766 5.16875 13.3047 5.95625L16.6641 2.59375C14.7734 0.84375 12.7 0 10.2 0C6.70156 0 3.67031 2.26875 1.85156 5.44375L5.04844 7.75625C5.77344 5.59375 7.80156 4.75625 10.2 4.75625Z"
+                          fill="#EA4335"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath id="clip0_17_40">
+                          <rect
+                            width="19.0556"
+                            height="20"
+                            fill="white"
+                            transform="translate(0.75)"
+                          />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </span>
+                  Sign Up with Google
+                </Button>
+              </motion.div>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">

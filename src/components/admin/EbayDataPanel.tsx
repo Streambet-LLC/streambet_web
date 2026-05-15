@@ -46,6 +46,7 @@ export const EbayDataPanel = () => {
   const ebaySoldAvgEnabled = parseFlag(socials._ff_ebaySoldAvg, true);
   const ebaySoldAvgAdminOnly = parseFlag(socials._ff_ebaySoldAvgAdminOnly, false);
   const ebayManualSyncEnabled = parseFlag(socials._ff_ebayManualSync, true);
+  const ebayItemCardButtonPublic = parseFlag(socials._ff_ebayItemCardButtonPublic, false);
 
   const updateSettingsMutation = useMutation({
     mutationFn: (nextSocials: Record<string, string>) =>
@@ -66,7 +67,7 @@ export const EbayDataPanel = () => {
     },
   });
 
-  const setFlag = (key: '_ff_ebaySoldAvg' | '_ff_ebaySoldAvgAdminOnly' | '_ff_ebayManualSync', value: boolean) => {
+  const setFlag = (key: '_ff_ebaySoldAvg' | '_ff_ebaySoldAvgAdminOnly' | '_ff_ebayManualSync' | '_ff_ebayItemCardButtonPublic', value: boolean) => {
     const baseSocials = (cardcadeSettings?.socials ?? {}) as Record<string, string>;
     const nextSocials: Record<string, string> = {
       ...baseSocials,
@@ -98,9 +99,9 @@ export const EbayDataPanel = () => {
     queryKey: ['migration-status', migrationJobId],
     queryFn: () => api.admin.getMigratePsaGradeFlagsStatus(migrationJobId!),
     enabled: !!migrationJobId,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Stop polling if completed or failed
-      if (data?.state === 'completed' || data?.state === 'failed') {
+      if (query.state.data?.state === 'completed' || query.state.data?.state === 'failed') {
         return false;
       }
       return 2000; // Poll every 2 seconds
@@ -165,6 +166,20 @@ export const EbayDataPanel = () => {
               <Switch
                 checked={ebaySoldAvgAdminOnly}
                 onCheckedChange={(checked) => setFlag('_ff_ebaySoldAvgAdminOnly', checked)}
+                disabled={updateSettingsMutation.isPending}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div className="space-y-1 pr-3">
+                <Label className="text-sm font-medium">Show eBay Button on Item Cards for Users</Label>
+                <p className="text-xs text-muted-foreground">
+                  When enabled, regular users can see the "See Recent eBay Sales" button on shop/redemption item cards. Auction cards always show the button for everyone.
+                </p>
+              </div>
+              <Switch
+                checked={ebayItemCardButtonPublic}
+                onCheckedChange={(checked) => setFlag('_ff_ebayItemCardButtonPublic', checked)}
                 disabled={updateSettingsMutation.isPending}
               />
             </div>
