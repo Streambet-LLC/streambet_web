@@ -176,10 +176,12 @@ export default function Redemptions() {
               <h3 className="text-lg font-semibold text-white">How Prizes Work</h3>
               <div className="space-y-2 text-sm text-[#FFFFFFBF]">
                 <p>
-                  Congrats! You've earned Cadecoins!
+                  You've earned CadeCoins from spending or selling! Now redeem them for sealed wax
+                  and trading card products.
                 </p>
                 <p>
-                  Redeem them here for cards and sealed product, and we'll get them shipped out STAT!
+                  Redeem them here for cards and sealed product, and we'll get them shipped out
+                  STAT!
                 </p>
               </div>
               {session && (

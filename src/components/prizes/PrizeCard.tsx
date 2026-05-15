@@ -101,7 +101,7 @@ const resolveEbayFullResolutionImageUrl = (imageUrl: string): string => {
 
     const resizedPath = parsed.pathname.replace(
       /\/s-l\d+(\.[a-z0-9]+)?$/i,
-      (_match, extension = '') => `/s-l1600${extension}`,
+      (_match, extension = '') => `/s-l1600${extension}`
     );
 
     if (resizedPath === parsed.pathname) {
@@ -334,6 +334,10 @@ export default function PrizeCard({
     setShowImageModal(true);
   };
 
+  const canBuy = prize.purchaseOption === 'buy_only' || prize.purchaseOption === 'both';
+  const canOffer = prize.purchaseOption === 'offers_only' || prize.purchaseOption === 'both';
+  const isOutOfStock = !prize.stock || prize.stock === 0;
+
   // Amount is always stored in CadeCoins (50 coins = $1 USD)
   const priceInUSD = prize.amount
     ? (prize.amount / 50).toLocaleString('en-US', {
@@ -341,9 +345,13 @@ export default function PrizeCard({
         maximumFractionDigits: 2,
       })
     : '0.00';
-  const canBuy = prize.purchaseOption === 'buy_only' || prize.purchaseOption === 'both';
-  const canOffer = prize.purchaseOption === 'offers_only' || prize.purchaseOption === 'both';
-  const isOutOfStock = !prize.stock || prize.stock === 0;
+  const estimatedRewardCadeCoins = useMemo(() => {
+    if (!canBuy || !prize.amount) return 0;
+
+    const shippingUsd = Number(prize.shippingCostUsd ?? 0);
+    const transactionSubtotalCents = Math.round((prize.amount / 50 + shippingUsd) * 100);
+    return Math.round((transactionSubtotalCents * 3) / 10000);
+  }, [canBuy, prize.amount, prize.shippingCostUsd]);
 
   // Pro-only gating: item is locked for non-Pro users
   const { session } = useAuthContext();
@@ -365,9 +373,7 @@ export default function PrizeCard({
   const prizeCreatorUsername = prize.createdByUsername?.toLowerCase() ?? null;
   const isOwnItem =
     !!sessionUserId &&
-    ((!!prizeCreatorId &&
-      prizeCreatorId !== 'cardcade' &&
-      prizeCreatorId === sessionUserId) ||
+    ((!!prizeCreatorId && prizeCreatorId !== 'cardcade' && prizeCreatorId === sessionUserId) ||
       (!!sessionUsername &&
         !!prizeCreatorUsername &&
         prizeCreatorUsername !== 'cardcade' &&
@@ -397,7 +403,7 @@ export default function PrizeCard({
   // For item cards (non-auction), users need the itemCardButtonPublic flag enabled
   const shouldShowEbayBox = isAdminUser
     ? ebaySoldAvgEnabled
-    : (ebaySoldAvgEnabled && !ebaySoldAvgAdminOnly && ebayItemCardButtonPublic);
+    : ebaySoldAvgEnabled && !ebaySoldAvgAdminOnly && ebayItemCardButtonPublic;
 
   // Early-access countdown: only for items with a timed window (not permanently pro-only)
   const earlyAccessDate = !prize.isProOnly ? prize.proEarlyAccessUntil : null;
@@ -424,9 +430,9 @@ export default function PrizeCard({
 
   // Determine if actual eBay data should be displayed (vs "Coming Soon")
   // "Hide eBay avg" overrides everything (even for admins)
-  const canShowEbayData = (prize.showEbayAvgPublicly ?? false) && (
-    isAdminUser || (marketSummaryQuery.data?.totalValidSoldCount ?? 0) > 0
-  );
+  const canShowEbayData =
+    (prize.showEbayAvgPublicly ?? false) &&
+    (isAdminUser || (marketSummaryQuery.data?.totalValidSoldCount ?? 0) > 0);
 
   const handleManualMarketSync = async () => {
     if (!isAdminUser) {
@@ -576,7 +582,7 @@ export default function PrizeCard({
                 {marketSummaryQuery.isLoading ? (
                   <span className="text-muted-foreground">Loading eBay sales...</span>
                 ) : canShowEbayData ? (
-                  "See recent eBay sales"
+                  'See recent eBay sales'
                 ) : (
                   <span className="text-muted-foreground">eBay data coming soon</span>
                 )}
@@ -612,10 +618,7 @@ export default function PrizeCard({
                 type="button"
                 tabIndex={0}
               >
-                <Link
-                  to={editHref}
-                  onClick={e => e.stopPropagation()}
-                >
+                <Link to={editHref} onClick={e => e.stopPropagation()}>
                   <Pencil className="w-4 h-4" />
                   Edit Item
                 </Link>
@@ -806,7 +809,9 @@ export default function PrizeCard({
 
         <CardContent className="p-3 flex-1 flex flex-col gap-1.5">
           {/* Prize Name */}
-          <h3 className="font-semibold text-sm line-clamp-2 leading-tight min-h-[38px]">{prize.name}</h3>
+          <h3 className="font-semibold text-sm line-clamp-2 leading-tight min-h-[38px]">
+            {prize.name}
+          </h3>
 
           {/* Description */}
           {prize.description && (
@@ -827,7 +832,14 @@ export default function PrizeCard({
           {/* Price */}
           <div className="mt-1">
             {canBuy ? (
-              <span className="text-xl font-bold text-primary">${priceInUSD}</span>
+              <div className="space-y-0.5">
+                <span className="text-xl font-bold text-primary">${priceInUSD}</span>
+                {estimatedRewardCadeCoins > 0 && (
+                  <div className="text-xs font-medium text-green-500">
+                    Earn {estimatedRewardCadeCoins.toLocaleString('en-US')} CadeCoins
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="text-sm font-semibold text-muted-foreground">Offers Only</div>
             )}
@@ -852,7 +864,7 @@ export default function PrizeCard({
                 {marketSummaryQuery.isLoading ? (
                   <span className="text-muted-foreground">Loading eBay sales...</span>
                 ) : canShowEbayData ? (
-                  "See recent eBay sales"
+                  'See recent eBay sales'
                 ) : (
                   <span className="text-muted-foreground">eBay data coming soon</span>
                 )}
@@ -1130,24 +1142,33 @@ export default function PrizeCard({
                   const prices = listings.map(l => l.salePrice).filter(p => Number.isFinite(p));
                   const highPrice = prices.length > 0 ? Math.max(...prices) : null;
                   const lowPrice = prices.length > 0 ? Math.min(...prices) : null;
-                  const avgPrice = prices.length > 0 ? prices.reduce((sum, p) => sum + p, 0) / prices.length : null;
-                  
+                  const avgPrice =
+                    prices.length > 0
+                      ? prices.reduce((sum, p) => sum + p, 0) / prices.length
+                      : null;
+
                   return prices.length > 0 ? (
                     <div className="rounded-md border border-[#2A2F3A] bg-[#121722] px-4 py-3">
                       <div className="flex items-center justify-center gap-6 text-sm">
                         <div>
                           <span className="text-muted-foreground">High: </span>
-                          <span className="font-semibold text-[#7AFF14]">${highPrice?.toFixed(2)}</span>
+                          <span className="font-semibold text-[#7AFF14]">
+                            ${highPrice?.toFixed(2)}
+                          </span>
                         </div>
                         <div className="text-muted-foreground">•</div>
                         <div>
                           <span className="text-muted-foreground">Avg: </span>
-                          <span className="font-semibold text-[#7AFF14]">${avgPrice?.toFixed(2)}</span>
+                          <span className="font-semibold text-[#7AFF14]">
+                            ${avgPrice?.toFixed(2)}
+                          </span>
                         </div>
                         <div className="text-muted-foreground">•</div>
                         <div>
                           <span className="text-muted-foreground">Low: </span>
-                          <span className="font-semibold text-[#7AFF14]">${lowPrice?.toFixed(2)}</span>
+                          <span className="font-semibold text-[#7AFF14]">
+                            ${lowPrice?.toFixed(2)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1156,18 +1177,17 @@ export default function PrizeCard({
 
                 {/* Sold Listings */}
                 <div className="space-y-2">
-                  {(marketHistoryQuery.data?.listings ?? []).map((row) => (
-                    <div 
-                      key={row.id} 
-                      className="rounded border border-[#2A2F3A] p-3"
-                    >
+                  {(marketHistoryQuery.data?.listings ?? []).map(row => (
+                    <div key={row.id} className="rounded border border-[#2A2F3A] p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3 min-w-0 flex-1">
                           {row.imageUrl ? (
                             <button
                               type="button"
                               className="group relative h-16 w-16 shrink-0 overflow-hidden rounded border border-[#2A2F3A] bg-[#0B1018]"
-                              onClick={() => handleOpenSoldListingPreview(row.imageUrl, row.soldTitle)}
+                              onClick={() =>
+                                handleOpenSoldListingPreview(row.imageUrl, row.soldTitle)
+                              }
                               aria-label={`Open full image for ${row.soldTitle}`}
                             >
                               <img
@@ -1184,9 +1204,13 @@ export default function PrizeCard({
                             <div className="h-16 w-16 shrink-0 rounded border border-[#2A2F3A] bg-[#0B1018]" />
                           )}
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm text-white line-clamp-2 mb-1">{row.soldTitle}</div>
+                            <div className="text-sm text-white line-clamp-2 mb-1">
+                              {row.soldTitle}
+                            </div>
                             <div className="text-xs text-muted-foreground">
-                              <span className="text-[#7AFF14] font-semibold">${row.salePrice.toFixed(2)}</span>
+                              <span className="text-[#7AFF14] font-semibold">
+                                ${row.salePrice.toFixed(2)}
+                              </span>
                               {row.dateSold
                                 ? ` • ${new Date(row.dateSold).toLocaleDateString()}`
                                 : ''}
