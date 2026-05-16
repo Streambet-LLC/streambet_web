@@ -18,6 +18,7 @@ import {
   X,
   Expand,
   Loader2,
+  Tag,
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getThumbnailUrl } from '@/utils/helper';
@@ -576,6 +577,16 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
               <TrendingUp className="w-3 h-3" />
               Next bid ${auction.minNextBidUsd.toFixed(2)}
             </span>
+            {shouldShowEbayBox && canShowEbayData && marketSummary?.mostRecentSalePrice ? (
+              <span className="text-xs text-muted-foreground mt-0.5 inline-flex items-center gap-1">
+                <Tag className="w-3 h-3 scale-x-[-1]" />
+                eBay last sale ${Math.ceil(marketSummary.mostRecentSalePrice)}
+              </span>
+            ) : shouldShowEbayBox ? (
+              <span className="text-xs text-transparent mt-0.5">
+                &nbsp;
+              </span>
+            ) : null}
           </div>
 
           <div className="flex flex-col items-end">
@@ -639,10 +650,10 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
         {shouldShowEbayBox && (
           <button
             type="button"
-            className={`w-full rounded-md border border-[#2A2F3A] bg-[#11151d] px-3 py-2 text-center transition-colors mt-2 ${
+            className={`w-full rounded-md px-3 py-2 text-center transition-colors mt-2 ${
               canShowEbayData && !marketSummaryQuery.isLoading
-                ? 'hover:border-[#7AFF14]/50 cursor-pointer'
-                : 'cursor-not-allowed opacity-75'
+                ? 'border border-[#d5fb69]/30 bg-[#d5fb69] hover:bg-[#d5fb69]/90 cursor-pointer'
+                : 'border border-[#2A2F3A] bg-[#1e242e] cursor-not-allowed opacity-75'
             }`}
             onClick={e => {
               e.stopPropagation();
@@ -651,11 +662,11 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
               }
             }}
           >
-            <div className="text-sm font-medium text-white">
+            <div className="text-sm font-medium">
               {marketSummaryQuery.isLoading ? (
                 <span className="text-muted-foreground">Loading eBay sales...</span>
               ) : canShowEbayData ? (
-                'See recent eBay sales'
+                <span className="text-black">eBay sale history</span>
               ) : (
                 <span className="text-muted-foreground">eBay data coming soon</span>
               )}
@@ -724,28 +735,47 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
       {shouldShowEbayBox && (
         <Dialog open={showMarketModal} onOpenChange={setShowMarketModal}>
           <DialogContent className="max-w-2xl bg-[#0D0D0D] border-[#1E242E]">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-white">Recent eBay Sales: {prize.name}</DialogTitle>
-              {isAdminUser && ebayManualSyncEnabled && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 text-xs border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
-                  disabled={syncingMarketData}
-                  onClick={() => {
-                    void handleManualMarketSync();
-                  }}
-                >
-                  {syncingMarketData ? (
-                    <>
-                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      Fetching...
-                    </>
-                  ) : (
-                    'Fetch Sold Data Now'
-                  )}
-                </Button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-white">Recent eBay Sales: {prize.name}</DialogTitle>
+                {isAdminUser && ebayManualSyncEnabled && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
+                    disabled={syncingMarketData}
+                    onClick={() => {
+                      void handleManualMarketSync();
+                    }}
+                  >
+                    {syncingMarketData ? (
+                      <>
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        Fetching...
+                      </>
+                    ) : (
+                      'Fetch Sold Data Now'
+                    )}
+                  </Button>
+                )}
+              </div>
+              {isAdminUser && marketHistoryQuery.data?.summary?.lastFetchedAt && (
+                <div className="text-xs text-muted-foreground">
+                  Last fetched: {new Date(marketHistoryQuery.data.summary.lastFetchedAt).toLocaleString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true 
+                  })}
+                </div>
+              )}
+              {isAdminUser && !marketHistoryQuery.data?.summary?.lastFetchedAt && (
+                <div className="text-xs text-muted-foreground">
+                  Last fetched: Never
+                </div>
               )}
             </div>
 
@@ -886,6 +916,111 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
               )}
             </motion.div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Prize Image Lightbox Modal */}
+      <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
+        <DialogTitle className="sr-only">Auction Prize Image</DialogTitle>
+        <DialogContent
+          className="max-w-[95vw] max-h-[95vh] p-4 border-0 bg-transparent flex items-center justify-center pointer-events-none"
+          aria-describedby={undefined}
+          hideCloseButton={true}
+        >
+          <motion.div
+            className="relative pointer-events-auto"
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            whileTap={{ cursor: 'grabbing' }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onDragEnd={(e, info) => {
+              // Close modal if dragged down more than 100px
+              if (info.offset.y > 100) {
+                setIsLightboxOpen(false);
+              }
+            }}
+          >
+            {/* Drag Indicator - subtle hint for mobile users */}
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-60 md:hidden">
+              <div className="w-12 h-1 bg-white rounded-full" />
+              <span className="text-xs text-white">Swipe down to close</span>
+            </div>
+
+            {/* Custom Close Button - positioned on image */}
+            <button
+              onClick={() => setIsLightboxOpen(false)}
+              className="absolute -top-3 -right-3 z-50 hidden rounded-full border border-[#7AFF14] bg-black/80 p-2 transition-colors hover:bg-black focus:outline-none focus:ring-2 focus:ring-white md:block"
+              aria-label="Close image"
+            >
+              <X className="h-6 w-6 text-white" />
+            </button>
+
+            <div className="flex items-center justify-center gap-2 sm:gap-3">
+              {hasMultipleImages && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="hidden h-9 w-9 shrink-0 border border-[#7AFF14] md:inline-flex md:h-10 md:w-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToPreviousImage();
+                  }}
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+              )}
+
+              <img
+                src={resolveEbayFullResolutionImageUrl(activeImageUrl)}
+                alt={prize.name}
+                className={cn(
+                  'block max-h-[90vh] object-contain rounded-lg select-none',
+                  hasMultipleImages
+                    ? 'max-w-[calc(95vw-6rem)] sm:max-w-[calc(95vw-7rem)]'
+                    : 'max-w-full'
+                )}
+              />
+
+              {hasMultipleImages && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="hidden h-9 w-9 shrink-0 border border-[#7AFF14] md:inline-flex md:h-10 md:w-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goToNextImage();
+                  }}
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+
+            {hasMultipleImages && (
+              <div className="absolute -bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/70 px-3 py-1">
+                {galleryUrls.map((_, index) => (
+                  <button
+                    key={`${prize.id}-modal-dot-${index}`}
+                    type="button"
+                    onClick={() => setActiveImageIndex(index)}
+                    className={cn(
+                      'h-2 w-2 rounded-full border border-[#7AFF14] transition-all',
+                      index === safeIndex ? 'bg-white' : 'bg-transparent'
+                    )}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </motion.div>
         </DialogContent>
       </Dialog>
     </>
