@@ -1103,28 +1103,47 @@ export default function PrizeCard({
       {/* Market Data Modal */}
       <Dialog open={showMarketModal} onOpenChange={setShowMarketModal}>
         <DialogContent className="max-w-2xl bg-[#0D0D0D] border-[#1E242E]">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-white">Recent eBay Sales: {prize.name}</DialogTitle>
-            {isAdminUser && ebayManualSyncEnabled && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 px-3 text-xs border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
-                disabled={syncingMarketData}
-                onClick={() => {
-                  void handleManualMarketSync();
-                }}
-              >
-                {syncingMarketData ? (
-                  <>
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Fetching...
-                  </>
-                ) : (
-                  'Fetch Sold Data Now'
-                )}
-              </Button>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-white">Recent eBay Sales: {prize.name}</DialogTitle>
+              {isAdminUser && ebayManualSyncEnabled && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-xs border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
+                  disabled={syncingMarketData}
+                  onClick={() => {
+                    void handleManualMarketSync();
+                  }}
+                >
+                  {syncingMarketData ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Fetching...
+                    </>
+                  ) : (
+                    'Fetch Sold Data Now'
+                  )}
+                </Button>
+              )}
+            </div>
+            {isAdminUser && marketHistoryQuery.data?.summary?.lastFetchedAt && (
+              <div className="text-xs text-muted-foreground">
+                Last fetched: {new Date(marketHistoryQuery.data.summary.lastFetchedAt).toLocaleString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true 
+                })}
+              </div>
+            )}
+            {isAdminUser && !marketHistoryQuery.data?.summary?.lastFetchedAt && (
+              <div className="text-xs text-muted-foreground">
+                Last fetched: Never
+              </div>
             )}
           </div>
 

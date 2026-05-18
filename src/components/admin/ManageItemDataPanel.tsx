@@ -13,9 +13,10 @@ import {
   Search,
   CheckCircle2,
 } from 'lucide-react';
-import { adminAPI } from '@/integrations/api/client';
+import { adminAPI, prizeAPI } from '@/integrations/api/client';
 import { useAdminPrizeTiers } from '@/hooks/usePrizeConfig';
 import { PrizeConfiguration, AdminEbaySoldListing } from '@/types/prize';
+import { getThumbnailUrl } from '@/utils/helper';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -73,6 +74,26 @@ const BRAND_LABELS: Record<string, string> = {
   one_piece: 'One Piece',
   sports: 'Sports',
   other: 'Other',
+};
+
+// Helper to normalize item images (checks both imageUrls array and legacy imageUrl)
+const getItemDisplayImage = (item: PrizeConfiguration): string | null => {
+  const imageUrls = item.imageUrls || [];
+  
+  // First: try imageUrls array
+  for (const imageUrl of imageUrls) {
+    const trimmedUrl = typeof imageUrl === 'string' ? imageUrl.trim() : '';
+    if (trimmedUrl) {
+      return getThumbnailUrl(trimmedUrl);
+    }
+  }
+  
+  // Fallback: use legacy single imageUrl
+  if (item.imageUrl) {
+    return getThumbnailUrl(item.imageUrl);
+  }
+  
+  return null;
 };
 
 // ---------------------------------------------------------------------------
@@ -230,7 +251,7 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
             </SelectContent>
           </Select>
         </div>
-        <Button
+        {/* <Button
           onClick={handleSyncAll}
           disabled={syncAllMutation.isPending}
           variant="outline"
@@ -242,7 +263,7 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
             <RefreshCw className="w-4 h-4 mr-2" />
           )}
           Update All Sold eBay Data
-        </Button>
+        </Button> */}
       </div>
 
       {/* Selection and visibility controls */}
@@ -329,17 +350,20 @@ const ItemListView = ({ onSelectItem }: ItemListViewProps) => {
                 onClick={() => onSelectItem(item)}
                 className="text-left w-full hover:opacity-80 transition-opacity"
               >
-                {item.imageUrl ? (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    className="w-full aspect-square object-cover rounded mb-2"
-                  />
-                ) : (
-                  <div className="w-full aspect-square bg-muted rounded mb-2 flex items-center justify-center text-xs text-muted-foreground">
-                    No image
-                  </div>
-                )}
+                {(() => {
+                  const displayImage = getItemDisplayImage(item);
+                  return displayImage ? (
+                    <img
+                      src={displayImage}
+                      alt={item.name}
+                      className="w-full aspect-square object-cover rounded mb-2"
+                    />
+                  ) : (
+                    <div className="w-full aspect-square bg-muted rounded mb-2 flex items-center justify-center text-xs text-muted-foreground">
+                      No image
+                    </div>
+                  );
+                })()}
                 <p className="font-medium text-sm leading-tight line-clamp-2 mb-1">{item.name}</p>
                 <div className="flex gap-1 mb-1">
                   <Badge variant="outline" className="text-xs">
@@ -475,6 +499,7 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
   const [confirmFlagAllButSelected, setConfirmFlagAllButSelected] = useState(false);
   const [showFlagged, setShowFlagged] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'price-high' | 'price-low'>('date');
+  const [syncingMarketData, setSyncingMarketData] = useState(false);
   const [soldListingPreview, setSoldListingPreview] = useState<{
     activeUrl: string;
     thumbnailUrl: string;
@@ -486,6 +511,22 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
     queryKey: listingsQueryKey,
     queryFn: () => adminAPI.getItemEbaySoldListings(item.id, 500),
   });
+
+  const ebayFeatureFlagsQuery = useQuery({
+    queryKey: ['ebay-feature-flags'],
+    queryFn: () => prizeAPI.getEbayFeatureFlags(),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const marketHistoryQuery = useQuery({
+    queryKey: ['ebay-market-history', item.id],
+    queryFn: () => prizeAPI.getEbayMarketHistory(item.id, 5),
+    staleTime: 1000 * 60 * 2,
+    retry: 1,
+  });
+
+  const ebayManualSyncEnabled = ebayFeatureFlagsQuery.data?.ebayManualSyncEnabled ?? true;
 
   const saveQueryMutation = useMutation({
     mutationFn: (query: string | null) =>
@@ -512,6 +553,33 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
       toast({ title: 'Error', description: 'Failed to drop listings.', variant: 'destructive' });
     },
   });
+
+  const syncItemMutation = useMutation({
+    mutationFn: () => prizeAPI.syncEbaySoldListingsNow(item.id),
+    onSuccess: (result) => {
+      toast({
+        title: 'Sold data refreshed',
+        description: `Fetched ${result.fetched}, inserted ${result.inserted}, deduped ${result.deduped}, auto-flagged ${result.autoFlagged}`,
+      });
+      setSyncingMarketData(false);
+      queryClient.invalidateQueries({ queryKey: listingsQueryKey });
+      queryClient.invalidateQueries({ queryKey: ['adminPrizeTiers'] });
+      queryClient.invalidateQueries({ queryKey: ['ebay-market-history', item.id] });
+    },
+    onError: () => {
+      toast({
+        title: 'Sync failed',
+        description: 'Unable to refresh sold listings right now.',
+        variant: 'destructive',
+      });
+      setSyncingMarketData(false);
+    },
+  });
+
+  const handleManualSync = async () => {
+    setSyncingMarketData(true);
+    syncItemMutation.mutate();
+  };
 
   const bulkModerateMutation = useMutation({
     mutationFn: async ({ ids, isInaccurate, reason }: { 
@@ -646,13 +714,48 @@ const ItemDetailView = ({ item, onBack }: ItemDetailViewProps) => {
             className="w-14 h-14 object-cover rounded flex-shrink-0"
           />
         )}
-        <div>
+        <div className="flex-1">
           <h2 className="text-lg font-bold leading-tight">{item.name}</h2>
           <Badge variant="outline" className="mt-1 text-xs">
             {CATEGORY_LABELS[item.category] ?? item.category}
           </Badge>
         </div>
+        {ebayManualSyncEnabled && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 px-3 text-xs border-[#7AFF14]/40 text-[#7AFF14] hover:bg-[#7AFF14]/10"
+            disabled={syncingMarketData}
+            onClick={handleManualSync}
+          >
+            {syncingMarketData ? (
+              <>
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                Fetching...
+              </>
+            ) : (
+              'Fetch Sold Data Now'
+            )}
+          </Button>
+        )}
       </div>
+
+      {/* Last fetched timestamp */}
+      {marketHistoryQuery.data?.summary?.lastFetchedAt ? (
+        <div className="text-xs text-muted-foreground mb-4">
+          Last fetched: {new Date(marketHistoryQuery.data.summary.lastFetchedAt).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          })}
+        </div>
+      ) : (
+        <div className="text-xs text-muted-foreground mb-4">Last fetched: Never</div>
+      )}
 
       {/* Search query editor */}
       <div className="border border-[#2D343E] rounded-lg p-4 mb-5">

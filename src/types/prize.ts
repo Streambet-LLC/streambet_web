@@ -132,7 +132,10 @@ export interface EbayMarketSummary {
   soldCountUsed: number;
   percentDifference: number | null;
   lastCalculatedAt: string | null;
+  lastFetchedAt: string | null;
   totalValidSoldCount: number;
+  mostRecentSalePrice: number | null;
+  mostRecentSaleDate: string | null;
   windows: EbayMarketWindowAverage[];
 }
 
