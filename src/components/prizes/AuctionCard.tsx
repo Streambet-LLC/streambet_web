@@ -158,7 +158,7 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
   const marketHistoryQuery = useQuery({
     queryKey: ['ebay-market-history', prize.id],
     queryFn: () => prizeAPI.getEbayMarketHistory(prize.id, 5),
-    enabled: showMarketModal,
+    enabled: shouldShowEbayBox,
     staleTime: 1000 * 60 * 2,
     retry: 1,
   });
@@ -167,6 +167,9 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
   const latestAvg = marketSummary?.averagePrice ?? null;
   const cardLastCalculated =
     marketSummary?.lastCalculatedAt || prize.ebayMarketLastCalculatedAt || null;
+
+  // Use history data as source of truth for most recent sale
+  const mostRecentSalePrice = marketHistoryQuery.data?.listings[0]?.salePrice ?? null;
 
   const handleBidClick = () => {
     if (!session) {
@@ -577,10 +580,10 @@ export default function AuctionCard({ prize }: AuctionCardProps) {
               <TrendingUp className="w-3 h-3" />
               Next bid ${auction.minNextBidUsd.toFixed(2)}
             </span>
-            {shouldShowEbayBox && canShowEbayData && marketSummary?.mostRecentSalePrice ? (
+            {shouldShowEbayBox && canShowEbayData && mostRecentSalePrice ? (
               <span className="text-xs text-muted-foreground mt-0.5 inline-flex items-center gap-1">
                 <Tag className="w-3 h-3 scale-x-[-1]" />
-                eBay last sale ${Math.ceil(marketSummary.mostRecentSalePrice)}
+                eBay last sale ${Math.ceil(mostRecentSalePrice)}
               </span>
             ) : shouldShowEbayBox ? (
               <span className="text-xs text-transparent mt-0.5">
