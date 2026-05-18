@@ -836,7 +836,8 @@ export default function PrizeCard({
                 <span className="text-xl font-bold text-primary">${priceInUSD}</span>
                 {estimatedRewardCadeCoins > 0 && (
                   <div className="text-xs font-medium text-green-500">
-                    Earn {estimatedRewardCadeCoins.toLocaleString('en-US')} CadeCoins
+                    Earn {estimatedRewardCadeCoins.toLocaleString('en-US')}{' '}
+                    {estimatedRewardCadeCoins === 1 ? 'CadeCoin' : 'CadeCoins'}
                   </div>
                 )}
               </div>
@@ -1130,20 +1131,19 @@ export default function PrizeCard({
             </div>
             {isAdminUser && marketHistoryQuery.data?.summary?.lastFetchedAt && (
               <div className="text-xs text-muted-foreground">
-                Last fetched: {new Date(marketHistoryQuery.data.summary.lastFetchedAt).toLocaleString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric', 
+                Last fetched:{' '}
+                {new Date(marketHistoryQuery.data.summary.lastFetchedAt).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
                   year: 'numeric',
                   hour: 'numeric',
                   minute: '2-digit',
-                  hour12: true 
+                  hour12: true,
                 })}
               </div>
             )}
             {isAdminUser && !marketHistoryQuery.data?.summary?.lastFetchedAt && (
-              <div className="text-xs text-muted-foreground">
-                Last fetched: Never
-              </div>
+              <div className="text-xs text-muted-foreground">Last fetched: Never</div>
             )}
           </div>
 

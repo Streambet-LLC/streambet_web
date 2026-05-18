@@ -415,9 +415,19 @@ export default function Prizes() {
             {featuredPrizes.length > 0 && (
               <>
                 {session && (
-                  <h2 className="text-4xl font-bold px-2">
-                    {featured.mode === 'auctions' ? 'Auctions:' : 'Featured Items:'}
-                  </h2>
+                  <div>
+                    <h2 className="text-4xl font-bold px-2">
+                      {featured.mode === 'auctions' ? 'Auctions:' : 'Featured Items:'}
+                    </h2>
+                    {featured.mode === 'auctions' && (
+                      <p className="text-sm text-green-500 font-medium px-2 mt-0.5">
+                        Earn 10 CadeCoins per{' '}
+                        <strong>
+                          <u>bid</u>
+                        </strong>
+                      </p>
+                    )}
+                  </div>
                 )}
                 <div className="p-6 -mx-4">
                   <Carousel
