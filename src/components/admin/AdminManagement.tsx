@@ -1261,7 +1261,7 @@ export const AdminManagement = ({
                   textAlign: 'left',
                 }}
               >
-                Users
+                Month-To-Date New Users
               </span>
               {isAdminAnalyticsLoading ? (
                 <svg
@@ -1293,7 +1293,7 @@ export const AdminManagement = ({
                     textAlign: 'left',
                   }}
                 >
-                  {adminAnalytics?.totalUsers}
+                  {adminAnalytics?.newUsersMonthToDate ?? 0}
                 </span>
               )}
             </div>
@@ -1399,7 +1399,7 @@ export const AdminManagement = ({
                 </span>
               )}
             </div>
-            {/* Concierge Requests Card */}
+            {/* Month-To-Date Primary Sales Card */}
             <div
               className="bg-[rgba(22,22,22,1)] rounded-xl flex flex-col justify-center"
               style={{ minHeight: 109, height: 109, padding: 24 }}
@@ -1412,7 +1412,7 @@ export const AdminManagement = ({
                   textAlign: 'left',
                 }}
               >
-                Concierge Requests
+                Month-To-Date Primary Sales
               </span>
               {isAdminAnalyticsLoading ? (
                 <svg
@@ -1444,7 +1444,11 @@ export const AdminManagement = ({
                     textAlign: 'left',
                   }}
                 >
-                  {adminAnalytics?.totalConciergeRequests ?? 0}
+                  {(adminAnalytics?.monthlyPrimarySales ?? 0).toLocaleString('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    maximumFractionDigits: 2,
+                  })}
                 </span>
               )}
             </div>
