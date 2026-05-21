@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,8 @@ interface Prize {
 }
 
 interface ShippingAddress {
+  firstName: string;
+  lastName: string;
   addressLine1: string;
   addressLine2?: string;
   city: string;
@@ -63,6 +66,33 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
     zipCode: '',
     country: 'United States',
   });
+
+  // Pre-fill shipping address from the user's saved address (mirrors
+  // PrizeCheckoutModal so the offer flow has parity with the buy flow).
+  const { data: userAddress } = useQuery({
+    queryKey: ['userAddress'],
+    queryFn: async () => {
+      const response = await prizeAPI.getMyAddress();
+      return response;
+    },
+    enabled: isOpen && !!session && !prize.isInPerson,
+  });
+
+  useEffect(() => {
+    if (userAddress) {
+      setShippingAddress(prev => ({
+        ...prev,
+        firstName: userAddress.firstName || '',
+        lastName: userAddress.lastName || '',
+        addressLine1: userAddress.address || '',
+        addressLine2: userAddress.address2 || '',
+        city: userAddress.city || '',
+        state: userAddress.state || '',
+        zipCode: userAddress.zipCode || '',
+        country: 'United States',
+      }));
+    }
+  }, [userAddress]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,113 +258,115 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
                 reach out to coordinate the hand-off if your offer is accepted.
               </div>
             ) : (
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Shipping Address</Label>
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Shipping Address</Label>
 
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input
+                      id="firstName"
+                      value={shippingAddress.firstName}
+                      onChange={e =>
+                        setShippingAddress({ ...shippingAddress, firstName: e.target.value })
+                      }
+                      placeholder="John"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Input
+                      id="lastName"
+                      value={shippingAddress.lastName}
+                      onChange={e =>
+                        setShippingAddress({ ...shippingAddress, lastName: e.target.value })
+                      }
+                      placeholder="Doe"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
+                  <Label htmlFor="address1">Street Address *</Label>
                   <Input
-                    id="firstName"
-                    value={shippingAddress.firstName}
+                    id="address1"
+                    value={shippingAddress.addressLine1}
                     onChange={e =>
-                      setShippingAddress({ ...shippingAddress, firstName: e.target.value })
+                      setShippingAddress({ ...shippingAddress, addressLine1: e.target.value })
                     }
-                    placeholder="John"
+                    placeholder="123 Main St"
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Label htmlFor="address2">Apartment, Suite, etc.</Label>
                   <Input
-                    id="lastName"
-                    value={shippingAddress.lastName}
+                    id="address2"
+                    value={shippingAddress.addressLine2}
                     onChange={e =>
-                      setShippingAddress({ ...shippingAddress, lastName: e.target.value })
+                      setShippingAddress({ ...shippingAddress, addressLine2: e.target.value })
                     }
-                    placeholder="Doe"
-                    required
+                    placeholder="Apt 4B"
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="address1">Street Address *</Label>
-                <Input
-                  id="address1"
-                  value={shippingAddress.addressLine1}
-                  onChange={e =>
-                    setShippingAddress({ ...shippingAddress, addressLine1: e.target.value })
-                  }
-                  placeholder="123 Main St"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address2">Apartment, Suite, etc.</Label>
-                <Input
-                  id="address2"
-                  value={shippingAddress.addressLine2}
-                  onChange={e =>
-                    setShippingAddress({ ...shippingAddress, addressLine2: e.target.value })
-                  }
-                  placeholder="Apt 4B"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City *</Label>
-                  <Input
-                    id="city"
-                    value={shippingAddress.city}
-                    onChange={e => setShippingAddress({ ...shippingAddress, city: e.target.value })}
-                    placeholder="New York"
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City *</Label>
+                    <Input
+                      id="city"
+                      value={shippingAddress.city}
+                      onChange={e =>
+                        setShippingAddress({ ...shippingAddress, city: e.target.value })
+                      }
+                      placeholder="New York"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State/Province *</Label>
+                    <Input
+                      id="state"
+                      value={shippingAddress.state}
+                      onChange={e =>
+                        setShippingAddress({ ...shippingAddress, state: e.target.value })
+                      }
+                      placeholder="NY"
+                      required
+                    />
+                  </div>
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="state">State/Province *</Label>
+                  <Label htmlFor="zip">ZIP/Postal Code *</Label>
                   <Input
-                    id="state"
-                    value={shippingAddress.state}
+                    id="zip"
+                    value={shippingAddress.zipCode}
                     onChange={e =>
-                      setShippingAddress({ ...shippingAddress, state: e.target.value })
+                      setShippingAddress({ ...shippingAddress, zipCode: e.target.value })
                     }
-                    placeholder="NY"
+                    placeholder="10001"
                     required
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="zip">ZIP/Postal Code *</Label>
-                <Input
-                  id="zip"
-                  value={shippingAddress.zipCode}
-                  onChange={e =>
-                    setShippingAddress({ ...shippingAddress, zipCode: e.target.value })
-                  }
-                  placeholder="10001"
-                  required
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country *</Label>
+                  <Input
+                    id="country"
+                    type="text"
+                    value="United States"
+                    disabled
+                    className="bg-muted cursor-not-allowed"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    We currently ship to the United States only
+                  </p>
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="country">Country *</Label>
-                <Input
-                  id="country"
-                  type="text"
-                  value="United States"
-                  disabled
-                  className="bg-muted cursor-not-allowed"
-                />
-                <p className="text-xs text-muted-foreground">
-                  We currently ship to the United States only
-                </p>
-              </div>
-            </div>
             )}
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>

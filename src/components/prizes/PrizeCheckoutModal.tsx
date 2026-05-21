@@ -432,7 +432,7 @@ export default function PrizeCheckoutModal({
           <DialogDescription>
             {allowCadeCoins
               ? 'Complete your purchase with flexible payment options'
-              : 'This seller accepts card payments only'}
+              : 'This seller accepts card or bank (ACH) payments only'}
           </DialogDescription>
         </DialogHeader>
 
@@ -586,14 +586,14 @@ export default function PrizeCheckoutModal({
                     </SelectItem>
                   )}
                   <SelectItem value="usd" className="cursor-pointer">
-                    <span className="font-medium">Credit/Debit Card (USD)</span>
+                    <span className="font-medium">Card or Bank / ACH (USD)</span>
                     <span className="text-muted-foreground ml-2">
                       · ${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)}
                     </span>
                   </SelectItem>
                   {allowCadeCoins && (
                     <SelectItem value="combined" className="cursor-pointer">
-                      <span className="font-medium">CadeCoins + Card</span>
+                      <span className="font-medium">CadeCoins + Card / Bank</span>
                       <span className="text-muted-foreground ml-2">· split</span>
                     </SelectItem>
                   )}
@@ -650,7 +650,7 @@ export default function PrizeCheckoutModal({
                     className="mr-3"
                   />
                   <div className="flex-1">
-                    <div className="font-medium">Credit/Debit Card (USD)</div>
+                    <div className="font-medium">Card or Bank / ACH (USD)</div>
                     <div className="text-sm text-muted-foreground">
                       ${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} USD
                     </div>
@@ -673,7 +673,7 @@ export default function PrizeCheckoutModal({
                       className="mr-3"
                     />
                     <div className="flex-1">
-                      <div className="font-medium">CadeCoins + Card</div>
+                      <div className="font-medium">CadeCoins + Card / Bank</div>
                       <div className="text-sm text-muted-foreground">
                         Split payment between coins and USD
                       </div>
@@ -763,7 +763,7 @@ export default function PrizeCheckoutModal({
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="usd">USD to Pay by Card</Label>
+                  <Label htmlFor="usd">USD to Pay (Card or Bank)</Label>
                   <span className="text-sm text-muted-foreground">${usdAmount.toFixed(2)}</span>
                 </div>
                 <Input
@@ -825,13 +825,13 @@ export default function PrizeCheckoutModal({
                     {paymentMethod === 'coins'
                       ? `Total: ${roundDownCoinAmount(coinsAmount).toLocaleString()} CadeCoins`
                       : paymentMethod === 'usd'
-                        ? `Total: $${(totalPrice + getBuyerFeeUsd(usdAmount)).toFixed(2)} • Pay via card`
+                        ? `Total: $${(totalPrice + getBuyerFeeUsd(usdAmount)).toFixed(2)} • Pay with card or bank`
                         : paymentMethod === 'crypto'
                           ? `Total: $${cryptoTotalUsd.toFixed(2)} USDC${
                               cryptoBuyerFeeWaived ? ' (buyer fee waived)' : ''
                             }`
                           : paymentMethod === 'combined'
-                            ? `Total: ${roundDownCoinAmount(combinedCoinsAmount).toLocaleString()} coins + $${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} card`
+                            ? `Total: ${roundDownCoinAmount(combinedCoinsAmount).toLocaleString()} coins + $${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} card or bank`
                             : ''}
                   </AlertDescription>
                 </Alert>
@@ -991,13 +991,13 @@ export default function PrizeCheckoutModal({
                     {paymentMethod === 'coins'
                       ? `Total: ${roundDownCoinAmount(coinsAmount).toLocaleString()} CadeCoins`
                       : paymentMethod === 'usd'
-                        ? `Total: $${(totalPrice + getBuyerFeeUsd(usdAmount)).toFixed(2)} • Pay via card`
+                        ? `Total: $${(totalPrice + getBuyerFeeUsd(usdAmount)).toFixed(2)} • Pay with card or bank`
                         : paymentMethod === 'crypto'
                           ? `Total: $${cryptoTotalUsd.toFixed(2)} USDC${
                               cryptoBuyerFeeWaived ? ' (buyer fee waived)' : ''
                             }`
                           : paymentMethod === 'combined'
-                            ? `Total: ${roundDownCoinAmount(combinedCoinsAmount).toLocaleString()} coins + $${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} card`
+                            ? `Total: ${roundDownCoinAmount(combinedCoinsAmount).toLocaleString()} coins + $${(usdAmount + getBuyerFeeUsd(usdAmount)).toFixed(2)} card or bank`
                             : ''}
                   </AlertDescription>
                 </Alert>

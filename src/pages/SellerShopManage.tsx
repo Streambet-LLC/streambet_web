@@ -1279,6 +1279,10 @@ export default function SellerShopManage() {
         return 'bg-red-500/10 text-red-500 border-red-500/20';
       case 'paid':
         return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'payment_processing':
+        return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+      case 'payment_failed':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
       default:
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     }
@@ -3057,7 +3061,29 @@ export default function SellerShopManage() {
                               </div>
                             )}
 
-                            {order.status === 'paid' ? (
+                            {order.status === 'payment_processing' ? (
+                              <div className="flex flex-col gap-2">
+                                <div className="rounded-md border-2 border-orange-500/40 bg-orange-500/10 p-3">
+                                  <p className="text-sm font-semibold text-orange-400 mb-1">
+                                    ⚠️ Do Not Ship Yet — ACH Payment Processing
+                                  </p>
+                                  <p className="text-xs text-foreground/80 leading-relaxed">
+                                    The buyer paid via bank transfer (ACH), which takes 3–5
+                                    business days to settle. You will be notified by email the
+                                    moment funds clear and the order is safe to ship.
+                                  </p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedSaleTransaction(order)}
+                                  className="w-full"
+                                >
+                                  <Receipt className="w-4 h-4 mr-2" />
+                                  View transaction
+                                </Button>
+                              </div>
+                            ) : order.status === 'paid' ? (
                               <div className="flex flex-col gap-2">
                                 <Button
                                   size="sm"

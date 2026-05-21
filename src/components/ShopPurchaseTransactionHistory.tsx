@@ -34,7 +34,7 @@ const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryPro
     queryKey: ['shop-orders'],
     queryFn: async () => {
       const data = await api.prize.getShopOrders();
-      return data?.filter(t => ['paid', 'shipped'].includes(t.status));
+      return data?.filter(t => ['paid', 'shipped', 'payment_processing'].includes(t.status));
     },
   });
 
