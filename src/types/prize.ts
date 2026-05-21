@@ -470,6 +470,8 @@ export interface PrizeOrder {
   status:
     | 'pending'
     | 'buy_attempted'
+    | 'payment_processing'
+    | 'payment_failed'
     | 'paid'
     | 'processing'
     | 'shipped'

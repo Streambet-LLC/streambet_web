@@ -212,6 +212,10 @@ export const PrizeOrders = () => {
         return 'bg-red-500/10 text-red-500 border-red-500/20';
       case 'paid':
         return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'payment_processing':
+        return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+      case 'payment_failed':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
       case 'pending':
         return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
       case 'buy_attempted':
@@ -224,6 +228,12 @@ export const PrizeOrders = () => {
   const getStatusLabel = (status: string) => {
     if (status === 'buy_attempted') {
       return 'Buy Attempted';
+    }
+    if (status === 'payment_processing') {
+      return 'ACH PROCESSING — DO NOT SHIP';
+    }
+    if (status === 'payment_failed') {
+      return 'PAYMENT FAILED';
     }
     return status.replace(/_/g, ' ').toUpperCase();
   };
