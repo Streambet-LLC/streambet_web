@@ -2,11 +2,15 @@ import { MainLayout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, CreditCard, AlertTriangle, CheckCircle2, Home, Clock } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { toast } from '@/hooks/use-toast';
+import StripePaymentMethodPicker, {
+  StripePaymentMethod,
+  getBuyerFeePercent,
+} from '@/components/payments/StripePaymentMethodPicker';
 
 interface PaymentStatus {
   auctionId: string;
@@ -42,6 +46,10 @@ export default function AuctionRetryPayment() {
 
   const retryFlag = searchParams.get('auction_retry');
 
+  // Buyer's chosen Stripe Checkout method. Default to card (3% fee) so
+  // the worst-case total shows until the buyer opts into ACH (0.8%).
+  const [stripeMethod, setStripeMethod] = useState<StripePaymentMethod>('card');
+
   const {
     data: status,
     isLoading,
@@ -75,7 +83,7 @@ export default function AuctionRetryPayment() {
     mutationFn: async () => {
       if (!auctionId) throw new Error('Missing auction id');
       const returnUrl = window.location.origin + window.location.pathname;
-      return api.auction.createRetryCheckout(auctionId, returnUrl);
+      return api.auction.createRetryCheckout(auctionId, returnUrl, stripeMethod);
     },
     onSuccess: ({ url }) => {
       if (url) {
@@ -259,8 +267,16 @@ export default function AuctionRetryPayment() {
                 <span className="font-medium">{formatUsd(status.winningBidUsd)}</span>
               </div>
               <div className="flex items-center justify-between px-4 py-3 text-sm">
-                <span className="text-muted-foreground">Processing fee</span>
-                <span className="font-medium">{formatUsd(status.buyerProcessingFeeUsd)}</span>
+                <span className="text-muted-foreground">
+                  Processing fee ({getBuyerFeePercent(stripeMethod)}%)
+                </span>
+                <span className="font-medium">
+                  {formatUsd(
+                    Math.round(
+                      status.winningBidUsd * getBuyerFeePercent(stripeMethod)
+                    ) / 100
+                  )}
+                </span>
               </div>
               <div className="flex items-center justify-between px-4 py-3 text-sm">
                 <span className="text-muted-foreground">Shipping</span>
@@ -270,9 +286,22 @@ export default function AuctionRetryPayment() {
               </div>
               <div className="flex items-center justify-between px-4 py-3 text-base">
                 <span className="font-semibold">Total due</span>
-                <span className="font-semibold">{formatUsd(status.totalDueUsd)}</span>
+                <span className="font-semibold">
+                  {formatUsd(
+                    status.winningBidUsd +
+                      status.shippingUsd +
+                      Math.round(status.winningBidUsd * getBuyerFeePercent(stripeMethod)) /
+                        100
+                  )}
+                </span>
               </div>
             </div>
+
+            <StripePaymentMethodPicker
+              value={stripeMethod}
+              onChange={setStripeMethod}
+              disabled={checkoutMutation.isPending}
+            />
 
             <div className="space-y-3">
               <Button

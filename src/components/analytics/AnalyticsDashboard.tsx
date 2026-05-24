@@ -1,0 +1,295 @@
+import { Card } from '@/components/ui/card';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  LineChart,
+  Line,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+import {
+  MOCK_ANALYTICS_OVERVIEW,
+  formatUsd,
+  categoryLabel,
+} from '@/mocks/analytics';
+import { CategoryBadge } from './AnalyticsBadges';
+import { Users, Link2, TrendingUp, Sparkles } from 'lucide-react';
+
+const CATEGORY_PIE_COLORS = ['#FACC15', '#EF4444', '#3B82F6', '#94A3B8'];
+
+const StatCard = ({
+  label,
+  value,
+  hint,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) => (
+  <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
+    <div className="flex items-start justify-between">
+      <div>
+        <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
+        <div className="text-2xl font-semibold mt-2 text-white">{value}</div>
+        {hint && <div className="text-xs text-muted-foreground mt-1">{hint}</div>}
+      </div>
+      <div className="rounded-lg bg-[#B4FF39]/10 p-2">
+        <Icon className="h-4 w-4 text-[#B4FF39]" />
+      </div>
+    </div>
+  </Card>
+);
+
+const ChartCard = ({
+  title,
+  subtitle,
+  children,
+  className = '',
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <Card className={`bg-[rgba(22,22,22,1)] border-white/5 p-6 ${className}`}>
+    <div className="mb-4">
+      <div className="text-sm font-medium text-white">{title}</div>
+      {subtitle && <div className="text-xs text-muted-foreground mt-0.5">{subtitle}</div>}
+    </div>
+    {children}
+  </Card>
+);
+
+export const AnalyticsDashboard = () => {
+  const o = MOCK_ANALYTICS_OVERVIEW;
+
+  return (
+    <div className="space-y-6">
+      {/* Top stat row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Unified Profiles"
+          value={o.totalProfiles.toLocaleString()}
+          hint="Across CardCade + scraped sources"
+          icon={Users}
+        />
+        <StatCard
+          label="Linked Identities"
+          value={o.unifiedIdentitiesLinked.toLocaleString()}
+          hint={`Avg confidence ${o.avgIdentityConfidence}%`}
+          icon={Link2}
+        />
+        <StatCard
+          label="Predicted 30-Day Spend"
+          value={formatUsd(o.predicted30dSpendUsd)}
+          hint="Sum of model forecasts"
+          icon={TrendingUp}
+        />
+        <StatCard
+          label="High-Intent Buyers"
+          value={(
+            o.confidenceDistribution[3].count + o.confidenceDistribution[4].count
+          ).toLocaleString()}
+          hint="Confidence ≥ 76%"
+          icon={Sparkles}
+        />
+      </div>
+
+      {/* Spend trend + Confidence dist */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <ChartCard
+          title="Predicted vs. Actual Spend"
+          subtitle="Last 12 weeks · USD (thousands)"
+          className="lg:col-span-2"
+        >
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={o.spendTrend}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+              <XAxis dataKey="week" stroke="#ffffff60" fontSize={12} />
+              <YAxis stroke="#ffffff60" fontSize={12} />
+              <Tooltip
+                contentStyle={{
+                  background: '#0A0A0A',
+                  border: '1px solid #ffffff20',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line
+                type="monotone"
+                dataKey="predicted"
+                stroke="#B4FF39"
+                strokeWidth={2}
+                dot={false}
+                name="Predicted"
+              />
+              <Line
+                type="monotone"
+                dataKey="actual"
+                stroke="#60A5FA"
+                strokeWidth={2}
+                dot={false}
+                name="Actual"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard
+          title="Identity Confidence Distribution"
+          subtitle="Linked accounts by match confidence"
+        >
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={o.confidenceDistribution}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+              <XAxis dataKey="bucket" stroke="#ffffff60" fontSize={12} />
+              <YAxis stroke="#ffffff60" fontSize={12} />
+              <Tooltip
+                contentStyle={{
+                  background: '#0A0A0A',
+                  border: '1px solid #ffffff20',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+              />
+              <Bar dataKey="count" fill="#B4FF39" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      {/* Category affinity + Top personas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <ChartCard
+          title="Category Affinity"
+          subtitle="Predicted spend share by category"
+        >
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+              <Pie
+                data={o.categoryAffinity}
+                dataKey="predictedSpendUsd"
+                nameKey="label"
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={90}
+                paddingAngle={2}
+              >
+                {o.categoryAffinity.map((_, i) => (
+                  <Cell key={i} fill={CATEGORY_PIE_COLORS[i % CATEGORY_PIE_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  background: '#0A0A0A',
+                  border: '1px solid #ffffff20',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                formatter={(value: number) => formatUsd(value)}
+              />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard
+          title="Top Predicted Assets"
+          subtitle="Highest forecast spend over next 30 days"
+          className="lg:col-span-2"
+        >
+          <div className="space-y-3">
+            {o.topAssets.map(a => (
+              <div
+                key={a.assetId}
+                className="flex items-center justify-between rounded-lg border border-white/5 bg-black/30 p-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <CategoryBadge category={a.category} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-white truncate">{a.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {a.predictedBuyers.toLocaleString()} predicted buyers · avg{' '}
+                      {a.avgBuyLikelihood}% intent
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right pl-4 shrink-0">
+                  <div className="text-sm font-semibold text-[#B4FF39]">
+                    {formatUsd(a.totalPredictedSpendUsd)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">forecast</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
+      </div>
+
+      {/* Personas */}
+      <ChartCard
+        title="Collector Personas"
+        subtitle="Inferred from purchase + social behavior"
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {o.topPersonas.map(p => (
+            <div
+              key={p.persona}
+              className="rounded-lg border border-white/5 bg-black/30 p-3"
+            >
+              <div className="text-xs text-muted-foreground">{p.persona}</div>
+              <div className="text-lg font-semibold text-white mt-1">
+                {p.count.toLocaleString()}
+              </div>
+            </div>
+          ))}
+        </div>
+      </ChartCard>
+
+      {/* Category roll-up table */}
+      <ChartCard title="Category Forecast Detail" subtitle="Users + predicted spend per category">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase text-muted-foreground border-b border-white/5">
+                <th className="py-2 pr-4">Category</th>
+                <th className="py-2 pr-4">Active Profiles</th>
+                <th className="py-2 pr-4">Predicted 30-Day Spend</th>
+                <th className="py-2 pr-4">Avg Spend / User</th>
+              </tr>
+            </thead>
+            <tbody>
+              {o.categoryAffinity.map(c => (
+                <tr key={c.category} className="border-b border-white/5 last:border-0">
+                  <td className="py-3 pr-4">
+                    <CategoryBadge category={c.category} />
+                  </td>
+                  <td className="py-3 pr-4 text-white">{c.userCount.toLocaleString()}</td>
+                  <td className="py-3 pr-4 text-[#B4FF39] font-medium">
+                    {formatUsd(c.predictedSpendUsd)}
+                  </td>
+                  <td className="py-3 pr-4 text-muted-foreground">
+                    {formatUsd(c.predictedSpendUsd / c.userCount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* keep categoryLabel referenced so tree-shake doesn't drop the helper export */}
+        <div className="sr-only">{categoryLabel('pokemon')}</div>
+      </ChartCard>
+    </div>
+  );
+};
