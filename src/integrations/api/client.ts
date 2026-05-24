@@ -1936,6 +1936,10 @@ export const prizeAPI = {
     shippingAddress: any;
     offerAmount: number;
     offerNotes?: string;
+    // Stripe method the buyer agrees to pay with if the offer is
+    // accepted. Locked in now so the buyer fee at acceptance is the
+    // rate the buyer was quoted (card = 3%, ACH = 0.8%).
+    stripePaymentMethod: 'card' | 'us_bank_account';
   }) => {
     const response = await apiClient.post('/prizes/make-offer', offerData);
     return response.data;
@@ -2412,9 +2416,14 @@ export const auctionAPI = {
    * surfaced inside the Stripe-hosted page; new cards are saved for
    * future auctions automatically.
    */
-  createRetryCheckout: async (auctionId: string, returnUrl: string): Promise<{ url: string }> => {
+  createRetryCheckout: async (
+    auctionId: string,
+    returnUrl: string,
+    stripePaymentMethod: 'card' | 'us_bank_account',
+  ): Promise<{ url: string }> => {
     const response = await apiClient.post(`/auctions/${auctionId}/retry-checkout`, {
       returnUrl,
+      stripePaymentMethod,
     });
     return response.data;
   },

@@ -55,6 +55,7 @@ import MyBids from './pages/MyBids';
 import PurchaseSuccess from './pages/PurchaseSuccess';
 import CartPage from './pages/CartPage';
 import AuctionRetryPayment from './pages/AuctionRetryPayment';
+import Analytics from './pages/Analytics';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -99,6 +100,8 @@ const App = () => {
                               {/* Guarded Routes */}
                               <Route element={<RouteGroup guard />}>
                                 <Route path="/admin" element={<Admin />} />
+                                <Route path="/analytics" element={<Analytics />} />
+                                <Route path="/analytics/:userId" element={<Analytics />} />
                                 <Route path="/withdraw" element={<Redeem />} />
                                 <Route path="/withdraw/verification" element={<Kyc />} />
                                 <Route

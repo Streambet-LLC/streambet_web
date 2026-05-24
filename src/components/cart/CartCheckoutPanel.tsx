@@ -8,6 +8,10 @@ import { Separator } from '@/components/ui/separator';
 import { useCartCheckout, useValidateDiscountCode } from '@/hooks/useCart';
 import { CartSummary, ShippingAddressForm, ValidateDiscountCodeResponse } from '@/types/cart';
 import { useToast } from '@/hooks/use-toast';
+import StripePaymentMethodPicker, {
+  StripePaymentMethod,
+  getBuyerFeePercent,
+} from '@/components/payments/StripePaymentMethodPicker';
 
 const formatCents = (cents: number) => {
   return `$${(cents / 100).toFixed(2)}`;
@@ -34,6 +38,9 @@ export default function CartCheckoutPanel({
 
   const [discountInput, setDiscountInput] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<ValidateDiscountCodeResponse | null>(null);
+  // Buyer's chosen Stripe Checkout method. Default to card so we display
+  // the worst-case fee until the buyer explicitly opts into ACH.
+  const [stripeMethod, setStripeMethod] = useState<StripePaymentMethod>('card');
 
   const handleApplyDiscount = () => {
     const code = discountInput.trim();
@@ -91,7 +98,19 @@ export default function CartCheckoutPanel({
     }
   }
 
-  const adjustedTotalCents = cartSummary.cartTotals.totalCents - discountCents;
+  // Server pre-computes `buyerFeeCents` using the card rate (3%). When the
+  // buyer selects ACH (0.8%) we recompute locally so the summary matches
+  // what they'll see on Stripe. The backend re-derives the fee from the
+  // `stripePaymentMethod` we submit at checkout, so this is display-only.
+  const buyerFeePercent = getBuyerFeePercent(stripeMethod);
+  const displayBuyerFeeCents = Math.round(
+    cartSummary.cartTotals.itemSubtotalCents * (buyerFeePercent / 100)
+  );
+  const displayTotalCents =
+    cartSummary.cartTotals.itemSubtotalCents +
+    cartSummary.cartTotals.shippingCents +
+    displayBuyerFeeCents -
+    discountCents;
 
   const handleCheckout = () => {
     if (
@@ -121,6 +140,7 @@ export default function CartCheckoutPanel({
         zipCode: shippingAddress.zipCode,
         country: shippingAddress.country,
       },
+      stripePaymentMethod: stripeMethod,
       ...(appliedDiscount?.valid && appliedDiscount.code
         ? { discountCode: appliedDiscount.code }
         : {}),
@@ -157,10 +177,10 @@ export default function CartCheckoutPanel({
               <span>{formatCents(cartTotals.shippingCents)}</span>
             )}
           </div>
-          {cartTotals.buyerFeeCents > 0 && (
+          {displayBuyerFeeCents > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Processing fee (3%)</span>
-              <span>{formatCents(cartTotals.buyerFeeCents)}</span>
+              <span className="text-muted-foreground">Processing fee ({buyerFeePercent}%)</span>
+              <span>{formatCents(displayBuyerFeeCents)}</span>
             </div>
           )}
           {discountCents > 0 && (
@@ -175,7 +195,7 @@ export default function CartCheckoutPanel({
           <Separator />
           <div className="flex justify-between font-bold text-lg">
             <span>Total</span>
-            <span>{formatCents(adjustedTotalCents)}</span>
+            <span>{formatCents(displayTotalCents)}</span>
           </div>
         </CardContent>
       </Card>
@@ -225,6 +245,19 @@ export default function CartCheckoutPanel({
           )}
         </CardContent>
       </Card>
+
+      {/* Stripe payment method selection */}
+      {cartTotals.itemSubtotalCents > 0 && (
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <StripePaymentMethodPicker
+              value={stripeMethod}
+              onChange={setStripeMethod}
+              disabled={checkout.isPending}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Offer items info */}
       {hasOfferItems && (

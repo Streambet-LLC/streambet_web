@@ -28,6 +28,10 @@ import { useValidateDiscountCode } from '@/hooks/useCart';
 import type { PrizePurchaseRequest } from '@/types/prize';
 import type { ValidateDiscountCodeResponse } from '@/types/cart';
 import { CryptoCheckoutButton } from '@/components/crypto/CryptoCheckoutButton';
+import StripePaymentMethodPicker, {
+  StripePaymentMethod,
+  getBuyerFeePercent,
+} from '@/components/payments/StripePaymentMethodPicker';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { PublicKey } from '@solana/web3.js';
@@ -63,7 +67,6 @@ interface PrizeCheckoutModalProps {
 
 const COINS_TO_USD = 50; // 50 coins = $1
 const DEFAULT_SHIPPING_FEE_USD = 5; // Legacy default when caller doesn't override.
-const BUYER_FEE_PERCENT = 3; // 3% buyer service fee on USD payments
 // On-chain buyer fee charged by the marketplace contract (basis points).
 // Mirrors `BUYER_FEE_BPS` in cardcade-contracts (default 50 = 0.5%).
 // Waivable per-buyer via `grant_buyer_waiver` (admin-only PDA).
@@ -144,11 +147,23 @@ export default function PrizeCheckoutModal({
   const itemLabel = isShopItem ? 'Item:' : 'Prize:';
   const displayItemPriceUsd = prizeAmount / COINS_TO_USD;
 
-  // Calculate buyer fee (3%) on the item price only (excludes shipping)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    allowCadeCoins ? 'coins' : 'usd'
+  );
+  // Buyer's chosen Stripe Checkout method (card = 3% fee, ACH = 0.8%).
+  // Only matters when paymentMethod is 'usd' or 'combined'. Default to
+  // card so the higher fee is what we display until the buyer explicitly
+  // opts into the cheaper ACH path.
+  const [stripeMethod, setStripeMethod] = useState<StripePaymentMethod>('card');
+
+  // Calculate buyer fee on the item price only (excludes shipping).
+  // Rate is card 3% / ACH 0.8% — must match server-side
+  // `getBuyerFeePercentForStripeMethod` in `fee-utils.ts`.
+  const buyerFeePercent = getBuyerFeePercent(stripeMethod);
   const getBuyerFeeUsd = (usdPortion: number) => {
     const transactionSubtotalCents = Math.round(usdPortion * 100);
     const itemSubtotalCents = Math.max(0, transactionSubtotalCents - SHIPPING_FEE_CENTS);
-    const buyerFeeCents = Math.round(itemSubtotalCents * (BUYER_FEE_PERCENT / 100));
+    const buyerFeeCents = Math.round(itemSubtotalCents * (buyerFeePercent / 100));
     return buyerFeeCents / 100;
   };
 
@@ -171,9 +186,6 @@ export default function PrizeCheckoutModal({
     enabled: isOpen,
   });
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    allowCadeCoins ? 'coins' : 'usd'
-  );
   const [cryptoOrderId, setCryptoOrderId] = useState<string | null>(null);
   const [coinsAmount, setCoinsAmount] = useState(
     allowCadeCoins && userCadeCoins >= totalAmount ? totalAmount : 0
@@ -406,6 +418,11 @@ export default function PrizeCheckoutModal({
       coinsAmount: finalCoinsAmount,
       usdAmount,
       totalPrice: finalTotalPrice,
+      // Only send when we're actually going to hit Stripe. Backend
+      // rejects the request if it's missing for usd/combined.
+      ...(paymentMethod === 'usd' || paymentMethod === 'combined'
+        ? { stripePaymentMethod: stripeMethod }
+        : {}),
       ...(appliedDiscount?.valid && appliedDiscount.code
         ? { discountCode: appliedDiscount.code }
         : {}),
@@ -461,7 +478,7 @@ export default function PrizeCheckoutModal({
               </div>
               {(paymentMethod === 'usd' || paymentMethod === 'combined') && usdAmount > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Service Fee ({BUYER_FEE_PERCENT}%):</span>
+                  <span className="text-muted-foreground">Service Fee ({buyerFeePercent}%):</span>
                   <span className="text-muted-foreground">
                     ${getBuyerFeeUsd(usdAmount).toFixed(2)}
                   </span>
@@ -799,6 +816,14 @@ export default function PrizeCheckoutModal({
                 </div>
               </div>
             </div>
+          )}
+
+          {(paymentMethod === 'usd' || paymentMethod === 'combined') && usdAmount > 0 && (
+            <StripePaymentMethodPicker
+              value={stripeMethod}
+              onChange={setStripeMethod}
+              disabled={createOrderMutation.isPending}
+            />
           )}
 
           <div className="space-y-4">

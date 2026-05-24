@@ -452,6 +452,13 @@ export interface PrizePurchaseRequest {
   usdAmount: number; // Amount in USD (0 for coins-only)
   totalPrice: number; // Total price in USD (coins converted to USD)
   discountCode?: string; // Optional discount code
+  /**
+   * Stripe Checkout payment method. Required when paymentMethod is
+   * `usd` or `combined`. The backend restricts the hosted Checkout
+   * session to this single method and applies the matching buyer fee
+   * tier (card = 3%, us_bank_account = 0.8%).
+   */
+  stripePaymentMethod?: 'card' | 'us_bank_account';
 }
 
 export interface PrizeOrder {

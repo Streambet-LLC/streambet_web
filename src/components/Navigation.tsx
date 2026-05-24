@@ -171,6 +171,10 @@ export const Navigation = ({ onDashboardClick, searchValue, onSearchChange }: Na
       label: 'Admin Dashboard',
       path: '/admin',
     },
+    session?.role === 'admin' && {
+      label: 'Analytics',
+      path: '/analytics',
+    },
     // { label: 'Streams', icon: undefined, path: '/stream' },
     // { label: 'Rewards', icon: undefined, path: '/rewards' },
     // { label: 'Community', icon: undefined, path: '/community' },

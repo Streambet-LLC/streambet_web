@@ -16,6 +16,9 @@ import { Loader2 } from 'lucide-react';
 import { prizeAPI } from '@/integrations/api/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { getThumbnailUrl } from '@/utils/helper';
+import StripePaymentMethodPicker, {
+  StripePaymentMethod,
+} from '@/components/payments/StripePaymentMethodPicker';
 
 interface Prize {
   id: string;
@@ -56,6 +59,10 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [offerAmount, setOfferAmount] = useState('');
   const [offerNotes, setOfferNotes] = useState('');
+  // Method the buyer commits to using if/when the seller accepts the offer.
+  // Stored on the prize_order row so the server can compute the correct
+  // Stripe fee and restrict the Checkout session at acceptance time.
+  const [stripeMethod, setStripeMethod] = useState<StripePaymentMethod>('card');
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
     firstName: '',
     lastName: '',
@@ -125,6 +132,7 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
         shippingAddress,
         offerAmount: amount,
         offerNotes: offerNotes || undefined,
+        stripePaymentMethod: stripeMethod,
       });
 
       toast({
@@ -136,6 +144,7 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
 
       setOfferAmount('');
       setOfferNotes('');
+      setStripeMethod('card');
       setShippingAddress({
         firstName: '',
         lastName: '',
@@ -249,6 +258,13 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
               />
               <p className="text-xs text-muted-foreground">{offerNotes.length}/500</p>
             </div>
+
+            <StripePaymentMethodPicker
+              value={stripeMethod}
+              onChange={setStripeMethod}
+              disabled={isSubmitting}
+              title="Payment Method (if accepted)"
+            />
 
             {prize.isInPerson ? (
               // In-person pickup: no shipping address collected. Seller
