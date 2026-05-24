@@ -75,6 +75,13 @@ export interface CartCheckoutRequest {
   cardcadePaymentMethod?: 'coins' | 'usd' | 'combined';
   coinsToApply?: number;
   discountCode?: string;
+  /**
+   * Stripe Checkout payment method. Required when the cart contains
+   * any USD items. Backend restricts the hosted Checkout to this
+   * single method and applies the matching buyer fee tier
+   * (card = 3%, us_bank_account = 0.8%).
+   */
+  stripePaymentMethod?: 'card' | 'us_bank_account';
 }
 
 export interface CartCheckoutResponse {
