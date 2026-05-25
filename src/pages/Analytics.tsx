@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { AnalyticsUsersList } from '@/components/analytics/AnalyticsUsersList';
 import { AnalyticsUserDetail } from '@/components/analytics/AnalyticsUserDetail';
-import { Badge } from '@/components/ui/badge';
+import { AnalyticsScrapers } from '@/components/analytics/AnalyticsScrapers';
 
 /**
  * Admin-only Analytics homebase.
@@ -19,7 +19,9 @@ import { Badge } from '@/components/ui/badge';
 const Analytics = () => {
   const { session, isLoading, isFetching } = useAuthContext();
   const { userId } = useParams<{ userId?: string }>();
-  const [tab, setTab] = useState<'overview' | 'profiles'>(userId ? 'profiles' : 'overview');
+  const [tab, setTab] = useState<'overview' | 'profiles' | 'scrapers'>(
+    userId ? 'profiles' : 'overview',
+  );
 
   if (isLoading || isFetching) {
     return (
@@ -47,18 +49,6 @@ const Analytics = () => {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold text-white">Analytics</h1>
-              <Badge
-                variant="outline"
-                className="bg-[#B4FF39]/10 text-[#B4FF39] border-[#B4FF39]/30"
-              >
-                Admin Preview
-              </Badge>
-              <Badge
-                variant="outline"
-                className="bg-white/5 text-muted-foreground border-white/10"
-              >
-                Mock Data
-              </Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Unified collector intelligence — purchase propensity, payment-percentile predictions,
@@ -72,10 +62,11 @@ const Analytics = () => {
         {userId ? (
           <AnalyticsUserDetail />
         ) : (
-          <Tabs value={tab} onValueChange={v => setTab(v as 'overview' | 'profiles')}>
+          <Tabs value={tab} onValueChange={v => setTab(v as 'overview' | 'profiles' | 'scrapers')}>
             <TabsList className="bg-[rgba(22,22,22,1)] border border-white/5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="profiles">Profiles</TabsTrigger>
+              <TabsTrigger value="scrapers">Scrapers</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="mt-6">
@@ -84,6 +75,10 @@ const Analytics = () => {
 
             <TabsContent value="profiles" className="mt-6">
               <AnalyticsUsersList />
+            </TabsContent>
+
+            <TabsContent value="scrapers" className="mt-6">
+              <AnalyticsScrapers />
             </TabsContent>
           </Tabs>
         )}
