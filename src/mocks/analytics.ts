@@ -36,6 +36,32 @@ export interface LinkedAccount {
   /** Short list of signals that contributed to the match */
   signals: string[];
   verified?: boolean;
+  /** True when an admin manually linked this account (vs. auto-matched). */
+  manuallyLinked?: boolean;
+}
+
+/**
+ * A scraped public account that *might* belong to this user but has not
+ * been auto-linked. Surfaced to admins so they can confirm / reject.
+ */
+export interface MatchCandidate {
+  handle: string;
+  url: string;
+  /** 0-100 model confidence — typically below auto-link threshold (≈60). */
+  confidence: number;
+  followers?: number;
+  signals: string[];
+}
+
+/**
+ * A platform we crawl but have not (yet) linked an account on for this user.
+ * Includes any low-confidence candidates worth a human review.
+ */
+export interface UnmatchedPlatform {
+  platform: SocialPlatform;
+  /** Why we haven't matched yet, e.g. "Below confidence threshold" */
+  reason: string;
+  candidates: MatchCandidate[];
 }
 
 export interface AssetPrediction {
@@ -89,6 +115,8 @@ export interface AnalyticsUser {
   /** % of bids that converted to a win in last 90d */
   winRate: number;
   linkedAccounts: LinkedAccount[];
+  /** Platforms where we haven't linked an account yet (with candidates). */
+  unmatchedPlatforms?: UnmatchedPlatform[];
   predictions: AssetPrediction[];
   recentActivity: ActivityEvent[];
   /** Free-form short bio from inferred profile */
@@ -551,6 +579,154 @@ export const MOCK_ANALYTICS_USERS: AnalyticsUser[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Expand every user's predictions to a consistent minimum length so the
+// detail view always has enough rows to demo scrolling. Each filler entry
+// is derived deterministically from the asset + user id so it stays stable
+// across reloads.
+// ---------------------------------------------------------------------------
+
+const TARGET_PREDICTIONS_PER_USER = 10;
+
+const FILLER_RATIONALES = [
+  'Marginal cross-category interest based on co-view patterns.',
+  'Surfaces in lookalike cohort of similar collectors.',
+  'Followed creators mentioned this asset recently.',
+  'Wishlist overlap with users who bought this in last 90d.',
+  'Price band fits historical purchase distribution.',
+  'Recently searched a related set; low-conviction signal.',
+  'Aftermarket comps trending up in their region.',
+  'Engagement on adjacent asset pages on CardCade.',
+];
+
+const hashStr = (s: string): number => {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h);
+};
+
+for (const user of MOCK_ANALYTICS_USERS) {
+  const existing = new Set(user.predictions.map(p => p.assetId));
+  const candidates = MOCK_ASSETS.filter(a => !existing.has(a.assetId));
+  let i = 0;
+  while (user.predictions.length < TARGET_PREDICTIONS_PER_USER && i < candidates.length) {
+    const asset = candidates[i++];
+    const seed = hashStr(user.id + asset.assetId);
+    // Filler predictions are intentionally low-to-mid conviction so they
+    // sit below the curated ones when sorted.
+    const buy = 8 + (seed % 38); // 8..45
+    const pay = 35 + ((seed >> 3) % 45); // 35..79
+    const conf = 55 + ((seed >> 5) % 30); // 55..84
+    const ceilingMult = 0.85 + ((seed >> 7) % 20) / 100; // 0.85..1.04
+    const rationale = FILLER_RATIONALES[(seed >> 9) % FILLER_RATIONALES.length];
+    user.predictions.push(pred(asset.assetId, buy, pay, conf, rationale, ceilingMult));
+  }
+  // Sort so highest-conviction predictions stay at the top.
+  user.predictions.sort((a, b) => b.buyLikelihood - a.buyLikelihood);
+}
+
+// ---------------------------------------------------------------------------
+// Backfill unmatched-platform candidates for every user. For each platform
+// the user does *not* already have a linked account on, we generate 0-3
+// low-confidence candidates so admins have something to review.
+// ---------------------------------------------------------------------------
+
+const ALL_PLATFORMS: SocialPlatform[] = [
+  'ebay',
+  'instagram',
+  'twitter',
+  'tiktok',
+  'facebook',
+  'reddit',
+  'discord',
+];
+
+const UNMATCH_REASONS = [
+  'Below confidence threshold',
+  'Multiple candidates — needs disambiguation',
+  'No scraper signal in last 90 days',
+  'Conflicting region metadata',
+];
+
+const CANDIDATE_SIGNAL_POOL = [
+  'Username token overlap',
+  'Display name fuzzy match',
+  'Same first name + city',
+  'Mutual followers with linked accounts',
+  'Avatar pHash distance 0.18',
+  'Posted same asset within 24h',
+  'Bio mentions trading cards',
+  'Engagement on linked X account',
+];
+
+const buildCandidate = (
+  platform: SocialPlatform,
+  handle: string,
+  seed: number,
+): MatchCandidate => {
+  const confidence = 22 + (seed % 33); // 22..54 (below auto-link)
+  const followerSeed = (seed >> 4) % 100;
+  const followers = followerSeed > 30 ? 200 + ((seed >> 6) % 18_000) : undefined;
+  const sigCount = 2 + (seed % 2);
+  const signals: string[] = [];
+  for (let i = 0; i < sigCount; i++) {
+    const s = CANDIDATE_SIGNAL_POOL[(seed >> (i * 3)) % CANDIDATE_SIGNAL_POOL.length];
+    if (!signals.includes(s)) signals.push(s);
+  }
+  const urlBase =
+    platform === 'ebay'
+      ? `https://www.ebay.com/usr/${handle}`
+      : platform === 'instagram'
+      ? `https://instagram.com/${handle}`
+      : platform === 'twitter'
+      ? `https://twitter.com/${handle}`
+      : platform === 'tiktok'
+      ? `https://tiktok.com/@${handle}`
+      : platform === 'facebook'
+      ? `https://facebook.com/${handle}`
+      : platform === 'reddit'
+      ? `https://reddit.com/user/${handle}`
+      : `https://discord.com/users/${handle}`;
+  return { handle, url: urlBase, confidence, followers, signals };
+};
+
+const slugifyHandle = (s: string, suffix = ''): string =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .slice(0, 14) + suffix;
+
+for (const user of MOCK_ANALYTICS_USERS) {
+  if (user.unmatchedPlatforms) continue;
+  const matched = new Set(user.linkedAccounts.map(a => a.platform));
+  const missing = ALL_PLATFORMS.filter(p => !matched.has(p));
+  const out: UnmatchedPlatform[] = [];
+  for (const platform of missing) {
+    const seed = hashStr(user.id + platform);
+    // Decide how many candidates to surface (0, 1, 2, or 3). Bias toward 1-2.
+    const n = [1, 2, 1, 0, 2, 3, 1][seed % 7];
+    const candidates: MatchCandidate[] = [];
+    const baseHandles = [
+      slugifyHandle(user.username),
+      slugifyHandle(user.displayName.split(' ').join('.')),
+      slugifyHandle(user.username, String(seed % 100)),
+    ];
+    for (let i = 0; i < n; i++) {
+      const handle = baseHandles[i] || slugifyHandle(user.username, '_' + i);
+      candidates.push(buildCandidate(platform, handle, seed + i * 7919));
+    }
+    const reason =
+      n === 0
+        ? 'No scraper signal in last 90 days'
+        : UNMATCH_REASONS[seed % UNMATCH_REASONS.length];
+    out.push({ platform, reason, candidates });
+  }
+  user.unmatchedPlatforms = out;
+}
+
+// ---------------------------------------------------------------------------
 // Aggregate / dashboard data
 // ---------------------------------------------------------------------------
 
@@ -702,3 +878,397 @@ export const platformLabel = (p: SocialPlatform): string =>
     reddit: 'Reddit',
     discord: 'Discord',
   }[p]);
+
+// ---------------------------------------------------------------------------
+// Scrapers — mock pipeline status for the admin Scrapers tab.
+// ---------------------------------------------------------------------------
+
+export type ScraperStatus = 'running' | 'idle' | 'degraded' | 'error' | 'paused';
+
+export type ScraperKind =
+  | 'listings'
+  | 'sold_comps'
+  | 'profiles'
+  | 'posts'
+  | 'engagement'
+  | 'video_meta'
+  | 'comments'
+  | 'pages'
+  | 'threads';
+
+export interface ScraperError {
+  at: string; // ISO
+  code: string;
+  message: string;
+  count: number;
+}
+
+export interface ScraperPipeline {
+  id: string;
+  platform: SocialPlatform;
+  /** Short descriptor, e.g. "eBay Sold Comps" */
+  name: string;
+  kind: ScraperKind;
+  status: ScraperStatus;
+  /** Strategy used to access the source */
+  strategy: 'official_api' | 'public_html' | 'graphql' | 'rss' | 'mobile_api';
+  /** Region / cluster this worker pool runs in */
+  region: 'us-east-1' | 'us-west-2' | 'eu-west-1' | 'ap-southeast-1';
+  /** Cron-like schedule for human readability */
+  schedule: string;
+  lastRunAt: string; // ISO
+  nextRunAt: string; // ISO
+  /** Last 24h success rate, 0-100 */
+  successRate24h: number;
+  /** Items successfully scraped in last 24h */
+  itemsScraped24h: number;
+  /** Lifetime items scraped */
+  itemsScrapedTotal: number;
+  /** Avg request latency in ms (last 24h) */
+  avgLatencyMs: number;
+  /** Pending jobs in queue */
+  queueDepth: number;
+  /** Number of proxy / token rotations used in last 24h */
+  rotations24h: number;
+  /** Per-hour throughput buckets, oldest → newest (24 entries) */
+  throughput24h: { hour: string; count: number }[];
+  /** Recent errors (most recent first) */
+  recentErrors: ScraperError[];
+  /** Free-form note shown under the card */
+  note?: string;
+}
+
+const hoursAgoISO = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
+const minutesAgoISO = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
+const minutesFromNowISO = (m: number) => new Date(Date.now() + m * 60_000).toISOString();
+
+/** Generate a 24-hour throughput series with a smooth diurnal curve. */
+const makeThroughput = (peak: number, variance = 0.25, downscale = false): { hour: string; count: number }[] => {
+  const series: { hour: string; count: number }[] = [];
+  const nowHour = new Date();
+  nowHour.setMinutes(0, 0, 0);
+  for (let i = 23; i >= 0; i--) {
+    const d = new Date(nowHour.getTime() - i * 3_600_000);
+    const hour = d.getHours();
+    // Diurnal: low at 3-6am UTC, peak 14-20 UTC
+    const diurnal = 0.45 + 0.55 * Math.sin(((hour - 4) / 24) * Math.PI * 2 * 0.5 + Math.PI / 2);
+    const jitter = 1 + (((i * 7919) % 100) / 100 - 0.5) * variance;
+    const raw = peak * Math.max(0.1, diurnal) * jitter;
+    const count = Math.max(0, Math.round(downscale && i < 3 ? raw * 0.15 : raw));
+    series.push({
+      hour: `${String(d.getHours()).padStart(2, '0')}:00`,
+      count,
+    });
+  }
+  return series;
+};
+
+export const MOCK_SCRAPERS: ScraperPipeline[] = [
+  {
+    id: 'ebay-listings-us',
+    platform: 'ebay',
+    name: 'eBay Active Listings',
+    kind: 'listings',
+    status: 'running',
+    strategy: 'official_api',
+    region: 'us-east-1',
+    schedule: 'every 5 min',
+    lastRunAt: minutesAgoISO(2),
+    nextRunAt: minutesFromNowISO(3),
+    successRate24h: 99.4,
+    itemsScraped24h: 184_220,
+    itemsScrapedTotal: 42_118_904,
+    avgLatencyMs: 312,
+    queueDepth: 84,
+    rotations24h: 12,
+    throughput24h: makeThroughput(8200),
+    recentErrors: [
+      { at: hoursAgoISO(6), code: '429', message: 'Rate limit hit on Finding API — backed off 30s', count: 3 },
+    ],
+    note: 'Primary listing crawler covering 14 TCG categories.',
+  },
+  {
+    id: 'ebay-sold-comps',
+    platform: 'ebay',
+    name: 'eBay Sold Comps',
+    kind: 'sold_comps',
+    status: 'running',
+    strategy: 'official_api',
+    region: 'us-east-1',
+    schedule: 'every 15 min',
+    lastRunAt: minutesAgoISO(7),
+    nextRunAt: minutesFromNowISO(8),
+    successRate24h: 98.1,
+    itemsScraped24h: 41_905,
+    itemsScrapedTotal: 9_204_771,
+    avgLatencyMs: 488,
+    queueDepth: 12,
+    rotations24h: 4,
+    throughput24h: makeThroughput(1850),
+    recentErrors: [],
+    note: 'Drives payment-percentile predictions.',
+  },
+  {
+    id: 'ebay-watchlist-events',
+    platform: 'ebay',
+    name: 'eBay Watchlist Events',
+    kind: 'listings',
+    status: 'running',
+    strategy: 'official_api',
+    region: 'us-east-1',
+    schedule: 'every 5 min',
+    lastRunAt: minutesAgoISO(1),
+    nextRunAt: minutesFromNowISO(4),
+    successRate24h: 99.2,
+    itemsScraped24h: 58_140,
+    itemsScrapedTotal: 6_804_220,
+    avgLatencyMs: 224,
+    queueDepth: 18,
+    rotations24h: 2,
+    throughput24h: makeThroughput(2600),
+    recentErrors: [],
+  },
+  {
+    id: 'instagram-posts',
+    platform: 'instagram',
+    name: 'Instagram Post Stream',
+    kind: 'posts',
+    status: 'running',
+    strategy: 'graphql',
+    region: 'us-west-2',
+    schedule: 'continuous',
+    lastRunAt: minutesAgoISO(1),
+    nextRunAt: minutesFromNowISO(1),
+    successRate24h: 96.5,
+    itemsScraped24h: 62_904,
+    itemsScrapedTotal: 8_904_122,
+    avgLatencyMs: 740,
+    queueDepth: 38,
+    rotations24h: 22,
+    throughput24h: makeThroughput(2800),
+    recentErrors: [],
+  },
+  {
+    id: 'instagram-stories',
+    platform: 'instagram',
+    name: 'Instagram Stories Sampler',
+    kind: 'posts',
+    status: 'running',
+    strategy: 'graphql',
+    region: 'us-west-2',
+    schedule: 'every 5 min',
+    lastRunAt: minutesAgoISO(2),
+    nextRunAt: minutesFromNowISO(3),
+    successRate24h: 96.8,
+    itemsScraped24h: 21_410,
+    itemsScrapedTotal: 2_440_009,
+    avgLatencyMs: 612,
+    queueDepth: 9,
+    rotations24h: 14,
+    throughput24h: makeThroughput(940),
+    recentErrors: [],
+  },
+  {
+    id: 'twitter-engagement',
+    platform: 'twitter',
+    name: 'X Engagement Graph',
+    kind: 'engagement',
+    status: 'running',
+    strategy: 'official_api',
+    region: 'us-east-1',
+    schedule: 'every 2 min',
+    lastRunAt: minutesAgoISO(1),
+    nextRunAt: minutesFromNowISO(1),
+    successRate24h: 97.8,
+    itemsScraped24h: 244_120,
+    itemsScrapedTotal: 31_004_822,
+    avgLatencyMs: 218,
+    queueDepth: 6,
+    rotations24h: 1,
+    throughput24h: makeThroughput(10_400),
+    recentErrors: [
+      { at: hoursAgoISO(9), code: '503', message: 'Upstream timeout on /2/users/by — retried', count: 7 },
+    ],
+  },
+  {
+    id: 'twitter-mentions',
+    platform: 'twitter',
+    name: 'X Brand Mention Stream',
+    kind: 'posts',
+    status: 'running',
+    strategy: 'official_api',
+    region: 'us-east-1',
+    schedule: 'continuous',
+    lastRunAt: minutesAgoISO(1),
+    nextRunAt: minutesFromNowISO(1),
+    successRate24h: 98.4,
+    itemsScraped24h: 88_402,
+    itemsScrapedTotal: 11_402_007,
+    avgLatencyMs: 198,
+    queueDepth: 3,
+    rotations24h: 0,
+    throughput24h: makeThroughput(3700),
+    recentErrors: [],
+  },
+  {
+    id: 'tiktok-video-meta',
+    platform: 'tiktok',
+    name: 'TikTok Video Metadata',
+    kind: 'video_meta',
+    status: 'running',
+    strategy: 'mobile_api',
+    region: 'ap-southeast-1',
+    schedule: 'every 5 min',
+    lastRunAt: minutesAgoISO(3),
+    nextRunAt: minutesFromNowISO(2),
+    successRate24h: 94.2,
+    itemsScraped24h: 38_220,
+    itemsScrapedTotal: 5_017_004,
+    avgLatencyMs: 612,
+    queueDepth: 120,
+    rotations24h: 34,
+    throughput24h: makeThroughput(1600, 0.35),
+    recentErrors: [
+      { at: hoursAgoISO(1), code: 'SIGN_FAIL', message: 'X-Bogus signature drift detected, regenerated', count: 4 },
+    ],
+  },
+  {
+    id: 'reddit-threads',
+    platform: 'reddit',
+    name: 'Reddit r/tcg Threads',
+    kind: 'threads',
+    status: 'running',
+    strategy: 'official_api',
+    region: 'us-east-1',
+    schedule: 'every 10 min',
+    lastRunAt: minutesAgoISO(6),
+    nextRunAt: minutesFromNowISO(4),
+    successRate24h: 99.9,
+    itemsScraped24h: 14_802,
+    itemsScrapedTotal: 2_104_998,
+    avgLatencyMs: 184,
+    queueDepth: 2,
+    rotations24h: 0,
+    throughput24h: makeThroughput(640),
+    recentErrors: [],
+  },
+  {
+    id: 'reddit-mentions',
+    platform: 'reddit',
+    name: 'Reddit Card Mentions',
+    kind: 'comments',
+    status: 'running',
+    strategy: 'official_api',
+    region: 'us-east-1',
+    schedule: 'every 10 min',
+    lastRunAt: minutesAgoISO(4),
+    nextRunAt: minutesFromNowISO(6),
+    successRate24h: 98.5,
+    itemsScraped24h: 22_018,
+    itemsScrapedTotal: 3_088_140,
+    avgLatencyMs: 192,
+    queueDepth: 0,
+    rotations24h: 0,
+    throughput24h: makeThroughput(910),
+    recentErrors: [],
+  },
+  {
+    id: 'discord-servers',
+    platform: 'discord',
+    name: 'Discord Public Servers',
+    kind: 'posts',
+    status: 'idle',
+    strategy: 'official_api',
+    region: 'us-east-1',
+    schedule: 'every 1 hr',
+    lastRunAt: minutesAgoISO(28),
+    nextRunAt: minutesFromNowISO(32),
+    successRate24h: 100,
+    itemsScraped24h: 8_410,
+    itemsScrapedTotal: 1_402_910,
+    avgLatencyMs: 142,
+    queueDepth: 0,
+    rotations24h: 0,
+    throughput24h: makeThroughput(380),
+    recentErrors: [],
+  },
+  {
+    id: 'tiktok-comments',
+    platform: 'tiktok',
+    name: 'TikTok Comment Mining',
+    kind: 'comments',
+    status: 'paused',
+    strategy: 'mobile_api',
+    region: 'ap-southeast-1',
+    schedule: 'every 30 min',
+    lastRunAt: hoursAgoISO(14),
+    nextRunAt: minutesFromNowISO(60),
+    successRate24h: 0,
+    itemsScraped24h: 0,
+    itemsScrapedTotal: 920_115,
+    avgLatencyMs: 0,
+    queueDepth: 0,
+    rotations24h: 0,
+    throughput24h: makeThroughput(0),
+    recentErrors: [],
+    note: 'Paused pending updated ToS review (legal queue).',
+  },
+  {
+    id: 'instagram-profiles',
+    platform: 'instagram',
+    name: 'Instagram Profile Resolver',
+    kind: 'profiles',
+    status: 'degraded',
+    strategy: 'public_html',
+    region: 'us-west-2',
+    schedule: 'every 10 min',
+    lastRunAt: minutesAgoISO(4),
+    nextRunAt: minutesFromNowISO(6),
+    successRate24h: 55.2,
+    itemsScraped24h: 9_412,
+    itemsScrapedTotal: 1_287_119,
+    avgLatencyMs: 1_140,
+    queueDepth: 412,
+    rotations24h: 87,
+    throughput24h: makeThroughput(520, 0.4),
+    recentErrors: [
+      { at: minutesAgoISO(22), code: 'CHALLENGE', message: 'Login challenge interstitial on residential proxy', count: 18 },
+      { at: hoursAgoISO(2), code: '403', message: 'Forbidden — rotating session cookies', count: 41 },
+    ],
+    note: 'Elevated challenge rate from IG since 04:00 UTC. Auto-rotating.',
+  },
+  {
+    id: 'facebook-pages',
+    platform: 'facebook',
+    name: 'Facebook Pages Crawl',
+    kind: 'pages',
+    status: 'error',
+    strategy: 'graphql',
+    region: 'eu-west-1',
+    schedule: 'every 20 min',
+    lastRunAt: minutesAgoISO(18),
+    nextRunAt: minutesFromNowISO(2),
+    successRate24h: 10.0,
+    itemsScraped24h: 2_104,
+    itemsScrapedTotal: 612_398,
+    avgLatencyMs: 1_840,
+    queueDepth: 904,
+    rotations24h: 142,
+    throughput24h: makeThroughput(380, 0.5, true),
+    recentErrors: [
+      { at: minutesAgoISO(8), code: 'CHECKPOINT', message: 'Account checkpoint flow blocking session', count: 62 },
+      { at: minutesAgoISO(45), code: '190', message: 'OAuth token invalidated — refresh failed', count: 28 },
+      { at: hoursAgoISO(3), code: 'NET', message: 'Connection reset by peer', count: 14 },
+    ],
+    note: 'Token refresh pipeline failing since 09:12 UTC. On-call paged.',
+  },
+];
+
+export const scraperStatusLabel = (s: ScraperStatus): string =>
+  ({
+    running: 'Running',
+    idle: 'Idle',
+    degraded: 'Degraded',
+    error: 'Error',
+    paused: 'Paused',
+  }[s]);

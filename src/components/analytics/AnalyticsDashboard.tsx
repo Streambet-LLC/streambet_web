@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import {
   ResponsiveContainer,
@@ -21,6 +22,8 @@ import {
 } from '@/mocks/analytics';
 import { CategoryBadge } from './AnalyticsBadges';
 import { Users, Link2, TrendingUp, Sparkles } from 'lucide-react';
+import { useDemoTicker } from '@/hooks/useDemoTicker';
+import { toast } from 'sonner';
 
 const CATEGORY_PIE_COLORS = ['#FACC15', '#EF4444', '#3B82F6', '#94A3B8'];
 
@@ -29,17 +32,23 @@ const StatCard = ({
   value,
   hint,
   icon: Icon,
+  pulse = false,
 }: {
   label: string;
   value: string;
   hint?: string;
   icon: React.ComponentType<{ className?: string }>;
+  pulse?: boolean;
 }) => (
-  <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
+  <Card
+    className={`bg-[rgba(22,22,22,1)] border-white/5 p-6 transition-colors ${
+      pulse ? 'border-[#B4FF39]/50 shadow-[0_0_0_1px_rgba(180,255,57,0.3)]' : ''
+    }`}
+  >
     <div className="flex items-start justify-between">
       <div>
         <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
-        <div className="text-2xl font-semibold mt-2 text-white">{value}</div>
+        <div className={`text-2xl font-semibold mt-2 ${pulse ? 'text-[#B4FF39]' : 'text-white'}`}>{value}</div>
         {hint && <div className="text-xs text-muted-foreground mt-1">{hint}</div>}
       </div>
       <div className="rounded-lg bg-[#B4FF39]/10 p-2">
@@ -72,27 +81,71 @@ const ChartCard = ({
 export const AnalyticsDashboard = () => {
   const o = MOCK_ANALYTICS_OVERVIEW;
 
+  const [totalProfiles, setTotalProfiles] = useState(o.totalProfiles);
+  const [linkedIdentities, setLinkedIdentities] = useState(o.unifiedIdentitiesLinked);
+  const [predictedSpend, setPredictedSpend] = useState(o.predicted30dSpendUsd);
+  const [pulseKey, setPulseKey] = useState<string | null>(null);
+
+  const flash = (key: string) => {
+    setPulseKey(key);
+    setTimeout(() => setPulseKey(prev => (prev === key ? null : prev)), 1800);
+  };
+
+  useDemoTicker(
+    () => {
+      const roll = Math.random();
+      if (roll < 0.4) {
+        const bump = 1 + Math.floor(Math.random() * 3);
+        setTotalProfiles(p => p + bump);
+        flash('profiles');
+        toast.success(`${bump} new profile${bump > 1 ? 's' : ''} discovered`, {
+          description: 'Scraper picked up fresh handles across IG + TikTok',
+        });
+      } else if (roll < 0.75) {
+        setLinkedIdentities(p => p + 1);
+        flash('linked');
+        const samples = [
+          '@kantograils ↔ @kanto.grails',
+          '@thrifted.tcg ↔ thriftedtcg',
+          '@vintage_holos ↔ vintageholos_yt',
+          '@cardhoarder ↔ cardhoarder.eth',
+        ];
+        toast.success('New unified identity linked', {
+          description: samples[Math.floor(Math.random() * samples.length)],
+        });
+      } else {
+        const bump = Math.round(800 + Math.random() * 4200);
+        setPredictedSpend(p => p + bump);
+        flash('spend');
+      }
+    },
+    { minMs: 9000, maxMs: 18000 },
+  );
+
   return (
     <div className="space-y-6">
       {/* Top stat row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Unified Profiles"
-          value={o.totalProfiles.toLocaleString()}
+          value={totalProfiles.toLocaleString()}
           hint="Across CardCade + scraped sources"
           icon={Users}
+          pulse={pulseKey === 'profiles'}
         />
         <StatCard
           label="Linked Identities"
-          value={o.unifiedIdentitiesLinked.toLocaleString()}
+          value={linkedIdentities.toLocaleString()}
           hint={`Avg confidence ${o.avgIdentityConfidence}%`}
           icon={Link2}
+          pulse={pulseKey === 'linked'}
         />
         <StatCard
           label="Predicted 30-Day Spend"
-          value={formatUsd(o.predicted30dSpendUsd)}
+          value={formatUsd(predictedSpend)}
           hint="Sum of model forecasts"
           icon={TrendingUp}
+          pulse={pulseKey === 'spend'}
         />
         <StatCard
           label="High-Intent Buyers"
@@ -122,7 +175,10 @@ export const AnalyticsDashboard = () => {
                   border: '1px solid #ffffff20',
                   borderRadius: 8,
                   fontSize: 12,
+                  color: '#ffffff',
                 }}
+                labelStyle={{ color: '#ffffff' }}
+                itemStyle={{ color: '#ffffff' }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Line
@@ -155,12 +211,16 @@ export const AnalyticsDashboard = () => {
               <XAxis dataKey="bucket" stroke="#ffffff60" fontSize={12} />
               <YAxis stroke="#ffffff60" fontSize={12} />
               <Tooltip
+                cursor={{ fill: '#ffffff08' }}
                 contentStyle={{
                   background: '#0A0A0A',
                   border: '1px solid #ffffff20',
                   borderRadius: 8,
                   fontSize: 12,
+                  color: '#ffffff',
                 }}
+                labelStyle={{ color: '#ffffff' }}
+                itemStyle={{ color: '#ffffff' }}
               />
               <Bar dataKey="count" fill="#B4FF39" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -196,7 +256,10 @@ export const AnalyticsDashboard = () => {
                   border: '1px solid #ffffff20',
                   borderRadius: 8,
                   fontSize: 12,
+                  color: '#ffffff',
                 }}
+                labelStyle={{ color: '#ffffff' }}
+                itemStyle={{ color: '#ffffff' }}
                 formatter={(value: number) => formatUsd(value)}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
