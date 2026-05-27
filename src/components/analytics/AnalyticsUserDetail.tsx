@@ -37,6 +37,8 @@ import {
   ScoreMeter,
 } from './AnalyticsBadges';
 import { useDemoTicker } from '@/hooks/useDemoTicker';
+import { useCollectorProfileDetail } from '@/hooks/useCollectorAnalytics';
+import { useIsRealDataOnly } from '@/hooks/useRealDataOnly';
 import {
   ArrowLeft,
   ExternalLink,
@@ -73,7 +75,16 @@ const SectionCard = ({
 export const AnalyticsUserDetail = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const user = userId ? getMockAnalyticsUser(userId) : undefined;
+
+  // Try to load this profile from the real backend (real socials + real
+  // recent orders). If the API call returns nothing — e.g. the userId is a
+  // mock-only id from the demo dataset — fall back to the original mock
+  // record so the page still renders end-to-end. When the global toggle
+  // is on we skip the mock fallback entirely.
+  const { data: apiUser } = useCollectorProfileDetail(userId);
+  const realOnly = useIsRealDataOnly();
+  const mockUser = userId && !realOnly ? getMockAnalyticsUser(userId) : undefined;
+  const user = apiUser ?? mockUser;
   const [openAccount, setOpenAccount] = useState<LinkedAccount | null>(null);
   const [confidenceOpen, setConfidenceOpen] = useState(false);
   const [engagementOpen, setEngagementOpen] = useState(false);
@@ -380,7 +391,7 @@ export const AnalyticsUserDetail = () => {
         );
       }, 2200);
     },
-    { minMs: 8000, maxMs: 15000, enabled: !!user },
+    { minMs: 8000, maxMs: 15000, enabled: !!user && !realOnly },
   );
 
   const activityFeed = useMemo<(ActivityEvent & { __live?: boolean })[]>(
@@ -434,7 +445,7 @@ export const AnalyticsUserDetail = () => {
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-xl font-semibold text-white">{user.displayName}</h2>
-              <PersonaBadge persona={user.persona} />
+              {!realOnly && <PersonaBadge persona={user.persona} />}
               {user.topCategories.map(c => (
                 <CategoryBadge key={c} category={c} />
               ))}
@@ -443,7 +454,9 @@ export const AnalyticsUserDetail = () => {
               @{user.username} · {user.email} · joined{' '}
               {moment(user.joinedAt).format('MMM YYYY')}
             </div>
-            <p className="text-sm text-white/80 mt-3 max-w-3xl">{user.inferredBio}</p>
+            {!realOnly && user.inferredBio && (
+              <p className="text-sm text-white/80 mt-3 max-w-3xl">{user.inferredBio}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-right">
@@ -454,7 +467,9 @@ export const AnalyticsUserDetail = () => {
               </div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Predicted 30d</div>
+              <div className="text-xs text-muted-foreground">
+                {realOnly ? '30d Spend' : 'Predicted 30d'}
+              </div>
               <div className="text-lg font-semibold text-[#B4FF39]">
                 {formatUsd(user.predicted30dSpendUsd)}
               </div>
@@ -463,49 +478,57 @@ export const AnalyticsUserDetail = () => {
               <div className="text-xs text-muted-foreground">Purchases</div>
               <div className="text-lg font-semibold text-white">{user.purchaseCount}</div>
             </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Win Rate</div>
-              <div className="text-lg font-semibold text-white">{user.winRate}%</div>
-            </div>
+            {!realOnly && (
+              <div>
+                <div className="text-xs text-muted-foreground">Win Rate</div>
+                <div className="text-lg font-semibold text-white">{user.winRate}%</div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/5">
-          <button
-            type="button"
-            onClick={() => setConfidenceOpen(true)}
-            className="text-left rounded-md -m-2 p-2 hover:bg-white/[0.03] transition group"
-            title="View confidence breakdown"
-          >
-            <ScoreMeter
-              label="Unified Identity Confidence"
-              value={user.unifiedConfidence}
-            />
-            <div className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground group-hover:text-white/70 flex items-center gap-1">
-              <Info className="h-3 w-3" />
-              View breakdown
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setEngagementOpen(true)}
-            className="text-left rounded-md -m-2 p-2 hover:bg-white/[0.03] transition group"
-            title="View engagement breakdown"
-          >
-            <ScoreMeter label="Engagement Score" value={user.engagementScore} />
-            <div className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground group-hover:text-white/70 flex items-center gap-1">
-              <Info className="h-3 w-3" />
-              View breakdown
-            </div>
-          </button>
-        </div>
+        {!realOnly && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/5">
+            <button
+              type="button"
+              onClick={() => setConfidenceOpen(true)}
+              className="text-left rounded-md -m-2 p-2 hover:bg-white/[0.03] transition group"
+              title="View confidence breakdown"
+            >
+              <ScoreMeter
+                label="Unified Identity Confidence"
+                value={user.unifiedConfidence}
+              />
+              <div className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground group-hover:text-white/70 flex items-center gap-1">
+                <Info className="h-3 w-3" />
+                View breakdown
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setEngagementOpen(true)}
+              className="text-left rounded-md -m-2 p-2 hover:bg-white/[0.03] transition group"
+              title="View engagement breakdown"
+            >
+              <ScoreMeter label="Engagement Score" value={user.engagementScore} />
+              <div className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground group-hover:text-white/70 flex items-center gap-1">
+                <Info className="h-3 w-3" />
+                View breakdown
+              </div>
+            </button>
+          </div>
+        )}
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 ${realOnly ? '' : 'lg:grid-cols-3'} gap-6`}>
         {/* Linked accounts */}
         <SectionCard
-          title="Linked Identities"
-          subtitle={`${linkedAccounts.length} matched · ${unmatchedPlatforms.length} unmatched platform${unmatchedPlatforms.length === 1 ? '' : 's'}`}
+          title={realOnly ? 'Seller Socials' : 'Linked Identities'}
+          subtitle={
+            realOnly
+              ? `${linkedAccounts.length} provided by seller`
+              : `${linkedAccounts.length} matched · ${unmatchedPlatforms.length} unmatched platform${unmatchedPlatforms.length === 1 ? '' : 's'}`
+          }
           className="lg:col-span-1"
         >
           <div className="flex-1 min-h-0 overflow-y-auto pr-2 -mr-2 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
@@ -564,8 +587,8 @@ export const AnalyticsUserDetail = () => {
               })}
             </div>
 
-            {/* Unmatched / suggested */}
-            {unmatchedPlatforms.length > 0 && (
+            {/* Unmatched / suggested (mock-only — admin review workflow) */}
+            {!realOnly && unmatchedPlatforms.length > 0 && (
               <div className="space-y-2 pt-2 border-t border-white/5">
                 <div className="flex items-center justify-between px-1">
                   <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
@@ -637,57 +660,59 @@ export const AnalyticsUserDetail = () => {
           </div>
         </SectionCard>
 
-        {/* Predictions */}
-        <SectionCard
-          title="Asset Purchase Predictions"
-          subtitle={`${user.predictions.length} forecasts · likelihood to buy + pay at-or-above market`}
-          className="lg:col-span-2"
-        >
-          <div className="flex-1 min-h-0 max-h-[520px] overflow-y-auto pr-2 -mr-2 space-y-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-            {user.predictions.map(p => (
-              <div
-                key={p.assetId}
-                className="rounded-lg border border-white/5 bg-black/30 p-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="text-sm font-medium text-white truncate">{p.name}</div>
-                      <CategoryBadge category={p.category} />
+        {/* Predictions (mock-only — no forecast model wired yet) */}
+        {!realOnly && (
+          <SectionCard
+            title="Asset Purchase Predictions"
+            subtitle={`${user.predictions.length} forecasts · likelihood to buy + pay at-or-above market`}
+            className="lg:col-span-2"
+          >
+            <div className="flex-1 min-h-0 max-h-[520px] overflow-y-auto pr-2 -mr-2 space-y-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              {user.predictions.map(p => (
+                <div
+                  key={p.assetId}
+                  className="rounded-lg border border-white/5 bg-black/30 p-4"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="text-sm font-medium text-white truncate">{p.name}</div>
+                        <CategoryBadge category={p.category} />
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {p.era} · Market {formatUsd(p.marketPriceUsd)}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {p.era} · Market {formatUsd(p.marketPriceUsd)}
+                    <div className="text-right shrink-0">
+                      <div className="text-xs text-muted-foreground">Predicted ceiling</div>
+                      <div className="text-sm font-semibold text-[#B4FF39]">
+                        {formatUsd(p.predictedCeilingUsd)}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-xs text-muted-foreground">Predicted ceiling</div>
-                    <div className="text-sm font-semibold text-[#B4FF39]">
-                      {formatUsd(p.predictedCeilingUsd)}
-                    </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                    <ScoreMeter label="Buy likelihood" value={p.buyLikelihood} />
+                    <ScoreMeter label="Pay ≥ market" value={p.payMarketLikelihood} />
+                    <ScoreMeter label="Model confidence" value={p.confidence} />
+                  </div>
+
+                  <div className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        </TooltipTrigger>
+                        <TooltipContent>Why the model surfaced this asset</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <span>{p.rationale}</span>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                  <ScoreMeter label="Buy likelihood" value={p.buyLikelihood} />
-                  <ScoreMeter label="Pay ≥ market" value={p.payMarketLikelihood} />
-                  <ScoreMeter label="Model confidence" value={p.confidence} />
-                </div>
-
-                <div className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                      </TooltipTrigger>
-                      <TooltipContent>Why the model surfaced this asset</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <span>{p.rationale}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
+              ))}
+            </div>
+          </SectionCard>
+        )}
       </div>
 
       {/* Recent activity */}
