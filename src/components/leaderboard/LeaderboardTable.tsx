@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { getImageLink } from '@/utils/helper';
@@ -41,12 +42,15 @@ const ProfileImage = ({ imageUrl, username }: { imageUrl: string; username: stri
 );
 
 export const LeaderboardTable = () => {
+  const [sortBy, setSortBy] = useState<'balance' | 'monthly' | 'lifetime'>('balance');
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['leaderboard'],
+    queryKey: ['leaderboard', sortBy],
     queryFn: async () => {
-      const response = await api.user.getLeaderboard();
+      const response = await api.user.getLeaderboard(sortBy);
       return response.data as LeaderboardEntry[];
     },
+    placeholderData: (previousData) => previousData,
   });
 
   if (isLoading) {
@@ -100,6 +104,55 @@ export const LeaderboardTable = () => {
         </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div
+        className="px-4 md:px-8 py-4 md:py-6 border-b-2 flex justify-center gap-2 md:gap-4"
+        style={{ borderColor: 'var(--card-grid-border)' }}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            setSortBy('monthly');
+          }}
+          className={`px-4 md:px-6 py-2 md:py-3 font-bold uppercase text-xs md:text-sm tracking-wider transition-all duration-200 border-2 ${
+            sortBy === 'monthly'
+              ? 'border-[var(--electric-lime)] bg-[var(--electric-lime)]/10 text-[var(--electric-lime)] shadow-[0_0_10px_rgba(189,255,0,0.3)]'
+              : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'
+          }`}
+        >
+          THIS MONTH
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            setSortBy('balance');
+          }}
+          className={`px-4 md:px-6 py-2 md:py-3 font-bold uppercase text-xs md:text-sm tracking-wider transition-all duration-200 border-2 ${
+            sortBy === 'balance'
+              ? 'border-[var(--electric-lime)] bg-[var(--electric-lime)]/10 text-[var(--electric-lime)] shadow-[0_0_10px_rgba(189,255,0,0.3)]'
+              : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'
+          }`}
+        >
+          BALANCE
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            setSortBy('lifetime');
+          }}
+          className={`px-4 md:px-6 py-2 md:py-3 font-bold uppercase text-xs md:text-sm tracking-wider transition-all duration-200 border-2 ${
+            sortBy === 'lifetime'
+              ? 'border-[var(--electric-lime)] bg-[var(--electric-lime)]/10 text-[var(--electric-lime)] shadow-[0_0_10px_rgba(189,255,0,0.3)]'
+              : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'
+          }`}
+        >
+          ALL-TIME
+        </button>
+      </div>
+
       {/* Leaderboard Table - Scrollable on Mobile */}
       <div className="overflow-x-auto">
         <div className="min-w-[600px]">
@@ -121,8 +174,12 @@ export const LeaderboardTable = () => {
               PLAYER
             </div>
             <div
-              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider"
-              style={{ color: 'var(--electric-lime)' }}
+              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider transition-all duration-200"
+              style={{
+                color: sortBy === 'monthly' ? 'var(--electric-lime)' : 'rgba(189, 255, 0, 0.5)',
+                textShadow:
+                  sortBy === 'monthly' ? '0 0 10px rgba(189, 255, 0, 0.5)' : undefined,
+              }}
             >
               <img src="/icons/cade-coins.png" alt="CadeCoin" className="w-3 h-3 md:w-4 md:h-4" />
               <span className="text-center leading-tight">
@@ -132,8 +189,11 @@ export const LeaderboardTable = () => {
               </span>
             </div>
             <div
-              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider"
-              style={{ color: 'var(--electric-lime)' }}
+              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider transition-all duration-200"
+              style={{
+                color: sortBy === 'balance' ? 'var(--electric-lime)' : 'rgba(189, 255, 0, 0.5)',
+                textShadow: sortBy === 'balance' ? '0 0 10px rgba(189, 255, 0, 0.5)' : undefined,
+              }}
             >
               <img src="/icons/cade-coins.png" alt="CadeCoin" className="w-3 h-3 md:w-4 md:h-4" />
               <span className="text-center leading-tight">
@@ -143,8 +203,12 @@ export const LeaderboardTable = () => {
               </span>
             </div>
             <div
-              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider"
-              style={{ color: 'var(--electric-lime)' }}
+              className="flex flex-col items-center justify-center gap-1 text-xs md:text-sm font-bold uppercase tracking-wider transition-all duration-200"
+              style={{
+                color: sortBy === 'lifetime' ? 'var(--electric-lime)' : 'rgba(189, 255, 0, 0.5)',
+                textShadow:
+                  sortBy === 'lifetime' ? '0 0 10px rgba(189, 255, 0, 0.5)' : undefined,
+              }}
             >
               <img src="/icons/cade-coins.png" alt="CadeCoin" className="w-3 h-3 md:w-4 md:h-4" />
               <span className="text-center leading-tight">
