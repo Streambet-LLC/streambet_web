@@ -45,7 +45,7 @@ const Leaderboard = () => {
                 📊 Track Your Progress
               </h3>
               <div className="space-y-2 text-sm text-white/90">
-                <p>The leaderboard shows the top CadeCoin earners, by:</p>
+                <p>The leaderboard shows the top CadeCoin earners. You can filter by:</p>
                 <ul className="space-y-1 ml-4">
                   <li className="flex items-start gap-2">
                     <span style={{ color: 'var(--electric-lime)' }}>•</span>
@@ -70,40 +70,68 @@ const Leaderboard = () => {
                   </li>
                 </ul>
                 <p className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(189, 255, 0, 0.2)' }}>
-                  Earn coins by{' '}
-                  <Link
-                    to="/"
-                    className="underline hover:no-underline transition-all"
-                    style={{
-                      color: 'var(--electric-lime)',
-                      textShadow: '0 0 5px rgba(189, 255, 0, 0.3)',
-                    }}
-                  >
-                    buying
-                  </Link>
-                  ,{' '}
-                  <Link
-                    to={userShopUrl}
-                    className="underline hover:no-underline transition-all"
-                    style={{
-                      color: 'var(--electric-lime)',
-                      textShadow: '0 0 5px rgba(189, 255, 0, 0.3)',
-                    }}
-                  >
-                    selling
-                  </Link>
-                  , and{' '}
-                  <Link
-                    to="/daily-spin"
-                    className="underline hover:no-underline transition-all"
-                    style={{
-                      color: 'var(--electric-lime)',
-                      textShadow: '0 0 5px rgba(189, 255, 0, 0.3)',
-                    }}
-                  >
-                    spinning
-                  </Link>
-                  ! Then go to{' '}
+                  <strong style={{ color: 'var(--electric-lime)' }}>Earn CadeCoins by:</strong>
+                </p>
+                <ul className="space-y-1 ml-4">
+                  <li className="flex items-start gap-2">
+                    <span style={{ color: 'var(--electric-lime)' }}>🎁</span>
+                    <span>Signing up for an account (one-time bonus)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span style={{ color: 'var(--electric-lime)' }}>🛍️</span>
+                    <span>
+                      <Link
+                        to="/"
+                        className="underline hover:no-underline transition-all"
+                        style={{
+                          color: 'var(--electric-lime)',
+                          textShadow: '0 0 5px rgba(189, 255, 0, 0.3)',
+                        }}
+                      >
+                        Buying items
+                      </Link>{' '}
+                      (3 coins per $100 spent)
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span style={{ color: 'var(--electric-lime)' }}>💰</span>
+                    <span>
+                      <Link
+                        to={userShopUrl}
+                        className="underline hover:no-underline transition-all"
+                        style={{
+                          color: 'var(--electric-lime)',
+                          textShadow: '0 0 5px rgba(189, 255, 0, 0.3)',
+                        }}
+                      >
+                        Selling items
+                      </Link>{' '}
+                      (3 coins per $100 sold)
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span style={{ color: 'var(--electric-lime)' }}>🔨</span>
+                    <span>Bidding on auctions (10 coins per bid)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span style={{ color: 'var(--electric-lime)' }}>🎰</span>
+                    <span>
+                      <Link
+                        to="/daily-spin"
+                        className="underline hover:no-underline transition-all"
+                        style={{
+                          color: 'var(--electric-lime)',
+                          textShadow: '0 0 5px rgba(189, 255, 0, 0.3)',
+                        }}
+                      >
+                        Daily spin
+                      </Link>{' '}
+                      (variable rewards)
+                    </span>
+                  </li>
+                </ul>
+                <p className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(189, 255, 0, 0.2)' }}>
+                  Use your coins to{' '}
                   <Link
                     to="/redemptions"
                     className="underline hover:no-underline transition-all"
@@ -112,9 +140,9 @@ const Leaderboard = () => {
                       textShadow: '0 0 5px rgba(189, 255, 0, 0.3)',
                     }}
                   >
-                    Prizes
-                  </Link>{' '}
-                  to redeem! We also do monthly giveaways for the highest coin earner of the month
+                    redeem prizes
+                  </Link>
+                  ! We also do monthly giveaways for the highest coin earner of the month.
                 </p>
               </div>
             </div>

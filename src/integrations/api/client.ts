@@ -444,8 +444,9 @@ export const userAPI = {
     return response.data?.data ?? [];
   },
 
-  getLeaderboard: async () => {
-    const response = await apiClient.get('/users/leaderboard');
+  getLeaderboard: async (sortBy?: 'balance' | 'monthly' | 'lifetime') => {
+    const params = sortBy ? { sortBy } : {};
+    const response = await apiClient.get('/users/leaderboard', { params });
     return response.data;
   },
 };
