@@ -16,8 +16,11 @@ import {
   formatUsd,
   type Persona,
   type AssetCategory,
+  type AnalyticsUser,
 } from '@/mocks/analytics';
 import { PersonaBadge, CategoryBadge, ScoreMeter } from './AnalyticsBadges';
+import { useCollectorProfiles } from '@/hooks/useCollectorAnalytics';
+import { useIsRealDataOnly } from '@/hooks/useRealDataOnly';
 import { Search, ArrowUpRight } from 'lucide-react';
 
 const PERSONAS: ('all' | Persona)[] = [
@@ -41,8 +44,23 @@ export const AnalyticsUsersList = () => {
   const [category, setCategory] = useState<'all' | AssetCategory>('all');
   const [sort, setSort] = useState<'spend' | 'confidence' | 'predicted' | 'engagement'>('predicted');
 
+  const realOnly = useIsRealDataOnly();
+
+  // Pull real CardCade profiles (with seller socials + buy/sell totals).
+  // The hook returns rows already merged onto the AnalyticsUser shape so
+  // the table doesn't need to care about API vs mock plumbing. When the
+  // network is loading we transparently fall back to mocks — unless the
+  // admin has explicitly toggled "real data only", in which case we show
+  // nothing rather than fake rows.
+  const { data: profilesData, isLoading } = useCollectorProfiles({
+    limit: 100,
+    search: query.trim() || undefined,
+  });
+  const sourceUsers: AnalyticsUser[] = profilesData?.rows
+    ?? (realOnly ? [] : MOCK_ANALYTICS_USERS);
+
   const rows = useMemo(() => {
-    let list = MOCK_ANALYTICS_USERS.filter(u => {
+    let list = sourceUsers.filter(u => {
       if (persona !== 'all' && u.persona !== persona) return false;
       if (category !== 'all' && !u.topCategories.includes(category)) return false;
       if (query.trim()) {
@@ -73,7 +91,7 @@ export const AnalyticsUsersList = () => {
     });
 
     return list;
-  }, [query, persona, category, sort]);
+  }, [sourceUsers, query, persona, category, sort]);
 
   return (
     <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
@@ -88,7 +106,11 @@ export const AnalyticsUsersList = () => {
             className="pl-9 bg-black/40 border-white/10"
           />
         </div>
-        <Select value={persona} onValueChange={v => setPersona(v as 'all' | Persona)}>
+        <Select
+          value={persona}
+          onValueChange={v => setPersona(v as 'all' | Persona)}
+          disabled={realOnly}
+        >
           <SelectTrigger className="w-full lg:w-[180px] bg-black/40 border-white/10">
             <SelectValue placeholder="Persona" />
           </SelectTrigger>
@@ -125,10 +147,12 @@ export const AnalyticsUsersList = () => {
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="predicted">Predicted 30-day spend</SelectItem>
+            <SelectItem value="predicted">
+              {realOnly ? '30-day spend' : 'Predicted 30-day spend'}
+            </SelectItem>
             <SelectItem value="spend">Lifetime spend</SelectItem>
-            <SelectItem value="confidence">Identity confidence</SelectItem>
-            <SelectItem value="engagement">Engagement</SelectItem>
+            {!realOnly && <SelectItem value="confidence">Identity confidence</SelectItem>}
+            {!realOnly && <SelectItem value="engagement">Engagement</SelectItem>}
           </SelectContent>
         </Select>
       </div>
@@ -139,12 +163,14 @@ export const AnalyticsUsersList = () => {
           <thead>
             <tr className="text-left text-xs uppercase text-muted-foreground border-b border-white/5">
               <th className="py-3 pr-4">User</th>
-              <th className="py-3 pr-4">Persona</th>
+              {!realOnly && <th className="py-3 pr-4">Persona</th>}
               <th className="py-3 pr-4">Top Categories</th>
-              <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>
+              {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
               <th className="py-3 pr-4 text-right">Lifetime Spend</th>
-              <th className="py-3 pr-4 text-right">Predicted 30d</th>
-              <th className="py-3 pr-4 w-[140px]">Engagement</th>
+              <th className="py-3 pr-4 text-right">
+                {realOnly ? '30d Spend' : 'Predicted 30d'}
+              </th>
+              {!realOnly && <th className="py-3 pr-4 w-[140px]">Engagement</th>}
               <th className="py-3 pr-2 w-[40px]"></th>
             </tr>
           </thead>
@@ -173,9 +199,11 @@ export const AnalyticsUsersList = () => {
                     </div>
                   </div>
                 </td>
-                <td className="py-3 pr-4">
-                  <PersonaBadge persona={u.persona} />
-                </td>
+                {!realOnly && (
+                  <td className="py-3 pr-4">
+                    <PersonaBadge persona={u.persona} />
+                  </td>
+                )}
                 <td className="py-3 pr-4">
                   <div className="flex flex-wrap gap-1">
                     {u.topCategories.map(c => (
@@ -183,18 +211,22 @@ export const AnalyticsUsersList = () => {
                     ))}
                   </div>
                 </td>
-                <td className="py-3 pr-4">
-                  <ScoreMeter value={u.unifiedConfidence} />
-                </td>
+                {!realOnly && (
+                  <td className="py-3 pr-4">
+                    <ScoreMeter value={u.unifiedConfidence} />
+                  </td>
+                )}
                 <td className="py-3 pr-4 text-right text-white">
                   {formatUsd(u.lifetimeSpendUsd)}
                 </td>
                 <td className="py-3 pr-4 text-right text-[#B4FF39] font-medium">
                   {formatUsd(u.predicted30dSpendUsd)}
                 </td>
-                <td className="py-3 pr-4">
-                  <ScoreMeter value={u.engagementScore} />
-                </td>
+                {!realOnly && (
+                  <td className="py-3 pr-4">
+                    <ScoreMeter value={u.engagementScore} />
+                  </td>
+                )}
                 <td className="py-3 pr-2 text-right">
                   <Button
                     variant="ghost"
@@ -212,8 +244,8 @@ export const AnalyticsUsersList = () => {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                  No profiles match the current filters.
+                <td colSpan={realOnly ? 5 : 8} className="py-8 text-center text-muted-foreground">
+                  {isLoading ? 'Loading collector profiles…' : 'No profiles match the current filters.'}
                 </td>
               </tr>
             )}

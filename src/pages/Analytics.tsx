@@ -4,10 +4,13 @@ import { Navigation } from '@/components/Navigation';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { AnalyticsUsersList } from '@/components/analytics/AnalyticsUsersList';
 import { AnalyticsUserDetail } from '@/components/analytics/AnalyticsUserDetail';
 import { AnalyticsScrapers } from '@/components/analytics/AnalyticsScrapers';
+import { useRealDataOnly } from '@/hooks/useRealDataOnly';
 
 /**
  * Admin-only Analytics homebase.
@@ -22,6 +25,7 @@ const Analytics = () => {
   const [tab, setTab] = useState<'overview' | 'profiles' | 'scrapers'>(
     userId ? 'profiles' : 'overview',
   );
+  const [realOnly, setRealOnly] = useRealDataOnly();
 
   if (isLoading || isFetching) {
     return (
@@ -56,17 +60,34 @@ const Analytics = () => {
               and Facebook signals.
             </p>
           </div>
+          {/* Global toggle: hides every mock-derived field across all tabs. */}
+          <div className="flex items-center gap-3 rounded-lg border border-white/5 bg-[rgba(22,22,22,1)] px-4 py-2">
+            <Switch
+              id="analytics-real-only"
+              checked={realOnly}
+              onCheckedChange={setRealOnly}
+            />
+            <Label
+              htmlFor="analytics-real-only"
+              className="text-xs text-muted-foreground cursor-pointer select-none"
+            >
+              {realOnly ? 'Showing real CardCade data only' : 'Show real data only (hide mocks)'}
+            </Label>
+          </div>
         </div>
 
         {/* If a userId is in the URL, render detail directly */}
         {userId ? (
           <AnalyticsUserDetail />
         ) : (
-          <Tabs value={tab} onValueChange={v => setTab(v as 'overview' | 'profiles' | 'scrapers')}>
+          <Tabs
+            value={tab === 'scrapers' && realOnly ? 'overview' : tab}
+            onValueChange={v => setTab(v as 'overview' | 'profiles' | 'scrapers')}
+          >
             <TabsList className="bg-[rgba(22,22,22,1)] border border-white/5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="profiles">Profiles</TabsTrigger>
-              <TabsTrigger value="scrapers">Scrapers</TabsTrigger>
+              {!realOnly && <TabsTrigger value="scrapers">Scrapers</TabsTrigger>}
             </TabsList>
 
             <TabsContent value="overview" className="mt-6">
@@ -77,9 +98,11 @@ const Analytics = () => {
               <AnalyticsUsersList />
             </TabsContent>
 
-            <TabsContent value="scrapers" className="mt-6">
-              <AnalyticsScrapers />
-            </TabsContent>
+            {!realOnly && (
+              <TabsContent value="scrapers" className="mt-6">
+                <AnalyticsScrapers />
+              </TabsContent>
+            )}
           </Tabs>
         )}
         </div>

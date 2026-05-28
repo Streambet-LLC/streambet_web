@@ -866,6 +866,49 @@ export const socketAPI = {
   },
 };
 
+// Collector Analytics API (admin-only, real buy/sell + socials)
+import type {
+  ApiCollectorAnalyticsOverview,
+  ApiCollectorListParams,
+  ApiCollectorProfileDetail,
+  ApiCollectorProfilesList,
+} from '@/types/analytics-api';
+
+export const analyticsAPI = {
+  /** Aggregated overview: stats, category affinity, top assets, 12w trend. */
+  getCollectorsOverview: async (): Promise<ApiCollectorAnalyticsOverview> => {
+    const response = await apiClient.get(
+      `/admin/analytics/collectors/overview`,
+    );
+    return response.data.data as ApiCollectorAnalyticsOverview;
+  },
+
+  /** Paginated profile list with spend + socials + top categories. */
+  listCollectorProfiles: async (
+    params: ApiCollectorListParams = {},
+  ): Promise<ApiCollectorProfilesList> => {
+    const response = await apiClient.get(`/admin/analytics/collectors`, {
+      params: {
+        limit: params.limit,
+        offset: params.offset,
+        search: params.search || undefined,
+        onlySellers: params.onlySellers ? 'true' : undefined,
+      },
+    });
+    return response.data.data as ApiCollectorProfilesList;
+  },
+
+  /** Single profile detail with category breakdown + recent orders. */
+  getCollectorProfile: async (
+    userId: string,
+  ): Promise<ApiCollectorProfileDetail> => {
+    const response = await apiClient.get(
+      `/admin/analytics/collectors/${userId}`,
+    );
+    return response.data.data as ApiCollectorProfileDetail;
+  },
+};
+
 // Admin API
 export const adminAPI = {
   // Get all users
@@ -2576,6 +2619,7 @@ export const api = {
   betting: bettingAPI,
   socket: socketAPI,
   admin: adminAPI,
+  analytics: analyticsAPI,
   userStream: userStreamAPI,
   payment: paymentAPI,
   bets: betsAPI,
