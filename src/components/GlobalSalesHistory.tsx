@@ -23,6 +23,8 @@ const mapSaleToTransaction = (sale: any) => ({
   createdAt: sale.createdAt,
   totalPrice: sale.totalPrice,
   paymentMethod: sale.paymentMethod,
+  // Optional: surfaces ACH vs card in the detail dialog when available.
+  stripePaymentMethod: sale.stripePaymentMethod ?? null,
   status: sale.status,
   username: sale.buyerUsername,
   saleType: sale.saleType,

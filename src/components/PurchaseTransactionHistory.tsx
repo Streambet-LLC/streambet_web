@@ -15,11 +15,22 @@ import { ReviewableOrderSide } from '@/types/review';
 /**
  * Map an order's `paymentMethod` to a user-friendly currency label.
  * 'crypto' is rendered as 'USDC' since that's the only supported on-chain
- * currency today.
+ * currency today. When the order is a Stripe USD/combined order paid via
+ * ACH (us_bank_account), surface the label as ACH so buyers/sellers can
+ * tell at a glance how the order was funded.
  */
-function formatPaymentLabel(method?: string): string {
+function formatPaymentLabel(
+  method?: string,
+  stripeMethod?: 'card' | 'us_bank_account' | null
+): string {
   if (!method) return '';
   if (method === 'crypto') return 'USDC';
+  if (
+    (method === 'usd' || method === 'combined') &&
+    stripeMethod === 'us_bank_account'
+  ) {
+    return method === 'combined' ? 'ACH + COINS' : 'ACH';
+  }
   return method.toUpperCase();
 }
 
@@ -27,8 +38,12 @@ function formatPaymentLabel(method?: string): string {
  * Format the right-side "Purchase Amount" cell. Crypto/USD use 2 decimals;
  * coins/combined fall back to integer formatting.
  */
-function formatPurchaseAmount(method: string | undefined, total: number | undefined): string {
-  const label = formatPaymentLabel(method);
+function formatPurchaseAmount(
+  method: string | undefined,
+  total: number | undefined,
+  stripeMethod?: 'card' | 'us_bank_account' | null
+): string {
+  const label = formatPaymentLabel(method, stripeMethod);
   if (total == null) return label;
   if (method === 'crypto') {
     // Crypto reads naturally as "15.00 USDC" rather than "USDC 15.00".
@@ -127,7 +142,8 @@ const PurchaseTransactionHistory: React.FC<PurchaseTransactionHistoryProps> = ({
                           >
                             {formatPurchaseAmount(
                               transaction.paymentMethod,
-                              transaction.totalPrice
+                              transaction.totalPrice,
+                              transaction.stripePaymentMethod
                             )}
                           </span>
                         </div>
@@ -190,7 +206,8 @@ const PurchaseTransactionHistory: React.FC<PurchaseTransactionHistoryProps> = ({
                         >
                           {formatPurchaseAmount(
                             transaction.paymentMethod,
-                            transaction.totalPrice
+                            transaction.totalPrice,
+                            transaction.stripePaymentMethod
                           )}
                         </TableCell>
                         <TableCell className="text-right">

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Tooltip,
   TooltipContent,
@@ -49,8 +50,10 @@ import {
   Search,
   X as XIcon,
   UserPlus,
+  Pencil,
 } from 'lucide-react';
 import moment from 'moment';
+import { AnalyticsEditProfileDialog } from './AnalyticsEditProfileDialog';
 
 const SectionCard = ({
   title,
@@ -72,6 +75,88 @@ const SectionCard = ({
   </Card>
 );
 
+/**
+ * Loading placeholder for the detail page. Mirrors the real layout
+ * (header card → 3-col identity grid → activity feed) so the page
+ * doesn't reflow once data arrives, and so admins don't briefly see
+ * mock data or the "Profile not found" empty state.
+ */
+const AnalyticsUserDetailSkeleton = ({ onBack }: { onBack: () => void }) => (
+  <div className="space-y-6" aria-busy="true">
+    <div className="flex items-center justify-between">
+      <Button variant="ghost" onClick={onBack} className="text-muted-foreground">
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Analytics
+      </Button>
+      <Skeleton className="h-9 w-32 bg-white/10" />
+    </div>
+
+    {/* Header card */}
+    <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
+      <div className="flex items-start gap-4">
+        <Skeleton className="h-16 w-16 rounded-full bg-white/10" />
+        <div className="flex-1 space-y-3">
+          <Skeleton className="h-5 w-48 bg-white/10" />
+          <Skeleton className="h-3 w-32 bg-white/5" />
+          <div className="flex gap-2 pt-1">
+            <Skeleton className="h-5 w-24 bg-white/10" />
+            <Skeleton className="h-5 w-20 bg-white/10" />
+            <Skeleton className="h-5 w-16 bg-white/10" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 min-w-[240px]">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-2.5 w-16 bg-white/5" />
+              <Skeleton className="h-5 w-20 bg-white/10" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+
+    {/* Three-column identity / activity row */}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 3 }).map((_, col) => (
+        <Card key={col} className="bg-[rgba(22,22,22,1)] border-white/5 p-6 space-y-4">
+          <Skeleton className="h-4 w-32 bg-white/10" />
+          <Skeleton className="h-3 w-48 bg-white/5" />
+          <div className="space-y-3 pt-2">
+            {Array.from({ length: 4 }).map((_, row) => (
+              <div key={row} className="flex items-center gap-3">
+                <Skeleton className="h-8 w-8 rounded-full bg-white/10" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3 w-3/4 bg-white/10" />
+                  <Skeleton className="h-2.5 w-1/2 bg-white/5" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ))}
+    </div>
+
+    {/* Activity feed */}
+    <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6 space-y-4">
+      <Skeleton className="h-4 w-40 bg-white/10" />
+      <div className="space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <Skeleton className="h-8 w-8 rounded bg-white/10" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-2/3 bg-white/10" />
+                <Skeleton className="h-2.5 w-1/3 bg-white/5" />
+              </div>
+            </div>
+            <Skeleton className="h-4 w-16 bg-white/10" />
+          </div>
+        ))}
+      </div>
+    </Card>
+  </div>
+);
+
 export const AnalyticsUserDetail = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
@@ -81,13 +166,19 @@ export const AnalyticsUserDetail = () => {
   // mock-only id from the demo dataset — fall back to the original mock
   // record so the page still renders end-to-end. When the global toggle
   // is on we skip the mock fallback entirely.
-  const { data: apiUser } = useCollectorProfileDetail(userId);
+  const { data: apiUser, isLoading: apiLoading } = useCollectorProfileDetail(userId);
   const realOnly = useIsRealDataOnly();
   const mockUser = userId && !realOnly ? getMockAnalyticsUser(userId) : undefined;
   const user = apiUser ?? mockUser;
+  // Show a skeleton while the API is still resolving and we don't yet have
+  // *anything* to render. In `realOnly` mode there is no mock fallback, so
+  // the skeleton is the only thing standing between the user and a flash of
+  // the "Profile not found" empty state.
+  const showSkeleton = apiLoading && !apiUser && !mockUser;
   const [openAccount, setOpenAccount] = useState<LinkedAccount | null>(null);
   const [confidenceOpen, setConfidenceOpen] = useState(false);
   const [engagementOpen, setEngagementOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   /**
    * Live demo activity: prepended every ~8-15s to make the timeline feel
@@ -399,6 +490,10 @@ export const AnalyticsUserDetail = () => {
     [liveActivity, user],
   );
 
+  if (showSkeleton) {
+    return <AnalyticsUserDetailSkeleton onBack={() => navigate('/analytics')} />;
+  }
+
   if (!user) {
     return (
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-12 text-center">
@@ -417,16 +512,30 @@ export const AnalyticsUserDetail = () => {
 
   return (
     <div className="space-y-6">
-      {/* Back nav */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-muted-foreground hover:text-white -ml-2"
-        onClick={() => navigate('/analytics')}
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        All Profiles
-      </Button>
+      {/* Back nav + admin edit */}
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-white -ml-2"
+          onClick={() => navigate('/analytics')}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          All Profiles
+        </Button>
+        {!!apiUser && !!userId && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/10 bg-white/5 text-white hover:bg-white/15 hover:text-white hover:border-white/20"
+            onClick={() => setEditOpen(true)}
+            title="Inject socials + AI annotations"
+          >
+            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+            Edit profile
+          </Button>
+        )}
+      </div>
 
       {/* Header card */}
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
@@ -1193,6 +1302,15 @@ export const AnalyticsUserDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Admin: edit socials + AI annotations */}
+      {userId && (
+        <AnalyticsEditProfileDialog
+          userId={userId}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+        />
+      )}
     </div>
   );
 };

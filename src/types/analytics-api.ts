@@ -26,6 +26,17 @@ export interface ApiCollectorSocial {
   platform: ApiAnalyticsSocialPlatform;
   handle: string;
   url: string;
+  /** Stable id for analytics-only entries (allows multiple per platform). */
+  id?: string;
+  /** Optional admin-supplied label ("Personal", "Shop", "Pokémon-only"). */
+  label?: string;
+  /**
+   * `public` rows come from `users.socials` (one-per-platform, visible on
+   * the user's profile/shop). `analytics` rows live on
+   * `analytics_profile.socials`, allow multiple per platform, and never
+   * leak to the public profile unless explicitly mirrored.
+   */
+  source: 'public' | 'analytics';
 }
 
 export interface ApiCollectorCategorySpend {
@@ -59,6 +70,11 @@ export interface ApiCollectorOrderEvent {
   category: ApiAnalyticsCategory;
   amountUsd: number;
   paymentMethod: 'coins' | 'usd' | 'combined' | 'crypto';
+  /**
+   * Stripe Checkout method actually used (card vs us_bank_account / ACH).
+   * Only meaningful for usd/combined orders; null otherwise.
+   */
+  stripePaymentMethod: 'card' | 'us_bank_account' | null;
   status: string;
   counterpartyUsername: string | null;
 }
@@ -66,7 +82,52 @@ export interface ApiCollectorOrderEvent {
 export interface ApiCollectorProfileDetail extends ApiCollectorProfileSummary {
   categoryBreakdown: ApiCollectorCategorySpend[];
   recentOrders: ApiCollectorOrderEvent[];
+  /**
+   * Admin-injected analytics annotations. Free-form on the wire so we can
+   * iterate without lockstep API changes; consumers should treat unknown
+   * keys as optional.
+   */
+  analyticsProfile?: ApiCollectorAnalyticsAnnotations | null;
 }
+
+/**
+ * Loose shape for the admin-managed annotations stored on
+ * `users.analytics_profile`. Mirrors `AnalyticsProfileAnnotations` on the
+ * API. Used by the future AI integration.
+ */
+export interface ApiCollectorAnalyticsAnnotations {
+  displayName?: string;
+  bio?: string;
+  personaOverride?: string;
+  interests?: string[];
+  preferences?: string[];
+  customAttributes?: Record<string, string>;
+  notes?: string;
+  lastEditedAt?: string;
+  lastEditedBy?: string;
+}
+
+/** Payload for PATCH /admin/analytics/collectors/:id/socials. */
+export interface ApiUpdateCollectorSocialsPayload {
+  entries: Array<{
+    /** Existing id when editing a row. Omit when adding a new one. */
+    id?: string;
+    platform: ApiAnalyticsSocialPlatform;
+    /** Empty string drops the row. */
+    value: string;
+    /** Optional admin label. */
+    label?: string;
+  }>;
+  /**
+   * When true, also overwrite the canonical `users.socials` map (one per
+   * platform, first wins) so the changes surface on the user's public
+   * profile and shop. Defaults to false (analytics-only).
+   */
+  applyToPublic?: boolean;
+}
+
+/** Payload for PATCH /admin/analytics/collectors/:id/profile. */
+export type ApiUpdateCollectorAnalyticsProfilePayload = ApiCollectorAnalyticsAnnotations;
 
 export interface ApiCollectorOverviewCategory {
   category: ApiAnalyticsCategory;
