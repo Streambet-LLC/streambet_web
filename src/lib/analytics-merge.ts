@@ -148,17 +148,29 @@ export const mergeProfileIntoAnalyticsUser = (
     .map(socialToLinkedAccount)
     .filter((x): x is LinkedAccount => x !== null);
 
-  const realActivity: ActivityEvent[] =
-    detail?.recentOrders.map(orderToActivity) ?? [];
+  const realActivity: ActivityEvent[] = detail?.recentOrders.map(orderToActivity) ?? [];
 
-  const topCategoriesReal: AssetCategory[] = profile.topCategories.map(
-    apiCategoryToUi,
-  );
+  const topCategoriesReal: AssetCategory[] = profile.topCategories.map(apiCategoryToUi);
+
+  // Admin-injected annotations (notes, persona override, bio, etc.). These
+  // win over both API defaults AND mock fallbacks so admins can hand-curate
+  // the analytics surface ahead of the AI integration.
+  const annotations = detail?.analyticsProfile ?? null;
+
+  const overlayFromAnnotations = (base: AnalyticsUser): AnalyticsUser => {
+    if (!annotations) return base;
+    return {
+      ...base,
+      displayName: annotations.displayName?.trim() || base.displayName,
+      persona: (annotations.personaOverride?.trim() || base.persona) as AnalyticsUser['persona'],
+      inferredBio: annotations.bio?.trim() || base.inferredBio,
+    };
+  };
 
   if (realOnly) {
     // Build a fully-real record. Anything we don't own becomes empty/0 so
     // the UI can hide / skip those sections.
-    return {
+    const base: AnalyticsUser = {
       id: profile.id,
       username: profile.username,
       displayName: profile.displayName || profile.username,
@@ -177,8 +189,9 @@ export const mergeProfileIntoAnalyticsUser = (
       unmatchedPlatforms: [],
       predictions: [],
       recentActivity: realActivity,
-      inferredBio: '',
+      inferredBio: annotations?.bio?.trim() ?? '',
     };
+    return overlayFromAnnotations(base);
   }
 
   const mock = fallbackUser(profile.id);
@@ -186,9 +199,7 @@ export const mergeProfileIntoAnalyticsUser = (
   // Keep any mock-only platforms that the seller did NOT supply, so the
   // demo UI still shows multi-source identity coverage.
   const ownedPlatforms = new Set(linkedFromSocials.map(a => a.platform));
-  const mockExtras = mock.linkedAccounts.filter(
-    a => !ownedPlatforms.has(a.platform),
-  );
+  const mockExtras = mock.linkedAccounts.filter(a => !ownedPlatforms.has(a.platform));
 
   const topCategories: AssetCategory[] =
     topCategoriesReal.length > 0 ? topCategoriesReal : mock.topCategories;
@@ -197,12 +208,10 @@ export const mergeProfileIntoAnalyticsUser = (
   // see real history first, then fall through to the demo events.
   const recentActivity: ActivityEvent[] = [
     ...realActivity,
-    ...mock.recentActivity.filter(
-      e => !realActivity.some(r => r.id === e.id),
-    ),
+    ...mock.recentActivity.filter(e => !realActivity.some(r => r.id === e.id)),
   ].slice(0, 25);
 
-  return {
+  const base: AnalyticsUser = {
     ...mock,
     id: profile.id,
     username: profile.username || mock.username,
@@ -217,6 +226,7 @@ export const mergeProfileIntoAnalyticsUser = (
     linkedAccounts: [...linkedFromSocials, ...mockExtras],
     recentActivity,
   };
+  return overlayFromAnnotations(base);
 };
 
 // ---------------------------------------------------------------------------

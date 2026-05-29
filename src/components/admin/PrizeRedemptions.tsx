@@ -239,10 +239,22 @@ export const PrizeRedemptions = () => {
                     {redemption.paymentMethod ? (
                       <div className="flex flex-col text-sm">
                         <span className="font-medium">
-                          {redemption.paymentMethod === 'usd'
-                            ? 'USD'
-                            : redemption.paymentMethod.replace(/_/g, ' ').charAt(0).toUpperCase() +
-                              redemption.paymentMethod.replace(/_/g, ' ').slice(1)}
+                          {(() => {
+                            const pm = redemption.paymentMethod;
+                            // ACH = Stripe usd/combined order funded by us_bank_account.
+                            const isAch =
+                              (pm === 'usd' || pm === 'combined') &&
+                              redemption.stripePaymentMethod === 'us_bank_account';
+                            if (isAch) {
+                              return pm === 'combined' ? 'ACH + Coins' : 'ACH';
+                            }
+                            if (pm === 'usd') return 'Card';
+                            if (pm === 'combined') return 'Card + Coins';
+                            return (
+                              pm.replace(/_/g, ' ').charAt(0).toUpperCase() +
+                              pm.replace(/_/g, ' ').slice(1)
+                            );
+                          })()}
                         </span>
                         {redemption.paymentMethod !== 'usd' && redemption.coinsDeducted ? (
                           <span className="text-xs text-muted-foreground">

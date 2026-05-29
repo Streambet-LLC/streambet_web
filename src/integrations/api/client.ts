@@ -868,24 +868,26 @@ export const socketAPI = {
 
 // Collector Analytics API (admin-only, real buy/sell + socials)
 import type {
+  ApiCollectorAnalyticsAnnotations,
   ApiCollectorAnalyticsOverview,
   ApiCollectorListParams,
   ApiCollectorProfileDetail,
   ApiCollectorProfilesList,
+  ApiCollectorSocial,
+  ApiUpdateCollectorAnalyticsProfilePayload,
+  ApiUpdateCollectorSocialsPayload,
 } from '@/types/analytics-api';
 
 export const analyticsAPI = {
   /** Aggregated overview: stats, category affinity, top assets, 12w trend. */
   getCollectorsOverview: async (): Promise<ApiCollectorAnalyticsOverview> => {
-    const response = await apiClient.get(
-      `/admin/analytics/collectors/overview`,
-    );
+    const response = await apiClient.get(`/admin/analytics/collectors/overview`);
     return response.data.data as ApiCollectorAnalyticsOverview;
   },
 
   /** Paginated profile list with spend + socials + top categories. */
   listCollectorProfiles: async (
-    params: ApiCollectorListParams = {},
+    params: ApiCollectorListParams = {}
   ): Promise<ApiCollectorProfilesList> => {
     const response = await apiClient.get(`/admin/analytics/collectors`, {
       params: {
@@ -899,13 +901,44 @@ export const analyticsAPI = {
   },
 
   /** Single profile detail with category breakdown + recent orders. */
-  getCollectorProfile: async (
-    userId: string,
-  ): Promise<ApiCollectorProfileDetail> => {
-    const response = await apiClient.get(
-      `/admin/analytics/collectors/${userId}`,
-    );
+  getCollectorProfile: async (userId: string): Promise<ApiCollectorProfileDetail> => {
+    const response = await apiClient.get(`/admin/analytics/collectors/${userId}`);
     return response.data.data as ApiCollectorProfileDetail;
+  },
+
+  /**
+   * Admin-only: replace the user's connected socials. Empty `value`
+   * entries are treated as deletions server-side.
+   */
+  updateCollectorSocials: async (
+    userId: string,
+    payload: ApiUpdateCollectorSocialsPayload
+  ): Promise<{ socials: ApiCollectorSocial[]; appliedToPublic: boolean }> => {
+    const response = await apiClient.patch(
+      `/admin/analytics/collectors/${userId}/socials`,
+      payload
+    );
+    return response.data.data as {
+      socials: ApiCollectorSocial[];
+      appliedToPublic: boolean;
+    };
+  },
+
+  /**
+   * Admin-only: merge analytics annotations (notes, persona override,
+   * interests, etc.) onto the collector's profile.
+   */
+  updateCollectorAnalyticsProfile: async (
+    userId: string,
+    payload: ApiUpdateCollectorAnalyticsProfilePayload
+  ): Promise<{ analyticsProfile: ApiCollectorAnalyticsAnnotations | null }> => {
+    const response = await apiClient.patch(
+      `/admin/analytics/collectors/${userId}/profile`,
+      payload
+    );
+    return response.data.data as {
+      analyticsProfile: ApiCollectorAnalyticsAnnotations | null;
+    };
   },
 };
 
@@ -1001,7 +1034,7 @@ export const adminAPI = {
   getSalesHistory: async (params?: {
     from?: string;
     to?: string;
-    paymentMethod?: 'crypto' | 'noncrypto' | 'all';
+    paymentMethod?: 'crypto' | 'noncrypto' | 'card' | 'ach' | 'all';
     range?: string;
     q?: string;
   }) => {
@@ -1015,6 +1048,9 @@ export const adminAPI = {
         usdCharged: number;
         coinsDeducted: number;
         paymentMethod: 'coins' | 'usd' | 'combined' | 'crypto';
+        // Stripe Checkout method actually used by the buyer.
+        // null for coins/crypto and legacy rows that predate the column.
+        stripePaymentMethod: 'card' | 'us_bank_account' | null;
         status: string;
         buyerUsername: string;
         buyerEmail: string | null;
@@ -1035,26 +1071,40 @@ export const adminAPI = {
         totalRevenue: number;
         cryptoRevenue: number;
         nonCryptoRevenue: number;
+        achRevenue: number;
+        cardRevenue: number;
         platformFees: number;
         cryptoPlatformFees: number;
         nonCryptoPlatformFees: number;
+        achPlatformFees: number;
+        cardPlatformFees: number;
         orderCount: number;
         cryptoOrderCount: number;
         nonCryptoOrderCount: number;
+        achOrderCount: number;
+        cardOrderCount: number;
       }>;
       totals: {
         totalRevenue: number;
         cryptoRevenue: number;
         nonCryptoRevenue: number;
+        achRevenue: number;
+        cardRevenue: number;
         platformFees: number;
         cryptoPlatformFees: number;
         nonCryptoPlatformFees: number;
+        achPlatformFees: number;
+        cardPlatformFees: number;
         orderCount: number;
         cryptoOrderCount: number;
         nonCryptoOrderCount: number;
+        achOrderCount: number;
+        cardOrderCount: number;
       };
       feeAssumptions: {
         nonCryptoBuyerFeePercent: number;
+        nonCryptoBuyerCardFeePercent: number;
+        nonCryptoBuyerAchFeePercent: number;
         nonCryptoSellerFeePercent: number;
         cryptoCombinedBps: number;
       };

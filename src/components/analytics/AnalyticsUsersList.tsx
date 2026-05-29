@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -42,7 +43,9 @@ export const AnalyticsUsersList = () => {
   const [query, setQuery] = useState('');
   const [persona, setPersona] = useState<'all' | Persona>('all');
   const [category, setCategory] = useState<'all' | AssetCategory>('all');
-  const [sort, setSort] = useState<'spend' | 'confidence' | 'predicted' | 'engagement'>('predicted');
+  const [sort, setSort] = useState<'spend' | 'confidence' | 'predicted' | 'engagement'>(
+    'predicted'
+  );
 
   const realOnly = useIsRealDataOnly();
 
@@ -51,13 +54,20 @@ export const AnalyticsUsersList = () => {
   // the table doesn't need to care about API vs mock plumbing. When the
   // network is loading we transparently fall back to mocks — unless the
   // admin has explicitly toggled "real data only", in which case we show
-  // nothing rather than fake rows.
-  const { data: profilesData, isLoading } = useCollectorProfiles({
+  // a skeleton table rather than fake rows.
+  const {
+    data: profilesData,
+    isLoading,
+    isFetching,
+  } = useCollectorProfiles({
     limit: 100,
     search: query.trim() || undefined,
   });
-  const sourceUsers: AnalyticsUser[] = profilesData?.rows
-    ?? (realOnly ? [] : MOCK_ANALYTICS_USERS);
+  // First-load skeleton: we have no data yet AND we're actually waiting on
+  // the network. Subsequent re-fetches (search debounce, sort change) keep
+  // the previous rows visible to avoid layout flashes.
+  const showSkeleton = isLoading && !profilesData;
+  const sourceUsers: AnalyticsUser[] = profilesData?.rows ?? (realOnly ? [] : MOCK_ANALYTICS_USERS);
 
   const rows = useMemo(() => {
     let list = sourceUsers.filter(u => {
@@ -132,12 +142,12 @@ export const AnalyticsUsersList = () => {
                 {c === 'all'
                   ? 'All Categories'
                   : c === 'pokemon'
-                  ? 'Pokémon'
-                  : c === 'one_piece'
-                  ? 'One Piece'
-                  : c === 'sports'
-                  ? 'Sports'
-                  : 'Other'}
+                    ? 'Pokémon'
+                    : c === 'one_piece'
+                      ? 'One Piece'
+                      : c === 'sports'
+                        ? 'Sports'
+                        : 'Other'}
               </SelectItem>
             ))}
           </SelectContent>
@@ -167,85 +177,129 @@ export const AnalyticsUsersList = () => {
               <th className="py-3 pr-4">Top Categories</th>
               {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
               <th className="py-3 pr-4 text-right">Lifetime Spend</th>
-              <th className="py-3 pr-4 text-right">
-                {realOnly ? '30d Spend' : 'Predicted 30d'}
-              </th>
+              <th className="py-3 pr-4 text-right">{realOnly ? '30d Spend' : 'Predicted 30d'}</th>
               {!realOnly && <th className="py-3 pr-4 w-[140px]">Engagement</th>}
               <th className="py-3 pr-2 w-[40px]"></th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(u => (
-              <tr
-                key={u.id}
-                className="border-b border-white/5 last:border-0 hover:bg-white/5 cursor-pointer transition-colors"
-                onClick={() => navigate(`/analytics/${u.id}`)}
-              >
-                <td className="py-3 pr-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-[#B4FF39]/20 text-[#B4FF39] text-xs">
-                        {u.displayName
-                          .split(' ')
-                          .map(s => s[0])
-                          .join('')
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <div className="font-medium text-white truncate">{u.displayName}</div>
-                      <div className="text-xs text-muted-foreground truncate">@{u.username}</div>
+            {showSkeleton &&
+              Array.from({ length: 8 }).map((_, i) => (
+                <tr
+                  key={`skeleton-${i}`}
+                  className="border-b border-white/5 last:border-0"
+                  aria-busy="true"
+                >
+                  <td className="py-3 pr-4">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full bg-white/10" />
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-3 w-32 bg-white/10" />
+                        <Skeleton className="h-2.5 w-20 bg-white/5" />
+                      </div>
                     </div>
-                  </div>
-                </td>
-                {!realOnly && (
-                  <td className="py-3 pr-4">
-                    <PersonaBadge persona={u.persona} />
                   </td>
-                )}
-                <td className="py-3 pr-4">
-                  <div className="flex flex-wrap gap-1">
-                    {u.topCategories.map(c => (
-                      <CategoryBadge key={c} category={c} />
-                    ))}
-                  </div>
-                </td>
-                {!realOnly && (
+                  {!realOnly && (
+                    <td className="py-3 pr-4">
+                      <Skeleton className="h-5 w-24 bg-white/10" />
+                    </td>
+                  )}
                   <td className="py-3 pr-4">
-                    <ScoreMeter value={u.unifiedConfidence} />
+                    <Skeleton className="h-5 w-28 bg-white/10" />
                   </td>
-                )}
-                <td className="py-3 pr-4 text-right text-white">
-                  {formatUsd(u.lifetimeSpendUsd)}
-                </td>
-                <td className="py-3 pr-4 text-right text-[#B4FF39] font-medium">
-                  {formatUsd(u.predicted30dSpendUsd)}
-                </td>
-                {!realOnly && (
+                  {!realOnly && (
+                    <td className="py-3 pr-4">
+                      <Skeleton className="h-2 w-full bg-white/10" />
+                    </td>
+                  )}
+                  <td className="py-3 pr-4 text-right">
+                    <Skeleton className="h-4 w-16 ml-auto bg-white/10" />
+                  </td>
+                  <td className="py-3 pr-4 text-right">
+                    <Skeleton className="h-4 w-16 ml-auto bg-white/10" />
+                  </td>
+                  {!realOnly && (
+                    <td className="py-3 pr-4">
+                      <Skeleton className="h-2 w-full bg-white/10" />
+                    </td>
+                  )}
+                  <td className="py-3 pr-2">
+                    <Skeleton className="h-8 w-8 ml-auto bg-white/5" />
+                  </td>
+                </tr>
+              ))}
+            {!showSkeleton &&
+              rows.map(u => (
+                <tr
+                  key={u.id}
+                  className="border-b border-white/5 last:border-0 hover:bg-white/5 cursor-pointer transition-colors"
+                  onClick={() => navigate(`/analytics/${u.id}`)}
+                >
                   <td className="py-3 pr-4">
-                    <ScoreMeter value={u.engagementScore} />
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-[#B4FF39]/20 text-[#B4FF39] text-xs">
+                          {u.displayName
+                            .split(' ')
+                            .map(s => s[0])
+                            .join('')
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="font-medium text-white truncate">{u.displayName}</div>
+                        <div className="text-xs text-muted-foreground truncate">@{u.username}</div>
+                      </div>
+                    </div>
                   </td>
-                )}
-                <td className="py-3 pr-2 text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={e => {
-                      e.stopPropagation();
-                      navigate(`/analytics/${u.id}`);
-                    }}
-                  >
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
+                  {!realOnly && (
+                    <td className="py-3 pr-4">
+                      <PersonaBadge persona={u.persona} />
+                    </td>
+                  )}
+                  <td className="py-3 pr-4">
+                    <div className="flex flex-wrap gap-1">
+                      {u.topCategories.map(c => (
+                        <CategoryBadge key={c} category={c} />
+                      ))}
+                    </div>
+                  </td>
+                  {!realOnly && (
+                    <td className="py-3 pr-4">
+                      <ScoreMeter value={u.unifiedConfidence} />
+                    </td>
+                  )}
+                  <td className="py-3 pr-4 text-right text-white">
+                    {formatUsd(u.lifetimeSpendUsd)}
+                  </td>
+                  <td className="py-3 pr-4 text-right text-[#B4FF39] font-medium">
+                    {formatUsd(u.predicted30dSpendUsd)}
+                  </td>
+                  {!realOnly && (
+                    <td className="py-3 pr-4">
+                      <ScoreMeter value={u.engagementScore} />
+                    </td>
+                  )}
+                  <td className="py-3 pr-2 text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={e => {
+                        e.stopPropagation();
+                        navigate(`/analytics/${u.id}`);
+                      }}
+                    >
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            {!showSkeleton && rows.length === 0 && (
               <tr>
                 <td colSpan={realOnly ? 5 : 8} className="py-8 text-center text-muted-foreground">
-                  {isLoading ? 'Loading collector profiles…' : 'No profiles match the current filters.'}
+                  {isFetching ? 'Refreshing…' : 'No profiles match the current filters.'}
                 </td>
               </tr>
             )}
