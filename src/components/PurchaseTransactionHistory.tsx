@@ -55,6 +55,41 @@ function formatPurchaseAmount(
   return `${label} ${total.toLocaleString()}`;
 }
 
+/**
+ * Render an order status as a pill. ACH (us_bank_account) orders sit in
+ * `payment_processing` for 3-5 business days while Stripe settles the
+ * bank debit — treat that as a first-class state with a clear sky-blue
+ * "Settling" label so buyers don't think their order vanished.
+ */
+function StatusPill({
+  status,
+  stripeMethod,
+}: {
+  status: string;
+  stripeMethod?: 'card' | 'us_bank_account' | null;
+}) {
+  if (status === 'payment_processing') {
+    const isAch = stripeMethod === 'us_bank_account';
+    return (
+      <span
+        className="px-2 py-1 rounded font-bold text-xs bg-sky-500/15 text-sky-300 border border-sky-500/30"
+        title={
+          isAch
+            ? 'ACH bank debit authorised — funds typically settle in 3-5 business days.'
+            : 'Payment is still being confirmed by the processor.'
+        }
+      >
+        {isAch ? 'ACH Settling' : 'Processing'}
+      </span>
+    );
+  }
+  return (
+    <span className="px-2 py-1 rounded font-bold text-xs bg-[#23272F]">
+      {_.startCase(status)}
+    </span>
+  );
+}
+
 interface PurchaseTransactionHistoryProps {
   /** Called with an orderId when the user clicks the review button on a row. */
   onOpenReview?: (orderId: string) => void;
@@ -70,7 +105,14 @@ const PurchaseTransactionHistory: React.FC<PurchaseTransactionHistoryProps> = ({
     queryKey: ['prize-orders'],
     queryFn: async () => {
       const data = await api.prize.getMyOrders();
-      return data?.filter(t => ['paid', 'shipped'].includes(t.status));
+      // Include `payment_processing` so buyers who just paid by ACH can
+      // see their in-flight order while Stripe takes 3-5 business days
+      // to settle the bank debit. Without this, the buyer hits the
+      // success page and then sees nothing in their purchase history
+      // until the funds clear, which looks like the order vanished.
+      return data?.filter(t =>
+        ['paid', 'shipped', 'payment_processing'].includes(t.status)
+      );
     },
   });
 
@@ -149,9 +191,10 @@ const PurchaseTransactionHistory: React.FC<PurchaseTransactionHistoryProps> = ({
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-xs text-muted-foreground">Status</span>
-                          <span className="px-2 py-1 rounded font-bold text-xs bg-[#23272F]">
-                            {_.startCase(transaction.status)}
-                          </span>
+                          <StatusPill
+                            status={transaction.status}
+                            stripeMethod={transaction.stripePaymentMethod}
+                          />
                         </div>
                         {onOpenReview && reviewSideByOrderId.get(transaction.id) && (
                           <div className="flex justify-between items-center pt-1">
@@ -211,7 +254,10 @@ const PurchaseTransactionHistory: React.FC<PurchaseTransactionHistoryProps> = ({
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {_.startCase(transaction.status)}
+                          <StatusPill
+                            status={transaction.status}
+                            stripeMethod={transaction.stripePaymentMethod}
+                          />
                         </TableCell>
                         {onOpenReview && (
                           <TableCell className="text-right" onClick={e => e.stopPropagation()}>

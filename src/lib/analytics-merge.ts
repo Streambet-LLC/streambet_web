@@ -110,17 +110,29 @@ const inferPersona = (p: ApiCollectorProfileSummary): Persona => {
 // Order events → ActivityEvent
 // ---------------------------------------------------------------------------
 
-const orderToActivity = (o: ApiCollectorOrderEvent): ActivityEvent => ({
-  id: o.id,
-  at: o.at,
-  kind: o.kind,
-  source: 'cardcade',
-  summary:
-    o.kind === 'purchase'
-      ? `Bought ${o.prizeName}${o.counterpartyUsername ? ` from @${o.counterpartyUsername}` : ''}`
-      : `Sold ${o.prizeName}${o.counterpartyUsername ? ` to @${o.counterpartyUsername}` : ''}`,
-  amountUsd: o.amountUsd,
-});
+const orderToActivity = (o: ApiCollectorOrderEvent): ActivityEvent => {
+  // Tag in-flight ACH (us_bank_account) debits in the summary line so
+  // the collector activity feed clearly shows these are not yet settled.
+  // Matches the "ACH Settling" pill used in Sales History / My Purchases.
+  const pendingTag =
+    o.status === 'payment_processing'
+      ? o.stripePaymentMethod === 'us_bank_account'
+        ? ' — ACH Settling'
+        : ' — Processing'
+      : '';
+
+  return {
+    id: o.id,
+    at: o.at,
+    kind: o.kind,
+    source: 'cardcade',
+    summary:
+      o.kind === 'purchase'
+        ? `Bought ${o.prizeName}${o.counterpartyUsername ? ` from @${o.counterpartyUsername}` : ''}${pendingTag}`
+        : `Sold ${o.prizeName}${o.counterpartyUsername ? ` to @${o.counterpartyUsername}` : ''}${pendingTag}`,
+    amountUsd: o.amountUsd,
+  };
+};
 
 // ---------------------------------------------------------------------------
 // Profile (summary or detail) → AnalyticsUser

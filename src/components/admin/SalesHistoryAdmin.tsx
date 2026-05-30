@@ -67,10 +67,15 @@ const PAGE_SIZE = 25;
  *
  * Top: monthly summary (last 12 months) — total revenue, crypto vs non-crypto
  * split, and order counts. Numbers come from `/admin/prizes/sales-summary`
- * and aggregate completed orders only (status IN paid/shipped/delivered).
+ * and aggregate captured orders only (status IN paid/shipped/delivered).
+ * In-flight ACH debits (status = payment_processing) are intentionally
+ * EXCLUDED from these totals so revenue tiles only reflect settled money.
  *
  * Bottom: paginated transactions table with date-range, payment-method, and
- * free-text search filters, backed by `/admin/prizes/sales-history`.
+ * free-text search filters, backed by `/admin/prizes/sales-history`. Unlike
+ * the summary, the table INCLUDES `payment_processing` rows (visibly marked
+ * "ACH Settling") so ops can see what's in flight — helpful when buyers
+ * ask why their ACH purchase isn't visible yet.
  */
 export default function SalesHistoryAdmin() {
   // ── Filters (transactions) ─────────────────────────────────────────
@@ -362,7 +367,24 @@ export default function SalesHistoryAdmin() {
                           stripeMethod={t.stripePaymentMethod}
                         />
                       </TableCell>
-                      <TableCell className="capitalize">{t.status}</TableCell>
+                      <TableCell>
+                        {t.status === 'payment_processing' ? (
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30"
+                            title={
+                              t.stripePaymentMethod === 'us_bank_account'
+                                ? 'ACH bank debit authorised — funds typically settle in 3-5 business days. Excluded from revenue totals above until settled.'
+                                : 'Payment is still being confirmed by the processor. Excluded from revenue totals until settled.'
+                            }
+                          >
+                            {t.stripePaymentMethod === 'us_bank_account'
+                              ? 'ACH Settling'
+                              : 'Processing'}
+                          </span>
+                        ) : (
+                          <span className="capitalize text-xs">{t.status}</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right font-medium">
                         {fmtUSD(t.totalPrice)}
                       </TableCell>
