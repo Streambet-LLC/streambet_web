@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   ResponsiveContainer,
   BarChart,
@@ -15,11 +16,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import {
-  MOCK_ANALYTICS_OVERVIEW,
-  formatUsd,
-  categoryLabel,
-} from '@/mocks/analytics';
+import { MOCK_ANALYTICS_OVERVIEW, formatUsd, categoryLabel } from '@/mocks/analytics';
 import { CategoryBadge } from './AnalyticsBadges';
 import { Users, Link2, TrendingUp, Sparkles } from 'lucide-react';
 import { useDemoTicker } from '@/hooks/useDemoTicker';
@@ -50,7 +47,9 @@ const StatCard = ({
     <div className="flex items-start justify-between">
       <div>
         <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
-        <div className={`text-2xl font-semibold mt-2 ${pulse ? 'text-[#B4FF39]' : 'text-white'}`}>{value}</div>
+        <div className={`text-2xl font-semibold mt-2 ${pulse ? 'text-[#B4FF39]' : 'text-white'}`}>
+          {value}
+        </div>
         {hint && <div className="text-xs text-muted-foreground mt-1">{hint}</div>}
       </div>
       <div className="rounded-lg bg-[#B4FF39]/10 p-2">
@@ -80,12 +79,85 @@ const ChartCard = ({
   </Card>
 );
 
+/**
+ * Loading shell shown while the real `/admin/analytics/collectors/overview`
+ * payload is in flight. Mirrors the live dashboard layout (stat row + two
+ * chart rows + table) so the page doesn't jump when data resolves.
+ */
+const AnalyticsDashboardSkeleton = ({ realOnly }: { realOnly: boolean }) => {
+  const statCount = realOnly ? 2 : 4;
+  return (
+    <div className="space-y-6" aria-busy="true" aria-live="polite">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: statCount }).map((_, i) => (
+          <Card key={i} className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
+            <Skeleton className="h-3 w-24 bg-white/10" />
+            <Skeleton className="h-7 w-32 mt-3 bg-white/10" />
+            <Skeleton className="h-3 w-40 mt-2 bg-white/5" />
+          </Card>
+        ))}
+      </div>
+
+      <div className={`grid grid-cols-1 ${realOnly ? '' : 'lg:grid-cols-3'} gap-4`}>
+        <Card
+          className={`bg-[rgba(22,22,22,1)] border-white/5 p-6 ${realOnly ? '' : 'lg:col-span-2'}`}
+        >
+          <Skeleton className="h-4 w-48 bg-white/10" />
+          <Skeleton className="h-3 w-32 mt-2 bg-white/5" />
+          <Skeleton className="h-[260px] w-full mt-4 bg-white/5" />
+        </Card>
+        {!realOnly && (
+          <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
+            <Skeleton className="h-4 w-56 bg-white/10" />
+            <Skeleton className="h-3 w-40 mt-2 bg-white/5" />
+            <Skeleton className="h-[260px] w-full mt-4 bg-white/5" />
+          </Card>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
+          <Skeleton className="h-4 w-40 bg-white/10" />
+          <Skeleton className="h-3 w-48 mt-2 bg-white/5" />
+          <Skeleton className="h-[240px] w-full mt-4 bg-white/5 rounded-full" />
+        </Card>
+        <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6 lg:col-span-2">
+          <Skeleton className="h-4 w-48 bg-white/10" />
+          <Skeleton className="h-3 w-56 mt-2 bg-white/5" />
+          <div className="space-y-3 mt-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full bg-white/5" />
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
+        <Skeleton className="h-4 w-56 bg-white/10" />
+        <Skeleton className="h-3 w-72 mt-2 bg-white/5" />
+        <div className="space-y-2 mt-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full bg-white/5" />
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 export const AnalyticsDashboard = () => {
   // Real CardCade data (buy/sell + categories) gets merged onto the mock
   // overview shell so the demo-only fields (personas, confidence buckets,
   // etc.) keep rendering while real signals replace the rest.
-  const { data: overview } = useCollectorAnalyticsOverview();
+  const { data: overview, isLoading } = useCollectorAnalyticsOverview();
   const realOnly = useIsRealDataOnly();
+
+  // While the real overview is in flight we don't want to flash mock
+  // numbers on screen — especially in real-data-only mode, where the
+  // dashboard otherwise renders confidently wrong stats. Show skeletons
+  // until the API resolves; mock mode falls back to the in-memory mock
+  // overview so the demo keeps its existing instant-render behavior.
+  const showSkeleton = isLoading && !overview;
   const o = overview ?? MOCK_ANALYTICS_OVERVIEW;
 
   const [totalProfiles, setTotalProfiles] = useState(o.totalProfiles);
@@ -136,8 +208,12 @@ export const AnalyticsDashboard = () => {
         flash('spend');
       }
     },
-    { minMs: 9000, maxMs: 18000 },
+    { minMs: 9000, maxMs: 18000 }
   );
+
+  if (showSkeleton) {
+    return <AnalyticsDashboardSkeleton realOnly={realOnly} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -268,7 +344,11 @@ export const AnalyticsDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <ChartCard
           title="Category Affinity"
-          subtitle={realOnly ? 'Real spend share by category · last 30 days' : 'Predicted spend share by category'}
+          subtitle={
+            realOnly
+              ? 'Real spend share by category · last 30 days'
+              : 'Predicted spend share by category'
+          }
         >
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
@@ -350,16 +430,10 @@ export const AnalyticsDashboard = () => {
 
       {/* Personas (mock-only) */}
       {!realOnly && (
-        <ChartCard
-          title="Collector Personas"
-          subtitle="Inferred from purchase + social behavior"
-        >
+        <ChartCard title="Collector Personas" subtitle="Inferred from purchase + social behavior">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {o.topPersonas.map(p => (
-              <div
-                key={p.persona}
-                className="rounded-lg border border-white/5 bg-black/30 p-3"
-              >
+              <div key={p.persona} className="rounded-lg border border-white/5 bg-black/30 p-3">
                 <div className="text-xs text-muted-foreground">{p.persona}</div>
                 <div className="text-lg font-semibold text-white mt-1">
                   {p.count.toLocaleString()}
@@ -385,7 +459,9 @@ export const AnalyticsDashboard = () => {
               <tr className="text-left text-xs uppercase text-muted-foreground border-b border-white/5">
                 <th className="py-2 pr-4">Category</th>
                 <th className="py-2 pr-4">{realOnly ? 'Buyers (30d)' : 'Active Profiles'}</th>
-                <th className="py-2 pr-4">{realOnly ? '30-Day Spend' : 'Predicted 30-Day Spend'}</th>
+                <th className="py-2 pr-4">
+                  {realOnly ? '30-Day Spend' : 'Predicted 30-Day Spend'}
+                </th>
                 <th className="py-2 pr-4">Avg Spend / User</th>
               </tr>
             </thead>
@@ -400,9 +476,7 @@ export const AnalyticsDashboard = () => {
                     {formatUsd(c.predictedSpendUsd)}
                   </td>
                   <td className="py-3 pr-4 text-muted-foreground">
-                    {c.userCount > 0
-                      ? formatUsd(c.predictedSpendUsd / c.userCount)
-                      : '—'}
+                    {c.userCount > 0 ? formatUsd(c.predictedSpendUsd / c.userCount) : '—'}
                   </td>
                 </tr>
               ))}

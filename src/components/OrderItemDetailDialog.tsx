@@ -26,6 +26,12 @@ interface OrderItemDetailDialogProps {
     createdAt?: string;
     totalPrice?: number;
     paymentMethod?: string;
+    /**
+     * Stripe Checkout method actually used (card vs us_bank_account / ACH).
+     * Lets the dialog label ACH explicitly instead of bundling everything
+     * under "USD".
+     */
+    stripePaymentMethod?: 'card' | 'us_bank_account' | null;
     /** Solana transaction signature when paymentMethod === 'crypto'. */
     cryptoTxSignature?: string;
     status?: string;
@@ -165,15 +171,31 @@ const OrderItemDetailDialog = ({
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Amount</span>
               <span className="text-sm font-semibold" style={{ color: '#7AFF14' }}>
-                {transaction.paymentMethod === 'crypto'
-                  ? `${(transaction.totalPrice ?? 0).toFixed(2)} USDC`
-                  : transaction.paymentMethod === 'usd' || transaction.paymentMethod === 'combined'
-                    ? `${transaction.paymentMethod.toUpperCase()} ${(
-                        transaction.totalPrice ?? 0
-                      ).toFixed(2)}`
-                    : `${transaction.paymentMethod?.toUpperCase() ?? ''} ${
-                        transaction.totalPrice?.toLocaleString() ?? ''
-                      }`}
+                {(() => {
+                  const total = transaction.totalPrice ?? 0;
+                  if (transaction.paymentMethod === 'crypto') {
+                    return `${total.toFixed(2)} USDC`;
+                  }
+                  // ACH = Stripe usd/combined order funded by us_bank_account.
+                  const isAch =
+                    (transaction.paymentMethod === 'usd' ||
+                      transaction.paymentMethod === 'combined') &&
+                    transaction.stripePaymentMethod === 'us_bank_account';
+                  if (isAch) {
+                    const prefix =
+                      transaction.paymentMethod === 'combined' ? 'ACH + COINS' : 'ACH';
+                    return `${prefix} ${total.toFixed(2)}`;
+                  }
+                  if (
+                    transaction.paymentMethod === 'usd' ||
+                    transaction.paymentMethod === 'combined'
+                  ) {
+                    return `${transaction.paymentMethod.toUpperCase()} ${total.toFixed(2)}`;
+                  }
+                  return `${transaction.paymentMethod?.toUpperCase() ?? ''} ${
+                    transaction.totalPrice?.toLocaleString() ?? ''
+                  }`;
+                })()}
               </span>
             </div>
 

@@ -110,9 +110,21 @@ const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryPro
                               color: '#7AFF14',
                             }}
                           >
-                            {transaction.paymentMethod === 'crypto'
-                              ? `${transaction.totalPrice.toLocaleString()} USDC`
-                              : `${transaction.paymentMethod.toUpperCase()} ${transaction.totalPrice.toLocaleString()}`}
+                            {(() => {
+                              if (transaction.paymentMethod === 'crypto') {
+                                return `${transaction.totalPrice.toLocaleString()} USDC`;
+                              }
+                              const isAch =
+                                (transaction.paymentMethod === 'usd' ||
+                                  transaction.paymentMethod === 'combined') &&
+                                transaction.stripePaymentMethod === 'us_bank_account';
+                              const label = isAch
+                                ? transaction.paymentMethod === 'combined'
+                                  ? 'ACH + COINS'
+                                  : 'ACH'
+                                : transaction.paymentMethod.toUpperCase();
+                              return `${label} ${transaction.totalPrice.toLocaleString()}`;
+                            })()}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -190,9 +202,21 @@ const ShopPurchaseTransactionHistory: React.FC<ShopPurchaseTransactionHistoryPro
                             color: '#7AFF14',
                           }}
                         >
-                          {transaction.paymentMethod === 'crypto'
-                            ? `${transaction.totalPrice.toLocaleString()} USDC`
-                            : `${transaction.paymentMethod.toUpperCase()} ${transaction.totalPrice.toLocaleString()}`}
+                          {(() => {
+                            if (transaction.paymentMethod === 'crypto') {
+                              return `${transaction.totalPrice.toLocaleString()} USDC`;
+                            }
+                            const isAch =
+                              (transaction.paymentMethod === 'usd' ||
+                                transaction.paymentMethod === 'combined') &&
+                              transaction.stripePaymentMethod === 'us_bank_account';
+                            const label = isAch
+                              ? transaction.paymentMethod === 'combined'
+                                ? 'ACH + COINS'
+                                : 'ACH'
+                              : transaction.paymentMethod.toUpperCase();
+                            return `${label} ${transaction.totalPrice.toLocaleString()}`;
+                          })()}
                         </TableCell>
                         <TableCell className="text-right">
                           {_.startCase(transaction.status)}

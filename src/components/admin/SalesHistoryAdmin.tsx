@@ -67,17 +67,22 @@ const PAGE_SIZE = 25;
  *
  * Top: monthly summary (last 12 months) — total revenue, crypto vs non-crypto
  * split, and order counts. Numbers come from `/admin/prizes/sales-summary`
- * and aggregate completed orders only (status IN paid/shipped/delivered).
+ * and aggregate captured orders only (status IN paid/shipped/delivered).
+ * In-flight ACH debits (status = payment_processing) are intentionally
+ * EXCLUDED from these totals so revenue tiles only reflect settled money.
  *
  * Bottom: paginated transactions table with date-range, payment-method, and
- * free-text search filters, backed by `/admin/prizes/sales-history`.
+ * free-text search filters, backed by `/admin/prizes/sales-history`. Unlike
+ * the summary, the table INCLUDES `payment_processing` rows (visibly marked
+ * "ACH Settling") so ops can see what's in flight — helpful when buyers
+ * ask why their ACH purchase isn't visible yet.
  */
 export default function SalesHistoryAdmin() {
   // ── Filters (transactions) ─────────────────────────────────────────
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<
-    'all' | 'crypto' | 'noncrypto'
+    'all' | 'crypto' | 'noncrypto' | 'card' | 'ach'
   >('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -165,6 +170,18 @@ export default function SalesHistoryAdmin() {
                 sub={`${totals.nonCryptoOrderCount} orders`}
               />
             </div>
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+              <Stat
+                label="Card revenue"
+                value={fmtUSD(totals.cardRevenue)}
+                sub={`${totals.cardOrderCount} orders · fees ${fmtUSD(totals.cardPlatformFees)}`}
+              />
+              <Stat
+                label="ACH revenue"
+                value={fmtUSD(totals.achRevenue)}
+                sub={`${totals.achOrderCount} orders · fees ${fmtUSD(totals.achPlatformFees)}`}
+              />
+            </div>
             {summary?.feeAssumptions && (
               <p className="text-xs text-muted-foreground">
                 Includes buyer + seller platform fees across crypto and non-crypto orders.
@@ -192,16 +209,17 @@ export default function SalesHistoryAdmin() {
                 <TableHead>Month</TableHead>
                 <TableHead className="text-right">Total revenue</TableHead>
                 <TableHead className="text-right">Crypto</TableHead>
-                <TableHead className="text-right">Non-crypto</TableHead>
+                <TableHead className="text-right">Card</TableHead>
+                <TableHead className="text-right">ACH</TableHead>
                 <TableHead className="text-right">Platform fees</TableHead>
                 <TableHead className="text-right">Orders</TableHead>
-                <TableHead className="text-right">Crypto orders</TableHead>
+                <TableHead className="text-right">ACH orders</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {months.length === 0 && !summaryQuery.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
                     No sales data yet
                   </TableCell>
                 </TableRow>
@@ -213,12 +231,15 @@ export default function SalesHistoryAdmin() {
                       {fmtUSD(m.totalRevenue)}
                     </TableCell>
                     <TableCell className="text-right">{fmtUSD(m.cryptoRevenue)}</TableCell>
-                    <TableCell className="text-right">{fmtUSD(m.nonCryptoRevenue)}</TableCell>
+                    <TableCell className="text-right">{fmtUSD(m.cardRevenue)}</TableCell>
+                    <TableCell className="text-right text-sky-300">
+                      {fmtUSD(m.achRevenue)}
+                    </TableCell>
                     <TableCell className="text-right text-emerald-300 font-medium">
                       {fmtUSD(m.platformFees)}
                     </TableCell>
                     <TableCell className="text-right">{m.orderCount}</TableCell>
-                    <TableCell className="text-right">{m.cryptoOrderCount}</TableCell>
+                    <TableCell className="text-right text-sky-300">{m.achOrderCount}</TableCell>
                   </TableRow>
                 ))
               )}
@@ -273,7 +294,9 @@ export default function SalesHistoryAdmin() {
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="crypto">Crypto (USDC)</SelectItem>
-                  <SelectItem value="noncrypto">Non-crypto</SelectItem>
+                  <SelectItem value="noncrypto">Non-crypto (all)</SelectItem>
+                  <SelectItem value="card">Card (Stripe)</SelectItem>
+                  <SelectItem value="ach">ACH (US bank)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -339,9 +362,29 @@ export default function SalesHistoryAdmin() {
                       </TableCell>
                       <TableCell>{t.sellerUsername}</TableCell>
                       <TableCell>
-                        <PaymentBadge method={t.paymentMethod} />
+                        <PaymentBadge
+                          method={t.paymentMethod}
+                          stripeMethod={t.stripePaymentMethod}
+                        />
                       </TableCell>
-                      <TableCell className="capitalize">{t.status}</TableCell>
+                      <TableCell>
+                        {t.status === 'payment_processing' ? (
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30"
+                            title={
+                              t.stripePaymentMethod === 'us_bank_account'
+                                ? 'ACH bank debit authorised — funds typically settle in 3-5 business days. Excluded from revenue totals above until settled.'
+                                : 'Payment is still being confirmed by the processor. Excluded from revenue totals until settled.'
+                            }
+                          >
+                            {t.stripePaymentMethod === 'us_bank_account'
+                              ? 'ACH Settling'
+                              : 'Processing'}
+                          </span>
+                        ) : (
+                          <span className="capitalize text-xs">{t.status}</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right font-medium">
                         {fmtUSD(t.totalPrice)}
                       </TableCell>
@@ -435,9 +478,26 @@ function Stat({
 
 function PaymentBadge({
   method,
+  stripeMethod,
 }: {
   method: 'coins' | 'usd' | 'combined' | 'crypto';
+  stripeMethod?: 'card' | 'us_bank_account' | null;
 }) {
+  // ACH is its own visual tier: stored as paymentMethod=usd|combined with
+  // stripePaymentMethod=us_bank_account. Treat that case as a first-class
+  // badge so admins can scan ACH activity at a glance.
+  const isAch =
+    (method === 'usd' || method === 'combined') &&
+    stripeMethod === 'us_bank_account';
+
+  if (isAch) {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-md border text-xs bg-sky-500/20 text-sky-300 border-sky-500/30">
+        ACH{method === 'combined' ? ' + Coins' : ''}
+      </span>
+    );
+  }
+
   const styles: Record<typeof method, string> = {
     crypto: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
     usd: 'bg-green-500/20 text-green-300 border-green-500/30',
@@ -448,10 +508,10 @@ function PaymentBadge({
     method === 'crypto'
       ? 'USDC'
       : method === 'usd'
-        ? 'USD'
+        ? 'Card'
         : method === 'coins'
           ? 'Coins'
-          : 'Combined';
+          : 'Card + Coins';
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs ${styles[method]}`}

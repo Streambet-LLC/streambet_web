@@ -404,6 +404,12 @@ export interface AdminPrizeRedemptionResponse {
   fulfilled: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Underlying prize_order.payment_method (coins / usd / combined / crypto). */
+  paymentMethod?: string | null;
+  /** Stripe Checkout method used (card vs us_bank_account / ACH). */
+  stripePaymentMethod?: 'card' | 'us_bank_account' | null;
+  coinsDeducted?: number | null;
+  usdCharged?: string | null;
   user?: {
     id: string;
     username: string;
@@ -472,6 +478,12 @@ export interface PrizeOrder {
   totalPrice: number;
   stripePriceId?: string; // For USD payment via Stripe
   stripeSessionId?: string;
+  /**
+   * Stripe Checkout method actually used by the buyer (card vs ACH).
+   * Only meaningful when paymentMethod is `usd` or `combined`. Null for
+   * coins/crypto orders and legacy rows that predate the column.
+   */
+  stripePaymentMethod?: 'card' | 'us_bank_account' | null;
   /** Solana transaction signature when paymentMethod === 'crypto'. */
   cryptoTxSignature?: string;
   status:
