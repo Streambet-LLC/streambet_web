@@ -196,4 +196,8 @@ export interface ApiCollectorListParams {
   offset?: number;
   search?: string;
   onlySellers?: boolean;
+  /** Server-side sort key. Defaults to lifetime spend. */
+  sort?: 'lifetime' | 'last30d' | 'recent';
+  /** Server-side category filter (by purchased prize brand). */
+  category?: 'all' | 'pokemon' | 'one_piece' | 'sports' | 'other';
 }
