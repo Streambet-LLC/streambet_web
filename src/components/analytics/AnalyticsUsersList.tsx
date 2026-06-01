@@ -47,9 +47,7 @@ export const AnalyticsUsersList = () => {
   const [query, setQuery] = useState('');
   const [persona, setPersona] = useState<'all' | Persona>('all');
   const [category, setCategory] = useState<'all' | AssetCategory>('all');
-  const [sort, setSort] = useState<'spend' | 'confidence' | 'predicted' | 'engagement'>(
-    'predicted'
-  );
+  const [sort, setSort] = useState<'spend' | 'confidence' | 'predicted' | 'engagement'>('spend');
   const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
 
