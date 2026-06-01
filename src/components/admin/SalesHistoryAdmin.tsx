@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/integrations/api/client';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -120,6 +123,33 @@ export default function SalesHistoryAdmin() {
   const total = txQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  // ── Manual ACH reconciliation ──────────────────────────────────────
+  // Re-checks every order stuck in `payment_processing` against Stripe and
+  // settles/reverts as needed. The cron does this every 30 min; this button
+  // lets an admin force it now (e.g. to clear a stranded ACH order that a
+  // missed webhook left in flight). Refreshes both the summary tiles and
+  // the transactions table on success.
+  const queryClient = useQueryClient();
+  const reconcileAch = useMutation({
+    mutationFn: () => api.admin.reconcileAch({}),
+    onSuccess: result => {
+      const { scanned, settled, failed, stillProcessing } = result;
+      if (scanned === 0) {
+        toast.success('ACH reconcile: no orders are pending settlement.');
+      } else {
+        toast.success(
+          `ACH reconcile: ${settled} settled, ${failed} reverted, ${stillProcessing} still processing (scanned ${scanned}).`
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sales-summary', 12] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sales-history'] });
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'ACH reconcile failed';
+      toast.error(message);
+    },
+  });
+
   const resetFilters = () => {
     setFrom('');
     setTo('');
@@ -134,9 +164,24 @@ export default function SalesHistoryAdmin() {
       <Card className="p-6 bg-[#0D0D0D] border-[#191D24]">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium">Last 12 months</h2>
-          {summaryQuery.isFetching && (
-            <span className="text-xs text-muted-foreground">Refreshing…</span>
-          )}
+          <div className="flex items-center gap-3">
+            {summaryQuery.isFetching && (
+              <span className="text-xs text-muted-foreground">Refreshing…</span>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-[#2D343E] bg-[#0D0D0D] whitespace-nowrap"
+              disabled={reconcileAch.isPending}
+              onClick={() => reconcileAch.mutate()}
+              title="Re-check ACH orders stuck in processing against Stripe and settle them"
+            >
+              <RefreshCw
+                className={`h-4 w-4 mr-1.5 ${reconcileAch.isPending ? 'animate-spin' : ''}`}
+              />
+              {reconcileAch.isPending ? 'Reconciling…' : 'Reconcile ACH'}
+            </Button>
+          </div>
         </div>
 
         {summaryQuery.isError ? (

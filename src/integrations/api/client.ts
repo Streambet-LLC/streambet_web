@@ -896,6 +896,11 @@ export const analyticsAPI = {
         offset: params.offset,
         search: params.search || undefined,
         onlySellers: params.onlySellers ? 'true' : undefined,
+        sort: params.sort || undefined,
+        category:
+          params.category && params.category !== 'all'
+            ? params.category
+            : undefined,
       },
     });
     return response.data.data as ApiCollectorProfilesList;
@@ -1037,6 +1042,23 @@ export const adminAPI = {
   rejectPrizeOffer: async (orderId: string) => {
     const response = await apiClient.patch(`/admin/prizes/orders/${orderId}/reject-offer`);
     return response.data;
+  },
+
+  /**
+   * Reconcile prize orders stuck in `payment_processing` against Stripe.
+   * Settles orders whose ACH PaymentIntent has succeeded and reverts
+   * canceled ones. Safe to run repeatedly (idempotent server-side).
+   */
+  reconcileAch: async (body?: { olderThanMinutes?: number; limit?: number }) => {
+    const response = await apiClient.post('/admin/ach-reconciler/run', body ?? {});
+    return response.data as {
+      scanned: number;
+      settled: number;
+      failed: number;
+      stillProcessing: number;
+      skippedNoPaymentIntent: number;
+      errors: number;
+    };
   },
 
   // Sales history (admin) -- paginated transactions across the whole platform

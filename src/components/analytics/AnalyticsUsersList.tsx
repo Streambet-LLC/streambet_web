@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,7 @@ import { PersonaBadge, CategoryBadge, ScoreMeter } from './AnalyticsBadges';
 import { AnalyticsCreateProfileDialog } from './AnalyticsCreateProfileDialog';
 import { useCollectorProfiles } from '@/hooks/useCollectorAnalytics';
 import { useIsRealDataOnly } from '@/hooks/useRealDataOnly';
-import { Search, ArrowUpRight, Plus } from 'lucide-react';
+import { Search, ArrowUpRight, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const PERSONAS: ('all' | Persona)[] = [
   'all',
@@ -39,6 +39,9 @@ const PERSONAS: ('all' | Persona)[] = [
 
 const CATEGORIES: ('all' | AssetCategory)[] = ['all', 'pokemon', 'one_piece', 'sports', 'other'];
 
+// Server-side page size for the real-data profiles list.
+const PAGE_SIZE = 50;
+
 export const AnalyticsUsersList = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -47,9 +50,24 @@ export const AnalyticsUsersList = () => {
   const [sort, setSort] = useState<'spend' | 'confidence' | 'predicted' | 'engagement'>(
     'predicted'
   );
+  const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
 
   const realOnly = useIsRealDataOnly();
+
+  // Any change to the filters/search/sort invalidates the current page
+  // offset, so jump back to the first page to avoid landing on an empty
+  // out-of-range page.
+  useEffect(() => {
+    setPage(0);
+  }, [query, persona, category, sort, realOnly]);
+
+  // Map the UI sort control onto the server-side sort key. Only the real
+  // spend-based sorts can be pushed to the backend; the mock-only sorts
+  // (confidence/engagement) fall back to lifetime spend server-side and are
+  // re-sorted client-side over the returned rows.
+  const serverSort: 'lifetime' | 'last30d' | 'recent' =
+    sort === 'predicted' ? 'last30d' : 'lifetime';
 
   // Pull real CardCade profiles (with seller socials + buy/sell totals).
   // The hook returns rows already merged onto the AnalyticsUser shape so
@@ -57,24 +75,34 @@ export const AnalyticsUsersList = () => {
   // network is loading we transparently fall back to mocks — unless the
   // admin has explicitly toggled "real data only", in which case we show
   // a skeleton table rather than fake rows.
+  //
+  // Sorting + spend aggregation happen server-side so the list reflects the
+  // top spenders across the ENTIRE user base (auctions, shop, ACH, etc.),
+  // not just whichever accounts happen to be returned first.
   const {
     data: profilesData,
     isLoading,
     isFetching,
   } = useCollectorProfiles({
-    limit: 100,
+    limit: PAGE_SIZE,
+    offset: page * PAGE_SIZE,
     search: query.trim() || undefined,
+    sort: serverSort,
+    category,
   });
   // First-load skeleton: we have no data yet AND we're actually waiting on
   // the network. Subsequent re-fetches (search debounce, sort change) keep
   // the previous rows visible to avoid layout flashes.
   const showSkeleton = isLoading && !profilesData;
+  const usingRealData = !!profilesData;
   const sourceUsers: AnalyticsUser[] = profilesData?.rows ?? (realOnly ? [] : MOCK_ANALYTICS_USERS);
 
   const rows = useMemo(() => {
     let list = sourceUsers.filter(u => {
       if (persona !== 'all' && u.persona !== persona) return false;
-      if (category !== 'all' && !u.topCategories.includes(category)) return false;
+      // Category is filtered server-side for real data (by actual purchases).
+      // For mock data we still filter client-side over `topCategories`.
+      if (!usingRealData && category !== 'all' && !u.topCategories.includes(category)) return false;
       if (query.trim()) {
         const q = query.toLowerCase();
         if (
@@ -103,7 +131,15 @@ export const AnalyticsUsersList = () => {
     });
 
     return list;
-  }, [sourceUsers, query, persona, category, sort]);
+  }, [sourceUsers, query, persona, category, sort, usingRealData]);
+
+  // Pagination math (real-data mode only — mocks render as a single page).
+  const total = profilesData?.total ?? rows.length;
+  const totalPages = usingRealData ? Math.max(1, Math.ceil(total / PAGE_SIZE)) : 1;
+  const canPrev = usingRealData && page > 0;
+  const canNext = usingRealData && page < totalPages - 1;
+  const rangeStart = total === 0 ? 0 : page * PAGE_SIZE + 1;
+  const rangeEnd = usingRealData ? Math.min(total, (page + 1) * PAGE_SIZE) : rows.length;
 
   return (
     <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
@@ -314,6 +350,43 @@ export const AnalyticsUsersList = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination (real-data mode) */}
+      {usingRealData && !showSkeleton && (
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+          <div className="text-xs text-muted-foreground">
+            {total === 0
+              ? 'No collectors'
+              : `Showing ${rangeStart.toLocaleString()}–${rangeEnd.toLocaleString()} of ${total.toLocaleString()}`}
+            {isFetching && total > 0 ? ' · Refreshing…' : ''}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              Page {page + 1} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 border-white/10 bg-black/40"
+              disabled={!canPrev}
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 border-white/10 bg-black/40"
+              disabled={!canNext}
+              onClick={() => setPage(p => p + 1)}
+              aria-label="Next page"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <AnalyticsCreateProfileDialog open={createOpen} onOpenChange={setCreateOpen} />
     </Card>
