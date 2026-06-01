@@ -17,6 +17,7 @@ import type {
   ApiCollectorProfilesList,
   ApiCollectorProfileSummary,
   ApiCollectorSocial,
+  ApiCreateCollectorProfilePayload,
   ApiUpdateCollectorAnalyticsProfilePayload,
   ApiUpdateCollectorSocialsPayload,
 } from '@/types/analytics-api';
@@ -131,6 +132,26 @@ export const useUpdateCollectorAnalyticsProfile = (userId: string | undefined) =
     },
     onSuccess: () => {
       if (userId) invalidateCollectorProfile(queryClient, userId);
+    },
+  });
+};
+
+/** Admin-only: create a brand-new collector profile. */
+export const useCreateCollectorProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation<
+    ApiCollectorProfileDetail,
+    Error,
+    ApiCreateCollectorProfilePayload
+  >({
+    mutationFn: payload => api.analytics.createCollectorProfile(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'collectors', 'list'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'collectors', 'overview'],
+      });
     },
   });
 };
