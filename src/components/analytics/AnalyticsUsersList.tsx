@@ -20,9 +20,10 @@ import {
   type AnalyticsUser,
 } from '@/mocks/analytics';
 import { PersonaBadge, CategoryBadge, ScoreMeter } from './AnalyticsBadges';
+import { AnalyticsCreateProfileDialog } from './AnalyticsCreateProfileDialog';
 import { useCollectorProfiles } from '@/hooks/useCollectorAnalytics';
 import { useIsRealDataOnly } from '@/hooks/useRealDataOnly';
-import { Search, ArrowUpRight } from 'lucide-react';
+import { Search, ArrowUpRight, Plus } from 'lucide-react';
 
 const PERSONAS: ('all' | Persona)[] = [
   'all',
@@ -46,6 +47,7 @@ export const AnalyticsUsersList = () => {
   const [sort, setSort] = useState<'spend' | 'confidence' | 'predicted' | 'engagement'>(
     'predicted'
   );
+  const [createOpen, setCreateOpen] = useState(false);
 
   const realOnly = useIsRealDataOnly();
 
@@ -165,6 +167,12 @@ export const AnalyticsUsersList = () => {
             {!realOnly && <SelectItem value="engagement">Engagement</SelectItem>}
           </SelectContent>
         </Select>
+        <Button
+          className="h-10 bg-[#B4FF39] text-black hover:bg-[#a2e833] w-full lg:w-auto"
+          onClick={() => setCreateOpen(true)}
+        >
+          <Plus className="h-4 w-4 mr-1.5" /> Add profile
+        </Button>
       </div>
 
       {/* Table */}
@@ -306,6 +314,8 @@ export const AnalyticsUsersList = () => {
           </tbody>
         </table>
       </div>
+
+      <AnalyticsCreateProfileDialog open={createOpen} onOpenChange={setCreateOpen} />
     </Card>
   );
 };

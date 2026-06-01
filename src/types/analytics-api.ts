@@ -129,6 +129,29 @@ export interface ApiUpdateCollectorSocialsPayload {
 /** Payload for PATCH /admin/analytics/collectors/:id/profile. */
 export type ApiUpdateCollectorAnalyticsProfilePayload = ApiCollectorAnalyticsAnnotations;
 
+/** Payload for POST /admin/analytics/collectors (create a new profile). */
+export interface ApiCreateCollectorProfilePayload {
+  /** Optional unique username. Auto-generated server-side when omitted. */
+  username?: string;
+  /** Optional unique email. A placeholder is generated when omitted. */
+  email?: string;
+  displayName?: string;
+  bio?: string;
+  personaOverride?: string;
+  interests?: string[];
+  preferences?: string[];
+  customAttributes?: Record<string, string>;
+  notes?: string;
+  /** Optional analytics socials to seed (multiple per platform allowed). */
+  socials?: Array<{
+    platform: ApiAnalyticsSocialPlatform;
+    value: string;
+    label?: string;
+  }>;
+  /** When true, also write seeded socials onto the public profile map. */
+  applyToPublic?: boolean;
+}
+
 export interface ApiCollectorOverviewCategory {
   category: ApiAnalyticsCategory;
   label: string;

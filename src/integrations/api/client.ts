@@ -873,6 +873,7 @@ import type {
   ApiCollectorProfileDetail,
   ApiCollectorProfilesList,
   ApiCollectorSocial,
+  ApiCreateCollectorProfilePayload,
   ApiUpdateCollectorAnalyticsProfilePayload,
   ApiUpdateCollectorSocialsPayload,
 } from '@/types/analytics-api';
@@ -902,6 +903,14 @@ export const analyticsAPI = {
   /** Single profile detail with category breakdown + recent orders. */
   getCollectorProfile: async (userId: string): Promise<ApiCollectorProfileDetail> => {
     const response = await apiClient.get(`/admin/analytics/collectors/${userId}`);
+    return response.data.data as ApiCollectorProfileDetail;
+  },
+
+  /** Admin-only: create a brand-new collector profile. */
+  createCollectorProfile: async (
+    payload: ApiCreateCollectorProfilePayload
+  ): Promise<ApiCollectorProfileDetail> => {
+    const response = await apiClient.post(`/admin/analytics/collectors`, payload);
     return response.data.data as ApiCollectorProfileDetail;
   },
 
