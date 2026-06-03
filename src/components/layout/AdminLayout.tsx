@@ -21,7 +21,7 @@ export const AdminLayout = ({
       <Navigation onDashboardClick={onDashboardClick} />
       <div className='w-full flex gap-2'>
         <Sidebar />
-        <main className={cn("flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-8 pb-8 ", className)}>
+        <main className={cn("flex-1 flex flex-col w-full min-w-0 h-[calc(100dvh-64px)] overflow-auto p-4 pb-24 md:p-8", className)}>
           {children}
         </main>
       </div>

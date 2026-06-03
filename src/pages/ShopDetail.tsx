@@ -207,7 +207,7 @@ export default function ShopDetail() {
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-start gap-4">
             {/* Shop Owner Avatar */}
-            <div className="h-16 w-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary">
+            <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary">
               {shopData?.shop?.profileImageUrl ? (
                 <img
                   src={getImageLink(shopData.shop.profileImageUrl)}
@@ -226,7 +226,7 @@ export default function ShopDetail() {
             {/* Shop Name and Username */}
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold">{shopName}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold break-words">{shopName}</h1>
                 {profileData?.isProSubscriber && <ProBadge size="lg" />}
               </div>
               <div className="flex items-center gap-3 flex-wrap">

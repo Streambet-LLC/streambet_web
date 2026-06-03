@@ -78,7 +78,7 @@ export const LeaderboardTable = () => {
   }
 
   return (
-    <div className="w-fit max-w-6xl mx-auto">
+    <div className="w-full md:w-fit max-w-6xl mx-auto">
       {/* Header Card */}
       <div
         className="relative px-4 md:px-8 py-6 md:py-10 border-b-2"

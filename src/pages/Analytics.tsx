@@ -47,9 +47,9 @@ const Analytics = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="h-[calc(100dvh-64px)] overflow-auto">
-        <div className="max-w-[1600px] mx-auto px-6 lg:px-10 py-8 pb-16">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-10 py-6 md:py-8 pb-16">
         {/* Page header */}
-        <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold text-white">Analytics</h1>
