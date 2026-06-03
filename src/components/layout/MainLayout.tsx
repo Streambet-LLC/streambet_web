@@ -71,7 +71,10 @@ export const MainLayout = ({
 
           {/* Main Content */}
           <main
-            className={cn('flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto', className)}
+            className={cn(
+              'flex-1 flex flex-col w-full min-w-0 h-[calc(100dvh-64px)] overflow-auto',
+              className
+            )}
           >
             {children}
           </main>
@@ -100,7 +103,7 @@ export const MainLayout = ({
 
         <main
           className={cn(
-            'flex-1 flex flex-col h-[calc(100dvh-64px)] overflow-auto p-4 pb-8 z-0',
+            'flex-1 flex flex-col w-full min-w-0 h-[calc(100dvh-64px)] overflow-auto p-3 pb-24 md:p-4 z-0',
             className
           )}
         >

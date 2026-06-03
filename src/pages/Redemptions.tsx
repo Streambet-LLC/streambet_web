@@ -166,13 +166,16 @@ export default function Redemptions() {
       {/* Info Banner */}
       <Card className="mb-6 bg-[#11151d] border-[#2A2F3A]">
         <CardContent className="p-6">
-          <div className="flex gap-4">
-            <div className="flex-shrink-0">
+          {/* flow-root on mobile lets the floated icon sit inline while the text wraps
+              around it; md+ restores the original icon | content flex row. */}
+          <div className="flow-root md:flex md:gap-4">
+            {/* Icon: floats left on mobile (text wraps around it), flex item on desktop */}
+            <div className="float-left mr-3 mb-1 md:float-none md:mr-0 md:mb-0 md:flex-shrink-0">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Info className="w-5 h-5 text-primary" />
               </div>
             </div>
-            <div className="flex-1 space-y-3">
+            <div className="md:flex-1 space-y-3">
               <h3 className="text-lg font-semibold text-white">How Prizes Work</h3>
               <div className="space-y-2 text-sm text-[#FFFFFFBF]">
                 <p>
@@ -185,8 +188,8 @@ export default function Redemptions() {
                 </p>
               </div>
               {session && (
-                <div className="mt-4 pt-4 border-t border-[#2A2F3A]">
-                  <div className="flex items-center gap-2 text-sm">
+                <div className="clear-both mt-4 pt-4 border-t border-[#2A2F3A]">
+                  <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-center md:justify-start md:text-left">
                     <span className="text-[#FFFFFFBF]">Your Balance:</span>
                     <span className="font-bold text-primary">
                       {Math.floor(userCadeCoins).toLocaleString()} CadeCoins

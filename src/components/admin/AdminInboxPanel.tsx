@@ -41,7 +41,7 @@ export const AdminInboxPanel = ({ tab }: AdminInboxPanelProps) => {
     <div className="flex border border-border/40 rounded-lg overflow-hidden h-[600px]">
       {/* List */}
       <div
-        className={`w-[380px] min-w-[380px] border-r border-border/40 flex flex-col ${
+        className={`w-full lg:w-[380px] lg:min-w-[380px] border-r border-border/40 flex flex-col ${
           selectedConversationId ? 'hidden lg:flex' : 'flex'
         }`}
       >

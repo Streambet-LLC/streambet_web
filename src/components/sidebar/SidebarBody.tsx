@@ -30,6 +30,9 @@ interface SidebarBodyProps {
   setSelectedCategory?: (category: BettingCategory | null) => void;
   selectedBetType?: BetRoundType | null;
   setSelectedBetType?: (type: BetRoundType | null) => void;
+  /** Render the full expanded layout (labels, checkboxes) regardless of mobile state.
+   * Used when SidebarBody is rendered inside the mobile filter Sheet. */
+  forceExpanded?: boolean;
 }
 
 // Mapping between BettingCategory (used in sidebar UI) and PrizeBrand (used in database)
@@ -68,8 +71,15 @@ const CategoryIconContainer = ({
   </div>
 );
 
-export default function SidebarBody({ selectedCategory, setSelectedCategory }: SidebarBodyProps) {
+export default function SidebarBody({
+  selectedCategory,
+  setSelectedCategory,
+  forceExpanded = false,
+}: SidebarBodyProps) {
   const controls = useSidebar();
+  // Expanded = full layout with labels/checkboxes. Forced when inside the mobile Sheet,
+  // otherwise only when the desktop rail is open.
+  const expanded = forceExpanded || (controls.open && !controls.isMobile);
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const isPredictionsPage = location.pathname === '/predictions';
@@ -246,14 +256,14 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
       collapsible="none"
       className={cn(
         'top-16 py-2 !transition-none bg-background flex flex-col',
-        controls.open ? 'w-60' : 'w-fit',
-        controls.isMobile && 'max-w-[50px]'
+        forceExpanded ? 'w-full' : controls.open ? 'w-60' : 'w-fit',
+        !forceExpanded && controls.isMobile && 'max-w-[50px]'
       )}
     >
       <SidebarContent>
         <SidebarGroup className="flex flex-col gap-2">
           <div className="flex justify-between items-center md:mb-2">
-            {controls.open && !controls.isMobile && (
+            {expanded && (
               <div className="flex items-center gap-1.5 pl-2">
                 <Flame className="h-4 w-4 text-live-hot" />
                 <span className="text-sm font-semibold">
@@ -268,10 +278,12 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                 <SidebarIcon />
               </Button>
             ) : (
-              <div className="flex flex-col items-center mx-auto">
-                <Flame className="h-4 w-4 text-live-hot" />
-                <div className="text-[8px] text-muted-foreground font-bold">LIVE</div>
-              </div>
+              !expanded && (
+                <div className="flex flex-col items-center mx-auto">
+                  <Flame className="h-4 w-4 text-live-hot" />
+                  <div className="text-[8px] text-muted-foreground font-bold">LIVE</div>
+                </div>
+              )
             )}
           </div>
           {data?.map((stream, i) => (
@@ -282,7 +294,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
               streamName={stream.streamName}
               streamId={stream.id}
               creator={stream.creator}
-              compact={!controls.open || controls.isMobile}
+              compact={!expanded}
             />
           ))}
 
@@ -290,7 +302,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
             <>
               {/* Categories Section */}
               <div className="border-t border-border my-2" />
-              {controls.open && !controls.isMobile && (
+              {expanded && (
                 <div className="text-sm font-semibold pl-2 mb-2" id="sidebar-categories-label">
                   {isShopPage ? 'Card Type' : 'Markets'}
                 </div>
@@ -300,14 +312,14 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                 role="navigation"
                 aria-label={isShopPage ? 'Pick brands' : 'Pick markets'}
                 aria-labelledby={
-                  controls.open && !controls.isMobile ? 'sidebar-categories-label' : undefined
+                  expanded ? 'sidebar-categories-label' : undefined
                 }
               >
                 <Button
                   onClick={() => handleCategoryClick(null)}
                   className={cn(
                     'h-auto overflow-visible transition-all cursor-pointer',
-                    controls.open && !controls.isMobile
+                    expanded
                       ? 'justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
                       : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',
                     isCategorySelected(null)
@@ -319,9 +331,9 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                 >
                   <motion.div
                     className="w-full"
-                    whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}
+                    whileHover={expanded ? { x: 4 } : {}}
                   >
-                    {controls.open && !controls.isMobile ? (
+                    {expanded ? (
                       <div className="flex items-center gap-2.5 w-full">
                         <CategoryIconContainer
                           icon={LayoutGrid}
@@ -347,7 +359,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                       onClick={() => handleCategoryClick(category)}
                       className={cn(
                         'h-auto overflow-visible transition-all cursor-pointer',
-                        controls.open && !controls.isMobile
+                        expanded
                           ? 'justify-start text-left p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
                           : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',
                         isSelected
@@ -359,9 +371,9 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                     >
                       <motion.div
                         className="w-full"
-                        whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}
+                        whileHover={expanded ? { x: 4 } : {}}
                       >
-                        {controls.open && !controls.isMobile ? (
+                        {expanded ? (
                           <div className="flex items-center gap-2.5 w-full">
                             <CategoryIconContainer icon={IconComponent} isSelected={isSelected} />
                             <span className="text-[13px] font-semibold">
@@ -393,7 +405,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
               {isShopPage && (
                 <>
                   <div className="border-t border-border my-2" />
-                  {controls.open && !controls.isMobile && (
+                  {expanded && (
                     <div
                       className="text-sm font-semibold pl-2 mb-2"
                       id="sidebar-product-category-label"
@@ -406,7 +418,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                     role="navigation"
                     aria-label="Pick product types"
                     aria-labelledby={
-                      controls.open && !controls.isMobile
+                      expanded
                         ? 'sidebar-product-category-label'
                         : undefined
                     }
@@ -415,7 +427,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                       onClick={() => handleProductCategoryClick(null)}
                       className={cn(
                         'h-auto overflow-visible transition-all cursor-pointer',
-                        controls.open && !controls.isMobile
+                        expanded
                           ? 'justify-start p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
                           : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',
                         selectedProductCategories.length === 0
@@ -427,9 +439,9 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                     >
                       <motion.div
                         className="w-full"
-                        whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}
+                        whileHover={expanded ? { x: 4 } : {}}
                       >
-                        {controls.open && !controls.isMobile ? (
+                        {expanded ? (
                           <div className="flex items-center gap-2.5 w-full">
                             <CategoryIconContainer
                               icon={Layers}
@@ -454,7 +466,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                           onClick={() => handleProductCategoryClick(value)}
                           className={cn(
                             'h-auto overflow-visible transition-all cursor-pointer',
-                            controls.open && !controls.isMobile
+                            expanded
                               ? 'justify-start text-left p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary hover:bg-primary/5'
                               : 'justify-center items-center px-1 py-1 rounded-md hover:bg-sidebar-compact-hover',
                             isSelected
@@ -466,9 +478,9 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                         >
                           <motion.div
                             className="w-full"
-                            whileHover={controls.open && !controls.isMobile ? { x: 4 } : {}}
+                            whileHover={expanded ? { x: 4 } : {}}
                           >
-                            {controls.open && !controls.isMobile ? (
+                            {expanded ? (
                               <div className="flex items-center gap-2.5 w-full">
                                 <CategoryIconContainer icon={icon} isSelected={isSelected} />
                                 <span className="text-[13px] font-semibold">{label}</span>
@@ -498,7 +510,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
           {isPredictionsPage ? (
             // Creators section for predictions page
             <>
-              {controls.open && !controls.isMobile && (
+              {expanded && (
                 <div className="flex items-center justify-between" id="sidebar-creators-label">
                   <div className="text-sm font-semibold">Creators</div>
                   <Link
@@ -514,13 +526,13 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                 role="navigation"
                 aria-label="Live creators"
                 aria-labelledby={
-                  controls.open && !controls.isMobile ? 'sidebar-creators-label' : undefined
+                  expanded ? 'sidebar-creators-label' : undefined
                 }
               >
                 {data?.slice(0, 5).map(stream => {
                   const commonClassName = cn(
                     'h-auto overflow-visible transition-all cursor-pointer no-underline',
-                    controls.open && !controls.isMobile
+                    expanded
                       ? 'p-2.5 rounded-[8px] bg-sidebar-card-bg/50 border border-primary/50 hover:bg-primary/5 hover:border-primary flex items-center gap-2.5'
                       : 'px-1 py-1 rounded-md hover:bg-sidebar-compact-hover flex justify-center'
                   );
@@ -529,7 +541,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                     <Link key={stream.id} to={`/${stream.creator}`} className={commonClassName}>
                       <Avatar
                         className={cn(
-                          controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
+                          expanded ? 'h-8 w-8' : 'h-7 w-7',
                           'flex-shrink-0'
                         )}
                       >
@@ -541,7 +553,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                           {stream.creator?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      {controls.open && !controls.isMobile && (
+                      {expanded && (
                         <span className="text-[13px] font-semibold text-primary truncate">
                           {stream.creator}
                         </span>
@@ -554,7 +566,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
           ) : (
             // Shops section for shop/home pages
             <>
-              {controls.open && !controls.isMobile && (
+              {expanded && (
                 <div className="flex items-center justify-between" id="sidebar-shops-label">
                   <div className="text-sm font-semibold">Shops</div>
                   <Link
@@ -570,14 +582,14 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                 role="navigation"
                 aria-label="Featured shops"
                 aria-labelledby={
-                  controls.open && !controls.isMobile ? 'sidebar-shops-label' : undefined
+                  expanded ? 'sidebar-shops-label' : undefined
                 }
               >
                 {sortedShops.map(shop => {
                   const isActiveShop = currentShopUsername === shop.username.toLowerCase();
                   const commonClassName = cn(
                     'h-auto overflow-visible transition-all cursor-pointer no-underline',
-                    controls.open && !controls.isMobile
+                    expanded
                       ? cn(
                           'p-2.5 rounded-[8px] flex items-center gap-2.5',
                           isActiveShop
@@ -596,7 +608,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                     <>
                       <Avatar
                         className={cn(
-                          controls.open && !controls.isMobile ? 'h-8 w-8' : 'h-7 w-7',
+                          expanded ? 'h-8 w-8' : 'h-7 w-7',
                           'flex-shrink-0'
                         )}
                       >
@@ -610,7 +622,7 @@ export default function SidebarBody({ selectedCategory, setSelectedCategory }: S
                           {shop.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      {controls.open && !controls.isMobile && (
+                      {expanded && (
                         <span className="text-[13px] font-semibold text-primary truncate">
                           {shop.name}
                         </span>

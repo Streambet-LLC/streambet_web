@@ -22,7 +22,7 @@ const Leaderboard = () => {
           }}
         >
           <div className="flex gap-4">
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 hidden md:block">
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center"
                 style={{
