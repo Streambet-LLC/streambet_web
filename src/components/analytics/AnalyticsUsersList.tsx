@@ -60,12 +60,13 @@ export const AnalyticsUsersList = () => {
     setPage(0);
   }, [query, persona, category, sort, realOnly]);
 
-  // Map the UI sort control onto the server-side sort key. Only the real
-  // spend-based sorts can be pushed to the backend; the mock-only sorts
-  // (confidence/engagement) fall back to lifetime spend server-side and are
-  // re-sorted client-side over the returned rows.
-  const serverSort: 'lifetime' | 'last30d' | 'recent' =
-    sort === 'predicted' ? 'last30d' : 'lifetime';
+  // Map the UI sort control onto the server-side sort key. The real
+  // spend-based sorts (spend → lifetime, predicted → predicted forecast) are
+  // pushed to the backend; the mock-only sorts (confidence/engagement) fall
+  // back to lifetime spend server-side and are re-sorted client-side over the
+  // returned rows.
+  const serverSort: 'lifetime' | 'last30d' | 'recent' | 'predicted' =
+    sort === 'predicted' ? 'predicted' : 'lifetime';
 
   // Pull real CardCade profiles (with seller socials + buy/sell totals).
   // The hook returns rows already merged onto the AnalyticsUser shape so
@@ -194,7 +195,7 @@ export const AnalyticsUsersList = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="predicted">
-              {realOnly ? '30-day spend' : 'Predicted 30-day spend'}
+              Predicted 30-day spend
             </SelectItem>
             <SelectItem value="spend">Lifetime spend</SelectItem>
             {!realOnly && <SelectItem value="confidence">Identity confidence</SelectItem>}
@@ -219,7 +220,7 @@ export const AnalyticsUsersList = () => {
               <th className="py-3 pr-4">Top Categories</th>
               {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
               <th className="py-3 pr-4 text-right">Lifetime Spend</th>
-              <th className="py-3 pr-4 text-right">{realOnly ? '30d Spend' : 'Predicted 30d'}</th>
+              <th className="py-3 pr-4 text-right">Predicted 30d</th>
               {!realOnly && <th className="py-3 pr-4 w-[140px]">Engagement</th>}
               <th className="py-3 pr-2 w-[40px]"></th>
             </tr>

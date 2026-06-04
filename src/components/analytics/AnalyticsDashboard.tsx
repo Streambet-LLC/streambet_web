@@ -163,6 +163,7 @@ export const AnalyticsDashboard = () => {
   const [totalProfiles, setTotalProfiles] = useState(o.totalProfiles);
   const [linkedIdentities, setLinkedIdentities] = useState(o.unifiedIdentitiesLinked);
   const [predictedSpend, setPredictedSpend] = useState(o.predicted30dSpendUsd);
+  const [actualSpend, setActualSpend] = useState(o.actual30dSpendUsd);
   const [pulseKey, setPulseKey] = useState<string | null>(null);
 
   // Re-sync the demo-ticker counters whenever a fresh overview arrives, so
@@ -171,6 +172,7 @@ export const AnalyticsDashboard = () => {
     if (!overview) return;
     setTotalProfiles(overview.totalProfiles);
     setPredictedSpend(overview.predicted30dSpendUsd);
+    setActualSpend(overview.actual30dSpendUsd);
     // unifiedIdentitiesLinked is still mock-derived; leave as-is.
   }, [overview]);
 
@@ -236,9 +238,15 @@ export const AnalyticsDashboard = () => {
           />
         )}
         <StatCard
-          label={realOnly ? '30-Day Spend' : 'Predicted 30-Day Spend'}
+          label="30-Day Spend"
+          value={formatUsd(actualSpend)}
+          hint="Actual paid orders, last 30 days"
+          icon={TrendingUp}
+        />
+        <StatCard
+          label="Predicted 30-Day Spend"
           value={formatUsd(predictedSpend)}
-          hint={realOnly ? 'Paid orders, last 30 days' : 'Sum of model forecasts'}
+          hint="Forecast: run-rate × recency decay"
           icon={TrendingUp}
           pulse={pulseKey === 'spend'}
         />

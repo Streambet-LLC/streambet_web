@@ -106,6 +106,8 @@ export interface AnalyticsUser {
   lifetimeSpendUsd: number;
   /** Predicted next-30-day spend (USD) */
   predicted30dSpendUsd: number;
+  /** Actual trailing-30-day spend (USD). Shown next to the predicted figure. */
+  actual30dSpendUsd?: number;
   /** Total purchases on CardCade */
   purchaseCount: number;
   /** Primary collecting categories, ordered by affinity */
@@ -757,6 +759,8 @@ export interface AnalyticsOverview {
   unifiedIdentitiesLinked: number;
   avgIdentityConfidence: number;
   predicted30dSpendUsd: number;
+  /** Actual trailing-30-day spend (companion to the predicted figure). */
+  actual30dSpendUsd: number;
   topPersonas: { persona: Persona; count: number }[];
   categoryAffinity: CategoryAffinity[];
   topAssets: TopAssetForecast[];
@@ -770,6 +774,7 @@ export const MOCK_ANALYTICS_OVERVIEW: AnalyticsOverview = {
   unifiedIdentitiesLinked: 38_412,
   avgIdentityConfidence: 79,
   predicted30dSpendUsd: 1_284_500,
+  actual30dSpendUsd: 1_192_300,
   topPersonas: [
     { persona: 'Casual Flipper', count: 4_120 },
     { persona: 'Set Builder', count: 2_840 },
