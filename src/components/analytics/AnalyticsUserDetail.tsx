@@ -576,11 +576,15 @@ export const AnalyticsUserDetail = () => {
               </div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">
-                {realOnly ? '30d Spend' : 'Predicted 30d'}
-              </div>
+              <div className="text-xs text-muted-foreground">Predicted 30d</div>
               <div className="text-lg font-semibold text-[#B4FF39]">
                 {formatUsd(user.predicted30dSpendUsd)}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">30d Actual</div>
+              <div className="text-lg font-semibold text-white">
+                {formatUsd(user.actual30dSpendUsd ?? 0)}
               </div>
             </div>
             <div>

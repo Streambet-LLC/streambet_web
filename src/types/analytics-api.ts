@@ -54,6 +54,11 @@ export interface ApiCollectorProfileSummary {
   isSeller: boolean;
   lifetimeSpendUsd: number;
   last30dSpendUsd: number;
+  /**
+   * Heuristic forecast of next-30-day USD spend (run-rate × recency decay),
+   * buy-side only so sellers who buy sealed get a value. 0 with no history.
+   */
+  predicted30dSpendUsd: number;
   purchaseCount: number;
   saleCount: number;
   lifetimeSalesUsd: number;
@@ -180,6 +185,8 @@ export interface ApiCollectorAnalyticsOverview {
   activeBuyers30d: number;
   activeSellers30d: number;
   spend30dUsd: number;
+  /** Summed per-buyer heuristic forecast of next-30-day spend (companion to spend30dUsd). */
+  predicted30dSpendUsd: number;
   lifetimeSpendUsd: number;
   categoryAffinity: ApiCollectorOverviewCategory[];
   topAssets: ApiCollectorOverviewTopAsset[];
@@ -197,7 +204,7 @@ export interface ApiCollectorListParams {
   search?: string;
   onlySellers?: boolean;
   /** Server-side sort key. Defaults to lifetime spend. */
-  sort?: 'lifetime' | 'last30d' | 'recent';
+  sort?: 'lifetime' | 'last30d' | 'recent' | 'predicted';
   /** Server-side category filter (by purchased prize brand). */
   category?: 'all' | 'pokemon' | 'one_piece' | 'sports' | 'other';
 }
