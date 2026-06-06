@@ -83,6 +83,9 @@ import {
 interface SellerOfferOrder {
   id: string;
   status: string;
+  orderType?: 'single' | 'cart' | 'bundle_offer' | 'offer';
+  orderGroupId?: string | null;
+  groupItemCount?: number;
   offerAmount?: number;
   counterOfferAmount?: number;
   offerNotes?: string;
@@ -96,6 +99,33 @@ interface SellerOfferOrder {
     name: string;
     category: string;
   };
+}
+
+/**
+ * Bundle offers are N orders sharing orderGroupId. Collapse them into one row
+ * per bundle (item names joined) so the seller acts on the bundle once; the
+ * backend applies accept/counter/reject to the whole group via any member id.
+ */
+function collapseBundleOffers(offers: SellerOfferOrder[]): Array<
+  SellerOfferOrder & { bundleItemNames?: string }
+> {
+  const seenGroups = new Set<string>();
+  const out: Array<SellerOfferOrder & { bundleItemNames?: string }> = [];
+  for (const o of offers) {
+    if (o.orderType === 'bundle_offer' && o.orderGroupId) {
+      if (seenGroups.has(o.orderGroupId)) continue;
+      seenGroups.add(o.orderGroupId);
+      const names = offers
+        .filter(x => x.orderGroupId === o.orderGroupId)
+        .map(x => x.prizeConfig?.name)
+        .filter(Boolean)
+        .join(', ');
+      out.push({ ...o, bundleItemNames: names });
+    } else {
+      out.push(o);
+    }
+  }
+  return out;
 }
 
 interface SellerPurchasedOrder {
@@ -368,7 +398,7 @@ export default function SellerShopManage() {
     enabled: !!session?.isSeller && !isCardCadeMode,
   });
 
-  const offers = offersResponse?.data || [];
+  const offers = collapseBundleOffers(offersResponse?.data || []);
 
   // Sync shop settings when session updates or editing mode changes
   useEffect(() => {
@@ -2848,11 +2878,21 @@ export default function SellerShopManage() {
                       <div key={order.id} className="border rounded-md p-3 space-y-3">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
-                            <div className="font-medium">
-                              {order.prizeConfig?.name || 'Shop Item'}
+                            <div className="font-medium flex items-center gap-2">
+                              {order.orderType === 'bundle_offer' ? (
+                                <>
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md border text-xs bg-pink-500/15 text-pink-300 border-pink-500/30">
+                                    Bundle ×{order.groupItemCount || ''}
+                                  </span>
+                                  <span>{order.bundleItemNames || 'Bundle offer'}</span>
+                                </>
+                              ) : (
+                                order.prizeConfig?.name || 'Shop Item'
+                              )}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              Buyer: {order.user?.username || 'Unknown'} • Offer: $
+                              Buyer: {order.user?.username || 'Unknown'} •{' '}
+                              {order.orderType === 'bundle_offer' ? 'Bundle offer' : 'Offer'}: $
                               {order.offerAmount?.toFixed(2) || '0.00'}
                             </div>
                             {order.counterOfferAmount ? (

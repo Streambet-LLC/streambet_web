@@ -53,6 +53,7 @@ import Inbox from './pages/Inbox';
 import Watchlist from './pages/Watchlist';
 import MyBids from './pages/MyBids';
 import PurchaseSuccess from './pages/PurchaseSuccess';
+import CartCheckoutSuccess from './pages/CartCheckoutSuccess';
 import CartPage from './pages/CartPage';
 import AuctionRetryPayment from './pages/AuctionRetryPayment';
 import Analytics from './pages/Analytics';
@@ -145,6 +146,10 @@ const App = () => {
                               <Route path="/auth/google-callback" element={<GoogleCallback />} />
                               <Route path="/verify-email-notice" element={<VerifyEmailNotice />} />
                               <Route path="/purchase-success" element={<PurchaseSuccess />} />
+                              <Route
+                                path="/cart/checkout-success"
+                                element={<CartCheckoutSuccess />}
+                              />
                               <Route path="/cart" element={<CartPage />} />
                               <Route path="/shop" element={<Prizes />} />
                               <Route path="/redemptions" element={<Redemptions />} />

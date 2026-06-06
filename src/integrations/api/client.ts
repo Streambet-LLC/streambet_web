@@ -956,6 +956,18 @@ export const analyticsAPI = {
   },
 };
 
+export interface EmailLog {
+  id: string;
+  emailType: string;
+  toAddress: string;
+  subject: string | null;
+  relatedOrderId: string | null;
+  status: 'sent' | 'failed' | string;
+  error: string | null;
+  messageId: string | null;
+  createdAt: string;
+}
+
 // Admin API
 export const adminAPI = {
   // Get all users
@@ -1041,6 +1053,36 @@ export const adminAPI = {
   // Reject a prize offer
   rejectPrizeOffer: async (orderId: string) => {
     const response = await apiClient.patch(`/admin/prizes/orders/${orderId}/reject-offer`);
+    return response.data;
+  },
+
+  // Mark any order as shipped (admin) — sets tracking + emails the buyer
+  markOrderShipped: async (
+    orderId: string,
+    dto: { trackingNumber?: string; shippingCarrier?: string }
+  ) => {
+    const response = await apiClient.patch(
+      `/admin/prizes/orders/${orderId}/mark-shipped`,
+      dto
+    );
+    return response.data;
+  },
+
+  // Email send history for an order
+  getOrderEmailLogs: async (orderId: string): Promise<EmailLog[]> => {
+    const response = await apiClient.get(`/admin/prizes/orders/${orderId}/email-logs`);
+    return (response.data?.data ?? response.data ?? []) as EmailLog[];
+  },
+
+  // Re-send a previously-logged email by replaying its payload
+  resendEmailLog: async (id: string) => {
+    const response = await apiClient.post(`/admin/prizes/email-logs/${id}/resend`);
+    return response.data;
+  },
+
+  // Reconstruct + send the purchase emails for an order (works with no log)
+  resendOrderEmails: async (orderId: string) => {
+    const response = await apiClient.post(`/admin/prizes/orders/${orderId}/resend-emails`);
     return response.data;
   },
 
@@ -2396,7 +2438,36 @@ export const cartAPI = {
       message: response.data?.message ?? 'Bundle offer submitted',
     };
   },
+
+  /** Summary of all orders in a completed checkout session (cart or bundle). */
+  getCheckoutSummary: async (sessionId: string): Promise<CartCheckoutSummary> => {
+    const response = await apiClient.get('/cart/checkout-success', {
+      params: { session_id: sessionId },
+    });
+    return (response.data?.data ?? response.data) as CartCheckoutSummary;
+  },
 };
+
+export interface CartCheckoutSummaryItem {
+  orderId: string;
+  itemName: string;
+  itemImage: string | null;
+  itemCategory: string | null;
+  status: string;
+  totalPrice: number;
+  usdCharged: number;
+  paymentMethod: string;
+  sellerName: string | null;
+  sellerUsername: string | null;
+}
+
+export interface CartCheckoutSummary {
+  sessionId: string;
+  isPaymentProcessing: boolean;
+  orderCount: number;
+  total: number;
+  items: CartCheckoutSummaryItem[];
+}
 
 export const reviewAPI = {
   /** Aggregate buyer/seller stats for a user. Public. */

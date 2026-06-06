@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminAPI } from '@/integrations/api/client';
+import { adminAPI, type EmailLog } from '@/integrations/api/client';
 import {
   Table,
   TableBody,
@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, DollarSign, X, Check } from 'lucide-react';
+import { Loader2, DollarSign, X, Check, Truck, Mail, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { handleMutationError } from '@/lib/mutationHelpers';
 import { format } from 'date-fns';
@@ -40,6 +40,14 @@ interface PrizeOrder {
   userId: string;
   prizeConfigId: string;
   status: string;
+  orderType?: 'single' | 'cart' | 'bundle_offer' | 'offer';
+  orderGroupId?: string | null;
+  groupItemCount?: number;
+  paymentMethod?: 'coins' | 'usd' | 'combined' | 'crypto';
+  stripePaymentMethod?: 'card' | 'us_bank_account' | null;
+  trackingNumber?: string;
+  shippingCarrier?: string;
+  shippedAt?: string | null;
   offerAmount?: number;
   counterOfferAmount?: number;
   offerNotes?: string;
@@ -55,12 +63,85 @@ interface PrizeOrder {
   };
 }
 
-export const PrizeOrders = () => {
+/** Payment-method badge (Card / ACH / Coins / Combined / USDC). */
+function PaymentBadge({
+  method,
+  stripeMethod,
+}: {
+  method?: 'coins' | 'usd' | 'combined' | 'crypto';
+  stripeMethod?: 'card' | 'us_bank_account' | null;
+}) {
+  if (!method) return <span className="text-muted-foreground">-</span>;
+  const isAch =
+    (method === 'usd' || method === 'combined') && stripeMethod === 'us_bank_account';
+  if (isAch) {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-md border text-xs bg-sky-500/20 text-sky-300 border-sky-500/30">
+        ACH{method === 'combined' ? ' + Coins' : ''}
+      </span>
+    );
+  }
+  const styles: Record<NonNullable<typeof method>, string> = {
+    crypto: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+    usd: 'bg-green-500/20 text-green-300 border-green-500/30',
+    coins: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+    combined: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  };
+  const label =
+    method === 'crypto'
+      ? 'USDC'
+      : method === 'usd'
+        ? 'Card'
+        : method === 'coins'
+          ? 'Coins'
+          : 'Card + Coins';
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs ${styles[method]}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** Order-type badge (Single / Cart ×N / Bundle ×N / Offer). */
+function OrderTypeBadge({
+  orderType,
+  groupItemCount,
+}: {
+  orderType?: PrizeOrder['orderType'];
+  groupItemCount?: number;
+}) {
+  const type = orderType || 'single';
+  const n = groupItemCount && groupItemCount > 1 ? ` ×${groupItemCount}` : '';
+  const map: Record<NonNullable<PrizeOrder['orderType']>, { label: string; cls: string }> = {
+    single: { label: 'Single', cls: 'bg-gray-500/15 text-gray-300 border-gray-500/25' },
+    cart: { label: `Cart${n}`, cls: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' },
+    bundle_offer: {
+      label: `Bundle${n}`,
+      cls: 'bg-pink-500/15 text-pink-300 border-pink-500/30',
+    },
+    offer: { label: 'Offer', cls: 'bg-blue-500/15 text-blue-300 border-blue-500/30' },
+  };
+  const { label, cls } = map[type];
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
+export const PrizeOrders = ({ view = 'offers' }: { view?: 'offers' | 'orders' }) => {
+  const isOffersView = view === 'offers';
   const queryClient = useQueryClient();
   const [selectedOrder, setSelectedOrder] = useState<PrizeOrder | null>(null);
   const [isCounterDialogOpen, setIsCounterDialogOpen] = useState(false);
   const [counterAmount, setCounterAmount] = useState('');
   const [counterNotes, setCounterNotes] = useState('');
+  const [isShipDialogOpen, setIsShipDialogOpen] = useState(false);
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [shippingCarrier, setShippingCarrier] = useState('');
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | string>('all');
 
   // Fetch orders
@@ -164,6 +245,77 @@ export const PrizeOrders = () => {
     onError: error => handleMutationError(error, 'Failed to reject offer'),
   });
 
+  // Mark order shipped mutation
+  const markShippedMutation = useMutation({
+    mutationFn: async (data: {
+      orderId: string;
+      trackingNumber?: string;
+      shippingCarrier?: string;
+    }) => {
+      return await adminAPI.markOrderShipped(data.orderId, {
+        trackingNumber: data.trackingNumber,
+        shippingCarrier: data.shippingCarrier,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: 'Marked as shipped', description: 'Buyer has been emailed.' });
+      setIsShipDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['adminPrizeOrders'] });
+    },
+    onError: error => handleMutationError(error, 'Failed to mark as shipped'),
+  });
+
+  // Email history for the selected order (loaded when the dialog is open)
+  const {
+    data: emailLogs,
+    refetch: refetchEmailLogs,
+    isFetching: emailLogsLoading,
+  } = useQuery<EmailLog[]>({
+    queryKey: ['orderEmailLogs', selectedOrder?.id],
+    queryFn: () => adminAPI.getOrderEmailLogs(selectedOrder!.id),
+    enabled: isEmailDialogOpen && !!selectedOrder?.id,
+  });
+
+  const resendLogMutation = useMutation({
+    mutationFn: (id: string) => adminAPI.resendEmailLog(id),
+    onSuccess: () => {
+      toast({ title: 'Email resent' });
+      refetchEmailLogs();
+    },
+    onError: error => handleMutationError(error, 'Failed to resend email'),
+  });
+
+  const resendOrderEmailsMutation = useMutation({
+    mutationFn: (orderId: string) => adminAPI.resendOrderEmails(orderId),
+    onSuccess: () => {
+      toast({ title: 'Purchase emails sent', description: 'Buyer + seller notified.' });
+      refetchEmailLogs();
+    },
+    onError: error =>
+      handleMutationError(error, 'Failed to (re)send purchase emails'),
+  });
+
+  const handleOpenEmailDialog = (order: PrizeOrder) => {
+    setSelectedOrder(order);
+    setIsEmailDialogOpen(true);
+  };
+
+  const handleOpenShipDialog = (order: PrizeOrder) => {
+    setSelectedOrder(order);
+    setTrackingNumber(order.trackingNumber || '');
+    setShippingCarrier(order.shippingCarrier || '');
+    setIsShipDialogOpen(true);
+  };
+
+  const handleSubmitShip = () => {
+    if (!selectedOrder) return;
+    markShippedMutation.mutate({
+      orderId: selectedOrder.id,
+      trackingNumber: trackingNumber.trim() || undefined,
+      shippingCarrier: shippingCarrier.trim() || undefined,
+    });
+  };
+
   const handleOpenCounterDialog = (order: PrizeOrder) => {
     setSelectedOrder(order);
     setCounterAmount(order.offerAmount?.toString() || '');
@@ -246,18 +398,40 @@ export const PrizeOrders = () => {
     );
   }
 
-  const offerOrders =
-    orders?.filter(order =>
-      ['offer_made', 'countered', 'offer_accepted', 'rejected'].includes(order.status)
-    ) || [];
+  // "Offers" view shows ONLY offer-originated orders (make-an-offer + bundle
+  // offers), with bundle rows collapsed to one per group (backend applies
+  // actions group-wide). "Orders" view shows everything else — the actual
+  // cart/single purchases (the transaction record).
+  const seenBundleGroups = new Set<string>();
+  const displayOrders = (orders || []).filter(order => {
+    const isOfferType =
+      order.orderType === 'offer' || order.orderType === 'bundle_offer';
+    if (isOffersView) {
+      if (!isOfferType) return false;
+      if (order.orderType === 'bundle_offer' && order.orderGroupId) {
+        if (seenBundleGroups.has(order.orderGroupId)) return false;
+        seenBundleGroups.add(order.orderGroupId);
+      }
+      return true;
+    }
+    // Orders view: all non-offer purchases.
+    return !isOfferType;
+  });
 
   return (
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold">Prize Orders</h2>
+          <h2 className="text-3xl font-bold">{isOffersView ? 'Offers' : 'Orders'}</h2>
           <Badge variant="outline" className="text-lg px-4 py-2">
-            {orders?.length || 0} {orders?.length === 1 ? 'Order' : 'Orders'}
+            {displayOrders.length}{' '}
+            {isOffersView
+              ? displayOrders.length === 1
+                ? 'Offer'
+                : 'Offers'
+              : displayOrders.length === 1
+                ? 'Order'
+                : 'Orders'}
           </Badge>
         </div>
         
@@ -288,16 +462,26 @@ export const PrizeOrders = () => {
         </div>
       </div>
 
-      {!orders || orders.length === 0 ? (
+      {displayOrders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <DollarSign className="h-16 w-16 text-muted-foreground mb-4" />
           <h3 className="text-2xl font-semibold mb-2">
-            {filterStatus === 'all' ? 'No Orders Yet' : 'No Orders Found'}
+            {isOffersView
+              ? filterStatus === 'all'
+                ? 'No Offers Yet'
+                : 'No Offers Found'
+              : filterStatus === 'all'
+                ? 'No Orders Yet'
+                : 'No Orders Found'}
           </h3>
           <p className="text-muted-foreground">
-            {filterStatus === 'all'
-              ? 'Prize orders will appear here'
-              : `No orders found with status: ${filterStatus}`}
+            {isOffersView
+              ? filterStatus === 'all'
+                ? 'Make-an-offer and bundle offers will appear here'
+                : `No offers found with status: ${filterStatus}`
+              : filterStatus === 'all'
+                ? 'Cart and single purchases will appear here'
+                : `No orders found with status: ${filterStatus}`}
           </p>
         </div>
       ) : (
@@ -307,6 +491,8 @@ export const PrizeOrders = () => {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Prize</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Payment</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Offer Amount</TableHead>
@@ -315,7 +501,7 @@ export const PrizeOrders = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map(order => (
+              {displayOrders.map(order => (
                 <TableRow key={order.id}>
                   <TableCell>
                     <div className="flex flex-col">
@@ -330,6 +516,18 @@ export const PrizeOrders = () => {
                         {order.prizeConfig?.category}
                       </span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <OrderTypeBadge
+                      orderType={order.orderType}
+                      groupItemCount={order.groupItemCount}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <PaymentBadge
+                      method={order.paymentMethod}
+                      stripeMethod={order.stripePaymentMethod}
+                    />
                   </TableCell>
                   <TableCell>
                     <Badge className={cn('border', getStatusColor(order.status))}>
@@ -355,13 +553,23 @@ export const PrizeOrders = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col sm:flex-row gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1"
+                        onClick={() => handleOpenEmailDialog(order)}
+                      >
+                        <Mail className="h-3 w-3" />
+                        Emails
+                      </Button>
                       {['offer_made'].includes(order.status) && (
                         <>
                           <Button
                             size="sm"
                             variant="default"
                             className="gap-1"
-                            onClick={() => {} /* acceptOfferMutation.mutate(order.id) */}
+                            disabled={acceptOfferMutation.isPending}
+                            onClick={() => acceptOfferMutation.mutate(order.id)}
                           >
                             <Check className="h-3 w-3" />
                             Accept
@@ -377,7 +585,8 @@ export const PrizeOrders = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => {} /* rejectOfferMutation.mutate(order.id) */}
+                            disabled={rejectOfferMutation.isPending}
+                            onClick={() => rejectOfferMutation.mutate(order.id)}
                           >
                             <X className="h-3 w-3" />
                             Reject
@@ -390,9 +599,28 @@ export const PrizeOrders = () => {
                         </span>
                       )}
                       {order.status === 'paid' && (
-                        <span className="text-sm text-green-500 font-medium">
-                          Payment Complete
-                        </span>
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="gap-1"
+                          disabled={markShippedMutation.isPending}
+                          onClick={() => handleOpenShipDialog(order)}
+                        >
+                          <Truck className="h-3 w-3" />
+                          Mark Shipped
+                        </Button>
+                      )}
+                      {order.status === 'shipped' && (
+                        <div className="text-xs">
+                          <span className="text-green-500 font-medium">Shipped</span>
+                          {order.trackingNumber && (
+                            <span className="text-muted-foreground">
+                              {' '}
+                              · {order.shippingCarrier ? `${order.shippingCarrier} ` : ''}
+                              {order.trackingNumber}
+                            </span>
+                          )}
+                        </div>
                       )}
                       {order.status === 'cancelled' && (
                         <span className="text-sm text-red-500 font-medium">Cancelled</span>
@@ -477,6 +705,148 @@ export const PrizeOrders = () => {
               ) : (
                 'Send Counter Offer'
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mark Shipped Dialog */}
+      <Dialog open={isShipDialogOpen} onOpenChange={setIsShipDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Mark as Shipped</DialogTitle>
+            <DialogDescription>
+              {selectedOrder?.prizeConfig?.name
+                ? `Shipping "${selectedOrder.prizeConfig.name}". The buyer will be emailed.`
+                : 'The buyer will be emailed with the tracking details.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="shippingCarrier">Carrier (optional)</Label>
+              <Input
+                id="shippingCarrier"
+                placeholder="USPS, UPS, FedEx…"
+                value={shippingCarrier}
+                onChange={e => setShippingCarrier(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="trackingNumber">Tracking number (optional)</Label>
+              <Input
+                id="trackingNumber"
+                placeholder="1Z…"
+                value={trackingNumber}
+                onChange={e => setTrackingNumber(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsShipDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitShip} disabled={markShippedMutation.isPending}>
+              {markShippedMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Marking…
+                </>
+              ) : (
+                'Mark Shipped'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email history + resend Dialog */}
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent className="sm:max-w-[640px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Order Emails</DialogTitle>
+            <DialogDescription>
+              Email history for this order. Resend any logged email, or
+              (re)send the purchase notifications — useful for orders that
+              never sent any.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Button
+              onClick={() =>
+                selectedOrder && resendOrderEmailsMutation.mutate(selectedOrder.id)
+              }
+              disabled={resendOrderEmailsMutation.isPending}
+              className="gap-2"
+            >
+              {resendOrderEmailsMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              (Re)send purchase emails
+            </Button>
+
+            <div className="rounded-md border max-h-[320px] overflow-y-auto">
+              {emailLogsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : !emailLogs || emailLogs.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No emails logged for this order yet.
+                </p>
+              ) : (
+                <div className="divide-y">
+                  {emailLogs.map(log => (
+                    <div
+                      key={log.id}
+                      className="flex items-center justify-between gap-3 p-3"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm truncate">
+                            {log.emailType}
+                          </span>
+                          <span
+                            className={cn(
+                              'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border',
+                              log.status === 'sent'
+                                ? 'bg-green-500/15 text-green-400 border-green-500/30'
+                                : 'bg-red-500/15 text-red-400 border-red-500/30'
+                            )}
+                          >
+                            {log.status.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {log.toAddress} ·{' '}
+                          {format(new Date(log.createdAt), 'MMM dd, HH:mm')}
+                        </div>
+                        {log.error && (
+                          <div className="text-xs text-red-400 truncate">{log.error}</div>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 flex-shrink-0"
+                        disabled={resendLogMutation.isPending}
+                        onClick={() => resendLogMutation.mutate(log.id)}
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        Resend
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
