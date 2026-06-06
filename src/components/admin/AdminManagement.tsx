@@ -78,9 +78,9 @@ export const AdminManagement = ({
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('prize-settings');
   const [pickStatusTab, setPickStatusTab] = useState<'active' | 'ended'>('active');
-  const [ordersSubTab, setOrdersSubTab] = useState<'auctions' | 'redemptions' | 'offers'>(
-    'auctions'
-  );
+  const [ordersSubTab, setOrdersSubTab] = useState<
+    'auctions' | 'orders' | 'redemptions' | 'offers'
+  >('auctions');
   const [listingsSubTab, setListingsSubTab] = useState<'items' | 'auctions'>('items');
   const [createStep, setCreateStep] = useState<'info' | 'betting'>('info');
   const [searchUserQuery, setSearchUserQuery] = useState('');
@@ -1663,13 +1663,24 @@ export const AdminManagement = ({
                 <button
                   type="button"
                   className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    ordersSubTab === 'orders'
+                      ? 'bg-primary text-black'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setOrdersSubTab('orders')}
+                >
+                  Orders
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-1.5 text-sm font-semibold transition-colors ${
                     ordersSubTab === 'redemptions'
                       ? 'bg-primary text-black'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                   onClick={() => setOrdersSubTab('redemptions')}
                 >
-                  Redemptions
+                  Fulfillment
                 </button>
                 <button
                   type="button"
@@ -1684,8 +1695,9 @@ export const AdminManagement = ({
                 </button>
               </div>
               {ordersSubTab === 'auctions' && <AdminAuctions mode="completed" />}
+              {ordersSubTab === 'orders' && <PrizeOrders view="orders" />}
               {ordersSubTab === 'redemptions' && <PrizeRedemptions />}
-              {ordersSubTab === 'offers' && <PrizeOrders />}
+              {ordersSubTab === 'offers' && <PrizeOrders view="offers" />}
             </div>
           )}
 
