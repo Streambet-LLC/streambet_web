@@ -215,16 +215,21 @@ export default function SalesHistoryAdmin() {
                 sub={`${totals.nonCryptoOrderCount} orders`}
               />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Stat
                 label="Card revenue"
                 value={fmtUSD(totals.cardRevenue)}
                 sub={`${totals.cardOrderCount} orders · fees ${fmtUSD(totals.cardPlatformFees)}`}
               />
               <Stat
-                label="ACH revenue"
+                label="ACH revenue (settled)"
                 value={fmtUSD(totals.achRevenue)}
                 sub={`${totals.achOrderCount} orders · fees ${fmtUSD(totals.achPlatformFees)}`}
+              />
+              <Stat
+                label="Pending ACH (settling)"
+                value={fmtUSD(totals.pendingAchRevenue)}
+                sub={`${totals.pendingAchOrderCount} orders · not counted as revenue`}
               />
             </div>
             {summary?.feeAssumptions && (
@@ -243,8 +248,9 @@ export default function SalesHistoryAdmin() {
         <div className="px-6 py-4 border-b border-[#191D24]">
           <h2 className="text-lg font-medium">Monthly breakdown</h2>
           <p className="text-xs text-muted-foreground">
-            Revenue is gross merchandise value (USD). Includes only orders in paid / shipped /
-            delivered status.
+            Revenue is gross merchandise value (USD), counting only settled orders (paid / shipped /
+            delivered). In-flight ACH still settling is shown separately as "Pending ACH" and is not
+            counted in revenue until it clears.
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -256,6 +262,7 @@ export default function SalesHistoryAdmin() {
                 <TableHead className="text-right">Crypto</TableHead>
                 <TableHead className="text-right">Card</TableHead>
                 <TableHead className="text-right">ACH</TableHead>
+                <TableHead className="text-right">Pending ACH</TableHead>
                 <TableHead className="text-right">Platform fees</TableHead>
                 <TableHead className="text-right">Orders</TableHead>
                 <TableHead className="text-right">ACH orders</TableHead>
@@ -264,7 +271,7 @@ export default function SalesHistoryAdmin() {
             <TableBody>
               {months.length === 0 && !summaryQuery.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-6">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
                     No sales data yet
                   </TableCell>
                 </TableRow>
@@ -279,6 +286,9 @@ export default function SalesHistoryAdmin() {
                     <TableCell className="text-right">{fmtUSD(m.cardRevenue)}</TableCell>
                     <TableCell className="text-right text-sky-300">
                       {fmtUSD(m.achRevenue)}
+                    </TableCell>
+                    <TableCell className="text-right text-amber-300">
+                      {m.pendingAchRevenue > 0 ? fmtUSD(m.pendingAchRevenue) : '—'}
                     </TableCell>
                     <TableCell className="text-right text-emerald-300 font-medium">
                       {fmtUSD(m.platformFees)}
