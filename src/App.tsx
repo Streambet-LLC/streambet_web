@@ -26,6 +26,7 @@ import { BettingStatusProvider } from './contexts/BettingStatusContext';
 import { BettingProvider } from './contexts/BettingContext';
 import BugSnagErrorBoundary from './bugsnag';
 import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
+import PageViewTracker from '@/components/analytics/PageViewTracker';
 import Redeem from './components/withdraw/Redeem';
 import { CoinflowPurchaseProtection } from '@coinflowlabs/react';
 import { getChargebackProtectionMerchantId, getCoinFlowEnv } from '@/config/coinflow';
@@ -89,6 +90,7 @@ const App = () => {
                               merchantId={getChargebackProtectionMerchantId()}
                             />
                             <LogoutEventHandlers />
+                            <PageViewTracker />
                             <Deposit />
                             <RequireWalletConnectModal />
                             <Routes>

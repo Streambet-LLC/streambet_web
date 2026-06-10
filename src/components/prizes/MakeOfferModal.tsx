@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { prizeAPI } from '@/integrations/api/client';
+import { track, MixpanelEvent } from '@/lib/mixpanel';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { getThumbnailUrl } from '@/utils/helper';
 import StripePaymentMethodPicker, {
@@ -133,6 +134,13 @@ export function MakeOfferModal({ isOpen, onClose, prize }: MakeOfferModalProps) 
         offerAmount: amount,
         offerNotes: offerNotes || undefined,
         stripePaymentMethod: stripeMethod,
+      });
+
+      track(MixpanelEvent.OFFER_MADE, {
+        prizeId: prize.id,
+        itemName: prize.name,
+        offerAmountUsd: amount,
+        paymentMethod: stripeMethod,
       });
 
       toast({

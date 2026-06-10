@@ -21,6 +21,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { prizeAPI } from '@/integrations/api/client';
+import { track, MixpanelEvent } from '@/lib/mixpanel';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { handleMutationError } from '@/lib/mutationHelpers';
 import { roundDownCoinAmount } from '@/utils/format';
@@ -242,6 +243,17 @@ export default function PrizeCheckoutModal({
     setUsdAmount(parseFloat((totalAmount / COINS_TO_USD).toFixed(2)));
   }, [allowCadeCoins, totalAmount]);
 
+  // Fire a "Shop Item Viewed" event whenever the item's detail/checkout
+  // modal opens (the meaningful "viewed an item" signal in the shop UX).
+  useEffect(() => {
+    if (isOpen) {
+      track(MixpanelEvent.SHOP_ITEM_VIEWED, {
+        prizeId,
+        itemName: prizeName,
+      });
+    }
+  }, [isOpen, prizeId, prizeName]);
+
   useEffect(() => {
     if (!allowCadeCoins) {
       // Shop item path: USD or crypto are both valid, leave the user's
@@ -327,6 +339,13 @@ export default function PrizeCheckoutModal({
       queryClient.invalidateQueries({ queryKey: ['userOrders'] });
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       queryClient.invalidateQueries({ queryKey: ['prizeTiers'] });
+
+      track(MixpanelEvent.CHECKOUT_STARTED, {
+        orderType: 'single',
+        itemName: prizeName,
+        amountUsd: totalPrice,
+        paymentMethod,
+      });
 
       if (response.stripeSessionUrl) {
         window.location.href = response.stripeSessionUrl;

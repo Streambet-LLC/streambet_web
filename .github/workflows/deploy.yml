@@ -52,6 +52,7 @@ jobs:
             VITE_COINFLOW_MERCHANT_ID
             VITE_S3_BASE_URL
             VITE_SOLANA_RPC_URL
+            VITE_MIXPANEL_TOKEN
           )
           for name in "${PARAMS[@]}"; do
             full="/cardcade/$REF/$name"

@@ -1,6 +1,7 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/integrations/api/client';
+import { identifyUser, resetMixpanel } from '@/lib/mixpanel';
 
 interface Session {
   id: string;
@@ -55,6 +56,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return data;
     },
   });
+
+  // Keep Mixpanel identity in lock-step with the session: identify when a
+  // user is present (also re-runs on hard refresh once the session resolves),
+  // and reset when they log out so the next visitor starts anonymous.
+  const lastIdentifiedId = useRef<string | null>(null);
+  useEffect(() => {
+    const userId = session?.user?.id ?? null;
+    if (userId && userId !== lastIdentifiedId.current) {
+      identifyUser({
+        id: userId,
+        email: session?.user?.email,
+        username: session?.user?.username,
+        isSeller: session?.isSeller,
+        role: session?.user?.role,
+      });
+      lastIdentifiedId.current = userId;
+    } else if (!userId && lastIdentifiedId.current) {
+      resetMixpanel();
+      lastIdentifiedId.current = null;
+    }
+  }, [
+    session?.user?.id,
+    session?.user?.email,
+    session?.user?.username,
+    session?.user?.role,
+    session?.isSeller,
+  ]);
 
   const getBettingLimits = () => ({
     maxSweepCoinsBet: session?.maxSweepCoinsBet || 0,

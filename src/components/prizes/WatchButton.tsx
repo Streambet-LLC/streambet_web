@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { prizeAPI } from '@/integrations/api/client';
+import { track, MixpanelEvent } from '@/lib/mixpanel';
 
 export interface WatchButtonProps {
   itemId: string;
@@ -54,7 +55,11 @@ export const WatchButton = ({
       setIsWatching(next);
       setWatcherCount(prev => Math.max(0, prev + (next ? 1 : -1)));
     },
-    onSuccess: data => {
+    onSuccess: (data, next) => {
+      // Only track adds, not removals.
+      if (next) {
+        track(MixpanelEvent.WATCHLIST_ADDED, { itemId });
+      }
       // Reconcile against authoritative server count.
       if (typeof data?.watcherCount === 'number') {
         setWatcherCount(data.watcherCount);
