@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/integrations/api/client';
+import { track, MixpanelEvent } from '@/lib/mixpanel';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -44,10 +45,11 @@ export default function Login() {
       return await api.auth.login(credentials);
     },
     onSuccess: async (response) => {
+      track(MixpanelEvent.LOGGED_IN, { method: 'password' });
       await refetchSession();
       if (redirectParam) {
         navigate(redirectParam);
-      } 
+      }
       else {
         navigate(response?.data?.role === 'admin' ? '/admin' : '/');
       }

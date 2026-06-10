@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, CreditCard, Gavel, Info, Truck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { api } from '@/integrations/api/client';
+import { track, MixpanelEvent } from '@/lib/mixpanel';
 import type { AuctionSummary } from '@/types/prize';
 import { format } from 'date-fns';
 
@@ -192,6 +193,14 @@ export default function AuctionBidModal({
       });
     },
     onSuccess: next => {
+      track(MixpanelEvent.BID_PLACED, {
+        auctionId: auction.id,
+        itemName: prize.name,
+        proxyMaxUsd: Number(proxyMax),
+        currentBidUsd: next.currentBidUsd ?? null,
+        isLeader: !!next.isLeader,
+        isRaisingMax,
+      });
       const raised = isRaisingMax && next.isLeader;
       toast({
         title: raised

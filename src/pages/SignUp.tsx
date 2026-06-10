@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { api } from '@/integrations/api/client';
+import { track, MixpanelEvent } from '@/lib/mixpanel';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -93,6 +94,9 @@ export default function SignUp() {
       return await api.auth.register(userData);
     },
     onSuccess: response => {
+      track(MixpanelEvent.SIGNUP_SUBMITTED, {
+        hasPromoCode: !!response?.data?.discountCodeAlsoAvailable?.code,
+      });
       toast({
         title: 'Account created!',
         description: 'Your account has been successfully created. Please verify mail to login.',

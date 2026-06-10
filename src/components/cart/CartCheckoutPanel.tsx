@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useCartCheckout, useValidateDiscountCode } from '@/hooks/useCart';
+import { track, MixpanelEvent } from '@/lib/mixpanel';
 import { CartSummary, ShippingAddressForm, ValidateDiscountCodeResponse } from '@/types/cart';
 import { useToast } from '@/hooks/use-toast';
 import StripePaymentMethodPicker, {
@@ -128,6 +129,13 @@ export default function CartCheckoutPanel({
       });
       return;
     }
+
+    track(MixpanelEvent.CHECKOUT_STARTED, {
+      orderType: 'cart',
+      itemCount: cartSummary.cartTotals.itemCount,
+      amountUsd: displayTotalCents / 100,
+      paymentMethod: stripeMethod,
+    });
 
     checkout.mutate({
       shippingAddress: {
