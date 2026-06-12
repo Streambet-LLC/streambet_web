@@ -216,8 +216,9 @@ export const AnalyticsUsersList = () => {
           <thead>
             <tr className="text-left text-xs uppercase text-muted-foreground border-b border-white/5">
               <th className="py-3 pr-4">User</th>
-              {!realOnly && <th className="py-3 pr-4">Persona</th>}
+              <th className="py-3 pr-4">Persona</th>
               <th className="py-3 pr-4">Top Categories</th>
+              <th className="py-3 pr-4">Affiliation</th>
               {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
               <th className="py-3 pr-4 text-right">Lifetime Spend</th>
               <th className="py-3 pr-4 text-right">Predicted 30d</th>
@@ -242,13 +243,14 @@ export const AnalyticsUsersList = () => {
                       </div>
                     </div>
                   </td>
-                  {!realOnly && (
-                    <td className="py-3 pr-4">
-                      <Skeleton className="h-5 w-24 bg-white/10" />
-                    </td>
-                  )}
+                  <td className="py-3 pr-4">
+                    <Skeleton className="h-5 w-24 bg-white/10" />
+                  </td>
                   <td className="py-3 pr-4">
                     <Skeleton className="h-5 w-28 bg-white/10" />
+                  </td>
+                  <td className="py-3 pr-4">
+                    <Skeleton className="h-5 w-20 bg-white/10" />
                   </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
@@ -296,17 +298,30 @@ export const AnalyticsUsersList = () => {
                       </div>
                     </div>
                   </td>
-                  {!realOnly && (
-                    <td className="py-3 pr-4">
+                  <td className="py-3 pr-4">
+                    {realOnly ? (
+                      u.persona ? (
+                        <span className="text-white/90">{u.persona}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )
+                    ) : (
                       <PersonaBadge persona={u.persona} />
-                    </td>
-                  )}
+                    )}
+                  </td>
                   <td className="py-3 pr-4">
                     <div className="flex flex-wrap gap-1">
                       {u.topCategories.map(c => (
                         <CategoryBadge key={c} category={c} />
                       ))}
                     </div>
+                  </td>
+                  <td className="py-3 pr-4">
+                    {u.affiliation ? (
+                      <span className="text-white/90">{u.affiliation}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
@@ -341,7 +356,7 @@ export const AnalyticsUsersList = () => {
               ))}
             {!showSkeleton && rows.length === 0 && (
               <tr>
-                <td colSpan={realOnly ? 5 : 8} className="py-8 text-center text-muted-foreground">
+                <td colSpan={realOnly ? 7 : 9} className="py-8 text-center text-muted-foreground">
                   {isFetching ? 'Refreshing…' : 'No profiles match the current filters.'}
                 </td>
               </tr>

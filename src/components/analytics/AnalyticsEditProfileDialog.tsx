@@ -122,6 +122,7 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [personaOverride, setPersonaOverride] = useState('');
+  const [affiliation, setAffiliation] = useState('');
   const [interests, setInterests] = useState('');
   const [preferences, setPreferences] = useState('');
   const [notes, setNotes] = useState('');
@@ -135,6 +136,7 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
     setDisplayName(ann.displayName ?? '');
     setBio(ann.bio ?? '');
     setPersonaOverride(ann.personaOverride ?? '');
+    setAffiliation(ann.affiliation ?? '');
     setInterests(formatTags(ann.interests));
     setPreferences(formatTags(ann.preferences));
     setNotes(ann.notes ?? '');
@@ -206,6 +208,7 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
         displayName: displayName.trim(),
         bio: bio.trim(),
         personaOverride: personaOverride.trim(),
+        affiliation: affiliation.trim(),
         interests: parseTags(interests),
         preferences: parseTags(preferences),
         notes: notes.trim(),
@@ -401,6 +404,15 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
                     value={personaOverride}
                     onChange={e => setPersonaOverride(e.target.value)}
                     placeholder="e.g. Whale Collector"
+                    className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Affiliation</Label>
+                  <Input
+                    value={affiliation}
+                    onChange={e => setAffiliation(e.target.value)}
+                    placeholder="e.g. Dragon Shield Breakers (optional)"
                     className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
                   />
                 </div>
