@@ -24,6 +24,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  COLLECTOR_PERSONA_OPTIONS,
+  normalizeCollectorPersona,
+} from '@/types/analytics-api';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import {
@@ -73,6 +84,9 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+/** Radix Select forbids empty-string item values, so use a sentinel for "none". */
+const PERSONA_NONE = '__none__';
 
 const parseTags = (raw: string): string[] =>
   raw
@@ -135,7 +149,7 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
     const ann: ApiCollectorAnalyticsAnnotations = detail.analyticsProfile ?? {};
     setDisplayName(ann.displayName ?? '');
     setBio(ann.bio ?? '');
-    setPersonaOverride(ann.personaOverride ?? '');
+    setPersonaOverride(normalizeCollectorPersona(ann.personaOverride));
     setAffiliation(ann.affiliation ?? '');
     setInterests(formatTags(ann.interests));
     setPreferences(formatTags(ann.preferences));
@@ -400,12 +414,24 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Persona override</Label>
-                  <Input
-                    value={personaOverride}
-                    onChange={e => setPersonaOverride(e.target.value)}
-                    placeholder="e.g. Whale Collector"
-                    className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
-                  />
+                  <Select
+                    value={personaOverride || PERSONA_NONE}
+                    onValueChange={v =>
+                      setPersonaOverride(v === PERSONA_NONE ? '' : v)
+                    }
+                  >
+                    <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                      <SelectValue placeholder="Select persona" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={PERSONA_NONE}>— None —</SelectItem>
+                      {COLLECTOR_PERSONA_OPTIONS.map(p => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Affiliation</Label>

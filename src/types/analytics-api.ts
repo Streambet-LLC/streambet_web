@@ -22,6 +22,34 @@ export type ApiAnalyticsSocialPlatform =
   | 'twitch'
   | 'ebay';
 
+/**
+ * Canonical collector personas. Mirrors `COLLECTOR_PERSONAS` on the API.
+ * The admin "Persona override" field is a single-select over these.
+ */
+export const COLLECTOR_PERSONA_OPTIONS = [
+  'Pro Dealer',
+  'Amateur Dealer',
+  'Short Holder / Flipper',
+  'Long Holder / Collector',
+  'Hybrid - Long / Short',
+] as const;
+
+export type CollectorPersona = (typeof COLLECTOR_PERSONA_OPTIONS)[number];
+
+/**
+ * Map a stored persona value to a canonical option (case-insensitive), so
+ * legacy free-text values like "pro dealer" resolve to "Pro Dealer". Returns
+ * '' for empty/unrecognized values.
+ */
+export const normalizeCollectorPersona = (raw?: string | null): string => {
+  const v = (raw ?? '').trim();
+  if (!v) return '';
+  return (
+    COLLECTOR_PERSONA_OPTIONS.find(o => o.toLowerCase() === v.toLowerCase()) ??
+    ''
+  );
+};
+
 export interface ApiCollectorSocial {
   platform: ApiAnalyticsSocialPlatform;
   handle: string;

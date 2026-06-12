@@ -36,6 +36,10 @@ import {
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { useCreateCollectorProfile } from '@/hooks/useCollectorAnalytics';
 import type { ApiAnalyticsSocialPlatform } from '@/types/analytics-api';
+import { COLLECTOR_PERSONA_OPTIONS } from '@/types/analytics-api';
+
+/** Radix Select forbids empty-string item values, so use a sentinel for "none". */
+const PERSONA_NONE = '__none__';
 
 const SUPPORTED_PLATFORMS: ApiAnalyticsSocialPlatform[] = [
   'instagram',
@@ -339,13 +343,24 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
               <Label htmlFor="new-persona" className="text-xs text-muted-foreground">
                 Persona override
               </Label>
-              <Input
-                id="new-persona"
-                value={personaOverride}
-                onChange={e => setPersonaOverride(e.target.value)}
-                placeholder="e.g. Whale Collector"
-                className="bg-black/40 border-white/10"
-              />
+              <Select
+                value={personaOverride || PERSONA_NONE}
+                onValueChange={v =>
+                  setPersonaOverride(v === PERSONA_NONE ? '' : v)
+                }
+              >
+                <SelectTrigger id="new-persona" className="bg-black/40 border-white/10">
+                  <SelectValue placeholder="Select persona" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={PERSONA_NONE}>— None —</SelectItem>
+                  {COLLECTOR_PERSONA_OPTIONS.map(p => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="new-affiliation" className="text-xs text-muted-foreground">
