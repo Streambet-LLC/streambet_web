@@ -91,6 +91,7 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [personaOverride, setPersonaOverride] = useState('');
+  const [affiliation, setAffiliation] = useState('');
   const [interests, setInterests] = useState('');
   const [preferences, setPreferences] = useState('');
   const [notes, setNotes] = useState('');
@@ -103,6 +104,7 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
     setDisplayName('');
     setBio('');
     setPersonaOverride('');
+    setAffiliation('');
     setInterests('');
     setPreferences('');
     setNotes('');
@@ -143,6 +145,7 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
     !!displayName.trim() ||
     !!bio.trim() ||
     !!personaOverride.trim() ||
+    !!affiliation.trim() ||
     !!interests.trim() ||
     !!preferences.trim() ||
     !!notes.trim() ||
@@ -166,6 +169,7 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
         displayName: displayName.trim() || undefined,
         bio: bio.trim() || undefined,
         personaOverride: personaOverride.trim() || undefined,
+        affiliation: affiliation.trim() || undefined,
         interests: parseTags(interests),
         preferences: parseTags(preferences),
         notes: notes.trim() || undefined,
@@ -340,6 +344,18 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
                 value={personaOverride}
                 onChange={e => setPersonaOverride(e.target.value)}
                 placeholder="e.g. Whale Collector"
+                className="bg-black/40 border-white/10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="new-affiliation" className="text-xs text-muted-foreground">
+                Affiliation
+              </Label>
+              <Input
+                id="new-affiliation"
+                value={affiliation}
+                onChange={e => setAffiliation(e.target.value)}
+                placeholder="e.g. Dragon Shield Breakers (optional)"
                 className="bg-black/40 border-white/10"
               />
             </div>

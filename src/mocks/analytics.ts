@@ -100,6 +100,11 @@ export interface AnalyticsUser {
   email: string;
   joinedAt: string;
   persona: Persona;
+  /**
+   * Admin-set affiliation / group (shop, league, org). Optional — many
+   * collectors have none, so this is frequently null/undefined.
+   */
+  affiliation?: string | null;
   /** Avg confidence across linked identities */
   unifiedConfidence: number;
   /** Lifetime spend on CardCade in USD */

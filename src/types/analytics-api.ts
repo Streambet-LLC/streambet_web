@@ -64,6 +64,10 @@ export interface ApiCollectorProfileSummary {
   lifetimeSalesUsd: number;
   lastPurchaseAt: string | null;
   topCategories: ApiAnalyticsCategory[];
+  /** Admin-set persona label (analytics_profile.personaOverride); null if unset. */
+  persona: string | null;
+  /** Admin-set affiliation/group (analytics_profile.affiliation); null if none. */
+  affiliation: string | null;
   socials: ApiCollectorSocial[];
 }
 
@@ -104,6 +108,8 @@ export interface ApiCollectorAnalyticsAnnotations {
   displayName?: string;
   bio?: string;
   personaOverride?: string;
+  /** Affiliation / group label (shop, league, org). Optional. */
+  affiliation?: string;
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
@@ -143,6 +149,7 @@ export interface ApiCreateCollectorProfilePayload {
   displayName?: string;
   bio?: string;
   personaOverride?: string;
+  affiliation?: string;
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;

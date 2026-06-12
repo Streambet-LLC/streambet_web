@@ -175,6 +175,7 @@ export const mergeProfileIntoAnalyticsUser = (
       ...base,
       displayName: annotations.displayName?.trim() || base.displayName,
       persona: (annotations.personaOverride?.trim() || base.persona) as AnalyticsUser['persona'],
+      affiliation: annotations.affiliation?.trim() || base.affiliation || null,
       inferredBio: annotations.bio?.trim() || base.inferredBio,
     };
   };
@@ -188,8 +189,10 @@ export const mergeProfileIntoAnalyticsUser = (
       displayName: profile.displayName || profile.username,
       email: profile.email,
       joinedAt: profile.joinedAt,
-      // Persona is still derived from real spend signals, not a mock label.
-      persona: inferPersona(profile),
+      // Real mode shows the admin-set persona (analytics_profile.personaOverride),
+      // NOT an inferred label — blank when no persona has been assigned.
+      persona: (profile.persona?.trim() || '') as AnalyticsUser['persona'],
+      affiliation: profile.affiliation ?? null,
       unifiedConfidence: 0,
       lifetimeSpendUsd: profile.lifetimeSpendUsd,
       predicted30dSpendUsd: profile.predicted30dSpendUsd,
@@ -232,6 +235,7 @@ export const mergeProfileIntoAnalyticsUser = (
     email: profile.email || mock.email,
     joinedAt: profile.joinedAt || mock.joinedAt,
     persona: inferPersona(profile),
+    affiliation: profile.affiliation ?? null,
     lifetimeSpendUsd: profile.lifetimeSpendUsd,
     predicted30dSpendUsd: profile.predicted30dSpendUsd,
     actual30dSpendUsd: profile.last30dSpendUsd,
