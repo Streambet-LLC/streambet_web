@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,11 +19,32 @@ import {
   type AssetCategory,
   type AnalyticsUser,
 } from '@/mocks/analytics';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 import { PersonaBadge, CategoryBadge, ScoreMeter } from './AnalyticsBadges';
 import { AnalyticsCreateProfileDialog } from './AnalyticsCreateProfileDialog';
-import { useCollectorProfiles } from '@/hooks/useCollectorAnalytics';
+import {
+  useCollectorProfiles,
+  useSetCollectorExclusion,
+} from '@/hooks/useCollectorAnalytics';
 import { useIsRealDataOnly } from '@/hooks/useRealDataOnly';
-import { Search, ArrowUpRight, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Search,
+  ArrowUpRight,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  EyeOff,
+  Eye,
+} from 'lucide-react';
 
 const PERSONAS: ('all' | Persona)[] = [
   'all',
@@ -50,15 +71,40 @@ export const AnalyticsUsersList = () => {
   const [sort, setSort] = useState<'spend' | 'confidence' | 'predicted' | 'engagement'>('spend');
   const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
+  const [showOmitted, setShowOmitted] = useState(false);
 
   const realOnly = useIsRealDataOnly();
+  const setExclusion = useSetCollectorExclusion();
+
+  const handleToggleOmit = (
+    e: MouseEvent,
+    userId: string,
+    nextExcluded: boolean
+  ) => {
+    e.stopPropagation();
+    setExclusion.mutate(
+      { userId, excluded: nextExcluded },
+      {
+        onSuccess: () =>
+          toast.success(
+            nextExcluded
+              ? 'User omitted from analytics'
+              : 'User restored to analytics'
+          ),
+        onError: err =>
+          toast.error(
+            err instanceof Error ? err.message : 'Failed to update'
+          ),
+      }
+    );
+  };
 
   // Any change to the filters/search/sort invalidates the current page
   // offset, so jump back to the first page to avoid landing on an empty
   // out-of-range page.
   useEffect(() => {
     setPage(0);
-  }, [query, persona, category, sort, realOnly]);
+  }, [query, persona, category, sort, realOnly, showOmitted]);
 
   // Map the UI sort control onto the server-side sort key. The real
   // spend-based sorts (spend → lifetime, predicted → predicted forecast) are
@@ -67,6 +113,12 @@ export const AnalyticsUsersList = () => {
   // returned rows.
   const serverSort: 'lifetime' | 'last30d' | 'recent' | 'predicted' =
     sort === 'predicted' ? 'predicted' : 'lifetime';
+
+  // The Lifetime/Predicted spend columns are fused into one whose value +
+  // header follow the sort dropdown: "Predicted 30-day spend" shows the
+  // forecast (green); every other sort shows lifetime spend.
+  const spendIsPredicted = sort === 'predicted';
+  const spendHeader = spendIsPredicted ? 'Predicted 30D' : 'Lifetime Spend';
 
   // Pull real CardCade profiles (with seller socials + buy/sell totals).
   // The hook returns rows already merged onto the AnalyticsUser shape so
@@ -88,6 +140,7 @@ export const AnalyticsUsersList = () => {
     search: query.trim() || undefined,
     sort: serverSort,
     category,
+    includeOmitted: showOmitted,
   });
   // First-load skeleton: we have no data yet AND we're actually waiting on
   // the network. Subsequent re-fetches (search debounce, sort change) keep
@@ -202,6 +255,19 @@ export const AnalyticsUsersList = () => {
             {!realOnly && <SelectItem value="engagement">Engagement</SelectItem>}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2 px-1 shrink-0">
+          <Switch
+            id="show-omitted"
+            checked={showOmitted}
+            onCheckedChange={setShowOmitted}
+          />
+          <label
+            htmlFor="show-omitted"
+            className="text-xs text-muted-foreground whitespace-nowrap cursor-pointer"
+          >
+            Show omitted
+          </label>
+        </div>
         <Button
           className="h-10 bg-[#B4FF39] text-black hover:bg-[#a2e833] w-full lg:w-auto"
           onClick={() => setCreateOpen(true)}
@@ -219,9 +285,9 @@ export const AnalyticsUsersList = () => {
               <th className="py-3 pr-4">Persona</th>
               <th className="py-3 pr-4">Top Categories</th>
               <th className="py-3 pr-4">Affiliation</th>
+              <th className="py-3 pr-4">Location</th>
               {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
-              <th className="py-3 pr-4 text-right">Lifetime Spend</th>
-              <th className="py-3 pr-4 text-right">Predicted 30d</th>
+              <th className="py-3 pr-4 text-right">{spendHeader}</th>
               {!realOnly && <th className="py-3 pr-4 w-[140px]">Engagement</th>}
               <th className="py-3 pr-2 w-[40px]"></th>
             </tr>
@@ -252,14 +318,14 @@ export const AnalyticsUsersList = () => {
                   <td className="py-3 pr-4">
                     <Skeleton className="h-5 w-20 bg-white/10" />
                   </td>
+                  <td className="py-3 pr-4">
+                    <Skeleton className="h-5 w-24 bg-white/10" />
+                  </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
                       <Skeleton className="h-2 w-full bg-white/10" />
                     </td>
                   )}
-                  <td className="py-3 pr-4 text-right">
-                    <Skeleton className="h-4 w-16 ml-auto bg-white/10" />
-                  </td>
                   <td className="py-3 pr-4 text-right">
                     <Skeleton className="h-4 w-16 ml-auto bg-white/10" />
                   </td>
@@ -293,7 +359,17 @@ export const AnalyticsUsersList = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <div className="font-medium text-white truncate">{u.displayName}</div>
+                        <div className="font-medium text-white truncate flex items-center gap-2">
+                          <span className="truncate">{u.displayName}</span>
+                          {u.excluded && (
+                            <Badge
+                              variant="outline"
+                              className="shrink-0 border-amber-400/30 bg-amber-400/10 text-amber-300 text-[10px] font-normal"
+                            >
+                              Omitted
+                            </Badge>
+                          )}
+                        </div>
                         <div className="text-xs text-muted-foreground truncate">@{u.username}</div>
                       </div>
                     </div>
@@ -315,10 +391,32 @@ export const AnalyticsUsersList = () => {
                         <CategoryBadge key={c} category={c} />
                       ))}
                     </div>
+                    {u.topCategories.includes('sports') &&
+                      (u.preferredSport || u.preferredTeam) && (
+                        <div className="flex flex-wrap gap-1 mt-1 pl-0.5">
+                          {u.preferredSport && (
+                            <span className="text-[10px] rounded px-1.5 py-0.5 bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                              {u.preferredSport}
+                            </span>
+                          )}
+                          {u.preferredTeam && (
+                            <span className="text-[10px] rounded px-1.5 py-0.5 bg-white/5 text-white/70 border border-white/10">
+                              {u.preferredTeam}
+                            </span>
+                          )}
+                        </div>
+                      )}
                   </td>
                   <td className="py-3 pr-4">
                     {u.affiliation ? (
                       <span className="text-white/90">{u.affiliation}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="py-3 pr-4">
+                    {u.location ? (
+                      <span className="text-white/90 whitespace-nowrap">{u.location}</span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
@@ -328,11 +426,18 @@ export const AnalyticsUsersList = () => {
                       <ScoreMeter value={u.unifiedConfidence} />
                     </td>
                   )}
-                  <td className="py-3 pr-4 text-right text-white">
-                    {formatUsd(u.lifetimeSpendUsd)}
-                  </td>
-                  <td className="py-3 pr-4 text-right text-[#B4FF39] font-medium">
-                    {formatUsd(u.predicted30dSpendUsd)}
+                  <td
+                    className={`py-3 pr-4 text-right ${
+                      spendIsPredicted
+                        ? 'text-[#B4FF39] font-medium'
+                        : 'text-white'
+                    }`}
+                  >
+                    {formatUsd(
+                      spendIsPredicted
+                        ? u.predicted30dSpendUsd
+                        : u.lifetimeSpendUsd
+                    )}
                   </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
@@ -340,17 +445,53 @@ export const AnalyticsUsersList = () => {
                     </td>
                   )}
                   <td className="py-3 pr-2 text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={e => {
-                        e.stopPropagation();
-                        navigate(`/analytics/${u.id}`);
-                      }}
-                    >
-                      <ArrowUpRight className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={e => {
+                          e.stopPropagation();
+                          navigate(`/analytics/${u.id}`);
+                        }}
+                      >
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={e => e.stopPropagation()}
+                            aria-label="Row actions"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          {u.excluded ? (
+                            <DropdownMenuItem
+                              onClick={e => handleToggleOmit(e, u.id, false)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Restore to analytics
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              className="text-amber-300 focus:text-amber-300"
+                              onClick={e => handleToggleOmit(e, u.id, true)}
+                            >
+                              <EyeOff className="h-4 w-4 mr-2" />
+                              Omit from analytics
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               ))}

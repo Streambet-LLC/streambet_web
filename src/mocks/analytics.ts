@@ -105,6 +105,14 @@ export interface AnalyticsUser {
    * collectors have none, so this is frequently null/undefined.
    */
   affiliation?: string | null;
+  /** True when an admin has omitted this user from the Analytics surface. */
+  excluded?: boolean;
+  /** Centralized metro area (suburbs roll up to the nearest metro); null if unknown. */
+  location?: string | null;
+  /** Preferred sport for Sports collectors (admin tag or derived); null otherwise. */
+  preferredSport?: string | null;
+  /** Preferred team for Sports collectors (admin tag or derived); null otherwise. */
+  preferredTeam?: string | null;
   /** Avg confidence across linked identities */
   unifiedConfidence: number;
   /** Lifetime spend on CardCade in USD */

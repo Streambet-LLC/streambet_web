@@ -901,6 +901,7 @@ export const analyticsAPI = {
           params.category && params.category !== 'all'
             ? params.category
             : undefined,
+        includeOmitted: params.includeOmitted ? 'true' : undefined,
       },
     });
     return response.data.data as ApiCollectorProfilesList;
@@ -953,6 +954,21 @@ export const analyticsAPI = {
     return response.data.data as {
       analyticsProfile: ApiCollectorAnalyticsAnnotations | null;
     };
+  },
+
+  /**
+   * Admin-only: omit (or restore) a user from the Analytics surface. Toggles
+   * an analytics-only flag — does not affect the user's account or shop.
+   */
+  setCollectorExclusion: async (
+    userId: string,
+    excluded: boolean
+  ): Promise<{ excluded: boolean }> => {
+    const response = await apiClient.patch(
+      `/admin/analytics/collectors/${userId}/exclusion`,
+      { excluded }
+    );
+    return response.data.data as { excluded: boolean };
   },
 };
 

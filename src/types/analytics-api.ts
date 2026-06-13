@@ -22,6 +22,45 @@ export type ApiAnalyticsSocialPlatform =
   | 'twitch'
   | 'ebay';
 
+/**
+ * Canonical collector personas. Mirrors `COLLECTOR_PERSONAS` on the API.
+ * The admin "Persona override" field is a single-select over these.
+ */
+export const COLLECTOR_PERSONA_OPTIONS = [
+  'Pro Dealer',
+  'Amateur Dealer',
+  'Short Holder / Flipper',
+  'Long Holder / Collector',
+  'Hybrid - Long / Short',
+  'Creator / Influencer',
+  'Card Fund Manager',
+] as const;
+
+export type CollectorPersona = (typeof COLLECTOR_PERSONA_OPTIONS)[number];
+
+/** Sports the admin can assign as the "Preferred Sport" override. */
+export const SPORT_OPTIONS = [
+  'Football',
+  'Basketball',
+  'Baseball',
+  'Hockey',
+  'Soccer',
+] as const;
+
+/**
+ * Map a stored persona value to a canonical option (case-insensitive), so
+ * legacy free-text values like "pro dealer" resolve to "Pro Dealer". Returns
+ * '' for empty/unrecognized values.
+ */
+export const normalizeCollectorPersona = (raw?: string | null): string => {
+  const v = (raw ?? '').trim();
+  if (!v) return '';
+  return (
+    COLLECTOR_PERSONA_OPTIONS.find(o => o.toLowerCase() === v.toLowerCase()) ??
+    ''
+  );
+};
+
 export interface ApiCollectorSocial {
   platform: ApiAnalyticsSocialPlatform;
   handle: string;
@@ -68,6 +107,14 @@ export interface ApiCollectorProfileSummary {
   persona: string | null;
   /** Admin-set affiliation/group (analytics_profile.affiliation); null if none. */
   affiliation: string | null;
+  /** True when an admin has omitted this user from the Analytics surface. */
+  excluded: boolean;
+  /** Centralized metro area derived from city/state/zip; null when unknown. */
+  location: string | null;
+  /** Preferred sport for Sports collectors (admin tag or derived); null otherwise. */
+  preferredSport: string | null;
+  /** Preferred team for Sports collectors (admin tag or derived); null otherwise. */
+  preferredTeam: string | null;
   socials: ApiCollectorSocial[];
 }
 
@@ -110,6 +157,11 @@ export interface ApiCollectorAnalyticsAnnotations {
   personaOverride?: string;
   /** Affiliation / group label (shop, league, org). Optional. */
   affiliation?: string;
+  /** When true, the user is omitted from the Analytics surface. */
+  excludedFromAnalytics?: boolean;
+  /** Admin override for the Sports sub-category (wins over auto-derived). */
+  preferredSport?: string;
+  preferredTeam?: string;
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
@@ -214,4 +266,6 @@ export interface ApiCollectorListParams {
   sort?: 'lifetime' | 'last30d' | 'recent' | 'predicted';
   /** Server-side category filter (by purchased prize brand). */
   category?: 'all' | 'pokemon' | 'one_piece' | 'sports' | 'other';
+  /** When true, include admin-omitted users (hidden by default). */
+  includeOmitted?: boolean;
 }
