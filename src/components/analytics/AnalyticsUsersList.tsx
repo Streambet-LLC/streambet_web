@@ -279,6 +279,7 @@ export const AnalyticsUsersList = () => {
               <th className="py-3 pr-4">Persona</th>
               <th className="py-3 pr-4">Top Categories</th>
               <th className="py-3 pr-4">Affiliation</th>
+              <th className="py-3 pr-4">Location</th>
               {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
               <th className="py-3 pr-4 text-right">Lifetime Spend</th>
               <th className="py-3 pr-4 text-right">Predicted 30d</th>
@@ -311,6 +312,9 @@ export const AnalyticsUsersList = () => {
                   </td>
                   <td className="py-3 pr-4">
                     <Skeleton className="h-5 w-20 bg-white/10" />
+                  </td>
+                  <td className="py-3 pr-4">
+                    <Skeleton className="h-5 w-24 bg-white/10" />
                   </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
@@ -393,6 +397,13 @@ export const AnalyticsUsersList = () => {
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
+                  <td className="py-3 pr-4">
+                    {u.location ? (
+                      <span className="text-white/90 whitespace-nowrap">{u.location}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
                       <ScoreMeter value={u.unifiedConfidence} />
@@ -462,7 +473,7 @@ export const AnalyticsUsersList = () => {
               ))}
             {!showSkeleton && rows.length === 0 && (
               <tr>
-                <td colSpan={realOnly ? 7 : 9} className="py-8 text-center text-muted-foreground">
+                <td colSpan={realOnly ? 8 : 10} className="py-8 text-center text-muted-foreground">
                   {isFetching ? 'Refreshing…' : 'No profiles match the current filters.'}
                 </td>
               </tr>

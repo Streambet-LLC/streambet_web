@@ -107,6 +107,8 @@ export interface AnalyticsUser {
   affiliation?: string | null;
   /** True when an admin has omitted this user from the Analytics surface. */
   excluded?: boolean;
+  /** Centralized metro area (suburbs roll up to the nearest metro); null if unknown. */
+  location?: string | null;
   /** Avg confidence across linked identities */
   unifiedConfidence: number;
   /** Lifetime spend on CardCade in USD */

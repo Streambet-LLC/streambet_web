@@ -32,6 +32,8 @@ export const COLLECTOR_PERSONA_OPTIONS = [
   'Short Holder / Flipper',
   'Long Holder / Collector',
   'Hybrid - Long / Short',
+  'Creator / Influencer',
+  'Card Fund Manager',
 ] as const;
 
 export type CollectorPersona = (typeof COLLECTOR_PERSONA_OPTIONS)[number];
@@ -98,6 +100,8 @@ export interface ApiCollectorProfileSummary {
   affiliation: string | null;
   /** True when an admin has omitted this user from the Analytics surface. */
   excluded: boolean;
+  /** Centralized metro area derived from city/state/zip; null when unknown. */
+  location: string | null;
   socials: ApiCollectorSocial[];
 }
 
