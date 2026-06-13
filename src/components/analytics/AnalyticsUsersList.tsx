@@ -391,6 +391,21 @@ export const AnalyticsUsersList = () => {
                         <CategoryBadge key={c} category={c} />
                       ))}
                     </div>
+                    {u.topCategories.includes('sports') &&
+                      (u.preferredSport || u.preferredTeam) && (
+                        <div className="flex flex-wrap gap-1 mt-1 pl-0.5">
+                          {u.preferredSport && (
+                            <span className="text-[10px] rounded px-1.5 py-0.5 bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                              {u.preferredSport}
+                            </span>
+                          )}
+                          {u.preferredTeam && (
+                            <span className="text-[10px] rounded px-1.5 py-0.5 bg-white/5 text-white/70 border border-white/10">
+                              {u.preferredTeam}
+                            </span>
+                          )}
+                        </div>
+                      )}
                   </td>
                   <td className="py-3 pr-4">
                     {u.affiliation ? (

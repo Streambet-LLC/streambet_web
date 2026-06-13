@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/select';
 import {
   COLLECTOR_PERSONA_OPTIONS,
+  SPORT_OPTIONS,
   normalizeCollectorPersona,
 } from '@/types/analytics-api';
 import { Badge } from '@/components/ui/badge';
@@ -137,6 +138,8 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
   const [bio, setBio] = useState('');
   const [personaOverride, setPersonaOverride] = useState('');
   const [affiliation, setAffiliation] = useState('');
+  const [preferredSport, setPreferredSport] = useState('');
+  const [preferredTeam, setPreferredTeam] = useState('');
   const [interests, setInterests] = useState('');
   const [preferences, setPreferences] = useState('');
   const [notes, setNotes] = useState('');
@@ -151,6 +154,8 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
     setBio(ann.bio ?? '');
     setPersonaOverride(normalizeCollectorPersona(ann.personaOverride));
     setAffiliation(ann.affiliation ?? '');
+    setPreferredSport(ann.preferredSport ?? '');
+    setPreferredTeam(ann.preferredTeam ?? '');
     setInterests(formatTags(ann.interests));
     setPreferences(formatTags(ann.preferences));
     setNotes(ann.notes ?? '');
@@ -223,6 +228,8 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
         bio: bio.trim(),
         personaOverride: personaOverride.trim(),
         affiliation: affiliation.trim(),
+        preferredSport: preferredSport.trim(),
+        preferredTeam: preferredTeam.trim(),
         interests: parseTags(interests),
         preferences: parseTags(preferences),
         notes: notes.trim(),
@@ -245,8 +252,7 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
         <DialogHeader>
           <DialogTitle>Edit collector profile</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Admin-only. Inject socials and analytics annotations the future AI integration will
-            consume.
+            Admin-only collector profile.
           </DialogDescription>
         </DialogHeader>
 
@@ -262,10 +268,6 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-white">Connected socials</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Analytics-only socials. Multiple entries per platform are allowed (e.g. personal
-                    + shop). Empty rows are dropped on save.
-                  </p>
                 </div>
                 <Button
                   type="button"
@@ -297,18 +299,18 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
                       ))}
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-2">
-                    These are read here. To overwrite them, edit the rows below and tick “Also apply
-                    to the public profile”.
+                    Socials list preview
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
-                {rows.length === 0 && (
-                  <div className="text-xs text-muted-foreground italic">
-                    No socials yet. Click “Add” to inject one.
-                  </div>
-                )}
+                {rows.length === 0 &&
+                  !detail?.socials?.some(s => s.source === 'public') && (
+                    <div className="text-xs text-muted-foreground italic">
+                      No socials yet. Click “Add” to inject one.
+                    </div>
+                  )}
                 {rows.map(row => {
                   const dupes = (perPlatform[row.platform] ?? 0) > 1;
                   return (
@@ -439,6 +441,42 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
                     value={affiliation}
                     onChange={e => setAffiliation(e.target.value)}
                     placeholder="e.g. Dragon Shield Breakers (optional)"
+                    className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">
+                    Preferred sport (Sports only)
+                  </Label>
+                  <Select
+                    value={preferredSport || PERSONA_NONE}
+                    onValueChange={v =>
+                      setPreferredSport(v === PERSONA_NONE ? '' : v)
+                    }
+                  >
+                    <SelectTrigger className="bg-black/40 border-white/10 text-white">
+                      <SelectValue placeholder="Auto-derived from purchases" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={PERSONA_NONE}>
+                        — Auto (from purchases) —
+                      </SelectItem>
+                      {SPORT_OPTIONS.map(s => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">
+                    Preferred team (Sports only)
+                  </Label>
+                  <Input
+                    value={preferredTeam}
+                    onChange={e => setPreferredTeam(e.target.value)}
+                    placeholder="Auto-derived; type to override"
                     className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
                   />
                 </div>

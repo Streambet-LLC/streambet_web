@@ -38,6 +38,15 @@ export const COLLECTOR_PERSONA_OPTIONS = [
 
 export type CollectorPersona = (typeof COLLECTOR_PERSONA_OPTIONS)[number];
 
+/** Sports the admin can assign as the "Preferred Sport" override. */
+export const SPORT_OPTIONS = [
+  'Football',
+  'Basketball',
+  'Baseball',
+  'Hockey',
+  'Soccer',
+] as const;
+
 /**
  * Map a stored persona value to a canonical option (case-insensitive), so
  * legacy free-text values like "pro dealer" resolve to "Pro Dealer". Returns
@@ -102,6 +111,10 @@ export interface ApiCollectorProfileSummary {
   excluded: boolean;
   /** Centralized metro area derived from city/state/zip; null when unknown. */
   location: string | null;
+  /** Preferred sport for Sports collectors (admin tag or derived); null otherwise. */
+  preferredSport: string | null;
+  /** Preferred team for Sports collectors (admin tag or derived); null otherwise. */
+  preferredTeam: string | null;
   socials: ApiCollectorSocial[];
 }
 
@@ -146,6 +159,9 @@ export interface ApiCollectorAnalyticsAnnotations {
   affiliation?: string;
   /** When true, the user is omitted from the Analytics surface. */
   excludedFromAnalytics?: boolean;
+  /** Admin override for the Sports sub-category (wins over auto-derived). */
+  preferredSport?: string;
+  preferredTeam?: string;
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
