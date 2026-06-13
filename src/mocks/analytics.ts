@@ -105,6 +105,8 @@ export interface AnalyticsUser {
    * collectors have none, so this is frequently null/undefined.
    */
   affiliation?: string | null;
+  /** True when an admin has omitted this user from the Analytics surface. */
+  excluded?: boolean;
   /** Avg confidence across linked identities */
   unifiedConfidence: number;
   /** Lifetime spend on CardCade in USD */

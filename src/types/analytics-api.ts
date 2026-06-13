@@ -96,6 +96,8 @@ export interface ApiCollectorProfileSummary {
   persona: string | null;
   /** Admin-set affiliation/group (analytics_profile.affiliation); null if none. */
   affiliation: string | null;
+  /** True when an admin has omitted this user from the Analytics surface. */
+  excluded: boolean;
   socials: ApiCollectorSocial[];
 }
 
@@ -138,6 +140,8 @@ export interface ApiCollectorAnalyticsAnnotations {
   personaOverride?: string;
   /** Affiliation / group label (shop, league, org). Optional. */
   affiliation?: string;
+  /** When true, the user is omitted from the Analytics surface. */
+  excludedFromAnalytics?: boolean;
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
@@ -242,4 +246,6 @@ export interface ApiCollectorListParams {
   sort?: 'lifetime' | 'last30d' | 'recent' | 'predicted';
   /** Server-side category filter (by purchased prize brand). */
   category?: 'all' | 'pokemon' | 'one_piece' | 'sports' | 'other';
+  /** When true, include admin-omitted users (hidden by default). */
+  includeOmitted?: boolean;
 }

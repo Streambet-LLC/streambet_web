@@ -136,6 +136,29 @@ export const useUpdateCollectorAnalyticsProfile = (userId: string | undefined) =
   });
 };
 
+/**
+ * Admin-only: omit (or restore) a user from the Analytics surface. Toggles an
+ * analytics-only flag; the account itself is untouched. Invalidates the list
+ * (so the row appears/disappears) and the overview.
+ */
+export const useSetCollectorExclusion = () => {
+  const queryClient = useQueryClient();
+  return useMutation<
+    { excluded: boolean },
+    Error,
+    { userId: string; excluded: boolean }
+  >({
+    mutationFn: ({ userId, excluded }) =>
+      api.analytics.setCollectorExclusion(userId, excluded),
+    onSuccess: (_data, { userId }) => {
+      invalidateCollectorProfile(queryClient, userId);
+      queryClient.invalidateQueries({
+        queryKey: ['analytics', 'collectors', 'overview'],
+      });
+    },
+  });
+};
+
 /** Admin-only: create a brand-new collector profile. */
 export const useCreateCollectorProfile = () => {
   const queryClient = useQueryClient();
