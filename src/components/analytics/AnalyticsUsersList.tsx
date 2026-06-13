@@ -114,6 +114,12 @@ export const AnalyticsUsersList = () => {
   const serverSort: 'lifetime' | 'last30d' | 'recent' | 'predicted' =
     sort === 'predicted' ? 'predicted' : 'lifetime';
 
+  // The Lifetime/Predicted spend columns are fused into one whose value +
+  // header follow the sort dropdown: "Predicted 30-day spend" shows the
+  // forecast (green); every other sort shows lifetime spend.
+  const spendIsPredicted = sort === 'predicted';
+  const spendHeader = spendIsPredicted ? 'Predicted 30D' : 'Lifetime Spend';
+
   // Pull real CardCade profiles (with seller socials + buy/sell totals).
   // The hook returns rows already merged onto the AnalyticsUser shape so
   // the table doesn't need to care about API vs mock plumbing. When the
@@ -281,8 +287,7 @@ export const AnalyticsUsersList = () => {
               <th className="py-3 pr-4">Affiliation</th>
               <th className="py-3 pr-4">Location</th>
               {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
-              <th className="py-3 pr-4 text-right">Lifetime Spend</th>
-              <th className="py-3 pr-4 text-right">Predicted 30d</th>
+              <th className="py-3 pr-4 text-right">{spendHeader}</th>
               {!realOnly && <th className="py-3 pr-4 w-[140px]">Engagement</th>}
               <th className="py-3 pr-2 w-[40px]"></th>
             </tr>
@@ -321,9 +326,6 @@ export const AnalyticsUsersList = () => {
                       <Skeleton className="h-2 w-full bg-white/10" />
                     </td>
                   )}
-                  <td className="py-3 pr-4 text-right">
-                    <Skeleton className="h-4 w-16 ml-auto bg-white/10" />
-                  </td>
                   <td className="py-3 pr-4 text-right">
                     <Skeleton className="h-4 w-16 ml-auto bg-white/10" />
                   </td>
@@ -409,11 +411,18 @@ export const AnalyticsUsersList = () => {
                       <ScoreMeter value={u.unifiedConfidence} />
                     </td>
                   )}
-                  <td className="py-3 pr-4 text-right text-white">
-                    {formatUsd(u.lifetimeSpendUsd)}
-                  </td>
-                  <td className="py-3 pr-4 text-right text-[#B4FF39] font-medium">
-                    {formatUsd(u.predicted30dSpendUsd)}
+                  <td
+                    className={`py-3 pr-4 text-right ${
+                      spendIsPredicted
+                        ? 'text-[#B4FF39] font-medium'
+                        : 'text-white'
+                    }`}
+                  >
+                    {formatUsd(
+                      spendIsPredicted
+                        ? u.predicted30dSpendUsd
+                        : u.lifetimeSpendUsd
+                    )}
                   </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
@@ -473,7 +482,7 @@ export const AnalyticsUsersList = () => {
               ))}
             {!showSkeleton && rows.length === 0 && (
               <tr>
-                <td colSpan={realOnly ? 8 : 10} className="py-8 text-center text-muted-foreground">
+                <td colSpan={realOnly ? 7 : 9} className="py-8 text-center text-muted-foreground">
                   {isFetching ? 'Refreshing…' : 'No profiles match the current filters.'}
                 </td>
               </tr>
