@@ -112,6 +112,8 @@ export interface ApiCollectorProfileSummary {
   excluded: boolean;
   /** Centralized metro area derived from city/state/zip; null when unknown. */
   location: string | null;
+  /** Rough buyer-volume guesstimate from lifetime spend; null for non-buyers. */
+  volume: 'High' | 'Medium' | 'Low' | null;
   /** Preferred sport for Sports collectors (admin tag or derived); null otherwise. */
   preferredSport: string | null;
   /** Preferred team for Sports collectors (admin tag or derived); null otherwise. */

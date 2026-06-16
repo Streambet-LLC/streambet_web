@@ -109,6 +109,8 @@ export interface AnalyticsUser {
   excluded?: boolean;
   /** Centralized metro area (suburbs roll up to the nearest metro); null if unknown. */
   location?: string | null;
+  /** Rough buyer-volume guesstimate (High/Medium/Low) from lifetime spend. */
+  volume?: 'High' | 'Medium' | 'Low' | null;
   /** Preferred sport for Sports collectors (admin tag or derived); null otherwise. */
   preferredSport?: string | null;
   /** Preferred team for Sports collectors (admin tag or derived); null otherwise. */

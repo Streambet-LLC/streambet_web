@@ -63,6 +63,13 @@ const CATEGORIES: ('all' | AssetCategory)[] = ['all', 'pokemon', 'one_piece', 's
 // Server-side page size for the real-data profiles list.
 const PAGE_SIZE = 50;
 
+// Buyer-volume badge colors (High/Medium/Low).
+const VOLUME_STYLES: Record<'High' | 'Medium' | 'Low', string> = {
+  High: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  Medium: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  Low: 'bg-white/5 text-white/60 border-white/10',
+};
+
 export const AnalyticsUsersList = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -286,8 +293,9 @@ export const AnalyticsUsersList = () => {
               <th className="py-3 pr-4">Top Categories</th>
               <th className="py-3 pr-4">Affiliation</th>
               <th className="py-3 pr-4">Location</th>
+              <th className="py-3 pr-4">Volume</th>
               {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
-              <th className="py-3 pr-4 text-right">{spendHeader}</th>
+              <th className="py-3 pr-4 text-center">{spendHeader}</th>
               {!realOnly && <th className="py-3 pr-4 w-[140px]">Engagement</th>}
               <th className="py-3 pr-2 w-[40px]"></th>
             </tr>
@@ -321,13 +329,16 @@ export const AnalyticsUsersList = () => {
                   <td className="py-3 pr-4">
                     <Skeleton className="h-5 w-24 bg-white/10" />
                   </td>
+                  <td className="py-3 pr-4">
+                    <Skeleton className="h-5 w-16 bg-white/10" />
+                  </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
                       <Skeleton className="h-2 w-full bg-white/10" />
                     </td>
                   )}
-                  <td className="py-3 pr-4 text-right">
-                    <Skeleton className="h-4 w-16 ml-auto bg-white/10" />
+                  <td className="py-3 pr-4 text-center">
+                    <Skeleton className="h-4 w-16 mx-auto bg-white/10" />
                   </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
@@ -421,13 +432,24 @@ export const AnalyticsUsersList = () => {
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
+                  <td className="py-3 pr-4">
+                    {u.volume ? (
+                      <span
+                        className={`text-[11px] rounded px-1.5 py-0.5 border ${VOLUME_STYLES[u.volume]}`}
+                      >
+                        {u.volume}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
                       <ScoreMeter value={u.unifiedConfidence} />
                     </td>
                   )}
                   <td
-                    className={`py-3 pr-4 text-right ${
+                    className={`py-3 pr-4 text-center ${
                       spendIsPredicted
                         ? 'text-[#B4FF39] font-medium'
                         : 'text-white'
@@ -497,7 +519,7 @@ export const AnalyticsUsersList = () => {
               ))}
             {!showSkeleton && rows.length === 0 && (
               <tr>
-                <td colSpan={realOnly ? 7 : 9} className="py-8 text-center text-muted-foreground">
+                <td colSpan={realOnly ? 8 : 10} className="py-8 text-center text-muted-foreground">
                   {isFetching ? 'Refreshing…' : 'No profiles match the current filters.'}
                 </td>
               </tr>
