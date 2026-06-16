@@ -27,6 +27,7 @@ export type ApiAnalyticsSocialPlatform =
  * The admin "Persona override" field is a single-select over these.
  */
 export const COLLECTOR_PERSONA_OPTIONS = [
+  'Institution',
   'Pro Dealer',
   'Amateur Dealer',
   'Short Holder / Flipper',
