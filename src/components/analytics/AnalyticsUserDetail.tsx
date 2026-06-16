@@ -615,8 +615,13 @@ export const AnalyticsUserDetail = () => {
               ))}
             </div>
             <div className="text-sm text-muted-foreground mt-1">
-              @{user.username} · {user.email} · joined{' '}
-              {moment(user.joinedAt).format('MMM YYYY')}
+              {[
+                user.username ? `@${user.username}` : 'no account yet',
+                user.email || null,
+                `joined ${moment(user.joinedAt).format('MMM YYYY')}`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </div>
             {!realOnly && user.inferredBio && (
               <p className="text-sm text-white/80 mt-3 max-w-3xl">{user.inferredBio}</p>
@@ -711,6 +716,20 @@ export const AnalyticsUserDetail = () => {
                       ? 'Manually added by admin'
                       : 'Auto (organic signup / buyer)'}
                   </Badge>
+                </DataRow>
+                <DataRow label="Account">
+                  {rawDetail.username || rawDetail.email ? (
+                    <span>
+                      {rawDetail.username ? `@${rawDetail.username}` : ''}
+                      {rawDetail.username && rawDetail.email ? ' · ' : ''}
+                      {rawDetail.email ?? ''}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground italic">
+                      Not linked yet — will tie to a real account when they sign
+                      up
+                    </span>
+                  )}
                 </DataRow>
                 <DataRow
                   label="Persona"

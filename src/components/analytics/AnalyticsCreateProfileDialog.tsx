@@ -211,7 +211,8 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
           <DialogTitle>Add collector profile</DialogTitle>
           <DialogDescription className="text-muted-foreground">
             Creates a new (non-login) collector record you can annotate. Add whatever data you have
-            — nothing is required. Username and email are auto-generated when left blank.
+            — nothing is required. Leave username and email blank for a prospect; you can tie this
+            persona to their real account when they sign up.
           </DialogDescription>
         </DialogHeader>
 
@@ -228,7 +229,7 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
                   id="new-username"
                   value={username}
                   onChange={e => setUsername(e.target.value)}
-                  placeholder="Auto-generated if blank"
+                  placeholder="Leave blank to link later"
                   className="bg-black/40 border-white/10"
                 />
                 {!!trimmedUsername && !usernameValid && (
@@ -246,7 +247,7 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="Auto-generated if blank"
+                  placeholder="Leave blank to link later"
                   className="bg-black/40 border-white/10"
                 />
                 {!!trimmedEmail && !emailValid && (

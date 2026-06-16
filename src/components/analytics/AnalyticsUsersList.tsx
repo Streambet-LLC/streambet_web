@@ -391,7 +391,11 @@ export const AnalyticsUsersList = () => {
                             </Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">@{u.username}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {u.username ? `@${u.username}` : (
+                            <span className="italic">no account yet</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>
