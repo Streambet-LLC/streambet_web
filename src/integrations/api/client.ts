@@ -897,6 +897,7 @@ export const analyticsAPI = {
         search: params.search || undefined,
         onlySellers: params.onlySellers ? 'true' : undefined,
         sort: params.sort || undefined,
+        dir: params.dir || undefined,
         category:
           params.category && params.category !== 'all'
             ? params.category

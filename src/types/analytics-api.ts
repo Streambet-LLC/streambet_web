@@ -27,6 +27,7 @@ export type ApiAnalyticsSocialPlatform =
  * The admin "Persona override" field is a single-select over these.
  */
 export const COLLECTOR_PERSONA_OPTIONS = [
+  'Institution',
   'Pro Dealer',
   'Amateur Dealer',
   'Short Holder / Flipper',
@@ -109,12 +110,16 @@ export interface ApiCollectorProfileSummary {
   affiliation: string | null;
   /** True when an admin has omitted this user from the Analytics surface. */
   excluded: boolean;
+  /** True when an admin manually added this profile (vs an organic signup/buyer). */
+  manuallyAdded: boolean;
   /** Centralized metro area derived from city/state/zip; null when unknown. */
   location: string | null;
-  /** Preferred sport for Sports collectors (admin tag or derived); null otherwise. */
-  preferredSport: string | null;
-  /** Preferred team for Sports collectors (admin tag or derived); null otherwise. */
-  preferredTeam: string | null;
+  /** Rough buyer-volume guesstimate from lifetime spend; null for non-buyers. */
+  volume: 'High' | 'Medium' | 'Low' | null;
+  /** Preferred sports for Sports collectors (admin tags or all derived); empty otherwise. */
+  preferredSports: string[];
+  /** Preferred teams for Sports collectors (admin tags or all derived); empty otherwise. */
+  preferredTeams: string[];
   socials: ApiCollectorSocial[];
 }
 
@@ -160,8 +165,8 @@ export interface ApiCollectorAnalyticsAnnotations {
   /** When true, the user is omitted from the Analytics surface. */
   excludedFromAnalytics?: boolean;
   /** Admin override for the Sports sub-category (wins over auto-derived). */
-  preferredSport?: string;
-  preferredTeam?: string;
+  preferredSports?: string[];
+  preferredTeams?: string[];
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
@@ -202,6 +207,8 @@ export interface ApiCreateCollectorProfilePayload {
   bio?: string;
   personaOverride?: string;
   affiliation?: string;
+  preferredSports?: string[];
+  preferredTeams?: string[];
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
@@ -263,7 +270,18 @@ export interface ApiCollectorListParams {
   search?: string;
   onlySellers?: boolean;
   /** Server-side sort key. Defaults to lifetime spend. */
-  sort?: 'lifetime' | 'last30d' | 'recent' | 'predicted';
+  sort?:
+    | 'lifetime'
+    | 'last30d'
+    | 'recent'
+    | 'predicted'
+    | 'name'
+    | 'persona'
+    | 'affiliation'
+    | 'location'
+    | 'volume';
+  /** Sort direction. */
+  dir?: 'asc' | 'desc';
   /** Server-side category filter (by purchased prize brand). */
   category?: 'all' | 'pokemon' | 'one_piece' | 'sports' | 'other';
   /** When true, include admin-omitted users (hidden by default). */

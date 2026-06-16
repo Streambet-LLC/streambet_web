@@ -107,12 +107,16 @@ export interface AnalyticsUser {
   affiliation?: string | null;
   /** True when an admin has omitted this user from the Analytics surface. */
   excluded?: boolean;
+  /** True when an admin manually added this profile (vs an organic signup/buyer). */
+  manuallyAdded?: boolean;
   /** Centralized metro area (suburbs roll up to the nearest metro); null if unknown. */
   location?: string | null;
-  /** Preferred sport for Sports collectors (admin tag or derived); null otherwise. */
-  preferredSport?: string | null;
-  /** Preferred team for Sports collectors (admin tag or derived); null otherwise. */
-  preferredTeam?: string | null;
+  /** Rough buyer-volume guesstimate (High/Medium/Low) from lifetime spend. */
+  volume?: 'High' | 'Medium' | 'Low' | null;
+  /** Preferred sports for Sports collectors (admin tags or all derived); empty otherwise. */
+  preferredSports?: string[];
+  /** Preferred teams for Sports collectors (admin tags or all derived); empty otherwise. */
+  preferredTeams?: string[];
   /** Avg confidence across linked identities */
   unifiedConfidence: number;
   /** Lifetime spend on CardCade in USD */

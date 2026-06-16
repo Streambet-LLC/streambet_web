@@ -63,15 +63,62 @@ const CATEGORIES: ('all' | AssetCategory)[] = ['all', 'pokemon', 'one_piece', 's
 // Server-side page size for the real-data profiles list.
 const PAGE_SIZE = 50;
 
+// Column-header sort keys (client-side sort of the loaded page).
+type ColSortKey = 'name' | 'persona' | 'affiliation' | 'location' | 'volume' | 'spend';
+// These sort high→low on first click (numeric); the rest sort A→Z.
+const NUMERIC_SORT_KEYS = new Set<ColSortKey>(['volume', 'spend']);
+
+// Buyer-volume badge colors (High/Medium/Low).
+const VOLUME_STYLES: Record<'High' | 'Medium' | 'Low', string> = {
+  High: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  Medium: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  Low: 'bg-white/5 text-white/60 border-white/10',
+};
+
 export const AnalyticsUsersList = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [persona, setPersona] = useState<'all' | Persona>('all');
   const [category, setCategory] = useState<'all' | AssetCategory>('all');
-  const [sort, setSort] = useState<'spend' | 'confidence' | 'predicted' | 'engagement'>('spend');
+  const [sort, setSort] = useState<
+    'recent' | 'spend' | 'confidence' | 'predicted' | 'engagement'
+  >('recent');
   const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [showOmitted, setShowOmitted] = useState(false);
+
+  // Client-side column-header sort (overrides the server order for the loaded
+  // page). Null = use the server order (which defaults to recently-added).
+  const [headerSort, setHeaderSort] = useState<{
+    key: ColSortKey;
+    dir: 'asc' | 'desc';
+  } | null>(null);
+  const toggleHeaderSort = (key: ColSortKey) =>
+    setHeaderSort(prev =>
+      prev && prev.key === key
+        ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+        : { key, dir: NUMERIC_SORT_KEYS.has(key) ? 'desc' : 'asc' }
+    );
+
+  /** A clickable, sortable column header (toggles asc/desc, shows an arrow). */
+  const sortHead = (label: string, key: ColSortKey, thClass = '') => (
+    <th className={`py-3 pr-4 ${thClass}`}>
+      <button
+        type="button"
+        onClick={() => toggleHeaderSort(key)}
+        className="inline-flex items-center gap-1 hover:text-white transition-colors"
+      >
+        <span>{label}</span>
+        <span className="text-[8px] leading-none w-2 inline-block">
+          {headerSort?.key === key
+            ? headerSort.dir === 'asc'
+              ? '▲'
+              : '▼'
+            : ''}
+        </span>
+      </button>
+    </th>
+  );
 
   const realOnly = useIsRealDataOnly();
   const setExclusion = useSetCollectorExclusion();
@@ -99,26 +146,39 @@ export const AnalyticsUsersList = () => {
     );
   };
 
-  // Any change to the filters/search/sort invalidates the current page
-  // offset, so jump back to the first page to avoid landing on an empty
-  // out-of-range page.
+  // Changing a filter/search or the dropdown sort jumps back to page 1 and
+  // clears any column-header sort (the dropdown is the global default order).
   useEffect(() => {
     setPage(0);
+    setHeaderSort(null);
   }, [query, persona, category, sort, realOnly, showOmitted]);
 
-  // Map the UI sort control onto the server-side sort key. The real
-  // spend-based sorts (spend → lifetime, predicted → predicted forecast) are
-  // pushed to the backend; the mock-only sorts (confidence/engagement) fall
-  // back to lifetime spend server-side and are re-sorted client-side over the
-  // returned rows.
-  const serverSort: 'lifetime' | 'last30d' | 'recent' | 'predicted' =
-    sort === 'predicted' ? 'predicted' : 'lifetime';
+  // Clicking a column header re-sorts globally too, so reset to page 1.
+  useEffect(() => {
+    setPage(0);
+  }, [headerSort]);
 
   // The Lifetime/Predicted spend columns are fused into one whose value +
   // header follow the sort dropdown: "Predicted 30-day spend" shows the
   // forecast (green); every other sort shows lifetime spend.
   const spendIsPredicted = sort === 'predicted';
   const spendHeader = spendIsPredicted ? 'Predicted 30D' : 'Lifetime Spend';
+
+  // Effective server-side sort: a column-header click wins (global, with its
+  // own direction); otherwise the dropdown sets the order. Both are pushed to
+  // the backend so sorting spans the ENTIRE list, not just the loaded page.
+  const effectiveSort = headerSort
+    ? headerSort.key === 'spend'
+      ? spendIsPredicted
+        ? 'predicted'
+        : 'lifetime'
+      : headerSort.key
+    : sort === 'predicted'
+      ? 'predicted'
+      : sort === 'recent'
+        ? 'recent'
+        : 'lifetime';
+  const effectiveDir: 'asc' | 'desc' = headerSort ? headerSort.dir : 'desc';
 
   // Pull real CardCade profiles (with seller socials + buy/sell totals).
   // The hook returns rows already merged onto the AnalyticsUser shape so
@@ -138,7 +198,8 @@ export const AnalyticsUsersList = () => {
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
     search: query.trim() || undefined,
-    sort: serverSort,
+    sort: effectiveSort,
+    dir: effectiveDir,
     category,
     includeOmitted: showOmitted,
   });
@@ -168,22 +229,69 @@ export const AnalyticsUsersList = () => {
       return true;
     });
 
-    list = [...list].sort((a, b) => {
-      switch (sort) {
-        case 'spend':
-          return b.lifetimeSpendUsd - a.lifetimeSpendUsd;
-        case 'confidence':
-          return b.unifiedConfidence - a.unifiedConfidence;
-        case 'engagement':
-          return b.engagementScore - a.engagementScore;
-        case 'predicted':
-        default:
-          return b.predicted30dSpendUsd - a.predicted30dSpendUsd;
+    // Real data is ordered GLOBALLY by the server (effectiveSort/effectiveDir),
+    // so we keep that order. Only the mock/demo dataset is sorted client-side.
+    if (!usingRealData) {
+      const rankVolume = (v?: string | null) =>
+        v === 'High' ? 3 : v === 'Medium' ? 2 : v === 'Low' ? 1 : 0;
+      if (headerSort) {
+        const acc = (u: AnalyticsUser): string | number => {
+          switch (headerSort.key) {
+            case 'name':
+              return u.displayName.toLowerCase();
+            case 'persona':
+              return (u.persona || '').toLowerCase();
+            case 'affiliation':
+              return (u.affiliation || '').toLowerCase();
+            case 'location':
+              return (u.location || '').toLowerCase();
+            case 'volume':
+              return rankVolume(u.volume);
+            case 'spend':
+              return spendIsPredicted
+                ? u.predicted30dSpendUsd
+                : u.lifetimeSpendUsd;
+          }
+        };
+        list = [...list].sort((a, b) => {
+          const av = acc(a);
+          const bv = acc(b);
+          const c =
+            typeof av === 'number' && typeof bv === 'number'
+              ? av - bv
+              : String(av).localeCompare(String(bv));
+          return headerSort.dir === 'asc' ? c : -c;
+        });
+      } else {
+        list = [...list].sort((a, b) => {
+          switch (sort) {
+            case 'spend':
+              return b.lifetimeSpendUsd - a.lifetimeSpendUsd;
+            case 'predicted':
+              return b.predicted30dSpendUsd - a.predicted30dSpendUsd;
+            case 'confidence':
+              return b.unifiedConfidence - a.unifiedConfidence;
+            case 'engagement':
+              return b.engagementScore - a.engagementScore;
+            case 'recent':
+            default:
+              return 0;
+          }
+        });
       }
-    });
+    }
 
     return list;
-  }, [sourceUsers, query, persona, category, sort, usingRealData]);
+  }, [
+    sourceUsers,
+    query,
+    persona,
+    category,
+    sort,
+    usingRealData,
+    headerSort,
+    spendIsPredicted,
+  ]);
 
   // Pagination math (real-data mode only — mocks render as a single page).
   const total = profilesData?.total ?? rows.length;
@@ -247,6 +355,7 @@ export const AnalyticsUsersList = () => {
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="recent">Recently added</SelectItem>
             <SelectItem value="predicted">
               Predicted 30-day spend
             </SelectItem>
@@ -281,13 +390,14 @@ export const AnalyticsUsersList = () => {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs uppercase text-muted-foreground border-b border-white/5">
-              <th className="py-3 pr-4">User</th>
-              <th className="py-3 pr-4">Persona</th>
+              {sortHead('User', 'name')}
+              {sortHead('Persona', 'persona')}
               <th className="py-3 pr-4">Top Categories</th>
-              <th className="py-3 pr-4">Affiliation</th>
-              <th className="py-3 pr-4">Location</th>
+              {sortHead('Affiliation', 'affiliation')}
+              {sortHead('Location', 'location')}
+              {sortHead('Volume', 'volume')}
               {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
-              <th className="py-3 pr-4 text-right">{spendHeader}</th>
+              {sortHead(spendHeader, 'spend', 'text-center')}
               {!realOnly && <th className="py-3 pr-4 w-[140px]">Engagement</th>}
               <th className="py-3 pr-2 w-[40px]"></th>
             </tr>
@@ -321,13 +431,16 @@ export const AnalyticsUsersList = () => {
                   <td className="py-3 pr-4">
                     <Skeleton className="h-5 w-24 bg-white/10" />
                   </td>
+                  <td className="py-3 pr-4">
+                    <Skeleton className="h-5 w-16 bg-white/10" />
+                  </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
                       <Skeleton className="h-2 w-full bg-white/10" />
                     </td>
                   )}
-                  <td className="py-3 pr-4 text-right">
-                    <Skeleton className="h-4 w-16 ml-auto bg-white/10" />
+                  <td className="py-3 pr-4 text-center">
+                    <Skeleton className="h-4 w-16 mx-auto bg-white/10" />
                   </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
@@ -361,6 +474,16 @@ export const AnalyticsUsersList = () => {
                       <div className="min-w-0">
                         <div className="font-medium text-white truncate flex items-center gap-2">
                           <span className="truncate">{u.displayName}</span>
+                          <Badge
+                            variant="outline"
+                            className={`shrink-0 text-[10px] font-normal ${
+                              u.manuallyAdded
+                                ? 'border-violet-400/30 bg-violet-400/10 text-violet-300'
+                                : 'border-white/10 bg-white/5 text-white/50'
+                            }`}
+                          >
+                            {u.manuallyAdded ? 'Manual' : 'Auto'}
+                          </Badge>
                           {u.excluded && (
                             <Badge
                               variant="outline"
@@ -370,7 +493,11 @@ export const AnalyticsUsersList = () => {
                             </Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">@{u.username}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {u.username ? `@${u.username}` : (
+                            <span className="italic">no account yet</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -392,18 +519,25 @@ export const AnalyticsUsersList = () => {
                       ))}
                     </div>
                     {u.topCategories.includes('sports') &&
-                      (u.preferredSport || u.preferredTeam) && (
+                      ((u.preferredSports?.length ?? 0) > 0 ||
+                        (u.preferredTeams?.length ?? 0) > 0) && (
                         <div className="flex flex-wrap gap-1 mt-1 pl-0.5">
-                          {u.preferredSport && (
-                            <span className="text-[10px] rounded px-1.5 py-0.5 bg-sky-500/10 text-sky-300 border border-sky-500/20">
-                              {u.preferredSport}
+                          {(u.preferredSports ?? []).map(s => (
+                            <span
+                              key={s}
+                              className="text-[10px] rounded px-1.5 py-0.5 bg-sky-500/10 text-sky-300 border border-sky-500/20"
+                            >
+                              {s}
                             </span>
-                          )}
-                          {u.preferredTeam && (
-                            <span className="text-[10px] rounded px-1.5 py-0.5 bg-white/5 text-white/70 border border-white/10">
-                              {u.preferredTeam}
+                          ))}
+                          {(u.preferredTeams ?? []).map(t => (
+                            <span
+                              key={t}
+                              className="text-[10px] rounded px-1.5 py-0.5 bg-white/5 text-white/70 border border-white/10"
+                            >
+                              {t}
                             </span>
-                          )}
+                          ))}
                         </div>
                       )}
                   </td>
@@ -421,13 +555,24 @@ export const AnalyticsUsersList = () => {
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
+                  <td className="py-3 pr-4">
+                    {u.volume ? (
+                      <span
+                        className={`text-[11px] rounded px-1.5 py-0.5 border ${VOLUME_STYLES[u.volume]}`}
+                      >
+                        {u.volume}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
                   {!realOnly && (
                     <td className="py-3 pr-4">
                       <ScoreMeter value={u.unifiedConfidence} />
                     </td>
                   )}
                   <td
-                    className={`py-3 pr-4 text-right ${
+                    className={`py-3 pr-4 text-center ${
                       spendIsPredicted
                         ? 'text-[#B4FF39] font-medium'
                         : 'text-white'
@@ -497,7 +642,7 @@ export const AnalyticsUsersList = () => {
               ))}
             {!showSkeleton && rows.length === 0 && (
               <tr>
-                <td colSpan={realOnly ? 7 : 9} className="py-8 text-center text-muted-foreground">
+                <td colSpan={realOnly ? 8 : 10} className="py-8 text-center text-muted-foreground">
                   {isFetching ? 'Refreshing…' : 'No profiles match the current filters.'}
                 </td>
               </tr>
