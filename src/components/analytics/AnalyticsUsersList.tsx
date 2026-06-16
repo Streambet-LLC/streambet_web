@@ -403,18 +403,25 @@ export const AnalyticsUsersList = () => {
                       ))}
                     </div>
                     {u.topCategories.includes('sports') &&
-                      (u.preferredSport || u.preferredTeam) && (
+                      ((u.preferredSports?.length ?? 0) > 0 ||
+                        (u.preferredTeams?.length ?? 0) > 0) && (
                         <div className="flex flex-wrap gap-1 mt-1 pl-0.5">
-                          {u.preferredSport && (
-                            <span className="text-[10px] rounded px-1.5 py-0.5 bg-sky-500/10 text-sky-300 border border-sky-500/20">
-                              {u.preferredSport}
+                          {(u.preferredSports ?? []).map(s => (
+                            <span
+                              key={s}
+                              className="text-[10px] rounded px-1.5 py-0.5 bg-sky-500/10 text-sky-300 border border-sky-500/20"
+                            >
+                              {s}
                             </span>
-                          )}
-                          {u.preferredTeam && (
-                            <span className="text-[10px] rounded px-1.5 py-0.5 bg-white/5 text-white/70 border border-white/10">
-                              {u.preferredTeam}
+                          ))}
+                          {(u.preferredTeams ?? []).map(t => (
+                            <span
+                              key={t}
+                              className="text-[10px] rounded px-1.5 py-0.5 bg-white/5 text-white/70 border border-white/10"
+                            >
+                              {t}
                             </span>
-                          )}
+                          ))}
                         </div>
                       )}
                   </td>

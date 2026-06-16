@@ -138,8 +138,13 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
   const [bio, setBio] = useState('');
   const [personaOverride, setPersonaOverride] = useState('');
   const [affiliation, setAffiliation] = useState('');
-  const [preferredSport, setPreferredSport] = useState('');
-  const [preferredTeam, setPreferredTeam] = useState('');
+  const [preferredSports, setPreferredSports] = useState<string[]>([]);
+  const [preferredTeamsText, setPreferredTeamsText] = useState('');
+
+  const toggleSport = (sport: string) =>
+    setPreferredSports(prev =>
+      prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]
+    );
   const [interests, setInterests] = useState('');
   const [preferences, setPreferences] = useState('');
   const [notes, setNotes] = useState('');
@@ -154,8 +159,8 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
     setBio(ann.bio ?? '');
     setPersonaOverride(normalizeCollectorPersona(ann.personaOverride));
     setAffiliation(ann.affiliation ?? '');
-    setPreferredSport(ann.preferredSport ?? '');
-    setPreferredTeam(ann.preferredTeam ?? '');
+    setPreferredSports(ann.preferredSports ?? []);
+    setPreferredTeamsText((ann.preferredTeams ?? []).join(', '));
     setInterests(formatTags(ann.interests));
     setPreferences(formatTags(ann.preferences));
     setNotes(ann.notes ?? '');
@@ -228,8 +233,8 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
         bio: bio.trim(),
         personaOverride: personaOverride.trim(),
         affiliation: affiliation.trim(),
-        preferredSport: preferredSport.trim(),
-        preferredTeam: preferredTeam.trim(),
+        preferredSports,
+        preferredTeams: parseTags(preferredTeamsText),
         interests: parseTags(interests),
         preferences: parseTags(preferences),
         notes: notes.trim(),
@@ -446,37 +451,42 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    Preferred sport (Sports only)
+                    Preferred sports (Sports only)
                   </Label>
-                  <Select
-                    value={preferredSport || PERSONA_NONE}
-                    onValueChange={v =>
-                      setPreferredSport(v === PERSONA_NONE ? '' : v)
-                    }
-                  >
-                    <SelectTrigger className="bg-black/40 border-white/10 text-white">
-                      <SelectValue placeholder="Auto-derived from purchases" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={PERSONA_NONE}>
-                        — Auto (from purchases) —
-                      </SelectItem>
-                      {SPORT_OPTIONS.map(s => (
-                        <SelectItem key={s} value={s}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SPORT_OPTIONS.map(s => {
+                      const active = preferredSports.includes(s);
+                      return (
+                        <button
+                          type="button"
+                          key={s}
+                          onClick={() => toggleSport(s)}
+                          className={`text-xs rounded-full px-2.5 py-1 border transition-colors ${
+                            active
+                              ? 'bg-sky-500/20 text-sky-200 border-sky-500/40'
+                              : 'bg-black/40 text-white/60 border-white/10 hover:border-white/25'
+                          }`}
+                        >
                           {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {preferredSports.length
+                      ? 'Overriding auto-derived. Click to toggle; clear all to revert to auto.'
+                      : 'Auto-derived from purchases. Click a sport to override.'}
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    Preferred team (Sports only)
+                    Preferred teams (Sports only)
                   </Label>
-                  <Input
-                    value={preferredTeam}
-                    onChange={e => setPreferredTeam(e.target.value)}
-                    placeholder="Auto-derived; type to override"
+                  <Textarea
+                    value={preferredTeamsText}
+                    onChange={e => setPreferredTeamsText(e.target.value)}
+                    placeholder="Auto-derived; comma or newline separated to override"
+                    rows={2}
                     className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
                   />
                 </div>

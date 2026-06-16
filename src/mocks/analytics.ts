@@ -111,10 +111,10 @@ export interface AnalyticsUser {
   location?: string | null;
   /** Rough buyer-volume guesstimate (High/Medium/Low) from lifetime spend. */
   volume?: 'High' | 'Medium' | 'Low' | null;
-  /** Preferred sport for Sports collectors (admin tag or derived); null otherwise. */
-  preferredSport?: string | null;
-  /** Preferred team for Sports collectors (admin tag or derived); null otherwise. */
-  preferredTeam?: string | null;
+  /** Preferred sports for Sports collectors (admin tags or all derived); empty otherwise. */
+  preferredSports?: string[];
+  /** Preferred teams for Sports collectors (admin tags or all derived); empty otherwise. */
+  preferredTeams?: string[];
   /** Avg confidence across linked identities */
   unifiedConfidence: number;
   /** Lifetime spend on CardCade in USD */

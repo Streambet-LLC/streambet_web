@@ -36,7 +36,7 @@ import {
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { useCreateCollectorProfile } from '@/hooks/useCollectorAnalytics';
 import type { ApiAnalyticsSocialPlatform } from '@/types/analytics-api';
-import { COLLECTOR_PERSONA_OPTIONS } from '@/types/analytics-api';
+import { COLLECTOR_PERSONA_OPTIONS, SPORT_OPTIONS } from '@/types/analytics-api';
 
 /** Radix Select forbids empty-string item values, so use a sentinel for "none". */
 const PERSONA_NONE = '__none__';
@@ -96,7 +96,14 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
   const [bio, setBio] = useState('');
   const [personaOverride, setPersonaOverride] = useState('');
   const [affiliation, setAffiliation] = useState('');
+  const [preferredSports, setPreferredSports] = useState<string[]>([]);
+  const [preferredTeamsText, setPreferredTeamsText] = useState('');
   const [interests, setInterests] = useState('');
+
+  const toggleSport = (sport: string) =>
+    setPreferredSports(prev =>
+      prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]
+    );
   const [preferences, setPreferences] = useState('');
   const [notes, setNotes] = useState('');
   const [rows, setRows] = useState<SocialRow[]>([]);
@@ -109,6 +116,8 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
     setBio('');
     setPersonaOverride('');
     setAffiliation('');
+    setPreferredSports([]);
+    setPreferredTeamsText('');
     setInterests('');
     setPreferences('');
     setNotes('');
@@ -150,6 +159,8 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
     !!bio.trim() ||
     !!personaOverride.trim() ||
     !!affiliation.trim() ||
+    preferredSports.length > 0 ||
+    !!preferredTeamsText.trim() ||
     !!interests.trim() ||
     !!preferences.trim() ||
     !!notes.trim() ||
@@ -174,6 +185,10 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
         bio: bio.trim() || undefined,
         personaOverride: personaOverride.trim() || undefined,
         affiliation: affiliation.trim() || undefined,
+        preferredSports: preferredSports.length ? preferredSports : undefined,
+        preferredTeams: parseTags(preferredTeamsText).length
+          ? parseTags(preferredTeamsText)
+          : undefined,
         interests: parseTags(interests),
         preferences: parseTags(preferences),
         notes: notes.trim() || undefined,
@@ -368,6 +383,42 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
                 value={affiliation}
                 onChange={e => setAffiliation(e.target.value)}
                 placeholder="e.g. Dragon Shield Breakers (optional)"
+                className="bg-black/40 border-white/10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">
+                Preferred sports (optional)
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                {SPORT_OPTIONS.map(s => {
+                  const active = preferredSports.includes(s);
+                  return (
+                    <button
+                      type="button"
+                      key={s}
+                      onClick={() => toggleSport(s)}
+                      className={`text-xs rounded-full px-2.5 py-1 border transition-colors ${
+                        active
+                          ? 'bg-sky-500/20 text-sky-200 border-sky-500/40'
+                          : 'bg-black/40 text-white/60 border-white/10 hover:border-white/25'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="new-teams" className="text-xs text-muted-foreground">
+                Preferred teams (comma-separated, optional)
+              </Label>
+              <Input
+                id="new-teams"
+                value={preferredTeamsText}
+                onChange={e => setPreferredTeamsText(e.target.value)}
+                placeholder="e.g. Cincinnati Reds, Kansas City Chiefs"
                 className="bg-black/40 border-white/10"
               />
             </div>

@@ -114,10 +114,10 @@ export interface ApiCollectorProfileSummary {
   location: string | null;
   /** Rough buyer-volume guesstimate from lifetime spend; null for non-buyers. */
   volume: 'High' | 'Medium' | 'Low' | null;
-  /** Preferred sport for Sports collectors (admin tag or derived); null otherwise. */
-  preferredSport: string | null;
-  /** Preferred team for Sports collectors (admin tag or derived); null otherwise. */
-  preferredTeam: string | null;
+  /** Preferred sports for Sports collectors (admin tags or all derived); empty otherwise. */
+  preferredSports: string[];
+  /** Preferred teams for Sports collectors (admin tags or all derived); empty otherwise. */
+  preferredTeams: string[];
   socials: ApiCollectorSocial[];
 }
 
@@ -163,8 +163,8 @@ export interface ApiCollectorAnalyticsAnnotations {
   /** When true, the user is omitted from the Analytics surface. */
   excludedFromAnalytics?: boolean;
   /** Admin override for the Sports sub-category (wins over auto-derived). */
-  preferredSport?: string;
-  preferredTeam?: string;
+  preferredSports?: string[];
+  preferredTeams?: string[];
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
@@ -205,6 +205,8 @@ export interface ApiCreateCollectorProfilePayload {
   bio?: string;
   personaOverride?: string;
   affiliation?: string;
+  preferredSports?: string[];
+  preferredTeams?: string[];
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
