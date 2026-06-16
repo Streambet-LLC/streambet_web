@@ -107,6 +107,8 @@ export interface AnalyticsUser {
   affiliation?: string | null;
   /** True when an admin has omitted this user from the Analytics surface. */
   excluded?: boolean;
+  /** True when an admin manually added this profile (vs an organic signup/buyer). */
+  manuallyAdded?: boolean;
   /** Centralized metro area (suburbs roll up to the nearest metro); null if unknown. */
   location?: string | null;
   /** Rough buyer-volume guesstimate (High/Medium/Low) from lifetime spend. */

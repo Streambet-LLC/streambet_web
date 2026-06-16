@@ -110,6 +110,8 @@ export interface ApiCollectorProfileSummary {
   affiliation: string | null;
   /** True when an admin has omitted this user from the Analytics surface. */
   excluded: boolean;
+  /** True when an admin manually added this profile (vs an organic signup/buyer). */
+  manuallyAdded: boolean;
   /** Centralized metro area derived from city/state/zip; null when unknown. */
   location: string | null;
   /** Rough buyer-volume guesstimate from lifetime spend; null for non-buyers. */

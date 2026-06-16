@@ -38,7 +38,10 @@ import {
   ScoreMeter,
 } from './AnalyticsBadges';
 import { useDemoTicker } from '@/hooks/useDemoTicker';
-import { useCollectorProfileDetail } from '@/hooks/useCollectorAnalytics';
+import {
+  useCollectorProfileDetail,
+  useCollectorProfileDetailRaw,
+} from '@/hooks/useCollectorAnalytics';
 import { useIsRealDataOnly } from '@/hooks/useRealDataOnly';
 import {
   ArrowLeft,
@@ -74,6 +77,53 @@ const SectionCard = ({
     <div className="flex-1 min-h-0 flex flex-col">{children}</div>
   </Card>
 );
+
+/** Small provenance pill: admin-entered (Manual) vs derived from activity (Auto). */
+const SourceTag = ({ source }: { source: 'manual' | 'auto' }) => (
+  <Badge
+    variant="outline"
+    className={`text-[9px] py-0 px-1.5 font-medium shrink-0 ${
+      source === 'manual'
+        ? 'border-violet-400/30 bg-violet-400/10 text-violet-300'
+        : 'border-white/10 bg-white/5 text-white/50'
+    }`}
+  >
+    {source === 'manual' ? 'MANUAL' : 'AUTO'}
+  </Badge>
+);
+
+/** One labeled row in the Collector Profile Data card. */
+const DataRow = ({
+  label,
+  source,
+  children,
+}: {
+  label: string;
+  source?: 'manual' | 'auto' | null;
+  children: React.ReactNode;
+}) => (
+  <div className="flex items-start gap-3 py-2.5 border-b border-white/5 last:border-0">
+    <div className="text-xs text-muted-foreground w-36 shrink-0 pt-0.5">{label}</div>
+    <div className="flex-1 min-w-0 text-sm text-white/90">{children}</div>
+    {source && <SourceTag source={source} />}
+  </div>
+);
+
+const DataChips = ({ items }: { items: string[] }) => (
+  <div className="flex flex-wrap gap-1">
+    {items.map(i => (
+      <Badge
+        key={i}
+        variant="outline"
+        className="bg-white/5 border-white/10 text-[11px] font-normal text-white/80"
+      >
+        {i}
+      </Badge>
+    ))}
+  </div>
+);
+
+const Dash = () => <span className="text-muted-foreground">—</span>;
 
 /**
  * Loading placeholder for the detail page. Mirrors the real layout
@@ -167,6 +217,11 @@ export const AnalyticsUserDetail = () => {
   // record so the page still renders end-to-end. When the global toggle
   // is on we skip the mock fallback entirely.
   const { data: apiUser, isLoading: apiLoading } = useCollectorProfileDetail(userId);
+  // Raw (un-merged) detail for the per-field provenance breakdown — gives us
+  // the actual annotations so we can tell admin overrides from auto-derived.
+  const { data: rawDetail } = useCollectorProfileDetailRaw(
+    apiUser && userId ? userId : undefined,
+  );
   const realOnly = useIsRealDataOnly();
   const mockUser = userId && !realOnly ? getMockAnalyticsUser(userId) : undefined;
   const user = apiUser ?? mockUser;
@@ -632,6 +687,122 @@ export const AnalyticsUserDetail = () => {
           </div>
         )}
       </Card>
+
+      {/* Collector profile data — every field tagged Manual vs Auto. */}
+      {rawDetail && (
+        <SectionCard
+          title="Collector Profile Data"
+          subtitle="Each field is tagged Manual (admin-entered) or Auto (derived from CardCade activity)."
+        >
+          {(() => {
+            const ann = rawDetail.analyticsProfile ?? {};
+            return (
+              <div className="space-y-0">
+                <DataRow label="Record source">
+                  <Badge
+                    variant="outline"
+                    className={`text-[11px] font-normal ${
+                      rawDetail.manuallyAdded
+                        ? 'border-violet-400/30 bg-violet-400/10 text-violet-300'
+                        : 'border-white/10 bg-white/5 text-white/60'
+                    }`}
+                  >
+                    {rawDetail.manuallyAdded
+                      ? 'Manually added by admin'
+                      : 'Auto (organic signup / buyer)'}
+                  </Badge>
+                </DataRow>
+                <DataRow
+                  label="Persona"
+                  source={rawDetail.persona ? 'manual' : null}
+                >
+                  {rawDetail.persona ?? <Dash />}
+                </DataRow>
+                <DataRow
+                  label="Affiliation"
+                  source={rawDetail.affiliation ? 'manual' : null}
+                >
+                  {rawDetail.affiliation ?? <Dash />}
+                </DataRow>
+                <DataRow
+                  label="Buyer volume"
+                  source={rawDetail.volume ? 'auto' : null}
+                >
+                  {rawDetail.volume ?? <Dash />}
+                </DataRow>
+                <DataRow
+                  label="Location"
+                  source={rawDetail.location ? 'auto' : null}
+                >
+                  {rawDetail.location ?? <Dash />}
+                </DataRow>
+                <DataRow
+                  label="Preferred sports"
+                  source={
+                    rawDetail.preferredSports.length
+                      ? ann.preferredSports?.length
+                        ? 'manual'
+                        : 'auto'
+                      : null
+                  }
+                >
+                  {rawDetail.preferredSports.length ? (
+                    <DataChips items={rawDetail.preferredSports} />
+                  ) : (
+                    <Dash />
+                  )}
+                </DataRow>
+                <DataRow
+                  label="Preferred teams"
+                  source={
+                    rawDetail.preferredTeams.length
+                      ? ann.preferredTeams?.length
+                        ? 'manual'
+                        : 'auto'
+                      : null
+                  }
+                >
+                  {rawDetail.preferredTeams.length ? (
+                    <DataChips items={rawDetail.preferredTeams} />
+                  ) : (
+                    <Dash />
+                  )}
+                </DataRow>
+                <DataRow label="Bio" source={ann.bio ? 'manual' : null}>
+                  {ann.bio ?? <Dash />}
+                </DataRow>
+                <DataRow
+                  label="Interests"
+                  source={ann.interests?.length ? 'manual' : null}
+                >
+                  {ann.interests?.length ? (
+                    <DataChips items={ann.interests} />
+                  ) : (
+                    <Dash />
+                  )}
+                </DataRow>
+                <DataRow
+                  label="Preferences"
+                  source={ann.preferences?.length ? 'manual' : null}
+                >
+                  {ann.preferences?.length ? (
+                    <DataChips items={ann.preferences} />
+                  ) : (
+                    <Dash />
+                  )}
+                </DataRow>
+                <DataRow label="Notes" source={ann.notes ? 'manual' : null}>
+                  {ann.notes ? (
+                    <span className="whitespace-pre-wrap">{ann.notes}</span>
+                  ) : (
+                    <Dash />
+                  )}
+                </DataRow>
+              </div>
+            );
+          })()}
+        </SectionCard>
+      )}
 
       <div className={`grid grid-cols-1 ${realOnly ? '' : 'lg:grid-cols-3'} gap-6`}>
         {/* Linked accounts */}

@@ -372,6 +372,16 @@ export const AnalyticsUsersList = () => {
                       <div className="min-w-0">
                         <div className="font-medium text-white truncate flex items-center gap-2">
                           <span className="truncate">{u.displayName}</span>
+                          <Badge
+                            variant="outline"
+                            className={`shrink-0 text-[10px] font-normal ${
+                              u.manuallyAdded
+                                ? 'border-violet-400/30 bg-violet-400/10 text-violet-300'
+                                : 'border-white/10 bg-white/5 text-white/50'
+                            }`}
+                          >
+                            {u.manuallyAdded ? 'Manual' : 'Auto'}
+                          </Badge>
                           {u.excluded && (
                             <Badge
                               variant="outline"
