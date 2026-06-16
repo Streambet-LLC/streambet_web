@@ -195,9 +195,8 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
         <DialogHeader>
           <DialogTitle>Add collector profile</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Admin-only. Creates a new (non-login) collector record you can annotate. Add whatever
-            data you have — nothing is required. Username and email are auto-generated when left
-            blank.
+            Creates a new (non-login) collector record you can annotate. Add whatever data you have
+            — nothing is required. Username and email are auto-generated when left blank.
           </DialogDescription>
         </DialogHeader>
 
@@ -345,9 +344,7 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
               </Label>
               <Select
                 value={personaOverride || PERSONA_NONE}
-                onValueChange={v =>
-                  setPersonaOverride(v === PERSONA_NONE ? '' : v)
-                }
+                onValueChange={v => setPersonaOverride(v === PERSONA_NONE ? '' : v)}
               >
                 <SelectTrigger id="new-persona" className="bg-black/40 border-white/10">
                   <SelectValue placeholder="Select persona" />
