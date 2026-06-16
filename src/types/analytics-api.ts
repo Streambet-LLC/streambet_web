@@ -270,7 +270,18 @@ export interface ApiCollectorListParams {
   search?: string;
   onlySellers?: boolean;
   /** Server-side sort key. Defaults to lifetime spend. */
-  sort?: 'lifetime' | 'last30d' | 'recent' | 'predicted';
+  sort?:
+    | 'lifetime'
+    | 'last30d'
+    | 'recent'
+    | 'predicted'
+    | 'name'
+    | 'persona'
+    | 'affiliation'
+    | 'location'
+    | 'volume';
+  /** Sort direction. */
+  dir?: 'asc' | 'desc';
   /** Server-side category filter (by purchased prize brand). */
   category?: 'all' | 'pokemon' | 'one_piece' | 'sports' | 'other';
   /** When true, include admin-omitted users (hidden by default). */
