@@ -504,13 +504,13 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
 
               <div className="space-y-1.5">
                 <Label htmlFor="new-notes" className="text-xs text-muted-foreground">
-                  Internal notes
+                  Notes
                 </Label>
                 <Textarea
                   id="new-notes"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder="Admin-only notes…"
+                  placeholder="Notes…"
                   className="bg-black/40 border-white/10 min-h-[72px]"
                 />
               </div>

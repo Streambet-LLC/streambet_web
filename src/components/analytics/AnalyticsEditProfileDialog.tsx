@@ -552,11 +552,11 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Internal notes (admin-only)</Label>
+                <Label className="text-xs text-muted-foreground">Notes</Label>
                 <Textarea
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder="Anything the AI / outreach team should know."
+                  placeholder="Notes…"
                   rows={4}
                   className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
                 />
