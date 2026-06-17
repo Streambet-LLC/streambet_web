@@ -464,7 +464,7 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    Preferred sports (Sports only)
+                    Collected sports (Sports only)
                   </Label>
                   <div className="flex flex-wrap gap-1.5">
                     {SPORT_OPTIONS.map(s => {
@@ -493,7 +493,7 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    Preferred teams (Sports only)
+                    Collected teams (Sports only)
                   </Label>
                   <Textarea
                     value={preferredTeamsText}

@@ -938,7 +938,7 @@ export const AnalyticsUserDetail = () => {
                   {rawDetail.location ?? <Dash />}
                 </DataRow>
                 <DataRow
-                  label="Preferred sports"
+                  label="Collected sports"
                   source={
                     rawDetail.preferredSports.length
                       ? ann.preferredSports?.length
@@ -954,7 +954,7 @@ export const AnalyticsUserDetail = () => {
                   )}
                 </DataRow>
                 <DataRow
-                  label="Preferred teams"
+                  label="Collected teams"
                   source={
                     rawDetail.preferredTeams.length
                       ? ann.preferredTeams?.length
