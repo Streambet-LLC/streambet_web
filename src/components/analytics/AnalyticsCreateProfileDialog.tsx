@@ -24,7 +24,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -36,7 +35,12 @@ import {
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { useCreateCollectorProfile } from '@/hooks/useCollectorAnalytics';
 import type { ApiAnalyticsSocialPlatform } from '@/types/analytics-api';
-import { COLLECTOR_PERSONA_OPTIONS, SPORT_OPTIONS } from '@/types/analytics-api';
+import {
+  COLLECTOR_PERSONA_OPTIONS,
+  SPORT_OPTIONS,
+  INTEREST_OPTIONS,
+  TCG_OPTIONS,
+} from '@/types/analytics-api';
 
 /** Radix Select forbids empty-string item values, so use a sentinel for "none". */
 const PERSONA_NONE = '__none__';
@@ -93,36 +97,75 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
   const [personaOverride, setPersonaOverride] = useState('');
   const [affiliation, setAffiliation] = useState('');
   const [preferredSports, setPreferredSports] = useState<string[]>([]);
   const [preferredTeamsText, setPreferredTeamsText] = useState('');
-  const [interests, setInterests] = useState('');
+  const [interests, setInterests] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
 
   const toggleSport = (sport: string) =>
     setPreferredSports(prev =>
       prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]
     );
-  const [preferences, setPreferences] = useState('');
-  const [notes, setNotes] = useState('');
+  const toggleInterest = (interest: string) =>
+    setInterests(prev =>
+      prev.includes(interest)
+        ? prev.filter(i => i !== interest)
+        : [...prev, interest]
+    );
+  const interestChips = Array.from(
+    new Set<string>([...INTEREST_OPTIONS, ...interests]),
+  );
+  const [tcgGames, setTcgGames] = useState<string[]>([]);
+  const toggleTcg = (g: string) =>
+    setTcgGames(prev =>
+      prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
+    );
+  // Wizard routing: which collecting world(s) to ask about (not stored;
+  // derived focus drives which sub-questions show).
+  const [focus, setFocus] = useState<('TCG' | 'Sports')[]>([]);
+  const toggleFocus = (f: 'TCG' | 'Sports') =>
+    setFocus(prev =>
+      prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]
+    );
+  const [step, setStep] = useState(0);
+  const STEPS = ['Identity', 'Collecting focus', 'Interests & socials'];
+
   const [rows, setRows] = useState<SocialRow[]>([]);
   const [applyToPublic, setApplyToPublic] = useState(false);
+
+  /** Shared pill-style toggle button used across the wizard's chip groups. */
+  const chipBtn = (label: string, active: boolean, onClick: () => void) => (
+    <button
+      type="button"
+      key={label}
+      onClick={onClick}
+      className={`text-xs rounded-full px-2.5 py-1 border transition-colors ${
+        active
+          ? 'bg-sky-500/20 text-sky-200 border-sky-500/40'
+          : 'bg-black/40 text-white/60 border-white/10 hover:border-white/25'
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   const reset = () => {
     setUsername('');
     setEmail('');
     setDisplayName('');
-    setBio('');
     setPersonaOverride('');
     setAffiliation('');
     setPreferredSports([]);
     setPreferredTeamsText('');
-    setInterests('');
-    setPreferences('');
+    setTcgGames([]);
+    setFocus([]);
+    setInterests([]);
     setNotes('');
     setRows([]);
     setApplyToPublic(false);
+    setStep(0);
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -149,23 +192,10 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
     !trimmedUsername || (USERNAME_RE.test(trimmedUsername) && trimmedUsername.length >= 3);
   const emailValid = !trimmedEmail || EMAIL_RE.test(trimmedEmail);
 
-  const filledSocials = rows.some(r => r.value.trim());
-  // Nothing is required — we just need at least ONE piece of data so we don't
-  // create an empty record. Username/email are auto-generated server-side.
-  const hasAnyData =
-    !!trimmedUsername ||
-    !!trimmedEmail ||
-    !!displayName.trim() ||
-    !!bio.trim() ||
-    !!personaOverride.trim() ||
-    !!affiliation.trim() ||
-    preferredSports.length > 0 ||
-    !!preferredTeamsText.trim() ||
-    !!interests.trim() ||
-    !!preferences.trim() ||
-    !!notes.trim() ||
-    filledSocials;
-  const canSubmit = hasAnyData && usernameValid && emailValid && !createProfile.isPending;
+  // Nothing is required (per the dialog copy) — Create just needs the
+  // username/email to be valid *format* when provided. No field, including
+  // notes, is mandatory.
+  const canSubmit = usernameValid && emailValid && !createProfile.isPending;
 
   const handleCreate = async () => {
     if (!canSubmit) return;
@@ -182,15 +212,14 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
         username: trimmedUsername || undefined,
         email: trimmedEmail.toLowerCase() || undefined,
         displayName: displayName.trim() || undefined,
-        bio: bio.trim() || undefined,
         personaOverride: personaOverride.trim() || undefined,
         affiliation: affiliation.trim() || undefined,
         preferredSports: preferredSports.length ? preferredSports : undefined,
         preferredTeams: parseTags(preferredTeamsText).length
           ? parseTags(preferredTeamsText)
           : undefined,
-        interests: parseTags(interests),
-        preferences: parseTags(preferences),
+        tcgGames: tcgGames.length ? tcgGames : undefined,
+        interests: interests.length ? interests : undefined,
         notes: notes.trim() || undefined,
         socials,
         applyToPublic,
@@ -216,283 +245,320 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 pt-2">
-          {/* Identity */}
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium text-white">Identity</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="new-username" className="text-xs text-muted-foreground">
-                  Username
-                </Label>
-                <Input
-                  id="new-username"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  placeholder="Leave blank to link later"
-                  className="bg-black/40 border-white/10"
-                />
-                {!!trimmedUsername && !usernameValid && (
-                  <p className="text-[11px] text-red-400">
-                    Min 3 chars; letters, numbers, underscores, hyphens only.
-                  </p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="new-email" className="text-xs text-muted-foreground">
-                  Email
-                </Label>
-                <Input
-                  id="new-email"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="Leave blank to link later"
-                  className="bg-black/40 border-white/10"
-                />
-                {!!trimmedEmail && !emailValid && (
-                  <p className="text-[11px] text-red-400">Enter a valid email address.</p>
-                )}
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="new-display-name" className="text-xs text-muted-foreground">
-                Display name
-              </Label>
-              <Input
-                id="new-display-name"
-                value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
-                placeholder="Real / public name"
-                className="bg-black/40 border-white/10"
-              />
-            </div>
-          </section>
-
-          <Separator className="bg-white/5" />
-
-          {/* Socials */}
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-white">Connected socials</h3>
-                <p className="text-xs text-muted-foreground">
-                  Optional. Multiple entries per platform are allowed. Empty rows are dropped.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="border-white/10 bg-white/5 text-white hover:bg-white/15 hover:text-white hover:border-white/20"
-                onClick={() => addRow()}
+        {/* Stepper progress */}
+        <div className="flex items-center gap-1.5 pt-1">
+          {STEPS.map((label, i) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <div
+                className={`flex items-center gap-1.5 ${
+                  i === step ? 'text-white' : 'text-muted-foreground'
+                }`}
               >
-                <Plus className="h-3.5 w-3.5 mr-1" /> Add
-              </Button>
-            </div>
-
-            {rows.length === 0 && (
-              <p className="text-xs text-muted-foreground italic">No socials added yet.</p>
-            )}
-
-            <div className="space-y-2">
-              {rows.map(row => (
-                <div key={row.key} className="flex flex-col sm:flex-row gap-2">
-                  <Select
-                    value={row.platform}
-                    onValueChange={v =>
-                      updateRow(row.key, { platform: v as ApiAnalyticsSocialPlatform })
-                    }
-                  >
-                    <SelectTrigger className="w-full sm:w-[140px] bg-black/40 border-white/10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SUPPORTED_PLATFORMS.map(p => (
-                        <SelectItem key={p} value={p}>
-                          {PLATFORM_LABEL[p]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    value={row.value}
-                    onChange={e => updateRow(row.key, { value: e.target.value })}
-                    placeholder="@handle or URL"
-                    className="flex-1 bg-black/40 border-white/10"
-                  />
-                  <Input
-                    value={row.label}
-                    onChange={e => updateRow(row.key, { label: e.target.value })}
-                    placeholder="Label (optional)"
-                    className="w-full sm:w-[140px] bg-black/40 border-white/10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 shrink-0 text-muted-foreground hover:text-red-400"
-                    onClick={() => removeRow(row.key)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-              <Checkbox
-                checked={applyToPublic}
-                onCheckedChange={v => setApplyToPublic(v === true)}
-              />
-              Also apply socials to the public profile (one per platform).
-            </label>
-          </section>
-
-          <Separator className="bg-white/5" />
-
-          {/* Annotations */}
-          <section className="space-y-3">
-            <h3 className="text-sm font-medium text-white">Analytics annotations</h3>
-            <div className="space-y-1.5">
-              <Label htmlFor="new-persona" className="text-xs text-muted-foreground">
-                Persona override
-              </Label>
-              <Select
-                value={personaOverride || PERSONA_NONE}
-                onValueChange={v => setPersonaOverride(v === PERSONA_NONE ? '' : v)}
-              >
-                <SelectTrigger id="new-persona" className="bg-black/40 border-white/10">
-                  <SelectValue placeholder="Select persona" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={PERSONA_NONE}>— None —</SelectItem>
-                  {COLLECTOR_PERSONA_OPTIONS.map(p => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="new-affiliation" className="text-xs text-muted-foreground">
-                Affiliation
-              </Label>
-              <Input
-                id="new-affiliation"
-                value={affiliation}
-                onChange={e => setAffiliation(e.target.value)}
-                placeholder="e.g. Dragon Shield Breakers (optional)"
-                className="bg-black/40 border-white/10"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">
-                Preferred sports (optional)
-              </Label>
-              <div className="flex flex-wrap gap-1.5">
-                {SPORT_OPTIONS.map(s => {
-                  const active = preferredSports.includes(s);
-                  return (
-                    <button
-                      type="button"
-                      key={s}
-                      onClick={() => toggleSport(s)}
-                      className={`text-xs rounded-full px-2.5 py-1 border transition-colors ${
-                        active
-                          ? 'bg-sky-500/20 text-sky-200 border-sky-500/40'
-                          : 'bg-black/40 text-white/60 border-white/10 hover:border-white/25'
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  );
-                })}
+                <span
+                  className={`h-5 w-5 rounded-full flex items-center justify-center text-[11px] font-medium ${
+                    i < step
+                      ? 'bg-[#B4FF39] text-black'
+                      : i === step
+                        ? 'bg-white/15 text-white'
+                        : 'bg-white/5 text-white/40'
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className="text-xs hidden sm:inline">{label}</span>
               </div>
+              {i < STEPS.length - 1 && <div className="h-px w-5 bg-white/10" />}
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="new-teams" className="text-xs text-muted-foreground">
-                Preferred teams (comma-separated, optional)
-              </Label>
-              <Input
-                id="new-teams"
-                value={preferredTeamsText}
-                onChange={e => setPreferredTeamsText(e.target.value)}
-                placeholder="e.g. Cincinnati Reds, Kansas City Chiefs"
-                className="bg-black/40 border-white/10"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="new-interests" className="text-xs text-muted-foreground">
-                  Interests (comma-separated)
-                </Label>
-                <Input
-                  id="new-interests"
-                  value={interests}
-                  onChange={e => setInterests(e.target.value)}
-                  placeholder="vintage, graded, 1st-edition"
-                  className="bg-black/40 border-white/10"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="new-preferences" className="text-xs text-muted-foreground">
-                  Preferences (comma-separated)
-                </Label>
-                <Input
-                  id="new-preferences"
-                  value={preferences}
-                  onChange={e => setPreferences(e.target.value)}
-                  placeholder="PSA10, japanese, sealed"
-                  className="bg-black/40 border-white/10"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="new-bio" className="text-xs text-muted-foreground">
-                Bio
-              </Label>
-              <Textarea
-                id="new-bio"
-                value={bio}
-                onChange={e => setBio(e.target.value)}
-                placeholder="Short summary about this collector…"
-                className="bg-black/40 border-white/10 min-h-[72px]"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="new-notes" className="text-xs text-muted-foreground">
-                Internal notes
-              </Label>
-              <Textarea
-                id="new-notes"
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Admin-only notes…"
-                className="bg-black/40 border-white/10 min-h-[72px]"
-              />
-            </div>
-          </section>
+          ))}
         </div>
 
-        <DialogFooter className="pt-2 border-t border-white/5">
+        <div className="space-y-5 pt-3 min-h-[260px]">
+          {/* Step 1 — Identity */}
+          {step === 0 && (
+            <section className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-username" className="text-xs text-muted-foreground">
+                    Username
+                  </Label>
+                  <Input
+                    id="new-username"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="Leave blank to link later"
+                    className="bg-black/40 border-white/10"
+                  />
+                  {!!trimmedUsername && !usernameValid && (
+                    <p className="text-[11px] text-red-400">
+                      Min 3 chars; letters, numbers, underscores, hyphens only.
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-email" className="text-xs text-muted-foreground">
+                    Email
+                  </Label>
+                  <Input
+                    id="new-email"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="Leave blank to link later"
+                    className="bg-black/40 border-white/10"
+                  />
+                  {!!trimmedEmail && !emailValid && (
+                    <p className="text-[11px] text-red-400">Enter a valid email address.</p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-display-name" className="text-xs text-muted-foreground">
+                  Display name
+                </Label>
+                <Input
+                  id="new-display-name"
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  placeholder="Real / public name"
+                  className="bg-black/40 border-white/10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-persona" className="text-xs text-muted-foreground">
+                  Persona
+                </Label>
+                <Select
+                  value={personaOverride || PERSONA_NONE}
+                  onValueChange={v => setPersonaOverride(v === PERSONA_NONE ? '' : v)}
+                >
+                  <SelectTrigger id="new-persona" className="bg-black/40 border-white/10">
+                    <SelectValue placeholder="Select persona" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={PERSONA_NONE}>— None —</SelectItem>
+                    {COLLECTOR_PERSONA_OPTIONS.map(p => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-affiliation" className="text-xs text-muted-foreground">
+                  Affiliation
+                </Label>
+                <Input
+                  id="new-affiliation"
+                  value={affiliation}
+                  onChange={e => setAffiliation(e.target.value)}
+                  placeholder="e.g. Dragon Shield Breakers (optional)"
+                  className="bg-black/40 border-white/10"
+                />
+              </div>
+            </section>
+          )}
+
+          {/* Step 2 — Collecting focus */}
+          {step === 1 && (
+            <section className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">
+                  Which are they? (pick any)
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {(['TCG', 'Sports'] as const).map(f =>
+                    chipBtn(f, focus.includes(f), () => toggleFocus(f)),
+                  )}
+                </div>
+              </div>
+
+              {focus.includes('TCG') && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Which TCG games?</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TCG_OPTIONS.map(g =>
+                      chipBtn(g, tcgGames.includes(g), () => toggleTcg(g)),
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {focus.includes('Sports') && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Which sports?</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SPORT_OPTIONS.map(s =>
+                        chipBtn(s, preferredSports.includes(s), () => toggleSport(s)),
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="new-teams" className="text-xs text-muted-foreground">
+                      Which teams? (comma-separated)
+                    </Label>
+                    <Input
+                      id="new-teams"
+                      value={preferredTeamsText}
+                      onChange={e => setPreferredTeamsText(e.target.value)}
+                      placeholder="e.g. Cincinnati Reds, Kansas City Chiefs"
+                      className="bg-black/40 border-white/10"
+                    />
+                  </div>
+                </>
+              )}
+
+              {focus.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">
+                  Optional — pick TCG and/or Sports to record what they collect.
+                </p>
+              )}
+            </section>
+          )}
+
+          {/* Step 3 — Interests & socials */}
+          {step === 2 && (
+            <section className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">
+                  Interests (sealed, graded, raw, vintage…)
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {interestChips.map(i =>
+                    chipBtn(i, interests.includes(i), () => toggleInterest(i)),
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Connected socials</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="border-white/10 bg-white/5 text-white hover:bg-white/15 hover:text-white hover:border-white/20"
+                    onClick={() => addRow()}
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Add
+                  </Button>
+                </div>
+                {rows.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic">No socials added yet.</p>
+                )}
+                <div className="space-y-2">
+                  {rows.map(row => (
+                    <div key={row.key} className="flex flex-col sm:flex-row gap-2">
+                      <Select
+                        value={row.platform}
+                        onValueChange={v =>
+                          updateRow(row.key, { platform: v as ApiAnalyticsSocialPlatform })
+                        }
+                      >
+                        <SelectTrigger className="w-full sm:w-[140px] bg-black/40 border-white/10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SUPPORTED_PLATFORMS.map(p => (
+                            <SelectItem key={p} value={p}>
+                              {PLATFORM_LABEL[p]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        value={row.value}
+                        onChange={e => updateRow(row.key, { value: e.target.value })}
+                        placeholder="@handle or URL"
+                        className="flex-1 bg-black/40 border-white/10"
+                      />
+                      <Input
+                        value={row.label}
+                        onChange={e => updateRow(row.key, { label: e.target.value })}
+                        placeholder="Label (optional)"
+                        className="w-full sm:w-[140px] bg-black/40 border-white/10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 shrink-0 text-muted-foreground hover:text-red-400"
+                        onClick={() => removeRow(row.key)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                {rows.length > 0 && (
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <Checkbox
+                      checked={applyToPublic}
+                      onCheckedChange={v => setApplyToPublic(v === true)}
+                    />
+                    Also apply socials to the public profile (one per platform).
+                  </label>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="new-notes" className="text-xs text-muted-foreground">
+                  Notes
+                </Label>
+                <Textarea
+                  id="new-notes"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Notes…"
+                  className="bg-black/40 border-white/10 min-h-[72px]"
+                />
+              </div>
+            </section>
+          )}
+        </div>
+
+        <DialogFooter className="flex flex-col-reverse gap-2 pt-4 border-t border-white/5 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:pt-2">
           <Button
-            variant="outline"
-            className="border-white/10 bg-white/5 hover:bg-white/10"
+            variant="ghost"
+            className="w-full sm:w-auto text-muted-foreground hover:text-white"
             onClick={() => handleOpenChange(false)}
             disabled={createProfile.isPending}
           >
             Cancel
           </Button>
-          <Button
-            className="bg-[#B4FF39] text-black hover:bg-[#a2e833]"
-            onClick={handleCreate}
-            disabled={!canSubmit}
-          >
-            {createProfile.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Create profile
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            {step > 0 && (
+              <Button
+                variant="outline"
+                className="flex-1 sm:flex-none border-white/10 bg-white/5 text-white hover:bg-white/15 hover:text-white hover:border-white/20"
+                onClick={() => setStep(s => Math.max(0, s - 1))}
+                disabled={createProfile.isPending}
+              >
+                Back
+              </Button>
+            )}
+            {step < STEPS.length - 1 ? (
+              <Button
+                className="flex-1 sm:flex-none bg-[#B4FF39] text-black hover:bg-[#a2e833]"
+                onClick={() => setStep(s => Math.min(STEPS.length - 1, s + 1))}
+                disabled={!usernameValid || !emailValid}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button
+                className="flex-1 sm:flex-none bg-[#B4FF39] text-black hover:bg-[#a2e833]"
+                onClick={handleCreate}
+                disabled={!canSubmit}
+              >
+                {createProfile.isPending && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                Create profile
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

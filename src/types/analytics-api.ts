@@ -48,6 +48,74 @@ export const SPORT_OPTIONS = [
   'Soccer',
 ] as const;
 
+/** TCG games the admin can tag a collector with (multi-select). */
+export const TCG_OPTIONS = [
+  'Pokémon',
+  'One Piece',
+  'Magic',
+  'Yu-Gi-Oh',
+  'Lorcana',
+  'Disney',
+  'Other',
+] as const;
+
+/**
+ * Outreach pipeline stages for a collector profile. Stored on
+ * `analytics_profile.outreachStatus`; absent/empty means "Not contacted".
+ */
+export const OUTREACH_STATUS_OPTIONS = [
+  'Not contacted',
+  'Contacted',
+  'Replied',
+  'Won',
+  'Passed',
+] as const;
+
+export type OutreachStatus = (typeof OUTREACH_STATUS_OPTIONS)[number];
+
+/** Tailwind classes for the outreach-status chip, keyed by status. */
+export const OUTREACH_STATUS_STYLES: Record<OutreachStatus, string> = {
+  'Not contacted': 'border-white/10 bg-white/5 text-white/50',
+  Contacted: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
+  Replied: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+  Won: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+  Passed: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+};
+
+/** Statuses that count as "we've reached out" (used to stamp lastContactedAt). */
+export const OUTREACH_REACHED_STATUSES: OutreachStatus[] = [
+  'Contacted',
+  'Replied',
+  'Won',
+];
+
+/** Normalize a stored status to a canonical option; defaults to "Not contacted". */
+export const normalizeOutreachStatus = (raw?: string | null): OutreachStatus => {
+  const v = (raw ?? '').trim();
+  return (
+    OUTREACH_STATUS_OPTIONS.find(o => o.toLowerCase() === v.toLowerCase()) ??
+    'Not contacted'
+  );
+};
+
+/** Collector interests the admin can tag (multi-select). */
+export const INTEREST_OPTIONS = [
+  'Vintage',
+  'Modern',
+  'Graded',
+  'Raw',
+  'Sealed',
+  'Singles',
+  'Rookies',
+  'Autographs',
+  'Patches',
+  'Numbered',
+  '1st Edition',
+  'Promos',
+  'Japanese',
+  'Grails',
+] as const;
+
 /**
  * Map a stored persona value to a canonical option (case-insensitive), so
  * legacy free-text values like "pro dealer" resolve to "Pro Dealer". Returns
@@ -167,10 +235,16 @@ export interface ApiCollectorAnalyticsAnnotations {
   /** Admin override for the Sports sub-category (wins over auto-derived). */
   preferredSports?: string[];
   preferredTeams?: string[];
+  /** TCG games the collector focuses on (Pokémon, One Piece, …). */
+  tcgGames?: string[];
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
   notes?: string;
+  /** Outreach pipeline stage ("Contacted", "Replied", …). */
+  outreachStatus?: string;
+  /** ISO timestamp of the last time an admin marked the collector contacted. */
+  lastContactedAt?: string;
   lastEditedAt?: string;
   lastEditedBy?: string;
 }
@@ -209,6 +283,7 @@ export interface ApiCreateCollectorProfilePayload {
   affiliation?: string;
   preferredSports?: string[];
   preferredTeams?: string[];
+  tcgGames?: string[];
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;

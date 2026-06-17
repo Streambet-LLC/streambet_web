@@ -41,8 +41,22 @@ import { useDemoTicker } from '@/hooks/useDemoTicker';
 import {
   useCollectorProfileDetail,
   useCollectorProfileDetailRaw,
+  useUpdateCollectorAnalyticsProfile,
 } from '@/hooks/useCollectorAnalytics';
 import { useIsRealDataOnly } from '@/hooks/useRealDataOnly';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  OUTREACH_STATUS_OPTIONS,
+  OUTREACH_STATUS_STYLES,
+  OUTREACH_REACHED_STATUSES,
+  normalizeOutreachStatus,
+} from '@/types/analytics-api';
 import {
   ArrowLeft,
   ExternalLink,
@@ -54,6 +68,8 @@ import {
   X as XIcon,
   UserPlus,
   Pencil,
+  Mail,
+  Copy,
 } from 'lucide-react';
 import moment from 'moment';
 import { AnalyticsEditProfileDialog } from './AnalyticsEditProfileDialog';
@@ -103,7 +119,7 @@ const DataRow = ({
   children: React.ReactNode;
 }) => (
   <div className="flex items-start gap-3 py-2.5 border-b border-white/5 last:border-0">
-    <div className="text-xs text-muted-foreground w-36 shrink-0 pt-0.5">{label}</div>
+    <div className="text-xs text-muted-foreground w-24 sm:w-36 shrink-0 pt-0.5">{label}</div>
     <div className="flex-1 min-w-0 text-sm text-white/90">{children}</div>
     {source && <SourceTag source={source} />}
   </div>
@@ -234,6 +250,38 @@ export const AnalyticsUserDetail = () => {
   const [confidenceOpen, setConfidenceOpen] = useState(false);
   const [engagementOpen, setEngagementOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+
+  // Outreach status: editable pipeline stage stored on analytics_profile.
+  const updateProfile = useUpdateCollectorAnalyticsProfile(userId);
+  const outreachStatus = normalizeOutreachStatus(
+    rawDetail?.analyticsProfile?.outreachStatus,
+  );
+  const lastContactedAt = rawDetail?.analyticsProfile?.lastContactedAt;
+
+  const handleStatusChange = (next: string) => {
+    const status = normalizeOutreachStatus(next);
+    updateProfile.mutate(
+      {
+        outreachStatus: status,
+        // Stamp the contact time when we move into a "reached" stage.
+        ...(OUTREACH_REACHED_STATUSES.includes(status) && {
+          lastContactedAt: new Date().toISOString(),
+        }),
+      },
+      {
+        onSuccess: () => toast.success(`Outreach status → ${status}`),
+        onError: e =>
+          toast.error(e instanceof Error ? e.message : 'Failed to update status'),
+      },
+    );
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => toast.success(`${label} copied`),
+      () => toast.error('Copy failed'),
+    );
+  };
 
   /**
    * Live demo activity: prepended every ~8-15s to make the timeline feel
@@ -628,7 +676,7 @@ export const AnalyticsUserDetail = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-right">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-left md:text-right shrink-0">
             <div>
               <div className="text-xs text-muted-foreground">Lifetime Spend</div>
               <div className="text-lg font-semibold text-white">
@@ -693,6 +741,140 @@ export const AnalyticsUserDetail = () => {
         )}
       </Card>
 
+      {/* Contact & outreach — reach the collector + track pipeline stage. */}
+      {rawDetail && (
+        <SectionCard
+          title="Contact & Outreach"
+          subtitle="Reach out across any channel and track where this collector sits in your pipeline."
+        >
+          {(() => {
+            const email = rawDetail.email?.trim();
+            const socials = rawDetail.socials ?? [];
+            const hasChannels = !!email || socials.length > 0;
+            return (
+              <div className="space-y-5">
+                {/* Pipeline status */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Status</span>
+                  <Select
+                    value={outreachStatus}
+                    onValueChange={handleStatusChange}
+                    disabled={updateProfile.isPending}
+                  >
+                    <SelectTrigger className="w-[180px] h-9 bg-black/40 border-white/10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {OUTREACH_STATUS_OPTIONS.map(s => (
+                        <SelectItem key={s} value={s}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Badge
+                    variant="outline"
+                    className={`text-[11px] font-normal ${OUTREACH_STATUS_STYLES[outreachStatus]}`}
+                  >
+                    {outreachStatus}
+                  </Badge>
+                  {lastContactedAt && (
+                    <span className="text-xs text-muted-foreground">
+                      Last contacted {moment(lastContactedAt).fromNow()}
+                    </span>
+                  )}
+                </div>
+
+                {/* Channels */}
+                {hasChannels ? (
+                  <div className="space-y-2">
+                    {email && (
+                      <div className="flex items-center gap-3 rounded-md border border-white/5 bg-black/30 p-3">
+                        <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Email
+                          </div>
+                          <div className="text-sm text-white truncate">{email}</div>
+                        </div>
+                        <Button
+                          asChild
+                          size="sm"
+                          className="h-8 bg-[#B4FF39] text-black hover:bg-[#B4FF39]/90"
+                        >
+                          <a href={`mailto:${email}`}>
+                            <Mail className="h-3.5 w-3.5 mr-1.5" />
+                            Email
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-white"
+                          onClick={() => copyToClipboard(email, 'Email')}
+                          aria-label="Copy email"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
+                    {socials.map(s => (
+                      <div
+                        key={`${s.platform}-${s.id ?? s.handle}`}
+                        className="flex items-center gap-3 rounded-md border border-white/5 bg-black/30 p-3"
+                      >
+                        <PlatformIcon
+                          platform={s.platform as SocialPlatform}
+                          className="h-4 w-4 text-muted-foreground shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            {platformLabel(s.platform as SocialPlatform)}
+                            {s.label ? ` · ${s.label}` : ''}
+                          </div>
+                          <div className="text-sm text-white truncate">
+                            {s.handle ? `@${s.handle}` : s.url}
+                          </div>
+                        </div>
+                        {s.url && (
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="outline"
+                            className="h-8 border-white/10 bg-white/5 hover:bg-white/10"
+                          >
+                            <a href={s.url} target="_blank" rel="noreferrer">
+                              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                              Open
+                            </a>
+                          </Button>
+                        )}
+                        {s.handle && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-white"
+                            onClick={() => copyToClipboard(s.handle, 'Handle')}
+                            aria-label="Copy handle"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-dashed border-white/10 p-4 text-center text-xs text-muted-foreground">
+                    No contact channels yet — add an email or socials (via
+                    “Inject socials”) to reach out.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </SectionCard>
+      )}
+
       {/* Collector profile data — every field tagged Manual vs Auto. */}
       {rawDetail && (
         <SectionCard
@@ -756,7 +938,7 @@ export const AnalyticsUserDetail = () => {
                   {rawDetail.location ?? <Dash />}
                 </DataRow>
                 <DataRow
-                  label="Preferred sports"
+                  label="Collected sports"
                   source={
                     rawDetail.preferredSports.length
                       ? ann.preferredSports?.length
@@ -772,7 +954,7 @@ export const AnalyticsUserDetail = () => {
                   )}
                 </DataRow>
                 <DataRow
-                  label="Preferred teams"
+                  label="Collected teams"
                   source={
                     rawDetail.preferredTeams.length
                       ? ann.preferredTeams?.length
@@ -787,8 +969,15 @@ export const AnalyticsUserDetail = () => {
                     <Dash />
                   )}
                 </DataRow>
-                <DataRow label="Bio" source={ann.bio ? 'manual' : null}>
-                  {ann.bio ?? <Dash />}
+                <DataRow
+                  label="TCG games"
+                  source={ann.tcgGames?.length ? 'manual' : null}
+                >
+                  {ann.tcgGames?.length ? (
+                    <DataChips items={ann.tcgGames} />
+                  ) : (
+                    <Dash />
+                  )}
                 </DataRow>
                 <DataRow
                   label="Interests"
@@ -796,16 +985,6 @@ export const AnalyticsUserDetail = () => {
                 >
                   {ann.interests?.length ? (
                     <DataChips items={ann.interests} />
-                  ) : (
-                    <Dash />
-                  )}
-                </DataRow>
-                <DataRow
-                  label="Preferences"
-                  source={ann.preferences?.length ? 'manual' : null}
-                >
-                  {ann.preferences?.length ? (
-                    <DataChips items={ann.preferences} />
                   ) : (
                     <Dash />
                   )}
