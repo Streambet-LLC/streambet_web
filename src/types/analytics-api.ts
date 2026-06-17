@@ -48,6 +48,17 @@ export const SPORT_OPTIONS = [
   'Soccer',
 ] as const;
 
+/** TCG games the admin can tag a collector with (multi-select). */
+export const TCG_OPTIONS = [
+  'Pokémon',
+  'One Piece',
+  'Magic',
+  'Yu-Gi-Oh',
+  'Lorcana',
+  'Disney',
+  'Other',
+] as const;
+
 /** Collector interests the admin can tag (multi-select). */
 export const INTEREST_OPTIONS = [
   'Vintage',
@@ -185,6 +196,8 @@ export interface ApiCollectorAnalyticsAnnotations {
   /** Admin override for the Sports sub-category (wins over auto-derived). */
   preferredSports?: string[];
   preferredTeams?: string[];
+  /** TCG games the collector focuses on (Pokémon, One Piece, …). */
+  tcgGames?: string[];
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;
@@ -227,6 +240,7 @@ export interface ApiCreateCollectorProfilePayload {
   affiliation?: string;
   preferredSports?: string[];
   preferredTeams?: string[];
+  tcgGames?: string[];
   interests?: string[];
   preferences?: string[];
   customAttributes?: Record<string, string>;

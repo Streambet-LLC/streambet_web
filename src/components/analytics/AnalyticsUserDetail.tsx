@@ -788,6 +788,16 @@ export const AnalyticsUserDetail = () => {
                   )}
                 </DataRow>
                 <DataRow
+                  label="TCG games"
+                  source={ann.tcgGames?.length ? 'manual' : null}
+                >
+                  {ann.tcgGames?.length ? (
+                    <DataChips items={ann.tcgGames} />
+                  ) : (
+                    <Dash />
+                  )}
+                </DataRow>
+                <DataRow
                   label="Interests"
                   source={ann.interests?.length ? 'manual' : null}
                 >

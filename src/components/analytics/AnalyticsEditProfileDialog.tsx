@@ -35,6 +35,7 @@ import {
   COLLECTOR_PERSONA_OPTIONS,
   SPORT_OPTIONS,
   INTEREST_OPTIONS,
+  TCG_OPTIONS,
   normalizeCollectorPersona,
 } from '@/types/analytics-api';
 import { Badge } from '@/components/ui/badge';
@@ -138,12 +139,17 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
   const [affiliation, setAffiliation] = useState('');
   const [preferredSports, setPreferredSports] = useState<string[]>([]);
   const [preferredTeamsText, setPreferredTeamsText] = useState('');
+  const [tcgGames, setTcgGames] = useState<string[]>([]);
   const [interests, setInterests] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
 
   const toggleSport = (sport: string) =>
     setPreferredSports(prev =>
       prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]
+    );
+  const toggleTcg = (g: string) =>
+    setTcgGames(prev =>
+      prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
     );
   const toggleInterest = (interest: string) =>
     setInterests(prev =>
@@ -169,6 +175,7 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
     setAffiliation(ann.affiliation ?? '');
     setPreferredSports(ann.preferredSports ?? []);
     setPreferredTeamsText((ann.preferredTeams ?? []).join(', '));
+    setTcgGames(ann.tcgGames ?? []);
     setInterests(ann.interests ?? []);
     setNotes(ann.notes ?? '');
   }, [detail]);
@@ -241,6 +248,7 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
         affiliation: affiliation.trim(),
         preferredSports,
         preferredTeams: parseTags(preferredTeamsText),
+        tcgGames,
         interests,
         notes: notes.trim(),
       });
@@ -494,6 +502,29 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
                     rows={2}
                     className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
                   />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">TCG games</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TCG_OPTIONS.map(g => {
+                    const active = tcgGames.includes(g);
+                    return (
+                      <button
+                        type="button"
+                        key={g}
+                        onClick={() => toggleTcg(g)}
+                        className={`text-xs rounded-full px-2.5 py-1 border transition-colors ${
+                          active
+                            ? 'bg-sky-500/20 text-sky-200 border-sky-500/40'
+                            : 'bg-black/40 text-white/60 border-white/10 hover:border-white/25'
+                        }`}
+                      >
+                        {g}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
