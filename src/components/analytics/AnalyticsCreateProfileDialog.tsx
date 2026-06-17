@@ -518,20 +518,20 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
           )}
         </div>
 
-        <DialogFooter className="pt-2 border-t border-white/5 sm:justify-between">
+        <DialogFooter className="flex flex-col-reverse gap-2 pt-4 border-t border-white/5 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:pt-2">
           <Button
             variant="ghost"
-            className="text-muted-foreground hover:text-white"
+            className="w-full sm:w-auto text-muted-foreground hover:text-white"
             onClick={() => handleOpenChange(false)}
             disabled={createProfile.isPending}
           >
             Cancel
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             {step > 0 && (
               <Button
                 variant="outline"
-                className="border-white/10 bg-white/5 text-white hover:bg-white/15 hover:text-white hover:border-white/20"
+                className="flex-1 sm:flex-none border-white/10 bg-white/5 text-white hover:bg-white/15 hover:text-white hover:border-white/20"
                 onClick={() => setStep(s => Math.max(0, s - 1))}
                 disabled={createProfile.isPending}
               >
@@ -540,7 +540,7 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
             )}
             {step < STEPS.length - 1 ? (
               <Button
-                className="bg-[#B4FF39] text-black hover:bg-[#a2e833]"
+                className="flex-1 sm:flex-none bg-[#B4FF39] text-black hover:bg-[#a2e833]"
                 onClick={() => setStep(s => Math.min(STEPS.length - 1, s + 1))}
                 disabled={!usernameValid || !emailValid}
               >
@@ -548,7 +548,7 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
               </Button>
             ) : (
               <Button
-                className="bg-[#B4FF39] text-black hover:bg-[#a2e833]"
+                className="flex-1 sm:flex-none bg-[#B4FF39] text-black hover:bg-[#a2e833]"
                 onClick={handleCreate}
                 disabled={!canSubmit}
               >
