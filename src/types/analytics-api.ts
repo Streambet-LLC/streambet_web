@@ -48,6 +48,24 @@ export const SPORT_OPTIONS = [
   'Soccer',
 ] as const;
 
+/** Collector interests the admin can tag (multi-select). */
+export const INTEREST_OPTIONS = [
+  'Vintage',
+  'Modern',
+  'Graded',
+  'Raw',
+  'Sealed',
+  'Singles',
+  'Rookies',
+  'Autographs',
+  'Patches',
+  'Numbered',
+  '1st Edition',
+  'Promos',
+  'Japanese',
+  'Grails',
+] as const;
+
 /**
  * Map a stored persona value to a canonical option (case-insensitive), so
  * legacy free-text values like "pro dealer" resolve to "Pro Dealer". Returns

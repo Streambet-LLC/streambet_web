@@ -34,6 +34,7 @@ import {
 import {
   COLLECTOR_PERSONA_OPTIONS,
   SPORT_OPTIONS,
+  INTEREST_OPTIONS,
   normalizeCollectorPersona,
 } from '@/types/analytics-api';
 import { Badge } from '@/components/ui/badge';
@@ -96,8 +97,6 @@ const parseTags = (raw: string): string[] =>
     .filter(Boolean)
     .slice(0, 40);
 
-const formatTags = (tags?: string[]): string => (tags ?? []).join(', ');
-
 let rowKeyCounter = 0;
 const nextRowKey = () => `row_${++rowKeyCounter}`;
 
@@ -135,19 +134,29 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
 
   // Annotations draft state.
   const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
   const [personaOverride, setPersonaOverride] = useState('');
   const [affiliation, setAffiliation] = useState('');
   const [preferredSports, setPreferredSports] = useState<string[]>([]);
   const [preferredTeamsText, setPreferredTeamsText] = useState('');
+  const [interests, setInterests] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
 
   const toggleSport = (sport: string) =>
     setPreferredSports(prev =>
       prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]
     );
-  const [interests, setInterests] = useState('');
-  const [preferences, setPreferences] = useState('');
-  const [notes, setNotes] = useState('');
+  const toggleInterest = (interest: string) =>
+    setInterests(prev =>
+      prev.includes(interest)
+        ? prev.filter(i => i !== interest)
+        : [...prev, interest]
+    );
+  // Predefined options + any legacy free-text interests already stored, so
+  // existing values still render as removable chips (nothing is silently lost).
+  const interestChips = useMemo(
+    () => Array.from(new Set<string>([...INTEREST_OPTIONS, ...interests])),
+    [interests],
+  );
 
   // Hydrate from the API payload every time the dialog opens.
   useEffect(() => {
@@ -156,13 +165,11 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
     setApplyToPublic(false);
     const ann: ApiCollectorAnalyticsAnnotations = detail.analyticsProfile ?? {};
     setDisplayName(ann.displayName ?? '');
-    setBio(ann.bio ?? '');
     setPersonaOverride(normalizeCollectorPersona(ann.personaOverride));
     setAffiliation(ann.affiliation ?? '');
     setPreferredSports(ann.preferredSports ?? []);
     setPreferredTeamsText((ann.preferredTeams ?? []).join(', '));
-    setInterests(formatTags(ann.interests));
-    setPreferences(formatTags(ann.preferences));
+    setInterests(ann.interests ?? []);
     setNotes(ann.notes ?? '');
   }, [detail]);
 
@@ -230,13 +237,11 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
       });
       await updateProfile.mutateAsync({
         displayName: displayName.trim(),
-        bio: bio.trim(),
         personaOverride: personaOverride.trim(),
         affiliation: affiliation.trim(),
         preferredSports,
         preferredTeams: parseTags(preferredTeamsText),
-        interests: parseTags(interests),
-        preferences: parseTags(preferences),
+        interests,
         notes: notes.trim(),
       });
       toast.success(
@@ -493,40 +498,26 @@ export const AnalyticsEditProfileDialog = ({ userId, open, onOpenChange }: Props
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Bio</Label>
-                <Textarea
-                  value={bio}
-                  onChange={e => setBio(e.target.value)}
-                  placeholder="Short bio surfaced on the collector card."
-                  rows={3}
-                  className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">
-                  Interests (comma or newline separated)
-                </Label>
-                <Textarea
-                  value={interests}
-                  onChange={e => setInterests(e.target.value)}
-                  placeholder="vintage, japanese, 1st-edition"
-                  rows={2}
-                  className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">
-                  Buying preferences (comma or newline separated)
-                </Label>
-                <Textarea
-                  value={preferences}
-                  onChange={e => setPreferences(e.target.value)}
-                  placeholder="PSA10, sealed, lorcana"
-                  rows={2}
-                  className="bg-black/40 border-white/10 text-white placeholder:text-muted-foreground"
-                />
+                <Label className="text-xs text-muted-foreground">Interests</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {interestChips.map(i => {
+                    const active = interests.includes(i);
+                    return (
+                      <button
+                        type="button"
+                        key={i}
+                        onClick={() => toggleInterest(i)}
+                        className={`text-xs rounded-full px-2.5 py-1 border transition-colors ${
+                          active
+                            ? 'bg-sky-500/20 text-sky-200 border-sky-500/40'
+                            : 'bg-black/40 text-white/60 border-white/10 hover:border-white/25'
+                        }`}
+                      >
+                        {i}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="space-y-1.5">

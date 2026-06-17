@@ -787,25 +787,12 @@ export const AnalyticsUserDetail = () => {
                     <Dash />
                   )}
                 </DataRow>
-                <DataRow label="Bio" source={ann.bio ? 'manual' : null}>
-                  {ann.bio ?? <Dash />}
-                </DataRow>
                 <DataRow
                   label="Interests"
                   source={ann.interests?.length ? 'manual' : null}
                 >
                   {ann.interests?.length ? (
                     <DataChips items={ann.interests} />
-                  ) : (
-                    <Dash />
-                  )}
-                </DataRow>
-                <DataRow
-                  label="Preferences"
-                  source={ann.preferences?.length ? 'manual' : null}
-                >
-                  {ann.preferences?.length ? (
-                    <DataChips items={ann.preferences} />
                   ) : (
                     <Dash />
                   )}

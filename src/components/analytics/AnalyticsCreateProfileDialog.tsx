@@ -36,7 +36,11 @@ import {
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { useCreateCollectorProfile } from '@/hooks/useCollectorAnalytics';
 import type { ApiAnalyticsSocialPlatform } from '@/types/analytics-api';
-import { COLLECTOR_PERSONA_OPTIONS, SPORT_OPTIONS } from '@/types/analytics-api';
+import {
+  COLLECTOR_PERSONA_OPTIONS,
+  SPORT_OPTIONS,
+  INTEREST_OPTIONS,
+} from '@/types/analytics-api';
 
 /** Radix Select forbids empty-string item values, so use a sentinel for "none". */
 const PERSONA_NONE = '__none__';
@@ -93,19 +97,26 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
   const [personaOverride, setPersonaOverride] = useState('');
   const [affiliation, setAffiliation] = useState('');
   const [preferredSports, setPreferredSports] = useState<string[]>([]);
   const [preferredTeamsText, setPreferredTeamsText] = useState('');
-  const [interests, setInterests] = useState('');
+  const [interests, setInterests] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
 
   const toggleSport = (sport: string) =>
     setPreferredSports(prev =>
       prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]
     );
-  const [preferences, setPreferences] = useState('');
-  const [notes, setNotes] = useState('');
+  const toggleInterest = (interest: string) =>
+    setInterests(prev =>
+      prev.includes(interest)
+        ? prev.filter(i => i !== interest)
+        : [...prev, interest]
+    );
+  const interestChips = Array.from(
+    new Set<string>([...INTEREST_OPTIONS, ...interests]),
+  );
   const [rows, setRows] = useState<SocialRow[]>([]);
   const [applyToPublic, setApplyToPublic] = useState(false);
 
@@ -113,13 +124,11 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
     setUsername('');
     setEmail('');
     setDisplayName('');
-    setBio('');
     setPersonaOverride('');
     setAffiliation('');
     setPreferredSports([]);
     setPreferredTeamsText('');
-    setInterests('');
-    setPreferences('');
+    setInterests([]);
     setNotes('');
     setRows([]);
     setApplyToPublic(false);
@@ -156,13 +165,11 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
     !!trimmedUsername ||
     !!trimmedEmail ||
     !!displayName.trim() ||
-    !!bio.trim() ||
     !!personaOverride.trim() ||
     !!affiliation.trim() ||
     preferredSports.length > 0 ||
     !!preferredTeamsText.trim() ||
-    !!interests.trim() ||
-    !!preferences.trim() ||
+    interests.length > 0 ||
     !!notes.trim() ||
     filledSocials;
   const canSubmit = hasAnyData && usernameValid && emailValid && !createProfile.isPending;
@@ -182,15 +189,13 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
         username: trimmedUsername || undefined,
         email: trimmedEmail.toLowerCase() || undefined,
         displayName: displayName.trim() || undefined,
-        bio: bio.trim() || undefined,
         personaOverride: personaOverride.trim() || undefined,
         affiliation: affiliation.trim() || undefined,
         preferredSports: preferredSports.length ? preferredSports : undefined,
         preferredTeams: parseTags(preferredTeamsText).length
           ? parseTags(preferredTeamsText)
           : undefined,
-        interests: parseTags(interests),
-        preferences: parseTags(preferences),
+        interests: interests.length ? interests : undefined,
         notes: notes.trim() || undefined,
         socials,
         applyToPublic,
@@ -423,43 +428,27 @@ export const AnalyticsCreateProfileDialog = ({ open, onOpenChange }: Props) => {
                 className="bg-black/40 border-white/10"
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="new-interests" className="text-xs text-muted-foreground">
-                  Interests (comma-separated)
-                </Label>
-                <Input
-                  id="new-interests"
-                  value={interests}
-                  onChange={e => setInterests(e.target.value)}
-                  placeholder="vintage, graded, 1st-edition"
-                  className="bg-black/40 border-white/10"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="new-preferences" className="text-xs text-muted-foreground">
-                  Preferences (comma-separated)
-                </Label>
-                <Input
-                  id="new-preferences"
-                  value={preferences}
-                  onChange={e => setPreferences(e.target.value)}
-                  placeholder="PSA10, japanese, sealed"
-                  className="bg-black/40 border-white/10"
-                />
-              </div>
-            </div>
             <div className="space-y-1.5">
-              <Label htmlFor="new-bio" className="text-xs text-muted-foreground">
-                Bio
-              </Label>
-              <Textarea
-                id="new-bio"
-                value={bio}
-                onChange={e => setBio(e.target.value)}
-                placeholder="Short summary about this collector…"
-                className="bg-black/40 border-white/10 min-h-[72px]"
-              />
+              <Label className="text-xs text-muted-foreground">Interests</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {interestChips.map(i => {
+                  const active = interests.includes(i);
+                  return (
+                    <button
+                      type="button"
+                      key={i}
+                      onClick={() => toggleInterest(i)}
+                      className={`text-xs rounded-full px-2.5 py-1 border transition-colors ${
+                        active
+                          ? 'bg-sky-500/20 text-sky-200 border-sky-500/40'
+                          : 'bg-black/40 text-white/60 border-white/10 hover:border-white/25'
+                      }`}
+                    >
+                      {i}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="new-notes" className="text-xs text-muted-foreground">
