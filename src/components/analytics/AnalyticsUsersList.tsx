@@ -35,6 +35,7 @@ import {
   useSetCollectorExclusion,
 } from '@/hooks/useCollectorAnalytics';
 import { useIsRealDataOnly } from '@/hooks/useRealDataOnly';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Search,
   ArrowUpRight,
@@ -121,6 +122,7 @@ export const AnalyticsUsersList = () => {
   );
 
   const realOnly = useIsRealDataOnly();
+  const isMobile = useIsMobile();
   const setExclusion = useSetCollectorExclusion();
 
   const handleToggleOmit = (
@@ -302,15 +304,15 @@ export const AnalyticsUsersList = () => {
   const rangeEnd = usingRealData ? Math.min(total, (page + 1) * PAGE_SIZE) : rows.length;
 
   return (
-    <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6">
+    <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-6">
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-3 mb-5">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-5">
+        <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search by username, name, or email…"
+            placeholder={isMobile ? 'Search…' : 'Search by username, name, or email…'}
             className="pl-9 bg-black/40 border-white/10"
           />
         </div>
@@ -319,7 +321,7 @@ export const AnalyticsUsersList = () => {
           onValueChange={v => setPersona(v as 'all' | Persona)}
           disabled={realOnly}
         >
-          <SelectTrigger className="w-full lg:w-[180px] bg-black/40 border-white/10">
+          <SelectTrigger className="w-full sm:w-[180px] bg-black/40 border-white/10">
             <SelectValue placeholder="Persona" />
           </SelectTrigger>
           <SelectContent>
@@ -331,7 +333,7 @@ export const AnalyticsUsersList = () => {
           </SelectContent>
         </Select>
         <Select value={category} onValueChange={v => setCategory(v as 'all' | AssetCategory)}>
-          <SelectTrigger className="w-full lg:w-[160px] bg-black/40 border-white/10">
+          <SelectTrigger className="w-full sm:w-[160px] bg-black/40 border-white/10">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -351,7 +353,7 @@ export const AnalyticsUsersList = () => {
           </SelectContent>
         </Select>
         <Select value={sort} onValueChange={v => setSort(v as typeof sort)}>
-          <SelectTrigger className="w-full lg:w-[200px] bg-black/40 border-white/10">
+          <SelectTrigger className="w-full sm:w-[200px] bg-black/40 border-white/10">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
@@ -378,7 +380,7 @@ export const AnalyticsUsersList = () => {
           </label>
         </div>
         <Button
-          className="h-10 bg-[#B4FF39] text-black hover:bg-[#a2e833] w-full lg:w-auto"
+          className="h-10 bg-[#B4FF39] text-black hover:bg-[#a2e833] w-full sm:w-auto sm:ml-auto"
           onClick={() => setCreateOpen(true)}
         >
           <Plus className="h-4 w-4 mr-1.5" /> Add profile
@@ -391,14 +393,22 @@ export const AnalyticsUsersList = () => {
           <thead>
             <tr className="text-left text-xs uppercase text-muted-foreground border-b border-white/5">
               {sortHead('User', 'name')}
-              {sortHead('Persona', 'persona')}
-              <th className="py-3 pr-4">Top Categories</th>
-              {sortHead('Affiliation', 'affiliation')}
-              {sortHead('Location', 'location')}
-              {sortHead('Volume', 'volume')}
-              {!realOnly && <th className="py-3 pr-4 w-[160px]">Identity Confidence</th>}
+              {sortHead('Persona', 'persona', 'hidden md:table-cell')}
+              <th className="py-3 pr-4 hidden md:table-cell">Top Categories</th>
+              {sortHead('Affiliation', 'affiliation', 'hidden lg:table-cell')}
+              {sortHead('Location', 'location', 'hidden lg:table-cell')}
+              {sortHead('Volume', 'volume', 'hidden sm:table-cell')}
+              {!realOnly && (
+                <th className="py-3 pr-4 w-[160px] hidden lg:table-cell">
+                  Identity Confidence
+                </th>
+              )}
               {sortHead(spendHeader, 'spend', 'text-center')}
-              {!realOnly && <th className="py-3 pr-4 w-[140px]">Engagement</th>}
+              {!realOnly && (
+                <th className="py-3 pr-4 w-[140px] hidden lg:table-cell">
+                  Engagement
+                </th>
+              )}
               <th className="py-3 pr-2 w-[40px]"></th>
             </tr>
           </thead>
@@ -419,23 +429,23 @@ export const AnalyticsUsersList = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden md:table-cell">
                     <Skeleton className="h-5 w-24 bg-white/10" />
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden md:table-cell">
                     <Skeleton className="h-5 w-28 bg-white/10" />
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden lg:table-cell">
                     <Skeleton className="h-5 w-20 bg-white/10" />
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden lg:table-cell">
                     <Skeleton className="h-5 w-24 bg-white/10" />
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden sm:table-cell">
                     <Skeleton className="h-5 w-16 bg-white/10" />
                   </td>
                   {!realOnly && (
-                    <td className="py-3 pr-4">
+                    <td className="py-3 pr-4 hidden lg:table-cell">
                       <Skeleton className="h-2 w-full bg-white/10" />
                     </td>
                   )}
@@ -443,7 +453,7 @@ export const AnalyticsUsersList = () => {
                     <Skeleton className="h-4 w-16 mx-auto bg-white/10" />
                   </td>
                   {!realOnly && (
-                    <td className="py-3 pr-4">
+                    <td className="py-3 pr-4 hidden lg:table-cell">
                       <Skeleton className="h-2 w-full bg-white/10" />
                     </td>
                   )}
@@ -498,10 +508,28 @@ export const AnalyticsUsersList = () => {
                             <span className="italic">no account yet</span>
                           )}
                         </div>
+                        {/* Mobile-only meta: surfaces columns hidden on small screens */}
+                        {(u.persona || u.volume || u.location) && (
+                          <div className="md:hidden mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+                            {u.persona && (
+                              <span className="text-white/70">{u.persona}</span>
+                            )}
+                            {u.volume && (
+                              <span
+                                className={`rounded px-1.5 py-0.5 border ${VOLUME_STYLES[u.volume]}`}
+                              >
+                                {u.volume}
+                              </span>
+                            )}
+                            {u.location && (
+                              <span className="whitespace-nowrap">{u.location}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden md:table-cell">
                     {realOnly ? (
                       u.persona ? (
                         <span className="text-white/90">{u.persona}</span>
@@ -512,7 +540,7 @@ export const AnalyticsUsersList = () => {
                       <PersonaBadge persona={u.persona} />
                     )}
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
                       {u.topCategories.map(c => (
                         <CategoryBadge key={c} category={c} />
@@ -541,21 +569,21 @@ export const AnalyticsUsersList = () => {
                         </div>
                       )}
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden lg:table-cell">
                     {u.affiliation ? (
                       <span className="text-white/90">{u.affiliation}</span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden lg:table-cell">
                     {u.location ? (
                       <span className="text-white/90 whitespace-nowrap">{u.location}</span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 hidden sm:table-cell">
                     {u.volume ? (
                       <span
                         className={`text-[11px] rounded px-1.5 py-0.5 border ${VOLUME_STYLES[u.volume]}`}
@@ -567,7 +595,7 @@ export const AnalyticsUsersList = () => {
                     )}
                   </td>
                   {!realOnly && (
-                    <td className="py-3 pr-4">
+                    <td className="py-3 pr-4 hidden lg:table-cell">
                       <ScoreMeter value={u.unifiedConfidence} />
                     </td>
                   )}
@@ -585,7 +613,7 @@ export const AnalyticsUsersList = () => {
                     )}
                   </td>
                   {!realOnly && (
-                    <td className="py-3 pr-4">
+                    <td className="py-3 pr-4 hidden lg:table-cell">
                       <ScoreMeter value={u.engagementScore} />
                     </td>
                   )}

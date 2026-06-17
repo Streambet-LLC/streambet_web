@@ -103,7 +103,7 @@ const DataRow = ({
   children: React.ReactNode;
 }) => (
   <div className="flex items-start gap-3 py-2.5 border-b border-white/5 last:border-0">
-    <div className="text-xs text-muted-foreground w-36 shrink-0 pt-0.5">{label}</div>
+    <div className="text-xs text-muted-foreground w-24 sm:w-36 shrink-0 pt-0.5">{label}</div>
     <div className="flex-1 min-w-0 text-sm text-white/90">{children}</div>
     {source && <SourceTag source={source} />}
   </div>
@@ -628,7 +628,7 @@ export const AnalyticsUserDetail = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-right">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-left md:text-right shrink-0">
             <div>
               <div className="text-xs text-muted-foreground">Lifetime Spend</div>
               <div className="text-lg font-semibold text-white">
