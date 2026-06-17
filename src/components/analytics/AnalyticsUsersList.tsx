@@ -45,6 +45,8 @@ import {
   MoreHorizontal,
   EyeOff,
   Eye,
+  Rows3,
+  LayoutGrid,
 } from 'lucide-react';
 
 const PERSONAS: ('all' | Persona)[] = [
@@ -76,6 +78,31 @@ const VOLUME_STYLES: Record<'High' | 'Medium' | 'Low', string> = {
   Low: 'bg-white/5 text-white/60 border-white/10',
 };
 
+// "Joined Feb 2024" style label for card footers; empty string if unparseable.
+const formatJoined = (iso?: string | null): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime())
+    ? ''
+    : d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+};
+
+// Fixed-width volume pill so High/Medium/Low all render the same size and
+// line up in the same spot across rows/cards.
+const VolumeBadge = ({
+  volume,
+  className = '',
+}: {
+  volume: 'High' | 'Medium' | 'Low';
+  className?: string;
+}) => (
+  <span
+    className={`inline-flex items-center justify-center w-[52px] shrink-0 text-[11px] leading-none rounded px-1.5 py-1 border ${VOLUME_STYLES[volume]} ${className}`}
+  >
+    {volume}
+  </span>
+);
+
 export const AnalyticsUsersList = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -87,6 +114,14 @@ export const AnalyticsUsersList = () => {
   const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [showOmitted, setShowOmitted] = useState(false);
+  // Table vs card layout. Defaults to cards on small screens (where the wide
+  // table is awkward) and the table on desktop; the user can toggle freely.
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() =>
+    typeof window !== 'undefined' &&
+    window.matchMedia('(max-width: 767px)').matches
+      ? 'cards'
+      : 'table'
+  );
 
   // Client-side column-header sort (overrides the server order for the loaded
   // page). Null = use the server order (which defaults to recently-added).
@@ -366,6 +401,7 @@ export const AnalyticsUsersList = () => {
             {!realOnly && <SelectItem value="engagement">Engagement</SelectItem>}
           </SelectContent>
         </Select>
+        <div className="flex items-center justify-between gap-3 shrink-0 sm:ml-auto">
         <div className="flex items-center gap-2 px-1 shrink-0">
           <Switch
             id="show-omitted"
@@ -379,8 +415,38 @@ export const AnalyticsUsersList = () => {
             Show omitted
           </label>
         </div>
+        {/* Table / card view toggle */}
+        <div className="flex items-center rounded-md border border-white/10 bg-black/40 p-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setViewMode('table')}
+            aria-label="Table view"
+            aria-pressed={viewMode === 'table'}
+            className={`flex items-center justify-center h-8 w-8 rounded transition-colors ${
+              viewMode === 'table'
+                ? 'bg-white/10 text-white'
+                : 'text-muted-foreground hover:text-white'
+            }`}
+          >
+            <Rows3 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('cards')}
+            aria-label="Card view"
+            aria-pressed={viewMode === 'cards'}
+            className={`flex items-center justify-center h-8 w-8 rounded transition-colors ${
+              viewMode === 'cards'
+                ? 'bg-white/10 text-white'
+                : 'text-muted-foreground hover:text-white'
+            }`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+        </div>
+        </div>
         <Button
-          className="h-10 bg-[#B4FF39] text-black hover:bg-[#a2e833] w-full sm:w-auto sm:ml-auto"
+          className="h-10 bg-[#B4FF39] text-black hover:bg-[#a2e833] w-full sm:w-auto"
           onClick={() => setCreateOpen(true)}
         >
           <Plus className="h-4 w-4 mr-1.5" /> Add profile
@@ -388,6 +454,7 @@ export const AnalyticsUsersList = () => {
       </div>
 
       {/* Table */}
+      {viewMode === 'table' && (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -511,15 +578,9 @@ export const AnalyticsUsersList = () => {
                         {/* Mobile-only meta: surfaces columns hidden on small screens */}
                         {(u.persona || u.volume || u.location) && (
                           <div className="md:hidden mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-muted-foreground">
+                            {u.volume && <VolumeBadge volume={u.volume} />}
                             {u.persona && (
                               <span className="text-white/70">{u.persona}</span>
-                            )}
-                            {u.volume && (
-                              <span
-                                className={`rounded px-1.5 py-0.5 border ${VOLUME_STYLES[u.volume]}`}
-                              >
-                                {u.volume}
-                              </span>
                             )}
                             {u.location && (
                               <span className="whitespace-nowrap">{u.location}</span>
@@ -585,11 +646,7 @@ export const AnalyticsUsersList = () => {
                   </td>
                   <td className="py-3 pr-4 hidden sm:table-cell">
                     {u.volume ? (
-                      <span
-                        className={`text-[11px] rounded px-1.5 py-0.5 border ${VOLUME_STYLES[u.volume]}`}
-                      >
-                        {u.volume}
-                      </span>
+                      <VolumeBadge volume={u.volume} />
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
@@ -678,6 +735,196 @@ export const AnalyticsUsersList = () => {
           </tbody>
         </table>
       </div>
+      )}
+
+      {/* Card view */}
+      {viewMode === 'cards' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {showSkeleton &&
+            Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={`card-skel-${i}`}
+                className="flex flex-col min-h-[150px] rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+                aria-busy="true"
+              >
+                <div className="flex items-start gap-3">
+                  <Skeleton className="h-11 w-11 rounded-full bg-white/10" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3.5 w-32 bg-white/10" />
+                    <Skeleton className="h-2.5 w-20 bg-white/5" />
+                  </div>
+                  <Skeleton className="h-5 w-14 bg-white/10" />
+                </div>
+                <div className="mt-auto pt-3 border-t border-white/5 flex gap-2">
+                  <Skeleton className="h-4 w-24 bg-white/5" />
+                </div>
+              </div>
+            ))}
+          {!showSkeleton &&
+            rows.map(u => {
+              const joined = formatJoined(u.joinedAt);
+              return (
+              <div
+                key={u.id}
+                onClick={() => navigate(`/analytics/${u.id}`)}
+                className="group relative flex flex-col min-h-[150px] rounded-xl border border-white/[0.06] bg-gradient-to-b from-white/[0.035] to-white/[0.01] p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B4FF39]/25 hover:from-white/[0.06] hover:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.8)]"
+              >
+                {/* Header: avatar · identity · spend */}
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-11 w-11 shrink-0 ring-1 ring-white/10">
+                    <AvatarFallback className="bg-[#B4FF39]/20 text-[#B4FF39] text-sm font-medium">
+                      {u.displayName
+                        .split(' ')
+                        .map(s => s[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-white truncate">
+                        {u.displayName}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={`shrink-0 text-[10px] font-normal ${
+                          u.manuallyAdded
+                            ? 'border-violet-400/30 bg-violet-400/10 text-violet-300'
+                            : 'border-white/10 bg-white/5 text-white/50'
+                        }`}
+                      >
+                        {u.manuallyAdded ? 'Manual' : 'Auto'}
+                      </Badge>
+                      {u.excluded && (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 border-amber-400/30 bg-amber-400/10 text-amber-300 text-[10px] font-normal"
+                        >
+                          Omitted
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {u.username ? `@${u.username}` : (
+                        <span className="italic">no account yet</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div
+                      className={`text-lg font-semibold leading-tight tracking-tight ${
+                        spendIsPredicted ? 'text-[#B4FF39]' : 'text-white'
+                      }`}
+                    >
+                      {formatUsd(
+                        spendIsPredicted
+                          ? u.predicted30dSpendUsd
+                          : u.lifetimeSpendUsd
+                      )}
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {spendIsPredicted ? 'Predicted 30D' : 'Lifetime'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Meta + categories, with explicit space before the footer */}
+                {(u.volume ||
+                  u.persona ||
+                  u.location ||
+                  u.topCategories.length > 0) && (
+                  <div className="mt-3 mb-4 space-y-2">
+                    {/* Meta row: volume pill always leads so it lines up */}
+                    {(u.volume || u.persona || u.location) && (
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                        {u.volume && <VolumeBadge volume={u.volume} />}
+                        {u.persona && (
+                          <span className="text-white/70">{u.persona}</span>
+                        )}
+                        {u.location && (
+                          <span className="whitespace-nowrap">{u.location}</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Categories + sports sub-tags */}
+                    {u.topCategories.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {u.topCategories.map(c => (
+                          <CategoryBadge key={c} category={c} />
+                        ))}
+                        {u.topCategories.includes('sports') &&
+                          (u.preferredSports ?? []).map(s => (
+                            <span
+                              key={s}
+                              className="text-[10px] rounded px-1.5 py-0.5 bg-sky-500/10 text-sky-300 border border-sky-500/20"
+                            >
+                              {s}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Footer pinned to bottom keeps every card balanced */}
+                <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                  <span className="truncate">
+                    {joined ? `Joined ${joined}` : 'No account yet'}
+                    {u.purchaseCount > 0 &&
+                      ` · ${u.purchaseCount} ${u.purchaseCount === 1 ? 'order' : 'orders'}`}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-white"
+                          onClick={e => e.stopPropagation()}
+                          aria-label="Row actions"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {u.excluded ? (
+                          <DropdownMenuItem
+                            onClick={e => handleToggleOmit(e, u.id, false)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Restore to analytics
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            className="text-amber-300 focus:text-amber-300"
+                            onClick={e => handleToggleOmit(e, u.id, true)}
+                          >
+                            <EyeOff className="h-4 w-4 mr-2" />
+                            Omit from analytics
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <span className="inline-flex items-center gap-1 text-white/40 group-hover:text-white/70 transition-colors">
+                      View <ArrowUpRight className="h-3 w-3" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+              );
+            })}
+          {!showSkeleton && rows.length === 0 && (
+            <div className="col-span-full py-8 text-center text-muted-foreground">
+              {isFetching ? 'Refreshing…' : 'No profiles match the current filters.'}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Pagination (real-data mode) */}
       {usingRealData && !showSkeleton && (
