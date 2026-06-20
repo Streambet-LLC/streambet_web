@@ -339,6 +339,79 @@ export interface ApiCollectorProfilesList {
   data: ApiCollectorProfileSummary[];
 }
 
+// ---------------------------------------------------------------------------
+// Seller document ingest (CSV / Excel / Google Sheets)
+// ---------------------------------------------------------------------------
+
+export type SellerInventorySource = 'csv' | 'excel' | 'google_sheets';
+
+/** A normalized inventory row sent to the ingest endpoint after mapping. */
+export interface ApiInventoryItemInput {
+  productName: string;
+  sku?: string;
+  setName?: string;
+  condition?: string;
+  grade?: string;
+  quantity?: number;
+  priceUsd?: number;
+  raw?: Record<string, unknown>;
+}
+
+export interface ApiIngestSellerInventoryPayload {
+  sellerUserId?: string;
+  sellerLabel?: string;
+  source: SellerInventorySource;
+  fileName?: string;
+  items: ApiInventoryItemInput[];
+}
+
+/** A CardCade buyer matched to one or more inventory items. */
+export interface ApiSellerMatchedBuyer {
+  userId: string;
+  username: string;
+  name: string | null;
+  email: string;
+  lifetimeSpendUsd: number;
+  volume: 'High' | 'Medium' | 'Low' | null;
+  location: string | null;
+  unitsBought: number;
+  matchedProductIds: string[];
+  /** Present on the de-duplicated roster: how many inventory items they match. */
+  matchedItems?: number;
+}
+
+export interface ApiSellerInventoryItemResult {
+  id: string;
+  rowIndex: number;
+  productName: string;
+  sku: string | null;
+  setName: string | null;
+  condition: string | null;
+  grade: string | null;
+  quantity: number | null;
+  priceUsd: number | null;
+  matchedBuyerCount: number;
+  buyers: ApiSellerMatchedBuyer[];
+}
+
+export interface ApiSellerInventoryUploadSummary {
+  id: string;
+  sellerUserId: string | null;
+  sellerLabel: string | null;
+  source: SellerInventorySource;
+  fileName: string | null;
+  rowCount: number;
+  matchedItemCount: number;
+  matchedBuyerCount: number;
+  createdAt: string;
+}
+
+export interface ApiSellerInventoryDetail
+  extends ApiSellerInventoryUploadSummary {
+  items: ApiSellerInventoryItemResult[];
+  buyers: ApiSellerMatchedBuyer[];
+}
+
 export interface ApiCollectorListParams {
   limit?: number;
   offset?: number;
