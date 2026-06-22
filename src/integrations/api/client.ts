@@ -877,6 +877,9 @@ import type {
   ApiCreateCollectorProfilePayload,
   ApiUpdateCollectorAnalyticsProfilePayload,
   ApiUpdateCollectorSocialsPayload,
+  ApiIngestSellerInventoryPayload,
+  ApiSellerInventoryDetail,
+  ApiSellerInventoryUploadSummary,
 } from '@/types/analytics-api';
 
 export const analyticsAPI = {
@@ -970,6 +973,75 @@ export const analyticsAPI = {
       { excluded }
     );
     return response.data.data as { excluded: boolean };
+  },
+
+  // --- Seller document ingest (CSV / Excel / Google Sheets) ---
+
+  /** Ingest a parsed inventory upload and match products to buyers. */
+  ingestSellerInventory: async (
+    payload: ApiIngestSellerInventoryPayload
+  ): Promise<ApiSellerInventoryDetail> => {
+    const response = await apiClient.post(
+      `/admin/analytics/sellers/inventory`,
+      payload
+    );
+    return response.data.data as ApiSellerInventoryDetail;
+  },
+
+  /** List prior inventory uploads (newest first). */
+  listSellerInventory: async (): Promise<ApiSellerInventoryUploadSummary[]> => {
+    const response = await apiClient.get(`/admin/analytics/sellers/inventory`);
+    return response.data.data as ApiSellerInventoryUploadSummary[];
+  },
+
+  /** One upload with per-item matched buyers + de-duped roster. */
+  getSellerInventory: async (
+    id: string
+  ): Promise<ApiSellerInventoryDetail> => {
+    const response = await apiClient.get(
+      `/admin/analytics/sellers/inventory/${id}`
+    );
+    return response.data.data as ApiSellerInventoryDetail;
+  },
+
+  /** Delete an inventory upload. */
+  deleteSellerInventory: async (id: string): Promise<{ id: string }> => {
+    const response = await apiClient.delete(
+      `/admin/analytics/sellers/inventory/${id}`
+    );
+    return response.data.data as { id: string };
+  },
+
+  /** Google OAuth consent URL for Sheets import (empty if not configured). */
+  getGoogleAuthUrl: async (): Promise<{ url: string; configured: boolean }> => {
+    const response = await apiClient.get(
+      `/admin/analytics/sellers/google/auth-url`
+    );
+    return response.data.data as { url: string; configured: boolean };
+  },
+
+  /** Exchange a Google OAuth code (from the redirect) for a live session. */
+  exchangeGoogleCode: async (
+    code: string
+  ): Promise<{ connected: boolean }> => {
+    const response = await apiClient.post(
+      `/admin/analytics/sellers/google/exchange`,
+      { code }
+    );
+    return response.data.data as { connected: boolean };
+  },
+
+  /** Read rows from a Google Sheet (by URL or id) for ingest. */
+  readGoogleSheet: async (body: {
+    url?: string;
+    spreadsheetId?: string;
+    range?: string;
+  }): Promise<{ title: string; rows: string[][] }> => {
+    const response = await apiClient.post(
+      `/admin/analytics/sellers/google/read`,
+      body
+    );
+    return response.data.data as { title: string; rows: string[][] };
   },
 };
 

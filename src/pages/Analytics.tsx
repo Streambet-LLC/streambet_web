@@ -10,6 +10,7 @@ import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { AnalyticsUsersList } from '@/components/analytics/AnalyticsUsersList';
 import { AnalyticsUserDetail } from '@/components/analytics/AnalyticsUserDetail';
 import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
+import { AnalyticsSellers } from '@/components/analytics/AnalyticsSellers';
 import { AnalyticsScrapers } from '@/components/analytics/AnalyticsScrapers';
 import { useRealDataOnly } from '@/hooks/useRealDataOnly';
 
@@ -24,7 +25,7 @@ const Analytics = () => {
   const { session, isLoading, isFetching } = useAuthContext();
   const { userId } = useParams<{ userId?: string }>();
   const [tab, setTab] = useState<
-    'overview' | 'profiles' | 'insights' | 'scrapers'
+    'overview' | 'profiles' | 'sellers' | 'insights' | 'scrapers'
   >(userId ? 'profiles' : 'overview');
   const [realOnly, setRealOnly] = useRealDataOnly();
 
@@ -84,12 +85,20 @@ const Analytics = () => {
           <Tabs
             value={tab === 'scrapers' && realOnly ? 'overview' : tab}
             onValueChange={v =>
-              setTab(v as 'overview' | 'profiles' | 'insights' | 'scrapers')
+              setTab(
+                v as
+                  | 'overview'
+                  | 'profiles'
+                  | 'sellers'
+                  | 'insights'
+                  | 'scrapers',
+              )
             }
           >
             <TabsList className="bg-[rgba(22,22,22,1)] border border-white/5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="profiles">Profiles</TabsTrigger>
+              <TabsTrigger value="sellers">Sellers</TabsTrigger>
               <TabsTrigger value="insights" className="gap-1.5">
                 Insights
               </TabsTrigger>
@@ -102,6 +111,10 @@ const Analytics = () => {
 
             <TabsContent value="profiles" className="mt-6">
               <AnalyticsUsersList />
+            </TabsContent>
+
+            <TabsContent value="sellers" className="mt-6">
+              <AnalyticsSellers />
             </TabsContent>
 
             <TabsContent value="insights" className="mt-6">

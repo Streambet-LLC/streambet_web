@@ -58,6 +58,7 @@ import CartCheckoutSuccess from './pages/CartCheckoutSuccess';
 import CartPage from './pages/CartPage';
 import AuctionRetryPayment from './pages/AuctionRetryPayment';
 import Analytics from './pages/Analytics';
+import GoogleSheetsCallback from './pages/GoogleSheetsCallback';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -104,6 +105,10 @@ const App = () => {
                               <Route element={<RouteGroup guard />}>
                                 <Route path="/admin" element={<Admin />} />
                                 <Route path="/analytics" element={<Analytics />} />
+                                <Route
+                                  path="/analytics/google/callback"
+                                  element={<GoogleSheetsCallback />}
+                                />
                                 <Route path="/analytics/:userId" element={<Analytics />} />
                                 <Route path="/withdraw" element={<Redeem />} />
                                 <Route path="/withdraw/verification" element={<Kyc />} />
