@@ -11,6 +11,8 @@ import { AnalyticsUsersList } from '@/components/analytics/AnalyticsUsersList';
 import { AnalyticsUserDetail } from '@/components/analytics/AnalyticsUserDetail';
 import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
 import { AnalyticsSellers } from '@/components/analytics/AnalyticsSellers';
+import { AnalyticsDiscover } from '@/components/analytics/AnalyticsDiscover';
+import { AnalyticsLeads } from '@/components/analytics/AnalyticsLeads';
 import { AnalyticsScrapers } from '@/components/analytics/AnalyticsScrapers';
 import { useRealDataOnly } from '@/hooks/useRealDataOnly';
 
@@ -25,7 +27,13 @@ const Analytics = () => {
   const { session, isLoading, isFetching } = useAuthContext();
   const { userId } = useParams<{ userId?: string }>();
   const [tab, setTab] = useState<
-    'overview' | 'profiles' | 'sellers' | 'insights' | 'scrapers'
+    | 'overview'
+    | 'profiles'
+    | 'sellers'
+    | 'discover'
+    | 'leads'
+    | 'insights'
+    | 'scrapers'
   >(userId ? 'profiles' : 'overview');
   const [realOnly, setRealOnly] = useRealDataOnly();
 
@@ -90,6 +98,8 @@ const Analytics = () => {
                   | 'overview'
                   | 'profiles'
                   | 'sellers'
+                  | 'discover'
+                  | 'leads'
                   | 'insights'
                   | 'scrapers',
               )
@@ -99,6 +109,8 @@ const Analytics = () => {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="profiles">Profiles</TabsTrigger>
               <TabsTrigger value="sellers">Sellers</TabsTrigger>
+              <TabsTrigger value="discover">Discover</TabsTrigger>
+              <TabsTrigger value="leads">Leads</TabsTrigger>
               <TabsTrigger value="insights" className="gap-1.5">
                 Insights
               </TabsTrigger>
@@ -115,6 +127,14 @@ const Analytics = () => {
 
             <TabsContent value="sellers" className="mt-6">
               <AnalyticsSellers />
+            </TabsContent>
+
+            <TabsContent value="discover" className="mt-6">
+              <AnalyticsDiscover />
+            </TabsContent>
+
+            <TabsContent value="leads" className="mt-6">
+              <AnalyticsLeads />
             </TabsContent>
 
             <TabsContent value="insights" className="mt-6">

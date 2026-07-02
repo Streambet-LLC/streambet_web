@@ -339,6 +339,94 @@ export interface ApiCollectorProfilesList {
   data: ApiCollectorProfileSummary[];
 }
 
+export type DiscoverySource =
+  | 'reddit'
+  | 'bluesky'
+  | 'youtube'
+  | 'google'
+  | 'twitch';
+
+/** A source-agnostic discovery lead (Reddit post, Bluesky post, …). */
+export interface ApiDiscoveryLead {
+  id: string;
+  platform: DiscoverySource;
+  author: string;
+  authorDisplay: string | null;
+  /** Community context (subreddit) when applicable. */
+  community: string | null;
+  title: string | null;
+  text: string;
+  url: string;
+  upvotes: number | null;
+  comments: number | null;
+  reposts: number | null;
+  /** Unix seconds. */
+  createdAt: number;
+}
+
+export interface ApiDiscoveryResult {
+  /** False only when the chosen source needs credentials it doesn't have. */
+  configured: boolean;
+  source: DiscoverySource;
+  leads: ApiDiscoveryLead[];
+  /** Set when the upstream API failed (e.g. bad key) — leads will be empty. */
+  error?: string;
+}
+
+/** A persisted lead in the pool (a discovery result saved to `discovered_leads`). */
+export interface ApiDiscoveredLead {
+  id: string;
+  source: DiscoverySource;
+  externalId: string;
+  author: string;
+  authorDisplay: string | null;
+  community: string | null;
+  title: string | null;
+  text: string;
+  url: string | null;
+  upvotes: number | null;
+  comments: number | null;
+  reposts: number | null;
+  postedAt: string | null;
+  query: string | null;
+  status: 'new' | 'added' | 'dismissed' | string;
+  convertedUserId: string | null;
+  createdAt: string;
+}
+
+export interface ApiDiscoveredLeadsList {
+  total: number;
+  data: ApiDiscoveredLead[];
+}
+
+export interface ApiLeadStats {
+  total: number;
+  bySource: Record<string, number>;
+  byStatus: Record<string, number>;
+}
+
+/**
+ * A normalized external signal about a collector (a consented social handle,
+ * an eBay official-API datapoint, or licensed-vendor data). Mirrors the
+ * `external_signals` table. Compliant sources only.
+ */
+export interface ApiExternalSignal {
+  id: string;
+  userId: string | null;
+  platform: string;
+  handle: string;
+  url: string | null;
+  /** Provenance: 'consented' | 'ebay_api' | 'vendor'. */
+  source: string;
+  /** 'handle' | 'profile' | 'activity'. */
+  signalType: string;
+  label: string | null;
+  data: Record<string, unknown> | null;
+  /** Reconciliation confidence 0–100 when inferred; null for consented links. */
+  confidence: number | null;
+  collectedAt: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Seller document ingest (CSV / Excel / Google Sheets)
 // ---------------------------------------------------------------------------
