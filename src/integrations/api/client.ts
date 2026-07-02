@@ -880,6 +880,11 @@ import type {
   ApiIngestSellerInventoryPayload,
   ApiSellerInventoryDetail,
   ApiSellerInventoryUploadSummary,
+  ApiExternalSignal,
+  ApiDiscoveryResult,
+  ApiDiscoveredLeadsList,
+  ApiLeadStats,
+  DiscoverySource,
 } from '@/types/analytics-api';
 
 export const analyticsAPI = {
@@ -1042,6 +1047,111 @@ export const analyticsAPI = {
       body
     );
     return response.data.data as { title: string; rows: string[][] };
+  },
+
+  // --- Acquisition: compliant external signals (consented handles, etc.) ---
+
+  /** Stored external signals for a collector. */
+  getCollectorSignals: async (
+    userId: string
+  ): Promise<ApiExternalSignal[]> => {
+    const response = await apiClient.get(
+      `/admin/analytics/acquisition/${userId}/signals`
+    );
+    return response.data.data as ApiExternalSignal[];
+  },
+
+  /** Run the connectors for a collector and return the refreshed signals. */
+  collectCollectorSignals: async (
+    userId: string
+  ): Promise<ApiExternalSignal[]> => {
+    const response = await apiClient.post(
+      `/admin/analytics/acquisition/${userId}/collect`
+    );
+    return response.data.data as ApiExternalSignal[];
+  },
+
+  /** Discover prospect leads via a compliant search source (Reddit / Bluesky). */
+  discover: async (params: {
+    source: DiscoverySource;
+    q: string;
+    subreddit?: string;
+    sort?: string;
+    time?: 'hour' | 'day' | 'week' | 'month' | 'year' | 'all';
+    limit?: number;
+  }): Promise<ApiDiscoveryResult> => {
+    const response = await apiClient.get(
+      `/admin/analytics/acquisition/discover`,
+      {
+        params: {
+          source: params.source,
+          q: params.q,
+          subreddit: params.subreddit || undefined,
+          sort: params.sort || undefined,
+          time: params.time || undefined,
+          limit: params.limit,
+        },
+      }
+    );
+    return response.data.data as ApiDiscoveryResult;
+  },
+
+  // --- Leads pool (persisted discovery results) ---
+
+  /** Paginated leads pool with source / status / text filters. */
+  getLeads: async (params: {
+    source?: string;
+    status?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiDiscoveredLeadsList> => {
+    const response = await apiClient.get(
+      `/admin/analytics/acquisition/leads`,
+      {
+        params: {
+          source: params.source && params.source !== 'all' ? params.source : undefined,
+          status: params.status && params.status !== 'all' ? params.status : undefined,
+          search: params.search || undefined,
+          limit: params.limit,
+          offset: params.offset,
+        },
+      }
+    );
+    return response.data.data as ApiDiscoveredLeadsList;
+  },
+
+  /** Leads pool counts by source + status. */
+  getLeadStats: async (): Promise<ApiLeadStats> => {
+    const response = await apiClient.get(
+      `/admin/analytics/acquisition/leads/stats`
+    );
+    return response.data.data as ApiLeadStats;
+  },
+
+  /** Convert a pooled lead into a prospect profile. */
+  convertLead: async (
+    source: string,
+    externalId: string
+  ): Promise<{ profileId: string; alreadyAdded?: boolean }> => {
+    const response = await apiClient.post(
+      `/admin/analytics/acquisition/leads/convert`,
+      { source, externalId }
+    );
+    return response.data.data as { profileId: string; alreadyAdded?: boolean };
+  },
+
+  /** Dismiss or restore a lead. */
+  setLeadStatus: async (
+    source: string,
+    externalId: string,
+    status: 'new' | 'dismissed'
+  ): Promise<{ status: string }> => {
+    const response = await apiClient.post(
+      `/admin/analytics/acquisition/leads/status`,
+      { source, externalId, status }
+    );
+    return response.data.data as { status: string };
   },
 };
 

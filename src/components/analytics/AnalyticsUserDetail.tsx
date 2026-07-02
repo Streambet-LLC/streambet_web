@@ -73,6 +73,7 @@ import {
 } from 'lucide-react';
 import moment from 'moment';
 import { AnalyticsEditProfileDialog } from './AnalyticsEditProfileDialog';
+import { ExternalSignalsCard } from './ExternalSignalsCard';
 
 const SectionCard = ({
   title,
@@ -874,6 +875,9 @@ export const AnalyticsUserDetail = () => {
           })()}
         </SectionCard>
       )}
+
+      {/* External signals — compliant acquisition (consented handles, etc.). */}
+      {rawDetail && <ExternalSignalsCard userId={rawDetail.id} />}
 
       {/* Collector profile data — every field tagged Manual vs Auto. */}
       {rawDetail && (
