@@ -392,17 +392,94 @@ export interface ApiDiscoveredLead {
   status: 'new' | 'added' | 'dismissed' | string;
   convertedUserId: string | null;
   createdAt: string;
+  /** Claude qualification (null until qualified). */
+  buyerScore: number | null;
+  intent:
+    | 'buying'
+    | 'selling'
+    | 'showcase'
+    | 'discussion'
+    | 'off_topic'
+    | string
+    | null;
+  interests: string[] | null;
+  qualifyReasoning: string | null;
+  qualifiedAt: string | null;
 }
 
 export interface ApiDiscoveredLeadsList {
   total: number;
   data: ApiDiscoveredLead[];
+  /** Count of leads still needing qualification. */
+  unqualified: number;
+}
+
+export interface ApiQuerySuggestions {
+  terms: string[];
+  subreddits: string[];
+  rationale: string;
 }
 
 export interface ApiLeadStats {
   total: number;
   bySource: Record<string, number>;
   byStatus: Record<string, number>;
+}
+
+// ---------------------------------------------------------------------------
+// Market / Dealer suite — per-card intelligence
+// ---------------------------------------------------------------------------
+
+export interface ApiMarketCard {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  grade: string | null;
+  price: number | null;
+  stock: number;
+  isActive: boolean;
+  sales: number;
+  buyers: number;
+  revenueUsd: number;
+  lastSaleAt: string | null;
+  concentrationPct: number | null;
+  liquidity: 'High' | 'Medium' | 'Low' | null;
+  liquidityScore: number;
+  comps: {
+    count: number;
+    low: number | null;
+    median: number | null;
+    high: number | null;
+    min: number | null;
+    max: number | null;
+  } | null;
+  priceGapPct: number | null;
+  vsMarketPct: number | null;
+  whaleRecent: boolean;
+}
+
+export interface ApiMarketCardsList {
+  total: number;
+  data: ApiMarketCard[];
+}
+
+export interface ApiMarketCardDetail extends ApiMarketCard {
+  topBuyers: {
+    userId: string;
+    name: string | null;
+    username: string;
+    units: number;
+    sharePct: number;
+  }[];
+  recentComps: {
+    title: string;
+    price: number | null;
+    soldAt: string | null;
+    url: string | null;
+  }[];
+  timeToSaleDays: number | null;
+  recommendation: { verdict: string; reasoning: string } | null;
 }
 
 /**

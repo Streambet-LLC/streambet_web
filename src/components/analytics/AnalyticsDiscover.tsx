@@ -16,6 +16,7 @@ import {
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiDiscoveryLead,
+  ApiQuerySuggestions,
   DiscoverySource,
 } from '@/types/analytics-api';
 import {
@@ -30,6 +31,7 @@ import {
   UserPlus,
   Check,
   Info,
+  Sparkles,
 } from 'lucide-react';
 
 const SOURCES: { key: DiscoverySource; label: string }[] = [
@@ -98,6 +100,10 @@ export const AnalyticsDiscover = () => {
   const [configured, setConfigured] = useState(true);
   const [loading, setLoading] = useState(false);
   const [added, setAdded] = useState<Record<string, boolean>>({});
+  const [suggestions, setSuggestions] = useState<ApiQuerySuggestions | null>(
+    null,
+  );
+  const [suggesting, setSuggesting] = useState(false);
 
   const switchSource = (s: DiscoverySource) => {
     setSource(s);
@@ -105,6 +111,23 @@ export const AnalyticsDiscover = () => {
     setLeads([]);
     setSearched(false);
     setConfigured(true);
+    setSuggestions(null);
+  };
+
+  const suggest = async () => {
+    if (!query.trim()) {
+      toast.info('Type a topic first (e.g. "vintage Charizard").');
+      return;
+    }
+    setSuggesting(true);
+    try {
+      const res = await analyticsAPI.suggestQueries(query.trim(), source);
+      setSuggestions(res);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Suggest failed.');
+    } finally {
+      setSuggesting(false);
+    }
   };
 
   const runSearch = async () => {
@@ -264,7 +287,21 @@ export const AnalyticsDiscover = () => {
               </Select>
             )}
             <Button
-              className="bg-[#B4FF39] text-black hover:bg-[#a2e833] sm:ml-auto"
+              variant="outline"
+              className="border-white/10 bg-white/5 hover:bg-white/10 sm:ml-auto"
+              onClick={suggest}
+              disabled={!query.trim() || suggesting}
+              title="Ask Claude for higher-signal queries"
+            >
+              {suggesting ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-1.5" />
+              )}
+              Suggest
+            </Button>
+            <Button
+              className="bg-[#B4FF39] text-black hover:bg-[#a2e833]"
               onClick={runSearch}
               disabled={!query.trim() || loading}
             >
@@ -276,6 +313,46 @@ export const AnalyticsDiscover = () => {
               Search
             </Button>
           </div>
+
+          {/* Claude query suggestions */}
+          {suggestions && (
+            <div className="rounded-lg border border-[#B4FF39]/20 bg-[#B4FF39]/[0.04] p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-[#B4FF39]" />
+                Claude suggestions {suggestions.rationale ? `— ${suggestions.rationale}` : ''}
+              </div>
+              {suggestions.terms.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestions.terms.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => {
+                        setQuery(t);
+                      }}
+                      className="text-[11px] rounded-full px-2.5 py-1 border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white"
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {isReddit && suggestions.subreddits.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestions.subreddits.map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setSubreddit(s)}
+                      className="text-[11px] rounded-full px-2.5 py-1 border border-orange-500/20 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20"
+                    >
+                      r/{s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {isReddit && (
             <div className="flex flex-wrap gap-1.5">

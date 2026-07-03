@@ -884,6 +884,9 @@ import type {
   ApiDiscoveryResult,
   ApiDiscoveredLeadsList,
   ApiLeadStats,
+  ApiMarketCardsList,
+  ApiMarketCardDetail,
+  ApiQuerySuggestions,
   DiscoverySource,
 } from '@/types/analytics-api';
 
@@ -1098,11 +1101,13 @@ export const analyticsAPI = {
 
   // --- Leads pool (persisted discovery results) ---
 
-  /** Paginated leads pool with source / status / text filters. */
+  /** Paginated leads pool with source / status / intent / text filters. */
   getLeads: async (params: {
     source?: string;
     status?: string;
+    intent?: string;
     search?: string;
+    sort?: 'recent' | 'score';
     limit?: number;
     offset?: number;
   }): Promise<ApiDiscoveredLeadsList> => {
@@ -1112,13 +1117,36 @@ export const analyticsAPI = {
         params: {
           source: params.source && params.source !== 'all' ? params.source : undefined,
           status: params.status && params.status !== 'all' ? params.status : undefined,
+          intent: params.intent && params.intent !== 'all' ? params.intent : undefined,
           search: params.search || undefined,
+          sort: params.sort || undefined,
           limit: params.limit,
           offset: params.offset,
         },
       }
     );
     return response.data.data as ApiDiscoveredLeadsList;
+  },
+
+  /** Qualify unscored leads with Claude (buyer score + intent + interests). */
+  qualifyLeads: async (limit?: number): Promise<{ qualified: number }> => {
+    const response = await apiClient.post(
+      `/admin/analytics/acquisition/leads/qualify`,
+      { limit }
+    );
+    return response.data.data as { qualified: number };
+  },
+
+  /** Claude query suggestions for a discovery topic + source. */
+  suggestQueries: async (
+    topic: string,
+    source: string
+  ): Promise<ApiQuerySuggestions> => {
+    const response = await apiClient.post(
+      `/admin/analytics/acquisition/suggest-queries`,
+      { topic, source }
+    );
+    return response.data.data as ApiQuerySuggestions;
   },
 
   /** Leads pool counts by source + status. */
@@ -1152,6 +1180,41 @@ export const analyticsAPI = {
       { source, externalId, status }
     );
     return response.data.data as { status: string };
+  },
+
+  // --- Market / Dealer suite (per-card intelligence) ---
+
+  /** Per-card market table with filters + sort. */
+  getMarketCards: async (params: {
+    search?: string;
+    brand?: string;
+    category?: string;
+    sort?: 'sales' | 'revenue' | 'gap' | 'concentration' | 'recent';
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiMarketCardsList> => {
+    const response = await apiClient.get(`/admin/analytics/market/cards`, {
+      params: {
+        search: params.search || undefined,
+        brand: params.brand && params.brand !== 'all' ? params.brand : undefined,
+        category:
+          params.category && params.category !== 'all'
+            ? params.category
+            : undefined,
+        sort: params.sort || undefined,
+        limit: params.limit,
+        offset: params.offset,
+      },
+    });
+    return response.data.data as ApiMarketCardsList;
+  },
+
+  /** One card's full market detail (+ AI hold/sell). */
+  getMarketCard: async (id: string): Promise<ApiMarketCardDetail> => {
+    const response = await apiClient.get(
+      `/admin/analytics/market/cards/${id}`
+    );
+    return response.data.data as ApiMarketCardDetail;
   },
 };
 

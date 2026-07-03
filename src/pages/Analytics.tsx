@@ -13,6 +13,7 @@ import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
 import { AnalyticsSellers } from '@/components/analytics/AnalyticsSellers';
 import { AnalyticsDiscover } from '@/components/analytics/AnalyticsDiscover';
 import { AnalyticsLeads } from '@/components/analytics/AnalyticsLeads';
+import { AnalyticsMarket } from '@/components/analytics/AnalyticsMarket';
 import { AnalyticsScrapers } from '@/components/analytics/AnalyticsScrapers';
 import { useRealDataOnly } from '@/hooks/useRealDataOnly';
 
@@ -30,6 +31,7 @@ const Analytics = () => {
     | 'overview'
     | 'profiles'
     | 'sellers'
+    | 'market'
     | 'discover'
     | 'leads'
     | 'insights'
@@ -98,6 +100,7 @@ const Analytics = () => {
                   | 'overview'
                   | 'profiles'
                   | 'sellers'
+                  | 'market'
                   | 'discover'
                   | 'leads'
                   | 'insights'
@@ -109,6 +112,7 @@ const Analytics = () => {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="profiles">Profiles</TabsTrigger>
               <TabsTrigger value="sellers">Sellers</TabsTrigger>
+              <TabsTrigger value="market">Market</TabsTrigger>
               <TabsTrigger value="discover">Discover</TabsTrigger>
               <TabsTrigger value="leads">Leads</TabsTrigger>
               <TabsTrigger value="insights" className="gap-1.5">
@@ -127,6 +131,10 @@ const Analytics = () => {
 
             <TabsContent value="sellers" className="mt-6">
               <AnalyticsSellers />
+            </TabsContent>
+
+            <TabsContent value="market" className="mt-6">
+              <AnalyticsMarket />
             </TabsContent>
 
             <TabsContent value="discover" className="mt-6">
