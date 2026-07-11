@@ -58,6 +58,7 @@ import CartCheckoutSuccess from './pages/CartCheckoutSuccess';
 import CartPage from './pages/CartPage';
 import AuctionRetryPayment from './pages/AuctionRetryPayment';
 import Analytics from './pages/Analytics';
+import DeepDiveReport from './pages/DeepDiveReport';
 import GoogleSheetsCallback from './pages/GoogleSheetsCallback';
 
 // Create a client
@@ -108,6 +109,10 @@ const App = () => {
                                 <Route
                                   path="/analytics/google/callback"
                                   element={<GoogleSheetsCallback />}
+                                />
+                                <Route
+                                  path="/analytics/deep-dive/:id"
+                                  element={<DeepDiveReport />}
                                 />
                                 <Route path="/analytics/:userId" element={<Analytics />} />
                                 <Route path="/withdraw" element={<Redeem />} />

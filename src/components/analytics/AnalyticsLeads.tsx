@@ -34,6 +34,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
+  Sparkles,
 } from 'lucide-react';
 
 const PAGE_SIZE = 50;
@@ -60,6 +61,21 @@ const STATUS_STYLES: Record<string, string> = {
   dismissed: 'border-white/10 bg-white/5 text-white/40',
 };
 
+const scoreStyle = (score: number) =>
+  score >= 70
+    ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
+    : score >= 40
+      ? 'border-amber-500/40 bg-amber-500/15 text-amber-300'
+      : 'border-white/10 bg-white/5 text-white/50';
+
+const INTENT_STYLES: Record<string, string> = {
+  buying: 'text-emerald-300',
+  selling: 'text-rose-300',
+  showcase: 'text-sky-300',
+  discussion: 'text-white/50',
+  off_topic: 'text-white/40',
+};
+
 const authorLabel = (l: ApiDiscoveredLead) => {
   if (l.source === 'reddit') return `u/${l.author}`;
   if (l.source === 'google' || l.source === 'twitch') return l.author;
@@ -75,20 +91,24 @@ export const AnalyticsLeads = () => {
   const navigate = useNavigate();
   const [source, setSource] = useState('all');
   const [status, setStatus] = useState('new');
+  const [intent, setIntent] = useState('all');
+  const [sort, setSort] = useState<'recent' | 'score'>('recent');
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
   const [page, setPage] = useState(0);
   const [leads, setLeads] = useState<ApiDiscoveredLead[]>([]);
   const [total, setTotal] = useState(0);
+  const [unqualified, setUnqualified] = useState(0);
   const [stats, setStats] = useState<ApiLeadStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [qualifying, setQualifying] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 300);
     return () => clearTimeout(t);
   }, [search]);
-  useEffect(() => setPage(0), [source, status, debounced]);
+  useEffect(() => setPage(0), [source, status, intent, sort, debounced]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,6 +117,8 @@ export const AnalyticsLeads = () => {
         analyticsAPI.getLeads({
           source,
           status,
+          intent,
+          sort,
           search: debounced,
           limit: PAGE_SIZE,
           offset: page * PAGE_SIZE,
@@ -105,6 +127,7 @@ export const AnalyticsLeads = () => {
       ]);
       setLeads(list.data);
       setTotal(list.total);
+      setUnqualified(list.unqualified ?? 0);
       setStats(s);
     } catch {
       setLeads([]);
@@ -112,11 +135,28 @@ export const AnalyticsLeads = () => {
     } finally {
       setLoading(false);
     }
-  }, [source, status, debounced, page]);
+  }, [source, status, intent, sort, debounced, page]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  const qualify = async () => {
+    setQualifying(true);
+    try {
+      const { qualified } = await analyticsAPI.qualifyLeads(60);
+      toast.success(
+        qualified > 0
+          ? `Claude scored ${qualified} lead${qualified === 1 ? '' : 's'}.`
+          : 'Nothing new to qualify.',
+      );
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Qualify failed.');
+    } finally {
+      setQualifying(false);
+    }
+  };
 
   const convert = async (l: ApiDiscoveredLead) => {
     setBusy(l.id);
@@ -185,8 +225,8 @@ export const AnalyticsLeads = () => {
 
       {/* Filters */}
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4">
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               value={search}
@@ -209,7 +249,7 @@ export const AnalyticsLeads = () => {
             </SelectContent>
           </Select>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-full sm:w-[150px] bg-black/40 border-white/10">
+            <SelectTrigger className="w-full sm:w-[140px] bg-black/40 border-white/10">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -219,6 +259,40 @@ export const AnalyticsLeads = () => {
               <SelectItem value="dismissed">Dismissed</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={intent} onValueChange={setIntent}>
+            <SelectTrigger className="w-full sm:w-[140px] bg-black/40 border-white/10">
+              <SelectValue placeholder="Intent" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All intent</SelectItem>
+              <SelectItem value="buying">Buying</SelectItem>
+              <SelectItem value="selling">Selling</SelectItem>
+              <SelectItem value="showcase">Showcase</SelectItem>
+              <SelectItem value="discussion">Discussion</SelectItem>
+              <SelectItem value="off_topic">Off-topic</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sort} onValueChange={v => setSort(v as 'recent' | 'score')}>
+            <SelectTrigger className="w-full sm:w-[150px] bg-black/40 border-white/10">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Most recent</SelectItem>
+              <SelectItem value="score">Top buyer score</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            className="bg-[#B4FF39] text-black hover:bg-[#a2e833] sm:ml-auto"
+            onClick={qualify}
+            disabled={qualifying}
+          >
+            {qualifying ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4 mr-1.5" />
+            )}
+            Qualify{unqualified > 0 ? ` (${unqualified})` : ''}
+          </Button>
         </div>
       </Card>
 
@@ -249,6 +323,21 @@ export const AnalyticsLeads = () => {
                   <div className="flex items-start gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground mb-1">
+                        {l.buyerScore != null && (
+                          <span
+                            className={`text-[10px] rounded px-1.5 py-0.5 border font-semibold ${scoreStyle(l.buyerScore)}`}
+                            title="Claude buyer-likelihood score"
+                          >
+                            {l.buyerScore}
+                          </span>
+                        )}
+                        {l.intent && (
+                          <span
+                            className={`font-medium ${INTENT_STYLES[l.intent] ?? 'text-white/50'}`}
+                          >
+                            {l.intent.replace('_', ' ')}
+                          </span>
+                        )}
                         <Badge
                           variant="outline"
                           className={`text-[10px] font-normal ${SOURCE_STYLES[l.source] ?? ''}`}
@@ -306,6 +395,23 @@ export const AnalyticsLeads = () => {
                       {l.title && l.text && (
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {l.text}
+                        </p>
+                      )}
+                      {l.interests && l.interests.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {l.interests.slice(0, 6).map(i => (
+                            <span
+                              key={i}
+                              className="text-[10px] rounded px-1.5 py-0.5 bg-sky-500/10 text-sky-300 border border-sky-500/20"
+                            >
+                              {i}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {l.qualifyReasoning && (
+                        <p className="text-[11px] text-muted-foreground/80 italic mt-1">
+                          {l.qualifyReasoning}
                         </p>
                       )}
                       <div className="text-[11px] text-muted-foreground mt-1">

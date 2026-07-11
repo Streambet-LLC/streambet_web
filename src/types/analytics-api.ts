@@ -392,17 +392,173 @@ export interface ApiDiscoveredLead {
   status: 'new' | 'added' | 'dismissed' | string;
   convertedUserId: string | null;
   createdAt: string;
+  /** Claude qualification (null until qualified). */
+  buyerScore: number | null;
+  intent:
+    | 'buying'
+    | 'selling'
+    | 'showcase'
+    | 'discussion'
+    | 'off_topic'
+    | string
+    | null;
+  interests: string[] | null;
+  qualifyReasoning: string | null;
+  qualifiedAt: string | null;
 }
 
 export interface ApiDiscoveredLeadsList {
   total: number;
   data: ApiDiscoveredLead[];
+  /** Count of leads still needing qualification. */
+  unqualified: number;
+}
+
+export interface ApiQuerySuggestions {
+  terms: string[];
+  subreddits: string[];
+  rationale: string;
 }
 
 export interface ApiLeadStats {
   total: number;
   bySource: Record<string, number>;
   byStatus: Record<string, number>;
+}
+
+// ---------------------------------------------------------------------------
+// Market / Dealer suite — per-card intelligence
+// ---------------------------------------------------------------------------
+
+export interface ApiMarketCard {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  grade: string | null;
+  price: number | null;
+  stock: number;
+  isActive: boolean;
+  sales: number;
+  buyers: number;
+  revenueUsd: number;
+  lastSaleAt: string | null;
+  concentrationPct: number | null;
+  liquidity: 'High' | 'Medium' | 'Low' | null;
+  liquidityScore: number;
+  comps: {
+    count: number;
+    low: number | null;
+    median: number | null;
+    high: number | null;
+    min: number | null;
+    max: number | null;
+  } | null;
+  priceGapPct: number | null;
+  vsMarketPct: number | null;
+  whaleRecent: boolean;
+}
+
+export interface ApiMarketCardsList {
+  total: number;
+  data: ApiMarketCard[];
+}
+
+export interface ApiCardMarketSourceMeta {
+  key: string;
+  label: string;
+  configured: boolean;
+  note?: string;
+}
+
+export interface ApiCardMarketPoint {
+  source: string;
+  capturedAt: string;
+  medianUsd: number | null;
+  lowUsd: number | null;
+  highUsd: number | null;
+  avgUsd: number | null;
+  sampleCount: number | null;
+}
+
+export interface ApiCardMarketLatest extends ApiCardMarketPoint {
+  meta: Record<string, unknown> | null;
+}
+
+export interface ApiCardMarketProfile {
+  cardId: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  grade: string | null;
+  sources: ApiCardMarketSourceMeta[];
+  latest: ApiCardMarketLatest[];
+  history: ApiCardMarketPoint[];
+  consensusMedianUsd: number | null;
+  updatedAt: string | null;
+}
+
+export interface ApiDeepResearchJob {
+  id: string;
+  subject: string;
+  status: 'pending' | 'running' | 'done' | 'error' | string;
+  result: ApiCardForecast | null;
+  error: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface ApiInsightsMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ApiInsightsChatResult {
+  reply: string;
+  toolCalls: { name: string; input: unknown }[];
+}
+
+export interface ApiCardForecast {
+  outlook: 'Bullish' | 'Neutral' | 'Bearish' | string;
+  confidence: number;
+  horizon: string;
+  thesis: string;
+  socialBuzz: { level: string; summary: string };
+  catalysts: {
+    event: string;
+    probabilityPct: number;
+    direction: 'up' | 'down' | string;
+    magnitude: 'small' | 'moderate' | 'large' | string;
+    note: string;
+  }[];
+  precedents: { comparable: string; outcome: string }[];
+  macroFactors: { factor: string; note: string }[];
+  risks: { risk: string; note: string }[];
+  suggestedAction: string;
+  sources: { title: string; url: string }[];
+}
+
+export interface ApiCardForecastResult {
+  forecast: ApiCardForecast;
+  generatedAt: string;
+}
+
+export interface ApiMarketCardDetail extends ApiMarketCard {
+  topBuyers: {
+    userId: string;
+    name: string | null;
+    username: string;
+    units: number;
+    sharePct: number;
+  }[];
+  recentComps: {
+    title: string;
+    price: number | null;
+    soldAt: string | null;
+    url: string | null;
+  }[];
+  timeToSaleDays: number | null;
+  recommendation: { verdict: string; reasoning: string } | null;
 }
 
 /**
