@@ -886,6 +886,11 @@ import type {
   ApiLeadStats,
   ApiMarketCardsList,
   ApiMarketCardDetail,
+  ApiCardForecastResult,
+  ApiCardMarketProfile,
+  ApiInsightsMessage,
+  ApiInsightsChatResult,
+  ApiDeepResearchJob,
   ApiQuerySuggestions,
   DiscoverySource,
 } from '@/types/analytics-api';
@@ -1215,6 +1220,149 @@ export const analyticsAPI = {
       `/admin/analytics/market/cards/${id}`
     );
     return response.data.data as ApiMarketCardDetail;
+  },
+
+  /** Cached predictive forecast for a card (null if none yet). */
+  getCardForecast: async (
+    id: string
+  ): Promise<ApiCardForecastResult | null> => {
+    const response = await apiClient.get(
+      `/admin/analytics/market/cards/${id}/forecast`
+    );
+    return response.data.data as ApiCardForecastResult | null;
+  },
+
+  /** Generate / refresh a Claude web-research forecast for a card. */
+  generateCardForecast: async (
+    id: string,
+    refresh = false
+  ): Promise<ApiCardForecastResult> => {
+    const response = await apiClient.post(
+      `/admin/analytics/market/cards/${id}/forecast`,
+      { refresh }
+    );
+    return response.data.data as ApiCardForecastResult;
+  },
+
+  /** A card's market profile + historical price series (cached snapshots). */
+  getCardProfile: async (id: string): Promise<ApiCardMarketProfile> => {
+    const response = await apiClient.get(
+      `/admin/analytics/market/cards/${id}/profile`
+    );
+    return response.data.data as ApiCardMarketProfile;
+  },
+
+  /** Refresh a card's market profile from all live sources (writes a snapshot). */
+  refreshCardProfile: async (id: string): Promise<ApiCardMarketProfile> => {
+    const response = await apiClient.post(
+      `/admin/analytics/market/cards/${id}/profile/refresh`
+    );
+    return response.data.data as ApiCardMarketProfile;
+  },
+
+  /** Ask the conversational Insights analyst (Claude + read-only data tools). */
+  insightsChat: async (
+    messages: ApiInsightsMessage[]
+  ): Promise<ApiInsightsChatResult> => {
+    const response = await apiClient.post('/admin/analytics/insights/chat', {
+      messages,
+    });
+    return response.data.data as ApiInsightsChatResult;
+  },
+
+  /**
+   * Streaming Insights chat (SSE over fetch). Invokes handlers as text deltas,
+   * tool markers, and the final done/error events arrive.
+   */
+  insightsChatStream: async (
+    messages: ApiInsightsMessage[],
+    handlers: {
+      onText: (delta: string) => void;
+      onTool?: (name: string) => void;
+      onDone?: (toolCalls: { name: string; input: unknown }[]) => void;
+      onError?: (message: string) => void;
+    }
+  ): Promise<void> => {
+    const token = localStorage.getItem('accessToken');
+    let resp: Response;
+    try {
+      resp = await fetch(`${API_URL}/admin/analytics/insights/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ messages }),
+      });
+    } catch {
+      handlers.onError?.('Network error reaching the analyst.');
+      return;
+    }
+    if (!resp.ok || !resp.body) {
+      handlers.onError?.(`Request failed (${resp.status}).`);
+      return;
+    }
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    // Parse SSE frames (blank-line-delimited) and dispatch each data event.
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const frames = buffer.split('\n\n');
+      buffer = frames.pop() ?? '';
+      for (const frame of frames) {
+        const line = frame
+          .split('\n')
+          .find(l => l.startsWith('data:'));
+        if (!line) continue;
+        const json = line.slice(5).trim();
+        if (!json) continue;
+        let evt: {
+          type: string;
+          text?: string;
+          name?: string;
+          message?: string;
+          toolCalls?: { name: string; input: unknown }[];
+        };
+        try {
+          evt = JSON.parse(json);
+        } catch {
+          continue;
+        }
+        if (evt.type === 'text' && evt.text) handlers.onText(evt.text);
+        else if (evt.type === 'tool' && evt.name) handlers.onTool?.(evt.name);
+        else if (evt.type === 'done') handlers.onDone?.(evt.toolCalls ?? []);
+        else if (evt.type === 'error')
+          handlers.onError?.(evt.message ?? 'Something went wrong.');
+      }
+    }
+  },
+
+  /** Recent background deep-dive research jobs (Insights). */
+  listDeepResearch: async (): Promise<ApiDeepResearchJob[]> => {
+    const response = await apiClient.get(
+      '/admin/analytics/insights/deep-research'
+    );
+    return response.data.data as ApiDeepResearchJob[];
+  },
+
+  /** One deep-dive research job by id (null if not found). */
+  getDeepResearch: async (id: string): Promise<ApiDeepResearchJob | null> => {
+    const response = await apiClient.get(
+      `/admin/analytics/insights/deep-research/${id}`
+    );
+    return response.data.data as ApiDeepResearchJob | null;
+  },
+
+  /** Start a background deep-dive research job. */
+  startDeepResearch: async (subject: string): Promise<ApiDeepResearchJob> => {
+    const response = await apiClient.post(
+      '/admin/analytics/insights/deep-research',
+      { subject }
+    );
+    return response.data.data as ApiDeepResearchJob;
   },
 };
 

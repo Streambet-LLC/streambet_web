@@ -464,6 +464,85 @@ export interface ApiMarketCardsList {
   data: ApiMarketCard[];
 }
 
+export interface ApiCardMarketSourceMeta {
+  key: string;
+  label: string;
+  configured: boolean;
+  note?: string;
+}
+
+export interface ApiCardMarketPoint {
+  source: string;
+  capturedAt: string;
+  medianUsd: number | null;
+  lowUsd: number | null;
+  highUsd: number | null;
+  avgUsd: number | null;
+  sampleCount: number | null;
+}
+
+export interface ApiCardMarketLatest extends ApiCardMarketPoint {
+  meta: Record<string, unknown> | null;
+}
+
+export interface ApiCardMarketProfile {
+  cardId: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  grade: string | null;
+  sources: ApiCardMarketSourceMeta[];
+  latest: ApiCardMarketLatest[];
+  history: ApiCardMarketPoint[];
+  consensusMedianUsd: number | null;
+  updatedAt: string | null;
+}
+
+export interface ApiDeepResearchJob {
+  id: string;
+  subject: string;
+  status: 'pending' | 'running' | 'done' | 'error' | string;
+  result: ApiCardForecast | null;
+  error: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface ApiInsightsMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ApiInsightsChatResult {
+  reply: string;
+  toolCalls: { name: string; input: unknown }[];
+}
+
+export interface ApiCardForecast {
+  outlook: 'Bullish' | 'Neutral' | 'Bearish' | string;
+  confidence: number;
+  horizon: string;
+  thesis: string;
+  socialBuzz: { level: string; summary: string };
+  catalysts: {
+    event: string;
+    probabilityPct: number;
+    direction: 'up' | 'down' | string;
+    magnitude: 'small' | 'moderate' | 'large' | string;
+    note: string;
+  }[];
+  precedents: { comparable: string; outcome: string }[];
+  macroFactors: { factor: string; note: string }[];
+  risks: { risk: string; note: string }[];
+  suggestedAction: string;
+  sources: { title: string; url: string }[];
+}
+
+export interface ApiCardForecastResult {
+  forecast: ApiCardForecast;
+  generatedAt: string;
+}
+
 export interface ApiMarketCardDetail extends ApiMarketCard {
   topBuyers: {
     userId: string;

@@ -3,43 +3,57 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Search, ArrowUp, ChevronRight } from 'lucide-react';
+import { analyticsAPI } from '@/integrations/api/client';
+import type { ApiInsightsMessage } from '@/types/analytics-api';
+import { DeepDivesPanel } from './DeepDivesPanel';
 
 /**
- * Insights — a placeholder AI chat surface for collector analytics.
+ * Insights — a conversational analyst over the collector data.
  *
- * UI ONLY for now: nothing is wired to a model. Sending a message echoes the
- * user's question and replies with a canned "coming soon" message. The empty
- * state is a search-bar landing with a rotating example placeholder and a list
- * of suggested queries that pre-fill the input.
- *
- * When the real backend lands, swap `respond()` for a streaming API call and
- * keep the rest of the UI.
+ * Sends the running chat history to `/admin/analytics/insights/chat`, where
+ * Claude answers by calling read-only tools (cards, buyers, market, leads).
+ * The empty state is a search-bar landing with a rotating example placeholder
+ * and suggested queries that pre-fill the input.
  */
 
-// Example questions the future assistant will answer. Used both for the
-// rotating input placeholder and the "Try asking" suggestions.
+// Example questions the assistant can answer. Used both for the rotating input
+// placeholder and the "Try asking" suggestions.
 const EXAMPLE_PROMPTS = [
-  'Who bought Mewtwo cards?',
-  'Top Charizard buyers in the last 90 days',
-  'High-volume whales who went quiet in the last 60 days',
-  'One Piece collectors based in California',
-  'Sports VIPs who collect the Dodgers',
-  'Lapsed Pokémon buyers worth re-engaging',
-  'Buyers spending $1k+ with no email on file',
+  "What's the outlook and social buzz on the Crown Zenith Charizard?",
+  'What scenarios could move a Luka Dončić Prizm rookie, and the odds?',
+  'How have rookie cards performed after an MVP season?',
+  'Could a reprint or PSA grading change move Umbreon VMAX Alt Art?',
+  "What's a PSA 10 Base Set Charizard worth right now?",
+  'How could a supply cut affect sealed Pokémon prices?',
+  'Which players are trending in card collecting right now?',
 ];
 
 const SUGGESTED = EXAMPLE_PROMPTS.slice(0, 5);
 
-const CANNED_REPLY =
-  "✨ AI Insights is coming soon. Soon you'll be able to ask questions like this in plain English and get back instant buyer lists, segments, and trends pulled straight from your collector data — ready to export or hand to outreach. For now, this is a preview of what's on the way.";
+// Friendly labels for the tools Claude may call, shown under a reply.
+const TOOL_LABELS: Record<string, string> = {
+  web_search: 'Searched the web',
+  start_deep_dive: 'Started deep dive',
+  search_cards: 'Searched catalog',
+  get_card: 'Read card detail',
+  search_buyers: 'Searched buyers',
+  search_leads: 'Searched leads',
+};
 
-type Msg = { id: number; role: 'user' | 'assistant'; text: string };
+type Msg = {
+  id: number;
+  role: 'user' | 'assistant';
+  text: string;
+  tools?: string[];
+  streaming?: boolean;
+};
 
 export const AnalyticsInsights = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Msg[]>([]);
   const [thinking, setThinking] = useState(false);
   const [phIndex, setPhIndex] = useState(0);
+  const [deepRefresh, setDeepRefresh] = useState(0);
 
   const idRef = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
@@ -55,26 +69,68 @@ export const AnalyticsInsights = () => {
     return () => clearInterval(t);
   }, [started]);
 
-  // Keep the latest message in view.
+  // Keep the latest message in view. 'auto' (instant) avoids janky
+  // fighting-scrolls while tokens stream in rapidly.
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    endRef.current?.scrollIntoView({ behavior: 'auto' });
   }, [messages, thinking]);
 
-  const send = (raw: string) => {
+  const send = async (raw: string) => {
     const text = raw.trim();
     if (!text || thinking) return;
     const userMsg: Msg = { id: ++idRef.current, role: 'user', text };
-    setMessages(m => [...m, userMsg]);
+    const history = [...messages, userMsg];
+    setMessages(history);
     setInput('');
-    // Fake a brief "thinking" beat, then drop in the canned reply.
     setThinking(true);
-    window.setTimeout(() => {
+
+    const payload: ApiInsightsMessage[] = history.map(m => ({
+      role: m.role,
+      content: m.text,
+    }));
+
+    // The streaming assistant bubble is created lazily on the first event,
+    // so the typing dots show until the model actually starts responding.
+    let asstId = -1;
+    let acc = '';
+    const toolSet = new Set<string>();
+    const ensureMsg = () => {
+      if (asstId !== -1) return;
+      asstId = ++idRef.current;
+      setThinking(false);
       setMessages(m => [
         ...m,
-        { id: ++idRef.current, role: 'assistant', text: CANNED_REPLY },
+        { id: asstId, role: 'assistant', text: '', tools: [], streaming: true },
       ]);
-      setThinking(false);
-    }, 750);
+    };
+    const patch = (fields: Partial<Msg>) =>
+      setMessages(m => m.map(x => (x.id === asstId ? { ...x, ...fields } : x)));
+
+    await analyticsAPI.insightsChatStream(payload, {
+      onText: delta => {
+        ensureMsg();
+        acc += delta;
+        patch({ text: acc });
+      },
+      onTool: name => {
+        ensureMsg();
+        toolSet.add(name);
+        patch({ tools: [...toolSet] });
+      },
+      onDone: toolCalls => {
+        if ((toolCalls ?? []).some(t => t.name === 'start_deep_dive')) {
+          setDeepRefresh(n => n + 1);
+        }
+        if (asstId !== -1) patch({ streaming: false });
+        setThinking(false);
+      },
+      onError: message => {
+        ensureMsg();
+        patch({ text: acc || `⚠️ ${message}`, streaming: false });
+        setThinking(false);
+      },
+    });
+    setThinking(false);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -113,23 +169,22 @@ export const AnalyticsInsights = () => {
   );
 
   return (
-    <Card className="bg-[rgba(22,22,22,1)] border-white/5 flex flex-col max-h-[72vh] overflow-hidden">
+    <>
+      <DeepDivesPanel refreshSignal={deepRefresh} />
+      <Card className="bg-[rgba(22,22,22,1)] border-white/5 flex flex-col max-h-[72vh] overflow-hidden">
       {!started ? (
         /* ---------- Empty state: search-bar landing ---------- */
         <div className="overflow-y-auto">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col items-center text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#B4FF39]/30 bg-[#B4FF39]/10 px-2.5 py-1 text-[11px] font-medium text-[#B4FF39]">
-              <Sparkles className="h-3 w-3" /> Coming soon
-            </span>
-            <div className="mt-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#B4FF39]/15 text-[#B4FF39]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#B4FF39]/15 text-[#B4FF39]">
               <Sparkles className="h-6 w-6" />
             </div>
             <h2 className="mt-4 text-xl sm:text-2xl font-semibold text-white">
               Ask CardCade AI
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground max-w-md">
-              Query your collector data in plain English — find buyers, build
-              segments, and surface trends without touching a filter.
+              Ask about any card — pricing, social buzz, and the upcoming events,
+              precedents, and supply factors that could move it.
             </p>
 
             <div className="w-full mt-6">{Composer}</div>
@@ -172,8 +227,28 @@ export const AnalyticsInsights = () => {
                     <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#B4FF39]/15 text-[#B4FF39]">
                       <Sparkles className="h-3.5 w-3.5" />
                     </div>
-                    <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 text-white/90 px-3.5 py-2.5 text-sm leading-relaxed">
-                      {m.text}
+                    <div className="max-w-[85%] space-y-1.5">
+                      {m.tools && m.tools.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {m.tools.map(t => (
+                            <span
+                              key={t}
+                              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-[10px] text-muted-foreground"
+                            >
+                              <Search className="h-2.5 w-2.5" />
+                              {TOOL_LABELS[t] ?? t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {(m.text || !m.streaming) && (
+                        <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 text-white/90 px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">
+                          {m.text}
+                          {m.streaming && (
+                            <span className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse rounded-sm bg-[#B4FF39]/70" />
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ),
@@ -200,6 +275,7 @@ export const AnalyticsInsights = () => {
           </div>
         </>
       )}
-    </Card>
+      </Card>
+    </>
   );
 };

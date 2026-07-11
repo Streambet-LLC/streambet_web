@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { Card } from '@/components/ui/card';
@@ -19,10 +20,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { formatUsd } from '@/mocks/analytics';
+import { CardMarketProfile } from './CardMarketProfile';
+import { ForecastBrief } from './ForecastBrief';
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiMarketCard,
   ApiMarketCardDetail,
+  ApiCardForecast,
 } from '@/types/analytics-api';
 import {
   Search,
@@ -33,7 +37,12 @@ import {
   ArrowUpRight,
   Sparkles,
   TrendingUp,
+  ArrowUp,
+  ArrowDown,
+  RefreshCw,
+  Radar,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const PAGE_SIZE = 50;
 
@@ -353,6 +362,99 @@ const Stat = ({
   </div>
 );
 
+const ForecastPanel = ({
+  forecast,
+  generatedAt,
+  loading,
+  generating,
+  onGenerate,
+  onRefresh,
+}: {
+  forecast: ApiCardForecast | null;
+  generatedAt: string | null;
+  loading: boolean;
+  generating: boolean;
+  onGenerate: () => void;
+  onRefresh: () => void;
+}) => {
+  const header = (
+    <div className="flex items-center gap-2">
+      <Radar className="h-4 w-4 text-[#B4FF39]" />
+      <span className="text-xs font-medium uppercase tracking-wide text-white/80">
+        Predictive intelligence
+      </span>
+      <span className="text-[10px] text-muted-foreground">AI estimate</span>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+        {header}
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading forecast…
+        </div>
+      </div>
+    );
+  }
+
+  if (!forecast) {
+    return (
+      <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+        {header}
+        <p className="mt-2 text-xs text-muted-foreground">
+          Claude fuses our demand signals with live web research (social buzz,
+          upcoming events, grading &amp; supply news, comparable precedents) into
+          a scenario-weighted price forecast.
+        </p>
+        <Button
+          size="sm"
+          onClick={onGenerate}
+          disabled={generating}
+          className="mt-3 bg-[#B4FF39] text-black hover:bg-[#B4FF39]/90"
+        >
+          {generating ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Researching…
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-3.5 w-3.5" /> Generate forecast
+            </>
+          )}
+        </Button>
+        {generating && (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            This runs live web searches — it can take 20–60 seconds.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-[#B4FF39]/20 bg-[#B4FF39]/[0.04] p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        {header}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onRefresh}
+          disabled={generating}
+          className="h-7 px-2 text-xs text-muted-foreground hover:text-white"
+        >
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${generating ? 'animate-spin' : ''}`}
+          />
+          {generating ? 'Refreshing…' : 'Refresh'}
+        </Button>
+      </div>
+
+      <ForecastBrief forecast={forecast} generatedAt={generatedAt} />
+    </div>
+  );
+};
+
 const MarketCardDialog = ({
   cardId,
   onClose,
@@ -363,6 +465,10 @@ const MarketCardDialog = ({
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ApiMarketCardDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [forecast, setForecast] = useState<ApiCardForecast | null>(null);
+  const [forecastAt, setForecastAt] = useState<string | null>(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     if (!cardId) {
@@ -372,15 +478,44 @@ const MarketCardDialog = ({
     let active = true;
     setLoading(true);
     setDetail(null);
+    setForecast(null);
+    setForecastAt(null);
+    setForecastLoading(true);
     analyticsAPI
       .getMarketCard(cardId)
       .then(d => active && setDetail(d))
       .catch(() => active && setDetail(null))
       .finally(() => active && setLoading(false));
+    analyticsAPI
+      .getCardForecast(cardId)
+      .then(r => {
+        if (!active || !r) return;
+        setForecast(r.forecast);
+        setForecastAt(r.generatedAt);
+      })
+      .catch(() => {})
+      .finally(() => active && setForecastLoading(false));
     return () => {
       active = false;
     };
   }, [cardId]);
+
+  const runForecast = async (refresh: boolean) => {
+    if (!cardId) return;
+    setGenerating(true);
+    try {
+      const r = await analyticsAPI.generateCardForecast(cardId, refresh);
+      setForecast(r.forecast);
+      setForecastAt(r.generatedAt);
+    } catch (e) {
+      const msg =
+        (e as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Forecast failed. Check the Anthropic key & try again.';
+      toast.error(msg);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <Dialog open={!!cardId} onOpenChange={o => !o && onClose()}>
@@ -477,6 +612,19 @@ const MarketCardDialog = ({
                 }
               />
             </div>
+
+            {/* Market history + charts */}
+            <CardMarketProfile cardId={detail.id} />
+
+            {/* Predictive intelligence */}
+            <ForecastPanel
+              forecast={forecast}
+              generatedAt={forecastAt}
+              loading={forecastLoading}
+              generating={generating}
+              onGenerate={() => runForecast(false)}
+              onRefresh={() => runForecast(true)}
+            />
 
             {/* Top buyers */}
             {detail.topBuyers.length > 0 && (
