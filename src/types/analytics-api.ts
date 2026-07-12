@@ -508,6 +508,32 @@ export interface ApiDeepResearchJob {
   completedAt: string | null;
 }
 
+export interface ApiDeepResearchList {
+  total: number;
+  data: ApiDeepResearchJob[];
+}
+
+export interface ApiInsightsConversation {
+  conversationId: string;
+  title: string;
+  count: number;
+  startedAt: string;
+  lastAt: string;
+}
+
+export interface ApiInsightsConversationList {
+  total: number;
+  data: ApiInsightsConversation[];
+}
+
+export interface ApiInsightsExchange {
+  id: string;
+  question: string;
+  answer: string;
+  tools: string[] | null;
+  createdAt: string;
+}
+
 export interface ApiInsightsMessage {
   role: 'user' | 'assistant';
   content: string;
