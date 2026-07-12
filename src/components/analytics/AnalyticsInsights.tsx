@@ -106,7 +106,7 @@ export const AnalyticsInsights = () => {
     const patch = (fields: Partial<Msg>) =>
       setMessages(m => m.map(x => (x.id === asstId ? { ...x, ...fields } : x)));
 
-    await analyticsAPI.insightsChatStream(payload, {
+    const { completed } = await analyticsAPI.insightsChatStream(payload, {
       onText: delta => {
         ensureMsg();
         acc += delta;
@@ -130,6 +130,26 @@ export const AnalyticsInsights = () => {
         setThinking(false);
       },
     });
+
+    // The stream was cut before finishing (e.g. a proxy idle-timeout in prod).
+    // Fall back to the non-streaming endpoint to fetch the complete answer.
+    if (!completed) {
+      try {
+        const res = await analyticsAPI.insightsChat(payload);
+        ensureMsg();
+        acc = res.reply;
+        const names = (res.toolCalls ?? []).map(t => t.name);
+        names.forEach(n => toolSet.add(n));
+        if (names.includes('start_deep_dive')) setDeepRefresh(n => n + 1);
+        patch({ text: acc, tools: [...toolSet], streaming: false });
+      } catch {
+        ensureMsg();
+        patch({
+          text: acc || '⚠️ The connection dropped. Please try again.',
+          streaming: false,
+        });
+      }
+    }
     setThinking(false);
   };
 

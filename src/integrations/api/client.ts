@@ -1282,7 +1282,7 @@ export const analyticsAPI = {
       onDone?: (toolCalls: { name: string; input: unknown }[]) => void;
       onError?: (message: string) => void;
     }
-  ): Promise<void> => {
+  ): Promise<{ completed: boolean }> => {
     const token = localStorage.getItem('accessToken');
     let resp: Response;
     try {
@@ -1295,16 +1295,22 @@ export const analyticsAPI = {
         body: JSON.stringify({ messages }),
       });
     } catch {
-      handlers.onError?.('Network error reaching the analyst.');
-      return;
+      // Network-level failure opening the stream — let the caller fall back.
+      return { completed: false };
     }
     if (!resp.ok || !resp.body) {
-      handlers.onError?.(`Request failed (${resp.status}).`);
-      return;
+      if (resp.status === 403) {
+        handlers.onError?.('Admin access required.');
+        return { completed: true };
+      }
+      return { completed: false };
     }
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    // `completed` distinguishes a clean end (done/error event received) from a
+    // stream that was cut mid-answer (e.g. a proxy idle-timeout in prod).
+    let completed = false;
     // Parse SSE frames (blank-line-delimited) and dispatch each data event.
     for (;;) {
       const { done, value } = await reader.read();
@@ -1316,7 +1322,7 @@ export const analyticsAPI = {
         const line = frame
           .split('\n')
           .find(l => l.startsWith('data:'));
-        if (!line) continue;
+        if (!line) continue; // ignore ": keepalive" comments
         const json = line.slice(5).trim();
         if (!json) continue;
         let evt: {
@@ -1333,11 +1339,16 @@ export const analyticsAPI = {
         }
         if (evt.type === 'text' && evt.text) handlers.onText(evt.text);
         else if (evt.type === 'tool' && evt.name) handlers.onTool?.(evt.name);
-        else if (evt.type === 'done') handlers.onDone?.(evt.toolCalls ?? []);
-        else if (evt.type === 'error')
+        else if (evt.type === 'done') {
+          completed = true;
+          handlers.onDone?.(evt.toolCalls ?? []);
+        } else if (evt.type === 'error') {
+          completed = true;
           handlers.onError?.(evt.message ?? 'Something went wrong.');
+        }
       }
     }
+    return { completed };
   },
 
   /** Recent background deep-dive research jobs (Insights). */
