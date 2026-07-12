@@ -1,11 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
+import moment from 'moment';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Search, ArrowUp, ChevronRight } from 'lucide-react';
+import {
+  Sparkles,
+  Search,
+  ArrowUp,
+  ChevronRight,
+  History,
+  Plus,
+} from 'lucide-react';
 import { analyticsAPI } from '@/integrations/api/client';
-import type { ApiInsightsMessage } from '@/types/analytics-api';
+import type {
+  ApiInsightsMessage,
+  ApiInsightsExchange,
+} from '@/types/analytics-api';
 import { DeepDivesPanel } from './DeepDivesPanel';
+import { ChatMarkdown } from './ChatMarkdown';
+import { InsightsHistoryDialog } from './InsightsHistoryDialog';
+
+const newConversationId = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 /**
  * Insights — a conversational analyst over the collector data.
@@ -46,6 +64,7 @@ type Msg = {
   text: string;
   tools?: string[];
   streaming?: boolean;
+  at?: number;
 };
 
 export const AnalyticsInsights = () => {
@@ -54,10 +73,39 @@ export const AnalyticsInsights = () => {
   const [thinking, setThinking] = useState(false);
   const [phIndex, setPhIndex] = useState(0);
   const [deepRefresh, setDeepRefresh] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const idRef = useRef(0);
+  const convIdRef = useRef<string>(newConversationId());
   const endRef = useRef<HTMLDivElement>(null);
   const started = messages.length > 0;
+
+  const newChat = () => {
+    if (thinking) return;
+    convIdRef.current = newConversationId();
+    setMessages([]);
+    setInput('');
+  };
+
+  const openConversation = (
+    conversationId: string,
+    exchanges: ApiInsightsExchange[]
+  ) => {
+    convIdRef.current = conversationId;
+    const msgs: Msg[] = [];
+    for (const e of exchanges) {
+      const at = new Date(e.createdAt).getTime();
+      msgs.push({ id: ++idRef.current, role: 'user', text: e.question, at });
+      msgs.push({
+        id: ++idRef.current,
+        role: 'assistant',
+        text: e.answer,
+        tools: e.tools ?? [],
+        at,
+      });
+    }
+    setMessages(msgs);
+  };
 
   // Rotate the placeholder through example prompts while the chat is empty.
   useEffect(() => {
@@ -78,7 +126,12 @@ export const AnalyticsInsights = () => {
   const send = async (raw: string) => {
     const text = raw.trim();
     if (!text || thinking) return;
-    const userMsg: Msg = { id: ++idRef.current, role: 'user', text };
+    const userMsg: Msg = {
+      id: ++idRef.current,
+      role: 'user',
+      text,
+      at: Date.now(),
+    };
     const history = [...messages, userMsg];
     setMessages(history);
     setInput('');
@@ -100,7 +153,14 @@ export const AnalyticsInsights = () => {
       setThinking(false);
       setMessages(m => [
         ...m,
-        { id: asstId, role: 'assistant', text: '', tools: [], streaming: true },
+        {
+          id: asstId,
+          role: 'assistant',
+          text: '',
+          tools: [],
+          streaming: true,
+          at: Date.now(),
+        },
       ]);
     };
     const patch = (fields: Partial<Msg>) =>
@@ -129,13 +189,13 @@ export const AnalyticsInsights = () => {
         patch({ text: acc || `⚠️ ${message}`, streaming: false });
         setThinking(false);
       },
-    });
+    }, convIdRef.current);
 
     // The stream was cut before finishing (e.g. a proxy idle-timeout in prod).
     // Fall back to the non-streaming endpoint to fetch the complete answer.
     if (!completed) {
       try {
-        const res = await analyticsAPI.insightsChat(payload);
+        const res = await analyticsAPI.insightsChat(payload, convIdRef.current);
         ensureMsg();
         acc = res.reply;
         const names = (res.toolCalls ?? []).map(t => t.name);
@@ -192,6 +252,28 @@ export const AnalyticsInsights = () => {
     <>
       <DeepDivesPanel refreshSignal={deepRefresh} />
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 flex flex-col max-h-[72vh] overflow-hidden">
+      {/* Toolbar */}
+      <div className="flex items-center justify-end gap-1 border-b border-white/5 px-2 py-1.5 shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setHistoryOpen(true)}
+          className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-white"
+        >
+          <History className="h-3.5 w-3.5" /> History
+        </Button>
+        {started && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={newChat}
+            disabled={thinking}
+            className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-white"
+          >
+            <Plus className="h-3.5 w-3.5" /> New chat
+          </Button>
+        )}
+      </div>
       {!started ? (
         /* ---------- Empty state: search-bar landing ---------- */
         <div className="overflow-y-auto">
@@ -237,10 +319,15 @@ export const AnalyticsInsights = () => {
             <div className="max-w-2xl mx-auto space-y-4">
               {messages.map(m =>
                 m.role === 'user' ? (
-                  <div key={m.id} className="flex justify-end">
+                  <div key={m.id} className="flex flex-col items-end">
                     <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#B4FF39] text-black px-3.5 py-2.5 text-sm">
                       {m.text}
                     </div>
+                    {m.at && (
+                      <div className="mt-1 mr-1 text-[10px] text-muted-foreground">
+                        {moment(m.at).format('MMM D, h:mm A')}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div key={m.id} className="flex items-start gap-2.5">
@@ -262,11 +349,16 @@ export const AnalyticsInsights = () => {
                         </div>
                       )}
                       {(m.text || !m.streaming) && (
-                        <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 text-white/90 px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">
-                          {m.text}
+                        <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 text-white/90 px-3.5 py-2.5 text-sm leading-relaxed">
+                          <ChatMarkdown text={m.text} />
                           {m.streaming && (
                             <span className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse rounded-sm bg-[#B4FF39]/70" />
                           )}
+                        </div>
+                      )}
+                      {m.at && !m.streaming && (
+                        <div className="ml-1 text-[10px] text-muted-foreground">
+                          {moment(m.at).format('MMM D, h:mm A')}
                         </div>
                       )}
                     </div>
@@ -296,6 +388,12 @@ export const AnalyticsInsights = () => {
         </>
       )}
       </Card>
+
+      <InsightsHistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onOpenConversation={openConversation}
+      />
     </>
   );
 };

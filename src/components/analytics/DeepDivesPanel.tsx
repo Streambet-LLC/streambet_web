@@ -42,16 +42,20 @@ const STATUS: Record<
 export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<ApiDeepResearchJob[]>([]);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(8);
   const [subject, setSubject] = useState('');
   const [starting, setStarting] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      setJobs(await analyticsAPI.listDeepResearch());
+      const r = await analyticsAPI.listDeepResearch(limit, 0);
+      setJobs(r.data);
+      setTotal(r.total);
     } catch {
       /* keep last known */
     }
-  }, []);
+  }, [limit]);
 
   useEffect(() => {
     load();
@@ -163,6 +167,15 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
                 </button>
               );
             })}
+            {total > jobs.length && (
+              <button
+                type="button"
+                onClick={() => setLimit(l => l + 8)}
+                className="w-full rounded-lg border border-white/5 bg-black/20 px-3 py-1.5 text-center text-xs text-muted-foreground hover:bg-white/5 hover:text-white"
+              >
+                Load more ({total - jobs.length})
+              </button>
+            )}
           </div>
         )}
       </Card>

@@ -891,6 +891,9 @@ import type {
   ApiInsightsMessage,
   ApiInsightsChatResult,
   ApiDeepResearchJob,
+  ApiDeepResearchList,
+  ApiInsightsConversationList,
+  ApiInsightsExchange,
   ApiQuerySuggestions,
   DiscoverySource,
 } from '@/types/analytics-api';
@@ -1262,12 +1265,35 @@ export const analyticsAPI = {
 
   /** Ask the conversational Insights analyst (Claude + read-only data tools). */
   insightsChat: async (
-    messages: ApiInsightsMessage[]
+    messages: ApiInsightsMessage[],
+    conversationId?: string
   ): Promise<ApiInsightsChatResult> => {
     const response = await apiClient.post('/admin/analytics/insights/chat', {
       messages,
+      conversationId,
     });
     return response.data.data as ApiInsightsChatResult;
+  },
+
+  /** Paginated past Insights conversations (history). */
+  listInsightsHistory: async (
+    limit = 20,
+    offset = 0
+  ): Promise<ApiInsightsConversationList> => {
+    const response = await apiClient.get(
+      `/admin/analytics/insights/history?limit=${limit}&offset=${offset}`
+    );
+    return response.data.data as ApiInsightsConversationList;
+  },
+
+  /** All exchanges in one past conversation. */
+  getInsightsConversation: async (
+    conversationId: string
+  ): Promise<ApiInsightsExchange[]> => {
+    const response = await apiClient.get(
+      `/admin/analytics/insights/history/${conversationId}`
+    );
+    return response.data.data as ApiInsightsExchange[];
   },
 
   /**
@@ -1281,7 +1307,8 @@ export const analyticsAPI = {
       onTool?: (name: string) => void;
       onDone?: (toolCalls: { name: string; input: unknown }[]) => void;
       onError?: (message: string) => void;
-    }
+    },
+    conversationId?: string
   ): Promise<{ completed: boolean }> => {
     const token = localStorage.getItem('accessToken');
     let resp: Response;
@@ -1292,7 +1319,7 @@ export const analyticsAPI = {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ messages }),
+        body: JSON.stringify({ messages, conversationId }),
       });
     } catch {
       // Network-level failure opening the stream — let the caller fall back.
@@ -1351,12 +1378,15 @@ export const analyticsAPI = {
     return { completed };
   },
 
-  /** Recent background deep-dive research jobs (Insights). */
-  listDeepResearch: async (): Promise<ApiDeepResearchJob[]> => {
+  /** Recent background deep-dive research jobs (Insights), paginated. */
+  listDeepResearch: async (
+    limit = 20,
+    offset = 0
+  ): Promise<ApiDeepResearchList> => {
     const response = await apiClient.get(
-      '/admin/analytics/insights/deep-research'
+      `/admin/analytics/insights/deep-research?limit=${limit}&offset=${offset}`
     );
-    return response.data.data as ApiDeepResearchJob[];
+    return response.data.data as ApiDeepResearchList;
   },
 
   /** One deep-dive research job by id (null if not found). */
