@@ -6,6 +6,7 @@ import { Sparkles, Search, ArrowUp, ChevronRight } from 'lucide-react';
 import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiInsightsMessage } from '@/types/analytics-api';
 import { DeepDivesPanel } from './DeepDivesPanel';
+import { ChatMarkdown } from './ChatMarkdown';
 
 /**
  * Insights — a conversational analyst over the collector data.
@@ -262,8 +263,8 @@ export const AnalyticsInsights = () => {
                         </div>
                       )}
                       {(m.text || !m.streaming) && (
-                        <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 text-white/90 px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">
-                          {m.text}
+                        <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 text-white/90 px-3.5 py-2.5 text-sm leading-relaxed">
+                          <ChatMarkdown text={m.text} />
                           {m.streaming && (
                             <span className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse rounded-sm bg-[#B4FF39]/70" />
                           )}
