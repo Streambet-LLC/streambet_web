@@ -29,6 +29,8 @@ import {
   Layers,
   AlertTriangle,
   Target,
+  Users,
+  Star,
 } from 'lucide-react';
 import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiDeepResearchJob, ApiCardForecast } from '@/types/analytics-api';
@@ -46,9 +48,18 @@ const BUZZ_COLOR: Record<string, string> = {
 const UP = '#B4FF39';
 const DOWN = '#f87171';
 
+const TRAJ_COLOR: Record<string, string> = {
+  Rising: '#B4FF39',
+  Stable: '#9ca3af',
+  Falling: '#f87171',
+};
+
 const magVal = (m: string) =>
   m === 'large' ? 3 : m === 'small' ? 1 : 2;
 const dirColor = (d: string) => (d === 'down' ? DOWN : UP);
+const clamp = (n: number) => Math.max(0, Math.min(100, n));
+const ratingColor = (score: number) =>
+  score >= 70 ? '#B4FF39' : score >= 45 ? '#fbbf24' : '#f87171';
 
 /** A titled report card. */
 const Section = ({
@@ -149,6 +160,76 @@ const ReportBody = ({
           </div>
         </div>
 
+        {/* Rating / liquidity / trajectory */}
+        {(f.rating || f.liquidity || f.priceTrajectory) && (
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {f.rating && (
+              <div className="rounded-lg border border-white/8 bg-black/30 p-3">
+                <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <Star className="h-3 w-3" /> Our rating
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span
+                    className="text-2xl font-bold"
+                    style={{ color: ratingColor(f.rating.score) }}
+                  >
+                    {f.rating.score}
+                  </span>
+                  <span className="text-xs text-white/70">
+                    /100 · {f.rating.label}
+                  </span>
+                </div>
+                {f.rating.rationale && (
+                  <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                    {f.rating.rationale}
+                  </div>
+                )}
+              </div>
+            )}
+            {f.liquidity && (
+              <div className="rounded-lg border border-white/8 bg-black/30 p-3">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Liquidity
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold text-white">
+                    {f.liquidity.score}
+                  </span>
+                  <span className="text-xs text-white/70">
+                    /100 · {f.liquidity.level}
+                  </span>
+                </div>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-[#38bdf8]"
+                    style={{ width: `${clamp(f.liquidity.score)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            {f.priceTrajectory && (
+              <div className="rounded-lg border border-white/8 bg-black/30 p-3">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Price trajectory
+                </div>
+                <div
+                  className="text-lg font-semibold"
+                  style={{
+                    color: TRAJ_COLOR[f.priceTrajectory.direction] ?? '#fff',
+                  }}
+                >
+                  {f.priceTrajectory.direction}
+                </div>
+                {f.priceTrajectory.note && (
+                  <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                    {f.priceTrajectory.note}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <p className="mt-4 text-[15px] leading-relaxed text-white/90">
           {f.thesis}
         </p>
@@ -173,6 +254,27 @@ const ReportBody = ({
               {f.socialBuzz.summary}
             </p>
           </div>
+        </Section>
+      )}
+
+      {/* Likely buyers */}
+      {f.likelyBuyers && (
+        <Section icon={<Users className="h-4 w-4" />} title="Likely buyers">
+          <p className="text-sm leading-relaxed text-white/80">
+            {f.likelyBuyers.profile}
+          </p>
+          {f.likelyBuyers.archetypes?.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {f.likelyBuyers.archetypes.map((a, i) => (
+                <span
+                  key={i}
+                  className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-white/75"
+                >
+                  {a}
+                </span>
+              ))}
+            </div>
+          )}
         </Section>
       )}
 

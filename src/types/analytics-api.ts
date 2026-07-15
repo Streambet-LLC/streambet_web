@@ -549,6 +549,10 @@ export interface ApiCardForecast {
   confidence: number;
   horizon: string;
   thesis: string;
+  rating?: { score: number; label: string; rationale: string };
+  liquidity?: { score: number; level: string; note: string };
+  priceTrajectory?: { direction: string; note: string };
+  likelyBuyers?: { profile: string; archetypes: string[] };
   socialBuzz: { level: string; summary: string };
   catalysts: {
     event: string;
