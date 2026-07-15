@@ -890,6 +890,9 @@ import type {
   ApiCardMarketProfile,
   ApiInsightsMessage,
   ApiInsightsChatResult,
+  ApiMarketSnapshot,
+  ApiMarketCatalog,
+  DashboardConfig,
   ApiDeepResearchJob,
   ApiDeepResearchList,
   ApiInsightsConversationList,
@@ -1261,6 +1264,58 @@ export const analyticsAPI = {
       `/admin/analytics/market/cards/${id}/profile/refresh`
     );
     return response.data.data as ApiCardMarketProfile;
+  },
+
+  /** Market dashboard: catalog of segments + metrics. */
+  getMarketCatalog: async (): Promise<ApiMarketCatalog> => {
+    const response = await apiClient.get(
+      '/admin/analytics/market-pulse/catalog'
+    );
+    return response.data.data as ApiMarketCatalog;
+  },
+
+  /** Latest market snapshot per segment. */
+  getMarketLatest: async (): Promise<ApiMarketSnapshot[]> => {
+    const response = await apiClient.get(
+      '/admin/analytics/market-pulse/latest'
+    );
+    return response.data.data as ApiMarketSnapshot[];
+  },
+
+  /** Historical market series for one segment. */
+  getMarketSeries: async (
+    segment: string,
+    days?: number
+  ): Promise<ApiMarketSnapshot[]> => {
+    const q = days ? `?days=${days}` : '';
+    const response = await apiClient.get(
+      `/admin/analytics/market-pulse/${segment}/series${q}`
+    );
+    return response.data.data as ApiMarketSnapshot[];
+  },
+
+  /** Refresh (AI-research) a market segment snapshot. */
+  refreshMarket: async (segment: string): Promise<ApiMarketSnapshot> => {
+    const response = await apiClient.post(
+      `/admin/analytics/market-pulse/${segment}/refresh`
+    );
+    return response.data.data as ApiMarketSnapshot;
+  },
+
+  /** This admin's saved market dashboard (null if none). */
+  getMarketDashboard: async (): Promise<DashboardConfig | null> => {
+    const response = await apiClient.get('/admin/analytics/market-dashboard');
+    return response.data.data as DashboardConfig | null;
+  },
+
+  /** Save this admin's market dashboard. */
+  saveMarketDashboard: async (
+    config: DashboardConfig
+  ): Promise<DashboardConfig> => {
+    const response = await apiClient.put('/admin/analytics/market-dashboard', {
+      config,
+    });
+    return response.data.data as DashboardConfig;
   },
 
   /** Ask the conversational Insights analyst (Claude + read-only data tools). */

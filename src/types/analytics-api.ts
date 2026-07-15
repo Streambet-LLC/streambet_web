@@ -534,6 +534,47 @@ export interface ApiInsightsExchange {
   createdAt: string;
 }
 
+export interface ApiMarketSnapshot {
+  id: string;
+  segment: string;
+  capturedAt: string;
+  metrics: Record<string, number>;
+  summary: string | null;
+  highlights: string[] | null;
+  sources: { title: string; url: string }[] | null;
+}
+
+export interface ApiMarketCatalog {
+  segments: { key: string; label: string }[];
+  metrics: { key: string; label: string; help: string }[];
+}
+
+export type DashboardWidgetType = 'stat' | 'line' | 'bar';
+
+export interface DashboardWidget {
+  id: string;
+  type: DashboardWidgetType;
+  title: string;
+  metric: string;
+  segments: string[];
+}
+
+export interface DashboardLayoutItem {
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface DashboardConfig {
+  segments: string[];
+  widgets: DashboardWidget[];
+  layouts: Record<string, DashboardLayoutItem[]>;
+  /** Trend-chart lookback in days; 0 = all history. */
+  rangeDays?: number;
+}
+
 export interface ApiInsightsMessage {
   role: 'user' | 'assistant';
   content: string;

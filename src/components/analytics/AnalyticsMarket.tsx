@@ -22,6 +22,7 @@ import {
 import { formatUsd } from '@/mocks/analytics';
 import { CardMarketProfile } from './CardMarketProfile';
 import { ForecastBrief } from './ForecastBrief';
+import { MarketDashboard } from './MarketDashboard';
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiMarketCard,
@@ -89,6 +90,7 @@ export const AnalyticsMarket = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [view, setView] = useState<'dashboard' | 'cards'>('dashboard');
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 300);
@@ -125,6 +127,28 @@ export const AnalyticsMarket = () => {
 
   return (
     <div className="space-y-5">
+      {/* View toggle */}
+      <div className="inline-flex items-center gap-1 rounded-lg border border-white/5 bg-[rgba(22,22,22,1)] p-1">
+        {(['dashboard', 'cards'] as const).map(v => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setView(v)}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+              view === v
+                ? 'bg-[#B4FF39] text-black'
+                : 'text-white/70 hover:text-white'
+            }`}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
+      {view === 'dashboard' && <MarketDashboard />}
+
+      {view === 'cards' && (
+        <>
       {/* Filters */}
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4">
         <div className="flex flex-col sm:flex-row flex-wrap gap-2">
@@ -330,6 +354,8 @@ export const AnalyticsMarket = () => {
           </>
         )}
       </Card>
+        </>
+      )}
 
       <MarketCardDialog
         cardId={openId}
