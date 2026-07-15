@@ -16,6 +16,37 @@ const BUZZ_STYLES: Record<string, string> = {
   Low: 'text-white/50',
 };
 
+const TRAJ_COLOR: Record<string, string> = {
+  Rising: '#B4FF39',
+  Stable: '#9ca3af',
+  Falling: '#f87171',
+};
+
+const MiniStat = ({
+  label,
+  value,
+  sub,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  valueColor?: string;
+}) => (
+  <div className="rounded-md border border-white/5 bg-black/30 px-2.5 py-1.5">
+    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+      {label}
+    </div>
+    <div
+      className="text-sm font-semibold text-white"
+      style={valueColor ? { color: valueColor } : undefined}
+    >
+      {value}
+    </div>
+    {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
+  </div>
+);
+
 const ForecastSection = ({
   title,
   children,
@@ -59,7 +90,53 @@ export const ForecastBrief = ({
         </span>
       </div>
 
+      {/* Rating / liquidity / trajectory */}
+      {(forecast.rating || forecast.liquidity || forecast.priceTrajectory) && (
+        <div className="grid grid-cols-3 gap-2">
+          {forecast.rating && (
+            <MiniStat
+              label="Our rating"
+              value={`${forecast.rating.score}`}
+              sub={forecast.rating.label}
+            />
+          )}
+          {forecast.liquidity && (
+            <MiniStat
+              label="Liquidity"
+              value={`${forecast.liquidity.score}`}
+              sub={forecast.liquidity.level}
+            />
+          )}
+          {forecast.priceTrajectory && (
+            <MiniStat
+              label="Trajectory"
+              value={forecast.priceTrajectory.direction}
+              valueColor={TRAJ_COLOR[forecast.priceTrajectory.direction]}
+            />
+          )}
+        </div>
+      )}
+
       <p className="text-sm text-white/85">{forecast.thesis}</p>
+
+      {forecast.likelyBuyers && (
+        <div className="text-xs">
+          <span className="text-muted-foreground">Likely buyers: </span>
+          <span className="text-white/80">{forecast.likelyBuyers.profile}</span>
+          {forecast.likelyBuyers.archetypes?.length > 0 && (
+            <span className="mt-1 flex flex-wrap gap-1">
+              {forecast.likelyBuyers.archetypes.map((a, i) => (
+                <span
+                  key={i}
+                  className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/70"
+                >
+                  {a}
+                </span>
+              ))}
+            </span>
+          )}
+        </div>
+      )}
 
       {forecast.socialBuzz && (
         <div className="text-xs">
