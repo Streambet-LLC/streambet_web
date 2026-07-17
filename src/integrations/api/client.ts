@@ -1139,13 +1139,17 @@ export const analyticsAPI = {
     return response.data.data as ApiDiscoveredLeadsList;
   },
 
-  /** Qualify unscored leads with Claude (buyer score + intent + interests). */
-  qualifyLeads: async (limit?: number): Promise<{ qualified: number }> => {
+  /**
+   * Queue unscored leads for Claude qualification (buyer score + intent +
+   * interests). Runs as a background batch job — returns how many were queued;
+   * scores appear in the list as the batch completes.
+   */
+  qualifyLeads: async (limit?: number): Promise<{ queued: number }> => {
     const response = await apiClient.post(
       `/admin/analytics/acquisition/leads/qualify`,
       { limit }
     );
-    return response.data.data as { qualified: number };
+    return response.data.data as { queued: number };
   },
 
   /** Claude query suggestions for a discovery topic + source. */

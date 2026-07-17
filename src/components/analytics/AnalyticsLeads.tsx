@@ -144,13 +144,17 @@ export const AnalyticsLeads = () => {
   const qualify = async () => {
     setQualifying(true);
     try {
-      const { qualified } = await analyticsAPI.qualifyLeads(60);
-      toast.success(
-        qualified > 0
-          ? `Claude scored ${qualified} lead${qualified === 1 ? '' : 's'}.`
-          : 'Nothing new to qualify.',
-      );
-      load();
+      const { queued } = await analyticsAPI.qualifyLeads(60);
+      if (queued > 0) {
+        toast.success(
+          `Queued ${queued} lead${queued === 1 ? '' : 's'} — scoring in the background…`,
+        );
+        // Scores land as the batch completes; refresh a few times to surface
+        // them without a manual reload.
+        [12000, 30000, 60000].forEach((ms) => setTimeout(() => load(), ms));
+      } else {
+        toast('Nothing new to qualify (or a batch is already running).');
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Qualify failed.');
     } finally {
