@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Telescope, Loader2, ChevronRight } from 'lucide-react';
+import { Telescope, Loader2, ChevronRight, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiDeepResearchJob } from '@/types/analytics-api';
+import { fileToCardImage } from '@/utils/cardImage';
 
 const STATUS: Record<
   string,
@@ -46,6 +47,13 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
   const [limit, setLimit] = useState(8);
   const [subject, setSubject] = useState('');
   const [starting, setStarting] = useState(false);
+  const [fromPhoto, setFromPhoto] = useState(false);
+  // Set once a photo has been identified — holds the preview thumbnail while the
+  // admin confirms (or edits `subject`) before we commit to a research run.
+  const [pendingPhoto, setPendingPhoto] = useState<{ dataUrl: string } | null>(
+    null
+  );
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -77,6 +85,7 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
     try {
       await analyticsAPI.startDeepResearch(s);
       setSubject('');
+      setPendingPhoto(null);
       await load();
     } catch (e) {
       const msg =
@@ -86,6 +95,45 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
     } finally {
       setStarting(false);
     }
+  };
+
+  // Snap/upload a card photo → server identifies it → we prefill the subject and
+  // show a confirm step ("is this the right card?") rather than starting blindly.
+  // Any text already typed in the subject box is passed along as a disambiguation hint.
+  const identifyFromPhoto = async (file?: File | null) => {
+    if (!file || fromPhoto) return;
+    setFromPhoto(true);
+    try {
+      const image = await fileToCardImage(file);
+      const note = subject.trim() || undefined;
+      const { isCard, subject: guess } = await analyticsAPI.identifyCardImage(
+        image,
+        note
+      );
+      if (!isCard || !guess) {
+        toast.error(
+          "Couldn't identify a card. Try a clearer, well-lit shot of the front."
+        );
+        return;
+      }
+      setSubject(guess);
+      setPendingPhoto({ dataUrl: image.dataUrl });
+    } catch (e) {
+      const msg =
+        (e as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ??
+        (e as Error).message ??
+        'Could not read that photo.';
+      toast.error(msg);
+    } finally {
+      setFromPhoto(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const cancelPhoto = () => {
+    setPendingPhoto(null);
+    setSubject('');
   };
 
   return (
@@ -103,6 +151,34 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
           )}
         </div>
 
+        {/* Confirm step: shown after a photo is identified, before we commit. */}
+        {pendingPhoto && (
+          <div className="mb-2 flex items-center gap-2 rounded-lg border border-[#B4FF39]/25 bg-[#B4FF39]/5 px-2 py-2">
+            <img
+              src={pendingPhoto.dataUrl}
+              alt="Identified card"
+              className="h-12 w-12 shrink-0 rounded-md border border-white/10 object-cover"
+            />
+            <span className="flex-1 text-xs text-white/80">
+              Is this the right card?{' '}
+              <span className="text-muted-foreground">
+                Edit the name below if not, then confirm.
+              </span>
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={cancelPhoto}
+              disabled={starting}
+              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-white"
+              aria-label="Discard photo"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
           <Input
             value={subject}
@@ -116,19 +192,52 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
             placeholder="Deep-dive a card… e.g. Crown Zenith Charizard UPC"
             className="h-9 bg-black/40 border-white/10 text-sm"
           />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => identifyFromPhoto(e.target.files?.[0])}
+          />
+          {!pendingPhoto && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={fromPhoto || starting}
+              size="sm"
+              title="Deep dive from a photo — take one or upload"
+              aria-label="Deep dive from a card photo"
+              className="h-9 w-9 shrink-0 border-white/10 bg-black/40 p-0 text-white/80 hover:bg-white/5 hover:text-white disabled:opacity-40"
+            >
+              {fromPhoto ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ImagePlus className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           <Button
             onClick={start}
-            disabled={!subject.trim() || starting}
+            disabled={!subject.trim() || starting || fromPhoto}
             size="sm"
             className="h-9 shrink-0 bg-[#B4FF39] text-black hover:bg-[#B4FF39]/90 disabled:opacity-40"
           >
             {starting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : pendingPhoto ? (
+              'Confirm & deep dive'
             ) : (
               'Deep dive'
             )}
           </Button>
         </div>
+        {!pendingPhoto && (
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Type a card, or tap the photo button to snap/upload one and let AI
+            identify it.
+          </p>
+        )}
 
         {jobs.length > 0 && (
           <div className="mt-3 space-y-1.5 max-h-52 overflow-y-auto">

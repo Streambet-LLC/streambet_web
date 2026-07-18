@@ -40,6 +40,11 @@ import {
   Settings2,
   Trash2,
   Check,
+  TrendingUp,
+  TrendingDown,
+  ExternalLink,
+  CalendarClock,
+  Flame,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { analyticsAPI } from '@/integrations/api/client';
@@ -65,30 +70,101 @@ const SEGMENT_COLORS: Record<string, string> = {
 };
 const colorFor = (s: string) => SEGMENT_COLORS[s] ?? '#94a3b8';
 
+/** Widget types that chart a specific metric. */
+const METRIC_TYPES: DashboardWidgetType[] = ['stat', 'line', 'bar'];
+/** Widget types that read a single market. */
+const SINGLE_SEG_TYPES: DashboardWidgetType[] = [
+  'stat',
+  'movers',
+  'catalysts',
+  'sales',
+  'temperature',
+];
+
+const usd = (n: number | null | undefined) =>
+  typeof n === 'number'
+    ? new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0,
+      }).format(n)
+    : '—';
+
+/**
+ * Fear/greed-style composite from the raw indices — heat/momentum/demand/
+ * sentiment pull it up, supply pressure cools it. Returns 0-100 or null when
+ * there's no data yet.
+ */
+function marketTemp(m: Record<string, number> | undefined): number | null {
+  if (!m) return null;
+  const g = (k: string) => (typeof m[k] === 'number' ? m[k] : null);
+  const parts: [number, number][] = [];
+  const push = (k: string, w: number) => {
+    const v = g(k);
+    if (v != null) parts.push([v, w]);
+  };
+  push('heat', 0.35);
+  push('momentum', 0.25);
+  push('demand', 0.2);
+  push('sentiment', 0.2);
+  if (parts.length === 0) return null;
+  const wsum = parts.reduce((a, [, w]) => a + w, 0) || 1;
+  let t = parts.reduce((a, [v, w]) => a + v * w, 0) / wsum;
+  const sup = g('supply');
+  if (sup != null) t -= 0.12 * (sup - 50);
+  return Math.max(0, Math.min(100, Math.round(t)));
+}
+
+const TEMP_BANDS: { max: number; label: string; color: string; emoji: string }[] =
+  [
+    { max: 25, label: 'Cold', color: '#38bdf8', emoji: '❄️' },
+    { max: 45, label: 'Cool', color: '#22d3ee', emoji: '🌤️' },
+    { max: 60, label: 'Neutral', color: '#94a3b8', emoji: '😐' },
+    { max: 78, label: 'Warm', color: '#f59e0b', emoji: '🔥' },
+    { max: 101, label: 'Hot', color: '#B4FF39', emoji: '🚀' },
+  ];
+const tempBand = (t: number) =>
+  TEMP_BANDS.find((b) => t < b.max) ?? TEMP_BANDS[TEMP_BANDS.length - 1];
+
 const genId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID().slice(0, 8)
     : Math.random().toString(16).slice(2, 10);
 
 const sizeFor = (type: DashboardWidgetType, cols: number) => {
-  if (cols <= 2) return { w: cols, h: type === 'stat' ? 2 : 4 };
+  if (cols <= 2) {
+    if (type === 'stat') return { w: cols, h: 2 };
+    if (type === 'temperature') return { w: cols, h: 3 };
+    if (type === 'movers' || type === 'catalysts' || type === 'sales')
+      return { w: cols, h: 5 };
+    return { w: cols, h: 4 };
+  }
   if (type === 'stat') return { w: 3, h: 2 };
+  if (type === 'temperature') return { w: 4, h: 3 };
+  if (type === 'leaderboard') return { w: 4, h: 4 };
+  if (type === 'movers' || type === 'catalysts' || type === 'sales')
+    return { w: 4, h: 5 };
   return { w: 6, h: 4 };
 };
 
 /** Build a default dashboard when the admin has none saved. */
 function defaultConfig(): DashboardConfig {
-  const widgets: DashboardWidget[] = [
-    { id: genId(), type: 'stat', title: 'Pokémon heat', metric: 'heat', segments: ['pokemon'] },
-    { id: genId(), type: 'stat', title: 'Sports heat', metric: 'heat', segments: ['sports'] },
-    { id: genId(), type: 'bar', title: 'Market heat by segment', metric: 'heat', segments: ['pokemon', 'sports', 'all'] },
-    { id: genId(), type: 'line', title: 'Momentum over time', metric: 'momentum', segments: ['pokemon', 'sports', 'all'] },
-  ];
+  const board: DashboardWidget = { id: genId(), type: 'leaderboard', title: 'Hottest markets', metric: 'heat', segments: [] };
+  const temp: DashboardWidget = { id: genId(), type: 'temperature', title: 'Pokémon market temp', metric: 'heat', segments: ['pokemon'] };
+  const sales: DashboardWidget = { id: genId(), type: 'sales', title: 'Pokémon — headline sales', metric: 'heat', segments: ['pokemon'] };
+  const movers: DashboardWidget = { id: genId(), type: 'movers', title: 'Pokémon — top movers', metric: 'heat', segments: ['pokemon'] };
+  const cats: DashboardWidget = { id: genId(), type: 'catalysts', title: 'Pokémon — release radar', metric: 'heat', segments: ['pokemon'] };
+  const bar: DashboardWidget = { id: genId(), type: 'bar', title: 'Market heat by segment', metric: 'heat', segments: ['pokemon', 'sports', 'all'] };
+  const line: DashboardWidget = { id: genId(), type: 'line', title: 'Momentum over time', metric: 'momentum', segments: ['pokemon', 'sports', 'all'] };
+  const widgets = [board, temp, sales, movers, cats, bar, line];
   const lg: Layout[] = [
-    { i: widgets[0].id, x: 0, y: 0, w: 3, h: 2 },
-    { i: widgets[1].id, x: 3, y: 0, w: 3, h: 2 },
-    { i: widgets[2].id, x: 0, y: 2, w: 6, h: 4 },
-    { i: widgets[3].id, x: 6, y: 2, w: 6, h: 4 },
+    { i: board.id, x: 0, y: 0, w: 4, h: 4 },
+    { i: temp.id, x: 4, y: 0, w: 4, h: 3 },
+    { i: sales.id, x: 8, y: 0, w: 4, h: 5 },
+    { i: movers.id, x: 0, y: 4, w: 4, h: 6 },
+    { i: cats.id, x: 4, y: 3, w: 4, h: 6 },
+    { i: bar.id, x: 8, y: 5, w: 4, h: 4 },
+    { i: line.id, x: 0, y: 10, w: 12, h: 4 },
   ];
   return {
     segments: ['pokemon', 'sports', 'all'],
@@ -489,6 +565,28 @@ const WidgetBody = ({
     );
   }
 
+  if (widget.type === 'temperature') {
+    return (
+      <TemperatureBody
+        seg={widget.segments[0]}
+        snap={latest[widget.segments[0]]}
+        segmentLabel={segmentLabel}
+      />
+    );
+  }
+  if (widget.type === 'leaderboard') {
+    return <LeaderboardBody latest={latest} segmentLabel={segmentLabel} />;
+  }
+  if (widget.type === 'movers') {
+    return <MoversBody snap={latest[widget.segments[0]]} />;
+  }
+  if (widget.type === 'catalysts') {
+    return <CatalystsBody snap={latest[widget.segments[0]]} />;
+  }
+  if (widget.type === 'sales') {
+    return <SalesBody snap={latest[widget.segments[0]]} />;
+  }
+
   if (widget.type === 'bar') {
     const data = widget.segments.map(s => ({
       name: segmentLabel(s),
@@ -577,6 +675,247 @@ const WidgetBody = ({
   );
 };
 
+/* ---------------- New widget bodies ---------------- */
+
+const Empty = ({ text }: { text: string }) => (
+  <div className="flex h-full items-center justify-center px-2 text-center text-[11px] text-muted-foreground">
+    {text}
+  </div>
+);
+
+const AsOf = ({ at }: { at: string }) => (
+  <div className="mt-1 shrink-0 text-[10px] text-muted-foreground">
+    as of {moment(at).fromNow()}
+  </div>
+);
+
+/** Fear/greed-style donut gauge for one market. */
+const TemperatureBody = ({
+  seg,
+  snap,
+  segmentLabel,
+}: {
+  seg: string;
+  snap: ApiMarketSnapshot | undefined;
+  segmentLabel: (k: string) => string;
+}) => {
+  const t = marketTemp(snap?.metrics);
+  if (t == null) return <Empty text="No data yet — refresh this market." />;
+  const band = tempBand(t);
+  const C = 2 * Math.PI * 52;
+  return (
+    <div className="flex h-full flex-col items-center justify-center">
+      <div className="relative h-[120px] w-[120px] max-h-full">
+        <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="10" />
+          <circle
+            cx="60"
+            cy="60"
+            r="52"
+            fill="none"
+            stroke={band.color}
+            strokeWidth="10"
+            strokeLinecap="round"
+            strokeDasharray={C}
+            strokeDashoffset={C * (1 - t / 100)}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="text-3xl font-bold leading-none" style={{ color: band.color }}>
+            {t}
+          </div>
+          <div className="text-[10px] text-muted-foreground">/ 100</div>
+        </div>
+      </div>
+      <div className="mt-1 text-sm font-semibold" style={{ color: band.color }}>
+        {band.emoji} {band.label}
+      </div>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        {segmentLabel(seg)} market temp
+      </div>
+      {snap && <AsOf at={snap.capturedAt} />}
+    </div>
+  );
+};
+
+/** Ranks every market that has data by temperature. */
+const LeaderboardBody = ({
+  latest,
+  segmentLabel,
+}: {
+  latest: Record<string, ApiMarketSnapshot>;
+  segmentLabel: (k: string) => string;
+}) => {
+  const rows = Object.values(latest)
+    .map((s) => ({ seg: s.segment, temp: marketTemp(s.metrics) }))
+    .filter((r): r is { seg: string; temp: number } => r.temp != null)
+    .sort((a, b) => b.temp - a.temp);
+  if (rows.length === 0)
+    return <Empty text="Refresh a few markets to rank them." />;
+  return (
+    <div className="flex h-full flex-col gap-1.5 overflow-y-auto pr-1">
+      {rows.map((r, i) => {
+        const band = tempBand(r.temp);
+        return (
+          <div key={r.seg} className="flex items-center gap-2">
+            <span className="w-4 text-center text-xs font-semibold text-muted-foreground">
+              {i + 1}
+            </span>
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ background: colorFor(r.seg) }}
+            />
+            <span className="w-20 shrink-0 truncate text-xs text-white/85">
+              {segmentLabel(r.seg)}
+            </span>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${r.temp}%`, background: band.color }}
+              />
+            </div>
+            <span
+              className="w-7 shrink-0 text-right text-xs font-semibold tabular-nums"
+              style={{ color: band.color }}
+            >
+              {r.temp}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/** Top gainers & faders for one market. */
+const MoversBody = ({ snap }: { snap: ApiMarketSnapshot | undefined }) => {
+  const movers = snap?.movers ?? [];
+  if (movers.length === 0)
+    return <Empty text="No movers yet — refresh this market." />;
+  return (
+    <div className="flex h-full flex-col gap-1 overflow-y-auto pr-1">
+      {movers.map((m, i) => {
+        const up = m.direction !== 'down';
+        const c = up ? '#B4FF39' : '#f87171';
+        return (
+          <a
+            key={i}
+            href={m.url ?? undefined}
+            target={m.url ? '_blank' : undefined}
+            rel="noreferrer"
+            className={`flex items-start gap-2 rounded-md px-1.5 py-1 ${
+              m.url ? 'hover:bg-white/5' : ''
+            }`}
+          >
+            {up ? (
+              <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: c }} />
+            ) : (
+              <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: c }} />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-xs font-medium text-white/90">
+                  {m.card}
+                </span>
+                {m.changePct != null && (
+                  <span className="shrink-0 text-xs font-semibold tabular-nums" style={{ color: c }}>
+                    {m.changePct > 0 ? '+' : ''}
+                    {Math.round(m.changePct)}%
+                  </span>
+                )}
+                {m.url && <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />}
+              </div>
+              {m.note && (
+                <div className="truncate text-[11px] text-muted-foreground">
+                  {m.note}
+                </div>
+              )}
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  );
+};
+
+const IMPACT_COLOR: Record<string, string> = {
+  up: '#B4FF39',
+  down: '#f87171',
+  mixed: '#f59e0b',
+};
+
+/** Upcoming catalysts / release radar for one market. */
+const CatalystsBody = ({ snap }: { snap: ApiMarketSnapshot | undefined }) => {
+  const cats = snap?.catalysts ?? [];
+  if (cats.length === 0)
+    return <Empty text="No upcoming catalysts found — refresh this market." />;
+  return (
+    <div className="flex h-full flex-col gap-1.5 overflow-y-auto pr-1">
+      {cats.map((c, i) => {
+        const ic = c.impact ? IMPACT_COLOR[c.impact] ?? '#94a3b8' : '#94a3b8';
+        return (
+          <div key={i} className="flex items-start gap-2 rounded-md px-1.5 py-1">
+            <CalendarClock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-xs font-medium text-white/90">
+                  {c.title}
+                </span>
+                {c.impact && (
+                  <span
+                    className="shrink-0 rounded px-1 text-[10px] font-semibold uppercase"
+                    style={{ color: ic, background: `${ic}22` }}
+                  >
+                    {c.impact}
+                  </span>
+                )}
+              </div>
+              <div className="truncate text-[11px] text-muted-foreground">
+                {[c.timeframe, c.note].filter(Boolean).join(' · ')}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/** Notable recent headline sales for one market. */
+const SalesBody = ({ snap }: { snap: ApiMarketSnapshot | undefined }) => {
+  const sales = snap?.sales ?? [];
+  if (sales.length === 0)
+    return <Empty text="No headline sales yet — refresh this market." />;
+  return (
+    <div className="flex h-full flex-col gap-1 overflow-y-auto pr-1">
+      {sales.map((s, i) => (
+        <a
+          key={i}
+          href={s.url ?? undefined}
+          target={s.url ? '_blank' : undefined}
+          rel="noreferrer"
+          className={`flex items-center gap-2 rounded-md px-1.5 py-1 ${
+            s.url ? 'hover:bg-white/5' : ''
+          }`}
+        >
+          <Flame className="h-3.5 w-3.5 shrink-0 text-[#f59e0b]" />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-xs font-medium text-white/90">
+              {s.card}
+            </div>
+            <div className="truncate text-[11px] text-muted-foreground">
+              {[s.grade, s.venue, s.soldAt].filter(Boolean).join(' · ')}
+            </div>
+          </div>
+          <span className="shrink-0 text-sm font-semibold text-[#B4FF39] tabular-nums">
+            {usd(s.priceUsd)}
+          </span>
+        </a>
+      ))}
+    </div>
+  );
+};
+
 /* ---------------- Widget editor ---------------- */
 
 const WidgetEditorDialog = ({
@@ -615,7 +954,9 @@ const WidgetEditorDialog = ({
     }
   }, [open, widget, catalog, defaultSegments]);
 
-  const single = type === 'stat';
+  const needsMetric = METRIC_TYPES.includes(type);
+  const noSegment = type === 'leaderboard';
+  const single = SINGLE_SEG_TYPES.includes(type);
   const toggleSeg = (k: string) => {
     if (single) {
       setSegments([k]);
@@ -630,15 +971,40 @@ const WidgetEditorDialog = ({
       : [defaultSegments[0] ?? 'pokemon'];
     const metricLabel =
       catalog.metrics.find(m => m.key === metric)?.label ?? metric;
-    const autoTitle = single
-      ? `${catalog.segments.find(s => s.key === segs[0])?.label ?? segs[0]} ${metricLabel.toLowerCase()}`
-      : `${metricLabel}${type === 'bar' ? ' by segment' : ' over time'}`;
+    const segLabel =
+      catalog.segments.find(s => s.key === segs[0])?.label ?? segs[0];
+    let autoTitle: string;
+    switch (type) {
+      case 'movers':
+        autoTitle = `${segLabel} — top movers`;
+        break;
+      case 'catalysts':
+        autoTitle = `${segLabel} — release radar`;
+        break;
+      case 'sales':
+        autoTitle = `${segLabel} — headline sales`;
+        break;
+      case 'temperature':
+        autoTitle = `${segLabel} market temp`;
+        break;
+      case 'leaderboard':
+        autoTitle = 'Hottest markets';
+        break;
+      case 'stat':
+        autoTitle = `${segLabel} ${metricLabel.toLowerCase()}`;
+        break;
+      case 'bar':
+        autoTitle = `${metricLabel} by segment`;
+        break;
+      default:
+        autoTitle = `${metricLabel} over time`;
+    }
     onSave({
       id: widget?.id ?? genId(),
       type,
       title: title.trim() || autoTitle,
       metric,
-      segments: single ? [segs[0]] : segs,
+      segments: noSegment ? [] : single ? [segs[0]] : segs,
     });
   };
 
@@ -658,6 +1024,11 @@ const WidgetEditorDialog = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="movers">Top movers (gainers &amp; faders)</SelectItem>
+                <SelectItem value="catalysts">Release radar (upcoming)</SelectItem>
+                <SelectItem value="sales">Headline sales</SelectItem>
+                <SelectItem value="temperature">Market temperature (gauge)</SelectItem>
+                <SelectItem value="leaderboard">Hottest-market leaderboard</SelectItem>
                 <SelectItem value="stat">Stat (latest value)</SelectItem>
                 <SelectItem value="bar">Bar (compare markets)</SelectItem>
                 <SelectItem value="line">Line (trend over time)</SelectItem>
@@ -665,47 +1036,51 @@ const WidgetEditorDialog = ({
             </Select>
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Metric</label>
-            <Select value={metric} onValueChange={setMetric}>
-              <SelectTrigger className="h-9 bg-black/40 border-white/10 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {catalog.metrics.map(m => (
-                  <SelectItem key={m.key} value={m.key}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs text-muted-foreground">
-              {single ? 'Market' : 'Markets'}
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {catalog.segments.map(s => {
-                const on = segments.includes(s.key);
-                return (
-                  <button
-                    key={s.key}
-                    type="button"
-                    onClick={() => toggleSeg(s.key)}
-                    className={`rounded-full border px-2.5 py-1 text-xs ${
-                      on
-                        ? 'border-transparent text-black'
-                        : 'border-white/10 bg-black/30 text-white/70'
-                    }`}
-                    style={on ? { background: colorFor(s.key) } : undefined}
-                  >
-                    {s.label}
-                  </button>
-                );
-              })}
+          {needsMetric && (
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Metric</label>
+              <Select value={metric} onValueChange={setMetric}>
+                <SelectTrigger className="h-9 bg-black/40 border-white/10 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {catalog.metrics.map(m => (
+                    <SelectItem key={m.key} value={m.key}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
+          )}
+
+          {!noSegment && (
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                {single ? 'Market' : 'Markets'}
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {catalog.segments.map(s => {
+                  const on = segments.includes(s.key);
+                  return (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => toggleSeg(s.key)}
+                      className={`rounded-full border px-2.5 py-1 text-xs ${
+                        on
+                          ? 'border-transparent text-black'
+                          : 'border-white/10 bg-black/30 text-white/70'
+                      }`}
+                      style={on ? { background: colorFor(s.key) } : undefined}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">
