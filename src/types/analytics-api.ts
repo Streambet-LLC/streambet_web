@@ -534,6 +534,29 @@ export interface ApiInsightsExchange {
   createdAt: string;
 }
 
+export interface ApiMarketMover {
+  card: string;
+  direction: string;
+  changePct: number | null;
+  note: string | null;
+  url: string | null;
+}
+export interface ApiMarketCatalyst {
+  title: string;
+  timeframe: string | null;
+  type: string | null;
+  impact: string | null;
+  note: string | null;
+}
+export interface ApiMarketSale {
+  card: string;
+  priceUsd: number | null;
+  grade: string | null;
+  venue: string | null;
+  soldAt: string | null;
+  url: string | null;
+}
+
 export interface ApiMarketSnapshot {
   id: string;
   segment: string;
@@ -542,6 +565,9 @@ export interface ApiMarketSnapshot {
   summary: string | null;
   highlights: string[] | null;
   sources: { title: string; url: string }[] | null;
+  movers: ApiMarketMover[] | null;
+  catalysts: ApiMarketCatalyst[] | null;
+  sales: ApiMarketSale[] | null;
 }
 
 export interface ApiMarketCatalog {
@@ -549,7 +575,15 @@ export interface ApiMarketCatalog {
   metrics: { key: string; label: string; help: string }[];
 }
 
-export type DashboardWidgetType = 'stat' | 'line' | 'bar';
+export type DashboardWidgetType =
+  | 'stat'
+  | 'line'
+  | 'bar'
+  | 'movers'
+  | 'catalysts'
+  | 'sales'
+  | 'temperature'
+  | 'leaderboard';
 
 export interface DashboardWidget {
   id: string;
@@ -575,9 +609,19 @@ export interface DashboardConfig {
   rangeDays?: number;
 }
 
+/** A base64 image attached to a user turn (for the vision-capable chat). */
+export interface ApiCardImage {
+  /** Raw base64, no `data:` prefix. */
+  data: string;
+  /** MIME type, e.g. 'image/jpeg'. */
+  mediaType: string;
+}
+
 export interface ApiInsightsMessage {
   role: 'user' | 'assistant';
   content: string;
+  /** Optional card photos for this turn. */
+  images?: ApiCardImage[];
 }
 
 export interface ApiInsightsChatResult {

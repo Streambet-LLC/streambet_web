@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import moment from 'moment';
+import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,12 +11,16 @@ import {
   ChevronRight,
   History,
   Plus,
+  ImagePlus,
+  X,
+  Loader2,
 } from 'lucide-react';
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiInsightsMessage,
   ApiInsightsExchange,
 } from '@/types/analytics-api';
+import { fileToCardImage, type CardImage } from '@/utils/cardImage';
 import { DeepDivesPanel } from './DeepDivesPanel';
 import { ChatMarkdown } from './ChatMarkdown';
 import { InsightsHistoryDialog } from './InsightsHistoryDialog';
@@ -65,6 +70,8 @@ type Msg = {
   tools?: string[];
   streaming?: boolean;
   at?: number;
+  /** A card photo attached to a user turn (base64 + preview URL). */
+  image?: CardImage;
 };
 
 export const AnalyticsInsights = () => {
@@ -74,10 +81,13 @@ export const AnalyticsInsights = () => {
   const [phIndex, setPhIndex] = useState(0);
   const [deepRefresh, setDeepRefresh] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [attachment, setAttachment] = useState<CardImage | null>(null);
+  const [attaching, setAttaching] = useState(false);
 
   const idRef = useRef(0);
   const convIdRef = useRef<string>(newConversationId());
   const endRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const started = messages.length > 0;
 
   const newChat = () => {
@@ -85,6 +95,22 @@ export const AnalyticsInsights = () => {
     convIdRef.current = newConversationId();
     setMessages([]);
     setInput('');
+    setAttachment(null);
+  };
+
+  // Resize/compress a chosen or camera-captured photo, then hold it as the
+  // pending attachment (shown as a thumbnail until the next send).
+  const pickFile = async (file?: File | null) => {
+    if (!file) return;
+    setAttaching(true);
+    try {
+      setAttachment(await fileToCardImage(file));
+    } catch (e) {
+      toast.error((e as Error).message || 'Could not add that image.');
+    } finally {
+      setAttaching(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
   };
 
   const openConversation = (
@@ -125,21 +151,28 @@ export const AnalyticsInsights = () => {
 
   const send = async (raw: string) => {
     const text = raw.trim();
-    if (!text || thinking) return;
+    const image = attachment;
+    // A photo alone is a valid turn ("identify & analyze this card").
+    if ((!text && !image) || thinking) return;
     const userMsg: Msg = {
       id: ++idRef.current,
       role: 'user',
       text,
       at: Date.now(),
+      ...(image ? { image } : {}),
     };
     const history = [...messages, userMsg];
     setMessages(history);
     setInput('');
+    setAttachment(null);
     setThinking(true);
 
     const payload: ApiInsightsMessage[] = history.map(m => ({
       role: m.role,
       content: m.text,
+      ...(m.image
+        ? { images: [{ data: m.image.data, mediaType: m.image.mediaType }] }
+        : {}),
     }));
 
     // The streaming assistant bubble is created lazily on the first event,
@@ -220,31 +253,87 @@ export const AnalyticsInsights = () => {
     }
   };
 
-  // Shared composer (input + send) used in both states.
+  // Shared composer (input + attach + send) used in both states.
   const Composer = (
-    <div className="flex items-center gap-2">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <Input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={
-            started
-              ? 'Ask a follow-up…'
-              : EXAMPLE_PROMPTS[phIndex]
-          }
-          className="pl-9 pr-3 h-11 bg-black/40 border-white/10 text-sm"
+    <div className="space-y-2">
+      {/* Pending photo preview (before send) */}
+      {(attachment || attaching) && (
+        <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-2">
+          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-black/40">
+            {attaching ? (
+              <div className="flex h-full w-full items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <img
+                src={attachment!.dataUrl}
+                alt="Card to analyze"
+                className="h-full w-full object-cover"
+              />
+            )}
+          </div>
+          <span className="flex-1 text-xs text-muted-foreground">
+            {attaching
+              ? 'Preparing photo…'
+              : 'Photo attached — ask about this card, or say “deep dive this”.'}
+          </span>
+          {attachment && !attaching && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setAttachment(null)}
+              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-white"
+              aria-label="Remove photo"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={e => pickFile(e.target.files?.[0])}
         />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => fileRef.current?.click()}
+          disabled={thinking || attaching}
+          className="h-11 w-11 shrink-0 p-0 border-white/10 bg-black/40 text-white/80 hover:bg-white/5 hover:text-white disabled:opacity-40"
+          aria-label="Add a photo of a card"
+          title="Add a photo — take one or upload"
+        >
+          <ImagePlus className="h-5 w-5" />
+        </Button>
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={
+              attachment
+                ? 'Ask about this card…'
+                : started
+                  ? 'Ask a follow-up…'
+                  : EXAMPLE_PROMPTS[phIndex]
+            }
+            className="pl-9 pr-3 h-11 bg-black/40 border-white/10 text-sm"
+          />
+        </div>
+        <Button
+          onClick={() => send(input)}
+          disabled={(!input.trim() && !attachment) || thinking}
+          className="h-11 w-11 shrink-0 p-0 bg-[#B4FF39] text-black hover:bg-[#a2e833] disabled:opacity-40"
+          aria-label="Send"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </Button>
       </div>
-      <Button
-        onClick={() => send(input)}
-        disabled={!input.trim() || thinking}
-        className="h-11 w-11 shrink-0 p-0 bg-[#B4FF39] text-black hover:bg-[#a2e833] disabled:opacity-40"
-        aria-label="Send"
-      >
-        <ArrowUp className="h-5 w-5" />
-      </Button>
     </div>
   );
 
@@ -320,9 +409,18 @@ export const AnalyticsInsights = () => {
               {messages.map(m =>
                 m.role === 'user' ? (
                   <div key={m.id} className="flex flex-col items-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#B4FF39] text-black px-3.5 py-2.5 text-sm">
-                      {m.text}
-                    </div>
+                    {m.image && (
+                      <img
+                        src={m.image.dataUrl}
+                        alt="Card"
+                        className="mb-1.5 max-h-52 max-w-[70%] rounded-2xl rounded-br-sm border border-white/10 object-contain"
+                      />
+                    )}
+                    {m.text && (
+                      <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#B4FF39] text-black px-3.5 py-2.5 text-sm">
+                        {m.text}
+                      </div>
+                    )}
                     {m.at && (
                       <div className="mt-1 mr-1 text-[10px] text-muted-foreground">
                         {moment(m.at).format('MMM D, h:mm A')}

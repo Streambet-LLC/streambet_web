@@ -889,6 +889,7 @@ import type {
   ApiCardForecastResult,
   ApiCardMarketProfile,
   ApiInsightsMessage,
+  ApiCardImage,
   ApiInsightsChatResult,
   ApiMarketSnapshot,
   ApiMarketCatalog,
@@ -1461,6 +1462,37 @@ export const analyticsAPI = {
     const response = await apiClient.post(
       '/admin/analytics/insights/deep-research',
       { subject }
+    );
+    return response.data.data as ApiDeepResearchJob;
+  },
+
+  /**
+   * Identify the card in a photo WITHOUT starting a job — powers the
+   * "is this the right card?" confirmation step. `note` optionally disambiguates.
+   */
+  identifyCardImage: async (
+    image: ApiCardImage,
+    note?: string
+  ): Promise<{ isCard: boolean; subject: string }> => {
+    const response = await apiClient.post(
+      '/admin/analytics/insights/deep-research/identify-image',
+      { image, note }
+    );
+    return response.data.data as { isCard: boolean; subject: string };
+  },
+
+  /**
+   * Start a deep dive straight from a card photo — the server identifies the
+   * card, then kicks off the normal background research job. `note` is optional
+   * text to disambiguate (e.g. "the PSA 10 one").
+   */
+  startDeepResearchFromImage: async (
+    image: ApiCardImage,
+    note?: string
+  ): Promise<ApiDeepResearchJob> => {
+    const response = await apiClient.post(
+      '/admin/analytics/insights/deep-research/from-image',
+      { image, note }
     );
     return response.data.data as ApiDeepResearchJob;
   },
