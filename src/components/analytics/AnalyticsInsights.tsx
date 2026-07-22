@@ -24,6 +24,7 @@ import { fileToCardImage, type CardImage } from '@/utils/cardImage';
 import { DeepDivesPanel } from './DeepDivesPanel';
 import { ChatMarkdown } from './ChatMarkdown';
 import { InsightsHistoryDialog } from './InsightsHistoryDialog';
+import { AiDisclaimer } from './AiDisclaimer';
 
 const newConversationId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -486,6 +487,8 @@ export const AnalyticsInsights = () => {
         </>
       )}
       </Card>
+
+      <AiDisclaimer />
 
       <InsightsHistoryDialog
         open={historyOpen}
