@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiDeepResearchJob, ApiCardForecast } from '@/types/analytics-api';
+import { AiDisclaimer } from '@/components/analytics/AiDisclaimer';
 
 const OUTLOOK_COLOR: Record<string, string> = {
   Bullish: '#B4FF39',
@@ -487,10 +488,6 @@ const ReportBody = ({
         </Section>
       )}
 
-      <p className="pt-1 text-center text-[11px] text-muted-foreground">
-        AI/market estimate synthesized from live web research — not financial
-        advice.
-      </p>
     </div>
   );
 };
@@ -604,6 +601,8 @@ const DeepDiveReport = () => {
               job={job as ApiDeepResearchJob & { result: ApiCardForecast }}
             />
           ) : null}
+
+          <AiDisclaimer />
         </div>
       </main>
     </div>
