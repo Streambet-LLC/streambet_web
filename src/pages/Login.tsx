@@ -2,11 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,10 +10,8 @@ import { api } from '@/integrations/api/client';
 import { track, MixpanelEvent } from '@/lib/mixpanel';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getMessage } from '@/utils/helper';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useLocationRestriction } from '@/contexts/LocationRestrictionContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { AuthLayout } from '@/components/layout';
 import { Eye, EyeOff } from 'lucide-react';
@@ -37,7 +31,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [rememberMe, setRememberMe] = useState(false);
-  const { locationResult } = useLocationRestriction();
   const { refetchSession } = useAuthContext();
 
   const loginMutation = useMutation({
@@ -51,7 +44,7 @@ export default function Login() {
         navigate(redirectParam);
       }
       else {
-        navigate(response?.data?.role === 'admin' ? '/admin' : '/');
+        navigate(response?.data?.role === 'admin' ? '/analytics' : '/');
       }
     },
     onError: (error: any) => {
@@ -65,16 +58,6 @@ export default function Login() {
 
   const googleLoginMutation = useMutation({
     mutationFn: async () => {
-      await fetch(`${import.meta.env.VITE_API_URL}/auth/location-check`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
-      }}).then(async (res) => {
-        const response = await res.json();
-        if (response?.isForcedLogout) {
-          return Promise.reject(getMessage(response));
-        }
-    });
       return api.auth.googleAuth();
     },
     onError: (error: any) => {
@@ -105,32 +88,8 @@ export default function Login() {
     }
   };
 
-  const renderLocationWarning = () => {
-    if (!locationResult) return null;
-
-    if (!locationResult?.allowed) {
-      return (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Location Restricted</AlertTitle>
-          <AlertDescription>{locationResult?.error}</AlertDescription>
-        </Alert>
-      );
-    }
-
-    return null;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (locationResult && !locationResult.allowed) {
-      toast({
-        variant: 'destructive',
-        title: 'Location Restricted',
-        description: locationResult?.error,
-      });
-      return;
-    }
 
     if (!validateForm()) return;
 
@@ -154,28 +113,7 @@ export default function Login() {
   
 
   const handleGoogleLogin = async () => {
-    if (locationResult && !locationResult.allowed) {
-      toast({
-        variant: 'destructive',
-        title: 'Location Restricted',
-        description: locationResult.error,
-      });
-      return;
-    }
-
-    // Trigger the Google login button click
-    // const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
-    // if (googleButton instanceof HTMLElement) {
-    //   googleButton.click();
-    // }
-  
-  
-      // Trigger the Google login button click
-      // const googleButton = googleLoginRef.current?.querySelector('div[role="button"]');
-      // if (googleButton instanceof HTMLElement) {
-      //   googleButton.click();
-      // }
-      googleLoginMutation.mutateAsync();
+    googleLoginMutation.mutateAsync();
   };
 
   const containerVariants = {
@@ -205,7 +143,6 @@ export default function Login() {
       >
         <motion.div variants={itemVariants}>
           <Card className="bg-transparent border-0 p-0">
-            {renderLocationWarning()}
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4 p-0">
                 <motion.div variants={itemVariants} className="space-y-2">
@@ -292,16 +229,6 @@ export default function Login() {
                 </motion.div>
               </CardContent>
             </form>
-            <CardFooter className="flex flex-col space-y-2">
-              <motion.div variants={itemVariants} className="text-center w-full mt-7">
-                <p className="text-sm text-muted-foreground">
-                  Don't have an account?{' '}
-                  <Link to={redirectParam ? `/signup?redirect=${redirectParam}` : "/signup"} className="text-primary hover:underline">
-                    Sign up
-                  </Link>
-                </p>
-              </motion.div>
-            </CardFooter>
           </Card>
         </motion.div>
       </motion.div>

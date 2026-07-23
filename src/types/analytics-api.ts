@@ -583,7 +583,9 @@ export type DashboardWidgetType =
   | 'catalysts'
   | 'sales'
   | 'temperature'
-  | 'leaderboard';
+  | 'leaderboard'
+  | 'indices'
+  | 'brief';
 
 export interface DashboardWidget {
   id: string;
@@ -607,6 +609,20 @@ export interface DashboardConfig {
   layouts: Record<string, DashboardLayoutItem[]>;
   /** Trend-chart lookback in days; 0 = all history. */
   rangeDays?: number;
+  /** Default-layout version — older saved configs are auto-upgraded. */
+  version?: number;
+}
+
+/** A card being tracked for market research (the post-marketplace card source). */
+export interface ApiTrackedCard {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  grade: string | null;
+  notes: string | null;
+  ownerUserId: string | null;
+  createdAt: string;
 }
 
 /** A base64 image attached to a user turn (for the vision-capable chat). */

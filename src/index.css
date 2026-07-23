@@ -32,6 +32,16 @@
 }
 
 
+/*
+ * react-grid-layout mount fix: RGL transitions items into place, which on
+ * first render animates every widget outward from the origin. The dashboard
+ * keeps this class on until after first paint so widgets appear in place,
+ * then removes it to restore drag/resize animations.
+ */
+.rgl-no-anim .react-grid-item {
+  transition: none !important;
+}
+
 /* CRT Color Enhancement */
 .crt-colors {
   filter: saturate(1.3) contrast(1.1);

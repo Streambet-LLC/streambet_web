@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Loader2, LineChart as LineIcon, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatUsd } from '@/mocks/analytics';
+import { formatUsd } from '@/utils/format';
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiCardMarketProfile,
