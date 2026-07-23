@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
@@ -27,8 +26,7 @@ import {
   ThumbsUp,
   MessageSquare,
   Repeat2,
-  UserPlus,
-  Check,
+
   EyeOff,
   RotateCcw,
   ChevronLeft,
@@ -85,10 +83,10 @@ const authorLabel = (l: ApiDiscoveredLead) => {
 /**
  * Leads — the persistent pool of everything the Discover engine has surfaced.
  * Every search auto-saves its results here; this dashboard is where you see
- * all of it, filter it, and convert leads into prospects.
+ * all of it and filter it.
  */
 export const AnalyticsLeads = () => {
-  const navigate = useNavigate();
+
   const [source, setSource] = useState('all');
   const [status, setStatus] = useState('new');
   const [intent, setIntent] = useState('all');
@@ -159,26 +157,6 @@ export const AnalyticsLeads = () => {
       toast.error(e instanceof Error ? e.message : 'Qualify failed.');
     } finally {
       setQualifying(false);
-    }
-  };
-
-  const convert = async (l: ApiDiscoveredLead) => {
-    setBusy(l.id);
-    try {
-      const { profileId } = await analyticsAPI.convertLead(l.source, l.externalId);
-      toast.success(
-        <span>
-          Added as a prospect.{' '}
-          <button className="underline" onClick={() => navigate(`/analytics/${profileId}`)}>
-            View
-          </button>
-        </span>,
-      );
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Convert failed.');
-    } finally {
-      setBusy(null);
     }
   };
 
@@ -425,36 +403,6 @@ export const AnalyticsLeads = () => {
                       </div>
                     </div>
                     <div className="flex flex-col gap-1.5 shrink-0">
-                      {l.status === 'added' ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-white/10 bg-white/5"
-                          onClick={() =>
-                            l.convertedUserId &&
-                            navigate(`/analytics/${l.convertedUserId}`)
-                          }
-                        >
-                          <Check className="h-3.5 w-3.5 mr-1.5" /> Added
-                        </Button>
-                      ) : (
-                        l.source !== 'google' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-white/10 bg-white/5 hover:bg-white/10"
-                            onClick={() => convert(l)}
-                            disabled={busy === l.id}
-                          >
-                            {busy === l.id ? (
-                              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                            ) : (
-                              <UserPlus className="h-3.5 w-3.5 mr-1.5" />
-                            )}
-                            Convert
-                          </Button>
-                        )
-                      )}
                       {l.status === 'dismissed' ? (
                         <Button
                           variant="ghost"

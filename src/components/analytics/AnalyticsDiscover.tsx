@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
@@ -28,8 +27,6 @@ import {
   Heart,
   ThumbsUp,
   Repeat2,
-  UserPlus,
-  Check,
   Info,
   Sparkles,
 } from 'lucide-react';
@@ -85,11 +82,10 @@ type Time = 'hour' | 'day' | 'week' | 'month' | 'year' | 'all';
 
 /**
  * Discover — compliant external prospecting across Bluesky, Reddit, YouTube
- * (break-video comments), and the web (Google Programmable Search). Turn
- * posters into prospect profiles. No scraping.
+ * (break-video comments), and the web (Google Programmable Search). Results
+ * land in the Leads pool. No scraping.
  */
 export const AnalyticsDiscover = () => {
-  const navigate = useNavigate();
   const [source, setSource] = useState<DiscoverySource>('bluesky');
   const [query, setQuery] = useState('');
   const [subreddit, setSubreddit] = useState('');
@@ -99,7 +95,6 @@ export const AnalyticsDiscover = () => {
   const [searched, setSearched] = useState(false);
   const [configured, setConfigured] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [added, setAdded] = useState<Record<string, boolean>>({});
   const [suggestions, setSuggestions] = useState<ApiQuerySuggestions | null>(
     null,
   );
@@ -159,32 +154,8 @@ export const AnalyticsDiscover = () => {
     }
   };
 
-  const addAsProspect = async (l: ApiDiscoveryLead) => {
-    if (l.platform === 'google') return;
-    try {
-      // The search already persisted this lead to the pool; convert it there
-      // (server builds the profile + marks the lead 'added').
-      const { profileId } = await analyticsAPI.convertLead(l.platform, l.id);
-      setAdded(a => ({ ...a, [l.id]: true }));
-      toast.success(
-        <span>
-          Added {authorLabel(l)} as a prospect.{' '}
-          <button
-            className="underline"
-            onClick={() => navigate(`/analytics/${profileId}`)}
-          >
-            View
-          </button>
-        </span>,
-      );
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not add prospect.');
-    }
-  };
-
   const isReddit = source === 'reddit';
   const showSort = source === 'reddit' || source === 'bluesky';
-  const canAdd = source !== 'google';
 
   const authorLabel = (l: ApiDiscoveryLead) => {
     if (l.platform === 'reddit') return `u/${l.author}`;
@@ -204,8 +175,8 @@ export const AnalyticsDiscover = () => {
           Discover buyers
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Search public posts for buying intent and turn posters into prospect
-          profiles — via official, compliant APIs. No scraping.
+          Search public posts for buying intent — results land in the Leads
+          pool. Official, compliant APIs only; no scraping.
         </p>
 
         {/* Source toggle */}
@@ -476,25 +447,6 @@ export const AnalyticsDiscover = () => {
                         </p>
                       )}
                     </div>
-                    {canAdd && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="shrink-0 border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-60"
-                        onClick={() => addAsProspect(l)}
-                        disabled={!!added[l.id]}
-                      >
-                        {added[l.id] ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 mr-1.5" /> Added
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Add
-                          </>
-                        )}
-                      </Button>
-                    )}
                   </div>
                 </div>
               );

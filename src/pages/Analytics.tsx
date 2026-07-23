@@ -1,43 +1,29 @@
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
-import { AnalyticsUsersList } from '@/components/analytics/AnalyticsUsersList';
-import { AnalyticsUserDetail } from '@/components/analytics/AnalyticsUserDetail';
 import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
 import { AnalyticsSellers } from '@/components/analytics/AnalyticsSellers';
 import { AnalyticsDiscover } from '@/components/analytics/AnalyticsDiscover';
 import { AnalyticsLeads } from '@/components/analytics/AnalyticsLeads';
 import { AnalyticsMarket } from '@/components/analytics/AnalyticsMarket';
-import { AnalyticsScrapers } from '@/components/analytics/AnalyticsScrapers';
-import { useRealDataOnly } from '@/hooks/useRealDataOnly';
+import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
 
 /**
- * Admin-only Analytics homebase.
- *
- * Route is gated to admins. The mock dataset is intentionally hard-coded
- * (see [src/mocks/analytics.ts](src/mocks/analytics.ts)) so this demo
- * showcases the UI/UX before backend wiring lands.
+ * Admin-only Analytics homebase — AI-powered card-market intelligence built
+ * on live external data (web research, market pulse, social discovery).
  */
 const Analytics = () => {
   const { session, isLoading, isFetching } = useAuthContext();
-  const { userId } = useParams<{ userId?: string }>();
   const [tab, setTab] = useState<
-    | 'overview'
-    | 'profiles'
-    | 'sellers'
-    | 'market'
-    | 'discover'
-    | 'leads'
-    | 'insights'
-    | 'scrapers'
-  >(userId ? 'profiles' : 'overview');
-  const [realOnly, setRealOnly] = useRealDataOnly();
+    'market' | 'audience' | 'insights' | 'waitlist'
+  >('market');
+  // Sub-view inside the Sellers/Buyers tab.
+  const [audienceTab, setAudienceTab] = useState<'sellers' | 'buyers' | 'leads'>(
+    'sellers',
+  );
 
   if (isLoading || isFetching) {
     return (
@@ -61,101 +47,74 @@ const Analytics = () => {
       <main className="h-[calc(100dvh-64px)] overflow-auto">
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-10 py-6 md:py-8 pb-16">
         {/* Page header */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold text-white">Analytics</h1>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Unified collector intelligence — purchase propensity, payment-percentile predictions,
-              and cross-platform identity confidence built from public eBay, Instagram, X, TikTok,
-              and Facebook signals.
-            </p>
-          </div>
-          {/* Global toggle: hides every mock-derived field across all tabs. */}
-          <div className="flex items-center gap-3 rounded-lg border border-white/5 bg-[rgba(22,22,22,1)] px-4 py-2">
-            <Switch
-              id="analytics-real-only"
-              checked={realOnly}
-              onCheckedChange={setRealOnly}
-            />
-            <Label
-              htmlFor="analytics-real-only"
-              className="text-xs text-muted-foreground cursor-pointer select-none"
-            >
-              {realOnly ? 'Showing real CardCade data only' : 'Show real data only (hide mocks)'}
-            </Label>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-white">Analytics</h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+            AI-powered card-market intelligence — tracked-card pricing and
+            forecasts, market-segment trends, prospect discovery, and a
+            research analyst built on live web data.
+          </p>
         </div>
 
-        {/* If a userId is in the URL, render detail directly */}
-        {userId ? (
-          <AnalyticsUserDetail />
-        ) : (
-          <Tabs
-            value={tab === 'scrapers' && realOnly ? 'overview' : tab}
-            onValueChange={v =>
-              setTab(
-                v as
-                  | 'overview'
-                  | 'profiles'
-                  | 'sellers'
-                  | 'market'
-                  | 'discover'
-                  | 'leads'
-                  | 'insights'
-                  | 'scrapers',
-              )
-            }
-          >
-            <TabsList className="bg-[rgba(22,22,22,1)] border border-white/5">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="profiles">Profiles</TabsTrigger>
-              <TabsTrigger value="sellers">Sellers</TabsTrigger>
-              <TabsTrigger value="market">Market</TabsTrigger>
-              <TabsTrigger value="discover">Discover</TabsTrigger>
-              <TabsTrigger value="leads">Leads</TabsTrigger>
-              <TabsTrigger value="insights" className="gap-1.5">
-                Insights
-              </TabsTrigger>
-              {!realOnly && <TabsTrigger value="scrapers">Scrapers</TabsTrigger>}
-            </TabsList>
+        <Tabs
+          value={tab}
+          onValueChange={v =>
+            setTab(v as 'market' | 'audience' | 'insights' | 'waitlist')
+          }
+        >
+          <TabsList className="h-auto flex-wrap justify-start bg-[rgba(22,22,22,1)] border border-white/5">
+            <TabsTrigger value="market">Market</TabsTrigger>
+            <TabsTrigger value="audience">Sellers/Buyers</TabsTrigger>
+            <TabsTrigger value="insights" className="gap-1.5">
+              Insights
+            </TabsTrigger>
+            <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="overview" className="mt-6">
-              <AnalyticsDashboard />
-            </TabsContent>
+          <TabsContent value="market" className="mt-6">
+            <AnalyticsMarket />
+          </TabsContent>
 
-            <TabsContent value="profiles" className="mt-6">
-              <AnalyticsUsersList />
-            </TabsContent>
+          <TabsContent value="audience" className="mt-6">
+            <div className="space-y-5">
+              {/* Sub-view toggle: Sellers · Buyers (discovery) · Leads */}
+              <div className="inline-flex items-center rounded-md border border-white/10 bg-black/40 p-0.5">
+                {(
+                  [
+                    { key: 'sellers', label: 'Sellers' },
+                    { key: 'buyers', label: 'Buyers' },
+                    { key: 'leads', label: 'Leads' },
+                  ] as const
+                ).map(v => (
+                  <button
+                    key={v.key}
+                    type="button"
+                    onClick={() => setAudienceTab(v.key)}
+                    className={`px-3 h-8 rounded text-sm transition-colors ${
+                      audienceTab === v.key
+                        ? 'bg-white/10 text-white'
+                        : 'text-muted-foreground hover:text-white'
+                    }`}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
 
-            <TabsContent value="sellers" className="mt-6">
-              <AnalyticsSellers />
-            </TabsContent>
+              {audienceTab === 'sellers' && <AnalyticsSellers />}
+              {audienceTab === 'buyers' && <AnalyticsDiscover />}
+              {audienceTab === 'leads' && <AnalyticsLeads />}
+            </div>
+          </TabsContent>
 
-            <TabsContent value="market" className="mt-6">
-              <AnalyticsMarket />
-            </TabsContent>
+          <TabsContent value="insights" className="mt-6">
+            <AnalyticsInsights />
+          </TabsContent>
 
-            <TabsContent value="discover" className="mt-6">
-              <AnalyticsDiscover />
-            </TabsContent>
-
-            <TabsContent value="leads" className="mt-6">
-              <AnalyticsLeads />
-            </TabsContent>
-
-            <TabsContent value="insights" className="mt-6">
-              <AnalyticsInsights />
-            </TabsContent>
-
-            {!realOnly && (
-              <TabsContent value="scrapers" className="mt-6">
-                <AnalyticsScrapers />
-              </TabsContent>
-            )}
-          </Tabs>
-        )}
+          <TabsContent value="waitlist" className="mt-6">
+            <AnalyticsWaitlist />
+          </TabsContent>
+        </Tabs>
         </div>
       </main>
     </div>

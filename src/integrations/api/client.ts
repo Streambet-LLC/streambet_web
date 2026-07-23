@@ -17,7 +17,6 @@ import {
   AdminReportedEbaySoldListing,
   SubmitPrizeRedemptionRequest,
 } from '@/types/prize';
-import { PromotedBetsResponse } from '@/types/promo';
 import { CurrencyType } from '@/utils/currency';
 import {
   CartSummary,
@@ -693,15 +692,6 @@ export const betsAPI = {
     return response.data;
   },
 
-  // Get all promoted bets
-  getPromotedBets: async (params?: any): Promise<{ data: PromotedBetsResponse }> => {
-    const response = await apiClient.get(`/stream/promoted-bets`, {
-      params,
-    });
-
-    return response.data;
-  },
-
   getBets: async (params?: any) => {
     const { page } = params;
     const { data: response } = await apiClient.get(`/stream/displayed-bets`, {
@@ -866,26 +856,15 @@ export const socketAPI = {
   },
 };
 
-// Collector Analytics API (admin-only, real buy/sell + socials)
+// Analytics API (admin-only, external market data)
 import type {
-  ApiCollectorAnalyticsAnnotations,
-  ApiCollectorAnalyticsOverview,
-  ApiCollectorListParams,
-  ApiCollectorProfileDetail,
-  ApiCollectorProfilesList,
-  ApiCollectorSocial,
-  ApiCreateCollectorProfilePayload,
-  ApiUpdateCollectorAnalyticsProfilePayload,
-  ApiUpdateCollectorSocialsPayload,
   ApiIngestSellerInventoryPayload,
   ApiSellerInventoryDetail,
   ApiSellerInventoryUploadSummary,
-  ApiExternalSignal,
   ApiDiscoveryResult,
   ApiDiscoveredLeadsList,
   ApiLeadStats,
-  ApiMarketCardsList,
-  ApiMarketCardDetail,
+  ApiTrackedCard,
   ApiCardForecastResult,
   ApiCardMarketProfile,
   ApiInsightsMessage,
@@ -903,97 +882,8 @@ import type {
 } from '@/types/analytics-api';
 
 export const analyticsAPI = {
-  /** Aggregated overview: stats, category affinity, top assets, 12w trend. */
-  getCollectorsOverview: async (): Promise<ApiCollectorAnalyticsOverview> => {
-    const response = await apiClient.get(`/admin/analytics/collectors/overview`);
-    return response.data.data as ApiCollectorAnalyticsOverview;
-  },
-
-  /** Paginated profile list with spend + socials + top categories. */
-  listCollectorProfiles: async (
-    params: ApiCollectorListParams = {}
-  ): Promise<ApiCollectorProfilesList> => {
-    const response = await apiClient.get(`/admin/analytics/collectors`, {
-      params: {
-        limit: params.limit,
-        offset: params.offset,
-        search: params.search || undefined,
-        onlySellers: params.onlySellers ? 'true' : undefined,
-        sort: params.sort || undefined,
-        dir: params.dir || undefined,
-        category:
-          params.category && params.category !== 'all'
-            ? params.category
-            : undefined,
-        includeOmitted: params.includeOmitted ? 'true' : undefined,
-      },
-    });
-    return response.data.data as ApiCollectorProfilesList;
-  },
-
-  /** Single profile detail with category breakdown + recent orders. */
-  getCollectorProfile: async (userId: string): Promise<ApiCollectorProfileDetail> => {
-    const response = await apiClient.get(`/admin/analytics/collectors/${userId}`);
-    return response.data.data as ApiCollectorProfileDetail;
-  },
-
-  /** Admin-only: create a brand-new collector profile. */
-  createCollectorProfile: async (
-    payload: ApiCreateCollectorProfilePayload
-  ): Promise<ApiCollectorProfileDetail> => {
-    const response = await apiClient.post(`/admin/analytics/collectors`, payload);
-    return response.data.data as ApiCollectorProfileDetail;
-  },
-
-  /**
-   * Admin-only: replace the user's connected socials. Empty `value`
-   * entries are treated as deletions server-side.
-   */
-  updateCollectorSocials: async (
-    userId: string,
-    payload: ApiUpdateCollectorSocialsPayload
-  ): Promise<{ socials: ApiCollectorSocial[]; appliedToPublic: boolean }> => {
-    const response = await apiClient.patch(
-      `/admin/analytics/collectors/${userId}/socials`,
-      payload
-    );
-    return response.data.data as {
-      socials: ApiCollectorSocial[];
-      appliedToPublic: boolean;
-    };
-  },
-
-  /**
-   * Admin-only: merge analytics annotations (notes, persona override,
-   * interests, etc.) onto the collector's profile.
-   */
-  updateCollectorAnalyticsProfile: async (
-    userId: string,
-    payload: ApiUpdateCollectorAnalyticsProfilePayload
-  ): Promise<{ analyticsProfile: ApiCollectorAnalyticsAnnotations | null }> => {
-    const response = await apiClient.patch(
-      `/admin/analytics/collectors/${userId}/profile`,
-      payload
-    );
-    return response.data.data as {
-      analyticsProfile: ApiCollectorAnalyticsAnnotations | null;
-    };
-  },
-
-  /**
-   * Admin-only: omit (or restore) a user from the Analytics surface. Toggles
-   * an analytics-only flag — does not affect the user's account or shop.
-   */
-  setCollectorExclusion: async (
-    userId: string,
-    excluded: boolean
-  ): Promise<{ excluded: boolean }> => {
-    const response = await apiClient.patch(
-      `/admin/analytics/collectors/${userId}/exclusion`,
-      { excluded }
-    );
-    return response.data.data as { excluded: boolean };
-  },
+  // NOTE: the collector/buyer analytics client methods were removed with the
+  // marketplace data integration — the dashboard is external-market-data only.
 
   // --- Seller document ingest (CSV / Excel / Google Sheets) ---
 
@@ -1062,28 +952,6 @@ export const analyticsAPI = {
       body
     );
     return response.data.data as { title: string; rows: string[][] };
-  },
-
-  // --- Acquisition: compliant external signals (consented handles, etc.) ---
-
-  /** Stored external signals for a collector. */
-  getCollectorSignals: async (
-    userId: string
-  ): Promise<ApiExternalSignal[]> => {
-    const response = await apiClient.get(
-      `/admin/analytics/acquisition/${userId}/signals`
-    );
-    return response.data.data as ApiExternalSignal[];
-  },
-
-  /** Run the connectors for a collector and return the refreshed signals. */
-  collectCollectorSignals: async (
-    userId: string
-  ): Promise<ApiExternalSignal[]> => {
-    const response = await apiClient.post(
-      `/admin/analytics/acquisition/${userId}/collect`
-    );
-    return response.data.data as ApiExternalSignal[];
   },
 
   /** Discover prospect leads via a compliant search source (Reddit / Bluesky). */
@@ -1173,18 +1041,6 @@ export const analyticsAPI = {
     return response.data.data as ApiLeadStats;
   },
 
-  /** Convert a pooled lead into a prospect profile. */
-  convertLead: async (
-    source: string,
-    externalId: string
-  ): Promise<{ profileId: string; alreadyAdded?: boolean }> => {
-    const response = await apiClient.post(
-      `/admin/analytics/acquisition/leads/convert`,
-      { source, externalId }
-    );
-    return response.data.data as { profileId: string; alreadyAdded?: boolean };
-  },
-
   /** Dismiss or restore a lead. */
   setLeadStatus: async (
     source: string,
@@ -1198,39 +1054,53 @@ export const analyticsAPI = {
     return response.data.data as { status: string };
   },
 
-  // --- Market / Dealer suite (per-card intelligence) ---
+  // --- Market: tracked-card research (external data only) ---
 
-  /** Per-card market table with filters + sort. */
+  /** Tracked cards, newest first, optional name search. */
   getMarketCards: async (params: {
     search?: string;
-    brand?: string;
-    category?: string;
-    sort?: 'sales' | 'revenue' | 'gap' | 'concentration' | 'recent';
     limit?: number;
     offset?: number;
-  }): Promise<ApiMarketCardsList> => {
+  }): Promise<{ total: number; data: ApiTrackedCard[] }> => {
     const response = await apiClient.get(`/admin/analytics/market/cards`, {
       params: {
         search: params.search || undefined,
-        brand: params.brand && params.brand !== 'all' ? params.brand : undefined,
-        category:
-          params.category && params.category !== 'all'
-            ? params.category
-            : undefined,
-        sort: params.sort || undefined,
         limit: params.limit,
         offset: params.offset,
       },
     });
-    return response.data.data as ApiMarketCardsList;
+    return response.data.data as { total: number; data: ApiTrackedCard[] };
   },
 
-  /** One card's full market detail (+ AI hold/sell). */
-  getMarketCard: async (id: string): Promise<ApiMarketCardDetail> => {
+  /** One tracked card. */
+  getMarketCard: async (id: string): Promise<ApiTrackedCard> => {
     const response = await apiClient.get(
       `/admin/analytics/market/cards/${id}`
     );
-    return response.data.data as ApiMarketCardDetail;
+    return response.data.data as ApiTrackedCard;
+  },
+
+  /** Track a new card for market research. */
+  addTrackedCard: async (payload: {
+    name: string;
+    brand?: string;
+    category?: string;
+    grade?: string;
+    notes?: string;
+  }): Promise<ApiTrackedCard> => {
+    const response = await apiClient.post(
+      `/admin/analytics/market/cards`,
+      payload
+    );
+    return response.data.data as ApiTrackedCard;
+  },
+
+  /** Stop tracking a card. */
+  removeTrackedCard: async (id: string): Promise<{ id: string }> => {
+    const response = await apiClient.delete(
+      `/admin/analytics/market/cards/${id}`
+    );
+    return response.data.data as { id: string };
   },
 
   /** Cached predictive forecast for a card (null if none yet). */
@@ -1495,6 +1365,38 @@ export const analyticsAPI = {
       { image, note }
     );
     return response.data.data as ApiDeepResearchJob;
+  },
+};
+
+/** Public waitlist signup + admin listing. */
+export interface WaitlistSignup {
+  id: string;
+  email: string;
+  name: string | null;
+  source: string | null;
+  createdAt: string;
+}
+
+export const waitlistAPI = {
+  /** Public: join the waitlist. Idempotent per email. */
+  join: async (input: {
+    email: string;
+    name?: string;
+    source?: string;
+  }): Promise<{ joined: boolean; alreadyOnList: boolean }> => {
+    const response = await apiClient.post('/waitlist', input);
+    return response.data.data as { joined: boolean; alreadyOnList: boolean };
+  },
+
+  /** Admin: list waitlist signups, newest first. */
+  list: async (
+    limit = 50,
+    offset = 0
+  ): Promise<{ total: number; data: WaitlistSignup[] }> => {
+    const response = await apiClient.get(
+      `/waitlist?limit=${limit}&offset=${offset}`
+    );
+    return response.data.data as { total: number; data: WaitlistSignup[] };
   },
 };
 

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
+import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,128 +18,130 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { formatUsd } from '@/mocks/analytics';
 import { CardMarketProfile } from './CardMarketProfile';
 import { ForecastBrief } from './ForecastBrief';
 import { MarketDashboard } from './MarketDashboard';
 import { analyticsAPI } from '@/integrations/api/client';
-import type {
-  ApiMarketCard,
-  ApiMarketCardDetail,
-  ApiCardForecast,
-} from '@/types/analytics-api';
+import type { ApiTrackedCard, ApiCardForecast } from '@/types/analytics-api';
 import {
   Search,
   Loader2,
-  ChevronLeft,
+  Plus,
+  Trash2,
   ChevronRight,
-  ExternalLink,
-  ArrowUpRight,
-  Sparkles,
-  TrendingUp,
-  ArrowUp,
-  ArrowDown,
-  RefreshCw,
   Radar,
+  RefreshCw,
+  Sparkles,
 } from 'lucide-react';
-import { toast } from 'sonner';
 
-const PAGE_SIZE = 50;
+const BRANDS = ['pokemon', 'one_piece', 'sports', 'other'] as const;
+const CATEGORIES = ['raw', 'slab', 'sealed', 'other'] as const;
 
-const LIQ_STYLES: Record<string, string> = {
-  High: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-  Medium: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-  Low: 'border-white/10 bg-white/5 text-white/60',
+const BRAND_LABEL: Record<string, string> = {
+  pokemon: 'Pokémon',
+  one_piece: 'One Piece',
+  sports: 'Sports',
+  other: 'Other',
 };
-
-const VERDICT_STYLES: Record<string, string> = {
-  Hold: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
-  'Sell now': 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-  'Sell soon': 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-};
-
-const brandLabel = (b: string | null) =>
-  b === 'pokemon'
-    ? 'Pokémon'
-    : b === 'one_piece'
-      ? 'One Piece'
-      : b === 'sports'
-        ? 'Sports'
-        : b === 'other'
-          ? 'Other'
-          : b ?? '';
-
-const pct = (n: number | null) => (n == null ? '—' : `${n}%`);
 
 /**
- * Market (Dealer Suite) — per-card demand + pricing intelligence over our own
- * sales, eBay sold comps, and buyer analytics. Click a card for the full
- * breakdown + an AI Hold/Sell call.
+ * Market — tracked-card research. Cards are explicitly tracked (added by
+ * admins today; saved to user profiles once sign-ups reopen) and enriched
+ * with EXTERNAL market data only: multi-source price profiles and AI
+ * forecasts from live web research. The old marketplace catalog/sales
+ * integration is gone with the marketplace itself.
  */
 export const AnalyticsMarket = () => {
+  const [view, setView] = useState<'dashboard' | 'cards'>('dashboard');
+  const [cards, setCards] = useState<ApiTrackedCard[]>([]);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
-  const [brand, setBrand] = useState('all');
-  const [category, setCategory] = useState('all');
-  const [sort, setSort] = useState<
-    'sales' | 'revenue' | 'gap' | 'concentration' | 'recent'
-  >('sales');
-  const [page, setPage] = useState(0);
-  const [rows, setRows] = useState<ApiMarketCard[]>([]);
-  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(50);
   const [loading, setLoading] = useState(true);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [view, setView] = useState<'dashboard' | 'cards'>('dashboard');
+  const [openCard, setOpenCard] = useState<ApiTrackedCard | null>(null);
+
+  // Add-card form
+  const [name, setName] = useState('');
+  const [brand, setBrand] = useState<string>('pokemon');
+  const [category, setCategory] = useState<string>('raw');
+  const [grade, setGrade] = useState('');
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 300);
     return () => clearTimeout(t);
   }, [search]);
-  useEffect(() => setPage(0), [debounced, brand, category, sort]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await analyticsAPI.getMarketCards({
-        search: debounced,
-        brand,
-        category,
-        sort,
-        limit: PAGE_SIZE,
-        offset: page * PAGE_SIZE,
+      const r = await analyticsAPI.getMarketCards({
+        search: debounced || undefined,
+        limit,
       });
-      setRows(res.data);
-      setTotal(res.total);
+      setCards(r.data);
+      setTotal(r.total);
     } catch {
-      setRows([]);
-      setTotal(0);
+      /* keep last known */
     } finally {
       setLoading(false);
     }
-  }, [debounced, brand, category, sort, page]);
+  }, [debounced, limit]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const addCard = async () => {
+    const n = name.trim();
+    if (!n || adding) return;
+    setAdding(true);
+    try {
+      const card = await analyticsAPI.addTrackedCard({
+        name: n,
+        brand,
+        category,
+        grade: grade.trim() || undefined,
+      });
+      setName('');
+      setGrade('');
+      toast.success(`Now tracking “${card.name}”`);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not track that card.');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const removeCard = async (card: ApiTrackedCard) => {
+    try {
+      await analyticsAPI.removeTrackedCard(card.id);
+      toast.success(`Stopped tracking “${card.name}”`);
+      if (openCard?.id === card.id) setOpenCard(null);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not untrack.');
+    }
+  };
 
   return (
     <div className="space-y-5">
       {/* View toggle */}
-      <div className="inline-flex items-center gap-1 rounded-lg border border-white/5 bg-[rgba(22,22,22,1)] p-1">
+      <div className="inline-flex items-center rounded-md border border-white/10 bg-black/40 p-0.5">
         {(['dashboard', 'cards'] as const).map(v => (
           <button
             key={v}
             type="button"
             onClick={() => setView(v)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+            className={`px-3 h-8 rounded text-sm transition-colors ${
               view === v
-                ? 'bg-[#B4FF39] text-black'
-                : 'text-white/70 hover:text-white'
+                ? 'bg-white/10 text-white'
+                : 'text-muted-foreground hover:text-white'
             }`}
           >
-            {v}
+            {v === 'dashboard' ? 'Market pulse' : 'Tracked cards'}
           </button>
         ))}
       </div>
@@ -149,244 +150,263 @@ export const AnalyticsMarket = () => {
 
       {view === 'cards' && (
         <>
-      {/* Filters */}
-      <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4">
-        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search cards…"
-              className="pl-9 bg-black/40 border-white/10"
-            />
-          </div>
-          <Select value={brand} onValueChange={setBrand}>
-            <SelectTrigger className="w-full sm:w-[150px] bg-black/40 border-white/10">
-              <SelectValue placeholder="Brand" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All brands</SelectItem>
-              <SelectItem value="pokemon">Pokémon</SelectItem>
-              <SelectItem value="one_piece">One Piece</SelectItem>
-              <SelectItem value="sports">Sports</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-full sm:w-[140px] bg-black/40 border-white/10">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
-              <SelectItem value="raw">Raw</SelectItem>
-              <SelectItem value="slab">Slab</SelectItem>
-              <SelectItem value="sealed">Sealed</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sort} onValueChange={v => setSort(v as typeof sort)}>
-            <SelectTrigger className="w-full sm:w-[170px] bg-black/40 border-white/10">
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sales">Most sales</SelectItem>
-              <SelectItem value="revenue">Top revenue</SelectItem>
-              <SelectItem value="gap">Widest price gap</SelectItem>
-              <SelectItem value="concentration">Most concentrated</SelectItem>
-              <SelectItem value="recent">Recently sold</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </Card>
-
-      {/* Table */}
-      <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-5">
-        {loading ? (
-          <div className="py-12 flex justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : rows.length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">
-            No cards match — try different filters.
-          </div>
-        ) : (
-          <>
-            <div className="text-xs text-muted-foreground mb-3">
-              {total.toLocaleString()} card{total === 1 ? '' : 's'}
+          {/* Track a card */}
+          <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
+            <div className="text-sm font-medium text-white mb-1">
+              Track a card
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase text-muted-foreground border-b border-white/5">
-                    <th className="py-3 pr-4">Card</th>
-                    <th className="py-3 pr-4 hidden md:table-cell">Supply</th>
-                    <th className="py-3 pr-4">Sales</th>
-                    <th className="py-3 pr-4 hidden lg:table-cell">
-                      Concentration
-                    </th>
-                    <th className="py-3 pr-4">Liquidity</th>
-                    <th className="py-3 pr-4 hidden md:table-cell">
-                      Market (comps)
-                    </th>
-                    <th className="py-3 pr-4 hidden lg:table-cell">Gap</th>
-                    <th className="py-3 pr-2 w-[40px]"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map(c => (
-                    <tr
-                      key={c.id}
-                      onClick={() => setOpenId(c.id)}
-                      className="border-b border-white/5 last:border-0 hover:bg-white/5 cursor-pointer transition-colors"
+            <p className="text-xs text-muted-foreground mb-3">
+              Add any card to the research universe — market profiles, price
+              history, and AI forecasts build from live external data.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <Input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addCard()}
+                placeholder='e.g. "Crown Zenith Charizard VSTAR UPC #GG69"'
+                className="flex-1 min-w-[240px] bg-black/40 border-white/10"
+              />
+              <Select value={brand} onValueChange={setBrand}>
+                <SelectTrigger className="w-full sm:w-[130px] bg-black/40 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BRANDS.map(b => (
+                    <SelectItem key={b} value={b}>
+                      {BRAND_LABEL[b]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="w-full sm:w-[110px] bg-black/40 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(c => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                value={grade}
+                onChange={e => setGrade(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addCard()}
+                placeholder="Grade (e.g. PSA 10)"
+                className="w-full sm:w-[150px] bg-black/40 border-white/10"
+              />
+              <Button
+                onClick={addCard}
+                disabled={!name.trim() || adding}
+                className="bg-[#B4FF39] text-black hover:bg-[#a2e833] disabled:opacity-40"
+              >
+                {adding ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-1" /> Track
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+
+          {/* Tracked cards list */}
+          <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-white">
+                  Tracked cards
+                </span>
+                <span className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-xs text-muted-foreground">
+                  {total}
+                </span>
+              </div>
+              <div className="relative w-full sm:w-[260px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search tracked cards…"
+                  className="pl-9 bg-black/40 border-white/10"
+                />
+              </div>
+            </div>
+
+            {loading && cards.length === 0 ? (
+              <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+              </div>
+            ) : cards.length === 0 ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                No tracked cards yet — add one above to start building market
+                profiles and forecasts.
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {cards.map(c => (
+                  <div
+                    key={c.id}
+                    className="flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-3 py-2.5 hover:bg-white/[0.04]"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenCard(c)}
+                      className="flex-1 min-w-0 text-left"
                     >
-                      <td className="py-3 pr-4">
-                        <div className="font-medium text-white truncate max-w-[280px] flex items-center gap-2">
-                          <span className="truncate">{c.name}</span>
-                          {c.whaleRecent && (
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 text-[10px] font-normal border-[#B4FF39]/30 bg-[#B4FF39]/10 text-[#B4FF39]"
-                            >
-                              🐋 whale
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {[brandLabel(c.brand), c.category, c.grade]
-                            .filter(Boolean)
-                            .join(' · ')}
-                          {c.price != null ? ` · ${formatUsd(c.price)}` : ''}
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4 hidden md:table-cell text-white/80">
-                        {c.stock}
-                      </td>
-                      <td className="py-3 pr-4">
-                        <span className="text-white">{c.sales}</span>
-                        <span className="text-muted-foreground">
-                          {' '}
-                          / {c.buyers} buyer{c.buyers === 1 ? '' : 's'}
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm text-white/90">
+                          {c.name}
                         </span>
-                      </td>
-                      <td className="py-3 pr-4 hidden lg:table-cell">
-                        {c.concentrationPct != null ? (
-                          <span
-                            className={
-                              c.concentrationPct >= 50
-                                ? 'text-amber-300'
-                                : 'text-white/80'
-                            }
-                          >
-                            {c.concentrationPct}% top buyer
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="py-3 pr-4">
-                        {c.liquidity ? (
+                        {c.grade && (
                           <Badge
                             variant="outline"
-                            className={`text-[11px] font-normal ${LIQ_STYLES[c.liquidity]}`}
+                            className="shrink-0 border-[#B4FF39]/30 bg-[#B4FF39]/10 text-[10px] text-[#B4FF39]"
                           >
-                            {c.liquidity}
+                            {c.grade}
                           </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
                         )}
-                      </td>
-                      <td className="py-3 pr-4 hidden md:table-cell">
-                        {c.comps?.median != null ? (
-                          <div>
-                            <div className="text-white/90">
-                              {formatUsd(c.comps.median)}
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {c.comps.low != null && c.comps.high != null
-                                ? `${formatUsd(c.comps.low)}–${formatUsd(c.comps.high)}`
-                                : `${c.comps.count} comps`}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">
-                            no comps
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 pr-4 hidden lg:table-cell text-white/80">
-                        {pct(c.priceGapPct)}
-                      </td>
-                      <td className="py-3 pr-2 text-right">
-                        <ArrowUpRight className="h-4 w-4 text-muted-foreground inline" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-              <div className="text-xs text-muted-foreground">
-                Page {page + 1} of {totalPages}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {[
+                          c.brand ? (BRAND_LABEL[c.brand] ?? c.brand) : null,
+                          c.category,
+                          `added ${moment(c.createdAt).fromNow()}`,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </div>
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeCard(c)}
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-red-400"
+                      aria-label="Stop tracking"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0 cursor-pointer text-muted-foreground"
+                      onClick={() => setOpenCard(c)}
+                    />
+                  </div>
+                ))}
+                {total > cards.length && (
+                  <button
+                    type="button"
+                    onClick={() => setLimit(l => l + 50)}
+                    className="w-full rounded-lg border border-white/5 bg-black/20 px-3 py-2 text-center text-xs text-muted-foreground hover:bg-white/5 hover:text-white"
+                  >
+                    Load more ({total - cards.length})
+                  </button>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 border-white/10 bg-white/5"
-                  onClick={() => setPage(p => Math.max(0, p - 1))}
-                  disabled={page === 0}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 border-white/10 bg-white/5"
-                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                  disabled={page >= totalPages - 1}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-      </Card>
+            )}
+          </Card>
         </>
       )}
 
-      <MarketCardDialog
-        cardId={openId}
-        onClose={() => setOpenId(null)}
-      />
+      {openCard && (
+        <TrackedCardDialog card={openCard} onClose={() => setOpenCard(null)} />
+      )}
     </div>
   );
 };
 
-// ---------------------------------------------------------------------------
-
-const Stat = ({
-  label,
-  value,
-  accent,
+/** Per-card research: multi-source market profile + AI forecast. */
+const TrackedCardDialog = ({
+  card,
+  onClose,
 }: {
-  label: string;
-  value: React.ReactNode;
-  accent?: boolean;
-}) => (
-  <div className="rounded-lg border border-white/5 bg-black/30 p-3">
-    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-      {label}
-    </div>
-    <div
-      className={`mt-0.5 text-sm font-semibold ${accent ? 'text-[#B4FF39]' : 'text-white'}`}
-    >
-      {value}
-    </div>
-  </div>
-);
+  card: ApiTrackedCard;
+  onClose: () => void;
+}) => {
+  const [forecast, setForecast] = useState<ApiCardForecast | null>(null);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+  const [loadingForecast, setLoadingForecast] = useState(true);
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoadingForecast(true);
+    setForecast(null);
+    analyticsAPI
+      .getCardForecast(card.id)
+      .then(r => {
+        if (!active) return;
+        if (r) {
+          setForecast(r.forecast);
+          setGeneratedAt(r.generatedAt);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => active && setLoadingForecast(false));
+    return () => {
+      active = false;
+    };
+  }, [card.id]);
+
+  const generate = async (refresh: boolean) => {
+    setGenerating(true);
+    try {
+      const r = await analyticsAPI.generateCardForecast(card.id, refresh);
+      setForecast(r.forecast);
+      setGeneratedAt(r.generatedAt);
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : 'Forecast generation failed.',
+      );
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={open => !open && onClose()}>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto border-white/10 bg-[rgba(18,18,18,1)]">
+        <DialogHeader>
+          <DialogTitle className="flex flex-wrap items-center gap-2 text-white">
+            {card.name}
+            {card.grade && (
+              <Badge
+                variant="outline"
+                className="border-[#B4FF39]/30 bg-[#B4FF39]/10 text-xs text-[#B4FF39]"
+              >
+                {card.grade}
+              </Badge>
+            )}
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            {[
+              card.brand ? (BRAND_LABEL[card.brand] ?? card.brand) : null,
+              card.category,
+              `tracked since ${moment(card.createdAt).format('MMM D, YYYY')}`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <CardMarketProfile cardId={card.id} />
+
+          <ForecastPanel
+            forecast={forecast}
+            generatedAt={generatedAt}
+            loading={loadingForecast}
+            generating={generating}
+            onGenerate={() => generate(false)}
+            onRefresh={() => generate(true)}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const ForecastPanel = ({
   forecast,
@@ -429,9 +449,9 @@ const ForecastPanel = ({
       <div className="rounded-lg border border-white/10 bg-black/20 p-4">
         {header}
         <p className="mt-2 text-xs text-muted-foreground">
-          Claude fuses our demand signals with live web research (social buzz,
-          upcoming events, grading &amp; supply news, comparable precedents) into
-          a scenario-weighted price forecast.
+          Claude researches this card across the live web (recent sold prices,
+          social buzz, upcoming events, grading &amp; supply news, comparable
+          precedents) into a scenario-weighted price forecast.
         </p>
         <Button
           size="sm"
@@ -478,245 +498,5 @@ const ForecastPanel = ({
 
       <ForecastBrief forecast={forecast} generatedAt={generatedAt} />
     </div>
-  );
-};
-
-const MarketCardDialog = ({
-  cardId,
-  onClose,
-}: {
-  cardId: string | null;
-  onClose: () => void;
-}) => {
-  const navigate = useNavigate();
-  const [detail, setDetail] = useState<ApiMarketCardDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [forecast, setForecast] = useState<ApiCardForecast | null>(null);
-  const [forecastAt, setForecastAt] = useState<string | null>(null);
-  const [forecastLoading, setForecastLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
-
-  useEffect(() => {
-    if (!cardId) {
-      setDetail(null);
-      return;
-    }
-    let active = true;
-    setLoading(true);
-    setDetail(null);
-    setForecast(null);
-    setForecastAt(null);
-    setForecastLoading(true);
-    analyticsAPI
-      .getMarketCard(cardId)
-      .then(d => active && setDetail(d))
-      .catch(() => active && setDetail(null))
-      .finally(() => active && setLoading(false));
-    analyticsAPI
-      .getCardForecast(cardId)
-      .then(r => {
-        if (!active || !r) return;
-        setForecast(r.forecast);
-        setForecastAt(r.generatedAt);
-      })
-      .catch(() => {})
-      .finally(() => active && setForecastLoading(false));
-    return () => {
-      active = false;
-    };
-  }, [cardId]);
-
-  const runForecast = async (refresh: boolean) => {
-    if (!cardId) return;
-    setGenerating(true);
-    try {
-      const r = await analyticsAPI.generateCardForecast(cardId, refresh);
-      setForecast(r.forecast);
-      setForecastAt(r.generatedAt);
-    } catch (e) {
-      const msg =
-        (e as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? 'Forecast failed. Check the Anthropic key & try again.';
-      toast.error(msg);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  return (
-    <Dialog open={!!cardId} onOpenChange={o => !o && onClose()}>
-      <DialogContent className="bg-[rgba(18,18,18,1)] border-white/10 text-white max-w-2xl max-h-[88vh] overflow-y-auto">
-        {loading || !detail ? (
-          <div className="py-16 flex justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-base pr-6">{detail.name}</DialogTitle>
-              <div className="text-xs text-muted-foreground">
-                {[brandLabel(detail.brand), detail.category, detail.grade]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </div>
-            </DialogHeader>
-
-            {/* AI Hold/Sell */}
-            {detail.recommendation && (
-              <div className="rounded-lg border border-[#B4FF39]/20 bg-[#B4FF39]/[0.04] p-4">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Sparkles className="h-4 w-4 text-[#B4FF39]" />
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
-                    AI recommendation
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className={`text-[11px] font-medium ${
-                      VERDICT_STYLES[detail.recommendation.verdict] ??
-                      'border-white/10 bg-white/5 text-white/70'
-                    }`}
-                  >
-                    {detail.recommendation.verdict}
-                  </Badge>
-                </div>
-                <p className="text-sm text-white/85">
-                  {detail.recommendation.reasoning}
-                </p>
-              </div>
-            )}
-
-            {/* Metrics grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <Stat
-                label="Our price"
-                value={detail.price != null ? formatUsd(detail.price) : '—'}
-              />
-              <Stat
-                label="Market median"
-                value={
-                  detail.comps?.median != null
-                    ? formatUsd(detail.comps.median)
-                    : '—'
-                }
-                accent
-              />
-              <Stat
-                label="vs Market"
-                value={
-                  detail.vsMarketPct == null
-                    ? '—'
-                    : `${detail.vsMarketPct > 0 ? '+' : ''}${detail.vsMarketPct}%`
-                }
-              />
-              <Stat
-                label="Market range"
-                value={
-                  detail.comps?.min != null && detail.comps?.max != null
-                    ? `${formatUsd(detail.comps.min)}–${formatUsd(detail.comps.max)}`
-                    : '—'
-                }
-              />
-              <Stat label="Price gap" value={pct(detail.priceGapPct)} />
-              <Stat label="Liquidity" value={detail.liquidity ?? '—'} />
-              <Stat label="Sales" value={`${detail.sales} / ${detail.buyers} buyers`} />
-              <Stat
-                label="Top-buyer share"
-                value={pct(detail.concentrationPct)}
-              />
-              <Stat label="Supply (stock)" value={detail.stock} />
-              <Stat
-                label="Median days to sale"
-                value={detail.timeToSaleDays ?? '—'}
-              />
-              <Stat label="Revenue" value={formatUsd(detail.revenueUsd)} />
-              <Stat
-                label="Last sale"
-                value={
-                  detail.lastSaleAt
-                    ? moment(detail.lastSaleAt).fromNow()
-                    : '—'
-                }
-              />
-            </div>
-
-            {/* Market history + charts */}
-            <CardMarketProfile cardId={detail.id} />
-
-            {/* Predictive intelligence */}
-            <ForecastPanel
-              forecast={forecast}
-              generatedAt={forecastAt}
-              loading={forecastLoading}
-              generating={generating}
-              onGenerate={() => runForecast(false)}
-              onRefresh={() => runForecast(true)}
-            />
-
-            {/* Top buyers */}
-            {detail.topBuyers.length > 0 && (
-              <div>
-                <div className="text-xs font-medium text-white/80 mb-2 flex items-center gap-1.5">
-                  <TrendingUp className="h-3.5 w-3.5" /> Who's buying it
-                </div>
-                <div className="space-y-1">
-                  {detail.topBuyers.map(b => (
-                    <button
-                      key={b.userId}
-                      type="button"
-                      onClick={() => navigate(`/analytics/${b.userId}`)}
-                      className="w-full flex items-center justify-between gap-2 rounded-md border border-white/5 bg-black/30 px-3 py-2 text-left hover:bg-white/5"
-                    >
-                      <span className="text-sm text-white truncate">
-                        {b.name || b.username || 'Unknown'}
-                        {b.username && (
-                          <span className="text-muted-foreground">
-                            {' '}
-                            @{b.username}
-                          </span>
-                        )}
-                      </span>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {b.units} bought · {b.sharePct}%
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Recent comps */}
-            {detail.recentComps.length > 0 && (
-              <div>
-                <div className="text-xs font-medium text-white/80 mb-2">
-                  Recent eBay sold comps
-                </div>
-                <div className="space-y-1">
-                  {detail.recentComps.slice(0, 8).map((c, i) => (
-                    <a
-                      key={i}
-                      href={c.url ?? '#'}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-between gap-2 rounded-md border border-white/5 bg-black/30 px-3 py-2 hover:bg-white/5"
-                    >
-                      <span className="text-xs text-white/80 truncate flex-1">
-                        {c.title}
-                      </span>
-                      <span className="text-xs text-white shrink-0">
-                        {c.price != null ? formatUsd(c.price) : '—'}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground shrink-0">
-                        {c.soldAt ? moment(c.soldAt).format('MMM D') : ''}
-                      </span>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
   );
 };

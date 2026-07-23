@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
@@ -14,10 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { formatUsd } from '@/mocks/analytics';
+import { formatUsd } from '@/utils/format';
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
-  ApiCollectorProfileSummary,
+
   ApiInventoryItemInput,
   ApiSellerInventoryDetail,
   ApiSellerInventoryUploadSummary,
@@ -177,13 +176,8 @@ const Stat = ({
 );
 
 const BuyerRow = ({ b }: { b: ApiSellerMatchedBuyer }) => {
-  const navigate = useNavigate();
   return (
-    <button
-      type="button"
-      onClick={() => navigate(`/analytics/${b.userId}`)}
-      className="group w-full flex items-center gap-3 rounded-lg border border-white/5 bg-black/30 px-3 py-2.5 text-left hover:bg-white/5 hover:border-white/10 transition-colors"
-    >
+    <div className="group w-full flex items-center gap-3 rounded-lg border border-white/5 bg-black/30 px-3 py-2.5 text-left">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-white truncate">
@@ -211,8 +205,7 @@ const BuyerRow = ({ b }: { b: ApiSellerMatchedBuyer }) => {
           {b.unitsBought} bought
         </div>
       </div>
-      <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-    </button>
+    </div>
   );
 };
 
@@ -227,12 +220,6 @@ export const AnalyticsSellers = () => {
     {} as Record<MapField, string>,
   );
   const [sellerLabel, setSellerLabel] = useState('');
-  const [sellerUserId, setSellerUserId] = useState<string | undefined>();
-  const [sellerSearch, setSellerSearch] = useState('');
-  const [sellerResults, setSellerResults] = useState<
-    ApiCollectorProfileSummary[]
-  >([]);
-  const [showSellerResults, setShowSellerResults] = useState(false);
   const [result, setResult] = useState<ApiSellerInventoryDetail | null>(null);
   const [uploads, setUploads] = useState<ApiSellerInventoryUploadSummary[]>([]);
   const [dragOver, setDragOver] = useState(false);
@@ -248,36 +235,6 @@ export const AnalyticsSellers = () => {
       .catch(() => void 0);
   };
   useEffect(refreshUploads, []);
-
-  // Debounced search for a real CardCade seller to link the upload to.
-  useEffect(() => {
-    if (!sellerSearch.trim() || sellerUserId) {
-      setSellerResults([]);
-      return;
-    }
-    const t = setTimeout(() => {
-      analyticsAPI
-        .listCollectorProfiles({ search: sellerSearch.trim(), limit: 8 })
-        .then(r => setSellerResults(r.data))
-        .catch(() => setSellerResults([]));
-    }, 300);
-    return () => clearTimeout(t);
-  }, [sellerSearch, sellerUserId]);
-
-  const selectSeller = (p: ApiCollectorProfileSummary) => {
-    setSellerUserId(p.id);
-    const name = p.displayName || p.username || 'Seller';
-    setSellerLabel(name);
-    setSellerSearch(name);
-    setShowSellerResults(false);
-  };
-
-  const clearSeller = () => {
-    setSellerUserId(undefined);
-    setSellerSearch('');
-    setSellerLabel('');
-    setSellerResults([]);
-  };
 
   const beginMapping = (p: Parsed) => {
     if (!p.headers.length || !p.rows.length) {
@@ -370,7 +327,7 @@ export const AnalyticsSellers = () => {
       const detail = await analyticsAPI.ingestSellerInventory({
         source: parsed.source,
         fileName: parsed.fileName,
-        sellerUserId,
+
         sellerLabel: sellerLabel.trim() || undefined,
         items: itemsToIngest,
       });
@@ -413,9 +370,6 @@ export const AnalyticsSellers = () => {
     setParsed(null);
     setResult(null);
     setSellerLabel('');
-    setSellerUserId(undefined);
-    setSellerSearch('');
-    setSellerResults([]);
     setGoogleUrl('');
     setStage('idle');
     refreshUploads();
@@ -607,84 +561,17 @@ export const AnalyticsSellers = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Link to a real CardCade seller (optional) */}
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">
-              Link to CardCade seller (optional)
-            </label>
-            {sellerUserId ? (
-              <div className="flex items-center gap-2 rounded-md border border-[#B4FF39]/30 bg-[#B4FF39]/10 px-3 h-10">
-                <span className="text-sm text-white truncate flex-1">
-                  {sellerLabel}
-                </span>
-                <button
-                  type="button"
-                  onClick={clearSeller}
-                  className="text-muted-foreground hover:text-white shrink-0"
-                  aria-label="Unlink seller"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="relative">
-                <Input
-                  value={sellerSearch}
-                  onChange={e => {
-                    setSellerSearch(e.target.value);
-                    setShowSellerResults(true);
-                  }}
-                  onFocus={() => setShowSellerResults(true)}
-                  placeholder="Search sellers by name or @username…"
-                  className="bg-black/40 border-white/10"
-                />
-                {showSellerResults && sellerResults.length > 0 && (
-                  <div className="absolute z-20 mt-1 w-full rounded-md border border-white/10 bg-[rgba(20,20,20,1)] shadow-xl max-h-64 overflow-y-auto">
-                    {sellerResults.map(p => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => selectSeller(p)}
-                        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-white/5"
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-sm text-white truncate">
-                            {p.displayName || p.username || 'Unknown'}
-                          </span>
-                          <span className="block text-xs text-muted-foreground truncate">
-                            {p.username ? `@${p.username}` : 'no account'}
-                          </span>
-                        </span>
-                        {p.isSeller && (
-                          <Badge
-                            variant="outline"
-                            className="shrink-0 text-[10px] font-normal border-white/10 bg-white/5 text-white/50"
-                          >
-                            Seller
-                          </Badge>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Free-text label for off-platform sellers */}
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground">
-              Or seller label (off-platform)
-            </label>
-            <Input
-              value={sellerLabel}
-              onChange={e => setSellerLabel(e.target.value)}
-              disabled={!!sellerUserId}
-              placeholder="e.g. Joe's Cards, eBay store name…"
-              className="bg-black/40 border-white/10 disabled:opacity-60"
-            />
-          </div>
+        {/* Seller label (free text) */}
+        <div className="space-y-1.5">
+          <label className="text-xs text-muted-foreground">
+            Seller label (optional)
+          </label>
+          <Input
+            value={sellerLabel}
+            onChange={e => setSellerLabel(e.target.value)}
+            placeholder="e.g. Joe's Cards, eBay store name…"
+            className="bg-black/40 border-white/10"
+          />
         </div>
 
         {/* Preview */}

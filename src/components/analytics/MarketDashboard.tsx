@@ -15,9 +15,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -35,7 +37,6 @@ import {
 import {
   Plus,
   RefreshCw,
-  Loader2,
   GripVertical,
   Settings2,
   Trash2,
@@ -45,6 +46,7 @@ import {
   ExternalLink,
   CalendarClock,
   Flame,
+  Maximize2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { analyticsAPI } from '@/integrations/api/client';
@@ -60,15 +62,31 @@ const Grid = WidthProvider(Responsive);
 const BREAKPOINTS = { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 };
 const COLS = { lg: 12, md: 12, sm: 6, xs: 2, xxs: 2 };
 
+/**
+ * Bump when the default dashboard meaningfully improves — saved configs from
+ * older versions are replaced with the new default (user's market selection is
+ * preserved).
+ */
+const CONFIG_VERSION = 2;
+
+/**
+ * Entity-fixed categorical palette, validated (dataviz six checks) against the
+ * dark surface #161616: lightness band, chroma floor, CVD + normal-vision
+ * separation, contrast. Color follows the segment, never its rank.
+ */
 const SEGMENT_COLORS: Record<string, string> = {
-  pokemon: '#B4FF39',
-  sports: '#38bdf8',
-  one_piece: '#f59e0b',
-  magic: '#a78bfa',
-  lorcana: '#f472b6',
-  all: '#e5e7eb',
+  pokemon: '#65a30d',
+  sports: '#0284c7',
+  one_piece: '#d97706',
+  magic: '#8b5cf6',
+  lorcana: '#dc2626',
+  all: '#0d9488',
 };
 const colorFor = (s: string) => SEGMENT_COLORS[s] ?? '#94a3b8';
+
+/** Reserved status colors (up/down/mixed) — never reused for segments. */
+const STATUS_UP = '#22c55e';
+const STATUS_DOWN = '#ef4444';
 
 /** Widget types that chart a specific metric. */
 const METRIC_TYPES: DashboardWidgetType[] = ['stat', 'line', 'bar'];
@@ -79,6 +97,8 @@ const SINGLE_SEG_TYPES: DashboardWidgetType[] = [
   'catalysts',
   'sales',
   'temperature',
+  'indices',
+  'brief',
 ];
 
 const usd = (n: number | null | undefined) =>
@@ -137,41 +157,147 @@ const sizeFor = (type: DashboardWidgetType, cols: number) => {
     if (type === 'temperature') return { w: cols, h: 3 };
     if (type === 'movers' || type === 'catalysts' || type === 'sales')
       return { w: cols, h: 5 };
+    if (type === 'indices' || type === 'brief') return { w: cols, h: 4 };
     return { w: cols, h: 4 };
   }
   if (type === 'stat') return { w: 3, h: 2 };
   if (type === 'temperature') return { w: 4, h: 3 };
   if (type === 'leaderboard') return { w: 4, h: 4 };
+  if (type === 'indices') return { w: 4, h: 4 };
+  if (type === 'brief') return { w: 4, h: 4 };
   if (type === 'movers' || type === 'catalysts' || type === 'sales')
     return { w: 4, h: 5 };
   return { w: 6, h: 4 };
 };
 
-/** Build a default dashboard when the admin has none saved. */
-function defaultConfig(): DashboardConfig {
+/**
+ * Build the default dashboard — what a card-market user expects per segment:
+ * temperature + full index board + AI brief + movers + catalysts + headline
+ * sales for the primary market, plus cross-market comparison and trends.
+ */
+function defaultConfig(keepSegments?: string[]): DashboardConfig {
+  const segments =
+    keepSegments && keepSegments.length > 0
+      ? keepSegments
+      : ['pokemon', 'sports', 'all'];
+  const primary = segments[0] ?? 'pokemon';
+  const pLabel =
+    { pokemon: 'Pokémon', sports: 'Sports', one_piece: 'One Piece', magic: 'Magic', lorcana: 'Lorcana', all: 'All TCG' }[primary] ?? primary;
+
   const board: DashboardWidget = { id: genId(), type: 'leaderboard', title: 'Hottest markets', metric: 'heat', segments: [] };
-  const temp: DashboardWidget = { id: genId(), type: 'temperature', title: 'Pokémon market temp', metric: 'heat', segments: ['pokemon'] };
-  const sales: DashboardWidget = { id: genId(), type: 'sales', title: 'Pokémon — headline sales', metric: 'heat', segments: ['pokemon'] };
-  const movers: DashboardWidget = { id: genId(), type: 'movers', title: 'Pokémon — top movers', metric: 'heat', segments: ['pokemon'] };
-  const cats: DashboardWidget = { id: genId(), type: 'catalysts', title: 'Pokémon — release radar', metric: 'heat', segments: ['pokemon'] };
-  const bar: DashboardWidget = { id: genId(), type: 'bar', title: 'Market heat by segment', metric: 'heat', segments: ['pokemon', 'sports', 'all'] };
-  const line: DashboardWidget = { id: genId(), type: 'line', title: 'Momentum over time', metric: 'momentum', segments: ['pokemon', 'sports', 'all'] };
-  const widgets = [board, temp, sales, movers, cats, bar, line];
+  const temp: DashboardWidget = { id: genId(), type: 'temperature', title: `${pLabel} market temp`, metric: 'heat', segments: [primary] };
+  const indices: DashboardWidget = { id: genId(), type: 'indices', title: `${pLabel} — index board`, metric: 'heat', segments: [primary] };
+  const brief: DashboardWidget = { id: genId(), type: 'brief', title: `${pLabel} — AI market brief`, metric: 'heat', segments: [primary] };
+  const movers: DashboardWidget = { id: genId(), type: 'movers', title: `${pLabel} — top movers`, metric: 'heat', segments: [primary] };
+  const cats: DashboardWidget = { id: genId(), type: 'catalysts', title: `${pLabel} — release radar`, metric: 'heat', segments: [primary] };
+  const sales: DashboardWidget = { id: genId(), type: 'sales', title: `${pLabel} — headline sales`, metric: 'heat', segments: [primary] };
+  const bar: DashboardWidget = { id: genId(), type: 'bar', title: 'Market heat by segment', metric: 'heat', segments };
+  const line: DashboardWidget = { id: genId(), type: 'line', title: 'Momentum over time', metric: 'momentum', segments };
+  const heatLine: DashboardWidget = { id: genId(), type: 'line', title: 'Market heat over time', metric: 'heat', segments };
+  const widgets = [board, temp, indices, brief, movers, cats, sales, bar, line, heatLine];
   const lg: Layout[] = [
     { i: board.id, x: 0, y: 0, w: 4, h: 4 },
-    { i: temp.id, x: 4, y: 0, w: 4, h: 3 },
-    { i: sales.id, x: 8, y: 0, w: 4, h: 5 },
-    { i: movers.id, x: 0, y: 4, w: 4, h: 6 },
-    { i: cats.id, x: 4, y: 3, w: 4, h: 6 },
-    { i: bar.id, x: 8, y: 5, w: 4, h: 4 },
-    { i: line.id, x: 0, y: 10, w: 12, h: 4 },
+    { i: temp.id, x: 4, y: 0, w: 4, h: 4 },
+    { i: indices.id, x: 8, y: 0, w: 4, h: 4 },
+    { i: brief.id, x: 0, y: 4, w: 8, h: 4 },
+    { i: bar.id, x: 8, y: 4, w: 4, h: 4 },
+    { i: movers.id, x: 0, y: 8, w: 4, h: 5 },
+    { i: cats.id, x: 4, y: 8, w: 4, h: 5 },
+    { i: sales.id, x: 8, y: 8, w: 4, h: 5 },
+    { i: heatLine.id, x: 0, y: 13, w: 6, h: 4 },
+    { i: line.id, x: 6, y: 13, w: 6, h: 4 },
   ];
   return {
-    segments: ['pokemon', 'sports', 'all'],
+    segments,
     widgets,
     layouts: { lg },
+    version: CONFIG_VERSION,
   };
 }
+
+/* ---------------- Loading skeleton ---------------- */
+
+/** Skeleton card matching the widget chrome (header bar + body). */
+const WidgetSkeleton = ({
+  className,
+  variant = 'lines',
+}: {
+  className?: string;
+  variant?: 'lines' | 'chart' | 'gauge';
+}) => (
+  <div
+    className={`overflow-hidden rounded-xl border border-white/8 bg-[rgba(22,22,22,1)] ${className ?? ''}`}
+  >
+    <div className="flex items-center gap-1.5 border-b border-white/5 px-3 py-2">
+      <Skeleton className="h-3.5 w-3.5 rounded bg-white/5" />
+      <Skeleton className="h-3 w-32 rounded bg-white/5" />
+    </div>
+    <div className="flex h-[calc(100%-33px)] flex-col p-3">
+      {variant === 'gauge' && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2">
+          <Skeleton className="h-[110px] w-[110px] rounded-full bg-white/5" />
+          <Skeleton className="h-3 w-20 rounded bg-white/5" />
+        </div>
+      )}
+      {variant === 'chart' && (
+        <div className="flex flex-1 items-end gap-2 pb-1">
+          {[55, 80, 40, 65, 30, 72, 50].map((h, i) => (
+            <Skeleton
+              key={i}
+              className="flex-1 rounded-t bg-white/5"
+              style={{ height: `${h}%` }}
+            />
+          ))}
+        </div>
+      )}
+      {variant === 'lines' && (
+        <div className="flex flex-1 flex-col justify-center gap-2.5">
+          {[100, 85, 92, 70, 60].map((w, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Skeleton className="h-3 w-3 shrink-0 rounded-full bg-white/5" />
+              <Skeleton
+                className="h-3 rounded bg-white/5"
+                style={{ width: `${w}%` }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+/** Full-page skeleton mirroring the controls row + default widget layout. */
+const DashboardSkeleton = () => (
+  <div>
+    {/* Controls */}
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      <Skeleton className="h-3 w-14 rounded bg-white/5" />
+      {[64, 56, 72, 52].map((w, i) => (
+        <Skeleton key={i} className="h-6 rounded-full bg-white/5" style={{ width: w }} />
+      ))}
+      <div className="ml-auto flex items-center gap-2">
+        <Skeleton className="h-8 w-[92px] rounded-md bg-white/5" />
+        <Skeleton className="h-8 w-24 rounded-md bg-white/5" />
+        <Skeleton className="h-8 w-28 rounded-md bg-white/5" />
+      </div>
+    </div>
+
+    {/* Widget grid — mirrors the default lg layout (rowHeight 58, 12px gaps) */}
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12">
+      <WidgetSkeleton className="h-[268px] lg:col-span-4" variant="lines" />
+      <WidgetSkeleton className="h-[268px] lg:col-span-4" variant="gauge" />
+      <WidgetSkeleton className="h-[268px] lg:col-span-4" variant="lines" />
+      <WidgetSkeleton className="h-[268px] sm:col-span-2 lg:col-span-8" variant="lines" />
+      <WidgetSkeleton className="h-[268px] lg:col-span-4" variant="chart" />
+      <WidgetSkeleton className="h-[338px] lg:col-span-4" variant="lines" />
+      <WidgetSkeleton className="h-[338px] lg:col-span-4" variant="lines" />
+      <WidgetSkeleton className="h-[338px] lg:col-span-4" variant="lines" />
+      <WidgetSkeleton className="h-[268px] lg:col-span-6" variant="chart" />
+      <WidgetSkeleton className="h-[268px] lg:col-span-6" variant="chart" />
+    </div>
+  </div>
+);
 
 export const MarketDashboard = () => {
   const [catalog, setCatalog] = useState<ApiMarketCatalog | null>(null);
@@ -183,8 +309,22 @@ export const MarketDashboard = () => {
   const [saved, setSaved] = useState(true);
   const [editor, setEditor] = useState<DashboardWidget | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  /** Widget currently shown in the fullscreen dialog. */
+  const [expanded, setExpanded] = useState<DashboardWidget | null>(null);
+  /**
+   * RGL animates items into place on mount (widgets fly outward from the
+   * origin). Transitions stay disabled (.rgl-no-anim) until after the grid's
+   * first paint, then turn on for drag/resize.
+   */
+  const [gridAnimated, setGridAnimated] = useState(false);
 
   const loadedRef = useRef(false);
+
+  useEffect(() => {
+    if (loading) return;
+    const t = window.setTimeout(() => setGridAnimated(true), 250);
+    return () => window.clearTimeout(t);
+  }, [loading]);
 
   const metricLabel = useCallback(
     (k: string) => catalog?.metrics.find(m => m.key === k)?.label ?? k,
@@ -207,8 +347,14 @@ export const MarketDashboard = () => {
         ]);
         if (!active) return;
         setCatalog(cat);
+        // Auto-upgrade: saved configs from an older default-layout version are
+        // replaced with the new richer default (market selection preserved).
         const cfg =
-          savedCfg && savedCfg.widgets?.length ? savedCfg : defaultConfig();
+          savedCfg &&
+          savedCfg.widgets?.length &&
+          savedCfg.version === CONFIG_VERSION
+            ? savedCfg
+            : defaultConfig(savedCfg?.segments);
         setConfig(cfg);
         const latMap: Record<string, ApiMarketSnapshot> = {};
         for (const s of lat) latMap[s.segment] = s;
@@ -242,7 +388,7 @@ export const MarketDashboard = () => {
     const days = rangeDays > 0 ? rangeDays : undefined;
     Promise.all(
       lineSegments.map(s =>
-        analyticsAPI.getMarketSeries(s, days).then(d => [s, d] as const).catch(() => [s, []] as const)
+        analyticsAPI.getMarketSeries(s, days).then(d => [s, d] as const).catch(() => [s, [] as ApiMarketSnapshot[]] as const)
       )
     ).then(pairs => {
       if (!active) return;
@@ -333,7 +479,7 @@ export const MarketDashboard = () => {
       const segs = lineSegments;
       const days = rangeDays > 0 ? rangeDays : undefined;
       const pairs = await Promise.all(
-        segs.map(s => analyticsAPI.getMarketSeries(s, days).then(d => [s, d] as const).catch(() => [s, []] as const))
+        segs.map(s => analyticsAPI.getMarketSeries(s, days).then(d => [s, d] as const).catch(() => [s, [] as ApiMarketSnapshot[]] as const))
       );
       setSeries(prev => {
         const next = { ...prev };
@@ -352,11 +498,7 @@ export const MarketDashboard = () => {
   };
 
   if (loading || !config || !catalog) {
-    return (
-      <div className="flex items-center gap-2 py-16 justify-center text-sm text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" /> Loading dashboard…
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const hasData = Object.keys(latest).length > 0;
@@ -383,7 +525,7 @@ export const MarketDashboard = () => {
               }
               className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                 on
-                  ? 'border-transparent text-black'
+                  ? 'border-transparent text-white'
                   : 'border-white/10 bg-black/30 text-white/70 hover:bg-white/5'
               }`}
               style={on ? { background: colorFor(s.key) } : undefined}
@@ -450,7 +592,8 @@ export const MarketDashboard = () => {
       )}
 
       <Grid
-        className="layout"
+        className={gridAnimated ? 'layout' : 'layout rgl-no-anim'}
+        measureBeforeMount
         layouts={config.layouts as unknown as Layouts}
         breakpoints={BREAKPOINTS}
         cols={COLS}
@@ -472,6 +615,15 @@ export const MarketDashboard = () => {
               <span className="flex-1 truncate text-xs font-medium text-white/85">
                 {w.title}
               </span>
+              <button
+                type="button"
+                onClick={() => setExpanded(w)}
+                className="text-muted-foreground/60 hover:text-white"
+                aria-label="Expand"
+                title="Expand"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -515,6 +667,30 @@ export const MarketDashboard = () => {
           setEditorOpen(false);
         }}
       />
+
+      {/* Fullscreen widget view — same body, room to breathe. */}
+      <Dialog open={!!expanded} onOpenChange={o => !o && setExpanded(null)}>
+        <DialogContent className="flex h-[92dvh] w-[96vw] max-w-[1400px] flex-col border-white/10 bg-[rgba(18,18,18,1)] p-4 sm:p-6">
+          {expanded && (
+            <>
+              <DialogHeader className="shrink-0">
+                <DialogTitle className="text-base text-white">
+                  {expanded.title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="min-h-0 flex-1">
+                <WidgetBody
+                  widget={expanded}
+                  latest={latest}
+                  series={series}
+                  metricLabel={metricLabel}
+                  segmentLabel={segmentLabel}
+                />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -542,13 +718,14 @@ const WidgetBody = ({
     const val = snap?.metrics?.[widget.metric];
     return (
       <div className="flex h-full flex-col justify-center">
-        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ background: colorFor(seg) }}
+          />
           {segmentLabel(seg)} · {metricLabel(widget.metric)}
         </div>
-        <div
-          className="text-4xl font-bold leading-tight"
-          style={{ color: colorFor(seg) }}
-        >
+        <div className="text-4xl font-bold leading-tight text-white">
           {typeof val === 'number' ? val : '—'}
           {typeof val === 'number' && (
             <span className="ml-1 text-base font-normal text-muted-foreground">
@@ -563,6 +740,19 @@ const WidgetBody = ({
         )}
       </div>
     );
+  }
+
+  if (widget.type === 'indices') {
+    return (
+      <IndicesBody
+        seg={widget.segments[0]}
+        snap={latest[widget.segments[0]]}
+        metricLabel={metricLabel}
+      />
+    );
+  }
+  if (widget.type === 'brief') {
+    return <BriefBody snap={latest[widget.segments[0]]} />;
   }
 
   if (widget.type === 'temperature') {
@@ -608,7 +798,12 @@ const WidgetBody = ({
               fontSize: 12,
             }}
           />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+          <Bar
+            dataKey="value"
+            radius={[4, 4, 0, 0]}
+            maxBarSize={44}
+            isAnimationActive={false}
+          >
             {data.map(d => (
               <Cell key={d.seg} fill={colorFor(d.seg)} />
             ))}
@@ -647,7 +842,14 @@ const WidgetBody = ({
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={rows} margin={{ top: 4, right: 8, bottom: 0, left: -18 }}>
         <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-        <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} />
+        <XAxis
+          dataKey="label"
+          tick={axisTick}
+          tickLine={false}
+          axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+          minTickGap={32}
+          interval="preserveStartEnd"
+        />
         <YAxis domain={[0, 100]} tick={axisTick} tickLine={false} axisLine={false} />
         <Tooltip
           contentStyle={{
@@ -657,6 +859,13 @@ const WidgetBody = ({
             fontSize: 12,
           }}
         />
+        {widget.segments.length > 1 && (
+          <Legend
+            iconType="circle"
+            iconSize={7}
+            wrapperStyle={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}
+          />
+        )}
         {widget.segments.map(s => (
           <Line
             key={s}
@@ -665,7 +874,8 @@ const WidgetBody = ({
             name={segmentLabel(s)}
             stroke={colorFor(s)}
             strokeWidth={2}
-            dot={{ r: 2.5, fill: colorFor(s), strokeWidth: 0 }}
+            dot={false}
+            activeDot={{ r: 4, strokeWidth: 0 }}
             connectNulls
             isAnimationActive={false}
           />
@@ -688,6 +898,94 @@ const AsOf = ({ at }: { at: string }) => (
     as of {moment(at).fromNow()}
   </div>
 );
+
+/**
+ * Full index board for one market — every 0-100 index as a labeled bar.
+ * Single-hue (the segment's color) since the job is magnitude, not identity.
+ */
+const IndicesBody = ({
+  seg,
+  snap,
+  metricLabel,
+}: {
+  seg: string;
+  snap: ApiMarketSnapshot | undefined;
+  metricLabel: (k: string) => string;
+}) => {
+  const metrics = snap?.metrics;
+  if (!metrics) return <Empty text="No data yet — refresh this market." />;
+  const rows = Object.entries(metrics).filter(
+    (e): e is [string, number] => typeof e[1] === 'number',
+  );
+  if (rows.length === 0)
+    return <Empty text="No indices yet — refresh this market." />;
+  const c = colorFor(seg);
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex flex-1 flex-col justify-center gap-1.5 overflow-y-auto pr-1">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex items-center gap-2">
+            <span className="w-[110px] shrink-0 truncate text-[11px] text-white/75">
+              {metricLabel(k)}
+            </span>
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${Math.max(2, Math.min(100, v))}%`, background: c }}
+              />
+            </div>
+            <span className="w-7 shrink-0 text-right text-xs font-semibold tabular-nums text-white">
+              {Math.round(v)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {snap && <AsOf at={snap.capturedAt} />}
+    </div>
+  );
+};
+
+/** AI market brief — the analyst summary + highlights from the last refresh. */
+const BriefBody = ({ snap }: { snap: ApiMarketSnapshot | undefined }) => {
+  if (!snap || (!snap.summary && !(snap.highlights ?? []).length))
+    return <Empty text="No brief yet — refresh this market." />;
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+        {snap.summary && (
+          <p className="text-xs leading-relaxed text-white/85">{snap.summary}</p>
+        )}
+        {(snap.highlights ?? []).length > 0 && (
+          <ul className="space-y-1">
+            {(snap.highlights ?? []).map((h, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-[11px] leading-snug text-white/70">
+                <Flame className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                {h}
+              </li>
+            ))}
+          </ul>
+        )}
+        {(snap.sources ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {(snap.sources ?? []).slice(0, 4).map((s, i) => (
+              <a
+                key={i}
+                href={s.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/60 hover:text-white"
+              >
+                <ExternalLink className="h-2.5 w-2.5" />
+                {s.title || 'source'}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+      <AsOf at={snap.capturedAt} />
+    </div>
+  );
+};
 
 /** Fear/greed-style donut gauge for one market. */
 const TemperatureBody = ({
@@ -721,9 +1019,7 @@ const TemperatureBody = ({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="text-3xl font-bold leading-none" style={{ color: band.color }}>
-            {t}
-          </div>
+          <div className="text-3xl font-bold leading-none text-white">{t}</div>
           <div className="text-[10px] text-muted-foreground">/ 100</div>
         </div>
       </div>
@@ -774,10 +1070,7 @@ const LeaderboardBody = ({
                 style={{ width: `${r.temp}%`, background: band.color }}
               />
             </div>
-            <span
-              className="w-7 shrink-0 text-right text-xs font-semibold tabular-nums"
-              style={{ color: band.color }}
-            >
+            <span className="w-7 shrink-0 text-right text-xs font-semibold tabular-nums text-white">
               {r.temp}
             </span>
           </div>
@@ -796,7 +1089,7 @@ const MoversBody = ({ snap }: { snap: ApiMarketSnapshot | undefined }) => {
     <div className="flex h-full flex-col gap-1 overflow-y-auto pr-1">
       {movers.map((m, i) => {
         const up = m.direction !== 'down';
-        const c = up ? '#B4FF39' : '#f87171';
+        const c = up ? STATUS_UP : STATUS_DOWN;
         return (
           <a
             key={i}
@@ -839,8 +1132,8 @@ const MoversBody = ({ snap }: { snap: ApiMarketSnapshot | undefined }) => {
 };
 
 const IMPACT_COLOR: Record<string, string> = {
-  up: '#B4FF39',
-  down: '#f87171',
+  up: STATUS_UP,
+  down: STATUS_DOWN,
   mixed: '#f59e0b',
 };
 
@@ -987,6 +1280,12 @@ const WidgetEditorDialog = ({
       case 'temperature':
         autoTitle = `${segLabel} market temp`;
         break;
+      case 'indices':
+        autoTitle = `${segLabel} — index board`;
+        break;
+      case 'brief':
+        autoTitle = `${segLabel} — AI market brief`;
+        break;
       case 'leaderboard':
         autoTitle = 'Hottest markets';
         break;
@@ -1028,6 +1327,8 @@ const WidgetEditorDialog = ({
                 <SelectItem value="catalysts">Release radar (upcoming)</SelectItem>
                 <SelectItem value="sales">Headline sales</SelectItem>
                 <SelectItem value="temperature">Market temperature (gauge)</SelectItem>
+                <SelectItem value="indices">Index board (all metrics)</SelectItem>
+                <SelectItem value="brief">AI market brief (summary)</SelectItem>
                 <SelectItem value="leaderboard">Hottest-market leaderboard</SelectItem>
                 <SelectItem value="stat">Stat (latest value)</SelectItem>
                 <SelectItem value="bar">Bar (compare markets)</SelectItem>

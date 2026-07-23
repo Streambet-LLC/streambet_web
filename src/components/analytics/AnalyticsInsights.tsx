@@ -58,9 +58,6 @@ const SUGGESTED = EXAMPLE_PROMPTS.slice(0, 5);
 const TOOL_LABELS: Record<string, string> = {
   web_search: 'Searched the web',
   start_deep_dive: 'Started deep dive',
-  search_cards: 'Searched catalog',
-  get_card: 'Read card detail',
-  search_buyers: 'Searched buyers',
   search_leads: 'Searched leads',
 };
 

@@ -84,6 +84,14 @@ export const formatViewCount = (count: number): string => {
   return `${formatCompactNumber(count)} views`;
 };
 
+/** Compact USD display: $950, $1.2k, $2.35M (analytics dashboards). */
+export const formatUsd = (n: number): string =>
+  n >= 1_000_000
+    ? `$${(n / 1_000_000).toFixed(2)}M`
+    : n >= 1_000
+      ? `$${(n / 1_000).toFixed(1)}k`
+      : `$${n.toFixed(0)}`;
+
 export const formatUrl = (url: string): string => {
   return !url.startsWith("https://") && !url.startsWith("http://") ? "https://".concat(url) : url;
 };
