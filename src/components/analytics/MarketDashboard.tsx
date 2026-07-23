@@ -65,9 +65,10 @@ const COLS = { lg: 12, md: 12, sm: 6, xs: 2, xxs: 2 };
 /**
  * Bump when the default dashboard meaningfully improves — saved configs from
  * older versions are replaced with the new default (user's market selection is
- * preserved).
+ * preserved). v3: discards layouts corrupted by a mount-time RGL emission that
+ * auto-saved with every widget collapsed to x:0.
  */
-const CONFIG_VERSION = 2;
+const CONFIG_VERSION = 3;
 
 /**
  * Entity-fixed categorical palette, validated (dataviz six checks) against the
@@ -421,6 +422,11 @@ export const MarketDashboard = () => {
 
   const onLayoutChange = (_current: Layout[], all: Layouts) => {
     if (!config) return;
+    // RGL emits generated layouts while mounting/measuring — before the grid
+    // has settled these can be collapsed (everything at x:0) and must never
+    // overwrite the saved layouts. Only user drags/resizes and breakpoint
+    // changes after settle are kept.
+    if (!loadedRef.current) return;
     setConfig(c => (c ? { ...c, layouts: all as DashboardConfig['layouts'] } : c));
   };
 
@@ -593,7 +599,6 @@ export const MarketDashboard = () => {
 
       <Grid
         className={gridAnimated ? 'layout' : 'layout rgl-no-anim'}
-        measureBeforeMount
         layouts={config.layouts as unknown as Layouts}
         breakpoints={BREAKPOINTS}
         cols={COLS}
