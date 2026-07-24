@@ -205,20 +205,35 @@ export const CardMarketProfile = ({ cardId }: { cardId: string }) => {
               </span>
             </div>
           )}
-          {profile.latest.map(l => (
-            <Badge
-              key={l.source}
-              variant="outline"
-              className="gap-1.5 border-white/10 bg-white/5 text-[11px] font-normal text-white/80"
-            >
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ background: colorFor(l.source) }}
-              />
-              {labelFor(l.source)}:{' '}
-              {l.medianUsd != null ? formatUsd(l.medianUsd) : '—'}
-            </Badge>
-          ))}
+          {profile.latest.map(l => {
+            const estimated = l.meta?.estimated === true;
+            const basis =
+              typeof l.meta?.basis === 'string' ? l.meta.basis : undefined;
+            return (
+              <Badge
+                key={l.source}
+                variant="outline"
+                title={
+                  estimated
+                    ? `Estimated (no direct comps) — ${basis ?? 'triangulated from comparable cards'}`
+                    : basis
+                }
+                className="gap-1.5 border-white/10 bg-white/5 text-[11px] font-normal text-white/80"
+              >
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ background: colorFor(l.source) }}
+                />
+                {labelFor(l.source)}:{' '}
+                {l.medianUsd != null ? formatUsd(l.medianUsd) : '—'}
+                {estimated && (
+                  <span className="ml-0.5 rounded bg-amber-400/15 px-1 text-[9px] font-medium uppercase tracking-wide text-amber-300">
+                    est
+                  </span>
+                )}
+              </Badge>
+            );
+          })}
         </div>
       )}
 
