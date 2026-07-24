@@ -26,6 +26,9 @@ const SEGMENTS: { label: string; color: string }[] = [
   { label: 'One Piece', color: '#d97706' },
   { label: 'Magic', color: '#8b5cf6' },
   { label: 'Lorcana', color: '#dc2626' },
+  { label: 'Star Wars', color: '#14b8a6' },
+  { label: 'Dragon Ball', color: '#f97316' },
+  { label: 'Yu-Gi-Oh!', color: '#ec4899' },
 ];
 
 /** What you can ask Cardy for — the capability set, told user-first. */
@@ -118,7 +121,7 @@ export default function Waitlist() {
         >
           <img
             src="/collectiq-logo.png"
-            alt="collectIQ — AI Powered. Collector Focused."
+            alt="collectIQ"
             className="mx-auto mb-8 h-12 w-auto sm:h-14"
           />
 
@@ -130,12 +133,11 @@ export default function Waitlist() {
             The card market, decoded.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/70">
-            collectIQ turns live web data into AI-powered market intelligence
-            for trading cards — real-time pricing, trend forecasts, and{' '}
-            <span className="font-medium text-white">Cardy</span>, our AI
-            research analyst who answers any card or collector question and
-            helps you contextualize assets, markets, dynamics, and prices.
-            We're currently in private beta, but will let waitlisters know as
+            collectIQ turns live web data into AI-powered market intelligence for trading cards —
+            real-time pricing, trend forecasts, and{' '}
+            <span className="font-medium text-white">Cardy</span>, our AI research analyst who
+            answers any card or collector question and helps you contextualize assets, markets,
+            dynamics, and prices. We're currently in private beta, but will let waitlisters know as
             soon as we go public.
           </p>
 
@@ -144,20 +146,14 @@ export default function Waitlist() {
             {done ? (
               <div className="mx-auto mt-8 flex max-w-md flex-col items-center rounded-2xl border border-[#B4FF39]/25 bg-[#B4FF39]/[0.06] px-6 py-8">
                 <CheckCircle2 className="h-9 w-9 text-[#B4FF39]" />
-                <h2 className="mt-3 text-lg font-semibold text-white">
-                  You're on the list!
-                </h2>
+                <h2 className="mt-3 text-lg font-semibold text-white">You're on the list!</h2>
                 <p className="mt-1 text-sm text-white/70">
                   Thanks for your interest — we'll be in touch at{' '}
-                  <span className="text-white">{email.trim()}</span> when access
-                  opens up.
+                  <span className="text-white">{email.trim()}</span> when access opens up.
                 </p>
               </div>
             ) : (
-              <form
-                onSubmit={submit}
-                className="mx-auto mt-8 w-full max-w-md space-y-3"
-              >
+              <form onSubmit={submit} className="mx-auto mt-8 w-full max-w-md space-y-3">
                 <Input
                   type="text"
                   value={name}
@@ -211,9 +207,9 @@ export default function Waitlist() {
               Use Cardy for all your card intelligence needs
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-white/60">
-              Ask Cardy anything and wield the power to interpret any card or
-              market at a glance — far beyond basic price checking. Here's some
-              of what you can pull, all fully manipulable in your dashboards.
+              Ask Cardy anything and wield the power to interpret any card or market at a glance —
+              far beyond basic price checking. Here's some of what you can pull, all fully
+              manipulable in your dashboards.
             </p>
           </div>
 
@@ -243,36 +239,31 @@ export default function Waitlist() {
                     >
                       {f.title}
                     </h3>
-                    <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">
-                      {f.desc}
-                    </p>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">{f.desc}</p>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Segment coverage */}
+          {/* Segment coverage — 8 markets fold into clean rows of 4 (2 on mobile). */}
           <div className="mt-14 flex flex-col items-center">
             <p className="text-xs uppercase tracking-[0.2em] text-white/40">
-              Markets we cover
+              We cover ALL card markets, including:
             </p>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+            <div className="mt-5 grid w-full max-w-2xl grid-cols-2 gap-2.5 sm:grid-cols-4">
               {SEGMENTS.map(s => (
                 <span
                   key={s.label}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-1.5 text-sm text-white/80"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-1.5 text-sm text-white/80"
                 >
                   <span
-                    className="h-2.5 w-2.5 rounded-full"
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ background: s.color }}
                   />
                   {s.label}
                 </span>
               ))}
-              <span className="inline-flex items-center rounded-full border border-white/10 bg-black/30 px-4 py-1.5 text-sm text-white/50">
-                + more coming
-              </span>
             </div>
           </div>
         </motion.section>
@@ -286,9 +277,7 @@ export default function Waitlist() {
             transition={{ duration: 0.5 }}
             className="mx-auto mt-24 max-w-2xl rounded-3xl border border-white/8 bg-gradient-to-b from-[rgba(180,255,57,0.06)] to-transparent px-6 py-12 text-center"
           >
-            <h2 className="text-2xl font-semibold text-white sm:text-3xl">
-              Get in early
-            </h2>
+            <h2 className="text-2xl font-semibold text-white sm:text-3xl">Get in early</h2>
             <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-white/60">
               Be among the first 1,000 waitlist signups to get early access!
             </p>
