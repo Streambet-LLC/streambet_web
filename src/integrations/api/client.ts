@@ -1375,9 +1375,14 @@ export const analyticsAPI = {
   },
 
   /** AI usage & estimated cost, aggregated by user and prompt type. */
-  getAiUsage: async (days = 0): Promise<ApiUsageSummary> => {
+  getAiUsage: async (
+    days = 0,
+    userId?: string
+  ): Promise<ApiUsageSummary> => {
+    const params = new URLSearchParams({ days: String(days) });
+    if (userId && userId !== 'all') params.set('userId', userId);
     const response = await apiClient.get(
-      `/admin/analytics/usage?days=${days}`
+      `/admin/analytics/usage?${params.toString()}`
     );
     return response.data.data as ApiUsageSummary;
   },
@@ -1398,9 +1403,11 @@ export interface ApiUsageRow {
 }
 
 export interface ApiUsageSummary {
+  /** Distinct users with usage — powers the user filter dropdown. */
+  users: { adminId: string | null; email: string | null }[];
   /** Rows grouped by user × prompt type — the main table. */
   byUserAndType: ApiUsageRow[];
-  /** Rows grouped by prompt type across all users. */
+  /** Rows grouped by prompt type across all users (or the filtered user). */
   byType: Omit<ApiUsageRow, 'adminId' | 'email'>[];
   totals: { prompts: number; totalTokens: number; costUsd: number };
 }
