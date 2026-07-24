@@ -560,10 +560,10 @@ const DeepDiveReport = () => {
             </div>
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-semibold text-white break-words">
-                {job?.subject ?? 'Deep dive'}
+                {job?.subject ?? 'AI Market Report'}
               </h1>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Deep dive{' '}
+                AI Market Report{' '}
                 {job?.completedAt
                   ? `· ${moment(job.completedAt).fromNow()}`
                   : job
@@ -579,7 +579,7 @@ const DeepDiveReport = () => {
             </div>
           ) : notFound ? (
             <div className="rounded-xl border border-white/8 bg-[rgba(22,22,22,1)] p-8 text-center text-sm text-muted-foreground">
-              This deep dive could not be found.
+              This report could not be found.
             </div>
           ) : active ? (
             <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.04] p-8 text-center">
@@ -594,7 +594,7 @@ const DeepDiveReport = () => {
             </div>
           ) : job?.status === 'error' ? (
             <div className="rounded-xl border border-red-500/20 bg-red-500/[0.05] p-6 text-sm text-red-300">
-              This deep dive failed: {job.error ?? 'unknown error'}
+              This report failed: {job.error ?? 'unknown error'}
             </div>
           ) : job?.result ? (
             <ReportBody

@@ -85,6 +85,13 @@ const SEGMENT_COLORS: Record<string, string> = {
 };
 const colorFor = (s: string) => SEGMENT_COLORS[s] ?? '#94a3b8';
 
+// Display overrides for the 'all' segment: full name in the market picker,
+// short form in the widgets below (titles, captions, chart labels).
+const SEG_PILL_LABEL: Record<string, string> = { all: 'All Cards Markets' };
+const SEG_SHORT_LABEL: Record<string, string> = { all: 'All Mkts' };
+/** Rewrite the legacy 'All TCG' label in any saved widget title to the short form. */
+const shortTitle = (t: string) => t.replace(/All TCG/g, 'All Mkts');
+
 /** Reserved status colors (up/down/mixed) — never reused for segments. */
 const STATUS_UP = '#22c55e';
 const STATUS_DOWN = '#ef4444';
@@ -332,7 +339,10 @@ export const MarketDashboard = () => {
     [catalog]
   );
   const segmentLabel = useCallback(
-    (k: string) => catalog?.segments.find(s => s.key === k)?.label ?? k,
+    (k: string) =>
+      SEG_SHORT_LABEL[k] ??
+      catalog?.segments.find(s => s.key === k)?.label ??
+      k,
     [catalog]
   );
 
@@ -534,7 +544,7 @@ export const MarketDashboard = () => {
               }`}
               style={on ? { background: colorFor(s.key) } : undefined}
             >
-              {s.label}
+              {SEG_PILL_LABEL[s.key] ?? s.label}
             </button>
           );
         })}
@@ -616,7 +626,7 @@ export const MarketDashboard = () => {
                 <GripVertical className="h-3.5 w-3.5" />
               </span>
               <span className="flex-1 truncate text-xs font-medium text-white/85">
-                {w.title}
+                {shortTitle(w.title)}
               </span>
               <button
                 type="button"
@@ -679,7 +689,7 @@ export const MarketDashboard = () => {
             <>
               <DialogHeader className="shrink-0">
                 <DialogTitle className="text-base text-white">
-                  {expanded.title}
+                  {shortTitle(expanded.title)}
                 </DialogTitle>
               </DialogHeader>
               <div className="min-h-0 flex-1">
@@ -1402,7 +1412,7 @@ const WidgetEditorDialog = ({
                       }`}
                       style={on ? { background: colorFor(s.key) } : undefined}
                     >
-                      {s.label}
+                      {SEG_PILL_LABEL[s.key] ?? s.label}
                     </button>
                   );
                 })}

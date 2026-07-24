@@ -18,7 +18,7 @@ import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiDeepResearchJob } from '@/types/analytics-api';
 import { fileToCardImage } from '@/utils/cardImage';
 import { useAnswerDepth } from '@/hooks/useAnswerDepth';
-import { DepthSlider } from './DepthSlider';
+import { DepthSettings } from './DepthSettings';
 
 const STATUS: Record<
   string,
@@ -134,7 +134,7 @@ export const DeepDivesPanel = ({
     } catch (e) {
       const msg =
         (e as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? 'Could not start deep dive.';
+          ?.message ?? 'Could not start the report.';
       toast.error(msg);
     } finally {
       setStarting(false);
@@ -185,22 +185,20 @@ export const DeepDivesPanel = ({
       <Card
         ref={cardRef}
         className={`bg-[rgba(22,22,22,1)] p-3 sm:p-4 mb-4 scroll-mt-20 transition-shadow duration-500 ${
-          flash
-            ? 'border-[#B4FF39]/50 ring-2 ring-[#B4FF39]/40'
-            : 'border-white/5'
+          flash ? 'border-[#B4FF39]/50 ring-2 ring-[#B4FF39]/40' : 'border-white/5'
         }`}
       >
         <div className="flex items-center gap-2 mb-2.5">
           <Telescope className="h-4 w-4 text-[#B4FF39]" />
           <span className="text-xs font-medium uppercase tracking-wide text-white/80">
-            Deep dives
+            AI Market Reports
           </span>
           {hasActive && (
             <span className="flex items-center gap-1 text-[11px] text-amber-300">
               <Loader2 className="h-3 w-3 animate-spin" /> researching
             </span>
           )}
-          <DepthSlider
+          <DepthSettings
             value={depth}
             onChange={setDepth}
             disabled={starting || fromPhoto}
@@ -246,7 +244,7 @@ export const DeepDivesPanel = ({
                 start();
               }
             }}
-            placeholder="Deep-dive a card… e.g. Crown Zenith Charizard UPC"
+            placeholder="Structured live data research report on cards"
             className="h-9 bg-black/40 border-white/10 text-sm"
           />
           <input
@@ -263,8 +261,8 @@ export const DeepDivesPanel = ({
               onClick={() => fileRef.current?.click()}
               disabled={fromPhoto || starting}
               size="sm"
-              title="Deep dive from a photo — take one or upload"
-              aria-label="Deep dive from a card photo"
+              title="AI Market Report from a photo — take one or upload"
+              aria-label="AI Market Report from a card photo"
               className="h-9 w-9 shrink-0 border-white/10 bg-black/40 p-0 text-white/80 hover:bg-white/5 hover:text-white disabled:opacity-40"
             >
               {fromPhoto ? (
@@ -283,16 +281,15 @@ export const DeepDivesPanel = ({
             {starting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : pendingPhoto ? (
-              'Confirm & deep dive'
+              'Confirm & run report'
             ) : (
-              'Deep dive'
+              'Run report'
             )}
           </Button>
         </div>
         {!pendingPhoto && (
           <p className="mt-1.5 text-[11px] text-muted-foreground">
-            Type a card, or tap the photo button to snap/upload one and let AI
-            identify it.
+            Type a card, or tap the photo button to snap/upload one and let AI identify it.
           </p>
         )}
 
@@ -305,9 +302,7 @@ export const DeepDivesPanel = ({
               aria-expanded={historyOpen}
             >
               <ChevronDown
-                className={`h-3.5 w-3.5 transition-transform ${
-                  historyOpen ? '' : '-rotate-90'
-                }`}
+                className={`h-3.5 w-3.5 transition-transform ${historyOpen ? '' : '-rotate-90'}`}
               />
               History
               <span className="text-muted-foreground/70">({total})</span>
@@ -323,17 +318,13 @@ export const DeepDivesPanel = ({
                       key={j.id}
                       type="button"
                       disabled={!ready}
-                      onClick={() =>
-                        ready && navigate(`/analytics/deep-dive/${j.id}`)
-                      }
+                      onClick={() => ready && navigate(`/analytics/deep-dive/${j.id}`)}
                       className={`w-full flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-3 py-2 text-left ${
                         ready ? 'hover:bg-white/5 cursor-pointer' : 'cursor-default'
                       }`}
                     >
                       <span className="flex-1 min-w-0">
-                        <span className="block truncate text-sm text-white/90">
-                          {j.subject}
-                        </span>
+                        <span className="block truncate text-sm text-white/90">{j.subject}</span>
                         <span className="block text-[11px] text-muted-foreground">
                           {moment(j.completedAt ?? j.createdAt).fromNow()}
                           {j.status === 'error' && j.error ? ` · ${j.error}` : ''}
@@ -343,14 +334,10 @@ export const DeepDivesPanel = ({
                         variant="outline"
                         className={`shrink-0 gap-1 text-[10px] font-medium ${st.className}`}
                       >
-                        {st.spin && (
-                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                        )}
+                        {st.spin && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
                         {st.label}
                       </Badge>
-                      {ready && (
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      )}
+                      {ready && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
                     </button>
                   );
                 })}
