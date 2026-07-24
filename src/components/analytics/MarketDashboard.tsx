@@ -372,13 +372,11 @@ export const MarketDashboard = () => {
     };
   }, []);
 
-  // Fetch history for segments referenced by any line widget.
+  // Line charts render the active market set (the Markets filter), so fetch
+  // history for those segments whenever any line widget is present.
   const lineSegments = useMemo(() => {
-    const set = new Set<string>();
-    config?.widgets
-      .filter(w => w.type === 'line')
-      .forEach(w => w.segments.forEach(s => set.add(s)));
-    return [...set];
+    const hasLine = config?.widgets.some(w => w.type === 'line') ?? false;
+    return hasLine ? (config?.segments ?? []) : [];
   }, [config]);
 
   const rangeDays = config?.rangeDays ?? 0;
@@ -652,6 +650,7 @@ export const MarketDashboard = () => {
                 widget={w}
                 latest={latest}
                 series={series}
+                activeSegments={config.segments}
                 metricLabel={metricLabel}
                 segmentLabel={segmentLabel}
               />
@@ -688,6 +687,7 @@ export const MarketDashboard = () => {
                   widget={expanded}
                   latest={latest}
                   series={series}
+                  activeSegments={config.segments}
                   metricLabel={metricLabel}
                   segmentLabel={segmentLabel}
                 />
@@ -706,12 +706,15 @@ const WidgetBody = ({
   widget,
   latest,
   series,
+  activeSegments,
   metricLabel,
   segmentLabel,
 }: {
   widget: DashboardWidget;
   latest: Record<string, ApiMarketSnapshot>;
   series: Record<string, ApiMarketSnapshot[]>;
+  /** The Markets filter — the working set of segments shown by cross-market widgets. */
+  activeSegments: string[];
   metricLabel: (k: string) => string;
   segmentLabel: (k: string) => string;
 }) => {
@@ -770,7 +773,13 @@ const WidgetBody = ({
     );
   }
   if (widget.type === 'leaderboard') {
-    return <LeaderboardBody latest={latest} segmentLabel={segmentLabel} />;
+    return (
+      <LeaderboardBody
+        latest={latest}
+        activeSegments={activeSegments}
+        segmentLabel={segmentLabel}
+      />
+    );
   }
   if (widget.type === 'movers') {
     return <MoversBody snap={latest[widget.segments[0]]} />;
@@ -783,7 +792,16 @@ const WidgetBody = ({
   }
 
   if (widget.type === 'bar') {
-    const data = widget.segments.map(s => ({
+    const segs = activeSegments.filter(s => latest[s]);
+    if (segs.length === 0) {
+      return (
+        <div className="flex h-full items-center justify-center text-center text-[11px] text-muted-foreground">
+          No data for the selected markets — pick markets above and hit Refresh
+          data.
+        </div>
+      );
+    }
+    const data = segs.map(s => ({
       name: segmentLabel(s),
       seg: s,
       value: latest[s]?.metrics?.[widget.metric] ?? 0,
@@ -818,9 +836,9 @@ const WidgetBody = ({
     );
   }
 
-  // line
+  // line — plots the active market set (the Markets filter)
   const map = new Map<string, Record<string, number | string>>();
-  for (const s of widget.segments) {
+  for (const s of activeSegments) {
     for (const snap of series[s] ?? []) {
       const row =
         map.get(snap.capturedAt) ??
@@ -864,14 +882,14 @@ const WidgetBody = ({
             fontSize: 12,
           }}
         />
-        {widget.segments.length > 1 && (
+        {activeSegments.length > 1 && (
           <Legend
             iconType="circle"
             iconSize={7}
             wrapperStyle={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}
           />
         )}
-        {widget.segments.map(s => (
+        {activeSegments.map(s => (
           <Line
             key={s}
             type="monotone"
@@ -1039,15 +1057,19 @@ const TemperatureBody = ({
   );
 };
 
-/** Ranks every market that has data by temperature. */
+/** Ranks the selected markets (Markets filter) that have data, by temperature. */
 const LeaderboardBody = ({
   latest,
+  activeSegments,
   segmentLabel,
 }: {
   latest: Record<string, ApiMarketSnapshot>;
+  activeSegments: string[];
   segmentLabel: (k: string) => string;
 }) => {
+  const active = new Set(activeSegments);
   const rows = Object.values(latest)
+    .filter((s) => active.has(s.segment))
     .map((s) => ({ seg: s.segment, temp: marketTemp(s.metrics) }))
     .filter((r): r is { seg: string; temp: number } => r.temp != null)
     .sort((a, b) => b.temp - a.temp);
