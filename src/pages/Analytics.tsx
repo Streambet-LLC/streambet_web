@@ -7,7 +7,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
 import { AnalyticsMarket } from '@/components/analytics/AnalyticsMarket';
-import { AnalyticsTrackedCards } from '@/components/analytics/AnalyticsTrackedCards';
 import { AnalyticsPortfolio } from '@/components/analytics/AnalyticsPortfolio';
 import { AnalyticsUsage } from '@/components/analytics/AnalyticsUsage';
 import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
@@ -19,7 +18,6 @@ import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
 type AnalyticsTab =
   | 'ai'
   | 'market'
-  | 'tracked'
   | 'crm'
   | 'portfolio'
   | 'usage'
@@ -76,9 +74,8 @@ const Analytics = () => {
               <Sparkles className="h-3.5 w-3.5" /> AI
             </TabsTrigger>
             <TabsTrigger value="market">Market Data</TabsTrigger>
-            <TabsTrigger value="tracked">Tracked Cards</TabsTrigger>
-            <TabsTrigger value="crm">CRM</TabsTrigger>
             <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+            <TabsTrigger value="crm">CRM</TabsTrigger>
             <TabsTrigger value="usage">Usage</TabsTrigger>
             <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
           </TabsList>
@@ -89,10 +86,6 @@ const Analytics = () => {
 
           <TabsContent value="market" className="mt-6">
             <AnalyticsMarket />
-          </TabsContent>
-
-          <TabsContent value="tracked" className="mt-6">
-            <AnalyticsTrackedCards />
           </TabsContent>
 
           <TabsContent value="crm" className="mt-6">
