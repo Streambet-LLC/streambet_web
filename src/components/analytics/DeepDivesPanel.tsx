@@ -17,6 +17,8 @@ import { toast } from 'sonner';
 import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiDeepResearchJob } from '@/types/analytics-api';
 import { fileToCardImage } from '@/utils/cardImage';
+import { useAnswerDepth } from '@/hooks/useAnswerDepth';
+import { DepthSlider } from './DepthSlider';
 
 const STATUS: Record<
   string,
@@ -47,14 +49,24 @@ const STATUS: Record<
  * Polls for status, lets you start one directly, and opens the full brief when
  * a job is ready. Jobs are also started from the Insights chat.
  */
-export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) => {
+export const DeepDivesPanel = ({
+  refreshSignal,
+  chatDive,
+}: {
+  refreshSignal?: number;
+  /** A deep dive the chat just started — autofill + scroll + highlight here. */
+  chatDive?: { subject: string; nonce: number } | null;
+}) => {
   const navigate = useNavigate();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [flash, setFlash] = useState(false);
   const [jobs, setJobs] = useState<ApiDeepResearchJob[]>([]);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(8);
   const [subject, setSubject] = useState('');
   const [starting, setStarting] = useState(false);
   const [fromPhoto, setFromPhoto] = useState(false);
+  const [depth, setDepth] = useAnswerDepth();
   // Deep-dive history list — collapsible, tucked away by default. Auto-expands
   // while a job is researching (see effect below) so in-progress dives show.
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -79,6 +91,22 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
     load();
   }, [load, refreshSignal]);
 
+  // The chat kicked off a deep dive: reflect it here — autofill the subject,
+  // reveal the history, scroll this panel into view, and pulse-highlight it so
+  // the user sees their dive is running in this area. (The job itself is
+  // already started server-side by the chat's start_deep_dive tool.)
+  useEffect(() => {
+    if (!chatDive?.subject) return;
+    setSubject(chatDive.subject);
+    setHistoryOpen(true);
+    cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setFlash(true);
+    load();
+    const t = window.setTimeout(() => setFlash(false), 2600);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatDive?.nonce]);
+
   // Poll faster while a job is active so results appear promptly.
   const hasActive = jobs.some(
     j => j.status === 'pending' || j.status === 'running'
@@ -99,7 +127,7 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
     if (!s || starting) return;
     setStarting(true);
     try {
-      await analyticsAPI.startDeepResearch(s);
+      await analyticsAPI.startDeepResearch(s, depth);
       setSubject('');
       setPendingPhoto(null);
       await load();
@@ -154,7 +182,14 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
 
   return (
     <>
-      <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-3 sm:p-4 mb-4">
+      <Card
+        ref={cardRef}
+        className={`bg-[rgba(22,22,22,1)] p-3 sm:p-4 mb-4 scroll-mt-20 transition-shadow duration-500 ${
+          flash
+            ? 'border-[#B4FF39]/50 ring-2 ring-[#B4FF39]/40'
+            : 'border-white/5'
+        }`}
+      >
         <div className="flex items-center gap-2 mb-2.5">
           <Telescope className="h-4 w-4 text-[#B4FF39]" />
           <span className="text-xs font-medium uppercase tracking-wide text-white/80">
@@ -165,6 +200,12 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
               <Loader2 className="h-3 w-3 animate-spin" /> researching
             </span>
           )}
+          <DepthSlider
+            value={depth}
+            onChange={setDepth}
+            disabled={starting || fromPhoto}
+            className="ml-auto"
+          />
         </div>
 
         {/* Confirm step: shown after a photo is identified, before we commit. */}
