@@ -48,8 +48,8 @@ const FEATURES: {
   },
   {
     icon: Sparkles,
-    title: 'AI market brief',
-    desc: 'A research analyst reads live web data and writes you a plain-English brief on where each market stands — with the sources it used.',
+    title: 'Cardy, your AI analyst',
+    desc: 'Ask Cardy any card or collector question — pricing, grading, what-ifs — and get a plain-English read that contextualizes the asset, its market, and the forces moving it, with sources.',
   },
   {
     icon: TrendingUp,
@@ -148,9 +148,12 @@ export default function Waitlist() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/70">
             collectIQ turns live web data into AI-powered market intelligence
-            for trading cards — real-time pricing, trend forecasts, and a
-            research analyst that tells you where every market stands. We're in
-            private testing and opening up soon.
+            for trading cards — real-time pricing, trend forecasts, and{' '}
+            <span className="font-medium text-white">Cardy</span>, our AI
+            research analyst who answers any card or collector question and
+            helps you contextualize assets, markets, dynamics, and prices.
+            We're currently in private beta, but will let waitlisters know as
+            soon as we go public.
           </p>
 
           {/* Waitlist capture */}
@@ -287,8 +290,7 @@ export default function Waitlist() {
               Get in early
             </h2>
             <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-white/60">
-              We're onboarding collectors gradually. Join the waitlist and
-              you'll be among the first through the door.
+              Be among the first 1,000 waitlist signups to get early access!
             </p>
             <Button
               onClick={scrollToForm}
