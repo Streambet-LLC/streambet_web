@@ -136,9 +136,7 @@ export default function Waitlist() {
             collectIQ turns live web data into AI-powered market intelligence for trading cards —
             real-time pricing, trend forecasts, and{' '}
             <span className="font-medium text-white">Cardy</span>, our AI research analyst who
-            answers any card or collector question and helps you contextualize assets, markets,
-            dynamics, and prices. We're currently in private beta, but will let waitlisters know as
-            soon as we go public.
+            answers any card or collector question. Sign up below for updates.
           </p>
 
           {/* Waitlist capture */}
@@ -207,9 +205,8 @@ export default function Waitlist() {
               Use Cardy for all your card intelligence needs
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-white/60">
-              Ask Cardy anything and wield the power to interpret any card or market at a glance —
-              far beyond basic price checking. Here's some of what you can pull, all fully
-              manipulable in your dashboards.
+              Ask Cardy anything about specific cards or card markets — Cardy goes far beyond
+              specific price checking. Here are some things you can do:
             </p>
           </div>
 
