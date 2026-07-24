@@ -1366,7 +1366,37 @@ export const analyticsAPI = {
     );
     return response.data.data as ApiDeepResearchJob;
   },
+
+  /** AI usage & estimated cost, aggregated by user and prompt type. */
+  getAiUsage: async (days = 0): Promise<ApiUsageSummary> => {
+    const response = await apiClient.get(
+      `/admin/analytics/usage?days=${days}`
+    );
+    return response.data.data as ApiUsageSummary;
+  },
 };
+
+/** One aggregated row of the AI usage table. */
+export interface ApiUsageRow {
+  adminId: string | null;
+  email: string | null;
+  feature: string;
+  prompts: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  costUsd: number;
+  avgTokensPerPrompt: number;
+  avgCostPerPrompt: number;
+}
+
+export interface ApiUsageSummary {
+  /** Rows grouped by user × prompt type — the main table. */
+  byUserAndType: ApiUsageRow[];
+  /** Rows grouped by prompt type across all users. */
+  byType: Omit<ApiUsageRow, 'adminId' | 'email'>[];
+  totals: { prompts: number; totalTokens: number; costUsd: number };
+}
 
 /** Public waitlist signup + admin listing. */
 export interface WaitlistSignup {

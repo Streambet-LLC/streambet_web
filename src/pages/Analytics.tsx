@@ -9,6 +9,7 @@ import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
 import { AnalyticsMarket } from '@/components/analytics/AnalyticsMarket';
 import { AnalyticsTrackedCards } from '@/components/analytics/AnalyticsTrackedCards';
 import { AnalyticsPortfolio } from '@/components/analytics/AnalyticsPortfolio';
+import { AnalyticsUsage } from '@/components/analytics/AnalyticsUsage';
 import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
 // CRM (Sellers / Buyers / Leads) — coming soon. Kept wired for when it's back:
 // import { AnalyticsSellers } from '@/components/analytics/AnalyticsSellers';
@@ -21,6 +22,7 @@ type AnalyticsTab =
   | 'tracked'
   | 'crm'
   | 'portfolio'
+  | 'usage'
   | 'waitlist';
 
 /**
@@ -72,6 +74,7 @@ const Analytics = () => {
             <TabsTrigger value="tracked">Tracked Cards</TabsTrigger>
             <TabsTrigger value="crm">CRM</TabsTrigger>
             <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+            <TabsTrigger value="usage">Usage</TabsTrigger>
             <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
           </TabsList>
 
@@ -145,6 +148,10 @@ const Analytics = () => {
 
           <TabsContent value="portfolio" className="mt-6">
             <AnalyticsPortfolio />
+          </TabsContent>
+
+          <TabsContent value="usage" className="mt-6">
+            <AnalyticsUsage />
           </TabsContent>
 
           <TabsContent value="waitlist" className="mt-6">

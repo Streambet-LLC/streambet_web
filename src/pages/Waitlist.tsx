@@ -6,13 +6,11 @@ import {
   CheckCircle2,
   ArrowRight,
   Gauge,
-  LayoutGrid,
-  Sparkles,
-  TrendingUp,
-  CalendarClock,
-  Flame,
+  FileText,
   LineChart,
-  Trophy,
+  Scale,
+  Briefcase,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +28,7 @@ const SEGMENTS: { label: string; color: string }[] = [
   { label: 'Lorcana', color: '#dc2626' },
 ];
 
-/** The market-intelligence surface, told as user-facing capabilities. */
+/** What you can ask Cardy for — the capability set, told user-first. */
 const FEATURES: {
   icon: typeof Gauge;
   title: string;
@@ -39,42 +37,27 @@ const FEATURES: {
   {
     icon: Gauge,
     title: 'Market temperature',
-    desc: 'A fear/greed-style read on every market — heat, momentum, demand, and supply pressure distilled into one 0–100 score you can glance at.',
+    desc: 'Fear/greed analysis on any market or card — heat, momentum, demand, supply pressure, and more distilled into a single 0–100 score.',
   },
   {
-    icon: LayoutGrid,
-    title: 'Live index board',
-    desc: 'Eight tracked indices per market — heat, demand, sealed strength, grading activity, price momentum, sentiment, supply, and volatility.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Cardy, your AI analyst',
-    desc: 'Ask Cardy any card or collector question — pricing, grading, what-ifs — and get a plain-English read that contextualizes the asset, its market, and the forces moving it, with sources.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Top movers',
-    desc: 'The biggest gainers and faders of the moment, so you see what is heating up or cooling off before it shows up in the price.',
-  },
-  {
-    icon: CalendarClock,
-    title: 'Release radar',
-    desc: 'Upcoming sets, drops, and catalysts on the horizon — with an impact read on how each is likely to move the market.',
-  },
-  {
-    icon: Flame,
-    title: 'Headline sales',
-    desc: 'Notable recent sales as they land — the grades, venues, and prices that are setting the market right now.',
+    icon: FileText,
+    title: 'AI market brief',
+    desc: 'Full research reports on cards and markets, based on live, real-time web data.',
   },
   {
     icon: LineChart,
     title: 'Trends over time',
-    desc: 'Heat and momentum charted across markets, so a single refresh becomes a trend line you can actually follow.',
+    desc: 'Heat, momentum, and trajectories charted across card markets and individual assets.',
   },
   {
-    icon: Trophy,
-    title: 'Hottest markets',
-    desc: 'A live leaderboard ranking every market by temperature — know where the action is at a glance.',
+    icon: Scale,
+    title: 'Buy, sell & hold signals',
+    desc: 'Ask Cardy whether to buy, sell, or hold — it analyzes and suggests timing, tuned to the latest news and happenings.',
+  },
+  {
+    icon: Briefcase,
+    title: 'Portfolio management',
+    desc: 'Ask Cardy to log cards into your watchlist, held, and sold portfolios anytime.',
   },
 ];
 
@@ -212,7 +195,7 @@ export default function Waitlist() {
           </div>
         </motion.div>
 
-        {/* ---------------- Market intelligence overview ---------------- */}
+        {/* ---------------- Meet Cardy ---------------- */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -220,36 +203,53 @@ export default function Waitlist() {
           className="mt-24"
         >
           <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-medium uppercase tracking-[0.2em] text-[#B4FF39]">
-              Market intelligence
-            </span>
-            <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">
-              Read every market at a glance
+            {/* Cardy mark — swap this badge for the Cardy logo when it's hosted. */}
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-[#B4FF39]/25 bg-[#B4FF39]/10 text-[#B4FF39]">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h2 className="mt-4 text-2xl font-semibold text-white sm:text-3xl">
+              Use Cardy for all your card intelligence needs
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-white/60">
-              Every market is researched live and scored across dozens of
-              signals, then laid out on a dashboard you can rearrange to your
-              own workflow. Here's what you get out of the box.
+              Ask Cardy anything and wield the power to interpret any card or
+              market at a glance — far beyond basic price checking. Here's some
+              of what you can pull, all fully manipulable in your dashboards.
             </p>
           </div>
 
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURES.map(f => (
-              <div
-                key={f.title}
-                className="group rounded-2xl border border-white/8 bg-[rgba(22,22,22,0.6)] p-5 transition-colors hover:border-[#B4FF39]/25"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-black/40 text-[#B4FF39]">
-                  <f.icon className="h-5 w-5" />
+          {/* Bento: 6-col grid — top row = three 2-wide cards, bottom row =
+              two 3-wide cards, so every row fills (no orphan with 5 cards). */}
+          <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+            {FEATURES.map((f, i) => {
+              const wide = i >= 3; // bottom-row cards span wider
+              const lgSpan = wide ? 'lg:col-span-3' : 'lg:col-span-2';
+              // On 2-col screens the 5th card goes full-width to avoid an orphan.
+              const smSpan = i === 4 ? 'sm:col-span-2' : '';
+              return (
+                <div
+                  key={f.title}
+                  className={`group rounded-2xl border border-white/8 bg-[rgba(22,22,22,0.6)] p-5 transition-colors hover:border-[#B4FF39]/25 ${lgSpan} ${smSpan} ${
+                    wide ? 'lg:flex lg:items-center lg:gap-4' : ''
+                  }`}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/40 text-[#B4FF39]">
+                    <f.icon className="h-5 w-5" />
+                  </div>
+                  <div className={wide ? '' : 'contents'}>
+                    <h3
+                      className={`text-sm font-semibold text-white ${
+                        wide ? 'mt-4 lg:mt-0' : 'mt-4'
+                      }`}
+                    >
+                      {f.title}
+                    </h3>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">
+                      {f.desc}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="mt-4 text-sm font-semibold text-white">
-                  {f.title}
-                </h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">
-                  {f.desc}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Segment coverage */}
