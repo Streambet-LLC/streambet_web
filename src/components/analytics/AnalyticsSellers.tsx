@@ -441,7 +441,7 @@ export const AnalyticsSellers = () => {
             </div>
           ) : (
             <div className="rounded-md border border-dashed border-white/10 p-6 text-center text-sm text-muted-foreground">
-              No CardCade buyers matched this inventory yet.
+              No collectIQ buyers matched this inventory yet.
             </div>
           )}
         </Card>
@@ -635,7 +635,7 @@ export const AnalyticsSellers = () => {
             Upload inventory
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            CSV or Excel (.xlsx). We'll match your products to CardCade buyers.
+            CSV or Excel (.xlsx). We'll match your products to collectIQ buyers.
           </p>
           <div
             onDragOver={e => {

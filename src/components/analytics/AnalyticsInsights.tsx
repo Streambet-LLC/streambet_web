@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
-  Sparkles,
   Search,
   ArrowUp,
   ChevronRight,
@@ -365,11 +364,9 @@ export const AnalyticsInsights = () => {
         /* ---------- Empty state: search-bar landing ---------- */
         <div className="overflow-y-auto">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col items-center text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#B4FF39]/15 text-[#B4FF39]">
-              <Sparkles className="h-6 w-6" />
-            </div>
+            <img src="/cardy-icon.png" alt="Cardy" className="h-14 w-14" />
             <h2 className="mt-4 text-xl sm:text-2xl font-semibold text-white">
-              Ask CardCade AI
+              Ask Cardy
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground max-w-md">
               Ask about any card — pricing, social buzz, and the upcoming events,
@@ -427,9 +424,11 @@ export const AnalyticsInsights = () => {
                   </div>
                 ) : (
                   <div key={m.id} className="flex items-start gap-2.5">
-                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#B4FF39]/15 text-[#B4FF39]">
-                      <Sparkles className="h-3.5 w-3.5" />
-                    </div>
+                    <img
+                      src="/cardy-icon.png"
+                      alt="Cardy"
+                      className="mt-0.5 h-7 w-7 shrink-0"
+                    />
                     <div className="max-w-[85%] space-y-1.5">
                       {m.tools && m.tools.length > 0 && (
                         <div className="flex flex-wrap gap-1">
@@ -463,9 +462,11 @@ export const AnalyticsInsights = () => {
               )}
               {thinking && (
                 <div className="flex items-start gap-2.5">
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#B4FF39]/15 text-[#B4FF39]">
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </div>
+                  <img
+                    src="/cardy-icon.png"
+                    alt="Cardy"
+                    className="mt-0.5 h-7 w-7 shrink-0"
+                  />
                   <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-3.5 py-3">
                     <div className="flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:-0.3s]" />

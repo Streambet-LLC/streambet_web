@@ -37,8 +37,8 @@ export const Navigation = ({ onDashboardClick }: NavigationProps) => {
         <div className="flex h-16 w-full items-center px-4">
           <Link to={isAdmin ? '/analytics' : '/'} className="flex items-center">
             <img
-              src="/wordmark.svg"
-              alt="CardCade"
+              src="/collectiq-mark.png"
+              alt="collectIQ"
               className="h-7 w-[120px] object-contain md:h-8 md:w-[165px]"
             />
           </Link>

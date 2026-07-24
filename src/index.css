@@ -102,6 +102,42 @@
   font-display: swap;
 }
 
+/*
+ * Chakra Petch — the collectIQ logo typeface. Self-hosted (OFL) and used as the
+ * brand heading/display font. Body copy stays Inter.
+ */
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('/fonts/ChakraPetch/ChakraPetch-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('/fonts/ChakraPetch/ChakraPetch-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('/fonts/ChakraPetch/ChakraPetch-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('/fonts/ChakraPetch/ChakraPetch-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 0%;
@@ -331,6 +367,16 @@
       'cv02' 1,
       'cv03' 1,
       'cv04' 1;
+  }
+  /*
+   * Brand heading font: Chakra Petch (the collectIQ logo typeface). Applies to
+   * semantic headings site-wide. Opt out on any element with `font-sans`;
+   * opt in elsewhere with the `font-heading` utility.
+   */
+  h1,
+  h2,
+  h3 {
+    font-family: 'Chakra Petch', 'Inter', system-ui, sans-serif;
   }
 }
 

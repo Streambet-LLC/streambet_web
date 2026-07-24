@@ -70,7 +70,7 @@ const ResetPassword = () => {
         <div className="w-full max-w-md">
           <div className="mb-6">
             <Link to="/">
-              <img src="/logo.svg" alt="CardCade Logo" className="mb-6 w-[121px]" />
+              <img src="/collectiq-mark.png" alt="collectIQ" className="mb-6 h-8 w-auto" />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left">Set a new password</h1>
             <p className="text-[#FFFFFFBF] mt-3 text-left font-light">
@@ -172,7 +172,7 @@ const ResetPassword = () => {
           zIndex: 10,
         }}
       >
-        © CardCade {new Date().getFullYear()}
+        © collectIQ {new Date().getFullYear()}
       </div>
     </>
   );
