@@ -5,7 +5,14 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Telescope, Loader2, ChevronRight, ImagePlus, X } from 'lucide-react';
+import {
+  Telescope,
+  Loader2,
+  ChevronRight,
+  ChevronDown,
+  ImagePlus,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiDeepResearchJob } from '@/types/analytics-api';
@@ -48,6 +55,9 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
   const [subject, setSubject] = useState('');
   const [starting, setStarting] = useState(false);
   const [fromPhoto, setFromPhoto] = useState(false);
+  // Deep-dive history list — collapsible, tucked away by default. Auto-expands
+  // while a job is researching (see effect below) so in-progress dives show.
+  const [historyOpen, setHistoryOpen] = useState(false);
   // Set once a photo has been identified — holds the preview thumbnail while the
   // admin confirms (or edits `subject`) before we commit to a research run.
   const [pendingPhoto, setPendingPhoto] = useState<{ dataUrl: string } | null>(
@@ -77,6 +87,12 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
     const t = window.setInterval(load, hasActive ? 4000 : 12000);
     return () => window.clearInterval(t);
   }, [load, hasActive]);
+
+  // Auto-expand the history while a job is researching so its progress is
+  // visible; the admin can still collapse it manually afterwards.
+  useEffect(() => {
+    if (hasActive) setHistoryOpen(true);
+  }, [hasActive]);
 
   const start = async () => {
     const s = subject.trim();
@@ -240,50 +256,73 @@ export const DeepDivesPanel = ({ refreshSignal }: { refreshSignal?: number }) =>
         )}
 
         {jobs.length > 0 && (
-          <div className="mt-3 space-y-1.5 max-h-52 overflow-y-auto">
-            {jobs.map(j => {
-              const st = STATUS[j.status] ?? STATUS.pending;
-              const ready = j.status === 'done' && j.result;
-              return (
-                <button
-                  key={j.id}
-                  type="button"
-                  disabled={!ready}
-                  onClick={() => ready && navigate(`/analytics/deep-dive/${j.id}`)}
-                  className={`w-full flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-3 py-2 text-left ${
-                    ready ? 'hover:bg-white/5 cursor-pointer' : 'cursor-default'
-                  }`}
-                >
-                  <span className="flex-1 min-w-0">
-                    <span className="block truncate text-sm text-white/90">
-                      {j.subject}
-                    </span>
-                    <span className="block text-[11px] text-muted-foreground">
-                      {moment(j.completedAt ?? j.createdAt).fromNow()}
-                      {j.status === 'error' && j.error ? ` · ${j.error}` : ''}
-                    </span>
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className={`shrink-0 gap-1 text-[10px] font-medium ${st.className}`}
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(o => !o)}
+              className="flex w-full items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground hover:text-white/80"
+              aria-expanded={historyOpen}
+            >
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform ${
+                  historyOpen ? '' : '-rotate-90'
+                }`}
+              />
+              History
+              <span className="text-muted-foreground/70">({total})</span>
+            </button>
+
+            {historyOpen && (
+              <div className="mt-2 space-y-1.5 max-h-52 overflow-y-auto">
+                {jobs.map(j => {
+                  const st = STATUS[j.status] ?? STATUS.pending;
+                  const ready = j.status === 'done' && j.result;
+                  return (
+                    <button
+                      key={j.id}
+                      type="button"
+                      disabled={!ready}
+                      onClick={() =>
+                        ready && navigate(`/analytics/deep-dive/${j.id}`)
+                      }
+                      className={`w-full flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-3 py-2 text-left ${
+                        ready ? 'hover:bg-white/5 cursor-pointer' : 'cursor-default'
+                      }`}
+                    >
+                      <span className="flex-1 min-w-0">
+                        <span className="block truncate text-sm text-white/90">
+                          {j.subject}
+                        </span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {moment(j.completedAt ?? j.createdAt).fromNow()}
+                          {j.status === 'error' && j.error ? ` · ${j.error}` : ''}
+                        </span>
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={`shrink-0 gap-1 text-[10px] font-medium ${st.className}`}
+                      >
+                        {st.spin && (
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                        )}
+                        {st.label}
+                      </Badge>
+                      {ready && (
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                    </button>
+                  );
+                })}
+                {total > jobs.length && (
+                  <button
+                    type="button"
+                    onClick={() => setLimit(l => l + 8)}
+                    className="w-full rounded-lg border border-white/5 bg-black/20 px-3 py-1.5 text-center text-xs text-muted-foreground hover:bg-white/5 hover:text-white"
                   >
-                    {st.spin && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
-                    {st.label}
-                  </Badge>
-                  {ready && (
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
-                </button>
-              );
-            })}
-            {total > jobs.length && (
-              <button
-                type="button"
-                onClick={() => setLimit(l => l + 8)}
-                className="w-full rounded-lg border border-white/5 bg-black/20 px-3 py-1.5 text-center text-xs text-muted-foreground hover:bg-white/5 hover:text-white"
-              >
-                Load more ({total - jobs.length})
-              </button>
+                    Load more ({total - jobs.length})
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
