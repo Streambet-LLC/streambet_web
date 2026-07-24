@@ -20,6 +20,8 @@ import type {
   ApiInsightsExchange,
 } from '@/types/analytics-api';
 import { fileToCardImage, type CardImage } from '@/utils/cardImage';
+import { useAnswerDepth } from '@/hooks/useAnswerDepth';
+import { DepthSlider } from './DepthSlider';
 import { DeepDivesPanel } from './DeepDivesPanel';
 import { ChatMarkdown } from './ChatMarkdown';
 import { InsightsHistoryDialog } from './InsightsHistoryDialog';
@@ -80,6 +82,28 @@ export const AnalyticsInsights = () => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [attachment, setAttachment] = useState<CardImage | null>(null);
   const [attaching, setAttaching] = useState(false);
+  const [depth, setDepth] = useAnswerDepth();
+  // When the chat kicks off a deep dive, hand its subject to the Deep Dives
+  // panel so it autofills + scrolls + highlights (nonce forces a re-trigger
+  // even if the same subject is dived twice).
+  const [chatDive, setChatDive] = useState<{
+    subject: string;
+    nonce: number;
+  } | null>(null);
+
+  /**
+   * A chat turn may have called the `start_deep_dive` tool (the job is already
+   * running server-side). Refresh the panel and surface the subject there.
+   */
+  const applyDiveTool = (
+    toolCalls?: { name: string; input?: unknown }[]
+  ) => {
+    const dive = (toolCalls ?? []).find(t => t.name === 'start_deep_dive');
+    if (!dive) return;
+    setDeepRefresh(n => n + 1);
+    const subject = (dive.input as { subject?: string } | undefined)?.subject;
+    if (subject) setChatDive({ subject, nonce: Date.now() });
+  };
 
   const idRef = useRef(0);
   const convIdRef = useRef<string>(newConversationId());
@@ -208,9 +232,7 @@ export const AnalyticsInsights = () => {
         patch({ tools: [...toolSet] });
       },
       onDone: toolCalls => {
-        if ((toolCalls ?? []).some(t => t.name === 'start_deep_dive')) {
-          setDeepRefresh(n => n + 1);
-        }
+        applyDiveTool(toolCalls);
         if (asstId !== -1) patch({ streaming: false });
         setThinking(false);
       },
@@ -219,18 +241,18 @@ export const AnalyticsInsights = () => {
         patch({ text: acc || `⚠️ ${message}`, streaming: false });
         setThinking(false);
       },
-    }, convIdRef.current);
+    }, convIdRef.current, depth);
 
     // The stream was cut before finishing (e.g. a proxy idle-timeout in prod).
     // Fall back to the non-streaming endpoint to fetch the complete answer.
     if (!completed) {
       try {
-        const res = await analyticsAPI.insightsChat(payload, convIdRef.current);
+        const res = await analyticsAPI.insightsChat(payload, convIdRef.current, depth);
         ensureMsg();
         acc = res.reply;
         const names = (res.toolCalls ?? []).map(t => t.name);
         names.forEach(n => toolSet.add(n));
-        if (names.includes('start_deep_dive')) setDeepRefresh(n => n + 1);
+        applyDiveTool(res.toolCalls);
         patch({ text: acc, tools: [...toolSet], streaming: false });
       } catch {
         ensureMsg();
@@ -336,10 +358,12 @@ export const AnalyticsInsights = () => {
 
   return (
     <>
-      <DeepDivesPanel refreshSignal={deepRefresh} />
+      <DeepDivesPanel refreshSignal={deepRefresh} chatDive={chatDive} />
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 flex flex-col max-h-[72vh] overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center justify-end gap-1 border-b border-white/5 px-2 py-1.5 shrink-0">
+      <div className="flex items-center gap-1 border-b border-white/5 px-2 py-1.5 shrink-0">
+        <DepthSlider value={depth} onChange={setDepth} disabled={thinking} />
+        <div className="ml-auto flex items-center gap-1">
         <Button
           variant="ghost"
           size="sm"
@@ -359,6 +383,7 @@ export const AnalyticsInsights = () => {
             <Plus className="h-3.5 w-3.5" /> New chat
           </Button>
         )}
+        </div>
       </div>
       {!started ? (
         /* ---------- Empty state: search-bar landing ---------- */

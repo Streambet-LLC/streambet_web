@@ -1196,11 +1196,13 @@ export const analyticsAPI = {
   /** Ask the conversational Insights analyst (Claude + read-only data tools). */
   insightsChat: async (
     messages: ApiInsightsMessage[],
-    conversationId?: string
+    conversationId?: string,
+    depth?: string
   ): Promise<ApiInsightsChatResult> => {
     const response = await apiClient.post('/admin/analytics/insights/chat', {
       messages,
       conversationId,
+      depth,
     });
     return response.data.data as ApiInsightsChatResult;
   },
@@ -1238,7 +1240,8 @@ export const analyticsAPI = {
       onDone?: (toolCalls: { name: string; input: unknown }[]) => void;
       onError?: (message: string) => void;
     },
-    conversationId?: string
+    conversationId?: string,
+    depth?: string
   ): Promise<{ completed: boolean }> => {
     const token = localStorage.getItem('accessToken');
     let resp: Response;
@@ -1249,7 +1252,7 @@ export const analyticsAPI = {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ messages, conversationId }),
+        body: JSON.stringify({ messages, conversationId, depth }),
       });
     } catch {
       // Network-level failure opening the stream — let the caller fall back.
@@ -1328,10 +1331,13 @@ export const analyticsAPI = {
   },
 
   /** Start a background deep-dive research job. */
-  startDeepResearch: async (subject: string): Promise<ApiDeepResearchJob> => {
+  startDeepResearch: async (
+    subject: string,
+    depth?: string
+  ): Promise<ApiDeepResearchJob> => {
     const response = await apiClient.post(
       '/admin/analytics/insights/deep-research',
-      { subject }
+      { subject, depth }
     );
     return response.data.data as ApiDeepResearchJob;
   },
@@ -1358,11 +1364,12 @@ export const analyticsAPI = {
    */
   startDeepResearchFromImage: async (
     image: ApiCardImage,
-    note?: string
+    note?: string,
+    depth?: string
   ): Promise<ApiDeepResearchJob> => {
     const response = await apiClient.post(
       '/admin/analytics/insights/deep-research/from-image',
-      { image, note }
+      { image, note, depth }
     );
     return response.data.data as ApiDeepResearchJob;
   },
