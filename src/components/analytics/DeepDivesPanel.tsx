@@ -18,7 +18,7 @@ import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiDeepResearchJob } from '@/types/analytics-api';
 import { fileToCardImage } from '@/utils/cardImage';
 import { useAnswerDepth } from '@/hooks/useAnswerDepth';
-import { DepthSlider } from './DepthSlider';
+import { DepthSettings } from './DepthSettings';
 
 const STATUS: Record<
   string,
@@ -134,7 +134,7 @@ export const DeepDivesPanel = ({
     } catch (e) {
       const msg =
         (e as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? 'Could not start deep dive.';
+          ?.message ?? 'Could not start the report.';
       toast.error(msg);
     } finally {
       setStarting(false);
@@ -193,14 +193,14 @@ export const DeepDivesPanel = ({
         <div className="flex items-center gap-2 mb-2.5">
           <Telescope className="h-4 w-4 text-[#B4FF39]" />
           <span className="text-xs font-medium uppercase tracking-wide text-white/80">
-            Deep dives
+            AI Market Reports
           </span>
           {hasActive && (
             <span className="flex items-center gap-1 text-[11px] text-amber-300">
               <Loader2 className="h-3 w-3 animate-spin" /> researching
             </span>
           )}
-          <DepthSlider
+          <DepthSettings
             value={depth}
             onChange={setDepth}
             disabled={starting || fromPhoto}
@@ -246,7 +246,7 @@ export const DeepDivesPanel = ({
                 start();
               }
             }}
-            placeholder="Deep-dive a card… e.g. Crown Zenith Charizard UPC"
+            placeholder="Report on a card… e.g. Crown Zenith Charizard UPC"
             className="h-9 bg-black/40 border-white/10 text-sm"
           />
           <input
@@ -263,8 +263,8 @@ export const DeepDivesPanel = ({
               onClick={() => fileRef.current?.click()}
               disabled={fromPhoto || starting}
               size="sm"
-              title="Deep dive from a photo — take one or upload"
-              aria-label="Deep dive from a card photo"
+              title="AI Market Report from a photo — take one or upload"
+              aria-label="AI Market Report from a card photo"
               className="h-9 w-9 shrink-0 border-white/10 bg-black/40 p-0 text-white/80 hover:bg-white/5 hover:text-white disabled:opacity-40"
             >
               {fromPhoto ? (
@@ -283,9 +283,9 @@ export const DeepDivesPanel = ({
             {starting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : pendingPhoto ? (
-              'Confirm & deep dive'
+              'Confirm & run report'
             ) : (
-              'Deep dive'
+              'Run report'
             )}
           </Button>
         </div>

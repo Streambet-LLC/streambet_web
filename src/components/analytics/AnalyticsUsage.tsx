@@ -14,8 +14,8 @@ import { analyticsAPI, type ApiUsageSummary } from '@/integrations/api/client';
 const FEATURE_LABELS: Record<string, string> = {
   chat: 'Cardy chat',
   chat_scope: 'Cardy scope check',
-  deep_dive: 'Deep dive',
-  deep_dive_identify: 'Deep dive · photo ID',
+  deep_dive: 'AI Market Report',
+  deep_dive_identify: 'AI Market Report · photo ID',
   card_forecast: 'Card forecast',
   market_refresh: 'Market refresh',
   card_profile: 'Card price profile',

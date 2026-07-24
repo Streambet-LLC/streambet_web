@@ -21,7 +21,7 @@ import type {
 } from '@/types/analytics-api';
 import { fileToCardImage, type CardImage } from '@/utils/cardImage';
 import { useAnswerDepth } from '@/hooks/useAnswerDepth';
-import { DepthSlider } from './DepthSlider';
+import { DepthSettings } from './DepthSettings';
 import { DeepDivesPanel } from './DeepDivesPanel';
 import { ChatMarkdown } from './ChatMarkdown';
 import { InsightsHistoryDialog } from './InsightsHistoryDialog';
@@ -58,7 +58,7 @@ const SUGGESTED = EXAMPLE_PROMPTS.slice(0, 5);
 // Friendly labels for the tools Claude may call, shown under a reply.
 const TOOL_LABELS: Record<string, string> = {
   web_search: 'Searched the web',
-  start_deep_dive: 'Started deep dive',
+  start_deep_dive: 'Started AI Market Report',
   search_leads: 'Searched leads',
 };
 
@@ -294,7 +294,7 @@ export const AnalyticsInsights = () => {
           <span className="flex-1 text-xs text-muted-foreground">
             {attaching
               ? 'Preparing photo…'
-              : 'Photo attached — ask about this card, or say “deep dive this”.'}
+              : 'Photo attached — ask about this card, or say “make a report on this”.'}
           </span>
           {attachment && !attaching && (
             <Button
@@ -361,9 +361,7 @@ export const AnalyticsInsights = () => {
       <DeepDivesPanel refreshSignal={deepRefresh} chatDive={chatDive} />
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 flex flex-col max-h-[72vh] overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-1 border-b border-white/5 px-2 py-1.5 shrink-0">
-        <DepthSlider value={depth} onChange={setDepth} disabled={thinking} />
-        <div className="ml-auto flex items-center gap-1">
+      <div className="flex items-center justify-end gap-1 border-b border-white/5 px-2 py-1.5 shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -372,6 +370,7 @@ export const AnalyticsInsights = () => {
         >
           <History className="h-3.5 w-3.5" /> History
         </Button>
+        <DepthSettings value={depth} onChange={setDepth} disabled={thinking} />
         {started && (
           <Button
             variant="ghost"
@@ -383,7 +382,6 @@ export const AnalyticsInsights = () => {
             <Plus className="h-3.5 w-3.5" /> New chat
           </Button>
         )}
-        </div>
       </div>
       {!started ? (
         /* ---------- Empty state: search-bar landing ---------- */

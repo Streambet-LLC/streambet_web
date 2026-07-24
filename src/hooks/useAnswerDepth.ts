@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 export type AnswerDepth = 'quick' | 'balanced' | 'deep';
 
 export const DEPTHS: { key: AnswerDepth; label: string; hint: string }[] = [
-  { key: 'quick', label: 'Quick', hint: 'Fast, concise answers with lighter research.' },
+  { key: 'quick', label: 'Brief', hint: 'Fast, concise answers with lighter research.' },
   { key: 'balanced', label: 'Balanced', hint: 'A useful read across the key dimensions.' },
   { key: 'deep', label: 'Deep', hint: 'Thorough, longer answers with deeper web research.' },
 ];
