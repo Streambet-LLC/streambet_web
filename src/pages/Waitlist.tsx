@@ -80,7 +80,7 @@ const FEATURES: {
 
 /**
  * Public landing page. While the product is in private testing, this is the
- * ONLY thing non-admin visitors see — a branded overview of CardCade's
+ * ONLY thing non-admin visitors see — a branded overview of collectIQ's
  * market intelligence plus a waitlist capture. Admins reach the dashboard by
  * logging in (discreet link in the footer).
  */
@@ -120,7 +120,9 @@ export default function Waitlist() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-background">
+    // Own scroll container: global CSS locks `body { overflow-y: hidden }`
+    // (fixed-viewport app shell), so the page must scroll itself.
+    <div className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-background">
       <div className="auth-bg-gradient" />
 
       <div className="relative z-10 mx-auto max-w-5xl px-5 pb-16 pt-12 sm:pt-16">
@@ -132,9 +134,9 @@ export default function Waitlist() {
           className="mx-auto max-w-2xl text-center"
         >
           <img
-            src="/machine-wordmark.svg"
-            alt="CardCade"
-            className="mx-auto mb-8 h-9"
+            src="/collectiq-logo.png"
+            alt="collectIQ — AI Powered. Collector Focused."
+            className="mx-auto mb-8 h-12 w-auto sm:h-14"
           />
 
           <span className="inline-flex items-center gap-2 rounded-full border border-[#B4FF39]/25 bg-[#B4FF39]/10 px-3 py-1 text-xs font-medium text-[#B4FF39]">
@@ -145,10 +147,10 @@ export default function Waitlist() {
             The card market, decoded.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/70">
-            CardCade turns live web data into AI-powered market intelligence for
-            trading cards — real-time pricing, trend forecasts, and a research
-            analyst that tells you where every market stands. We're in private
-            testing and opening up soon.
+            collectIQ turns live web data into AI-powered market intelligence
+            for trading cards — real-time pricing, trend forecasts, and a
+            research analyst that tells you where every market stands. We're in
+            private testing and opening up soon.
           </p>
 
           {/* Waitlist capture */}
@@ -301,7 +303,7 @@ export default function Waitlist() {
 
       {/* Footer: legal + discreet admin login */}
       <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pb-8 text-xs text-white/40">
-        <span>© CardCade {new Date().getFullYear()}</span>
+        <span>© collectIQ {new Date().getFullYear()}</span>
         <Link to="/privacy" className="hover:text-white/70">
           Privacy
         </Link>

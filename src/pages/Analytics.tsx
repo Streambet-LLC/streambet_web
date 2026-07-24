@@ -9,6 +9,7 @@ import { AnalyticsSellers } from '@/components/analytics/AnalyticsSellers';
 import { AnalyticsDiscover } from '@/components/analytics/AnalyticsDiscover';
 import { AnalyticsLeads } from '@/components/analytics/AnalyticsLeads';
 import { AnalyticsMarket } from '@/components/analytics/AnalyticsMarket';
+import { AnalyticsPortfolio } from '@/components/analytics/AnalyticsPortfolio';
 import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
 
 /**
@@ -18,7 +19,7 @@ import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
 const Analytics = () => {
   const { session, isLoading, isFetching } = useAuthContext();
   const [tab, setTab] = useState<
-    'market' | 'audience' | 'insights' | 'waitlist'
+    'market' | 'audience' | 'insights' | 'portfolio' | 'waitlist'
   >('market');
   // Sub-view inside the Sellers/Buyers tab.
   const [audienceTab, setAudienceTab] = useState<'sellers' | 'buyers' | 'leads'>(
@@ -59,7 +60,14 @@ const Analytics = () => {
         <Tabs
           value={tab}
           onValueChange={v =>
-            setTab(v as 'market' | 'audience' | 'insights' | 'waitlist')
+            setTab(
+              v as
+                | 'market'
+                | 'audience'
+                | 'insights'
+                | 'portfolio'
+                | 'waitlist',
+            )
           }
         >
           <TabsList className="h-auto flex-wrap justify-start bg-[rgba(22,22,22,1)] border border-white/5">
@@ -68,6 +76,7 @@ const Analytics = () => {
             <TabsTrigger value="insights" className="gap-1.5">
               Insights
             </TabsTrigger>
+            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
             <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
           </TabsList>
 
@@ -109,6 +118,10 @@ const Analytics = () => {
 
           <TabsContent value="insights" className="mt-6">
             <AnalyticsInsights />
+          </TabsContent>
+
+          <TabsContent value="portfolio" className="mt-6">
+            <AnalyticsPortfolio />
           </TabsContent>
 
           <TabsContent value="waitlist" className="mt-6">

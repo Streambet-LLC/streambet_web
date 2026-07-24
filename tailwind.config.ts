@@ -22,6 +22,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['"Chakra Petch"', 'Inter', 'system-ui', 'sans-serif'],
         fabio: ['FabioXM', 'system-ui', 'sans-serif'],
         emoji: ['"Apple Color Emoji"', '"Segoe UI Emoji"', '"Noto Color Emoji"', 'sans-serif'],
       },

@@ -9,7 +9,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <img src="/machine-wordmark.svg" alt="CardCade Logo" className="mb-8" />
+            <img src="/collectiq-mark.png" alt="collectIQ" className="mb-8 h-8 w-auto" />
             {/* <p className="text-sm text-muted-foreground">
               Live picks for games created on the Internet.
             </p> */}
@@ -131,7 +131,7 @@ export const Footer = () => {
 
         <div className="mt-8 pt-8 border-t border-border">
           <p className="text-sm text-center text-muted-foreground">
-            © {new Date().getFullYear()} CardCade. All rights reserved.
+            © {new Date().getFullYear()} collectIQ. All rights reserved.
           </p>
         </div>
       </div>
