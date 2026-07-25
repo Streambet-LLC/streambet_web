@@ -47,8 +47,15 @@ import {
   CalendarClock,
   Flame,
   Maximize2,
+  HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import {
+  Tooltip as UITooltip,
+  TooltipContent as UITooltipContent,
+  TooltipTrigger as UITooltipTrigger,
+} from '@/components/ui/tooltip';
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiMarketSnapshot,
@@ -338,6 +345,10 @@ export const MarketDashboard = () => {
     (k: string) => catalog?.metrics.find(m => m.key === k)?.label ?? k,
     [catalog]
   );
+  const metricHelp = useCallback(
+    (k: string) => catalog?.metrics.find(m => m.key === k)?.help ?? '',
+    [catalog]
+  );
   const segmentLabel = useCallback(
     (k: string) =>
       SEG_SHORT_LABEL[k] ??
@@ -619,41 +630,48 @@ export const MarketDashboard = () => {
         {config.widgets.map(w => (
           <div
             key={w.id}
-            className="overflow-hidden rounded-xl border border-white/8 bg-[rgba(22,22,22,1)]"
+            className="group/widget overflow-hidden rounded-xl border border-white/8 bg-[rgba(22,22,22,1)] transition-all duration-200 hover:border-[#B4FF39]/25 hover:shadow-lg hover:shadow-black/40"
           >
             <div className="flex items-center gap-1.5 border-b border-white/5 px-3 py-1.5">
-              <span className="widget-drag flex cursor-move items-center text-muted-foreground/60 hover:text-white/80">
+              <span className="widget-drag flex cursor-move items-center text-muted-foreground/40 transition-colors group-hover/widget:text-muted-foreground/80 hover:text-white/80">
                 <GripVertical className="h-3.5 w-3.5" />
               </span>
               <span className="flex-1 truncate text-xs font-medium text-white/85">
                 {shortTitle(w.title)}
               </span>
-              <button
-                type="button"
-                onClick={() => setExpanded(w)}
-                className="text-muted-foreground/60 hover:text-white"
-                aria-label="Expand"
-                title="Expand"
-              >
-                <Maximize2 className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditor(w);
-                  setEditorOpen(true);
-                }}
-                className="text-muted-foreground/60 hover:text-white"
-              >
-                <Settings2 className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => removeWidget(w.id)}
-                className="text-muted-foreground/60 hover:text-red-400"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+              {/* Controls stay subtle until the widget is hovered/focused. */}
+              <div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-200 group-hover/widget:opacity-100 focus-within:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => setExpanded(w)}
+                  className="text-muted-foreground/60 hover:text-white"
+                  aria-label="Expand"
+                  title="Expand to fullscreen"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditor(w);
+                    setEditorOpen(true);
+                  }}
+                  className="text-muted-foreground/60 hover:text-white"
+                  aria-label="Edit widget"
+                  title="Edit widget"
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeWidget(w.id)}
+                  className="text-muted-foreground/60 hover:text-red-400"
+                  aria-label="Remove widget"
+                  title="Remove widget"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
             <div className="h-[calc(100%-33px)] p-3">
               <WidgetBody
@@ -662,6 +680,7 @@ export const MarketDashboard = () => {
                 series={series}
                 activeSegments={config.segments}
                 metricLabel={metricLabel}
+                metricHelp={metricHelp}
                 segmentLabel={segmentLabel}
               />
             </div>
@@ -699,6 +718,7 @@ export const MarketDashboard = () => {
                   series={series}
                   activeSegments={config.segments}
                   metricLabel={metricLabel}
+                  metricHelp={metricHelp}
                   segmentLabel={segmentLabel}
                 />
               </div>
@@ -712,12 +732,47 @@ export const MarketDashboard = () => {
 
 /* ---------------- Widget body ---------------- */
 
+/**
+ * A metric name with an on-hover definition tooltip (the metric's `help`).
+ * Falls back to plain text when we have no definition.
+ */
+const MetricLabel = ({
+  label,
+  help,
+  className,
+}: {
+  label: string;
+  help?: string;
+  className?: string;
+}) => {
+  if (!help) return <span className={className}>{label}</span>;
+  return (
+    <UITooltip>
+      <UITooltipTrigger asChild>
+        <span
+          className={cn(
+            'inline-flex cursor-help items-center gap-1 underline decoration-dotted decoration-white/25 underline-offset-2 hover:decoration-white/60',
+            className
+          )}
+        >
+          {label}
+          <HelpCircle className="h-3 w-3 opacity-40" />
+        </span>
+      </UITooltipTrigger>
+      <UITooltipContent className="max-w-[220px] text-xs leading-snug">
+        {help}
+      </UITooltipContent>
+    </UITooltip>
+  );
+};
+
 const WidgetBody = ({
   widget,
   latest,
   series,
   activeSegments,
   metricLabel,
+  metricHelp,
   segmentLabel,
 }: {
   widget: DashboardWidget;
@@ -726,9 +781,18 @@ const WidgetBody = ({
   /** The Markets filter — the working set of segments shown by cross-market widgets. */
   activeSegments: string[];
   metricLabel: (k: string) => string;
+  metricHelp: (k: string) => string;
   segmentLabel: (k: string) => string;
 }) => {
   const axisTick = { fill: 'rgba(255,255,255,0.45)', fontSize: 11 };
+  const tooltipContentStyle = {
+    background: 'rgba(18,18,18,0.96)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    fontSize: 12,
+  } as const;
+  const tooltipLabelStyle = { color: '#fff', fontWeight: 600 } as const;
+  const tooltipItemStyle = { color: 'rgba(255,255,255,0.85)' } as const;
 
   if (widget.type === 'stat') {
     const seg = widget.segments[0];
@@ -741,7 +805,11 @@ const WidgetBody = ({
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ background: colorFor(seg) }}
           />
-          {segmentLabel(seg)} · {metricLabel(widget.metric)}
+          {segmentLabel(seg)} ·{' '}
+          <MetricLabel
+            label={metricLabel(widget.metric)}
+            help={metricHelp(widget.metric)}
+          />
         </div>
         <div className="text-4xl font-bold leading-tight text-white">
           {typeof val === 'number' ? val : '—'}
@@ -766,6 +834,7 @@ const WidgetBody = ({
         seg={widget.segments[0]}
         snap={latest[widget.segments[0]]}
         metricLabel={metricLabel}
+        metricHelp={metricHelp}
       />
     );
   }
@@ -824,12 +893,9 @@ const WidgetBody = ({
           <YAxis domain={[0, 100]} tick={axisTick} tickLine={false} axisLine={false} />
           <Tooltip
             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-            contentStyle={{
-              background: 'rgba(18,18,18,0.96)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              fontSize: 12,
-            }}
+            contentStyle={tooltipContentStyle}
+            labelStyle={tooltipLabelStyle}
+            itemStyle={tooltipItemStyle}
           />
           <Bar
             dataKey="value"
@@ -885,12 +951,9 @@ const WidgetBody = ({
         />
         <YAxis domain={[0, 100]} tick={axisTick} tickLine={false} axisLine={false} />
         <Tooltip
-          contentStyle={{
-            background: 'rgba(18,18,18,0.96)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            fontSize: 12,
-          }}
+          contentStyle={tooltipContentStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
         />
         {activeSegments.length > 1 && (
           <Legend
@@ -940,10 +1003,12 @@ const IndicesBody = ({
   seg,
   snap,
   metricLabel,
+  metricHelp,
 }: {
   seg: string;
   snap: ApiMarketSnapshot | undefined;
   metricLabel: (k: string) => string;
+  metricHelp: (k: string) => string;
 }) => {
   const metrics = snap?.metrics;
   if (!metrics) return <Empty text="No data yet — refresh this market." />;
@@ -957,13 +1022,18 @@ const IndicesBody = ({
     <div className="flex h-full flex-col">
       <div className="flex flex-1 flex-col justify-center gap-1.5 overflow-y-auto pr-1">
         {rows.map(([k, v]) => (
-          <div key={k} className="flex items-center gap-2">
-            <span className="w-[110px] shrink-0 truncate text-[11px] text-white/75">
-              {metricLabel(k)}
-            </span>
+          <div
+            key={k}
+            className="group/row flex items-center gap-2 rounded px-1 -mx-1 transition-colors hover:bg-white/5"
+          >
+            <MetricLabel
+              label={metricLabel(k)}
+              help={metricHelp(k)}
+              className="w-[110px] shrink-0 truncate text-[11px] text-white/75"
+            />
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
               <div
-                className="h-full rounded-full"
+                className="h-full rounded-full transition-all group-hover/row:brightness-125"
                 style={{ width: `${Math.max(2, Math.min(100, v))}%`, background: c }}
               />
             </div>
