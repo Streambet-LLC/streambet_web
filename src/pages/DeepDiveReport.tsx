@@ -83,6 +83,26 @@ const Section = ({
   </section>
 );
 
+/** The report header's card icon — the confirmed card's image, or a fallback. */
+const HeaderCard = ({ imageUrl }: { imageUrl: string | null }) => {
+  const [broken, setBroken] = useState(false);
+  if (imageUrl && !broken) {
+    return (
+      <img
+        src={imageUrl}
+        alt="Card"
+        onError={() => setBroken(true)}
+        className="mt-0.5 h-16 w-[46px] shrink-0 rounded-md border border-white/10 object-contain bg-black/40"
+      />
+    );
+  }
+  return (
+    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#B4FF39]/15 text-[#B4FF39]">
+      <Telescope className="h-5 w-5" />
+    </div>
+  );
+};
+
 const ScenarioTooltip = ({
   active,
   payload,
@@ -555,9 +575,7 @@ const DeepDiveReport = () => {
           </Button>
 
           <div className="mb-5 flex items-start gap-3">
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#B4FF39]/15 text-[#B4FF39]">
-              <Telescope className="h-5 w-5" />
-            </div>
+            <HeaderCard imageUrl={job?.imageUrl ?? null} />
             <div className="min-w-0">
               <h1 className="text-xl sm:text-2xl font-semibold text-white break-words">
                 {job?.subject ?? 'AI Market Report'}

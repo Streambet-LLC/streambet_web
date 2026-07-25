@@ -47,8 +47,12 @@ import {
   CalendarClock,
   Flame,
   Maximize2,
+  HelpCircle,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { InfoHint } from '@/components/ui/info-hint';
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiMarketSnapshot,
@@ -158,6 +162,37 @@ const genId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID().slice(0, 8)
     : Math.random().toString(16).slice(2, 10);
+
+/** Plain-language explainer for each widget type — shown as a header tooltip. */
+const WIDGET_TYPE_HELP: Record<DashboardWidgetType, string> = {
+  leaderboard:
+    'Ranks every tracked market by heat right now, hottest first — a quick read on where collector attention and momentum are concentrated.',
+  temperature:
+    'A 0–100 gauge of one market’s overall heat, blending demand, momentum, and activity into a single "how hot is it" score.',
+  indices:
+    'The full scorecard for one market — every index (heat, demand, supply, grading, momentum, sentiment, volatility) on a 0–100 scale. Hover any label for its definition.',
+  brief:
+    'Cardy’s written take on one market from the latest research pull — the narrative behind the numbers, plus the highlights driving it.',
+  movers:
+    'The biggest price gainers and faders in one market over the selected window, with a short note and source link for each move.',
+  catalysts:
+    'Upcoming releases, reprints, and events that could move a market — the release radar for what’s coming, not what already happened.',
+  sales:
+    'Notable recent sales in one market — the headline comps (card, grade, price, date) that anchor current values.',
+  stat: 'A single market’s latest value for one metric — the current reading at a glance.',
+  bar: 'Compares one metric across your selected markets side by side, so you can see who’s leading right now.',
+  line: 'Tracks one metric over time across your selected markets — the trend line that shows where things are heading.',
+};
+
+/** Overlapping grid-cell area between two layout rectangles (0 if disjoint). */
+const overlapArea = (
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number }
+) => {
+  const xo = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+  const yo = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  return xo * yo;
+};
 
 const sizeFor = (type: DashboardWidgetType, cols: number) => {
   if (cols <= 2) {
@@ -327,6 +362,14 @@ export const MarketDashboard = () => {
   const [gridAnimated, setGridAnimated] = useState(false);
 
   const loadedRef = useRef(false);
+  /** Current responsive breakpoint — so drag swaps write to the right layout. */
+  const bpRef = useRef<string>('lg');
+  /**
+   * True while a widget is being dragged. Widgets are dragged with overlap
+   * allowed (nothing else reflows), and the drop is resolved as a clean swap
+   * in onDragStop — so onLayoutChange must not persist the mid-drag overlap.
+   */
+  const draggingRef = useRef(false);
 
   useEffect(() => {
     if (loading) return;
@@ -336,6 +379,10 @@ export const MarketDashboard = () => {
 
   const metricLabel = useCallback(
     (k: string) => catalog?.metrics.find(m => m.key === k)?.label ?? k,
+    [catalog]
+  );
+  const metricHelp = useCallback(
+    (k: string) => catalog?.metrics.find(m => m.key === k)?.help ?? '',
     [catalog]
   );
   const segmentLabel = useCallback(
@@ -428,6 +475,19 @@ export const MarketDashboard = () => {
   const patchConfig = (fields: Partial<DashboardConfig>) =>
     setConfig(c => (c ? { ...c, ...fields } : c));
 
+  /** Restore the default widgets + layout, keeping the current market selection. */
+  const resetLayout = () => {
+    if (
+      !window.confirm(
+        'Reset the dashboard to its default widgets and layout? Your current arrangement and any added widgets will be replaced.',
+      )
+    )
+      return;
+    const fresh = defaultConfig(config?.segments);
+    // Preserve the chosen time range; only placement/widgets reset.
+    setConfig({ ...fresh, rangeDays: config?.rangeDays ?? fresh.rangeDays });
+  };
+
   const onLayoutChange = (_current: Layout[], all: Layouts) => {
     if (!config) return;
     // RGL emits generated layouts while mounting/measuring — before the grid
@@ -435,7 +495,99 @@ export const MarketDashboard = () => {
     // overwrite the saved layouts. Only user drags/resizes and breakpoint
     // changes after settle are kept.
     if (!loadedRef.current) return;
+    // Drags are resolved as a clean swap in onDragStop; the mid-drag overlap
+    // layout RGL emits here must not be persisted over it.
+    if (draggingRef.current) return;
     setConfig(c => (c ? { ...c, layouts: all as DashboardConfig['layouts'] } : c));
+  };
+
+  const onDragStart = () => {
+    draggingRef.current = true;
+  };
+
+  /**
+   * Resolve a drag as a swap: the dragged widget trades footprints with
+   * whichever widget it was dropped over (largest overlap). If it wasn't
+   * dropped over anything, it snaps back. Either way the layout stays
+   * gap-free and only two tiles animate — no cascading reflow.
+   */
+  const onDragStop = (
+    layout: Layout[],
+    oldItem: Layout,
+    newItem: Layout,
+  ) => {
+    const others = layout.filter(l => l.i !== newItem.i);
+    let target: Layout | null = null;
+    let best = 0;
+    for (const o of others) {
+      const area = overlapArea(newItem, o);
+      if (area > best) {
+        best = area;
+        target = o;
+      }
+    }
+    // Require a meaningful overlap (≥25% of the dragged tile) to count as a swap.
+    const draggedArea = newItem.w * newItem.h;
+    const next = layout.map(l => {
+      if (target && best >= draggedArea * 0.25) {
+        if (l.i === newItem.i)
+          return { ...l, x: target.x, y: target.y, w: target.w, h: target.h };
+        if (l.i === target.i)
+          return { ...l, x: oldItem.x, y: oldItem.y, w: oldItem.w, h: oldItem.h };
+        return l;
+      }
+      // No swap — return the dragged tile to where it started.
+      if (l.i === newItem.i)
+        return { ...l, x: oldItem.x, y: oldItem.y, w: oldItem.w, h: oldItem.h };
+      return l;
+    });
+    setConfig(c =>
+      c
+        ? {
+            ...c,
+            layouts: { ...c.layouts, [bpRef.current]: next } as DashboardConfig['layouts'],
+          }
+        : c,
+    );
+    // Let the trailing onLayoutChange (fired right after this) no-op, then
+    // re-enable normal persistence.
+    window.setTimeout(() => {
+      draggingRef.current = false;
+    }, 0);
+  };
+
+  const onResizeStart = () => {
+    draggingRef.current = true;
+  };
+
+  /**
+   * Overlap is allowed during interaction (so drags can be dropped onto a
+   * tile to swap), which means a resize could grow a tile over a neighbour.
+   * Revert any resize that ends up overlapping so the grid never persists
+   * stacked widgets.
+   */
+  const onResizeStop = (layout: Layout[], oldItem: Layout, newItem: Layout) => {
+    const overlaps = layout.some(
+      l => l.i !== newItem.i && overlapArea(newItem, l) > 0,
+    );
+    const next = overlaps
+      ? layout.map(l =>
+          l.i === newItem.i
+            ? { ...l, x: oldItem.x, y: oldItem.y, w: oldItem.w, h: oldItem.h }
+            : l,
+        )
+      : layout;
+    setConfig(c =>
+      c
+        ? {
+            ...c,
+            layouts: { ...c.layouts, [bpRef.current]: next } as DashboardConfig['layouts'],
+          }
+        : c,
+    );
+    window.setTimeout(() => {
+      draggingRef.current = false;
+    }, 0);
   };
 
   const addWidget = (w: DashboardWidget) => {
@@ -576,6 +728,15 @@ export const MarketDashboard = () => {
           <Button
             size="sm"
             variant="ghost"
+            onClick={resetLayout}
+            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-white"
+            title="Reset widgets and layout to default"
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Reset layout
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={() => {
               setEditor(null);
               setEditorOpen(true);
@@ -614,46 +775,69 @@ export const MarketDashboard = () => {
         margin={[12, 12]}
         draggableHandle=".widget-drag"
         onLayoutChange={onLayoutChange}
-        isBounded
+        onDragStart={onDragStart}
+        onDragStop={onDragStop}
+        onResizeStart={onResizeStart}
+        onResizeStop={onResizeStop}
+        onBreakpointChange={bp => (bpRef.current = bp)}
+        compactType={null}
+        preventCollision={false}
+        allowOverlap
       >
         {config.widgets.map(w => (
           <div
             key={w.id}
-            className="overflow-hidden rounded-xl border border-white/8 bg-[rgba(22,22,22,1)]"
+            className="group/widget overflow-hidden rounded-xl border border-white/8 bg-[rgba(22,22,22,1)] transition-all duration-200 hover:border-[#B4FF39]/25 hover:shadow-lg hover:shadow-black/40"
           >
             <div className="flex items-center gap-1.5 border-b border-white/5 px-3 py-1.5">
-              <span className="widget-drag flex cursor-move items-center text-muted-foreground/60 hover:text-white/80">
+              <span className="widget-drag flex cursor-move items-center text-muted-foreground/40 transition-colors group-hover/widget:text-muted-foreground/80 hover:text-white/80">
                 <GripVertical className="h-3.5 w-3.5" />
               </span>
-              <span className="flex-1 truncate text-xs font-medium text-white/85">
+              <span className="truncate text-xs font-medium text-white/85">
                 {shortTitle(w.title)}
               </span>
-              <button
-                type="button"
-                onClick={() => setExpanded(w)}
-                className="text-muted-foreground/60 hover:text-white"
-                aria-label="Expand"
-                title="Expand"
+              {/* What this widget shows — plain-language explainer on hover/tap. */}
+              <InfoHint
+                aria-label="What is this widget?"
+                content={WIDGET_TYPE_HELP[w.type]}
+                className="flex shrink-0 items-center text-muted-foreground/40 transition-colors hover:text-white/80 group-hover/widget:text-muted-foreground/70"
               >
-                <Maximize2 className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditor(w);
-                  setEditorOpen(true);
-                }}
-                className="text-muted-foreground/60 hover:text-white"
-              >
-                <Settings2 className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => removeWidget(w.id)}
-                className="text-muted-foreground/60 hover:text-red-400"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+                <HelpCircle className="h-3.5 w-3.5" />
+              </InfoHint>
+              <span className="flex-1" />
+              {/* Controls stay subtle until the widget is hovered/focused. */}
+              <div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-200 group-hover/widget:opacity-100 focus-within:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => setExpanded(w)}
+                  className="text-muted-foreground/60 hover:text-white"
+                  aria-label="Expand"
+                  title="Expand to fullscreen"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditor(w);
+                    setEditorOpen(true);
+                  }}
+                  className="text-muted-foreground/60 hover:text-white"
+                  aria-label="Edit widget"
+                  title="Edit widget"
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeWidget(w.id)}
+                  className="text-muted-foreground/60 hover:text-red-400"
+                  aria-label="Remove widget"
+                  title="Remove widget"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
             <div className="h-[calc(100%-33px)] p-3">
               <WidgetBody
@@ -662,6 +846,7 @@ export const MarketDashboard = () => {
                 series={series}
                 activeSegments={config.segments}
                 metricLabel={metricLabel}
+                metricHelp={metricHelp}
                 segmentLabel={segmentLabel}
               />
             </div>
@@ -688,8 +873,16 @@ export const MarketDashboard = () => {
           {expanded && (
             <>
               <DialogHeader className="shrink-0">
-                <DialogTitle className="text-base text-white">
+                <DialogTitle className="flex items-center gap-2 text-base text-white">
                   {shortTitle(expanded.title)}
+                  <InfoHint
+                    aria-label="What is this widget?"
+                    content={WIDGET_TYPE_HELP[expanded.type]}
+                    contentClassName="max-w-[280px]"
+                    className="flex items-center text-muted-foreground/50 transition-colors hover:text-white/80"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                  </InfoHint>
                 </DialogTitle>
               </DialogHeader>
               <div className="min-h-0 flex-1">
@@ -699,6 +892,7 @@ export const MarketDashboard = () => {
                   series={series}
                   activeSegments={config.segments}
                   metricLabel={metricLabel}
+                  metricHelp={metricHelp}
                   segmentLabel={segmentLabel}
                 />
               </div>
@@ -712,12 +906,43 @@ export const MarketDashboard = () => {
 
 /* ---------------- Widget body ---------------- */
 
+/**
+ * A metric name with an on-hover definition tooltip (the metric's `help`).
+ * Falls back to plain text when we have no definition.
+ */
+const MetricLabel = ({
+  label,
+  help,
+  className,
+}: {
+  label: string;
+  help?: string;
+  className?: string;
+}) => {
+  if (!help) return <span className={className}>{label}</span>;
+  return (
+    <InfoHint
+      aria-label={`${label} — definition`}
+      content={help}
+      contentClassName="max-w-[220px]"
+      className={cn(
+        'inline-flex items-center gap-1 text-left underline decoration-dotted decoration-white/25 underline-offset-2 hover:decoration-white/60',
+        className
+      )}
+    >
+      {label}
+      <HelpCircle className="h-3 w-3 opacity-40" />
+    </InfoHint>
+  );
+};
+
 const WidgetBody = ({
   widget,
   latest,
   series,
   activeSegments,
   metricLabel,
+  metricHelp,
   segmentLabel,
 }: {
   widget: DashboardWidget;
@@ -726,9 +951,18 @@ const WidgetBody = ({
   /** The Markets filter — the working set of segments shown by cross-market widgets. */
   activeSegments: string[];
   metricLabel: (k: string) => string;
+  metricHelp: (k: string) => string;
   segmentLabel: (k: string) => string;
 }) => {
   const axisTick = { fill: 'rgba(255,255,255,0.45)', fontSize: 11 };
+  const tooltipContentStyle = {
+    background: 'rgba(18,18,18,0.96)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    fontSize: 12,
+  } as const;
+  const tooltipLabelStyle = { color: '#fff', fontWeight: 600 } as const;
+  const tooltipItemStyle = { color: 'rgba(255,255,255,0.85)' } as const;
 
   if (widget.type === 'stat') {
     const seg = widget.segments[0];
@@ -741,7 +975,11 @@ const WidgetBody = ({
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ background: colorFor(seg) }}
           />
-          {segmentLabel(seg)} · {metricLabel(widget.metric)}
+          {segmentLabel(seg)} ·{' '}
+          <MetricLabel
+            label={metricLabel(widget.metric)}
+            help={metricHelp(widget.metric)}
+          />
         </div>
         <div className="text-4xl font-bold leading-tight text-white">
           {typeof val === 'number' ? val : '—'}
@@ -766,6 +1004,7 @@ const WidgetBody = ({
         seg={widget.segments[0]}
         snap={latest[widget.segments[0]]}
         metricLabel={metricLabel}
+        metricHelp={metricHelp}
       />
     );
   }
@@ -824,12 +1063,9 @@ const WidgetBody = ({
           <YAxis domain={[0, 100]} tick={axisTick} tickLine={false} axisLine={false} />
           <Tooltip
             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-            contentStyle={{
-              background: 'rgba(18,18,18,0.96)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8,
-              fontSize: 12,
-            }}
+            contentStyle={tooltipContentStyle}
+            labelStyle={tooltipLabelStyle}
+            itemStyle={tooltipItemStyle}
           />
           <Bar
             dataKey="value"
@@ -885,12 +1121,9 @@ const WidgetBody = ({
         />
         <YAxis domain={[0, 100]} tick={axisTick} tickLine={false} axisLine={false} />
         <Tooltip
-          contentStyle={{
-            background: 'rgba(18,18,18,0.96)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            fontSize: 12,
-          }}
+          contentStyle={tooltipContentStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
         />
         {activeSegments.length > 1 && (
           <Legend
@@ -940,10 +1173,12 @@ const IndicesBody = ({
   seg,
   snap,
   metricLabel,
+  metricHelp,
 }: {
   seg: string;
   snap: ApiMarketSnapshot | undefined;
   metricLabel: (k: string) => string;
+  metricHelp: (k: string) => string;
 }) => {
   const metrics = snap?.metrics;
   if (!metrics) return <Empty text="No data yet — refresh this market." />;
@@ -957,13 +1192,18 @@ const IndicesBody = ({
     <div className="flex h-full flex-col">
       <div className="flex flex-1 flex-col justify-center gap-1.5 overflow-y-auto pr-1">
         {rows.map(([k, v]) => (
-          <div key={k} className="flex items-center gap-2">
-            <span className="w-[110px] shrink-0 truncate text-[11px] text-white/75">
-              {metricLabel(k)}
-            </span>
+          <div
+            key={k}
+            className="group/row flex items-center gap-2 rounded px-1 -mx-1 transition-colors hover:bg-white/5"
+          >
+            <MetricLabel
+              label={metricLabel(k)}
+              help={metricHelp(k)}
+              className="w-[110px] shrink-0 truncate text-[11px] text-white/75"
+            />
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
               <div
-                className="h-full rounded-full"
+                className="h-full rounded-full transition-all group-hover/row:brightness-125"
                 style={{ width: `${Math.max(2, Math.min(100, v))}%`, background: c }}
               />
             </div>

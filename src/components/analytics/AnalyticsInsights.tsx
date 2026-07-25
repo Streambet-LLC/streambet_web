@@ -18,12 +18,14 @@ import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiInsightsMessage,
   ApiInsightsExchange,
+  ApiCardCandidate,
 } from '@/types/analytics-api';
 import { fileToCardImage, type CardImage } from '@/utils/cardImage';
 import { useAnswerDepth } from '@/hooks/useAnswerDepth';
 import { DepthSettings } from './DepthSettings';
 import { DeepDivesPanel } from './DeepDivesPanel';
 import { ChatMarkdown } from './ChatMarkdown';
+import { CardConfirm, nameOnlyCandidate } from './CardConfirm';
 import { InsightsHistoryDialog } from './InsightsHistoryDialog';
 import { AiDisclaimer } from './AiDisclaimer';
 
@@ -60,6 +62,7 @@ const TOOL_LABELS: Record<string, string> = {
   web_search: 'Searched the web',
   start_deep_dive: 'Started AI Market Report',
   search_leads: 'Searched leads',
+  verify_card: 'Verifying the card',
 };
 
 type Msg = {
@@ -90,6 +93,16 @@ export const AnalyticsInsights = () => {
     subject: string;
     nonce: number;
   } | null>(null);
+  // The chat asked to verify a specific card before analyzing it — we show the
+  // "is this the right card?" step (name + reference image) and only continue
+  // once the admin confirms (or corrects) it.
+  const [verify, setVerify] = useState<{
+    subject: string;
+    name: string;
+    candidate: ApiCardCandidate | null;
+    loading: boolean;
+    imageLoading: boolean;
+  } | null>(null);
 
   /**
    * A chat turn may have called the `start_deep_dive` tool (the job is already
@@ -103,6 +116,102 @@ export const AnalyticsInsights = () => {
     setDeepRefresh(n => n + 1);
     const subject = (dive.input as { subject?: string } | undefined)?.subject;
     if (subject) setChatDive({ subject, nonce: Date.now() });
+  };
+
+  /**
+   * Show the verify step for `subject` and (re)fetch its reference image +
+   * normalized name, so the admin can eyeball the card — or correct it and
+   * re-run this to check the fix.
+   */
+  const runIdentify = (subject: string) => {
+    const s = subject.trim();
+    if (!s) return;
+    setVerify({
+      subject: s,
+      name: s,
+      candidate: null,
+      loading: true,
+      imageLoading: false,
+    });
+    // Phase 1: fast card name (no web search) — shows almost instantly.
+    analyticsAPI
+      .identifyCard(s)
+      .then(c => {
+        setVerify(cur =>
+          cur && cur.subject === s
+            ? {
+                ...cur,
+                candidate: c,
+                name: c.name || s,
+                loading: false,
+                imageLoading: true,
+              }
+            : cur
+        );
+        // Phase 2: reference image (Pokémon TCG API → web search) — async.
+        analyticsAPI
+          .cardImage({
+            subject: c.subject || s,
+            name: c.name,
+            brand: c.brand,
+            number: c.number,
+          })
+          .then(({ imageUrl }) =>
+            setVerify(cur =>
+              cur && cur.subject === s && cur.candidate
+                ? {
+                    ...cur,
+                    candidate: { ...cur.candidate, imageUrl },
+                    imageLoading: false,
+                  }
+                : cur
+            )
+          )
+          .catch(() =>
+            setVerify(cur =>
+              cur && cur.subject === s ? { ...cur, imageLoading: false } : cur
+            )
+          );
+      })
+      .catch(() =>
+        setVerify(cur =>
+          cur && cur.subject === s
+            ? {
+                ...cur,
+                candidate: nameOnlyCandidate(s),
+                loading: false,
+                imageLoading: false,
+              }
+            : cur
+        )
+      );
+  };
+
+  /**
+   * The chat called `verify_card` to confirm the exact card before analyzing.
+   * Kick off the verify step. Returns true when one was triggered.
+   */
+  const applyVerifyTool = (
+    toolCalls?: { name: string; input?: unknown }[]
+  ): boolean => {
+    const v = (toolCalls ?? []).find(t => t.name === 'verify_card');
+    const subject = (
+      v?.input as { subject?: string } | undefined
+    )?.subject?.trim();
+    if (!subject) return false;
+    runIdentify(subject);
+    return true;
+  };
+
+  // Admin confirmed the card (possibly after editing the name) — hand Cardy the
+  // exact card to analyze. Neutral wording so a correction is never read as a
+  // blanket "yes".
+  const confirmVerify = () => {
+    if (!verify) return;
+    const name = verify.name.trim();
+    if (!name || thinking) return;
+    setVerify(null);
+    void send(`Confirmed — analyze this exact card: "${name}".`);
   };
 
   const idRef = useRef(0);
@@ -186,6 +295,7 @@ export const AnalyticsInsights = () => {
     setMessages(history);
     setInput('');
     setAttachment(null);
+    setVerify(null);
     setThinking(true);
 
     const payload: ApiInsightsMessage[] = history.map(m => ({
@@ -233,6 +343,7 @@ export const AnalyticsInsights = () => {
       },
       onDone: toolCalls => {
         applyDiveTool(toolCalls);
+        applyVerifyTool(toolCalls);
         if (asstId !== -1) patch({ streaming: false });
         setThinking(false);
       },
@@ -253,6 +364,7 @@ export const AnalyticsInsights = () => {
         const names = (res.toolCalls ?? []).map(t => t.name);
         names.forEach(n => toolSet.add(n));
         applyDiveTool(res.toolCalls);
+        applyVerifyTool(res.toolCalls);
         patch({ text: acc, tools: [...toolSet], streaming: false });
       } catch {
         ensureMsg();
@@ -496,6 +608,31 @@ export const AnalyticsInsights = () => {
                       <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:-0.15s]" />
                       <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce" />
                     </div>
+                  </div>
+                </div>
+              )}
+              {verify && (
+                <div className="flex items-start gap-2.5">
+                  <img
+                    src="/cardy-icon.png"
+                    alt="Cardy"
+                    className="mt-0.5 h-7 w-7 shrink-0"
+                  />
+                  <div className="w-full max-w-[85%]">
+                    <CardConfirm
+                      candidate={verify.candidate}
+                      loading={verify.loading}
+                      imageLoading={verify.imageLoading}
+                      name={verify.name}
+                      onNameChange={v =>
+                        setVerify(cur => (cur ? { ...cur, name: v } : cur))
+                      }
+                      onConfirm={confirmVerify}
+                      onReidentify={() => runIdentify(verify.name)}
+                      onCancel={() => setVerify(null)}
+                      confirmLabel="Confirm card"
+                      busy={thinking}
+                    />
                   </div>
                 </div>
               )}

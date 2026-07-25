@@ -869,6 +869,7 @@ import type {
   ApiCardMarketProfile,
   ApiInsightsMessage,
   ApiCardImage,
+  ApiCardCandidate,
   ApiInsightsChatResult,
   ApiMarketSnapshot,
   ApiMarketCatalog,
@@ -1333,11 +1334,12 @@ export const analyticsAPI = {
   /** Start a background deep-dive research job. */
   startDeepResearch: async (
     subject: string,
-    depth?: string
+    depth?: string,
+    imageUrl?: string | null
   ): Promise<ApiDeepResearchJob> => {
     const response = await apiClient.post(
       '/admin/analytics/insights/deep-research',
-      { subject, depth }
+      { subject, depth, imageUrl }
     );
     return response.data.data as ApiDeepResearchJob;
   },
@@ -1355,6 +1357,35 @@ export const analyticsAPI = {
       { image, note }
     );
     return response.data.data as { isCard: boolean; subject: string };
+  },
+
+  /**
+   * Identify a card from a text subject and fetch a reference image — powers
+   * the "verify the card" step (name + image) in chat and the reports panel.
+   */
+  identifyCard: async (subject: string): Promise<ApiCardCandidate> => {
+    const response = await apiClient.post(
+      '/admin/analytics/insights/identify-card',
+      { subject }
+    );
+    return response.data.data as ApiCardCandidate;
+  },
+
+  /**
+   * Find a reference image for a card subject (bounded web search). Fetched
+   * separately from identifyCard so a slow image never blocks the card name.
+   */
+  cardImage: async (input: {
+    subject: string;
+    name?: string | null;
+    brand?: string | null;
+    number?: string | null;
+  }): Promise<{ imageUrl: string | null }> => {
+    const response = await apiClient.post(
+      '/admin/analytics/insights/card-image',
+      input
+    );
+    return response.data.data as { imageUrl: string | null };
   },
 
   /**
