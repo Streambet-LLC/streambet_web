@@ -61,6 +61,24 @@ const dirColor = (d: string) => (d === 'down' ? DOWN : UP);
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
 const ratingColor = (score: number) =>
   score >= 70 ? '#B4FF39' : score >= 45 ? '#fbbf24' : '#f87171';
+const confColor = (pct: number) =>
+  pct >= 75 ? '#B4FF39' : pct >= 55 ? '#fbbf24' : '#f87171';
+
+const fmtUsd = (n: number) =>
+  `$${Math.round(n).toLocaleString('en-US')}`;
+
+const METHOD_LABEL: Record<string, string> = {
+  'anchor-and-adjust': 'Anchor + index adjustment',
+  'recent-median': 'Median of recent comps',
+  triangulation: 'Triangulated (no direct comps)',
+};
+const SRC_LABEL: Record<string, string> = {
+  'auction-sale': 'auction sale',
+  'private-sale': 'private sale',
+  'marketplace-listing': 'listing',
+  'price-guide': 'price guide',
+  index: 'index',
+};
 
 /** A titled report card. */
 const Section = ({
@@ -102,6 +120,48 @@ const HeaderCard = ({ imageUrl }: { imageUrl: string | null }) => {
     </div>
   );
 };
+
+/** One comp line: price (linked to the retrieved source) · date · grade · type. */
+const CompRow = ({
+  label,
+  priceUsd,
+  date,
+  grade,
+  sourceType,
+  url,
+}: {
+  label?: string;
+  priceUsd: number;
+  date: string;
+  grade?: string;
+  sourceType: string;
+  url: string;
+}) => (
+  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+    {label && (
+      <span className="rounded bg-[#B4FF39]/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#B4FF39]">
+        {label}
+      </span>
+    )}
+    {url ? (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-[#B4FF39] underline decoration-[#B4FF39]/40 underline-offset-2 hover:decoration-[#B4FF39]"
+      >
+        {fmtUsd(priceUsd)}
+      </a>
+    ) : (
+      <span className="font-semibold text-white">{fmtUsd(priceUsd)}</span>
+    )}
+    <span className="text-muted-foreground">
+      {[date, grade, SRC_LABEL[sourceType] ?? sourceType]
+        .filter(Boolean)
+        .join(' · ')}
+    </span>
+  </div>
+);
 
 const ScenarioTooltip = ({
   active,
@@ -255,6 +315,103 @@ const ReportBody = ({
           {f.thesis}
         </p>
       </section>
+
+      {/* Valuation — grounded estimate + the comps behind it */}
+      {f.valueEstimate && (
+        <Section
+          icon={<TrendingUp className="h-4 w-4" />}
+          title="Valuation"
+        >
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+            <div>
+              <div className="text-2xl font-bold text-white">
+                {fmtUsd(f.valueEstimate.pointUsd)}
+              </div>
+              {(f.valueEstimate.lowUsd || f.valueEstimate.highUsd) && (
+                <div className="text-xs text-muted-foreground">
+                  range {fmtUsd(f.valueEstimate.lowUsd)}–
+                  {fmtUsd(f.valueEstimate.highUsd)}
+                  {f.valueEstimate.asOf ? ` · as of ${f.valueEstimate.asOf}` : ''}
+                </div>
+              )}
+            </div>
+            {f.valuationConfidence && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Confidence
+                </div>
+                <div
+                  className="text-lg font-semibold"
+                  style={{ color: confColor(f.valuationConfidence.pct) }}
+                >
+                  {f.valuationConfidence.pct}%
+                </div>
+              </div>
+            )}
+            {f.method && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Method
+                </div>
+                <div className="text-sm text-white/85">
+                  {METHOD_LABEL[f.method] ?? f.method}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {f.valuationConfidence?.basis && (
+            <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+              {f.valuationConfidence.basis}
+            </p>
+          )}
+
+          {f.indexAdjustment && (
+            <p className="mt-2 text-xs text-white/70">
+              {f.indexAdjustment.index}:{' '}
+              <span
+                style={{
+                  color: f.indexAdjustment.movePct >= 0 ? UP : DOWN,
+                }}
+              >
+                {f.indexAdjustment.movePct >= 0 ? '+' : ''}
+                {f.indexAdjustment.movePct}%
+              </span>{' '}
+              <span className="text-muted-foreground">
+                ({f.indexAdjustment.window})
+              </span>
+            </p>
+          )}
+
+          {/* Anchor + comps used */}
+          {(f.anchorComp || (f.compsUsed && f.compsUsed.length > 0)) && (
+            <div className="mt-3 space-y-1.5">
+              {f.anchorComp && (
+                <CompRow
+                  label="Anchor"
+                  priceUsd={f.anchorComp.priceUsd}
+                  date={f.anchorComp.date}
+                  sourceType={f.anchorComp.sourceType}
+                  url={f.anchorComp.url}
+                />
+              )}
+              {(f.compsUsed ?? [])
+                .filter(c => !f.anchorComp || c.url !== f.anchorComp.url)
+                .slice(0, 6)
+                .map((c, i) => (
+                  <CompRow
+                    key={i}
+                    priceUsd={c.priceUsd}
+                    date={c.date}
+                    grade={c.grade}
+                    sourceType={c.sourceType}
+                    url={c.url}
+                  />
+                ))}
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* Social buzz */}
       {f.socialBuzz && (
