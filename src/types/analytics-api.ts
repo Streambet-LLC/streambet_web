@@ -668,6 +668,32 @@ export interface ApiCardForecast {
   confidence: number;
   horizon: string;
   thesis: string;
+  valueEstimate?: {
+    pointUsd: number;
+    lowUsd: number;
+    highUsd: number;
+    asOf: string;
+  };
+  method?: 'anchor-and-adjust' | 'recent-median' | 'triangulation' | string;
+  anchorComp?: {
+    priceUsd: number;
+    date: string;
+    sourceType: string;
+    url: string;
+  };
+  compsUsed?: {
+    priceUsd: number;
+    date: string;
+    grade: string;
+    sourceType: string;
+    url: string;
+  }[];
+  indexAdjustment?: {
+    index: string;
+    movePct: number;
+    window: string;
+  } | null;
+  valuationConfidence?: { pct: number; basis: string };
   rating?: { score: number; label: string; rationale: string };
   liquidity?: { score: number; level: string; note: string };
   priceTrajectory?: { direction: string; note: string };
