@@ -48,14 +48,11 @@ import {
   Flame,
   Maximize2,
   HelpCircle,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip as UITooltip,
-  TooltipContent as UITooltipContent,
-  TooltipTrigger as UITooltipTrigger,
-} from '@/components/ui/tooltip';
+import { InfoHint } from '@/components/ui/info-hint';
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiMarketSnapshot,
@@ -165,6 +162,27 @@ const genId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID().slice(0, 8)
     : Math.random().toString(16).slice(2, 10);
+
+/** Plain-language explainer for each widget type — shown as a header tooltip. */
+const WIDGET_TYPE_HELP: Record<DashboardWidgetType, string> = {
+  leaderboard:
+    'Ranks every tracked market by heat right now, hottest first — a quick read on where collector attention and momentum are concentrated.',
+  temperature:
+    'A 0–100 gauge of one market’s overall heat, blending demand, momentum, and activity into a single "how hot is it" score.',
+  indices:
+    'The full scorecard for one market — every index (heat, demand, supply, grading, momentum, sentiment, volatility) on a 0–100 scale. Hover any label for its definition.',
+  brief:
+    'Cardy’s written take on one market from the latest research pull — the narrative behind the numbers, plus the highlights driving it.',
+  movers:
+    'The biggest price gainers and faders in one market over the selected window, with a short note and source link for each move.',
+  catalysts:
+    'Upcoming releases, reprints, and events that could move a market — the release radar for what’s coming, not what already happened.',
+  sales:
+    'Notable recent sales in one market — the headline comps (card, grade, price, date) that anchor current values.',
+  stat: 'A single market’s latest value for one metric — the current reading at a glance.',
+  bar: 'Compares one metric across your selected markets side by side, so you can see who’s leading right now.',
+  line: 'Tracks one metric over time across your selected markets — the trend line that shows where things are heading.',
+};
 
 /** Overlapping grid-cell area between two layout rectangles (0 if disjoint). */
 const overlapArea = (
@@ -457,6 +475,19 @@ export const MarketDashboard = () => {
   const patchConfig = (fields: Partial<DashboardConfig>) =>
     setConfig(c => (c ? { ...c, ...fields } : c));
 
+  /** Restore the default widgets + layout, keeping the current market selection. */
+  const resetLayout = () => {
+    if (
+      !window.confirm(
+        'Reset the dashboard to its default widgets and layout? Your current arrangement and any added widgets will be replaced.',
+      )
+    )
+      return;
+    const fresh = defaultConfig(config?.segments);
+    // Preserve the chosen time range; only placement/widgets reset.
+    setConfig({ ...fresh, rangeDays: config?.rangeDays ?? fresh.rangeDays });
+  };
+
   const onLayoutChange = (_current: Layout[], all: Layouts) => {
     if (!config) return;
     // RGL emits generated layouts while mounting/measuring — before the grid
@@ -697,6 +728,15 @@ export const MarketDashboard = () => {
           <Button
             size="sm"
             variant="ghost"
+            onClick={resetLayout}
+            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-white"
+            title="Reset widgets and layout to default"
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Reset layout
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={() => {
               setEditor(null);
               setEditorOpen(true);
@@ -753,9 +793,18 @@ export const MarketDashboard = () => {
               <span className="widget-drag flex cursor-move items-center text-muted-foreground/40 transition-colors group-hover/widget:text-muted-foreground/80 hover:text-white/80">
                 <GripVertical className="h-3.5 w-3.5" />
               </span>
-              <span className="flex-1 truncate text-xs font-medium text-white/85">
+              <span className="truncate text-xs font-medium text-white/85">
                 {shortTitle(w.title)}
               </span>
+              {/* What this widget shows — plain-language explainer on hover/tap. */}
+              <InfoHint
+                aria-label="What is this widget?"
+                content={WIDGET_TYPE_HELP[w.type]}
+                className="flex shrink-0 items-center text-muted-foreground/40 transition-colors hover:text-white/80 group-hover/widget:text-muted-foreground/70"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </InfoHint>
+              <span className="flex-1" />
               {/* Controls stay subtle until the widget is hovered/focused. */}
               <div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-200 group-hover/widget:opacity-100 focus-within:opacity-100">
                 <button
@@ -824,8 +873,16 @@ export const MarketDashboard = () => {
           {expanded && (
             <>
               <DialogHeader className="shrink-0">
-                <DialogTitle className="text-base text-white">
+                <DialogTitle className="flex items-center gap-2 text-base text-white">
                   {shortTitle(expanded.title)}
+                  <InfoHint
+                    aria-label="What is this widget?"
+                    content={WIDGET_TYPE_HELP[expanded.type]}
+                    contentClassName="max-w-[280px]"
+                    className="flex items-center text-muted-foreground/50 transition-colors hover:text-white/80"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                  </InfoHint>
                 </DialogTitle>
               </DialogHeader>
               <div className="min-h-0 flex-1">
@@ -864,22 +921,18 @@ const MetricLabel = ({
 }) => {
   if (!help) return <span className={className}>{label}</span>;
   return (
-    <UITooltip>
-      <UITooltipTrigger asChild>
-        <span
-          className={cn(
-            'inline-flex cursor-help items-center gap-1 underline decoration-dotted decoration-white/25 underline-offset-2 hover:decoration-white/60',
-            className
-          )}
-        >
-          {label}
-          <HelpCircle className="h-3 w-3 opacity-40" />
-        </span>
-      </UITooltipTrigger>
-      <UITooltipContent className="max-w-[220px] text-xs leading-snug">
-        {help}
-      </UITooltipContent>
-    </UITooltip>
+    <InfoHint
+      aria-label={`${label} — definition`}
+      content={help}
+      contentClassName="max-w-[220px]"
+      className={cn(
+        'inline-flex items-center gap-1 text-left underline decoration-dotted decoration-white/25 underline-offset-2 hover:decoration-white/60',
+        className
+      )}
+    >
+      {label}
+      <HelpCircle className="h-3 w-3 opacity-40" />
+    </InfoHint>
   );
 };
 
