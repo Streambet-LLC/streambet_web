@@ -504,6 +504,8 @@ export interface ApiDeepResearchJob {
   status: 'pending' | 'running' | 'done' | 'error' | string;
   result: ApiCardForecast | null;
   error: string | null;
+  /** Reference image of the confirmed card, shown atop the report. */
+  imageUrl: string | null;
   createdAt: string;
   completedAt: string | null;
 }
@@ -638,6 +640,22 @@ export interface ApiInsightsMessage {
   content: string;
   /** Optional card photos for this turn. */
   images?: ApiCardImage[];
+}
+
+/**
+ * A card the system thinks the user means, with a reference image so the admin
+ * can visually confirm it's the right card before we analyze it.
+ */
+export interface ApiCardCandidate {
+  isCard: boolean;
+  subject: string;
+  name: string;
+  imageUrl: string | null;
+  brand: string | null;
+  set: string | null;
+  number: string | null;
+  grade: string | null;
+  confidence: 'high' | 'medium' | 'low';
 }
 
 export interface ApiInsightsChatResult {

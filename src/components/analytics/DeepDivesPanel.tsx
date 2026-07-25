@@ -11,14 +11,14 @@ import {
   ChevronRight,
   ChevronDown,
   ImagePlus,
-  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { analyticsAPI } from '@/integrations/api/client';
-import type { ApiDeepResearchJob } from '@/types/analytics-api';
+import type { ApiDeepResearchJob, ApiCardCandidate } from '@/types/analytics-api';
 import { fileToCardImage } from '@/utils/cardImage';
 import { useAnswerDepth } from '@/hooks/useAnswerDepth';
 import { DepthSettings } from './DepthSettings';
+import { CardConfirm, nameOnlyCandidate } from './CardConfirm';
 
 const STATUS: Record<
   string,
@@ -70,11 +70,15 @@ export const DeepDivesPanel = ({
   // Deep-dive history list — collapsible, tucked away by default. Auto-expands
   // while a job is researching (see effect below) so in-progress dives show.
   const [historyOpen, setHistoryOpen] = useState(false);
-  // Set once a photo has been identified — holds the preview thumbnail while the
-  // admin confirms (or edits `subject`) before we commit to a research run.
-  const [pendingPhoto, setPendingPhoto] = useState<{ dataUrl: string } | null>(
-    null
-  );
+  // The "is this the right card?" step — set once we're verifying a card (from
+  // typed text or a photo). Holds the reference-image candidate and, for the
+  // photo flow, the admin's own uploaded thumbnail. Non-null → show CardConfirm.
+  const [verify, setVerify] = useState<{
+    candidate: ApiCardCandidate | null;
+    loading: boolean;
+    imageLoading: boolean;
+    userPhotoUrl?: string;
+  } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -127,9 +131,13 @@ export const DeepDivesPanel = ({
     if (!s || starting) return;
     setStarting(true);
     try {
-      await analyticsAPI.startDeepResearch(s, depth);
+      await analyticsAPI.startDeepResearch(
+        s,
+        depth,
+        verify?.candidate?.imageUrl ?? null
+      );
       setSubject('');
-      setPendingPhoto(null);
+      setVerify(null);
       await load();
     } catch (e) {
       const msg =
@@ -141,9 +149,69 @@ export const DeepDivesPanel = ({
     }
   };
 
-  // Snap/upload a card photo → server identifies it → we prefill the subject and
-  // show a confirm step ("is this the right card?") rather than starting blindly.
-  // Any text already typed in the subject box is passed along as a disambiguation hint.
+  // Show the "is this the right card?" step: fetch a reference image (and
+  // normalize the name) for the subject before we commit to a research run.
+  // `userPhotoUrl` is set when the subject came from an uploaded photo.
+  const beginVerify = (subj: string, userPhotoUrl?: string) => {
+    const s = subj.trim();
+    if (!s) return;
+    setVerify({ candidate: null, loading: true, imageLoading: false, userPhotoUrl });
+    // Phase 1: fast card name (no web search).
+    analyticsAPI
+      .identifyCard(s)
+      .then(c => {
+        setSubject(c.name || s);
+        setVerify(cur =>
+          cur ? { ...cur, candidate: c, loading: false, imageLoading: true } : cur
+        );
+        // Phase 2: reference image (Pokémon TCG API → web search) — async.
+        analyticsAPI
+          .cardImage({
+            subject: c.subject || s,
+            name: c.name,
+            brand: c.brand,
+            number: c.number,
+          })
+          .then(({ imageUrl }) =>
+            setVerify(cur =>
+              cur && cur.candidate
+                ? {
+                    ...cur,
+                    candidate: { ...cur.candidate, imageUrl },
+                    imageLoading: false,
+                  }
+                : cur
+            )
+          )
+          .catch(() =>
+            setVerify(cur => (cur ? { ...cur, imageLoading: false } : cur))
+          );
+      })
+      .catch(() =>
+        setVerify(cur =>
+          cur
+            ? {
+                ...cur,
+                candidate: nameOnlyCandidate(s),
+                loading: false,
+                imageLoading: false,
+              }
+            : cur
+        )
+      );
+  };
+
+  // Typed a subject and hit "Run report" → verify the card first (name + image).
+  const requestVerify = () => {
+    const s = subject.trim();
+    if (!s || starting || fromPhoto) return;
+    beginVerify(s);
+  };
+
+  // Snap/upload a card photo → server identifies it → we show the confirm step
+  // ("is this the right card?") with the admin's photo next to a live reference
+  // image, rather than starting blindly. Any text already typed is passed along
+  // as a disambiguation hint.
   const identifyFromPhoto = async (file?: File | null) => {
     if (!file || fromPhoto) return;
     setFromPhoto(true);
@@ -161,7 +229,7 @@ export const DeepDivesPanel = ({
         return;
       }
       setSubject(guess);
-      setPendingPhoto({ dataUrl: image.dataUrl });
+      beginVerify(guess, image.dataUrl);
     } catch (e) {
       const msg =
         (e as { response?: { data?: { message?: string } } })?.response?.data
@@ -175,9 +243,8 @@ export const DeepDivesPanel = ({
     }
   };
 
-  const cancelPhoto = () => {
-    setPendingPhoto(null);
-    setSubject('');
+  const cancelVerify = () => {
+    setVerify(null);
   };
 
   return (
@@ -206,91 +273,78 @@ export const DeepDivesPanel = ({
           />
         </div>
 
-        {/* Confirm step: shown after a photo is identified, before we commit. */}
-        {pendingPhoto && (
-          <div className="mb-2 flex items-center gap-2 rounded-lg border border-[#B4FF39]/25 bg-[#B4FF39]/5 px-2 py-2">
-            <img
-              src={pendingPhoto.dataUrl}
-              alt="Identified card"
-              className="h-12 w-12 shrink-0 rounded-md border border-white/10 object-cover"
-            />
-            <span className="flex-1 text-xs text-white/80">
-              Is this the right card?{' '}
-              <span className="text-muted-foreground">
-                Edit the name below if not, then confirm.
-              </span>
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={cancelPhoto}
-              disabled={starting}
-              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-white"
-              aria-label="Discard photo"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        {/* File picker (shared by the photo button below). */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={e => identifyFromPhoto(e.target.files?.[0])}
+        />
 
-        <div className="flex items-center gap-2">
-          <Input
-            value={subject}
-            onChange={e => setSubject(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                start();
-              }
-            }}
-            placeholder="Structured live data research report on cards"
-            className="h-9 bg-black/40 border-white/10 text-sm"
+        {verify ? (
+          /* Confirm step — verify the card (name + reference image) first. */
+          <CardConfirm
+            candidate={verify.candidate}
+            loading={verify.loading}
+            imageLoading={verify.imageLoading}
+            userPhotoUrl={verify.userPhotoUrl}
+            name={subject}
+            onNameChange={setSubject}
+            onConfirm={start}
+            onReidentify={() => beginVerify(subject)}
+            onCancel={cancelVerify}
+            confirmLabel="Confirm & run report"
+            busy={starting}
           />
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={e => identifyFromPhoto(e.target.files?.[0])}
-          />
-          {!pendingPhoto && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileRef.current?.click()}
-              disabled={fromPhoto || starting}
-              size="sm"
-              title="AI Market Report from a photo — take one or upload"
-              aria-label="AI Market Report from a card photo"
-              className="h-9 w-9 shrink-0 border-white/10 bg-black/40 p-0 text-white/80 hover:bg-white/5 hover:text-white disabled:opacity-40"
-            >
-              {fromPhoto ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ImagePlus className="h-4 w-4" />
-              )}
-            </Button>
-          )}
-          <Button
-            onClick={start}
-            disabled={!subject.trim() || starting || fromPhoto}
-            size="sm"
-            className="h-9 shrink-0 bg-[#B4FF39] text-black hover:bg-[#B4FF39]/90 disabled:opacity-40"
-          >
-            {starting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : pendingPhoto ? (
-              'Confirm & run report'
-            ) : (
-              'Run report'
-            )}
-          </Button>
-        </div>
-        {!pendingPhoto && (
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            Type a card, or tap the photo button to snap/upload one and let AI identify it.
-          </p>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <Input
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    requestVerify();
+                  }
+                }}
+                placeholder="Structured live data research report on cards"
+                className="h-9 bg-black/40 border-white/10 text-sm"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileRef.current?.click()}
+                disabled={fromPhoto || starting}
+                size="sm"
+                title="AI Market Report from a photo — take one or upload"
+                aria-label="AI Market Report from a card photo"
+                className="h-9 w-9 shrink-0 border-white/10 bg-black/40 p-0 text-white/80 hover:bg-white/5 hover:text-white disabled:opacity-40"
+              >
+                {fromPhoto ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                onClick={requestVerify}
+                disabled={!subject.trim() || starting || fromPhoto}
+                size="sm"
+                className="h-9 shrink-0 bg-[#B4FF39] text-black hover:bg-[#B4FF39]/90 disabled:opacity-40"
+              >
+                {fromPhoto ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Run report'
+                )}
+              </Button>
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Type a card, or tap the photo button to snap/upload one and let AI identify it.
+            </p>
+          </>
         )}
 
         {jobs.length > 0 && (

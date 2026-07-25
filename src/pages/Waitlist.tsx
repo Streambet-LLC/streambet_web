@@ -205,7 +205,7 @@ export default function Waitlist() {
               Use Cardy for all your card intelligence needs
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-white/60">
-              Ask Cardy anything about specific cards or card markets — Cardy goes far beyond
+              Ask Cardy anything about card markets — Cardy goes far beyond
               specific price checking. Here are some things you can do:
             </p>
           </div>
