@@ -116,14 +116,16 @@ export const CardConfirm = ({
 
         {/* Name + identity + actions */}
         <div className="min-w-0 flex-1">
-          <div className="mb-1 text-xs font-medium text-white/90">
-            Is this the right card?{' '}
-            <span className="font-normal text-muted-foreground">
-              Wrong? Fix the name and re-check.
-            </span>
+          <div className="mb-1.5 text-xs font-semibold text-white">
+            Is this the right card?
           </div>
+          {/* Blunt, explicit edit affordance so it's obvious the name is editable. */}
+          <label className="mb-1 flex items-center gap-1 text-[11px] font-medium text-[#B4FF39]">
+            <Pencil className="h-3 w-3" />
+            Wrong card? Edit the name below, then Re-check
+          </label>
           <div className="relative">
-            <Pencil className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+            <Pencil className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-[#B4FF39]/70" />
             <Input
               value={name}
               onChange={e => onNameChange(e.target.value)}
@@ -136,9 +138,9 @@ export const CardConfirm = ({
                   else onConfirm();
                 }
               }}
-              placeholder="Card name"
+              placeholder="Type the correct card name…"
               disabled={busy}
-              className="h-8 border-white/10 bg-black/40 pl-7 text-sm"
+              className="h-9 border-[#B4FF39]/30 bg-black/50 pl-7 text-sm text-white focus-visible:border-[#B4FF39]/60 focus-visible:ring-1 focus-visible:ring-[#B4FF39]/40"
             />
           </div>
           {(identity || edited || (!loading && !imageLoading && !showImg)) && (

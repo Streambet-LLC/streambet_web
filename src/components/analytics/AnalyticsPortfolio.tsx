@@ -10,7 +10,7 @@ import { AnalyticsTrackedCards } from './AnalyticsTrackedCards';
 const PREVIEW: { icon: typeof TrendingUp; title: string; desc: string }[] = [
   {
     icon: Wallet,
-    title: 'Track your watchlist, holdings, and tracked cards',
+    title: 'Track your watchlist, holdings, and sold cards',
     desc: 'Ask Cardy to log your watched, purchased, and sold cards.',
   },
   {

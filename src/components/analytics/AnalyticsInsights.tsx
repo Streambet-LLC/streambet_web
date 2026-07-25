@@ -46,13 +46,10 @@ const newConversationId = () =>
 // Example questions the assistant can answer. Used both for the rotating input
 // placeholder and the "Try asking" suggestions.
 const EXAMPLE_PROMPTS = [
-  "What's the outlook and social buzz on the Crown Zenith Charizard?",
-  'What scenarios could move a Luka Dončić Prizm rookie, and the odds?',
-  'How have rookie cards performed after an MVP season?',
-  'Could a reprint or PSA grading change move Umbreon VMAX Alt Art?',
-  "What's a PSA 10 Base Set Charizard worth right now?",
-  'How could a supply cut affect sealed Pokémon prices?',
-  'Which players are trending in card collecting right now?',
+  'What events will drive prices on my Mahomes 2024 Color Blast PSA 9 over the next year?',
+  "What's the optimal time to sell my Pikachu Crown Zenith PSA 10? And where/how?",
+  "What's my PSA 10 Luther Burden Rookie Kaboom worth today?",
+  'Quantify the odds & price scenarios for my PSA 8 base set Charizard over the next 2 years',
 ];
 
 const SUGGESTED = EXAMPLE_PROMPTS.slice(0, 5);

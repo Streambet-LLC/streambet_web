@@ -10,7 +10,6 @@ import {
   LineChart,
   Scale,
   Briefcase,
-  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -197,11 +196,16 @@ export default function Waitlist() {
           className="mt-24"
         >
           <div className="mx-auto max-w-2xl text-center">
-            {/* Cardy mark — swap this badge for the Cardy logo when it's hosted. */}
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-[#B4FF39]/25 bg-[#B4FF39]/10 text-[#B4FF39]">
-              <Sparkles className="h-6 w-6" />
-            </div>
-            <h2 className="mt-4 text-2xl font-semibold text-white sm:text-3xl">
+            {/* Cardy mark */}
+            <img
+              src="/cardy-icon.png"
+              alt="Cardy"
+              className="mx-auto h-14 w-14"
+            />
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#B4FF39]">
+              Cardy AI Chat
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
               Use Cardy for all your card intelligence needs
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-white/60">
