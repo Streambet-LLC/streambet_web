@@ -166,6 +166,16 @@ const genId = () =>
     ? crypto.randomUUID().slice(0, 8)
     : Math.random().toString(16).slice(2, 10);
 
+/** Overlapping grid-cell area between two layout rectangles (0 if disjoint). */
+const overlapArea = (
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number }
+) => {
+  const xo = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+  const yo = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  return xo * yo;
+};
+
 const sizeFor = (type: DashboardWidgetType, cols: number) => {
   if (cols <= 2) {
     if (type === 'stat') return { w: cols, h: 2 };
@@ -334,6 +344,14 @@ export const MarketDashboard = () => {
   const [gridAnimated, setGridAnimated] = useState(false);
 
   const loadedRef = useRef(false);
+  /** Current responsive breakpoint — so drag swaps write to the right layout. */
+  const bpRef = useRef<string>('lg');
+  /**
+   * True while a widget is being dragged. Widgets are dragged with overlap
+   * allowed (nothing else reflows), and the drop is resolved as a clean swap
+   * in onDragStop — so onLayoutChange must not persist the mid-drag overlap.
+   */
+  const draggingRef = useRef(false);
 
   useEffect(() => {
     if (loading) return;
@@ -446,7 +464,99 @@ export const MarketDashboard = () => {
     // overwrite the saved layouts. Only user drags/resizes and breakpoint
     // changes after settle are kept.
     if (!loadedRef.current) return;
+    // Drags are resolved as a clean swap in onDragStop; the mid-drag overlap
+    // layout RGL emits here must not be persisted over it.
+    if (draggingRef.current) return;
     setConfig(c => (c ? { ...c, layouts: all as DashboardConfig['layouts'] } : c));
+  };
+
+  const onDragStart = () => {
+    draggingRef.current = true;
+  };
+
+  /**
+   * Resolve a drag as a swap: the dragged widget trades footprints with
+   * whichever widget it was dropped over (largest overlap). If it wasn't
+   * dropped over anything, it snaps back. Either way the layout stays
+   * gap-free and only two tiles animate — no cascading reflow.
+   */
+  const onDragStop = (
+    layout: Layout[],
+    oldItem: Layout,
+    newItem: Layout,
+  ) => {
+    const others = layout.filter(l => l.i !== newItem.i);
+    let target: Layout | null = null;
+    let best = 0;
+    for (const o of others) {
+      const area = overlapArea(newItem, o);
+      if (area > best) {
+        best = area;
+        target = o;
+      }
+    }
+    // Require a meaningful overlap (≥25% of the dragged tile) to count as a swap.
+    const draggedArea = newItem.w * newItem.h;
+    const next = layout.map(l => {
+      if (target && best >= draggedArea * 0.25) {
+        if (l.i === newItem.i)
+          return { ...l, x: target.x, y: target.y, w: target.w, h: target.h };
+        if (l.i === target.i)
+          return { ...l, x: oldItem.x, y: oldItem.y, w: oldItem.w, h: oldItem.h };
+        return l;
+      }
+      // No swap — return the dragged tile to where it started.
+      if (l.i === newItem.i)
+        return { ...l, x: oldItem.x, y: oldItem.y, w: oldItem.w, h: oldItem.h };
+      return l;
+    });
+    setConfig(c =>
+      c
+        ? {
+            ...c,
+            layouts: { ...c.layouts, [bpRef.current]: next } as DashboardConfig['layouts'],
+          }
+        : c,
+    );
+    // Let the trailing onLayoutChange (fired right after this) no-op, then
+    // re-enable normal persistence.
+    window.setTimeout(() => {
+      draggingRef.current = false;
+    }, 0);
+  };
+
+  const onResizeStart = () => {
+    draggingRef.current = true;
+  };
+
+  /**
+   * Overlap is allowed during interaction (so drags can be dropped onto a
+   * tile to swap), which means a resize could grow a tile over a neighbour.
+   * Revert any resize that ends up overlapping so the grid never persists
+   * stacked widgets.
+   */
+  const onResizeStop = (layout: Layout[], oldItem: Layout, newItem: Layout) => {
+    const overlaps = layout.some(
+      l => l.i !== newItem.i && overlapArea(newItem, l) > 0,
+    );
+    const next = overlaps
+      ? layout.map(l =>
+          l.i === newItem.i
+            ? { ...l, x: oldItem.x, y: oldItem.y, w: oldItem.w, h: oldItem.h }
+            : l,
+        )
+      : layout;
+    setConfig(c =>
+      c
+        ? {
+            ...c,
+            layouts: { ...c.layouts, [bpRef.current]: next } as DashboardConfig['layouts'],
+          }
+        : c,
+    );
+    window.setTimeout(() => {
+      draggingRef.current = false;
+    }, 0);
   };
 
   const addWidget = (w: DashboardWidget) => {
@@ -625,7 +735,14 @@ export const MarketDashboard = () => {
         margin={[12, 12]}
         draggableHandle=".widget-drag"
         onLayoutChange={onLayoutChange}
-        isBounded
+        onDragStart={onDragStart}
+        onDragStop={onDragStop}
+        onResizeStart={onResizeStart}
+        onResizeStop={onResizeStop}
+        onBreakpointChange={bp => (bpRef.current = bp)}
+        compactType={null}
+        preventCollision={false}
+        allowOverlap
       >
         {config.widgets.map(w => (
           <div
