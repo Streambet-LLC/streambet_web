@@ -60,6 +60,7 @@ const TOOL_LABELS: Record<string, string> = {
   start_deep_dive: 'Started AI Market Report',
   search_leads: 'Searched leads',
   verify_card: 'Verifying the card',
+  value_card: 'Valued the card',
 };
 
 type Msg = {
