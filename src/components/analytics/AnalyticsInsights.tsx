@@ -576,6 +576,24 @@ export const AnalyticsInsights = () => {
                           ))}
                         </div>
                       )}
+                      {/* A tool is running but no text yet — keep it alive so it
+                          doesn't look frozen (value_card can take 15-30s). */}
+                      {m.streaming && !m.text && (
+                        <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-3.5 py-3">
+                          <span className="flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:-0.3s]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:-0.15s]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce" />
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {m.tools?.includes('value_card')
+                              ? 'valuing the card…'
+                              : m.tools && m.tools.length > 0
+                                ? 'researching…'
+                                : 'thinking…'}
+                          </span>
+                        </div>
+                      )}
                       {(m.text || !m.streaming) && (
                         <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 text-white/90 px-3.5 py-2.5 text-sm leading-relaxed">
                           <ChatMarkdown text={m.text} />
