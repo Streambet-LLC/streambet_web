@@ -867,6 +867,8 @@ import type {
   ApiTrackedCard,
   ApiPortfolioSummary,
   ApiPortfolioAlert,
+  ApiSoldCard,
+  ApiSoldSummary,
   ApiCardForecastResult,
   ApiCardMarketProfile,
   ApiInsightsMessage,
@@ -1150,6 +1152,74 @@ export const analyticsAPI = {
   valuePortfolio: async (): Promise<ApiPortfolioSummary> => {
     const response = await apiClient.post(`/admin/analytics/portfolio/value`, {});
     return response.data.data as ApiPortfolioSummary;
+  },
+
+  /** Logged sales + realized P/L roll-up. */
+  getSoldCards: async (params?: {
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ApiSoldSummary> => {
+    const response = await apiClient.get(`/admin/analytics/portfolio/sold`, {
+      params,
+    });
+    return response.data.data as ApiSoldSummary;
+  },
+
+  /**
+   * Log a sale. Pass `trackedCardId` to sell a watched card — blank fields are
+   * inherited from it and the holding is drawn down unless
+   * `reduceHolding: false`.
+   */
+  addSoldCard: async (body: {
+    name?: string;
+    brand?: string;
+    category?: string;
+    grade?: string;
+    quantity?: number;
+    costBasisUsd?: number | null;
+    salePriceUsd?: number | null;
+    feesUsd?: number | null;
+    platform?: string;
+    soldAt?: string | null;
+    notes?: string;
+    trackedCardId?: string | null;
+    reduceHolding?: boolean;
+  }): Promise<ApiSoldCard> => {
+    const response = await apiClient.post(
+      `/admin/analytics/portfolio/sold`,
+      body
+    );
+    return response.data.data as ApiSoldCard;
+  },
+
+  /** Edit a logged sale. */
+  updateSoldCard: async (
+    id: string,
+    body: {
+      name?: string;
+      quantity?: number;
+      costBasisUsd?: number | null;
+      salePriceUsd?: number | null;
+      feesUsd?: number | null;
+      platform?: string;
+      soldAt?: string | null;
+      notes?: string;
+    }
+  ): Promise<ApiSoldCard> => {
+    const response = await apiClient.patch(
+      `/admin/analytics/portfolio/sold/${id}`,
+      body
+    );
+    return response.data.data as ApiSoldCard;
+  },
+
+  /** Delete a logged sale. */
+  removeSoldCard: async (id: string): Promise<{ id: string }> => {
+    const response = await apiClient.delete(
+      `/admin/analytics/portfolio/sold/${id}`
+    );
+    return response.data.data as { id: string };
   },
 
   /** Cached predictive forecast for a card (null if none yet). */

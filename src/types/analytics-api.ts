@@ -661,6 +661,55 @@ export interface ApiPortfolioSummary {
   movers: { id: string; name: string; changePct: number; valueUsd: number }[];
 }
 
+/** A logged sale — the realized side of the portfolio. P/L is derived server-side. */
+export interface ApiSoldCard {
+  id: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  grade: string | null;
+  quantity: number;
+  /** Per-unit cost basis (what you paid), USD. */
+  costBasisUsd: number | null;
+  /** Per-unit gross sale price, USD. */
+  salePriceUsd: number | null;
+  /** Total fees on the sale (not per-unit), USD. */
+  feesUsd: number | null;
+  platform: string | null;
+  soldAt: string | null;
+  notes: string | null;
+  trackedCardId: string | null;
+  ownerUserId: string | null;
+  createdAt: string;
+  /** Derived: salePrice x qty, before fees. */
+  grossProceedsUsd: number | null;
+  /** Derived: gross minus fees. */
+  netProceedsUsd: number | null;
+  /** Derived: costBasis x qty. */
+  totalCostUsd: number | null;
+  /** Derived: net proceeds minus cost. Null when either leg is unknown. */
+  realizedGainUsd: number | null;
+  realizedGainPct: number | null;
+}
+
+/** Realized roll-up across every logged sale. */
+export interface ApiSoldSummary {
+  sales: ApiSoldCard[];
+  total: number;
+  totalProceedsUsd: number;
+  totalFeesUsd: number;
+  netProceedsUsd: number;
+  totalCostUsd: number;
+  realizedGainUsd: number;
+  realizedGainPct: number | null;
+  saleCount: number;
+  cardsSold: number;
+  /** Sales missing a cost basis, so excluded from gain/loss. */
+  uncostedCount: number;
+  bestFlip: { id: string; name: string; realizedGainUsd: number } | null;
+  worstFlip: { id: string; name: string; realizedGainUsd: number } | null;
+}
+
 /** A base64 image attached to a user turn (for the vision-capable chat). */
 export interface ApiCardImage {
   /** Raw base64, no `data:` prefix. */
