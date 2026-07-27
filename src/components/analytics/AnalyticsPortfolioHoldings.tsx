@@ -123,7 +123,7 @@ export const AnalyticsPortfolioHoldings = ({
       <div className="mb-4 flex items-center gap-2">
         <Wallet className="h-4 w-4 text-[#B4FF39]" />
         <span className="text-xs font-medium uppercase tracking-wide text-white/80">
-          Portfolio
+          My Holdings
         </span>
         <Button
           size="sm"
@@ -145,7 +145,7 @@ export const AnalyticsPortfolioHoldings = ({
 
       {!hasCards ? (
         <div className="rounded-lg border border-white/8 bg-black/20 px-4 py-6 text-center text-sm text-muted-foreground">
-          Track cards above (or ask Cardy to log them), add what you paid, then
+          Watch cards below (or ask Cardy to log them), add what you paid, then
           hit <span className="text-white/80">Value portfolio</span> to see live
           value and gain/loss.
         </div>

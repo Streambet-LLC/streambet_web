@@ -49,7 +49,12 @@ const BRAND_LABEL: Record<string, string> = {
  * EXTERNAL market data only: multi-source price profiles and AI forecasts from
  * live web research. Previously a sub-view of the Market tab; now its own tab.
  */
-export const AnalyticsTrackedCards = () => {
+export const AnalyticsTrackedCards = ({
+  refreshSignal,
+}: {
+  /** Bump to refetch (e.g. after a sale draws a holding down). */
+  refreshSignal?: number;
+} = {}) => {
   const [cards, setCards] = useState<ApiTrackedCard[]>([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
@@ -88,7 +93,7 @@ export const AnalyticsTrackedCards = () => {
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, refreshSignal]);
 
   const addCard = async () => {
     const n = name.trim();
@@ -103,10 +108,10 @@ export const AnalyticsTrackedCards = () => {
       });
       setName('');
       setGrade('');
-      toast.success(`Now tracking “${card.name}”`);
+      toast.success(`Now watching “${card.name}”`);
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not track that card.');
+      toast.error(e instanceof Error ? e.message : 'Could not watch that card.');
     } finally {
       setAdding(false);
     }
@@ -115,22 +120,22 @@ export const AnalyticsTrackedCards = () => {
   const removeCard = async (card: ApiTrackedCard) => {
     try {
       await analyticsAPI.removeTrackedCard(card.id);
-      toast.success(`Stopped tracking “${card.name}”`);
+      toast.success(`Stopped watching “${card.name}”`);
       if (openCard?.id === card.id) setOpenCard(null);
       await load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not untrack.');
+      toast.error(e instanceof Error ? e.message : 'Could not unwatch.');
     }
   };
 
   return (
     <div className="space-y-5">
-      {/* Track a card */}
+      {/* Watch a card */}
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
-        <div className="text-sm font-medium text-white mb-1">Track a card</div>
+        <div className="text-sm font-medium text-white mb-1">Watch a card</div>
         <p className="text-xs text-muted-foreground mb-3">
-          Add any card to the research universe — market profiles, price
-          history, and AI forecasts build from live external data.
+          Add any card to your watchlist to get market profiles, price history,
+          and AI forecasts built from live external data.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Input
@@ -180,18 +185,18 @@ export const AnalyticsTrackedCards = () => {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <Plus className="h-4 w-4 mr-1" /> Track
+                <Plus className="h-4 w-4 mr-1" /> Watch
               </>
             )}
           </Button>
         </div>
       </Card>
 
-      {/* Tracked cards list */}
+      {/* Watched cards list */}
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-white">Tracked cards</span>
+            <span className="text-sm font-medium text-white">Watched Cards</span>
             <span className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-xs text-muted-foreground">
               {total}
             </span>
@@ -201,7 +206,7 @@ export const AnalyticsTrackedCards = () => {
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search tracked cards…"
+              placeholder="Search watched cards…"
               className="pl-9 bg-black/40 border-white/10"
             />
           </div>
@@ -213,7 +218,7 @@ export const AnalyticsTrackedCards = () => {
           </div>
         ) : cards.length === 0 ? (
           <div className="py-10 text-center text-sm text-muted-foreground">
-            No tracked cards yet — add one above to start building market
+            No watched cards yet — add one above to start building market
             profiles and forecasts.
           </div>
         ) : (
@@ -256,7 +261,7 @@ export const AnalyticsTrackedCards = () => {
                   size="icon"
                   onClick={() => removeCard(c)}
                   className="h-8 w-8 shrink-0 text-muted-foreground hover:text-red-400"
-                  aria-label="Stop tracking"
+                  aria-label="Stop watching"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -353,7 +358,7 @@ const TrackedCardDialog = ({
             {[
               card.brand ? (BRAND_LABEL[card.brand] ?? card.brand) : null,
               card.category,
-              `tracked since ${moment(card.createdAt).format('MMM D, YYYY')}`,
+              `watched since ${moment(card.createdAt).format('MMM D, YYYY')}`,
             ]
               .filter(Boolean)
               .join(' · ')}
