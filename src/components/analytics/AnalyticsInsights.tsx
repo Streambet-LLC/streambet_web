@@ -13,18 +13,22 @@ import {
   ImagePlus,
   X,
   Loader2,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import { analyticsAPI } from '@/integrations/api/client';
 import type {
   ApiInsightsMessage,
   ApiInsightsExchange,
   ApiCardCandidate,
+  ApiCardValuation,
 } from '@/types/analytics-api';
 import { fileToCardImage, type CardImage } from '@/utils/cardImage';
 import { useAnswerDepth } from '@/hooks/useAnswerDepth';
 import { DepthSettings } from './DepthSettings';
 import { DeepDivesPanel } from './DeepDivesPanel';
 import { ChatMarkdown } from './ChatMarkdown';
+import { ChatValuationCard } from './ChatValuationCard';
 import { CardConfirm, nameOnlyCandidate } from './CardConfirm';
 import { InsightsHistoryDialog } from './InsightsHistoryDialog';
 import { AiDisclaimer } from './AiDisclaimer';
@@ -33,6 +37,41 @@ const newConversationId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+// Steps value_card actually runs — cycled so the ~15-30s wait feels active.
+const VALUE_PHRASES = [
+  'finding recent sales…',
+  'checking the market index…',
+  'verifying the comps…',
+  'computing the value…',
+];
+
+/** The animated "working" bubble shown while a tool runs and no text has
+ *  arrived yet — cycles real steps for value_card so it never looks frozen. */
+const WorkingStatus = ({ tools }: { tools?: string[] }) => {
+  const [i, setI] = useState(0);
+  const valuing = tools?.includes('value_card') ?? false;
+  useEffect(() => {
+    if (!valuing) return;
+    const t = setInterval(() => setI(x => x + 1), 3500);
+    return () => clearInterval(t);
+  }, [valuing]);
+  const label = valuing
+    ? VALUE_PHRASES[i % VALUE_PHRASES.length]
+    : tools && tools.length > 0
+      ? 'researching…'
+      : 'thinking…';
+  return (
+    <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-3.5 py-3">
+      <span className="flex items-center gap-1">
+        <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:-0.3s]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:-0.15s]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce" />
+      </span>
+      <span className="text-[11px] text-muted-foreground">{label}</span>
+    </div>
+  );
+};
 
 /**
  * Insights — a conversational analyst over the collector data.
@@ -72,6 +111,10 @@ type Msg = {
   at?: number;
   /** A card photo attached to a user turn (base64 + preview URL). */
   image?: CardImage;
+  /** Structured, code-computed valuation to render as a card (assistant). */
+  valuation?: ApiCardValuation | null;
+  /** The admin's thumbs up/down on this answer. */
+  feedback?: 'up' | 'down';
 };
 
 export const AnalyticsInsights = () => {
@@ -339,10 +382,11 @@ export const AnalyticsInsights = () => {
         toolSet.add(name);
         patch({ tools: [...toolSet] });
       },
-      onDone: toolCalls => {
+      onDone: (toolCalls, valuation) => {
         applyDiveTool(toolCalls);
         applyVerifyTool(toolCalls);
-        if (asstId !== -1) patch({ streaming: false });
+        ensureMsg();
+        patch({ streaming: false, ...(valuation ? { valuation } : {}) });
         setThinking(false);
       },
       onError: message => {
@@ -363,7 +407,12 @@ export const AnalyticsInsights = () => {
         names.forEach(n => toolSet.add(n));
         applyDiveTool(res.toolCalls);
         applyVerifyTool(res.toolCalls);
-        patch({ text: acc, tools: [...toolSet], streaming: false });
+        patch({
+          text: acc,
+          tools: [...toolSet],
+          streaming: false,
+          ...(res.valuation ? { valuation: res.valuation } : {}),
+        });
       } catch {
         ensureMsg();
         patch({
@@ -380,6 +429,37 @@ export const AnalyticsInsights = () => {
       e.preventDefault();
       send(input);
     }
+  };
+
+  // Thumbs up/down on an answer — feeds the reliability flywheel (labeled data).
+  const rate = (msgId: number, rating: 'up' | 'down') => {
+    const idx = messages.findIndex(m => m.id === msgId);
+    if (idx === -1) return;
+    const m = messages[idx];
+    // The question is the nearest preceding user turn.
+    let question = '';
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        question = messages[i].text;
+        break;
+      }
+    }
+    const next = m.feedback === rating ? undefined : rating;
+    setMessages(list =>
+      list.map(x => (x.id === msgId ? { ...x, feedback: next } : x))
+    );
+    if (!next) return; // toggled off — nothing to send
+    void analyticsAPI
+      .sendInsightsFeedback({
+        rating,
+        question,
+        answer: m.text,
+        subject: m.valuation?.subject ?? undefined,
+        conversationId: convIdRef.current,
+      })
+      .catch(() => {
+        /* best-effort */
+      });
   };
 
   // Shared composer (input + attach + send) used in both states.
@@ -576,25 +656,14 @@ export const AnalyticsInsights = () => {
                           ))}
                         </div>
                       )}
+                      {/* Structured, code-computed valuation — the hero. */}
+                      {m.valuation && <ChatValuationCard v={m.valuation} />}
                       {/* A tool is running but no text yet — keep it alive so it
                           doesn't look frozen (value_card can take 15-30s). */}
                       {m.streaming && !m.text && (
-                        <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 px-3.5 py-3">
-                          <span className="flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:-0.3s]" />
-                            <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce [animation-delay:-0.15s]" />
-                            <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-bounce" />
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            {m.tools?.includes('value_card')
-                              ? 'valuing the card…'
-                              : m.tools && m.tools.length > 0
-                                ? 'researching…'
-                                : 'thinking…'}
-                          </span>
-                        </div>
+                        <WorkingStatus tools={m.tools} />
                       )}
-                      {(m.text || !m.streaming) && (
+                      {(m.text || (!m.streaming && !m.valuation)) && (
                         <div className="rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 text-white/90 px-3.5 py-2.5 text-sm leading-relaxed">
                           <ChatMarkdown text={m.text} />
                           {m.streaming && (
@@ -602,9 +671,37 @@ export const AnalyticsInsights = () => {
                           )}
                         </div>
                       )}
-                      {m.at && !m.streaming && (
-                        <div className="ml-1 text-[10px] text-muted-foreground">
-                          {moment(m.at).format('MMM D, h:mm A')}
+                      {!m.streaming && (m.text || m.valuation) && (
+                        <div className="ml-1 flex items-center gap-2">
+                          {m.at && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {moment(m.at).format('MMM D, h:mm A')}
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => rate(m.id, 'up')}
+                            aria-label="Good answer"
+                            className={`transition-colors ${
+                              m.feedback === 'up'
+                                ? 'text-[#B4FF39]'
+                                : 'text-muted-foreground/50 hover:text-white/80'
+                            }`}
+                          >
+                            <ThumbsUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => rate(m.id, 'down')}
+                            aria-label="Bad answer"
+                            className={`transition-colors ${
+                              m.feedback === 'down'
+                                ? 'text-red-400'
+                                : 'text-muted-foreground/50 hover:text-white/80'
+                            }`}
+                          >
+                            <ThumbsDown className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       )}
                     </div>
