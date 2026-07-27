@@ -623,8 +623,42 @@ export interface ApiTrackedCard {
   category: string | null;
   grade: string | null;
   notes: string | null;
+  /** Portfolio holding fields. */
+  quantity: number;
+  costBasisUsd: number | null;
+  acquiredAt: string | null;
+  lastValueUsd: number | null;
+  lastConfidencePct: number | null;
+  lastValuedAt: string | null;
+  lastValuation: ApiCardValuation | null;
+  alertAboveUsd: number | null;
+  alertBelowUsd: number | null;
   ownerUserId: string | null;
   createdAt: string;
+}
+
+/** A triggered price alert for a holding. */
+export interface ApiPortfolioAlert {
+  id: string;
+  name: string;
+  type: 'target-above' | 'target-below' | 'move';
+  direction: 'up' | 'down';
+  message: string;
+  valueUsd: number;
+  changePct: number | null;
+}
+
+/** Portfolio roll-up across all holdings. */
+export interface ApiPortfolioSummary {
+  cards: ApiTrackedCard[];
+  totalValueUsd: number;
+  totalCostUsd: number;
+  gainUsd: number;
+  gainPct: number | null;
+  costedCount: number;
+  valuedCount: number;
+  cardCount: number;
+  movers: { id: string; name: string; changePct: number; valueUsd: number }[];
 }
 
 /** A base64 image attached to a user turn (for the vision-capable chat). */
@@ -658,9 +692,47 @@ export interface ApiCardCandidate {
   confidence: 'high' | 'medium' | 'low';
 }
 
+/** One comp behind a valuation (price linked to its retrieved source). */
+export interface ApiValComp {
+  priceUsd: number;
+  date: string | null;
+  grade: string | null;
+  sourceType: string;
+  url: string | null;
+}
+
+/** A code-computed card valuation, rendered as a card in chat. */
+export interface ApiCardValuation {
+  isCard: boolean;
+  subject: string;
+  method: 'anchor-and-adjust' | 'recent-median' | 'triangulation' | string;
+  pointUsd: number | null;
+  lowUsd: number | null;
+  highUsd: number | null;
+  confidencePct: number;
+  confidenceBasis: string;
+  anchorComp: ApiValComp | null;
+  compsUsed: ApiValComp[];
+  indexAdjustment: { index: string; movePct: number; window: string } | null;
+  /** Live eBay active-listing context (asks, not sold comps). */
+  marketContext: {
+    source: string;
+    activeCount: number;
+    lowestAskUsd: number | null;
+    url: string;
+  } | null;
+  reliability: 'grounded' | 'thin' | 'unverified' | string;
+  liquidity: string | null;
+  trajectory: string | null;
+  take: string | null;
+  note: string | null;
+  sources: { title: string; type?: string; url: string }[];
+}
+
 export interface ApiInsightsChatResult {
   reply: string;
   toolCalls: { name: string; input: unknown }[];
+  valuation?: ApiCardValuation | null;
 }
 
 export interface ApiCardForecast {

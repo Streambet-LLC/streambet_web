@@ -865,11 +865,14 @@ import type {
   ApiDiscoveredLeadsList,
   ApiLeadStats,
   ApiTrackedCard,
+  ApiPortfolioSummary,
+  ApiPortfolioAlert,
   ApiCardForecastResult,
   ApiCardMarketProfile,
   ApiInsightsMessage,
   ApiCardImage,
   ApiCardCandidate,
+  ApiCardValuation,
   ApiInsightsChatResult,
   ApiMarketSnapshot,
   ApiMarketCatalog,
@@ -1104,6 +1107,51 @@ export const analyticsAPI = {
     return response.data.data as { id: string };
   },
 
+  /** Update a holding's cost basis / quantity / acquired date / alert targets. */
+  updateHolding: async (
+    id: string,
+    body: {
+      quantity?: number;
+      costBasisUsd?: number | null;
+      acquiredAt?: string | null;
+      alertAboveUsd?: number | null;
+      alertBelowUsd?: number | null;
+    }
+  ): Promise<ApiTrackedCard> => {
+    const response = await apiClient.patch(
+      `/admin/analytics/market/cards/${id}/holding`,
+      body
+    );
+    return response.data.data as ApiTrackedCard;
+  },
+
+  /** Triggered price alerts across holdings. */
+  getPortfolioAlerts: async (): Promise<ApiPortfolioAlert[]> => {
+    const response = await apiClient.get(`/admin/analytics/portfolio/alerts`);
+    return response.data.data as ApiPortfolioAlert[];
+  },
+
+  /** Value one tracked card now (code-computed comps). */
+  valueTrackedCard: async (id: string): Promise<ApiTrackedCard> => {
+    const response = await apiClient.post(
+      `/admin/analytics/market/cards/${id}/value`,
+      {}
+    );
+    return response.data.data as ApiTrackedCard;
+  },
+
+  /** Portfolio roll-up (cached valuations). */
+  getPortfolio: async (): Promise<ApiPortfolioSummary> => {
+    const response = await apiClient.get(`/admin/analytics/portfolio`);
+    return response.data.data as ApiPortfolioSummary;
+  },
+
+  /** Value every holding, then return the roll-up. */
+  valuePortfolio: async (): Promise<ApiPortfolioSummary> => {
+    const response = await apiClient.post(`/admin/analytics/portfolio/value`, {});
+    return response.data.data as ApiPortfolioSummary;
+  },
+
   /** Cached predictive forecast for a card (null if none yet). */
   getCardForecast: async (
     id: string
@@ -1208,6 +1256,22 @@ export const analyticsAPI = {
     return response.data.data as ApiInsightsChatResult;
   },
 
+  /** Rate a Cardy answer (thumbs up/down) — the reliability flywheel. */
+  sendInsightsFeedback: async (body: {
+    rating: 'up' | 'down';
+    question?: string;
+    answer?: string;
+    note?: string;
+    subject?: string;
+    conversationId?: string;
+  }): Promise<{ ok: boolean }> => {
+    const response = await apiClient.post(
+      '/admin/analytics/insights/feedback',
+      body
+    );
+    return response.data.data as { ok: boolean };
+  },
+
   /** Paginated past Insights conversations (history). */
   listInsightsHistory: async (
     limit = 20,
@@ -1238,7 +1302,10 @@ export const analyticsAPI = {
     handlers: {
       onText: (delta: string) => void;
       onTool?: (name: string) => void;
-      onDone?: (toolCalls: { name: string; input: unknown }[]) => void;
+      onDone?: (
+        toolCalls: { name: string; input: unknown }[],
+        valuation?: ApiCardValuation | null
+      ) => void;
       onError?: (message: string) => void;
     },
     conversationId?: string,
@@ -1292,6 +1359,7 @@ export const analyticsAPI = {
           name?: string;
           message?: string;
           toolCalls?: { name: string; input: unknown }[];
+          valuation?: ApiCardValuation | null;
         };
         try {
           evt = JSON.parse(json);
@@ -1302,7 +1370,7 @@ export const analyticsAPI = {
         else if (evt.type === 'tool' && evt.name) handlers.onTool?.(evt.name);
         else if (evt.type === 'done') {
           completed = true;
-          handlers.onDone?.(evt.toolCalls ?? []);
+          handlers.onDone?.(evt.toolCalls ?? [], evt.valuation ?? null);
         } else if (evt.type === 'error') {
           completed = true;
           handlers.onError?.(evt.message ?? 'Something went wrong.');
