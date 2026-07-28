@@ -536,6 +536,22 @@ export interface ApiInsightsExchange {
   createdAt: string;
 }
 
+/**
+ * In-flight state of one chat turn. Transient — once `status` is 'done' the
+ * answer also lives in the conversation's exchanges, which stay permanently.
+ */
+export interface ApiInsightsRun {
+  conversationId: string;
+  question: string;
+  status: 'running' | 'done' | 'error';
+  /** Partial text while running, final text once done. */
+  answer: string;
+  tools: string[] | null;
+  errorMessage: string | null;
+  startedAt: string;
+  finishedAt: string | null;
+}
+
 export interface ApiMarketMover {
   card: string;
   direction: string;
@@ -623,6 +639,8 @@ export interface ApiTrackedCard {
   category: string | null;
   grade: string | null;
   notes: string | null;
+  /** True = a real holding; false = watchlist only. */
+  owned: boolean;
   /** Portfolio holding fields. */
   quantity: number;
   costBasisUsd: number | null;

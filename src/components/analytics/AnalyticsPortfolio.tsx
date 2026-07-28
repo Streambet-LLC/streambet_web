@@ -19,7 +19,10 @@ export const AnalyticsPortfolio = () => {
       <AnalyticsPortfolioHoldings refreshSignal={refreshSignal} />
 
       {/* Watched Cards — the watchlist you add to + research */}
-      <AnalyticsTrackedCards refreshSignal={refreshSignal} />
+      <AnalyticsTrackedCards
+        refreshSignal={refreshSignal}
+        onChange={() => setRefreshSignal(s => s + 1)}
+      />
 
       {/* Sold Cards — realized profit and loss. It reloads itself after every
           edit, so it takes no refreshSignal (that would double-fetch). */}

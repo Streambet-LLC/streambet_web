@@ -1,5 +1,6 @@
 import { ExternalLink } from 'lucide-react';
 import type { ApiCardValuation } from '@/types/analytics-api';
+import { SaveToPortfolioMenu } from './SaveToPortfolioMenu';
 
 const money = (n: number | null | undefined) =>
   n == null ? '—' : `$${Math.round(n).toLocaleString('en-US')}`;
@@ -163,8 +164,13 @@ export const ChatValuationCard = ({ v }: { v: ApiCardValuation }) => {
         </div>
       )}
 
-      <div className="mt-2 text-[10px] text-muted-foreground/70">
-        Market estimate, not financial advice.
+      {/* Save action sits on the disclaimer row — present on every valuation,
+          so it doesn't depend on Cardy remembering to offer. */}
+      <div className="mt-2 flex items-center justify-between gap-2 border-t border-white/5 pt-2">
+        <span className="text-[10px] text-muted-foreground/70">
+          Market estimate, not financial advice.
+        </span>
+        <SaveToPortfolioMenu subject={v.subject} className="-mr-1" />
       </div>
     </div>
   );

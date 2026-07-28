@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import moment from 'moment';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   Search,
@@ -37,6 +36,35 @@ const newConversationId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+/** Where the active conversation id survives a navigation or reload. */
+const CONV_KEY = 'cardy.conversationId';
+
+/** How often a rejoined run is re-checked while it's still working. */
+const RUN_POLL_MS = 1500;
+
+const readStoredConvId = (): string | null => {
+  try {
+    return localStorage.getItem(CONV_KEY);
+  } catch {
+    return null; // private mode / storage disabled
+  }
+};
+
+const storeConvId = (id: string) => {
+  try {
+    localStorage.setItem(CONV_KEY, id);
+  } catch {
+    /* non-fatal: the chat just won't survive a reload */
+  }
+};
+
+/**
+ * Composer ceiling in px — ~7 lines at leading-5 (20px) plus the textarea's
+ * 8px of vertical padding. Past this it scrolls rather than pushing the chat
+ * transcript off screen. Keep in sync with max-h-[152px] on the textarea.
+ */
+const COMPOSER_MAX_H = 152;
 
 // Steps value_card actually runs — cycled so the ~15-30s wait feels active.
 const VALUE_PHRASES = [
@@ -100,6 +128,7 @@ const TOOL_LABELS: Record<string, string> = {
   search_leads: 'Searched leads',
   verify_card: 'Verifying the card',
   value_card: 'Valued the card',
+  add_to_portfolio: 'Saved to your portfolio',
 };
 
 type Msg = {
@@ -256,14 +285,26 @@ export const AnalyticsInsights = () => {
   };
 
   const idRef = useRef(0);
-  const convIdRef = useRef<string>(newConversationId());
+  // Reuse the stored conversation so leaving and coming back resumes it.
+  const convIdRef = useRef<string>(readStoredConvId() ?? newConversationId());
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  // Stops any in-progress run polling from setting state after unmount.
+  const mountedRef = useRef(true);
   const started = messages.length > 0;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const newChat = () => {
     if (thinking) return;
     convIdRef.current = newConversationId();
+    storeConvId(convIdRef.current);
     setMessages([]);
     setInput('');
     setAttachment(null);
@@ -284,11 +325,7 @@ export const AnalyticsInsights = () => {
     }
   };
 
-  const openConversation = (
-    conversationId: string,
-    exchanges: ApiInsightsExchange[]
-  ) => {
-    convIdRef.current = conversationId;
+  const toMessages = (exchanges: ApiInsightsExchange[]): Msg[] => {
     const msgs: Msg[] = [];
     for (const e of exchanges) {
       const at = new Date(e.createdAt).getTime();
@@ -301,8 +338,123 @@ export const AnalyticsInsights = () => {
         at,
       });
     }
-    setMessages(msgs);
+    return msgs;
   };
+
+  const openConversation = (
+    conversationId: string,
+    exchanges: ApiInsightsExchange[]
+  ) => {
+    convIdRef.current = conversationId;
+    storeConvId(conversationId);
+    setMessages(toMessages(exchanges));
+  };
+
+  /**
+   * Follow a turn the server is still working on, appending its text as it
+   * lands. Used both when rejoining after a navigation and when a stream is
+   * cut mid-answer — in the latter case it replaces re-running the whole
+   * conversation, which used to bill the tokens a second time.
+   * Returns once the run settles. `alive` lets an unmount stop the loop.
+   */
+  const followRun = async (
+    conversationId: string,
+    onUpdate: (text: string, done: boolean, error?: string) => void,
+    alive: () => boolean
+  ) => {
+    for (;;) {
+      if (!alive()) return;
+      let run: Awaited<ReturnType<typeof analyticsAPI.getInsightsRun>> = null;
+      try {
+        run = await analyticsAPI.getInsightsRun(conversationId);
+      } catch {
+        /* transient — try again next tick */
+      }
+      if (!alive()) return;
+      if (run) {
+        if (run.status === 'done') return onUpdate(run.answer, true);
+        if (run.status === 'error')
+          return onUpdate(
+            run.answer,
+            true,
+            run.errorMessage ?? 'That answer was interrupted.'
+          );
+        onUpdate(run.answer, false);
+      }
+      await new Promise(r => setTimeout(r, RUN_POLL_MS));
+    }
+  };
+
+  // On mount, restore the stored conversation and rejoin anything still
+  // running. The server finishes an answer even after the client disconnects,
+  // so this is about reattaching to work that is already happening/done.
+  useEffect(() => {
+    let alive = true;
+    const conversationId = convIdRef.current;
+    storeConvId(conversationId);
+
+    void (async () => {
+      const [exchanges, run] = await Promise.all([
+        analyticsAPI.getInsightsConversation(conversationId).catch(() => []),
+        analyticsAPI.getInsightsRun(conversationId).catch(() => null),
+      ]);
+      if (!alive) return;
+
+      const restored = toMessages(exchanges);
+      const isRunning = run?.status === 'running';
+      if (!restored.length && !isRunning) return; // nothing to come back to
+
+      setMessages(restored);
+      if (!isRunning) return;
+
+      // The in-flight turn isn't an exchange yet, so put it back by hand.
+      const at = new Date(run.startedAt).getTime();
+      const userId = ++idRef.current;
+      const asstId = ++idRef.current;
+      const bubble: Msg = {
+        id: asstId,
+        role: 'assistant',
+        text: run.answer,
+        tools: run.tools ?? [],
+        streaming: true,
+        at,
+      };
+      // Mirror send()'s lazy bubble: with no text yet the model is still on
+      // tool calls, so show the typing dots rather than an empty bubble.
+      const hasText = !!run.answer.trim();
+      setMessages([
+        ...restored,
+        { id: userId, role: 'user', text: run.question, at },
+        ...(hasText ? [bubble] : []),
+      ]);
+      setThinking(!hasText);
+      toast.info('Picking up where you left off…');
+
+      await followRun(
+        conversationId,
+        (text, done, error) => {
+          const body = error ? text || `⚠️ ${error}` : text;
+          // No text yet and not finished — still on tool calls, keep the dots.
+          if (!body && !done) return;
+          setThinking(false);
+          setMessages(m =>
+            m.some(x => x.id === asstId)
+              ? m.map(x =>
+                  x.id === asstId ? { ...x, text: body, streaming: !done } : x
+                )
+              : [...m, { ...bubble, text: body, streaming: !done }]
+          );
+        },
+        () => alive
+      );
+    })();
+
+    return () => {
+      alive = false;
+    };
+    // Mount-only: convIdRef is a ref and newChat() resets state directly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Rotate the placeholder through example prompts while the chat is empty.
   useEffect(() => {
@@ -397,24 +549,24 @@ export const AnalyticsInsights = () => {
     }, convIdRef.current, depth);
 
     // The stream was cut before finishing (e.g. a proxy idle-timeout in prod).
-    // Fall back to the non-streaming endpoint to fetch the complete answer.
+    // The server keeps going regardless, so follow its run to the end rather
+    // than re-asking — re-asking used to pay for the same answer twice.
     if (!completed) {
+      ensureMsg();
+      patch({ streaming: true });
       try {
-        const res = await analyticsAPI.insightsChat(payload, convIdRef.current, depth);
-        ensureMsg();
-        acc = res.reply;
-        const names = (res.toolCalls ?? []).map(t => t.name);
-        names.forEach(n => toolSet.add(n));
-        applyDiveTool(res.toolCalls);
-        applyVerifyTool(res.toolCalls);
-        patch({
-          text: acc,
-          tools: [...toolSet],
-          streaming: false,
-          ...(res.valuation ? { valuation: res.valuation } : {}),
-        });
+        await followRun(
+          convIdRef.current,
+          (text, done, error) => {
+            acc = text || acc;
+            patch({
+              text: error ? acc || `⚠️ ${error}` : acc,
+              streaming: !done,
+            });
+          },
+          () => mountedRef.current
+        );
       } catch {
-        ensureMsg();
         patch({
           text: acc || '⚠️ The connection dropped. Please try again.',
           streaming: false,
@@ -424,7 +576,7 @@ export const AnalyticsInsights = () => {
     setThinking(false);
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       send(input);
@@ -461,6 +613,21 @@ export const AnalyticsInsights = () => {
         /* best-effort */
       });
   };
+
+  // Grow the composer to fit what's typed, up to COMPOSER_MAX_H then scroll.
+  // Height must be reset to 'auto' first or scrollHeight only ever ratchets up
+  // and the box can't shrink back when text is deleted or sent.
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    // `height` is border-box here but scrollHeight excludes borders, so adding
+    // them back is what stops the box landing a few px short and showing a
+    // scrollbar over text that actually fits.
+    const borders = ta.offsetHeight - ta.clientHeight;
+    ta.style.height = `${Math.min(ta.scrollHeight + borders, COMPOSER_MAX_H)}px`;
+    // `started` is a dep because switching states remounts the textarea.
+  }, [input, attachment, started]);
 
   // Shared composer (input + attach + send) used in both states.
   const Composer = (
@@ -499,7 +666,10 @@ export const AnalyticsInsights = () => {
           )}
         </div>
       )}
-      <div className="flex items-center gap-2">
+      {/* One bordered shell holding the text and its controls, so the box
+          grows as a single unit instead of buttons floating beside it. The
+          border/focus ring live here, not on the textarea. */}
+      <div className="rounded-xl border border-white/10 bg-black/40 p-2 ring-offset-background transition-colors focus-within:border-white/20 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <input
           ref={fileRef}
           type="file"
@@ -507,41 +677,42 @@ export const AnalyticsInsights = () => {
           className="hidden"
           onChange={e => pickFile(e.target.files?.[0])}
         />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => fileRef.current?.click()}
-          disabled={thinking || attaching}
-          className="h-11 w-11 shrink-0 p-0 border-white/10 bg-black/40 text-white/80 hover:bg-white/5 hover:text-white disabled:opacity-40"
-          aria-label="Add a photo of a card"
-          title="Add a photo — take one or upload"
-        >
-          <ImagePlus className="h-5 w-5" />
-        </Button>
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={
-              attachment
-                ? 'Ask about this card…'
-                : started
-                  ? 'Ask a follow-up…'
-                  : EXAMPLE_PROMPTS[phIndex]
-            }
-            className="pl-9 pr-3 h-11 bg-black/40 border-white/10 text-sm"
-          />
+        <textarea
+          ref={taRef}
+          rows={1}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={
+            attachment
+              ? 'Ask about this card…'
+              : started
+                ? 'Ask a follow-up…'
+                : EXAMPLE_PROMPTS[phIndex]
+          }
+          className="block w-full resize-none overflow-y-auto bg-transparent px-1.5 py-1 text-sm leading-5 min-h-[28px] max-h-[152px] text-white placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <div className="mt-1 flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => fileRef.current?.click()}
+            disabled={thinking || attaching}
+            className="h-8 w-8 shrink-0 p-0 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-40"
+            aria-label="Add a photo of a card"
+            title="Add a photo — take one or upload"
+          >
+            <ImagePlus className="h-[18px] w-[18px]" />
+          </Button>
+          <Button
+            onClick={() => send(input)}
+            disabled={(!input.trim() && !attachment) || thinking}
+            className="ml-auto h-8 w-8 shrink-0 p-0 bg-[#B4FF39] text-black hover:bg-[#a2e833] disabled:opacity-40"
+            aria-label="Send"
+          >
+            <ArrowUp className="h-[18px] w-[18px]" />
+          </Button>
         </div>
-        <Button
-          onClick={() => send(input)}
-          disabled={(!input.trim() && !attachment) || thinking}
-          className="h-11 w-11 shrink-0 p-0 bg-[#B4FF39] text-black hover:bg-[#a2e833] disabled:opacity-40"
-          aria-label="Send"
-        >
-          <ArrowUp className="h-5 w-5" />
-        </Button>
       </div>
     </div>
   );
@@ -550,28 +721,35 @@ export const AnalyticsInsights = () => {
     <>
       <DeepDivesPanel refreshSignal={deepRefresh} chatDive={chatDive} />
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 flex flex-col max-h-[72vh] overflow-hidden">
-      {/* Toolbar */}
-      <div className="flex items-center justify-end gap-1 border-b border-white/5 px-2 py-1.5 shrink-0">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setHistoryOpen(true)}
-          className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-white"
-        >
-          <History className="h-3.5 w-3.5" /> History
-        </Button>
-        <DepthSettings value={depth} onChange={setDepth} disabled={thinking} />
-        {started && (
+      {/* Header + toolbar — same mark-then-label shape as AI Market Reports. */}
+      <div className="flex items-center gap-2 border-b border-white/5 px-3 py-1.5 shrink-0">
+        {/* Decorative: the label beside it already names the panel. */}
+        <img src="/cardy-icon.png" alt="" className="h-4 w-4 shrink-0" />
+        <span className="text-xs font-medium uppercase tracking-wide text-white/80">
+          Cardy AI
+        </span>
+        <div className="ml-auto flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            onClick={newChat}
-            disabled={thinking}
+            onClick={() => setHistoryOpen(true)}
             className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-white"
           >
-            <Plus className="h-3.5 w-3.5" /> New chat
+            <History className="h-3.5 w-3.5" /> History
           </Button>
-        )}
+          <DepthSettings value={depth} onChange={setDepth} disabled={thinking} />
+          {started && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={newChat}
+              disabled={thinking}
+              className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-white"
+            >
+              <Plus className="h-3.5 w-3.5" /> New chat
+            </Button>
+          )}
+        </div>
       </div>
       {!started ? (
         /* ---------- Empty state: search-bar landing ---------- */

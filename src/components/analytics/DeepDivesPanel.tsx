@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ImagePlus,
 } from 'lucide-react';
+import { SaveToPortfolioMenu } from './SaveToPortfolioMenu';
 import { toast } from 'sonner';
 import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiDeepResearchJob, ApiCardCandidate } from '@/types/analytics-api';
@@ -368,22 +369,30 @@ export const DeepDivesPanel = ({
                   const st = STATUS[j.status] ?? STATUS.pending;
                   const ready = j.status === 'done' && j.result;
                   return (
-                    <button
+                    // A div, not a button — the save menu below is itself a
+                    // button and nesting buttons is invalid.
+                    <div
                       key={j.id}
-                      type="button"
-                      disabled={!ready}
-                      onClick={() => ready && navigate(`/analytics/deep-dive/${j.id}`)}
-                      className={`w-full flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-3 py-2 text-left ${
-                        ready ? 'hover:bg-white/5 cursor-pointer' : 'cursor-default'
+                      className={`flex w-full items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-3 py-2 text-left ${
+                        ready ? 'hover:bg-white/5' : ''
                       }`}
                     >
-                      <span className="flex-1 min-w-0">
+                      <button
+                        type="button"
+                        disabled={!ready}
+                        onClick={() =>
+                          ready && navigate(`/analytics/deep-dive/${j.id}`)
+                        }
+                        className={`flex-1 min-w-0 text-left ${
+                          ready ? 'cursor-pointer' : 'cursor-default'
+                        }`}
+                      >
                         <span className="block truncate text-sm text-white/90">{j.subject}</span>
                         <span className="block text-[11px] text-muted-foreground">
                           {moment(j.completedAt ?? j.createdAt).fromNow()}
                           {j.status === 'error' && j.error ? ` · ${j.error}` : ''}
                         </span>
-                      </span>
+                      </button>
                       <Badge
                         variant="outline"
                         className={`shrink-0 gap-1 text-[10px] font-medium ${st.className}`}
@@ -391,8 +400,9 @@ export const DeepDivesPanel = ({
                         {st.spin && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
                         {st.label}
                       </Badge>
+                      <SaveToPortfolioMenu subject={j.subject} label="Save" />
                       {ready && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
-                    </button>
+                    </div>
                   );
                 })}
                 {total > jobs.length && (
@@ -412,3 +422,4 @@ export const DeepDivesPanel = ({
     </>
   );
 };
+
