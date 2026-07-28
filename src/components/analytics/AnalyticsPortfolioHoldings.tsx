@@ -201,7 +201,11 @@ export const AnalyticsPortfolioHoldings = ({
                   ) : (
                     <TrendingDown className="h-3 w-3 text-red-400" />
                   )}
-                  <span className="max-w-[160px] truncate">{m.name}</span>
+                  {/* A pill can't wrap without breaking the row, so the full
+                      name lives in the tooltip. */}
+                  <span className="max-w-[160px] truncate" title={m.name}>
+                    {m.name}
+                  </span>
                   <span style={{ color: gainColor(m.changePct) }}>{pct(m.changePct)}</span>
                 </span>
               ))}
@@ -215,10 +219,30 @@ export const AnalyticsPortfolioHoldings = ({
                 <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                   <th className="py-2 pr-2 font-medium">Card</th>
                   <th className="py-2 px-2 font-medium">Qty</th>
-                  <th className="py-2 px-2 font-medium">Cost / ea</th>
-                  <th className="py-2 px-2 font-medium">Value / ea</th>
-                  <th className="py-2 px-2 font-medium">Gain / loss</th>
-                  <th className="py-2 px-2 font-medium">Alert &gt;</th>
+                  {/* Both are PER CARD; Gain / loss is the total across qty.
+                      The titles spell that out because the "/ ea" suffix that
+                      used to carry it is gone from the labels. */}
+                  <th className="py-2 px-2 font-medium" title="What you paid per card">
+                    Purchase price
+                  </th>
+                  <th
+                    className="py-2 px-2 font-medium"
+                    title="Latest code-computed market value, per card"
+                  >
+                    Current value
+                  </th>
+                  <th
+                    className="py-2 px-2 font-medium"
+                    title="(current value − purchase price) × quantity"
+                  >
+                    Gain / loss
+                  </th>
+                  <th
+                    className="py-2 px-2 font-medium"
+                    title="Flag this holding in the alerts banner once its value reaches this price"
+                  >
+                    Alert &gt;
+                  </th>
                   <th className="py-2 pl-2 font-medium" />
                 </tr>
               </thead>
@@ -301,7 +325,13 @@ const HoldingRow = ({
   return (
     <tr className="border-b border-white/5">
       <td className="py-2 pr-2">
-        <div className="max-w-[220px] truncate text-white/90">{card.name}</div>
+        {/* Card names run long ("2018-19 Panini Prizm Kylian Mbappé…") and a
+            table cell is the one place there's room to wrap — truncating here
+            hid the parallel/number, which is exactly what distinguishes one
+            holding from another. */}
+        <div className="min-w-[180px] max-w-[320px] break-words text-white/90">
+          {card.name}
+        </div>
         {card.grade && (
           <div className="text-[11px] text-muted-foreground">{card.grade}</div>
         )}

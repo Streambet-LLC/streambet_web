@@ -75,7 +75,7 @@ const Analytics = () => {
               </TabsTrigger>
               <TabsTrigger value="market">Market Data</TabsTrigger>
               <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-              <TabsTrigger value="crm">CRM</TabsTrigger>
+              <TabsTrigger value="crm">CRM / Sales Intelligence</TabsTrigger>
               <TabsTrigger value="usage">Usage</TabsTrigger>
               <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
             </TabsList>
@@ -97,13 +97,16 @@ const Analytics = () => {
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-black/40 text-[#B4FF39]">
                     <Users className="h-6 w-6" />
                   </div>
-                  <h2 className="mt-4 text-lg font-semibold text-white">CRM</h2>
+                  <h2 className="mt-4 text-lg font-semibold text-white">
+                    CRM / Sales Intelligence
+                  </h2>
                   <span className="mt-2 inline-flex items-center rounded-full border border-[#B4FF39]/25 bg-[#B4FF39]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#B4FF39]">
                     Coming soon!
                   </span>
                   <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/60">
-                    Seller & buyer discovery, matching, lead management, and sales intelligence, are
-                    on the way. Check back soon.
+                    Buyer discovery, buyer/card interest matching, preferred
+                    buyers/sellers logging, lead management, card/inventory
+                    sourcing... all on the way! Check back soon
                   </p>
                 </div>
               </Card>
