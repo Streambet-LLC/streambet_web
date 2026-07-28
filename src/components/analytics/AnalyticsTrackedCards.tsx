@@ -31,6 +31,7 @@ import {
   Radar,
   RefreshCw,
   Sparkles,
+  Wallet,
 } from 'lucide-react';
 
 const BRANDS = ['pokemon', 'one_piece', 'sports', 'other'] as const;
@@ -51,9 +52,12 @@ const BRAND_LABEL: Record<string, string> = {
  */
 export const AnalyticsTrackedCards = ({
   refreshSignal,
+  onChange,
 }: {
   /** Bump to refetch (e.g. after a sale draws a holding down). */
   refreshSignal?: number;
+  /** Fired when a card moves buckets so holdings above can refresh. */
+  onChange?: () => void;
 } = {}) => {
   const [cards, setCards] = useState<ApiTrackedCard[]>([]);
   const [total, setTotal] = useState(0);
@@ -81,6 +85,8 @@ export const AnalyticsTrackedCards = ({
       const r = await analyticsAPI.getMarketCards({
         search: debounced || undefined,
         limit,
+        // Watchlist only — owned cards live in My Holdings above.
+        owned: false,
       });
       setCards(r.data);
       setTotal(r.total);
@@ -114,6 +120,18 @@ export const AnalyticsTrackedCards = ({
       toast.error(e instanceof Error ? e.message : 'Could not watch that card.');
     } finally {
       setAdding(false);
+    }
+  };
+
+  /** Promote a watched card into holdings — the only UI path between buckets. */
+  const markOwned = async (card: ApiTrackedCard) => {
+    try {
+      await analyticsAPI.updateHolding(card.id, { owned: true });
+      toast.success(`Moved “${card.name}” to your holdings`);
+      onChange?.();
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not move that card.');
     }
   };
 
@@ -256,6 +274,15 @@ export const AnalyticsTrackedCards = ({
                       .join(' · ')}
                   </div>
                 </button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => markOwned(c)}
+                  className="h-8 shrink-0 gap-1 px-2 text-xs text-muted-foreground hover:text-[#B4FF39]"
+                  title="Move this to My Holdings"
+                >
+                  <Wallet className="h-3.5 w-3.5" /> I own this
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"

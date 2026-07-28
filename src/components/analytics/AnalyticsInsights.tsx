@@ -37,6 +37,28 @@ const newConversationId = () =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
+/** Where the active conversation id survives a navigation or reload. */
+const CONV_KEY = 'cardy.conversationId';
+
+/** How often a rejoined run is re-checked while it's still working. */
+const RUN_POLL_MS = 1500;
+
+const readStoredConvId = (): string | null => {
+  try {
+    return localStorage.getItem(CONV_KEY);
+  } catch {
+    return null; // private mode / storage disabled
+  }
+};
+
+const storeConvId = (id: string) => {
+  try {
+    localStorage.setItem(CONV_KEY, id);
+  } catch {
+    /* non-fatal: the chat just won't survive a reload */
+  }
+};
+
 /**
  * Composer ceiling in px — ~7 lines at leading-5 (20px) plus the textarea's
  * 8px of vertical padding. Past this it scrolls rather than pushing the chat
@@ -106,6 +128,7 @@ const TOOL_LABELS: Record<string, string> = {
   search_leads: 'Searched leads',
   verify_card: 'Verifying the card',
   value_card: 'Valued the card',
+  add_to_portfolio: 'Saved to your portfolio',
 };
 
 type Msg = {
@@ -262,15 +285,26 @@ export const AnalyticsInsights = () => {
   };
 
   const idRef = useRef(0);
-  const convIdRef = useRef<string>(newConversationId());
+  // Reuse the stored conversation so leaving and coming back resumes it.
+  const convIdRef = useRef<string>(readStoredConvId() ?? newConversationId());
   const endRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  // Stops any in-progress run polling from setting state after unmount.
+  const mountedRef = useRef(true);
   const started = messages.length > 0;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const newChat = () => {
     if (thinking) return;
     convIdRef.current = newConversationId();
+    storeConvId(convIdRef.current);
     setMessages([]);
     setInput('');
     setAttachment(null);
@@ -291,11 +325,7 @@ export const AnalyticsInsights = () => {
     }
   };
 
-  const openConversation = (
-    conversationId: string,
-    exchanges: ApiInsightsExchange[]
-  ) => {
-    convIdRef.current = conversationId;
+  const toMessages = (exchanges: ApiInsightsExchange[]): Msg[] => {
     const msgs: Msg[] = [];
     for (const e of exchanges) {
       const at = new Date(e.createdAt).getTime();
@@ -308,8 +338,123 @@ export const AnalyticsInsights = () => {
         at,
       });
     }
-    setMessages(msgs);
+    return msgs;
   };
+
+  const openConversation = (
+    conversationId: string,
+    exchanges: ApiInsightsExchange[]
+  ) => {
+    convIdRef.current = conversationId;
+    storeConvId(conversationId);
+    setMessages(toMessages(exchanges));
+  };
+
+  /**
+   * Follow a turn the server is still working on, appending its text as it
+   * lands. Used both when rejoining after a navigation and when a stream is
+   * cut mid-answer — in the latter case it replaces re-running the whole
+   * conversation, which used to bill the tokens a second time.
+   * Returns once the run settles. `alive` lets an unmount stop the loop.
+   */
+  const followRun = async (
+    conversationId: string,
+    onUpdate: (text: string, done: boolean, error?: string) => void,
+    alive: () => boolean
+  ) => {
+    for (;;) {
+      if (!alive()) return;
+      let run: Awaited<ReturnType<typeof analyticsAPI.getInsightsRun>> = null;
+      try {
+        run = await analyticsAPI.getInsightsRun(conversationId);
+      } catch {
+        /* transient — try again next tick */
+      }
+      if (!alive()) return;
+      if (run) {
+        if (run.status === 'done') return onUpdate(run.answer, true);
+        if (run.status === 'error')
+          return onUpdate(
+            run.answer,
+            true,
+            run.errorMessage ?? 'That answer was interrupted.'
+          );
+        onUpdate(run.answer, false);
+      }
+      await new Promise(r => setTimeout(r, RUN_POLL_MS));
+    }
+  };
+
+  // On mount, restore the stored conversation and rejoin anything still
+  // running. The server finishes an answer even after the client disconnects,
+  // so this is about reattaching to work that is already happening/done.
+  useEffect(() => {
+    let alive = true;
+    const conversationId = convIdRef.current;
+    storeConvId(conversationId);
+
+    void (async () => {
+      const [exchanges, run] = await Promise.all([
+        analyticsAPI.getInsightsConversation(conversationId).catch(() => []),
+        analyticsAPI.getInsightsRun(conversationId).catch(() => null),
+      ]);
+      if (!alive) return;
+
+      const restored = toMessages(exchanges);
+      const isRunning = run?.status === 'running';
+      if (!restored.length && !isRunning) return; // nothing to come back to
+
+      setMessages(restored);
+      if (!isRunning) return;
+
+      // The in-flight turn isn't an exchange yet, so put it back by hand.
+      const at = new Date(run.startedAt).getTime();
+      const userId = ++idRef.current;
+      const asstId = ++idRef.current;
+      const bubble: Msg = {
+        id: asstId,
+        role: 'assistant',
+        text: run.answer,
+        tools: run.tools ?? [],
+        streaming: true,
+        at,
+      };
+      // Mirror send()'s lazy bubble: with no text yet the model is still on
+      // tool calls, so show the typing dots rather than an empty bubble.
+      const hasText = !!run.answer.trim();
+      setMessages([
+        ...restored,
+        { id: userId, role: 'user', text: run.question, at },
+        ...(hasText ? [bubble] : []),
+      ]);
+      setThinking(!hasText);
+      toast.info('Picking up where you left off…');
+
+      await followRun(
+        conversationId,
+        (text, done, error) => {
+          const body = error ? text || `⚠️ ${error}` : text;
+          // No text yet and not finished — still on tool calls, keep the dots.
+          if (!body && !done) return;
+          setThinking(false);
+          setMessages(m =>
+            m.some(x => x.id === asstId)
+              ? m.map(x =>
+                  x.id === asstId ? { ...x, text: body, streaming: !done } : x
+                )
+              : [...m, { ...bubble, text: body, streaming: !done }]
+          );
+        },
+        () => alive
+      );
+    })();
+
+    return () => {
+      alive = false;
+    };
+    // Mount-only: convIdRef is a ref and newChat() resets state directly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Rotate the placeholder through example prompts while the chat is empty.
   useEffect(() => {
@@ -404,24 +549,24 @@ export const AnalyticsInsights = () => {
     }, convIdRef.current, depth);
 
     // The stream was cut before finishing (e.g. a proxy idle-timeout in prod).
-    // Fall back to the non-streaming endpoint to fetch the complete answer.
+    // The server keeps going regardless, so follow its run to the end rather
+    // than re-asking — re-asking used to pay for the same answer twice.
     if (!completed) {
+      ensureMsg();
+      patch({ streaming: true });
       try {
-        const res = await analyticsAPI.insightsChat(payload, convIdRef.current, depth);
-        ensureMsg();
-        acc = res.reply;
-        const names = (res.toolCalls ?? []).map(t => t.name);
-        names.forEach(n => toolSet.add(n));
-        applyDiveTool(res.toolCalls);
-        applyVerifyTool(res.toolCalls);
-        patch({
-          text: acc,
-          tools: [...toolSet],
-          streaming: false,
-          ...(res.valuation ? { valuation: res.valuation } : {}),
-        });
+        await followRun(
+          convIdRef.current,
+          (text, done, error) => {
+            acc = text || acc;
+            patch({
+              text: error ? acc || `⚠️ ${error}` : acc,
+              streaming: !done,
+            });
+          },
+          () => mountedRef.current
+        );
       } catch {
-        ensureMsg();
         patch({
           text: acc || '⚠️ The connection dropped. Please try again.',
           streaming: false,

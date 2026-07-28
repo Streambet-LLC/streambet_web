@@ -6,11 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Telescope,
   Loader2,
   ChevronRight,
   ChevronDown,
   ImagePlus,
+  Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { analyticsAPI } from '@/integrations/api/client';
@@ -368,22 +375,30 @@ export const DeepDivesPanel = ({
                   const st = STATUS[j.status] ?? STATUS.pending;
                   const ready = j.status === 'done' && j.result;
                   return (
-                    <button
+                    // A div, not a button — the save menu below is itself a
+                    // button and nesting buttons is invalid.
+                    <div
                       key={j.id}
-                      type="button"
-                      disabled={!ready}
-                      onClick={() => ready && navigate(`/analytics/deep-dive/${j.id}`)}
-                      className={`w-full flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-3 py-2 text-left ${
-                        ready ? 'hover:bg-white/5 cursor-pointer' : 'cursor-default'
+                      className={`flex w-full items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-3 py-2 text-left ${
+                        ready ? 'hover:bg-white/5' : ''
                       }`}
                     >
-                      <span className="flex-1 min-w-0">
+                      <button
+                        type="button"
+                        disabled={!ready}
+                        onClick={() =>
+                          ready && navigate(`/analytics/deep-dive/${j.id}`)
+                        }
+                        className={`flex-1 min-w-0 text-left ${
+                          ready ? 'cursor-pointer' : 'cursor-default'
+                        }`}
+                      >
                         <span className="block truncate text-sm text-white/90">{j.subject}</span>
                         <span className="block text-[11px] text-muted-foreground">
                           {moment(j.completedAt ?? j.createdAt).fromNow()}
                           {j.status === 'error' && j.error ? ` · ${j.error}` : ''}
                         </span>
-                      </span>
+                      </button>
                       <Badge
                         variant="outline"
                         className={`shrink-0 gap-1 text-[10px] font-medium ${st.className}`}
@@ -391,8 +406,9 @@ export const DeepDivesPanel = ({
                         {st.spin && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
                         {st.label}
                       </Badge>
+                      <SaveToPortfolio subject={j.subject} />
                       {ready && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
-                    </button>
+                    </div>
                   );
                 })}
                 {total > jobs.length && (
@@ -410,5 +426,73 @@ export const DeepDivesPanel = ({
         )}
       </Card>
     </>
+  );
+};
+
+/**
+ * Save a researched card to the portfolio. Watchlist is the default and the
+ * one-click path; holdings and sold are opt-in from the menu, because we
+ * should never assume someone owns or sold a card just because they read a
+ * report on it.
+ */
+const SaveToPortfolio = ({ subject }: { subject: string }) => {
+  const [saving, setSaving] = useState(false);
+
+  const save = async (destination: 'watchlist' | 'holdings' | 'sold') => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (destination === 'sold') {
+        await analyticsAPI.addSoldCard({ name: subject });
+        toast.success(`Logged “${subject}” as sold — add the numbers in Portfolio.`);
+      } else {
+        await analyticsAPI.addTrackedCard({
+          name: subject,
+          owned: destination === 'holdings',
+        });
+        toast.success(
+          destination === 'holdings'
+            ? `Added “${subject}” to your holdings`
+            : `Added “${subject}” to your watchlist`
+        );
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not save that card.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={saving}
+          className="h-7 shrink-0 gap-1 px-2 text-[11px] text-muted-foreground hover:text-[#B4FF39]"
+          title="Save this card to your portfolio"
+        >
+          {saving ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Plus className="h-3.5 w-3.5" />
+          )}
+          Save
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="border-white/10 bg-[rgba(22,22,22,1)]">
+        <DropdownMenuItem onClick={() => save('watchlist')}>
+          Add to watchlist
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => save('holdings')}>
+          I own this — add to holdings
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => save('sold')}>
+          I sold this — log a sale
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };

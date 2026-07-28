@@ -883,6 +883,7 @@ import type {
   ApiDeepResearchList,
   ApiInsightsConversationList,
   ApiInsightsExchange,
+  ApiInsightsRun,
   ApiQuerySuggestions,
   DiscoverySource,
 } from '@/types/analytics-api';
@@ -1067,12 +1068,15 @@ export const analyticsAPI = {
     search?: string;
     limit?: number;
     offset?: number;
+    /** true = holdings, false = watchlist, omitted = both. */
+    owned?: boolean;
   }): Promise<{ total: number; data: ApiTrackedCard[] }> => {
     const response = await apiClient.get(`/admin/analytics/market/cards`, {
       params: {
         search: params.search || undefined,
         limit: params.limit,
         offset: params.offset,
+        owned: params.owned,
       },
     });
     return response.data.data as { total: number; data: ApiTrackedCard[] };
@@ -1093,6 +1097,8 @@ export const analyticsAPI = {
     category?: string;
     grade?: string;
     notes?: string;
+    /** true = straight into holdings; default false = watchlist. */
+    owned?: boolean;
   }): Promise<ApiTrackedCard> => {
     const response = await apiClient.post(
       `/admin/analytics/market/cards`,
@@ -1118,6 +1124,7 @@ export const analyticsAPI = {
       acquiredAt?: string | null;
       alertAboveUsd?: number | null;
       alertBelowUsd?: number | null;
+      owned?: boolean;
     }
   ): Promise<ApiTrackedCard> => {
     const response = await apiClient.patch(
@@ -1361,6 +1368,20 @@ export const analyticsAPI = {
       `/admin/analytics/insights/history/${conversationId}`
     );
     return response.data.data as ApiInsightsExchange[];
+  },
+
+  /**
+   * In-flight state of a conversation — null if it never ran. Lets a client
+   * that navigated away (or had its stream cut) rejoin an answer the server
+   * kept working on.
+   */
+  getInsightsRun: async (
+    conversationId: string
+  ): Promise<ApiInsightsRun | null> => {
+    const response = await apiClient.get(
+      `/admin/analytics/insights/run/${conversationId}`
+    );
+    return (response.data.data ?? null) as ApiInsightsRun | null;
   },
 
   /**
