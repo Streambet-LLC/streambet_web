@@ -534,6 +534,13 @@ export const AnalyticsInsights = () => {
         toolSet.add(name);
         patch({ tools: [...toolSet] });
       },
+      // The valuation is code-computed and final the moment it arrives — show
+      // it straight away instead of waiting on the model's prose. On a pricing
+      // question this is what the user is actually waiting for.
+      onValuation: valuation => {
+        ensureMsg();
+        patch({ valuation });
+      },
       onDone: (toolCalls, valuation) => {
         applyDiveTool(toolCalls);
         applyVerifyTool(toolCalls);

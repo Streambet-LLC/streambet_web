@@ -1393,6 +1393,11 @@ export const analyticsAPI = {
     handlers: {
       onText: (delta: string) => void;
       onTool?: (name: string) => void;
+      /**
+       * The code-computed valuation, pushed as soon as it exists — well ahead
+       * of the model's prose. Render it immediately; `onDone` repeats it.
+       */
+      onValuation?: (valuation: ApiCardValuation) => void;
       onDone?: (
         toolCalls: { name: string; input: unknown }[],
         valuation?: ApiCardValuation | null
@@ -1459,6 +1464,8 @@ export const analyticsAPI = {
         }
         if (evt.type === 'text' && evt.text) handlers.onText(evt.text);
         else if (evt.type === 'tool' && evt.name) handlers.onTool?.(evt.name);
+        else if (evt.type === 'valuation' && evt.valuation)
+          handlers.onValuation?.(evt.valuation);
         else if (evt.type === 'done') {
           completed = true;
           handlers.onDone?.(evt.toolCalls ?? [], evt.valuation ?? null);
