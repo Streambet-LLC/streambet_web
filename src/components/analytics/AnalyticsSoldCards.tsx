@@ -490,7 +490,10 @@ const Flip = ({
     ) : (
       <TrendingDown className="h-3 w-3 text-red-400" />
     )}
-    <span className="max-w-[160px] truncate">{flip.name}</span>
+    {/* Pills can't wrap without breaking the row — full name in the tooltip. */}
+    <span className="max-w-[160px] truncate" title={flip.name}>
+      {flip.name}
+    </span>
     <span style={{ color: gainColor(flip.realizedGainUsd) }}>
       {flip.realizedGainUsd >= 0 ? '+' : ''}
       {money(flip.realizedGainUsd)}
@@ -529,8 +532,10 @@ const SaleRow = ({
   return (
     <tr className="border-b border-white/5">
       <td className="py-2 pr-2">
-        <div className="flex items-center gap-2">
-          <span className="max-w-[220px] truncate text-white/90">
+        {/* Wrap rather than truncate — see the holdings table; a clipped name
+            hides the parallel/number that tells two sales apart. */}
+        <div className="flex items-start gap-2">
+          <span className="min-w-[180px] max-w-[320px] break-words text-white/90">
             {sale.name}
           </span>
           {sale.grade && (

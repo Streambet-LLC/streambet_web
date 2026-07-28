@@ -32,6 +32,7 @@ import {
   RefreshCw,
   Sparkles,
   Wallet,
+  Eye,
 } from 'lucide-react';
 
 const BRANDS = ['pokemon', 'one_piece', 'sports', 'other'] as const;
@@ -148,9 +149,20 @@ export const AnalyticsTrackedCards = ({
 
   return (
     <div className="space-y-5">
-      {/* Watch a card */}
+      {/* Watchlist — add + list in one continuous section */}
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
-        <div className="text-sm font-medium text-white mb-1">Watch a card</div>
+        {/* Header (matches My Holdings) */}
+        <div className="mb-3 flex items-center gap-2">
+          <Eye className="h-4 w-4 text-[#B4FF39]" />
+          <span className="text-xs font-medium uppercase tracking-wide text-white/80">
+            Watchlist
+          </span>
+          <span className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-xs text-muted-foreground">
+            {total}
+          </span>
+        </div>
+
+        {/* Add a card */}
         <p className="text-xs text-muted-foreground mb-3">
           Add any card to your watchlist to get market profiles, price history,
           and AI forecasts built from live external data.
@@ -208,17 +220,11 @@ export const AnalyticsTrackedCards = ({
             )}
           </Button>
         </div>
-      </Card>
 
-      {/* Watched cards list */}
-      <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
-        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-white">Watched Cards</span>
-            <span className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-xs text-muted-foreground">
-              {total}
-            </span>
-          </div>
+        {/* Divider → watched list */}
+        <div className="my-4 border-t border-white/5" />
+
+        <div className="mb-3 flex items-center justify-end">
           <div className="relative w-full sm:w-[260px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -251,8 +257,10 @@ export const AnalyticsTrackedCards = ({
                   onClick={() => setOpenCard(c)}
                   className="flex-1 min-w-0 text-left"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm text-white/90">
+                  <div className="flex items-start gap-2">
+                    {/* Wrap, don't clip — the tail of a card name carries the
+                        parallel and number that identify it. */}
+                    <span className="break-words text-sm text-white/90">
                       {c.name}
                     </span>
                     {c.grade && (
