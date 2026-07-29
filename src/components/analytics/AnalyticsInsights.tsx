@@ -39,6 +39,11 @@ const newConversationId = () =>
 
 /** Where the active conversation id survives a navigation or reload. */
 const CONV_KEY = 'cardy.conversationId';
+/** Last time the chat saw real activity (a send or a completed answer). */
+const ACTIVITY_KEY = 'cardy.lastActivity';
+/** After this much idle, a returning visitor gets a FRESH chat (old is in
+ *  History). Applied on remount, on tab return, and on the next send. */
+const IDLE_ROLLOVER_MS = 60 * 60 * 1000; // 1 hour
 
 /** How often a rejoined run is re-checked while it's still working. */
 const RUN_POLL_MS = 1500;
@@ -57,6 +62,26 @@ const storeConvId = (id: string) => {
   } catch {
     /* non-fatal: the chat just won't survive a reload */
   }
+};
+
+const readLastActivity = (): number => {
+  try {
+    return Number(localStorage.getItem(ACTIVITY_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+};
+const touchActivity = () => {
+  try {
+    localStorage.setItem(ACTIVITY_KEY, String(Date.now()));
+  } catch {
+    /* non-fatal */
+  }
+};
+/** True when the last chat activity was over an hour ago. */
+const isChatStale = (): boolean => {
+  const last = readLastActivity();
+  return last > 0 && Date.now() - last > IDLE_ROLLOVER_MS;
 };
 
 /**
@@ -400,8 +425,17 @@ export const AnalyticsInsights = () => {
       ]);
       if (!alive) return;
 
-      const restored = toMessages(exchanges);
       const isRunning = run?.status === 'running';
+      // Away over an hour → start a FRESH chat instead of reopening the stale
+      // one (it's still one tap away in History). Don't roll a run that's
+      // actually in flight — that means recent activity.
+      if (isChatStale() && !isRunning) {
+        convIdRef.current = newConversationId();
+        storeConvId(convIdRef.current);
+        return;
+      }
+
+      const restored = toMessages(exchanges);
       if (!restored.length && !isRunning) return; // nothing to come back to
 
       setMessages(restored);
@@ -456,6 +490,23 @@ export const AnalyticsInsights = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Returning to the tab after an hour idle → start a fresh chat (old one is in
+  // History). Covers the "left it open in a background tab" case that a remount
+  // doesn't.
+  useEffect(() => {
+    const onReturn = () => {
+      if (document.visibilityState !== 'visible' || thinking) return;
+      if (messages.length > 0 && isChatStale()) newChat();
+    };
+    window.addEventListener('focus', onReturn);
+    document.addEventListener('visibilitychange', onReturn);
+    return () => {
+      window.removeEventListener('focus', onReturn);
+      document.removeEventListener('visibilitychange', onReturn);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length, thinking]);
+
   // Rotate the placeholder through example prompts while the chat is empty.
   useEffect(() => {
     if (started) return;
@@ -477,6 +528,13 @@ export const AnalyticsInsights = () => {
     const image = attachment;
     // A photo alone is a valid turn ("identify & analyze this card").
     if ((!text && !image) || thinking) return;
+    // Been idle over an hour? Roll this into a fresh conversation (the old one
+    // stays in History) so a day-old thread doesn't silently continue.
+    const rollOver = messages.length > 0 && isChatStale();
+    if (rollOver) {
+      convIdRef.current = newConversationId();
+      storeConvId(convIdRef.current);
+    }
     const userMsg: Msg = {
       id: ++idRef.current,
       role: 'user',
@@ -484,12 +542,13 @@ export const AnalyticsInsights = () => {
       at: Date.now(),
       ...(image ? { image } : {}),
     };
-    const history = [...messages, userMsg];
+    const history = [...(rollOver ? [] : messages), userMsg];
     setMessages(history);
     setInput('');
     setAttachment(null);
     setVerify(null);
     setThinking(true);
+    touchActivity();
 
     const payload: ApiInsightsMessage[] = history.map(m => ({
       role: m.role,
@@ -581,6 +640,7 @@ export const AnalyticsInsights = () => {
       }
     }
     setThinking(false);
+    touchActivity(); // answer landed — reset the idle clock
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

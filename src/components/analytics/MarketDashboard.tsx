@@ -163,25 +163,27 @@ const genId = () =>
     ? crypto.randomUUID().slice(0, 8)
     : Math.random().toString(16).slice(2, 10);
 
-/** Plain-language explainer for each widget type — shown as a header tooltip. */
+/** Plain-language explainer for each widget type — shown as a header tooltip.
+ *  A "market" here = a card category (Pokémon, Sports, One Piece, Magic,
+ *  Lorcana, or all cards combined). */
 const WIDGET_TYPE_HELP: Record<DashboardWidgetType, string> = {
   leaderboard:
-    'Ranks every tracked market by heat right now, hottest first — a quick read on where collector attention and momentum are concentrated.',
+    'Your card categories — Pokémon, Sports, One Piece, Magic, Lorcana, and all cards combined — ranked by "market heat" (0–100, hottest at the top). A quick read on which category is running hottest right now.',
   temperature:
-    'A 0–100 gauge of one market’s overall heat, blending demand, momentum, and activity into a single "how hot is it" score.',
+    'A single 0–100 "how hot is it" gauge for one card category, blending demand, price momentum, and activity into one score. Near 100 = red-hot and moving; near 0 = cold and quiet.',
   indices:
-    'The full scorecard for one market — every index (heat, demand, supply, grading, momentum, sentiment, volatility) on a 0–100 scale. Hover any label for its definition.',
+    'The full scorecard for one card category — all eight indices (heat, demand, supply, grading, momentum, sentiment, volatility, sealed) on a 0–100 scale. Hover any row’s name for what it measures.',
   brief:
-    'Cardy’s written take on one market from the latest research pull — the narrative behind the numbers, plus the highlights driving it.',
+    'Cardy’s short written summary of one card category from the latest data pull — the story behind the numbers (what’s driving it, what to watch), plus a few highlight bullets.',
   movers:
-    'The biggest price gainers and faders in one market over the selected window, with a short note and source link for each move.',
+    'The specific cards whose prices jumped or dropped the most in one category over the selected window — each with its % change, a one-line reason, and a link to the source.',
   catalysts:
-    'Upcoming releases, reprints, and events that could move a market — the release radar for what’s coming, not what already happened.',
+    'A forward-looking calendar for one category: upcoming set releases, reprints, tournaments, and anniversaries that could move prices — what’s coming, not what already happened.',
   sales:
-    'Notable recent sales in one market — the headline comps (card, grade, price, date) that anchor current values.',
-  stat: 'A single market’s latest value for one metric — the current reading at a glance.',
-  bar: 'Compares one metric across your selected markets side by side, so you can see who’s leading right now.',
-  line: 'Tracks one metric over time across your selected markets — the trend line that shows where things are heading.',
+    'Notable recent individual card sales in one category — the big, name-worthy comps (card, grade, price, date) that show where real money is actually trading.',
+  stat: 'A single number: the latest value of one metric (e.g. heat or momentum) for one card category — the current reading at a glance.',
+  bar: 'Compares one metric (e.g. heat) across the card categories you’ve selected, side by side, so you can see which category leads on that measure right now.',
+  line: 'Tracks one metric (e.g. momentum) over time for the categories you’ve selected — the trend line showing whether it’s been climbing, flat, or falling.',
 };
 
 /** Overlapping grid-cell area between two layout rectangles (0 if disjoint). */
@@ -924,7 +926,7 @@ const MetricLabel = ({
     <InfoHint
       aria-label={`${label} — definition`}
       content={help}
-      contentClassName="max-w-[220px]"
+      contentClassName="max-w-[260px]"
       className={cn(
         'inline-flex items-center gap-1 text-left underline decoration-dotted decoration-white/25 underline-offset-2 hover:decoration-white/60',
         className

@@ -141,6 +141,40 @@ export const ChatValuationCard = ({ v }: { v: ApiCardValuation }) => {
         </div>
       )}
 
+      {/* Analogs — only when there were no direct comps. Labelled hard so an
+          estimate built off a PSA 9 is never mistaken for a sale of this card. */}
+      {(v.analogsUsed?.length ?? 0) > 0 && (
+        <div className="mt-2.5 space-y-1 border-t border-white/5 pt-2">
+          <div className="text-[10px] uppercase tracking-wide text-amber-300/80">
+            Estimated from comparable cards — not sales of this card
+          </div>
+          {v.analogsUsed!.slice(0, 4).map((a, i) => (
+            <div key={i} className="text-xs">
+              <div className="flex items-center gap-2">
+                <a
+                  href={a.url ?? '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-amber-300 hover:underline"
+                >
+                  {money(a.priceUsd)}
+                  <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                </a>
+                <span className="text-muted-foreground">
+                  × {a.multiplier} ={' '}
+                  <span className="text-white/80">
+                    {money(a.priceUsd * a.multiplier)}
+                  </span>
+                </span>
+              </div>
+              <div className="truncate text-[11px] text-muted-foreground">
+                {[a.title, a.rationale].filter(Boolean).join(' — ')}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Live eBay listing context — asks, not comps (labeled as such). */}
       {v.marketContext && v.marketContext.activeCount > 0 && (
         <div className="mt-2 border-t border-white/5 pt-2 text-[11px] text-muted-foreground">
