@@ -655,6 +655,23 @@ export interface ApiTrackedCard {
   createdAt: string;
 }
 
+/**
+ * A comparable-but-different card backing a TRIANGULATED estimate. Not a sale
+ * of the subject card — always label these as estimates, never as comps.
+ */
+export interface ApiValAnalog {
+  title: string;
+  /** What the ANALOG sold for. */
+  priceUsd: number;
+  date: string | null;
+  /** Which rung of the analog ladder this came from. */
+  relation: string;
+  /** subject ≈ priceUsd × multiplier. */
+  multiplier: number;
+  rationale: string | null;
+  url: string | null;
+}
+
 /** A triggered price alert for a holding. */
 export interface ApiPortfolioAlert {
   id: string;
@@ -780,6 +797,11 @@ export interface ApiCardValuation {
   confidenceBasis: string;
   anchorComp: ApiValComp | null;
   compsUsed: ApiValComp[];
+  /**
+   * Comparable-but-different cards behind a triangulated estimate. Populated
+   * only when there were no direct comps for this exact card.
+   */
+  analogsUsed?: ApiValAnalog[];
   indexAdjustment: { index: string; movePct: number; window: string } | null;
   /** Live eBay active-listing context (asks, not sold comps). */
   marketContext: {
