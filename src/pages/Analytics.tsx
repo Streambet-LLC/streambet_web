@@ -75,7 +75,9 @@ const Analytics = () => {
               </TabsTrigger>
               <TabsTrigger value="market">Market Data</TabsTrigger>
               <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-              <TabsTrigger value="crm">CRM / Sales Intelligence</TabsTrigger>
+              {/* Short label to keep the tab row compact — the panel's own
+                  header still reads "CRM / Sales Intelligence". */}
+              <TabsTrigger value="crm">CRM</TabsTrigger>
               <TabsTrigger value="usage">Usage</TabsTrigger>
               <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
             </TabsList>
