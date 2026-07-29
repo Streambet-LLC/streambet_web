@@ -778,6 +778,8 @@ export interface ApiCardCandidate {
 
 /** One comp behind a valuation (price linked to its retrieved source). */
 export interface ApiValComp {
+  /** Supplied by the user because our research missed it, not retrieved by us. */
+  userSupplied?: boolean;
   priceUsd: number;
   date: string | null;
   grade: string | null;
