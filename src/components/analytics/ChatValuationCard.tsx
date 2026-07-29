@@ -136,6 +136,16 @@ export const ChatValuationCard = ({ v }: { v: ApiCardValuation }) => {
                   .filter(Boolean)
                   .join(' · ')}
               </span>
+              {/* Provenance, so a comp we were told about is never mistaken
+                  for one we found ourselves. */}
+              {c.userSupplied && (
+                <span
+                  className="shrink-0 rounded-full border border-sky-400/30 bg-sky-400/10 px-1.5 text-[10px] text-sky-300"
+                  title="You added this sale — it counts toward the valuation"
+                >
+                  added by you
+                </span>
+              )}
             </div>
           ))}
         </div>
