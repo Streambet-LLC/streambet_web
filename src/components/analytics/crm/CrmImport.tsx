@@ -1,17 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Loader2,
-  Upload,
   FileSpreadsheet,
-  Link2,
   X,
   Check,
   CheckCircle2,
   Download,
 } from 'lucide-react';
-import { analyticsAPI, crmAPI } from '@/integrations/api/client';
+import { crmAPI } from '@/integrations/api/client';
 import type { ApiCrmContactInput, CrmContactKind } from '@/types/analytics-api';
 
 type FieldKey =
@@ -115,10 +112,10 @@ const downloadXlsxTemplate = async (kind: CrmContactKind) => {
 };
 
 /**
- * Bulk-import buyer/seller contacts from an Excel/CSV upload or a connected
- * Google Sheet. Parses client-side, auto-maps columns to CRM fields (with
- * manual override), previews, then posts normalized rows to the import
- * endpoint (which de-dupes within the kind).
+ * Bulk-import buyer/seller contacts from an Excel/CSV upload. Parses
+ * client-side, auto-maps columns to CRM fields (with manual override),
+ * previews, then posts normalized rows to the import endpoint (which de-dupes
+ * within the kind).
  */
 export const CrmImport = ({
   kind,
@@ -129,7 +126,6 @@ export const CrmImport = ({
   onClose: () => void;
   onImported: (created: number) => void;
 }) => {
-  const [mode, setMode] = useState<'upload' | 'google'>('upload');
   const [headers, setHeaders] = useState<string[]>([]);
   const [dataRows, setDataRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Record<FieldKey, number>>(
@@ -274,44 +270,20 @@ export const CrmImport = ({
             </button>
           </div>
 
-          {/* Source tabs */}
-          <div className="mb-3 inline-flex rounded-md border border-white/10 bg-black/40 p-0.5">
-            {(
-              [
-                { k: 'upload', label: 'Upload file', icon: Upload },
-                { k: 'google', label: 'Google Sheet', icon: Link2 },
-              ] as const
-            ).map(t => (
-              <button
-                key={t.k}
-                type="button"
-                onClick={() => setMode(t.k)}
-                className={`flex h-8 items-center gap-1.5 rounded px-3 text-xs transition-colors ${
-                  mode === t.k ? 'bg-white/10 text-white' : 'text-muted-foreground hover:text-white'
-                }`}
-              >
-                <t.icon className="h-3.5 w-3.5" /> {t.label}
-              </button>
-            ))}
-          </div>
-
-          {mode === 'upload' ? (
-            <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-white/15 bg-black/20 px-4 py-6 text-center hover:border-[#B4FF39]/40">
-              <FileSpreadsheet className="h-6 w-6 text-[#B4FF39]/70" />
-              <span className="text-sm text-white/80">
-                {fileName || 'Choose an Excel or CSV file'}
-              </span>
-              <span className="text-[11px] text-muted-foreground">.xlsx, .xls, .csv</span>
-              <input
-                type="file"
-                accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                className="hidden"
-                onChange={e => e.target.files?.[0] && onFile(e.target.files[0])}
-              />
-            </label>
-          ) : (
-            <GoogleSheetSource onRows={ingestRows} />
-          )}
+          {/* Upload Excel / CSV */}
+          <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-white/15 bg-black/20 px-4 py-6 text-center hover:border-[#B4FF39]/40">
+            <FileSpreadsheet className="h-6 w-6 text-[#B4FF39]/70" />
+            <span className="text-sm text-white/80">
+              {fileName || 'Choose an Excel or CSV file'}
+            </span>
+            <span className="text-[11px] text-muted-foreground">.xlsx, .xls, .csv</span>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className="hidden"
+              onChange={e => e.target.files?.[0] && onFile(e.target.files[0])}
+            />
+          </label>
 
           {parsing && (
             <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
@@ -407,143 +379,6 @@ export const CrmImport = ({
             </div>
           )}
         </>
-      )}
-    </div>
-  );
-};
-
-// --- Google Sheet source ----------------------------------------------------
-
-const GoogleSheetSource = ({
-  onRows,
-}: {
-  onRows: (rows: string[][], label: string) => void;
-}) => {
-  const [configured, setConfigured] = useState<boolean | null>(null);
-  const [authUrl, setAuthUrl] = useState('');
-  const [code, setCode] = useState('');
-  const [connecting, setConnecting] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const [url, setUrl] = useState('');
-  const [reading, setReading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await analyticsAPI.getGoogleAuthUrl();
-        setConfigured(r.configured);
-        setAuthUrl(r.url);
-      } catch {
-        setConfigured(false);
-      }
-    })();
-  }, []);
-
-  const connect = async () => {
-    if (!code.trim() || connecting) return;
-    setConnecting(true);
-    setErr(null);
-    try {
-      const r = await analyticsAPI.exchangeGoogleCode(code.trim());
-      setConnected(r.connected);
-      if (!r.connected) setErr('Could not connect — check the code and retry.');
-    } catch {
-      setErr('Connection failed.');
-    } finally {
-      setConnecting(false);
-    }
-  };
-
-  const read = async () => {
-    if (!url.trim() || reading) return;
-    setReading(true);
-    setErr(null);
-    try {
-      const r = await analyticsAPI.readGoogleSheet({ url: url.trim() });
-      onRows(r.rows, r.title || 'Google Sheet');
-    } catch {
-      setErr('Could not read that sheet. Make sure you connected Google above and the sheet is shared with that account.');
-    } finally {
-      setReading(false);
-    }
-  };
-
-  if (configured === null)
-    return (
-      <div className="flex items-center gap-2 py-4 text-xs text-muted-foreground">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking Google connection…
-      </div>
-    );
-
-  if (!configured)
-    return (
-      <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-4 text-xs text-muted-foreground">
-        Google Sheets isn't configured on the server (needs GOOGLE_CLIENT_ID /
-        GOOGLE_CLIENT_SECRET / GOOGLE_OAUTH_REDIRECT_URI). Use file upload
-        instead, or ask an admin to set those.
-      </div>
-    );
-
-  return (
-    <div className="space-y-3">
-      {!connected && (
-        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-          <div className="text-xs text-white/70">
-            1. Connect a Google account
-          </div>
-          <a
-            href={authUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 inline-flex items-center gap-1 text-xs text-[#B4FF39] hover:underline"
-          >
-            Open Google consent <Link2 className="h-3 w-3" />
-          </a>
-          <div className="mt-2 flex items-center gap-2">
-            <Input
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              placeholder="Paste the code from the redirect"
-              className="h-8 flex-1 border-white/10 bg-black/40 text-xs text-white placeholder:text-muted-foreground"
-            />
-            <Button
-              size="sm"
-              disabled={!code.trim() || connecting}
-              onClick={connect}
-              className="h-8 bg-white/10 text-xs text-white hover:bg-white/20"
-            >
-              {connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Connect'}
-            </Button>
-          </div>
-        </div>
-      )}
-      <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-        <div className="flex items-center gap-1.5 text-xs text-white/70">
-          {connected && <Check className="h-3.5 w-3.5 text-[#B4FF39]" />}
-          {connected ? '2. Read a sheet' : 'Read a sheet (once connected)'}
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <Input
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            placeholder="Paste a Google Sheet URL"
-            className="h-8 flex-1 border-white/10 bg-black/40 text-xs text-white placeholder:text-muted-foreground"
-          />
-          <Button
-            size="sm"
-            disabled={!url.trim() || reading}
-            onClick={read}
-            className="h-8 bg-[#B4FF39] text-xs font-semibold text-black hover:bg-[#B4FF39]/90"
-          >
-            {reading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Read'}
-          </Button>
-        </div>
-      </div>
-      {err && (
-        <div className="rounded-md border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-          {err}
-        </div>
       )}
     </div>
   );
