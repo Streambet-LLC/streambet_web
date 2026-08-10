@@ -3571,4 +3571,20 @@ export const crmAPI = {
     );
     return response.data.data as ApiCrmContact;
   },
+
+  /** Bulk-import contacts from a mapped Excel/CSV/Google-Sheet. */
+  importContacts: async (
+    kind: 'buyer' | 'seller',
+    contacts: ApiCrmContactInput[]
+  ): Promise<{ created: number; skipped: number; total: number }> => {
+    const response = await apiClient.post(
+      `/admin/analytics/crm/contacts/import`,
+      { kind, contacts }
+    );
+    return response.data.data as {
+      created: number;
+      skipped: number;
+      total: number;
+    };
+  },
 };

@@ -12,6 +12,7 @@ import {
   StickyNote,
   X,
   Send,
+  Upload,
 } from 'lucide-react';
 import { crmAPI } from '@/integrations/api/client';
 import type {
@@ -19,6 +20,7 @@ import type {
   ApiCrmNote,
   CrmContactKind,
 } from '@/types/analytics-api';
+import { CrmImport } from './CrmImport';
 
 const STAGES = ['new', 'contacted', 'negotiating', 'active', 'archived'];
 const STAGE_STYLE: Record<string, string> = {
@@ -54,6 +56,7 @@ export const CrmContacts = ({ kind }: { kind: CrmContactKind }) => {
   const [stage, setStage] = useState('all');
   const [preferredOnly, setPreferredOnly] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [notesFor, setNotesFor] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -143,6 +146,14 @@ export const CrmContacts = ({ kind }: { kind: CrmContactKind }) => {
             <Star className="h-3.5 w-3.5" /> Preferred
           </button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setImporting(v => !v)}
+            className="h-8 gap-1.5 border-white/10 bg-black/40 text-xs text-white/80 hover:bg-white/5 hover:text-white"
+          >
+            <Upload className="h-3.5 w-3.5" /> Import
+          </Button>
+          <Button
             size="sm"
             onClick={() => setAdding(a => !a)}
             className="h-8 gap-1.5 bg-[#B4FF39] text-xs font-semibold text-black hover:bg-[#B4FF39]/90"
@@ -151,6 +162,14 @@ export const CrmContacts = ({ kind }: { kind: CrmContactKind }) => {
           </Button>
         </div>
       </div>
+
+      {importing && (
+        <CrmImport
+          kind={kind}
+          onClose={() => setImporting(false)}
+          onImported={() => load()}
+        />
+      )}
 
       {adding && (
         <AddContactForm
