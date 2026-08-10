@@ -2,18 +2,17 @@ import { Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { Loader2, Users, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
 import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
 import { AnalyticsMarket } from '@/components/analytics/AnalyticsMarket';
 import { AnalyticsPortfolio } from '@/components/analytics/AnalyticsPortfolio';
 import { AnalyticsUsage } from '@/components/analytics/AnalyticsUsage';
 import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
-// CRM (Sellers / Buyers / Leads) — coming soon. Kept wired for when it's back:
-// import { AnalyticsSellers } from '@/components/analytics/AnalyticsSellers';
-// import { AnalyticsDiscover } from '@/components/analytics/AnalyticsDiscover';
-// import { AnalyticsLeads } from '@/components/analytics/AnalyticsLeads';
+// CRM (Leads engine + manual Buyers / Sellers contacts).
+import { AnalyticsLeads } from '@/components/analytics/crm/AnalyticsLeads';
+import { AnalyticsSellers } from '@/components/analytics/crm/AnalyticsSellers';
+import { CrmContacts } from '@/components/analytics/crm/CrmContacts';
 
 type AnalyticsTab =
   | 'ai'
@@ -30,10 +29,10 @@ type AnalyticsTab =
 const Analytics = () => {
   const { session, isLoading, isFetching } = useAuthContext();
   const [tab, setTab] = useState<AnalyticsTab>('ai');
-  // Sub-view inside the (currently disabled) CRM tab.
-  // const [audienceTab, setAudienceTab] = useState<'sellers' | 'buyers' | 'leads'>(
-  //   'sellers',
-  // );
+  // Sub-view inside the CRM tab.
+  const [audienceTab, setAudienceTab] = useState<'sellers' | 'buyers' | 'leads'>(
+    'leads',
+  );
 
   if (isLoading || isFetching) {
     return (
@@ -91,62 +90,44 @@ const Analytics = () => {
             </TabsContent>
 
             <TabsContent value="crm" className="mt-6">
-              {/* Coming soon — the Sellers / Buyers / Leads CRM is temporarily
-                disabled. The full implementation is preserved below (commented
-                out) so it can be switched back on without rebuilding it. */}
-              <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-6 sm:p-8">
-                <div className="mx-auto max-w-md text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-black/40 text-[#B4FF39]">
-                    <Users className="h-6 w-6" />
-                  </div>
-                  <h2 className="mt-4 text-lg font-semibold text-white">
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
                     CRM / Sales Intelligence
                   </h2>
-                  <span className="mt-2 inline-flex items-center rounded-full border border-[#B4FF39]/25 bg-[#B4FF39]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#B4FF39]">
-                    Coming soon!
-                  </span>
-                  <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/60">
-                    Buyer discovery, buyer/card interest matching, preferred
-                    buyers/sellers logging, lead management, card/inventory
-                    sourcing... all on the way! Check back soon
+                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                    Discover buyer prospects, qualify them with AI, and manage
+                    your buyers, sellers, and leads pipeline.
                   </p>
                 </div>
-              </Card>
 
-              {/*
-              ── PRESERVED CRM IMPLEMENTATION (re-enable when ready) ──
-              Also restore: the AnalyticsSellers/Discover/Leads imports and the
-              `audienceTab` state above, and the `Users` import can stay.
+                <div className="inline-flex items-center rounded-md border border-white/10 bg-black/40 p-0.5">
+                  {(
+                    [
+                      { key: 'leads', label: 'Leads' },
+                      { key: 'buyers', label: 'Buyers' },
+                      { key: 'sellers', label: 'Sellers' },
+                    ] as const
+                  ).map(v => (
+                    <button
+                      key={v.key}
+                      type="button"
+                      onClick={() => setAudienceTab(v.key)}
+                      className={`px-3 h-8 rounded text-sm transition-colors ${
+                        audienceTab === v.key
+                          ? 'bg-white/10 text-white'
+                          : 'text-muted-foreground hover:text-white'
+                      }`}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
 
-            <div className="space-y-5">
-              <div className="inline-flex items-center rounded-md border border-white/10 bg-black/40 p-0.5">
-                {(
-                  [
-                    { key: 'sellers', label: 'Sellers' },
-                    { key: 'buyers', label: 'Buyers' },
-                    { key: 'leads', label: 'Leads' },
-                  ] as const
-                ).map(v => (
-                  <button
-                    key={v.key}
-                    type="button"
-                    onClick={() => setAudienceTab(v.key)}
-                    className={`px-3 h-8 rounded text-sm transition-colors ${
-                      audienceTab === v.key
-                        ? 'bg-white/10 text-white'
-                        : 'text-muted-foreground hover:text-white'
-                    }`}
-                  >
-                    {v.label}
-                  </button>
-                ))}
+                {audienceTab === 'leads' && <AnalyticsLeads />}
+                {audienceTab === 'buyers' && <CrmContacts kind="buyer" />}
+                {audienceTab === 'sellers' && <AnalyticsSellers />}
               </div>
-
-              {audienceTab === 'sellers' && <AnalyticsSellers />}
-              {audienceTab === 'buyers' && <AnalyticsDiscover />}
-              {audienceTab === 'leads' && <AnalyticsLeads />}
-            </div>
-            */}
             </TabsContent>
 
             <TabsContent value="portfolio" className="mt-6">

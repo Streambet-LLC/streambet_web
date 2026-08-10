@@ -427,6 +427,69 @@ export interface ApiLeadStats {
 }
 
 // ---------------------------------------------------------------------------
+// CRM — manual buyer/seller contacts + note timelines (the human layer that
+// sits on top of the auto-discovered leads pool)
+// ---------------------------------------------------------------------------
+
+export type CrmContactKind = 'buyer' | 'seller';
+export type CrmStage =
+  | 'new'
+  | 'contacted'
+  | 'negotiating'
+  | 'active'
+  | 'archived';
+
+export interface ApiCrmContact {
+  id: string;
+  kind: CrmContactKind;
+  name: string;
+  handle: string | null;
+  email: string | null;
+  company: string | null;
+  location: string | null;
+  source: string;
+  stage: CrmStage | string;
+  preferred: boolean;
+  tags: string[] | null;
+  interests: string[] | null;
+  leadId: string | null;
+  createdById: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiCrmNote {
+  id: string;
+  contactId: string | null;
+  leadId: string | null;
+  body: string;
+  authorId: string | null;
+  createdAt: string;
+}
+
+export interface ApiCrmStats {
+  buyers: number;
+  sellers: number;
+  preferred: number;
+  total: number;
+}
+
+export interface ApiCrmContactInput {
+  kind: CrmContactKind;
+  name: string;
+  handle?: string | null;
+  email?: string | null;
+  company?: string | null;
+  location?: string | null;
+  stage?: string;
+  preferred?: boolean;
+  tags?: string[] | null;
+  interests?: string[] | null;
+  source?: string;
+  leadId?: string | null;
+}
+
+// ---------------------------------------------------------------------------
 // Market / Dealer suite — per-card intelligence
 // ---------------------------------------------------------------------------
 
