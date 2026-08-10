@@ -886,6 +886,10 @@ import type {
   ApiInsightsRun,
   ApiQuerySuggestions,
   DiscoverySource,
+  ApiCrmContact,
+  ApiCrmNote,
+  ApiCrmStats,
+  ApiCrmContactInput,
 } from '@/types/analytics-api';
 
 export const analyticsAPI = {
@@ -3472,3 +3476,115 @@ export const api = {
 };
 
 export default api;
+
+// ---------------------------------------------------------------------------
+// CRM — manual buyer/seller contacts, note timelines, and lead conversion.
+// The auto-discovered leads pool + seller inventory live on `analyticsAPI`.
+// ---------------------------------------------------------------------------
+
+export const crmAPI = {
+  listContacts: async (
+    params: {
+      kind?: 'buyer' | 'seller';
+      search?: string;
+      stage?: string;
+      preferred?: boolean;
+    } = {}
+  ): Promise<ApiCrmContact[]> => {
+    const response = await apiClient.get(`/admin/analytics/crm/contacts`, {
+      params: {
+        kind: params.kind || undefined,
+        search: params.search || undefined,
+        stage:
+          params.stage && params.stage !== 'all' ? params.stage : undefined,
+        preferred: params.preferred ? 'true' : undefined,
+      },
+    });
+    return response.data.data as ApiCrmContact[];
+  },
+
+  stats: async (): Promise<ApiCrmStats> => {
+    const response = await apiClient.get(`/admin/analytics/crm/stats`);
+    return response.data.data as ApiCrmStats;
+  },
+
+  createContact: async (input: ApiCrmContactInput): Promise<ApiCrmContact> => {
+    const response = await apiClient.post(
+      `/admin/analytics/crm/contacts`,
+      input
+    );
+    return response.data.data as ApiCrmContact;
+  },
+
+  updateContact: async (
+    id: string,
+    patch: Partial<ApiCrmContactInput>
+  ): Promise<ApiCrmContact> => {
+    const response = await apiClient.patch(
+      `/admin/analytics/crm/contacts/${id}`,
+      patch
+    );
+    return response.data.data as ApiCrmContact;
+  },
+
+  deleteContact: async (id: string): Promise<{ id: string }> => {
+    const response = await apiClient.delete(
+      `/admin/analytics/crm/contacts/${id}`
+    );
+    return response.data.data as { id: string };
+  },
+
+  listNotes: async (params: {
+    contactId?: string;
+    leadId?: string;
+  }): Promise<ApiCrmNote[]> => {
+    const response = await apiClient.get(`/admin/analytics/crm/notes`, {
+      params: {
+        contactId: params.contactId || undefined,
+        leadId: params.leadId || undefined,
+      },
+    });
+    return response.data.data as ApiCrmNote[];
+  },
+
+  addNote: async (input: {
+    contactId?: string;
+    leadId?: string;
+    body: string;
+  }): Promise<ApiCrmNote> => {
+    const response = await apiClient.post(`/admin/analytics/crm/notes`, input);
+    return response.data.data as ApiCrmNote;
+  },
+
+  deleteNote: async (id: string): Promise<{ id: string }> => {
+    const response = await apiClient.delete(`/admin/analytics/crm/notes/${id}`);
+    return response.data.data as { id: string };
+  },
+
+  convertLead: async (
+    leadId: string,
+    kind: 'buyer' | 'seller' = 'buyer'
+  ): Promise<ApiCrmContact> => {
+    const response = await apiClient.post(
+      `/admin/analytics/crm/leads/${leadId}/convert`,
+      { kind }
+    );
+    return response.data.data as ApiCrmContact;
+  },
+
+  /** Bulk-import contacts from a mapped Excel/CSV/Google-Sheet. */
+  importContacts: async (
+    kind: 'buyer' | 'seller',
+    contacts: ApiCrmContactInput[]
+  ): Promise<{ created: number; skipped: number; total: number }> => {
+    const response = await apiClient.post(
+      `/admin/analytics/crm/contacts/import`,
+      { kind, contacts }
+    );
+    return response.data.data as {
+      created: number;
+      skipped: number;
+      total: number;
+    };
+  },
+};

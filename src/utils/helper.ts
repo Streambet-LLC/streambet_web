@@ -1,6 +1,5 @@
 import { format } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
-import { load as nsfwjsLoad } from "nsfwjs";
 import Bugsnag from '@bugsnag/js';
 
 /**
@@ -219,48 +218,6 @@ export const getConnectionErrorMessage = (error?: any, networkStatus?: { isOnlin
   
   return 'Something went wrong. Please try again.';
 };
-
-export const isImageSFW = async (url: string) => {
-  const canvas = new OffscreenCanvas(299, 299);
-  const ctx = canvas.getContext("2d");
-  const image = new Image();
-  image.src = url;
-
-  return new Promise((resolve, reject) => {
-    image.onload = async () => {
-      try {
-        ctx.clearRect(0, 0, 299, 299);
-
-        const wrh = image.naturalWidth / image.naturalHeight;
-
-        let newWidth = 299;
-        let newHeight = newWidth / wrh;
-
-        if (newHeight > 299) {
-          newHeight = 299;
-          newWidth = newHeight * wrh;
-        }
-
-        ctx.drawImage(image, 0, 0, newWidth, newHeight);
-
-        const imageData = ctx.getImageData(0, 0, 299, 299);
-        const loadedModel = await nsfwjsLoad("/model/");
-        const predictions = await loadedModel.classify(imageData);
-        ctx.clearRect(0, 0, 299, 299);
-
-        for (const prediction of predictions) {
-          if ((prediction.className === "Porn" || prediction.className === "Hentai") && prediction.probability >= .05) {
-            return resolve(false);
-          }
-        }
-
-        return resolve(true);
-      } catch (error) {
-        return reject(error);
-      }
-    };
-  });
-}
 
 /**
  * Sort items by priority creator/title pairs.

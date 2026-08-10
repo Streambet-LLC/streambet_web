@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CardCade favicon">
-  <rect width="512" height="512" fill="#1f2230" />
-  <path
-    fill="#bdff00"
-    fill-rule="evenodd"
-    d="M96 96H416V416H96Z M176 176H336V336H176Z M336 176H416V336H336Z"
-  />
-</svg>
