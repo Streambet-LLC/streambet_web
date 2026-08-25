@@ -490,6 +490,47 @@ export interface ApiCrmContactInput {
 }
 
 // ---------------------------------------------------------------------------
+// Real-time market heat — leading indicators from daily active-listing
+// snapshots (supply level + supply/price momentum), not lagging sold comps.
+// ---------------------------------------------------------------------------
+
+export interface ApiMarketHeatPoint {
+  segment: string;
+  scope: 'segment' | 'set' | 'card' | string;
+  label: string | null;
+  capturedAt: string;
+  totalActive: number | null;
+  totalActiveChangePct: number | null;
+  sampleActive: number;
+  newCount: number;
+  clearedCount: number;
+  clearedRatePct: number | null;
+  medianDaysListed: number | null;
+  agingPct: number | null;
+  medianAskUsd: number | null;
+  askChangePct: number | null;
+  heatScore: number | null;
+  sampleQuery: string | null;
+  extra: {
+    social: { mentions: number | null; bySource: Record<string, number> } | null;
+    firstParty: { recentAdds: number; recentWatches: number } | null;
+  } | null;
+}
+
+export interface ApiMarketHeatMover {
+  segment: string;
+  label: string | null;
+  scope: string;
+  heat: number | null;
+  heatChange: number | null;
+  totalActive: number | null;
+  totalActiveChangePct: number | null;
+  askChangePct: number | null;
+  clearedRatePct: number | null;
+  capturedAt: string;
+}
+
+// ---------------------------------------------------------------------------
 // Market / Dealer suite — per-card intelligence
 // ---------------------------------------------------------------------------
 

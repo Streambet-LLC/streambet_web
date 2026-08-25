@@ -890,6 +890,8 @@ import type {
   ApiCrmNote,
   ApiCrmStats,
   ApiCrmContactInput,
+  ApiMarketHeatPoint,
+  ApiMarketHeatMover,
 } from '@/types/analytics-api';
 
 export const analyticsAPI = {
@@ -3586,5 +3588,48 @@ export const crmAPI = {
       skipped: number;
       total: number;
     };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Real-time market heat — leading indicators from daily active-listing snapshots
+// ---------------------------------------------------------------------------
+
+export const marketHeatAPI = {
+  /** Latest heat point per market (scope: segment | set | card | all). */
+  latest: async (scope?: string): Promise<ApiMarketHeatPoint[]> => {
+    const r = await apiClient.get(`/admin/analytics/market/heat`, {
+      params: { scope: scope && scope !== 'all' ? scope : undefined },
+    });
+    return r.data.data as ApiMarketHeatPoint[];
+  },
+
+  /** Biggest heat gainers/losers vs. the prior snapshot. */
+  movers: async (scope?: string, limit?: number): Promise<ApiMarketHeatMover[]> => {
+    const r = await apiClient.get(`/admin/analytics/market/heat/movers`, {
+      params: { scope: scope && scope !== 'all' ? scope : undefined, limit },
+    });
+    return r.data.data as ApiMarketHeatMover[];
+  },
+
+  /** Heat time series for one market topic. */
+  series: async (segment: string, days?: number): Promise<ApiMarketHeatPoint[]> => {
+    const r = await apiClient.get(
+      `/admin/analytics/market/heat/${encodeURIComponent(segment)}`,
+      { params: { days } }
+    );
+    return r.data.data as ApiMarketHeatPoint[];
+  },
+
+  /** Manually run a snapshot now (admin). */
+  collect: async (): Promise<
+    { segment: string; label: string; heatScore: number | null }[]
+  > => {
+    const r = await apiClient.post(`/admin/analytics/market/heat/collect`);
+    return r.data.data as {
+      segment: string;
+      label: string;
+      heatScore: number | null;
+    }[];
   },
 };
