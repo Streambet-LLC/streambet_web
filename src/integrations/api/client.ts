@@ -892,6 +892,9 @@ import type {
   ApiCrmContactInput,
   ApiMarketHeatPoint,
   ApiMarketHeatMover,
+  ApiMarketEngagementPoint,
+  ApiTaxonomyNode,
+  ApiTaxonomyTags,
 } from '@/types/analytics-api';
 
 export const analyticsAPI = {
@@ -3596,10 +3599,13 @@ export const crmAPI = {
 // ---------------------------------------------------------------------------
 
 export const marketHeatAPI = {
-  /** Latest heat point per market (scope: segment | set | card | all). */
-  latest: async (scope?: string): Promise<ApiMarketHeatPoint[]> => {
+  /** Latest heat point per market (scope: segment | set | card | player | all). */
+  latest: async (scope?: string, market?: string): Promise<ApiMarketHeatPoint[]> => {
     const r = await apiClient.get(`/admin/analytics/market/heat`, {
-      params: { scope: scope && scope !== 'all' ? scope : undefined },
+      params: {
+        scope: scope && scope !== 'all' ? scope : undefined,
+        market: market && market !== 'all' ? market : undefined,
+      },
     });
     return r.data.data as ApiMarketHeatPoint[];
   },
@@ -3631,5 +3637,111 @@ export const marketHeatAPI = {
       label: string;
       heatScore: number | null;
     }[];
+  },
+};
+
+// ---------------------------------------------------------------------------
+// First-party engagement — platform views + saves rolled up to taxonomy nodes
+// ---------------------------------------------------------------------------
+
+export const marketEngagementAPI = {
+  /** Latest engagement per node (scope + optional market drill-down). */
+  latest: async (scope?: string, market?: string): Promise<ApiMarketEngagementPoint[]> => {
+    const r = await apiClient.get(`/admin/analytics/market/engagement`, {
+      params: {
+        scope: scope && scope !== 'all' ? scope : undefined,
+        market: market && market !== 'all' ? market : undefined,
+      },
+    });
+    return r.data.data as ApiMarketEngagementPoint[];
+  },
+
+  /** Engagement time series for one node. */
+  series: async (segment: string, days?: number): Promise<ApiMarketEngagementPoint[]> => {
+    const r = await apiClient.get(
+      `/admin/analytics/market/engagement/${encodeURIComponent(segment)}`,
+      { params: { days } },
+    );
+    return r.data.data as ApiMarketEngagementPoint[];
+  },
+
+  /** Manually run an engagement snapshot now (admin). */
+  collect: async (): Promise<ApiMarketEngagementPoint[]> => {
+    const r = await apiClient.post(`/admin/analytics/market/engagement/collect`);
+    return r.data.data as ApiMarketEngagementPoint[];
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Market taxonomy — the market → sub-category → set → card/player backbone
+// ---------------------------------------------------------------------------
+
+export const marketTaxonomyAPI = {
+  /** Full nested tree (optional single market). */
+  tree: async (rootMarket?: string): Promise<ApiTaxonomyNode[]> => {
+    const r = await apiClient.get(`/admin/analytics/market/taxonomy`, {
+      params: { rootMarket },
+    });
+    return r.data.data as ApiTaxonomyNode[];
+  },
+
+  /** Flat node list (optional rootMarket / kind filter). */
+  list: async (rootMarket?: string, kind?: string): Promise<ApiTaxonomyNode[]> => {
+    const r = await apiClient.get(`/admin/analytics/market/taxonomy/list`, {
+      params: { rootMarket, kind },
+    });
+    return r.data.data as ApiTaxonomyNode[];
+  },
+
+  stats: async (): Promise<Record<string, number>> => {
+    const r = await apiClient.get(`/admin/analytics/market/taxonomy/stats`);
+    return r.data.data as Record<string, number>;
+  },
+
+  /** Classify one card name (+ optional brand). */
+  classify: async (name: string, brand?: string): Promise<ApiTaxonomyTags> => {
+    const r = await apiClient.get(`/admin/analytics/market/taxonomy/classify`, {
+      params: { name, brand },
+    });
+    return r.data.data as ApiTaxonomyTags;
+  },
+
+  /** Auto-tag coverage preview over an existing card table. */
+  distribution: async (source?: 'tracked_cards' | 'sold_cards'): Promise<unknown> => {
+    const r = await apiClient.get(`/admin/analytics/market/taxonomy/distribution`, {
+      params: { source },
+    });
+    return r.data.data;
+  },
+
+  /** Seed / re-seed the default tree (curated nodes preserved). */
+  seed: async (): Promise<{ seeded: number; total: number }> => {
+    const r = await apiClient.post(`/admin/analytics/market/taxonomy/seed`);
+    return r.data.data as { seeded: number; total: number };
+  },
+
+  createNode: async (body: Partial<ApiTaxonomyNode> & {
+    key: string;
+    kind: string;
+    rootMarket: string;
+    label: string;
+  }): Promise<ApiTaxonomyNode> => {
+    const r = await apiClient.post(`/admin/analytics/market/taxonomy/node`, body);
+    return r.data.data as ApiTaxonomyNode;
+  },
+
+  updateNode: async (key: string, patch: Partial<ApiTaxonomyNode>): Promise<ApiTaxonomyNode> => {
+    const r = await apiClient.patch(
+      `/admin/analytics/market/taxonomy/node/${encodeURIComponent(key)}`,
+      patch,
+    );
+    return r.data.data as ApiTaxonomyNode;
+  },
+
+  deleteNode: async (key: string): Promise<{ deleted: string }> => {
+    const r = await apiClient.delete(
+      `/admin/analytics/market/taxonomy/node/${encodeURIComponent(key)}`,
+    );
+    return r.data.data as { deleted: string };
   },
 };

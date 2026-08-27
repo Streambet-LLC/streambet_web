@@ -496,7 +496,7 @@ export interface ApiCrmContactInput {
 
 export interface ApiMarketHeatPoint {
   segment: string;
-  scope: 'segment' | 'set' | 'card' | string;
+  scope: 'segment' | 'set' | 'card' | 'player' | string;
   label: string | null;
   capturedAt: string;
   totalActive: number | null;
@@ -515,6 +515,53 @@ export interface ApiMarketHeatPoint {
     social: { mentions: number | null; bySource: Record<string, number> } | null;
     firstParty: { recentAdds: number; recentWatches: number } | null;
   } | null;
+  // Taxonomy context (joined) — for roll-up / drill-down in the UI.
+  rootMarket?: string | null;
+  taxKind?: 'market' | 'subcategory' | 'set' | 'player' | 'card' | null;
+  parentKey?: string | null;
+}
+
+/** First-party engagement (our platform views + saves) rolled up to a node. */
+export interface ApiMarketEngagementPoint {
+  segment: string;
+  scope: string;
+  label: string | null;
+  capturedAt: string;
+  itemCount: number;
+  totalViews: number;
+  totalWatchers: number;
+  newViews7d: number;
+  newWatchers7d: number;
+  viewsChangePct: number | null;
+  watchersChangePct: number | null;
+  rootMarket?: string | null;
+  taxKind?: string | null;
+  parentKey?: string | null;
+}
+
+/** A market-taxonomy node (as returned flat or nested with `children`). */
+export interface ApiTaxonomyNode {
+  key: string;
+  kind: 'market' | 'subcategory' | 'set' | 'player' | 'card';
+  rootMarket: string;
+  parentKey?: string | null;
+  label: string;
+  matchTerms: string[];
+  query?: string | null;
+  heatScope?: string | null;
+  curated?: boolean;
+  active?: boolean;
+  sortOrder?: number;
+  children?: ApiTaxonomyNode[];
+}
+
+/** Result of classifying one card name against the taxonomy. */
+export interface ApiTaxonomyTags {
+  marketKey: string | null;
+  subCategoryKey: string | null;
+  setKey: string | null;
+  playerKey: string | null;
+  cardKey: string | null;
 }
 
 export interface ApiMarketHeatMover {

@@ -11,15 +11,32 @@ import {
   Minus,
   Package,
   Tag,
+  Users,
+  Eye,
+  Star,
 } from 'lucide-react';
-import { marketHeatAPI } from '@/integrations/api/client';
-import type { ApiMarketHeatPoint, ApiMarketHeatMover } from '@/types/analytics-api';
+import { marketHeatAPI, marketEngagementAPI } from '@/integrations/api/client';
+import type {
+  ApiMarketHeatPoint,
+  ApiMarketHeatMover,
+  ApiMarketEngagementPoint,
+} from '@/types/analytics-api';
 
 const SCOPES = [
   { k: 'segment', label: 'Markets' },
   { k: 'set', label: 'Sets' },
+  { k: 'player', label: 'Players' },
   { k: 'card', label: 'Cards' },
   { k: 'all', label: 'All' },
+] as const;
+
+const MARKETS = [
+  { k: 'all', label: 'All markets' },
+  { k: 'pokemon', label: 'Pokémon' },
+  { k: 'one_piece', label: 'One Piece' },
+  { k: 'sports', label: 'Sports' },
+  { k: 'magic', label: 'Magic' },
+  { k: 'lorcana', label: 'Lorcana' },
 ] as const;
 
 const heatColor = (n: number | null) =>
@@ -64,28 +81,34 @@ const Momentum = ({
  */
 export const MarketHeatPanel = () => {
   const [scope, setScope] = useState<string>('segment');
+  const [market, setMarket] = useState<string>('all');
   const [rows, setRows] = useState<ApiMarketHeatPoint[]>([]);
   const [movers, setMovers] = useState<ApiMarketHeatMover[]>([]);
+  const [engagement, setEngagement] = useState<Record<string, ApiMarketEngagementPoint>>({});
   const [loading, setLoading] = useState(true);
   const [collecting, setCollecting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [l, m] = await Promise.all([
-        marketHeatAPI.latest(scope),
+      const [l, m, e] = await Promise.all([
+        marketHeatAPI.latest(scope, market),
         marketHeatAPI.movers(scope, 6),
+        marketEngagementAPI.latest(scope, market).catch(() => []),
       ]);
       setRows(
         [...l].sort((a, b) => (b.heatScore ?? -1) - (a.heatScore ?? -1))
       );
       setMovers(m);
+      setEngagement(
+        Object.fromEntries((e as ApiMarketEngagementPoint[]).map(x => [x.segment, x]))
+      );
     } catch {
       /* keep last known */
     } finally {
       setLoading(false);
     }
-  }, [scope]);
+  }, [scope, market]);
 
   useEffect(() => {
     load();
@@ -140,22 +163,35 @@ export const MarketHeatPanel = () => {
         </div>
       </div>
 
-      {/* Scope tabs */}
-      <div className="mb-4 inline-flex rounded-md border border-white/10 bg-black/40 p-0.5">
-        {SCOPES.map(s => (
-          <button
-            key={s.k}
-            type="button"
-            onClick={() => setScope(s.k)}
-            className={`h-8 rounded px-3 text-xs transition-colors ${
-              scope === s.k
-                ? 'bg-white/10 text-white'
-                : 'text-muted-foreground hover:text-white'
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
+      {/* Scope tabs + market drill-down */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-md border border-white/10 bg-black/40 p-0.5">
+          {SCOPES.map(s => (
+            <button
+              key={s.k}
+              type="button"
+              onClick={() => setScope(s.k)}
+              className={`h-8 rounded px-3 text-xs transition-colors ${
+                scope === s.k
+                  ? 'bg-white/10 text-white'
+                  : 'text-muted-foreground hover:text-white'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <select
+          value={market}
+          onChange={e => setMarket(e.target.value)}
+          className="h-8 rounded-md border border-white/10 bg-black/40 px-2 text-xs text-white/80 outline-none hover:bg-white/5 focus:border-white/20"
+        >
+          {MARKETS.map(m => (
+            <option key={m.k} value={m.k} className="bg-[#161616]">
+              {m.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Movers strip */}
@@ -220,10 +256,17 @@ export const MarketHeatPanel = () => {
                       <Package className="h-3.5 w-3.5 text-white/40" />
                     ) : r.scope === 'card' ? (
                       <Tag className="h-3.5 w-3.5 text-white/40" />
+                    ) : r.scope === 'player' ? (
+                      <Users className="h-3.5 w-3.5 text-white/40" />
                     ) : null}
                     <span className="truncate font-medium text-white">
                       {r.label ?? r.segment}
                     </span>
+                    {r.rootMarket && r.scope !== 'segment' && (
+                      <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/40">
+                        {r.rootMarket.replace('_', ' ')}
+                      </span>
+                    )}
                   </div>
                   {/* Heat bar */}
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
@@ -256,13 +299,34 @@ export const MarketHeatPanel = () => {
                       </span>
                     )}
                   </div>
+                  {/* First-party attention (our platform's views + saves) */}
+                  {engagement[r.segment] && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/5 pt-1.5">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#B4FF39]/80">
+                        <Eye className="h-3 w-3" />
+                        {(engagement[r.segment].totalViews ?? 0).toLocaleString()} views
+                      </span>
+                      <Momentum label="" value={engagement[r.segment].viewsChangePct} />
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#B4FF39]/80">
+                        <Star className="h-3 w-3" />
+                        {(engagement[r.segment].totalWatchers ?? 0).toLocaleString()} saves
+                      </span>
+                      {engagement[r.segment].newViews7d > 0 && (
+                        <span className="text-[11px] text-muted-foreground">
+                          {engagement[r.segment].newViews7d} views/7d
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           ))}
           <p className="pt-1 text-[11px] text-muted-foreground/70">
             Supply level + price/supply momentum are live signals; velocity/days-listed
-            firm up as daily snapshots accrue.
+            firm up as daily snapshots accrue.{' '}
+            <span className="text-[#B4FF39]/70">Green</span> = our platform's own attention
+            (views/saves).
           </p>
         </div>
       )}
