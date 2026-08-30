@@ -3638,6 +3638,35 @@ export const marketHeatAPI = {
       heatScore: number | null;
     }[];
   },
+
+  /** Snapshot a single topic now (e.g. a just-added player/card). */
+  collectOne: async (
+    segment: string,
+  ): Promise<{ segment: string; label: string; heatScore: number | null } | null> => {
+    const r = await apiClient.post(
+      `/admin/analytics/market/heat/collect/${encodeURIComponent(segment)}`,
+    );
+    return r.data.data as { segment: string; label: string; heatScore: number | null } | null;
+  },
+
+  /** Preview an eBay query (active total + sample) before saving a topic. */
+  preview: async (
+    q: string,
+  ): Promise<{ total: number; items: { title: string; priceUsd: number | null; url: string }[] }> => {
+    const r = await apiClient.get(`/admin/analytics/market/heat/preview`, { params: { q } });
+    return r.data.data as {
+      total: number;
+      items: { title: string; priceUsd: number | null; url: string }[];
+    };
+  },
+
+  /** Purge a topic's stored snapshots (after untracking it). */
+  remove: async (segment: string): Promise<{ removed: string }> => {
+    const r = await apiClient.delete(
+      `/admin/analytics/market/heat/${encodeURIComponent(segment)}`,
+    );
+    return r.data.data as { removed: string };
+  },
 };
 
 // ---------------------------------------------------------------------------

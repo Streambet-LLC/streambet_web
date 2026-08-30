@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
+import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,13 +15,39 @@ import {
   Users,
   Eye,
   Star,
+  Plus,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  Search,
 } from 'lucide-react';
-import { marketHeatAPI, marketEngagementAPI } from '@/integrations/api/client';
+import { marketHeatAPI, marketEngagementAPI, marketTaxonomyAPI } from '@/integrations/api/client';
 import type {
   ApiMarketHeatPoint,
   ApiMarketHeatMover,
   ApiMarketEngagementPoint,
+  ApiTaxonomyNode,
 } from '@/types/analytics-api';
+
+/** label → safe, unique-ish node key slug. */
+const slugify = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+
+const KINDS = [
+  { k: 'player', label: 'Player / Character', scope: 'player' },
+  { k: 'card', label: 'Card', scope: 'card' },
+  { k: 'set', label: 'Set', scope: 'set' },
+  { k: 'market', label: 'Market', scope: 'segment' },
+] as const;
+
+interface QueryPreview {
+  total: number;
+  items: { title: string; priceUsd: number | null; url: string }[];
+}
+
+const errMsg = (e: unknown, fallback: string) =>
+  (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback;
 
 const SCOPES = [
   { k: 'segment', label: 'Markets' },
@@ -75,9 +102,163 @@ const Momentum = ({
   );
 };
 
+const inputCls =
+  'rounded border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-white/25';
+
+/** Add a new tracked market (player / card / set / market) with a live query test. */
+const AddMarketForm = ({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) => {
+  const [kind, setKind] = useState<ApiTaxonomyNode['kind']>('player');
+  const [market, setMarket] = useState('sports');
+  const [label, setLabel] = useState('');
+  const [query, setQuery] = useState('');
+  const [preview, setPreview] = useState<QueryPreview | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const isMarket = kind === 'market';
+  const scopeFor = (k: string) => KINDS.find(x => x.k === k)?.scope ?? 'segment';
+
+  const test = async () => {
+    if (!query.trim()) return;
+    setTesting(true);
+    try {
+      setPreview(await marketHeatAPI.preview(query.trim()));
+    } catch {
+      toast.error('Preview failed');
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const add = async () => {
+    if (!label.trim() || !query.trim()) {
+      toast.error('Name and eBay query are required');
+      return;
+    }
+    setSaving(true);
+    const key = `custom_${kind}_${slugify(label)}`;
+    try {
+      await marketTaxonomyAPI.createNode({
+        key,
+        kind,
+        rootMarket: isMarket ? key : market,
+        parentKey: isMarket ? undefined : market,
+        label: label.trim(),
+        query: query.trim(),
+        matchTerms: [label.trim().toLowerCase()],
+        heatScope: scopeFor(kind),
+      });
+      const snap = await marketHeatAPI.collectOne(key).catch(() => null);
+      toast.success(snap ? `Tracking ${label} — snapshotted` : `Tracking ${label}`);
+      onDone();
+    } catch (e) {
+      toast.error(errMsg(e, 'Add failed (name may already be tracked)'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mb-4 rounded-lg border border-[#B4FF39]/20 bg-[#B4FF39]/[0.03] p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-medium text-white">Track a new market</span>
+        <button type="button" onClick={onCancel} className="text-white/40 hover:text-white">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <select value={kind} onChange={e => setKind(e.target.value as ApiTaxonomyNode['kind'])} className={inputCls}>
+          {KINDS.map(k => (
+            <option key={k.k} value={k.k} className="bg-[#161616]">{k.label}</option>
+          ))}
+        </select>
+        <select value={market} onChange={e => setMarket(e.target.value)} disabled={isMarket} className={`${inputCls} disabled:opacity-40`}>
+          {MARKETS.filter(m => m.k !== 'all').map(m => (
+            <option key={m.k} value={m.k} className="bg-[#161616]">{m.label}</option>
+          ))}
+        </select>
+        <input className={inputCls} value={label} onChange={e => setLabel(e.target.value)} placeholder="Name (e.g. Ja Morant)" />
+        <input
+          className={inputCls}
+          value={query}
+          onChange={e => { setQuery(e.target.value); setPreview(null); }}
+          placeholder="eBay query"
+        />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Button size="sm" variant="outline" onClick={test} disabled={testing || !query.trim()} className="h-7 gap-1 border-white/10 bg-black/40 text-[11px] text-white/80 hover:bg-white/5">
+          {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />} Test query
+        </Button>
+        {preview && (
+          <span className="text-[11px] text-muted-foreground">
+            ≈ <span className="text-[#B4FF39]">{preview.total.toLocaleString()}</span> active
+            {preview.items[0] && (
+              <span className="text-white/40"> · e.g. “{preview.items[0].title.slice(0, 46)}”</span>
+            )}
+          </span>
+        )}
+        <Button size="sm" onClick={add} disabled={saving} className="ml-auto h-7 gap-1 bg-[#B4FF39] text-[11px] text-black hover:bg-[#a3ee28]">
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />} Add &amp; snapshot
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+/** Inline editor for an existing heat row — label + eBay query. */
+const RowEditor = ({
+  row,
+  onDone,
+  onCancel,
+}: {
+  row: ApiMarketHeatPoint;
+  onDone: () => void;
+  onCancel: () => void;
+}) => {
+  const [label, setLabel] = useState(row.label ?? row.segment);
+  const [query, setQuery] = useState(row.sampleQuery ?? '');
+  const [saving, setSaving] = useState(false);
+
+  const save = async (snapshot: boolean) => {
+    setSaving(true);
+    try {
+      await marketTaxonomyAPI.updateNode(row.segment, {
+        label: label.trim() || row.segment,
+        query: query.trim() || null,
+      });
+      if (snapshot) await marketHeatAPI.collectOne(row.segment).catch(() => null);
+      toast.success('Saved');
+      onDone();
+    } catch (e) {
+      toast.error(errMsg(e, 'Save failed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="min-w-0 flex-1 space-y-1.5">
+      <input className={`w-full ${inputCls} py-1`} value={label} onChange={e => setLabel(e.target.value)} placeholder="Label" />
+      <input className={`w-full ${inputCls} py-1`} value={query} onChange={e => setQuery(e.target.value)} placeholder="eBay query" />
+      <div className="flex gap-1.5">
+        <Button size="sm" onClick={() => save(true)} disabled={saving} className="h-7 gap-1 bg-[#B4FF39] text-[11px] text-black hover:bg-[#a3ee28]">
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Save &amp; snapshot
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => save(false)} disabled={saving} className="h-7 text-[11px] text-white/70 hover:text-white">
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onCancel} className="h-7 gap-1 text-[11px] text-white/50 hover:text-white">
+          <X className="h-3 w-3" /> Cancel
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 /**
  * Real-time market heat — leading indicators from daily active-listing
  * snapshots (supply level + supply/price momentum), ahead of sold comps.
+ * Editable: add/edit/remove tracked players, cards, and sets inline.
  */
 export const MarketHeatPanel = () => {
   const [scope, setScope] = useState<string>('segment');
@@ -87,6 +268,8 @@ export const MarketHeatPanel = () => {
   const [engagement, setEngagement] = useState<Record<string, ApiMarketEngagementPoint>>({});
   const [loading, setLoading] = useState(true);
   const [collecting, setCollecting] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -127,6 +310,18 @@ export const MarketHeatPanel = () => {
     }
   };
 
+  const remove = async (key: string, label: string | null) => {
+    if (!window.confirm(`Stop tracking "${label ?? key}"? This removes it from the board.`)) return;
+    try {
+      await marketTaxonomyAPI.deleteNode(key);
+      await marketHeatAPI.remove(key).catch(() => null);
+      toast.success('Removed');
+      await load();
+    } catch (e) {
+      toast.error(errMsg(e, 'Remove failed (markets with sub-nodes can’t be removed here)'));
+    }
+  };
+
   const updated = rows[0]?.capturedAt ?? null;
 
   return (
@@ -149,6 +344,15 @@ export const MarketHeatPanel = () => {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setShowAdd(s => !s)}
+            className="h-8 gap-1.5 border-[#B4FF39]/25 bg-[#B4FF39]/10 text-xs text-[#B4FF39] hover:bg-[#B4FF39]/20"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add market
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={collect}
             disabled={collecting}
             className="h-8 gap-1.5 border-white/10 bg-black/40 text-xs text-white/80 hover:bg-white/5 hover:text-white"
@@ -162,6 +366,13 @@ export const MarketHeatPanel = () => {
           </Button>
         </div>
       </div>
+
+      {showAdd && (
+        <AddMarketForm
+          onDone={() => { setShowAdd(false); load(); }}
+          onCancel={() => setShowAdd(false)}
+        />
+      )}
 
       {/* Scope tabs + market drill-down */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -234,7 +445,7 @@ export const MarketHeatPanel = () => {
           {rows.map(r => (
             <div
               key={r.segment}
-              className="rounded-lg border border-white/8 bg-black/20 p-3"
+              className="group rounded-lg border border-white/8 bg-black/20 p-3"
             >
               <div className="flex items-center gap-3">
                 {/* Heat score dial */}
@@ -250,6 +461,13 @@ export const MarketHeatPanel = () => {
                   </div>
                 </div>
 
+                {editingKey === r.segment ? (
+                  <RowEditor
+                    row={r}
+                    onDone={() => { setEditingKey(null); load(); }}
+                    onCancel={() => setEditingKey(null)}
+                  />
+                ) : (
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {r.scope === 'set' ? (
@@ -267,6 +485,24 @@ export const MarketHeatPanel = () => {
                         {r.rootMarket.replace('_', ' ')}
                       </span>
                     )}
+                    <span className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => setEditingKey(r.segment)}
+                        className="rounded p-1 text-white/40 hover:text-[#B4FF39]"
+                        title="Edit label / query"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove(r.segment, r.label)}
+                        className="rounded p-1 text-white/40 hover:text-red-400"
+                        title="Stop tracking"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
                   </div>
                   {/* Heat bar */}
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
@@ -319,6 +555,7 @@ export const MarketHeatPanel = () => {
                     </div>
                   )}
                 </div>
+                )}
               </div>
             </div>
           ))}
