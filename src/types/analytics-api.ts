@@ -539,6 +539,27 @@ export interface ApiMarketEngagementPoint {
   parentKey?: string | null;
 }
 
+/** A per-market momentum forecast (projected heat + ask over a horizon). */
+export interface ApiMarketForecast {
+  segment: string;
+  label: string | null;
+  scope: string;
+  rootMarket: string | null;
+  taxKind: string | null;
+  points: number;
+  horizonDays: number;
+  currentHeat: number | null;
+  projectedHeat: number | null;
+  heatDelta: number | null;
+  slopePerWeek: number | null;
+  direction: 'rising' | 'cooling' | 'flat' | string;
+  confidence: 'high' | 'medium' | 'low' | 'insufficient' | string;
+  currentAskUsd: number | null;
+  projectedAskUsd: number | null;
+  askChangePct: number | null;
+  asOf: string;
+}
+
 /** A market-taxonomy node (as returned flat or nested with `children`). */
 export interface ApiTaxonomyNode {
   key: string;

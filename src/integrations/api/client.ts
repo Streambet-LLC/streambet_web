@@ -892,6 +892,7 @@ import type {
   ApiCrmContactInput,
   ApiMarketHeatPoint,
   ApiMarketHeatMover,
+  ApiMarketForecast,
   ApiMarketEngagementPoint,
   ApiTaxonomyNode,
   ApiTaxonomyTags,
@@ -3666,6 +3667,18 @@ export const marketHeatAPI = {
       `/admin/analytics/market/heat/${encodeURIComponent(segment)}`,
     );
     return r.data.data as { removed: string };
+  },
+
+  /** Momentum forecast — projected heat over a horizon (default 7d). */
+  forecast: async (scope?: string, market?: string, horizon?: number): Promise<ApiMarketForecast[]> => {
+    const r = await apiClient.get(`/admin/analytics/market/heat/forecast`, {
+      params: {
+        scope: scope && scope !== 'all' ? scope : undefined,
+        market: market && market !== 'all' ? market : undefined,
+        horizon,
+      },
+    });
+    return r.data.data as ApiMarketForecast[];
   },
 };
 

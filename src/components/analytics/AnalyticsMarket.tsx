@@ -1,4 +1,5 @@
 import { MarketHeatPanel } from './MarketHeatPanel';
+import { MarketForecastPanel } from './MarketForecastPanel';
 import { MarketDashboard } from './MarketDashboard';
 import { MarketTaxonomyPanel } from './MarketTaxonomyPanel';
 
@@ -13,6 +14,7 @@ export const AnalyticsMarket = () => {
   return (
     <div className="space-y-5">
       <MarketHeatPanel />
+      <MarketForecastPanel />
       <MarketDashboard />
       <MarketTaxonomyPanel />
     </div>
