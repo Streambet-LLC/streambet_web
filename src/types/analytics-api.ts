@@ -490,6 +490,115 @@ export interface ApiCrmContactInput {
 }
 
 // ---------------------------------------------------------------------------
+// Real-time market heat — leading indicators from daily active-listing
+// snapshots (supply level + supply/price momentum), not lagging sold comps.
+// ---------------------------------------------------------------------------
+
+export interface ApiMarketHeatPoint {
+  segment: string;
+  scope: 'segment' | 'set' | 'card' | 'player' | string;
+  label: string | null;
+  capturedAt: string;
+  totalActive: number | null;
+  totalActiveChangePct: number | null;
+  sampleActive: number;
+  newCount: number;
+  clearedCount: number;
+  clearedRatePct: number | null;
+  medianDaysListed: number | null;
+  agingPct: number | null;
+  medianAskUsd: number | null;
+  askChangePct: number | null;
+  heatScore: number | null;
+  sampleQuery: string | null;
+  extra: {
+    social: { mentions: number | null; bySource: Record<string, number> } | null;
+    firstParty: { recentAdds: number; recentWatches: number } | null;
+  } | null;
+  // Taxonomy context (joined) — for roll-up / drill-down in the UI.
+  rootMarket?: string | null;
+  taxKind?: 'market' | 'subcategory' | 'set' | 'player' | 'card' | null;
+  parentKey?: string | null;
+}
+
+/** First-party engagement (our platform views + saves) rolled up to a node. */
+export interface ApiMarketEngagementPoint {
+  segment: string;
+  scope: string;
+  label: string | null;
+  capturedAt: string;
+  itemCount: number;
+  totalViews: number;
+  totalWatchers: number;
+  newViews7d: number;
+  newWatchers7d: number;
+  viewsChangePct: number | null;
+  watchersChangePct: number | null;
+  rootMarket?: string | null;
+  taxKind?: string | null;
+  parentKey?: string | null;
+}
+
+/** A per-market momentum forecast (projected heat + ask over a horizon). */
+export interface ApiMarketForecast {
+  segment: string;
+  label: string | null;
+  scope: string;
+  rootMarket: string | null;
+  taxKind: string | null;
+  points: number;
+  horizonDays: number;
+  currentHeat: number | null;
+  projectedHeat: number | null;
+  heatDelta: number | null;
+  slopePerWeek: number | null;
+  direction: 'rising' | 'cooling' | 'flat' | string;
+  confidence: 'high' | 'medium' | 'low' | 'insufficient' | string;
+  currentAskUsd: number | null;
+  projectedAskUsd: number | null;
+  askChangePct: number | null;
+  asOf: string;
+}
+
+/** A market-taxonomy node (as returned flat or nested with `children`). */
+export interface ApiTaxonomyNode {
+  key: string;
+  kind: 'market' | 'subcategory' | 'set' | 'player' | 'card';
+  rootMarket: string;
+  parentKey?: string | null;
+  label: string;
+  matchTerms: string[];
+  query?: string | null;
+  heatScope?: string | null;
+  curated?: boolean;
+  active?: boolean;
+  sortOrder?: number;
+  children?: ApiTaxonomyNode[];
+}
+
+/** Result of classifying one card name against the taxonomy. */
+export interface ApiTaxonomyTags {
+  marketKey: string | null;
+  subCategoryKey: string | null;
+  setKey: string | null;
+  playerKey: string | null;
+  cardKey: string | null;
+}
+
+export interface ApiMarketHeatMover {
+  segment: string;
+  label: string | null;
+  scope: string;
+  heat: number | null;
+  heatChange: number | null;
+  totalActive: number | null;
+  totalActiveChangePct: number | null;
+  askChangePct: number | null;
+  clearedRatePct: number | null;
+  capturedAt: string;
+}
+
+// ---------------------------------------------------------------------------
 // Market / Dealer suite — per-card intelligence
 // ---------------------------------------------------------------------------
 
