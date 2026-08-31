@@ -21,7 +21,9 @@ import {
   Check,
   X,
   Search,
+  ChevronDown,
 } from 'lucide-react';
+import { MarketTrendChart } from './MarketTrendChart';
 import { marketHeatAPI, marketEngagementAPI, marketTaxonomyAPI } from '@/integrations/api/client';
 import type {
   ApiMarketHeatPoint,
@@ -270,6 +272,7 @@ export const MarketHeatPanel = () => {
   const [collecting, setCollecting] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -447,7 +450,13 @@ export const MarketHeatPanel = () => {
               key={r.segment}
               className="group rounded-lg border border-white/8 bg-black/20 p-3"
             >
-              <div className="flex items-center gap-3">
+              <div
+                className={`flex items-center gap-3 ${editingKey === r.segment ? '' : 'cursor-pointer'}`}
+                onClick={() => {
+                  if (editingKey !== r.segment)
+                    setExpandedKey(k => (k === r.segment ? null : r.segment));
+                }}
+              >
                 {/* Heat score dial */}
                 <div className="w-12 shrink-0 text-center">
                   <div
@@ -485,23 +494,28 @@ export const MarketHeatPanel = () => {
                         {r.rootMarket.replace('_', ' ')}
                       </span>
                     )}
-                    <span className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="ml-auto flex shrink-0 items-center gap-0.5">
                       <button
                         type="button"
-                        onClick={() => setEditingKey(r.segment)}
-                        className="rounded p-1 text-white/40 hover:text-[#B4FF39]"
+                        onClick={e => { e.stopPropagation(); setEditingKey(r.segment); }}
+                        className="rounded p-1 text-white/40 opacity-0 transition-opacity hover:text-[#B4FF39] group-hover:opacity-100"
                         title="Edit label / query"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
-                        onClick={() => remove(r.segment, r.label)}
-                        className="rounded p-1 text-white/40 hover:text-red-400"
+                        onClick={e => { e.stopPropagation(); remove(r.segment, r.label); }}
+                        className="rounded p-1 text-white/40 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
                         title="Stop tracking"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 text-white/30 transition-transform ${
+                          expandedKey === r.segment ? 'rotate-180' : ''
+                        }`}
+                      />
                     </span>
                   </div>
                   {/* Heat bar */}
@@ -557,11 +571,15 @@ export const MarketHeatPanel = () => {
                 </div>
                 )}
               </div>
+              {expandedKey === r.segment && editingKey !== r.segment && (
+                <MarketTrendChart segment={r.segment} label={r.label} />
+              )}
             </div>
           ))}
           <p className="pt-1 text-[11px] text-muted-foreground/70">
-            Supply level + price/supply momentum are live signals; velocity/days-listed
-            firm up as daily snapshots accrue.{' '}
+            Click any row for its trend over time (peaks &amp; troughs). Supply level +
+            price/supply momentum are live signals; velocity/days-listed firm up as daily
+            snapshots accrue.{' '}
             <span className="text-[#B4FF39]/70">Green</span> = our platform's own attention
             (views/saves).
           </p>

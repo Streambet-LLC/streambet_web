@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, LineChart } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
 import { AnalyticsMarket } from '@/components/analytics/AnalyticsMarket';
@@ -28,7 +28,7 @@ type AnalyticsTab =
  */
 const Analytics = () => {
   const { session, isLoading, isFetching } = useAuthContext();
-  const [tab, setTab] = useState<AnalyticsTab>('ai');
+  const [tab, setTab] = useState<AnalyticsTab>('market');
   // Sub-view inside the CRM tab.
   const [audienceTab, setAudienceTab] = useState<'sellers' | 'buyers' | 'leads'>(
     'leads',
@@ -66,13 +66,10 @@ const Analytics = () => {
 
           <Tabs value={tab} onValueChange={v => setTab(v as AnalyticsTab)}>
             <TabsList className="h-auto flex-wrap justify-start bg-[rgba(22,22,22,1)] border border-white/5">
-              <TabsTrigger
-                value="ai"
-                className="gap-1.5 font-semibold text-[#B4FF39] data-[state=active]:bg-[#B4FF39] data-[state=active]:text-black data-[state=active]:shadow-[0_0_12px_rgba(180,255,57,0.35)]"
-              >
-                <Sparkles className="h-3.5 w-3.5" /> AI
+              <TabsTrigger value="market" className="gap-1.5">
+                <LineChart className="h-3.5 w-3.5" /> Market Data
               </TabsTrigger>
-              <TabsTrigger value="market">Market Data</TabsTrigger>
+              <TabsTrigger value="ai">AI</TabsTrigger>
               <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
               {/* Short label to keep the tab row compact — the panel's own
                   header still reads "CRM / Sales Intelligence". */}
