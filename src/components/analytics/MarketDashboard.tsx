@@ -73,7 +73,7 @@ const COLS = { lg: 12, md: 12, sm: 6, xs: 2, xxs: 2 };
  * preserved). v3: discards layouts corrupted by a mount-time RGL emission that
  * auto-saved with every widget collapsed to x:0.
  */
-const CONFIG_VERSION = 3;
+const CONFIG_VERSION = 4;
 
 /**
  * Entity-fixed categorical palette, validated (dataviz six checks) against the
@@ -240,18 +240,23 @@ function defaultConfig(keepSegments?: string[]): DashboardConfig {
   const bar: DashboardWidget = { id: genId(), type: 'bar', title: 'Market heat by segment', metric: 'heat', segments };
   const line: DashboardWidget = { id: genId(), type: 'line', title: 'Momentum over time', metric: 'momentum', segments };
   const heatLine: DashboardWidget = { id: genId(), type: 'line', title: 'Market heat over time', metric: 'heat', segments };
-  const widgets = [board, temp, indices, brief, movers, cats, sales, bar, line, heatLine];
+  // Order: the "keep" widgets up top, then the three that overlap the new
+  // Market Heat page (leaderboard / temperature / by-segment bar) grouped at the
+  // bottom as a de-facto "review later" section. Nothing is removed.
+  const widgets = [indices, brief, movers, cats, sales, heatLine, line, board, temp, bar];
   const lg: Layout[] = [
-    { i: board.id, x: 0, y: 0, w: 4, h: 4 },
-    { i: temp.id, x: 4, y: 0, w: 4, h: 4 },
+    // --- Kept / still-useful ---
+    { i: brief.id, x: 0, y: 0, w: 8, h: 4 },
     { i: indices.id, x: 8, y: 0, w: 4, h: 4 },
-    { i: brief.id, x: 0, y: 4, w: 8, h: 4 },
-    { i: bar.id, x: 8, y: 4, w: 4, h: 4 },
-    { i: movers.id, x: 0, y: 8, w: 4, h: 5 },
-    { i: cats.id, x: 4, y: 8, w: 4, h: 5 },
-    { i: sales.id, x: 8, y: 8, w: 4, h: 5 },
-    { i: heatLine.id, x: 0, y: 13, w: 6, h: 4 },
-    { i: line.id, x: 6, y: 13, w: 6, h: 4 },
+    { i: movers.id, x: 0, y: 4, w: 4, h: 5 },
+    { i: cats.id, x: 4, y: 4, w: 4, h: 5 },
+    { i: sales.id, x: 8, y: 4, w: 4, h: 5 },
+    { i: heatLine.id, x: 0, y: 9, w: 6, h: 4 },
+    { i: line.id, x: 6, y: 9, w: 6, h: 4 },
+    // --- Possibly redundant with the Market Heat page (grouped at the bottom) ---
+    { i: board.id, x: 0, y: 13, w: 4, h: 4 },
+    { i: temp.id, x: 4, y: 13, w: 4, h: 4 },
+    { i: bar.id, x: 8, y: 13, w: 4, h: 4 },
   ];
   return {
     segments,

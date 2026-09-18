@@ -3,9 +3,8 @@ import { HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MarketHeatPanel } from './MarketHeatPanel';
 import { MarketForecastPanel } from './MarketForecastPanel';
-import { MarketDashboard } from './MarketDashboard';
 import { MarketTaxonomyPanel } from './MarketTaxonomyPanel';
-import { SectionHeader } from './SectionHeader';
+import { SectionHeader, SectionBanner } from './SectionHeader';
 import { GuidedTour, type TourStep } from './MarketHeatTour';
 
 const TOUR_KEY = 'mh_tour_seen_v1';
@@ -23,7 +22,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="mh-rows"]',
     title: 'Read a market',
-    body: 'Every row is a market with its heat score from 0 to 100, plus signals like how many are listed, where supply and price are heading, and buzz. Click any row to open its trend over time.',
+    body: 'Every row is a market with its heat score from 0 to 100, plus the drivers behind it: how many are listed, where supply and price are heading, and buzz. Click any row to open its trend over time.',
   },
   {
     selector: '[data-tour="mh-add"]',
@@ -37,18 +36,13 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     selector: '[data-tour="mh-forecast"]',
-    title: '7-day outlook',
+    title: 'Forward predictions',
     body: "A simple read on where each market's heat looks headed over the next week. It gets sharper as more days of data come in.",
   },
   {
-    selector: '[data-tour="mh-pulse"]',
-    title: 'Market pulse',
-    body: 'A deeper, AI-researched take on each market, built from web research. This one is separate from the live heat up top.',
-  },
-  {
     selector: '[data-tour="mh-taxonomy"]',
-    title: 'Behind the scenes',
-    body: 'The taxonomy is the hierarchy every metric slices by. Add or tweak the markets, sets, and players here.',
+    title: 'The market map',
+    body: 'The hierarchy every metric slices by: markets, sets, players, and cards. Add or tweak what gets tracked here.',
   },
   {
     title: "You're all set",
@@ -57,10 +51,10 @@ const TOUR_STEPS: TourStep[] = [
 ];
 
 /**
- * Market Heat, broken into labeled sections: real-time heat + forecast up top,
- * then the AI-researched market-pulse dashboard, and finally the taxonomy that
- * every metric slices by. Ships with a skippable guided tour (auto-shown once,
- * relaunchable from the "Tour" button).
+ * Market Heat — the main page, in three top-level areas: LIVE DATA (real-time
+ * heat), FORWARD PREDICTIONS (the forecast), and MARKET MAP (the taxonomy).
+ * The older AI-researched dashboard now lives in the "Additional Data" tab.
+ * Ships with a skippable guided tour (auto-shown once, relaunchable).
  */
 export const AnalyticsMarket = () => {
   const [tourOpen, setTourOpen] = useState(false);
@@ -85,25 +79,35 @@ export const AnalyticsMarket = () => {
 
   return (
     <div className="space-y-8">
+      {/* 1 — LIVE DATA */}
       <section className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <SectionHeader
-            title="Live Heat"
-            subtitle="Early signals from live listings. These tend to move before the sold comps do."
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setTourOpen(true)}
-            className="shrink-0 gap-1.5 border-white/10 bg-black/40 text-xs text-white/80 hover:bg-white/5 hover:text-white"
-          >
-            <HelpCircle className="h-3.5 w-3.5" /> Tour
-          </Button>
-        </div>
+        <SectionBanner
+          label="Live Data"
+          tip="What the market is doing right now, pulled daily from eBay's active listings. These are early signals that tend to move before the sold comps do."
+          action={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTourOpen(true)}
+              className="h-7 gap-1.5 border-white/10 bg-black/40 text-xs text-white/80 hover:bg-white/5 hover:text-white"
+            >
+              <HelpCircle className="h-3.5 w-3.5" /> Tour
+            </Button>
+          }
+        />
+        <SectionHeader
+          title="Live Heat"
+          subtitle="A heat score per market, plus the drivers behind it. Click any row to dig into its trend, or switch scope to go from markets down to players and cards."
+        />
         <MarketHeatPanel />
       </section>
 
+      {/* 2 — FORWARD PREDICTIONS */}
       <section data-tour="mh-forecast" className="space-y-4">
+        <SectionBanner
+          label="Forward Predictions"
+          tip="Where each market looks headed next, projected from its recent trend. This is where heat turns into a forward view."
+        />
         <SectionHeader
           title="7-Day Forecast"
           subtitle="Where each market's heat looks headed over the next week, based on its recent trend."
@@ -111,15 +115,12 @@ export const AnalyticsMarket = () => {
         <MarketForecastPanel />
       </section>
 
-      <section data-tour="mh-pulse" className="space-y-4">
-        <SectionHeader
-          title="Market Pulse"
-          subtitle="An AI-researched read on each market's temperature, indices, movers, and catalysts, built from web research."
-        />
-        <MarketDashboard />
-      </section>
-
+      {/* 3 — MARKET MAP */}
       <section data-tour="mh-taxonomy" className="space-y-4">
+        <SectionBanner
+          label="Market Map"
+          tip="The hierarchy everything is organized by: markets, sub-categories, sets, players, and cards. It's what lets you drill from a whole market down to a single card."
+        />
         <SectionHeader
           title="Market Taxonomy"
           subtitle="The hierarchy every metric slices by. Add or curate markets, sets, players, and cards here."

@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
 import { AnalyticsMarket } from '@/components/analytics/AnalyticsMarket';
+import { AnalyticsAdditional } from '@/components/analytics/AnalyticsAdditional';
 import { AnalyticsPortfolio } from '@/components/analytics/AnalyticsPortfolio';
 import { AnalyticsUsage } from '@/components/analytics/AnalyticsUsage';
 import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
@@ -18,6 +19,7 @@ import { CrmContacts } from '@/components/analytics/crm/CrmContacts';
 type AnalyticsTab =
   | 'ai'
   | 'market'
+  | 'additional'
   | 'crm'
   | 'portfolio'
   | 'usage'
@@ -84,11 +86,20 @@ const Analytics = () => {
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="ai">Deep Insights</TabsTrigger>
+                  <TabsTrigger value="additional">Deep Insights</TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
-                  Deep dives with Cardy, your AI analyst. Ask her anything about the market in
-                  plain English and she'll pull from the live data to answer.
+                  An AI-researched deep dive on each market: temperature, indices, movers,
+                  catalysts, and headline sales, built from web research.
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="ai">AI</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  Cardy, your AI analyst. Ask her anything about the market in plain English
+                  and she'll pull from the live data to answer.
                 </TooltipContent>
               </Tooltip>
               <Tooltip delayDuration={200}>
@@ -135,6 +146,10 @@ const Analytics = () => {
 
             <TabsContent value="market" className="mt-6">
               <AnalyticsMarket />
+            </TabsContent>
+
+            <TabsContent value="additional" className="mt-6">
+              <AnalyticsAdditional />
             </TabsContent>
 
             <TabsContent value="crm" className="mt-6">
