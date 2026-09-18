@@ -66,7 +66,10 @@ const Analytics = () => {
 
           <Tabs value={tab} onValueChange={v => setTab(v as AnalyticsTab)}>
             <TabsList className="h-auto flex-wrap justify-start bg-[rgba(22,22,22,1)] border border-white/5">
-              <TabsTrigger value="market" className="gap-1.5">
+              <TabsTrigger
+                value="market"
+                className="gap-1.5 font-semibold text-[#B4FF39] data-[state=active]:bg-[#B4FF39] data-[state=active]:text-black data-[state=active]:shadow-[0_0_12px_rgba(180,255,57,0.35)]"
+              >
                 <LineChart className="h-3.5 w-3.5" /> Market Data
               </TabsTrigger>
               <TabsTrigger value="ai">AI</TabsTrigger>
