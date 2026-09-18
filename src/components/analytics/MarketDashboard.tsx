@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { InfoTip } from './InfoTip';
 import {
   Select,
   SelectContent,
@@ -675,8 +676,14 @@ export const MarketDashboard = () => {
     <div>
       {/* Controls */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <span className="text-xs uppercase tracking-wide text-muted-foreground mr-1">
+        <span className="mr-1 inline-flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
           Markets
+          <InfoTip side="bottom">
+            The AI-researched market pulse. It's a customizable dashboard of temperature,
+            indices, movers, and catalysts, put together from web research rather than the eBay
+            listings that power the heat board above. "Refresh data" goes and researches it
+            again. You can toggle markets, add widgets, and drag things around.
+          </InfoTip>
         </span>
         {catalog.segments.map(s => {
           const on = config.segments.includes(s.key);

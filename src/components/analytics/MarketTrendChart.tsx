@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { Loader2 } from 'lucide-react';
+import { InfoTip } from './InfoTip';
 import { marketHeatAPI, marketEngagementAPI } from '@/integrations/api/client';
 import type { ApiMarketHeatPoint, ApiMarketEngagementPoint } from '@/types/analytics-api';
 
@@ -114,6 +115,13 @@ export const MarketTrendChart = ({ segment, label }: { segment: string; label: s
     <div className="mt-3 rounded-lg border border-white/8 bg-black/30 p-3">
       {/* Controls */}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+        <InfoTip>
+          This is the same market over time. Flip between metrics: heat (the 0 to 100 score),
+          median ask (price), supply (how many are listed), or views and saves (our own
+          engagement). The now / low / high line shows where it is now plus the peak and dip
+          over the range you pick.
+        </InfoTip>
         <div className="inline-flex rounded-md border border-white/10 bg-black/40 p-0.5">
           {metrics.map(m => (
             <button
@@ -127,6 +135,7 @@ export const MarketTrendChart = ({ segment, label }: { segment: string; label: s
               {m.label}
             </button>
           ))}
+        </div>
         </div>
         <div className="inline-flex rounded-md border border-white/10 bg-black/40 p-0.5">
           {RANGES.map(r => (
@@ -163,7 +172,7 @@ export const MarketTrendChart = ({ segment, label }: { segment: string; label: s
         </div>
       ) : data.length < 2 ? (
         <div className="flex h-[180px] items-center justify-center px-6 text-center text-xs text-muted-foreground">
-          Only one snapshot so far — the trend line appears once the next daily snapshot lands.
+          Only one snapshot so far. The trend line shows up once the next daily snapshot lands.
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={200}>

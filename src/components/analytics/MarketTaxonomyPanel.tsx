@@ -15,6 +15,7 @@ import {
   Layers,
   FlaskConical,
 } from 'lucide-react';
+import { InfoTip } from './InfoTip';
 import { marketTaxonomyAPI } from '@/integrations/api/client';
 import type { ApiTaxonomyNode, ApiTaxonomyTags } from '@/types/analytics-api';
 
@@ -155,7 +156,7 @@ const TreeNode = ({
             <KindBadge kind={node.kind} />
             <span className="font-medium text-white">{node.label}</span>
             {node.curated && (
-              <span className="rounded bg-white/5 px-1 text-[9px] text-white/40" title="Hand-curated — preserved on re-seed">
+              <span className="rounded bg-white/5 px-1 text-[9px] text-white/40" title="Hand-edited, so re-seeding won't overwrite it">
                 curated
               </span>
             )}
@@ -332,7 +333,7 @@ export const MarketTaxonomyPanel = () => {
     setSeeding(true);
     try {
       const r = await marketTaxonomyAPI.seed();
-      toast.success(`Seeded defaults — ${r.total} nodes total`);
+      toast.success(`Seeded defaults, ${r.total} nodes total`);
       await load();
     } catch {
       toast.error('Seed failed');
@@ -347,8 +348,15 @@ export const MarketTaxonomyPanel = () => {
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4 text-[#B4FF39]" />
           <span className="text-sm font-medium text-white">Market taxonomy</span>
+          <InfoTip side="bottom">
+            This is the hierarchy everything else slices by: market, then sub-category, set,
+            and card, plus player and character nodes that cut across them. Each node's match
+            terms are what auto-tag cards to it, and any node with an eBay query gets its own
+            heat snapshot. Your edits are pinned, so re-seeding the defaults won't overwrite
+            them. Use the tester to see how a card name gets classified.
+          </InfoTip>
           <span className="hidden text-[11px] text-muted-foreground sm:inline">
-            market → sub-category → set → player/card — every metric slices by this
+            market, sub-category, set, player and card. Every metric slices by this
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -378,7 +386,7 @@ export const MarketTaxonomyPanel = () => {
         </div>
       ) : tree.length === 0 ? (
         <div className="py-10 text-center text-sm text-muted-foreground">
-          No taxonomy yet — hit "Re-seed defaults" to build the starting tree.
+          No taxonomy yet. Hit "Re-seed defaults" to build the starting tree.
         </div>
       ) : (
         <div className="max-h-[560px] space-y-0.5 overflow-y-auto pr-1 text-xs">

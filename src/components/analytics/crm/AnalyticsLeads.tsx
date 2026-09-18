@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
+import { InfoTip, TermTip } from '../InfoTip';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -186,6 +187,11 @@ export const AnalyticsLeads = () => {
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
         <div className="flex items-center gap-2 text-sm font-medium text-white">
           <Radar className="h-4 w-4 text-[#B4FF39]" /> Discover prospects
+          <InfoTip side="bottom">
+            The lead engine. It scans places like Reddit for people who look like they want to
+            buy or sell cards, scores them, and lists them here. Found a good one? Convert them
+            to a buyer or seller contact and work them in the CRM.
+          </InfoTip>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <select
@@ -381,7 +387,11 @@ export const AnalyticsLeads = () => {
                   <div className="flex shrink-0 flex-col items-end gap-2">
                     {l.buyerScore != null ? (
                       <div className="text-right">
-                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">buyer</div>
+                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          <TermTip tip="A buyer score from 0 to 100 for how strongly this lead looks ready to buy, based on the AI's read of their posts. The higher it is, the warmer the prospect." side="left">
+                            buyer
+                          </TermTip>
+                        </div>
                         <div className="text-lg font-bold leading-none" style={{ color: scoreColor(l.buyerScore) }}>
                           {l.buyerScore}
                         </div>

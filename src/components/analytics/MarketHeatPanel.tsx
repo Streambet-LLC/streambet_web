@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import moment from 'moment';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
@@ -24,6 +25,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { MarketTrendChart } from './MarketTrendChart';
+import { InfoTip, TermTip } from './InfoTip';
 import { marketHeatAPI, marketEngagementAPI, marketTaxonomyAPI } from '@/integrations/api/client';
 import type {
   ApiMarketHeatPoint,
@@ -80,15 +82,18 @@ const Momentum = ({
   label,
   value,
   invert,
+  tip,
 }: {
   label: string;
   value: number | null | undefined;
   invert?: boolean;
+  tip?: ReactNode;
 }) => {
+  const labelEl = label ? (tip ? <TermTip tip={tip}>{label}</TermTip> : label) : null;
   if (value == null)
     return (
       <span className="text-[11px] text-muted-foreground">
-        {label} <span className="text-white/40">—</span>
+        {labelEl} <span className="text-white/40">—</span>
       </span>
     );
   const good = invert ? value < 0 : value > 0;
@@ -97,7 +102,7 @@ const Momentum = ({
   const Icon = flat ? Minus : value > 0 ? TrendingUp : TrendingDown;
   return (
     <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-      {label}
+      {labelEl}
       <Icon className="h-3 w-3" style={{ color }} />
       <span style={{ color }}>{pct(value)}</span>
     </span>
@@ -151,7 +156,7 @@ const AddMarketForm = ({ onDone, onCancel }: { onDone: () => void; onCancel: () 
         heatScope: scopeFor(kind),
       });
       const snap = await marketHeatAPI.collectOne(key).catch(() => null);
-      toast.success(snap ? `Tracking ${label} — snapshotted` : `Tracking ${label}`);
+      toast.success(snap ? `Now tracking ${label}, snapshotted` : `Now tracking ${label}`);
       onDone();
     } catch (e) {
       toast.error(errMsg(e, 'Add failed (name may already be tracked)'));
@@ -331,11 +336,18 @@ export const MarketHeatPanel = () => {
     <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
       {/* Header */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <Flame className="h-4 w-4 text-[#B4FF39]" />
           <span className="text-sm font-medium text-white">Live market heat</span>
+          <InfoTip side="bottom">
+            A daily read on the live market, taken from eBay's active listings (not sold
+            data). Each market gets a heat score from 0 to 100. It leans mostly on where
+            supply and prices are heading, then factors in how fast cards sell, how long they
+            sit, social buzz, and our own views and saves. The idea is to catch a market
+            heating up before the sold comps show it.
+          </InfoTip>
           <span className="hidden text-[11px] text-muted-foreground sm:inline">
-            leading indicators from active listings — ahead of sold comps
+            early signals from live listings, before the sold comps
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -379,6 +391,11 @@ export const MarketHeatPanel = () => {
 
       {/* Scope tabs + market drill-down */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        <InfoTip>
+          Choose what to look at: whole markets like Pokémon, sets, players and characters
+          like LeBron or Charizard, or single cards. The dropdown narrows it to one market,
+          and “All” shows everything.
+        </InfoTip>
         <div className="inline-flex rounded-md border border-white/10 bg-black/40 p-0.5">
           {SCOPES.map(s => (
             <button
@@ -410,7 +427,14 @@ export const MarketHeatPanel = () => {
 
       {/* Movers strip */}
       {movers.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            movers
+            <InfoTip>
+              The biggest jumps in heat since the last snapshot. Green is heating up fastest,
+              red is cooling off fastest.
+            </InfoTip>
+          </span>
           {movers.map(m => {
             const up = (m.heatChange ?? 0) >= 0;
             return (
@@ -441,7 +465,7 @@ export const MarketHeatPanel = () => {
         </div>
       ) : rows.length === 0 ? (
         <div className="py-12 text-center text-sm text-muted-foreground">
-          No snapshots yet — hit "Snapshot now" to collect the first data point.
+          No snapshots yet. Hit "Snapshot now" to grab the first one.
         </div>
       ) : (
         <div className="space-y-2">
@@ -466,7 +490,12 @@ export const MarketHeatPanel = () => {
                     {r.heatScore ?? '—'}
                   </div>
                   <div className="text-[9px] uppercase tracking-wide text-muted-foreground">
-                    heat
+                    <TermTip
+                      tip="A 0 to 100 score for how hot this market is. It weighs where supply and prices are heading most, then how fast cards sell, how long they sit, buzz, and our own views and saves. If you see a dash instead of a number, there isn't enough history yet."
+                      side="right"
+                    >
+                      heat
+                    </TermTip>
                   </div>
                 </div>
 
@@ -531,21 +560,38 @@ export const MarketHeatPanel = () => {
                   {/* Indicators */}
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="text-[11px] text-muted-foreground">
-                      {(r.totalActive ?? 0).toLocaleString()} listed
+                      {(r.totalActive ?? 0).toLocaleString()}{' '}
+                      <TermTip tip="How many listings are live for this market right now. This is eBay's full count, not the 200 we sample.">
+                        listed
+                      </TermTip>
                     </span>
-                    <Momentum label="supply" value={r.totalActiveChangePct} invert />
+                    <Momentum
+                      label="supply"
+                      value={r.totalActiveChangePct}
+                      invert
+                      tip="How the number of listings changed since the last snapshot. Fewer listings (green) means the market is tightening up, which runs hotter. More listings (red) means it's cooling off."
+                    />
                     <span className="text-[11px] text-muted-foreground">
-                      ask {money(r.medianAskUsd)}
+                      <TermTip tip="The middle asking price across the listings we sampled. The percent next to it is how that's changed since the last snapshot.">
+                        ask
+                      </TermTip>{' '}
+                      {money(r.medianAskUsd)}
                     </span>
                     <Momentum label="" value={r.askChangePct} />
                     {r.medianDaysListed != null && (
                       <span className="text-[11px] text-muted-foreground">
-                        {r.medianDaysListed.toFixed(0)}d listed
+                        {r.medianDaysListed.toFixed(0)}
+                        <TermTip tip="How long the typical listing has been sitting. Lower means cards are moving faster. It's rough until we've gathered more days of data.">
+                          d listed
+                        </TermTip>
                       </span>
                     )}
                     {r.extra?.social?.mentions != null && (
                       <span className="text-[11px] text-muted-foreground">
-                        buzz {r.extra.social.mentions}
+                        <TermTip tip="How much people are talking about this market lately on Reddit, YouTube, and Bluesky.">
+                          buzz
+                        </TermTip>{' '}
+                        {r.extra.social.mentions}
                       </span>
                     )}
                   </div>
@@ -554,12 +600,18 @@ export const MarketHeatPanel = () => {
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/5 pt-1.5">
                       <span className="inline-flex items-center gap-1 text-[11px] text-[#B4FF39]/80">
                         <Eye className="h-3 w-3" />
-                        {(engagement[r.segment].totalViews ?? 0).toLocaleString()} views
+                        {(engagement[r.segment].totalViews ?? 0).toLocaleString()}{' '}
+                        <TermTip tip="Views on our own shop items that match this market, counted once per viewer per day. This is our data, not eBay's.">
+                          views
+                        </TermTip>
                       </span>
                       <Momentum label="" value={engagement[r.segment].viewsChangePct} />
                       <span className="inline-flex items-center gap-1 text-[11px] text-[#B4FF39]/80">
                         <Star className="h-3 w-3" />
-                        {(engagement[r.segment].totalWatchers ?? 0).toLocaleString()} saves
+                        {(engagement[r.segment].totalWatchers ?? 0).toLocaleString()}{' '}
+                        <TermTip tip="How many people have saved our matching shop items. It's a direct read on how interested our own audience is.">
+                          saves
+                        </TermTip>
                       </span>
                       {engagement[r.segment].newViews7d > 0 && (
                         <span className="text-[11px] text-muted-foreground">
