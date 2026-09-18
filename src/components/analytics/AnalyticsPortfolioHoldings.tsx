@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { InfoTip } from './InfoTip';
 import {
   Loader2,
   RefreshCw,
@@ -125,6 +127,12 @@ export const AnalyticsPortfolioHoldings = ({
         <span className="text-xs font-medium uppercase tracking-wide text-white/80">
           My Holdings
         </span>
+        <InfoTip side="bottom">
+          The money side of the cards you actually own (the ones in your watchlist you've
+          marked owned with a cost basis). "Value portfolio" pulls each card's live value and
+          adds it all up into total value, what you paid, and your gain or loss. This is paper
+          profit, since you haven't sold anything yet.
+        </InfoTip>
         <Button
           size="sm"
           onClick={valueAll}
@@ -173,13 +181,22 @@ export const AnalyticsPortfolioHoldings = ({
 
           {/* Summary tiles */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Tile label="Total value" value={money(pf?.totalValueUsd)} />
-            <Tile label="Cost basis" value={money(pf?.totalCostUsd)} />
+            <Tile
+              label="Total value"
+              value={money(pf?.totalValueUsd)}
+              tip="What everything you own is worth right now, adding up each card's live value times how many you hold."
+            />
+            <Tile
+              label="Cost basis"
+              value={money(pf?.totalCostUsd)}
+              tip="What you paid in total, adding up the cost you recorded for every copy you own."
+            />
             <Tile
               label="Gain / loss"
               value={money(gain)}
               sub={pf?.gainPct != null ? pct(pf.gainPct) : undefined}
               color={gainColor(gain)}
+              tip="Your profit on paper: current value minus what you paid. It's not locked in yet, since you haven't sold these."
             />
             <Tile
               label="Holdings"
@@ -274,15 +291,18 @@ const Tile = ({
   value,
   sub,
   color,
+  tip,
 }: {
   label: string;
   value: string;
   sub?: string;
   color?: string;
+  tip?: ReactNode;
 }) => (
   <div className="rounded-lg border border-white/8 bg-black/20 p-3">
-    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+    <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
       {label}
+      {tip && <InfoTip>{tip}</InfoTip>}
     </div>
     <div className="text-lg font-bold" style={color ? { color } : undefined}>
       {value}

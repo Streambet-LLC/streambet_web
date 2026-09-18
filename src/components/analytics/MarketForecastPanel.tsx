@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
 import { Card } from '@/components/ui/card';
 import { LineChart, TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
+import { InfoTip, TermTip } from './InfoTip';
 import { marketHeatAPI } from '@/integrations/api/client';
 import type { ApiMarketForecast } from '@/types/analytics-api';
 
@@ -55,11 +56,17 @@ export const MarketForecastPanel = () => {
   return (
     <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <LineChart className="h-4 w-4 text-[#B4FF39]" />
           <span className="text-sm font-medium text-white">{horizon}-day heat outlook</span>
+          <InfoTip side="bottom">
+            A simple momentum forecast. We draw a trend line through each market's recent heat
+            and extend it {horizon} days out. When there's barely any history we hold the
+            projection back so a two-point trend can't fly off to extremes, and the confidence
+            label tells you how much data is behind it. It gets sharper as more days come in.
+          </InfoTip>
           <span className="hidden text-[11px] text-muted-foreground sm:inline">
-            trend projection — sharpens as daily snapshots accrue
+            a simple trend projection that sharpens as data builds up
           </span>
         </div>
         {updated && (
@@ -89,7 +96,7 @@ export const MarketForecastPanel = () => {
         </div>
       ) : rows.length === 0 ? (
         <div className="py-10 text-center text-sm text-muted-foreground">
-          No forecast yet — needs a few daily snapshots to project a trend.
+          No forecast yet. It needs a few daily snapshots before it can project a trend.
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -132,15 +139,24 @@ export const MarketForecastPanel = () => {
                       )}
                     </div>
                     <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
-                      <span
-                        className="rounded px-1.5 py-0.5 text-[10px]"
-                        style={{ color: conf.color, background: `${conf.color}1a` }}
+                      <TermTip
+                        tip="How much to trust this projection. High means 7 or more snapshots with a clean fit, medium means 4 or more, and low means only 2 or 3 so far. It climbs as more days come in."
+                        className="rounded px-1.5 py-0.5 text-[10px] no-underline"
+                        side="left"
                       >
-                        {conf.label}
-                      </span>
+                        <span style={{ color: conf.color, background: `${conf.color}1a` }} className="rounded px-1.5 py-0.5">
+                          {conf.label}
+                        </span>
+                      </TermTip>
                       {r.askChangePct != null && (
                         <span className="text-[10px] text-muted-foreground">
-                          ask {r.askChangePct >= 0 ? '+' : ''}
+                          <TermTip
+                            tip="Where we think the median asking price is headed over the window, capped at give-or-take 40%. On low confidence it often sits right at that cap, so read it as a direction, not a literal number."
+                            side="left"
+                          >
+                            ask
+                          </TermTip>{' '}
+                          {r.askChangePct >= 0 ? '+' : ''}
                           {r.askChangePct}%
                         </span>
                       )}

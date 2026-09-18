@@ -4,8 +4,10 @@ import { Navigation } from '@/components/Navigation';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Loader2, LineChart } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { AnalyticsInsights } from '@/components/analytics/AnalyticsInsights';
 import { AnalyticsMarket } from '@/components/analytics/AnalyticsMarket';
+import { AnalyticsAdditional } from '@/components/analytics/AnalyticsAdditional';
 import { AnalyticsPortfolio } from '@/components/analytics/AnalyticsPortfolio';
 import { AnalyticsUsage } from '@/components/analytics/AnalyticsUsage';
 import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
@@ -17,6 +19,7 @@ import { CrmContacts } from '@/components/analytics/crm/CrmContacts';
 type AnalyticsTab =
   | 'ai'
   | 'market'
+  | 'additional'
   | 'crm'
   | 'portfolio'
   | 'usage'
@@ -66,16 +69,75 @@ const Analytics = () => {
 
           <Tabs value={tab} onValueChange={v => setTab(v as AnalyticsTab)}>
             <TabsList className="h-auto flex-wrap justify-start bg-[rgba(22,22,22,1)] border border-white/5">
-              <TabsTrigger value="market" className="gap-1.5">
-                <LineChart className="h-3.5 w-3.5" /> Market Data
-              </TabsTrigger>
-              <TabsTrigger value="ai">AI</TabsTrigger>
-              <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-              {/* Short label to keep the tab row compact — the panel's own
-                  header still reads "CRM / Sales Intelligence". */}
-              <TabsTrigger value="crm">CRM</TabsTrigger>
-              <TabsTrigger value="usage">Usage</TabsTrigger>
-              <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger
+                    value="market"
+                    className="gap-1.5 font-semibold text-[#B4FF39] data-[state=active]:bg-[#B4FF39] data-[state=active]:text-black data-[state=active]:shadow-[0_0_12px_rgba(180,255,57,0.35)]"
+                  >
+                    <LineChart className="h-3.5 w-3.5" /> Market Heat
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  Real-time market heat, 7-day forecasts, trends over time, and the market
+                  taxonomy. It's built from eBay's live listings plus our own view and save
+                  data.
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="additional">Deep Insights</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  An AI-researched deep dive on each market: temperature, indices, movers,
+                  catalysts, and headline sales, built from web research.
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="ai">AI</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  Cardy, your AI analyst. Ask her anything about the market in plain English
+                  and she'll pull from the live data to answer.
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  Your tracked cards and holdings: what you paid, what they're worth now, and
+                  your profit or loss (both on paper and once you've sold).
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  {/* Short label to keep the tab row compact — the panel's own
+                      header still reads "CRM / Sales Intelligence". */}
+                  <TabsTrigger value="crm">CRM</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  Auto-discovered buyer and seller leads, plus your own contacts with notes,
+                  tags, and pipeline stages.
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="usage">Usage</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  Platform and AI usage: activity and cost tracking.
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  Everyone who's signed up for the waitlist, and the details they gave.
+                </TooltipContent>
+              </Tooltip>
             </TabsList>
 
             <TabsContent value="ai" className="mt-6">
@@ -84,6 +146,10 @@ const Analytics = () => {
 
             <TabsContent value="market" className="mt-6">
               <AnalyticsMarket />
+            </TabsContent>
+
+            <TabsContent value="additional" className="mt-6">
+              <AnalyticsAdditional />
             </TabsContent>
 
             <TabsContent value="crm" className="mt-6">

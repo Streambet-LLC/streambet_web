@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { SectionHeader } from './SectionHeader';
 import {
   Select,
   SelectContent,
@@ -107,6 +108,11 @@ export const AnalyticsUsage = () => {
 
   return (
     <div className="space-y-5">
+      <SectionHeader
+        title="Usage"
+        subtitle="AI and platform usage across the app, with activity and cost broken down by user."
+      />
+
       {/* Header + range + totals */}
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

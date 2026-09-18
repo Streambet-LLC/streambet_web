@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import moment from 'moment';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
+import { InfoTip } from './InfoTip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -198,6 +200,11 @@ export const AnalyticsSoldCards = ({
             <span className="text-xs font-medium uppercase tracking-wide text-white/80">
               Sold Cards
             </span>
+            <InfoTip side="bottom">
+              The cards you've actually sold. Holdings up top shows paper gains; this shows
+              what you really banked, which is the sale price minus what you paid and minus
+              fees. So the profit here already has fees taken out.
+            </InfoTip>
             {summary && summary.total > 0 && (
               <span className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-xs text-muted-foreground">
                 {summary.total}
@@ -238,7 +245,11 @@ export const AnalyticsSoldCards = ({
                     : undefined
                 }
               />
-              <Tile label="Cost basis" value={money(summary?.totalCostUsd)} />
+              <Tile
+                label="Cost basis"
+                value={money(summary?.totalCostUsd)}
+                tip="What you originally paid for the cards you've sold."
+              />
               <Tile
                 label="Realized P/L"
                 value={money(realized)}
@@ -248,6 +259,7 @@ export const AnalyticsSoldCards = ({
                     : undefined
                 }
                 color={gainColor(realized)}
+                tip="What you actually banked on the cards you sold: proceeds, minus what you paid, minus fees. It's locked in, unlike the paper gains in Holdings."
               />
               <Tile
                 label="Cards sold"
@@ -460,15 +472,18 @@ const Tile = ({
   value,
   sub,
   color,
+  tip,
 }: {
   label: string;
   value: string;
   sub?: string;
   color?: string;
+  tip?: ReactNode;
 }) => (
   <div className="rounded-lg border border-white/8 bg-black/20 p-3">
-    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+    <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
       {label}
+      {tip && <InfoTip>{tip}</InfoTip>}
     </div>
     <div className="text-lg font-bold" style={color ? { color } : undefined}>
       {value}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
+import { InfoTip } from '../InfoTip';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -108,6 +109,11 @@ export const CrmContacts = ({ kind }: { kind: CrmContactKind }) => {
           <span className="text-sm font-medium capitalize text-white">
             {noun}s
           </span>
+          <InfoTip side="bottom">
+            Your {noun} contacts. Add them yourself or convert a discovered lead. Each one has
+            a pipeline stage, a star for your favorites, tags, interests, and a running note
+            history. Filter by stage or star, and star the {noun}s you go to most.
+          </InfoTip>
           <span className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-xs text-muted-foreground">
             {rows.length}
           </span>

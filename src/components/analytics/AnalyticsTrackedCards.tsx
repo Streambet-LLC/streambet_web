@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
+import { InfoTip } from './InfoTip';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -157,6 +158,11 @@ export const AnalyticsTrackedCards = ({
           <span className="text-xs font-medium uppercase tracking-wide text-white/80">
             Watchlist
           </span>
+          <InfoTip side="bottom">
+            Cards you're tracking for research (not necessarily owned). Each gets a market
+            profile, price history, and forecasts. Mark one <b>owned</b> with a cost basis and
+            it also feeds <b>My Holdings</b> above.
+          </InfoTip>
           <span className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-xs text-muted-foreground">
             {total}
           </span>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import moment from 'moment';
 import { Card } from '@/components/ui/card';
 import { Loader2, PackageOpen, Users } from 'lucide-react';
+import { InfoTip } from '../InfoTip';
 import { analyticsAPI } from '@/integrations/api/client';
 import type { ApiSellerInventoryUploadSummary } from '@/types/analytics-api';
 import { CrmContacts } from './CrmContacts';
@@ -33,6 +34,10 @@ export const AnalyticsSellers = () => {
       <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
         <div className="mb-3 flex items-center gap-2 text-sm font-medium text-white">
           <PackageOpen className="h-4 w-4 text-[#B4FF39]" /> Seller inventory
+          <InfoTip side="bottom">
+            A read-only list of seller inventory uploads, the spreadsheets of what sellers
+            have. We match each one against CardCade buyers so you can see who might want it.
+          </InfoTip>
           <span className="rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-xs text-muted-foreground">
             {uploads.length}
           </span>
