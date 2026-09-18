@@ -357,6 +357,7 @@ export const MarketHeatPanel = () => {
             </span>
           )}
           <Button
+            data-tour="mh-add"
             variant="outline"
             size="sm"
             onClick={() => setShowAdd(s => !s)}
@@ -366,6 +367,7 @@ export const MarketHeatPanel = () => {
             Add market
           </Button>
           <Button
+            data-tour="mh-snapshot"
             variant="outline"
             size="sm"
             onClick={collect}
@@ -390,7 +392,7 @@ export const MarketHeatPanel = () => {
       )}
 
       {/* Scope tabs + market drill-down */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div data-tour="mh-scope" className="mb-4 flex flex-wrap items-center gap-2">
         <InfoTip>
           Choose what to look at: whole markets like Pokémon, sets, players and characters
           like LeBron or Charizard, or single cards. The dropdown narrows it to one market,
@@ -468,7 +470,7 @@ export const MarketHeatPanel = () => {
           No snapshots yet. Hit "Snapshot now" to grab the first one.
         </div>
       ) : (
-        <div className="space-y-2">
+        <div data-tour="mh-rows" className="space-y-2">
           {rows.map(r => (
             <div
               key={r.segment}

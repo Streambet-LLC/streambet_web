@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
 import { Card } from '@/components/ui/card';
+import { SectionHeader } from './SectionHeader';
 import { Button } from '@/components/ui/button';
 import { Loader2, Users, Download } from 'lucide-react';
 import { waitlistAPI, type WaitlistSignup } from '@/integrations/api/client';
@@ -54,7 +55,12 @@ export const AnalyticsWaitlist = () => {
   };
 
   return (
-    <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
+    <div className="space-y-5">
+      <SectionHeader
+        title="Waitlist"
+        subtitle="Everyone who's signed up for the waitlist, and the details they gave."
+      />
+      <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-[#B4FF39]" />
@@ -122,5 +128,6 @@ export const AnalyticsWaitlist = () => {
         </div>
       )}
     </Card>
+    </div>
   );
 };
