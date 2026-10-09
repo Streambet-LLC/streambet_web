@@ -891,6 +891,7 @@ import type {
   ApiCrmStats,
   ApiCrmContactInput,
   ApiMarketHeatPoint,
+  ApiMarketHeatScale,
   ApiMarketHeatMover,
   ApiMarketForecast,
   ApiMarketEngagementPoint,
@@ -3617,6 +3618,12 @@ export const marketHeatAPI = {
       params: { scope: scope && scope !== 'all' ? scope : undefined, limit },
     });
     return r.data.data as ApiMarketHeatMover[];
+  },
+
+  /** Site-wide record scale (all-time hottest/coldest readings); null with no data. */
+  scale: async (): Promise<ApiMarketHeatScale | null> => {
+    const r = await apiClient.get(`/admin/analytics/market/heat/scale`);
+    return r.data.data as ApiMarketHeatScale | null;
   },
 
   /** Heat time series for one market topic. */

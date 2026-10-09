@@ -27,10 +27,12 @@ import {
 } from 'lucide-react';
 import { MarketTrendChart } from './MarketTrendChart';
 import { InfoTip, TermTip } from './InfoTip';
+import { recordHolder, toHeatIndex, toHeatIndexDelta } from './heatScale';
 import { marketHeatAPI, marketEngagementAPI, marketTaxonomyAPI } from '@/integrations/api/client';
 import type {
   ApiMarketHeatPoint,
   ApiMarketHeatMover,
+  ApiMarketHeatScale,
   ApiMarketEngagementPoint,
   ApiTaxonomyNode,
 } from '@/types/analytics-api';
@@ -303,6 +305,7 @@ export const MarketHeatPanel = () => {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [removingKey, setRemovingKey] = useState<string | null>(null);
+  const [scale, setScale] = useState<ApiMarketHeatScale | null>(null);
   // scope|market the current rows belong to — a mismatch means they're stale, so show skeletons.
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const reqId = useRef(0);
@@ -312,14 +315,16 @@ export const MarketHeatPanel = () => {
     const id = ++reqId.current;
     setLoading(true);
     try {
-      const [l, m, e] = await Promise.all([
+      const [l, m, e, s] = await Promise.all([
         marketHeatAPI.latest(scope, market),
         marketHeatAPI.movers(scope, 6),
         marketEngagementAPI.latest(scope, market).catch(() => []),
+        marketHeatAPI.scale().catch(() => null),
       ]);
       // A newer scope/market request superseded this one.
       if (id !== reqId.current) return;
       setLoadedKey(`${scope}|${market}`);
+      setScale(s);
       setRows(
         [...l].sort((a, b) => (b.heatScore ?? -1) - (a.heatScore ?? -1))
       );
@@ -384,10 +389,11 @@ export const MarketHeatPanel = () => {
           <span className="text-sm font-medium text-white">Live market heat</span>
           <InfoTip side="bottom">
             A daily read on the live market, taken from eBay's active listings (not sold
-            data). Each market gets a heat score from 0 to 100. It leans mostly on where
-            supply and prices are heading, then factors in how fast cards sell, how long they
-            sit, social buzz, and our own views and saves. The idea is to catch a market
-            heating up before the sold comps show it.
+            data). Each market gets a heat score that leans mostly on where supply and prices
+            are heading, then factors in how fast cards sell, how long they sit, social buzz,
+            and our own views and saves. Scores are scaled to our all-time record: 100 is the
+            hottest reading we've ever recorded and 0 is the coldest. The idea is to catch a
+            market heating up before the sold comps show it.
           </InfoTip>
           <span className="hidden text-[11px] text-muted-foreground sm:inline">
             early signals from live listings, before the sold comps
@@ -497,12 +503,13 @@ export const MarketHeatPanel = () => {
           <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
             movers
             <InfoTip>
-              The biggest jumps in heat since the last snapshot. Green is heating up fastest,
-              red is cooling off fastest.
+              The biggest jumps in heat since the last snapshot, in points on the same 0 to 100
+              record scale. Green is heating up fastest, red is cooling off fastest.
             </InfoTip>
           </span>
           {movers.map(m => {
-            const up = (m.heatChange ?? 0) >= 0;
+            const change = toHeatIndexDelta(m.heatChange, scale) ?? 0;
+            const up = change >= 0;
             return (
               <span
                 key={m.segment}
@@ -516,11 +523,31 @@ export const MarketHeatPanel = () => {
                 {m.label ?? m.segment}
                 <span className="font-semibold">
                   {up ? '+' : ''}
-                  {m.heatChange}
+                  {change}
                 </span>
               </span>
             );
           })}
+        </div>
+      )}
+
+      {/* What 100 means — the all-time record the index is scaled to */}
+      {scale && rows.length > 0 && !(loading && stale) && (
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <Flame className="h-3 w-3 text-[#B4FF39]" />
+            <span className="font-semibold text-[#B4FF39]">100</span> = our all-time record
+            <span className="text-white/60">({recordHolder(scale)})</span>
+          </span>
+          <span>
+            <span className="font-semibold text-red-300">0</span> = the coldest we've seen
+          </span>
+          <InfoTip>
+            Heat is scaled against every reading we've ever taken ({scale.readings.toLocaleString()}{' '}
+            so far, across all markets, sets, players and cards). The hottest one sets 100, and
+            a new record moves the top of the scale. The tick on each bar marks that market's
+            own high.
+          </InfoTip>
         </div>
       )}
 
@@ -537,7 +564,18 @@ export const MarketHeatPanel = () => {
           aria-busy={busy}
           className={`space-y-2 transition-opacity ${busy ? 'pointer-events-none opacity-60' : ''}`}
         >
-          {rows.map(r => (
+          {rows.map(r => {
+            const idx = toHeatIndex(r.heatScore, scale);
+            const peak = toHeatIndex(r.peakHeat, scale);
+            const isRecord = scale != null && r.heatScore != null && r.heatScore >= scale.ceiling;
+            // "At its high" only means something once there's some history to beat.
+            const atOwnHigh =
+              !isRecord &&
+              (r.scoredReadings ?? 0) >= 5 &&
+              r.heatScore != null &&
+              r.peakHeat != null &&
+              r.heatScore >= r.peakHeat;
+            return (
             <div
               key={r.segment}
               className="group rounded-lg border border-white/8 bg-black/20 p-3"
@@ -553,13 +591,27 @@ export const MarketHeatPanel = () => {
                 <div className="w-12 shrink-0 text-center">
                   <div
                     className="text-xl font-bold leading-none"
-                    style={{ color: heatColor(r.heatScore) }}
+                    style={{ color: heatColor(idx) }}
                   >
-                    {r.heatScore ?? '—'}
+                    {idx ?? '—'}
                   </div>
                   <div className="text-[9px] uppercase tracking-wide text-muted-foreground">
                     <TermTip
-                      tip="A 0 to 100 score for how hot this market is. It weighs where supply and prices are heading most, then how fast cards sell, how long they sit, buzz, and our own views and saves. If you see a dash instead of a number, there isn't enough history yet."
+                      tip={
+                        idx == null ? (
+                          "Not enough history yet. A market needs two snapshots before it gets a heat score, so this fills in after the next daily run."
+                        ) : scale ? (
+                          <>
+                            How hot this market is against our all-time record. 100 is the
+                            hottest reading we've ever recorded ({recordHolder(scale)}) and 0 is
+                            the coldest.
+                            {peak != null && <> This market's own high is {peak}.</>} Raw
+                            score: {r.heatScore}.
+                          </>
+                        ) : (
+                          'A 0 to 100 score for how hot this market is. It weighs where supply and prices are heading most, then how fast cards sell, how long they sit, buzz, and our own views and saves.'
+                        )
+                      }
                       side="right"
                     >
                       heat
@@ -591,6 +643,15 @@ export const MarketHeatPanel = () => {
                         {r.rootMarket.replace('_', ' ')}
                       </span>
                     )}
+                    {isRecord ? (
+                      <span className="inline-flex items-center gap-0.5 rounded bg-[#B4FF39]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#B4FF39]">
+                        <Flame className="h-2.5 w-2.5" /> all-time record
+                      </span>
+                    ) : atOwnHigh ? (
+                      <span className="rounded bg-white/5 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-white/60">
+                        at its high
+                      </span>
+                    ) : null}
                     <span className="ml-auto flex shrink-0 items-center gap-0.5">
                       <button
                         type="button"
@@ -622,15 +683,24 @@ export const MarketHeatPanel = () => {
                       />
                     </span>
                   </div>
-                  {/* Heat bar */}
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.max(3, Math.min(100, r.heatScore ?? 0))}%`,
-                        background: heatColor(r.heatScore),
-                      }}
-                    />
+                  {/* Heat bar — full width = all-time record; tick = this market's own high */}
+                  <div className="relative mt-1.5">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max(3, Math.min(100, idx ?? 0))}%`,
+                          background: heatColor(idx),
+                        }}
+                      />
+                    </div>
+                    {idx != null && peak != null && peak > idx && (
+                      <span
+                        title={`Own high: ${peak}`}
+                        className="absolute -top-0.5 h-2.5 w-0.5 -translate-x-1/2 rounded-full bg-white/60"
+                        style={{ left: `${peak}%` }}
+                      />
+                    )}
                   </div>
                   {/* Indicators */}
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -699,10 +769,11 @@ export const MarketHeatPanel = () => {
                 )}
               </div>
               {expandedKey === r.segment && editingKey !== r.segment && (
-                <MarketTrendChart segment={r.segment} label={r.label} />
+                <MarketTrendChart segment={r.segment} label={r.label} scale={scale} />
               )}
             </div>
-          ))}
+            );
+          })}
           <p className="pt-1 text-[11px] text-muted-foreground/70">
             Click any row for its trend over time (peaks &amp; troughs). Supply level +
             price/supply momentum are live signals; velocity/days-listed firm up as daily

@@ -3,8 +3,9 @@ import moment from 'moment';
 import { Card } from '@/components/ui/card';
 import { LineChart, TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
 import { InfoTip, TermTip } from './InfoTip';
+import { toHeatIndex } from './heatScale';
 import { marketHeatAPI } from '@/integrations/api/client';
-import type { ApiMarketForecast } from '@/types/analytics-api';
+import type { ApiMarketForecast, ApiMarketHeatScale } from '@/types/analytics-api';
 
 const SCOPES = [
   { k: 'segment', label: 'Markets' },
@@ -32,12 +33,18 @@ const dirColor = (d: string) => (d === 'rising' ? '#B4FF39' : d === 'cooling' ? 
 export const MarketForecastPanel = () => {
   const [scope, setScope] = useState<string>('segment');
   const [rows, setRows] = useState<ApiMarketForecast[]>([]);
+  const [scale, setScale] = useState<ApiMarketHeatScale | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setRows(await marketHeatAPI.forecast(scope));
+      const [f, s] = await Promise.all([
+        marketHeatAPI.forecast(scope),
+        marketHeatAPI.scale().catch(() => null),
+      ]);
+      setRows(f);
+      setScale(s);
     } catch {
       /* keep last known */
     } finally {
@@ -64,6 +71,7 @@ export const MarketForecastPanel = () => {
             and extend it {horizon} days out. When there's barely any history we hold the
             projection back so a two-point trend can't fly off to extremes, and the confidence
             label tells you how much data is behind it. It gets sharper as more days come in.
+            Heat uses the same scale as the live board: 100 is our all-time record.
           </InfoTip>
           <span className="hidden text-[11px] text-muted-foreground sm:inline">
             a simple trend projection that sharpens as data builds up
@@ -105,6 +113,11 @@ export const MarketForecastPanel = () => {
             const c = dirColor(r.direction);
             const conf = CONF[r.confidence] ?? CONF.low;
             const projected = r.projectedHeat != null;
+            // On the record scale; delta is index-to-index so it matches the two numbers shown.
+            const cur = toHeatIndex(r.currentHeat, scale);
+            const proj = toHeatIndex(r.projectedHeat, scale);
+            const delta = cur != null && proj != null ? proj - cur : null;
+            const newRecord = scale != null && r.projectedHeat != null && r.projectedHeat > scale.ceiling;
             return (
               <div
                 key={r.segment}
@@ -126,15 +139,20 @@ export const MarketForecastPanel = () => {
                 {projected ? (
                   <>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm text-white/45">{r.currentHeat ?? '—'}</span>
+                      <span className="text-sm text-white/45">{cur ?? '—'}</span>
                       <Dir className="h-4 w-4" style={{ color: c }} />
                       <span className="text-lg font-bold leading-none" style={{ color: c }}>
-                        {r.projectedHeat}
+                        {proj}
                       </span>
-                      {r.heatDelta != null && r.heatDelta !== 0 && (
+                      {delta != null && delta !== 0 && (
                         <span className="text-[11px]" style={{ color: c }}>
-                          {r.heatDelta > 0 ? '+' : ''}
-                          {r.heatDelta}
+                          {delta > 0 ? '+' : ''}
+                          {delta}
+                        </span>
+                      )}
+                      {newRecord && (
+                        <span className="rounded bg-[#B4FF39]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#B4FF39]">
+                          new record?
                         </span>
                       )}
                     </div>

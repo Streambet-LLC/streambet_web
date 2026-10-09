@@ -510,6 +510,10 @@ export interface ApiMarketHeatPoint {
   medianAskUsd: number | null;
   askChangePct: number | null;
   heatScore: number | null;
+  /** This topic's own all-time high raw heat (on `latest` rows only). */
+  peakHeat?: number | null;
+  /** How many scored snapshots this topic has (on `latest` rows only). */
+  scoredReadings?: number;
   sampleQuery: string | null;
   extra: {
     social: { mentions: number | null; bySource: Record<string, number> } | null;
@@ -519,6 +523,26 @@ export interface ApiMarketHeatPoint {
   rootMarket?: string | null;
   taxKind?: 'market' | 'subcategory' | 'set' | 'player' | 'card' | null;
   parentKey?: string | null;
+}
+
+/** One end of the all-time heat record: the reading that set it. */
+export interface ApiHeatRecord {
+  score: number;
+  segment: string;
+  label: string | null;
+  capturedAt: string;
+}
+
+/**
+ * Site-wide record scale for the heat index: 100 = hottest raw reading ever
+ * recorded, 0 = coldest. `floor`/`ceiling` are the effective raw bounds.
+ */
+export interface ApiMarketHeatScale {
+  floor: number;
+  ceiling: number;
+  high: ApiHeatRecord;
+  low: ApiHeatRecord;
+  readings: number;
 }
 
 /** First-party engagement (our platform views + saves) rolled up to a node. */
