@@ -514,15 +514,30 @@ export interface ApiMarketHeatPoint {
   peakHeat?: number | null;
   /** How many scored snapshots this topic has (on `latest` rows only). */
   scoredReadings?: number;
+  /** Sub-scores behind heatScore (on `latest` rows only; null with no score yet). */
+  heatDrivers?: ApiHeatDriver[] | null;
   sampleQuery: string | null;
   extra: {
     social: { mentions: number | null; bySource: Record<string, number> } | null;
     firstParty: { recentAdds: number; recentWatches: number } | null;
+    /** Sub-scores saved with the point (newer points only). */
+    drivers?: ApiHeatDriver[] | null;
   } | null;
   // Taxonomy context (joined) — for roll-up / drill-down in the UI.
   rootMarket?: string | null;
   taxKind?: 'market' | 'subcategory' | 'set' | 'player' | 'card' | null;
   parentKey?: string | null;
+}
+
+/**
+ * One sub-score of a heat score. `score` is 0-100 on its own scale (price and
+ * supply: 50 = flat); `share` is the fraction of the blend it carried.
+ */
+export interface ApiHeatDriver {
+  key: 'price' | 'supply' | 'sellThrough' | 'freshness' | 'buzz' | 'tracking';
+  score: number;
+  weight: number;
+  share: number;
 }
 
 /** One end of the all-time heat record: the reading that set it. */

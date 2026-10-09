@@ -31,6 +31,7 @@ import { InfoTip, TermTip } from './InfoTip';
 import { recordHolder, toHeatIndex, toHeatIndexDelta } from './heatScale';
 import { marketHeatAPI, marketEngagementAPI, marketTaxonomyAPI } from '@/integrations/api/client';
 import type {
+  ApiHeatDriver,
   ApiMarketHeatPoint,
   ApiMarketHeatMover,
   ApiMarketHeatScale,
@@ -60,15 +61,51 @@ const MARKET_QUERY_PREFIX: Record<string, string> = {
 
 const stripAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 
+/**
+ * eBay searches aren't category-filtered, so a bare name ("hunter x hunter")
+ * pulls in manga, figures and keychains. A card word keeps it to cards.
+ */
+const CARD_WORD = /\b(cards?|tcg|ccg|psa|bgs|cgc|sgc|slab|graded)\b/i;
+const needsCardWord = (q: string) => !!q.trim() && !CARD_WORD.test(q);
+const withCardWord = (q: string) => (needsCardWord(q) ? `${q.trim()} card` : q.trim());
+
 /** Suggested eBay search from the name: "Ja Morant" → "ja morant card", "Umbreon" (Pokémon) → "pokemon umbreon card". */
 const suggestQuery = (kind: string, market: string, name: string) => {
   const n = stripAccents(name.trim().toLowerCase()).replace(/\s+/g, ' ');
   if (!n) return '';
   const prefix = kind === 'market' ? '' : MARKET_QUERY_PREFIX[market] ?? '';
   const head = prefix && !n.includes(prefix) ? `${prefix} ` : '';
-  const tail = /\bcards?\b/.test(n) ? '' : ' card';
-  return `${head}${n}${tail}`;
+  return withCardWord(`${head}${n}`);
 };
+
+/**
+ * Under a search box: says when we've added "card" to keep eBay to trading
+ * cards, with a toggle to search all of eBay instead.
+ */
+const CardWordNote = ({
+  query,
+  allEbay,
+  onToggle,
+}: {
+  query: string;
+  allEbay: boolean;
+  onToggle: () => void;
+}) =>
+  needsCardWord(query) ? (
+    <div className="mt-1 text-[11px] text-white/50">
+      {allEbay ? (
+        <>Searching all of eBay, so manga, figures and other merch are included. </>
+      ) : (
+        <>
+          Searching <span className="text-white/80">“{withCardWord(query)}”</span>. We added “card”
+          so eBay sticks to trading cards.{' '}
+        </>
+      )}
+      <button type="button" onClick={onToggle} className="text-white/60 underline hover:text-[#B4FF39]">
+        {allEbay ? 'Only cards' : 'Search all of eBay'}
+      </button>
+    </div>
+  ) : null;
 
 interface QueryPreview {
   total: number;
@@ -99,8 +136,9 @@ const heatColor = (n: number | null) =>
   n == null ? '#6b7280' : n >= 70 ? '#B4FF39' : n >= 45 ? '#fbbf24' : '#f87171';
 const money = (n: number | null | undefined) =>
   n == null ? '—' : `$${n < 100 ? n.toFixed(2) : Math.round(n).toLocaleString()}`;
+// Capped so a one-off glitch (e.g. eBay's total jumping 5 → 45k) doesn't print "+918080.0%".
 const pct = (n: number | null | undefined) =>
-  n == null ? null : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+  n == null ? null : n > 999 ? '>+999%' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 
 /** A small momentum chip. `invert` flips color meaning (rising supply = cooling). */
 const Momentum = ({
@@ -157,6 +195,115 @@ const HeatRowsSkeleton = () => (
   </div>
 );
 
+/** The heat score's sub-scores, in display order, with what each one means. */
+const DRIVERS: {
+  key: ApiHeatDriver['key'];
+  label: string;
+  tip: string;
+  /** The raw signal behind the sub-score. */
+  detail: (r: ApiMarketHeatPoint) => ReactNode;
+  empty: string;
+  /** Momentum sub-scores sit at 50 when nothing's moving. */
+  centered?: boolean;
+}[] = [
+  {
+    key: 'price',
+    label: 'Price',
+    tip: 'Are asking prices climbing? 50 means flat. Higher means asks are up since the last snapshot.',
+    detail: r => <Momentum label="asks" value={r.askChangePct} />,
+    empty: 'needs 2 snapshots',
+    centered: true,
+  },
+  {
+    key: 'supply',
+    label: 'Supply',
+    tip: 'Are listings drying up? 50 means flat. Higher means fewer listings than last time, which runs hotter.',
+    detail: r => <Momentum label="listings" value={r.totalActiveChangePct} invert />,
+    empty: 'needs 2 snapshots',
+    centered: true,
+  },
+  {
+    key: 'sellThrough',
+    label: 'Sell-through',
+    tip: 'How many of the listings we sampled last time are gone now (sold or pulled). 40% or more scores 100.',
+    detail: r => (r.clearedRatePct != null ? `${r.clearedRatePct.toFixed(0)}% gone` : null),
+    empty: 'needs 2 snapshots',
+  },
+  {
+    key: 'freshness',
+    label: 'Freshness',
+    tip: "How few listings have sat 14+ days. Higher means cards are moving instead of going stale. It only counts once some listings have aged.",
+    detail: r =>
+      r.agingPct != null
+        ? `${r.agingPct.toFixed(0)}% stale${r.medianDaysListed != null ? ` · ${r.medianDaysListed.toFixed(0)}d typical` : ''}`
+        : null,
+    empty: 'nothing stale yet',
+  },
+  {
+    key: 'buzz',
+    label: 'Buzz',
+    tip: 'Recent mentions on Reddit, YouTube and Bluesky. 50 or more mentions scores 100.',
+    detail: r => `${r.extra?.social?.mentions ?? 0} mentions`,
+    empty: 'no buzz data',
+  },
+  {
+    key: 'tracking',
+    label: 'Tracking',
+    tip: 'People on our platform adding these cards to a portfolio or watchlist in the last 7 days. 5 or more scores 100.',
+    detail: r => `${r.extra?.firstParty?.recentAdds ?? 0} adds this week`,
+    empty: 'no adds this week',
+  },
+];
+
+/** Sub-score grid under a heat row: what's pushing this market's heat up or down. */
+const DriverGrid = ({ row, drivers }: { row: ApiMarketHeatPoint; drivers: ApiHeatDriver[] }) => (
+  <div className="mt-2 grid grid-cols-3 gap-x-4 gap-y-2 sm:grid-cols-6">
+    {DRIVERS.map(d => {
+      const drv = drivers.find(x => x.key === d.key);
+      const share = drv ? Math.round(drv.share * 100) : null;
+      return (
+        <div key={d.key} className={`min-w-0 ${drv ? '' : 'opacity-40'}`}>
+          <div className="flex items-baseline justify-between gap-1 text-[9px] uppercase tracking-wide text-muted-foreground">
+            <TermTip
+              tip={
+                <>
+                  {d.tip}{' '}
+                  {share != null
+                    ? `It makes up ${share}% of this market's heat.`
+                    : "It isn't counted yet because there's no data for it."}
+                </>
+              }
+            >
+              {d.label}
+            </TermTip>
+            {share != null && <span className="text-white/30">{share}%</span>}
+          </div>
+          <div className="mt-0.5 flex items-center gap-1.5">
+            <span
+              className="w-6 shrink-0 text-xs font-semibold tabular-nums"
+              style={{ color: drv ? heatColor(drv.score) : undefined }}
+            >
+              {drv?.score ?? '—'}
+            </span>
+            <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+              {drv && (
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${Math.max(3, drv.score)}%`, background: heatColor(drv.score) }}
+                />
+              )}
+              {d.centered && <span className="absolute left-1/2 top-0 h-full w-px bg-white/40" />}
+            </div>
+          </div>
+          <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
+            {drv ? d.detail(row) : d.empty}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
+
 const inputCls =
   'rounded border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-white/25';
 
@@ -172,6 +319,8 @@ const AddMarketForm = ({ onDone, onCancel }: { onDone: () => void; onCancel: () 
   const [label, setLabel] = useState('');
   // null = follow the suggestion from the name; a string = the user's own search.
   const [customQuery, setCustomQuery] = useState<string | null>(null);
+  // Opt out of the auto-added "card" word.
+  const [allEbay, setAllEbay] = useState(false);
   const [preview, setPreview] = useState<QueryPreview | null>(null);
   const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [saving, setSaving] = useState(false);
@@ -179,7 +328,9 @@ const AddMarketForm = ({ onDone, onCancel }: { onDone: () => void; onCancel: () 
   const isMarket = kind === 'market';
   const kindDef = KINDS.find(x => x.k === kind) ?? KINDS[0];
   const suggested = suggestQuery(kind, market, label);
-  const query = customQuery ?? suggested;
+  const typed = customQuery ?? suggested;
+  // What we actually search and save.
+  const query = allEbay ? typed.trim() : withCardWord(typed);
   const canAdd = !!label.trim() && !!query.trim() && !saving;
 
   // Live-check the search against eBay once typing settles.
@@ -225,7 +376,11 @@ const AddMarketForm = ({ onDone, onCancel }: { onDone: () => void; onCancel: () 
         heatScope: kindDef.scope,
       });
       const snap = await marketHeatAPI.collectOne(key).catch(() => null);
-      toast.success(snap ? `Now tracking ${label}, snapshotted` : `Now tracking ${label}`);
+      toast.success(`Now tracking ${label.trim()}`, {
+        description: snap
+          ? 'Listings and price are in. Its heat score fills in after the next snapshot, since heat measures change over time.'
+          : "We couldn't reach eBay just now. It'll be picked up on the next snapshot.",
+      });
       onDone();
     } catch (e) {
       toast.error(errMsg(e, 'Add failed (name may already be tracked)'));
@@ -326,11 +481,12 @@ const AddMarketForm = ({ onDone, onCancel }: { onDone: () => void; onCancel: () 
             <input
               id="add-query"
               className={`w-full pl-6 ${inputCls}`}
-              value={query}
+              value={typed}
               onChange={e => setCustomQuery(e.target.value)}
               placeholder="Filled in from the name"
             />
           </div>
+          <CardWordNote query={typed} allEbay={allEbay} onToggle={() => setAllEbay(v => !v)} />
           <div className="mt-1 min-h-[16px] text-[11px]">
             {previewState === 'loading' ? (
               <span className="inline-flex items-center gap-1 text-muted-foreground">
@@ -398,14 +554,20 @@ const RowEditor = ({
 }) => {
   const [label, setLabel] = useState(row.label ?? row.segment);
   const [query, setQuery] = useState(row.sampleQuery ?? '');
+  const [allEbay, setAllEbay] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Only touch the search if it was edited — a label-only save must not
+  // rewrite (and so re-baseline) an existing search.
+  const queryEdited = query.trim() !== (row.sampleQuery ?? '').trim();
+  const finalQuery = !queryEdited || allEbay ? query.trim() : withCardWord(query);
 
   const save = async (snapshot: boolean) => {
     setSaving(true);
     try {
       await marketTaxonomyAPI.updateNode(row.segment, {
         label: label.trim() || row.segment,
-        query: query.trim() || null,
+        query: finalQuery || null,
       });
       if (snapshot) await marketHeatAPI.collectOne(row.segment).catch(() => null);
       toast.success('Saved');
@@ -420,7 +582,15 @@ const RowEditor = ({
   return (
     <div className="min-w-0 flex-1 space-y-1.5">
       <input className={`w-full ${inputCls} py-1`} value={label} onChange={e => setLabel(e.target.value)} placeholder="Label" />
-      <input className={`w-full ${inputCls} py-1`} value={query} onChange={e => setQuery(e.target.value)} placeholder="eBay query" />
+      <input className={`w-full ${inputCls} py-1`} value={query} onChange={e => setQuery(e.target.value)} placeholder="eBay search" />
+      {queryEdited && (
+        <>
+          <CardWordNote query={query} allEbay={allEbay} onToggle={() => setAllEbay(v => !v)} />
+          <div className="text-[11px] text-white/40">
+            A new search starts fresh, so its heat score comes back after the next snapshot.
+          </div>
+        </>
+      )}
       <div className="flex gap-1.5">
         <Button size="sm" onClick={() => save(true)} disabled={saving} className="h-7 gap-1 bg-[#B4FF39] text-[11px] text-black hover:bg-[#a3ee28]">
           {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Save &amp; snapshot
@@ -737,24 +907,30 @@ export const MarketHeatPanel = () => {
               >
                 {/* Heat score dial */}
                 <div className="w-12 shrink-0 text-center">
-                  <div
-                    className="text-xl font-bold leading-none"
-                    style={{ color: heatColor(idx) }}
-                  >
-                    {idx ?? '—'}
-                  </div>
+                  {idx == null ? (
+                    <div className="mx-auto w-fit rounded bg-white/5 px-1.5 py-1 text-[10px] font-semibold uppercase leading-none tracking-wide text-white/60">
+                      new
+                    </div>
+                  ) : (
+                    <div
+                      className="text-xl font-bold leading-none"
+                      style={{ color: heatColor(idx) }}
+                    >
+                      {idx}
+                    </div>
+                  )}
                   <div className="text-[9px] uppercase tracking-wide text-muted-foreground">
                     <TermTip
                       tip={
                         idx == null ? (
-                          "Not enough history yet. A market needs two snapshots before it gets a heat score, so this fills in after the next daily run."
+                          'Heat measures how a market is changing, so it needs two snapshots to compare. Listings and price are in now; the score fills in after the next snapshot.'
                         ) : scale ? (
                           <>
                             How hot this market is against our all-time record. 100 is the
                             hottest reading we've ever recorded ({recordHolder(scale)}) and 0 is
                             the coldest.
-                            {peak != null && <> This market's own high is {peak}.</>} Raw
-                            score: {r.heatScore}.
+                            {peak != null && <> This market's own high is {peak}.</>} It's a
+                            weighted mix of the sub-scores next to it. Raw score: {r.heatScore}.
                           </>
                         ) : (
                           'A 0 to 100 score for how hot this market is. It weighs where supply and prices are heading most, then how fast cards sell, how long they sit, buzz, and our own views and saves.'
@@ -832,6 +1008,12 @@ export const MarketHeatPanel = () => {
                     </span>
                   </div>
                   {/* Heat bar — full width = all-time record; tick = this market's own high */}
+                  {idx == null ? (
+                    <div className="mt-1 text-[11px] text-white/50">
+                      Nothing to compare against yet. Its heat score shows up after the next
+                      snapshot.
+                    </div>
+                  ) : (
                   <div className="relative mt-1.5">
                     <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
                       <div
@@ -850,7 +1032,8 @@ export const MarketHeatPanel = () => {
                       />
                     )}
                   </div>
-                  {/* Indicators */}
+                  )}
+                  {/* Market size + price level */}
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="text-[11px] text-muted-foreground">
                       {(r.totalActive ?? 0).toLocaleString()}{' '}
@@ -858,28 +1041,14 @@ export const MarketHeatPanel = () => {
                         listed
                       </TermTip>
                     </span>
-                    <Momentum
-                      label="supply"
-                      value={r.totalActiveChangePct}
-                      invert
-                      tip="How the number of listings changed since the last snapshot. Fewer listings (green) means the market is tightening up, which runs hotter. More listings (red) means it's cooling off."
-                    />
                     <span className="text-[11px] text-muted-foreground">
-                      <TermTip tip="The middle asking price across the listings we sampled. The percent next to it is how that's changed since the last snapshot.">
+                      <TermTip tip="The middle asking price across the listings we sampled.">
                         ask
                       </TermTip>{' '}
                       {money(r.medianAskUsd)}
                     </span>
-                    <Momentum label="" value={r.askChangePct} />
-                    {r.medianDaysListed != null && (
-                      <span className="text-[11px] text-muted-foreground">
-                        {r.medianDaysListed.toFixed(0)}
-                        <TermTip tip="How long the typical listing has been sitting. Lower means cards are moving faster. It's rough until we've gathered more days of data.">
-                          d listed
-                        </TermTip>
-                      </span>
-                    )}
-                    {r.extra?.social?.mentions != null && (
+                    {/* With sub-scores, buzz lives in the grid below. */}
+                    {!r.heatDrivers && r.extra?.social?.mentions != null && (
                       <span className="text-[11px] text-muted-foreground">
                         <TermTip tip="How much people are talking about this market lately on Reddit, YouTube, and Bluesky.">
                           buzz
@@ -888,6 +1057,8 @@ export const MarketHeatPanel = () => {
                       </span>
                     )}
                   </div>
+                  {/* Sub-scores: what's driving the heat */}
+                  {r.heatDrivers && <DriverGrid row={r} drivers={r.heatDrivers} />}
                   {/* First-party attention (our platform's views + saves) */}
                   {engagement[r.segment] && (
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/5 pt-1.5">
@@ -923,9 +1094,10 @@ export const MarketHeatPanel = () => {
             );
           })}
           <p className="pt-1 text-[11px] text-muted-foreground/70">
-            Click any row for its trend over time (peaks &amp; troughs). Supply level +
-            price/supply momentum are live signals; velocity/days-listed firm up as daily
-            snapshots accrue.{' '}
+            Click any row for its trend over time (peaks &amp; troughs). The sub-scores under
+            each market show what's driving its heat, and the small % is how much each one
+            counts. Price and supply are the steadiest; sell-through and freshness firm up as
+            daily snapshots accrue.{' '}
             <span className="text-[#B4FF39]/70">Green</span> = our platform's own attention
             (views/saves).
           </p>
