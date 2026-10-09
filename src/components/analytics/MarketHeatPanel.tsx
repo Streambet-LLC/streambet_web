@@ -205,6 +205,8 @@ const DRIVERS: {
   empty: string;
   /** Momentum sub-scores sit at 50 when nothing's moving. */
   centered?: boolean;
+  /** Only scored (and shown) for single cards. */
+  cardsOnly?: boolean;
 }[] = [
   {
     key: 'price',
@@ -221,6 +223,14 @@ const DRIVERS: {
     detail: r => <Momentum label="listings" value={r.totalActiveChangePct} invert />,
     empty: 'needs 2 snapshots',
     centered: true,
+  },
+  {
+    key: 'listed',
+    label: 'Listed',
+    tip: "How scarce this card is, by how many copies are listed right now. Fewer listed means scarcer, which runs hotter. 10 or fewer scores 100, 100,000+ scores 0, and every 10× more listings costs 25 points.",
+    detail: r => `${(r.totalActive ?? 0).toLocaleString()} listed`,
+    empty: 'no listing count',
+    cardsOnly: true,
   },
   {
     key: 'sellThrough',
@@ -256,9 +266,15 @@ const DRIVERS: {
 ];
 
 /** Sub-score grid under a heat row: what's pushing this market's heat up or down. */
-const DriverGrid = ({ row, drivers }: { row: ApiMarketHeatPoint; drivers: ApiHeatDriver[] }) => (
-  <div className="mt-2 grid grid-cols-3 gap-x-4 gap-y-2 sm:grid-cols-6">
-    {DRIVERS.map(d => {
+const DriverGrid = ({ row, drivers }: { row: ApiMarketHeatPoint; drivers: ApiHeatDriver[] }) => {
+  const shown = DRIVERS.filter(d => !d.cardsOnly || row.scope === 'card');
+  return (
+  <div
+    className={`mt-2 grid grid-cols-3 gap-x-4 gap-y-2 ${
+      shown.length > 6 ? 'sm:grid-cols-7' : 'sm:grid-cols-6'
+    }`}
+  >
+    {shown.map(d => {
       const drv = drivers.find(x => x.key === d.key);
       const share = drv ? Math.round(drv.share * 100) : null;
       return (
@@ -302,7 +318,8 @@ const DriverGrid = ({ row, drivers }: { row: ApiMarketHeatPoint; drivers: ApiHea
       );
     })}
   </div>
-);
+  );
+};
 
 const inputCls =
   'rounded border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-white/25';
@@ -1035,12 +1052,15 @@ export const MarketHeatPanel = () => {
                   )}
                   {/* Market size + price level */}
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="text-[11px] text-muted-foreground">
-                      {(r.totalActive ?? 0).toLocaleString()}{' '}
-                      <TermTip tip="How many listings are live for this market right now. This is eBay's full count, not the 200 we sample.">
-                        listed
-                      </TermTip>
-                    </span>
+                    {/* Cards show this as the "Listed" sub-score instead. */}
+                    {!r.heatDrivers?.some(d => d.key === 'listed') && (
+                      <span className="text-[11px] text-muted-foreground">
+                        {(r.totalActive ?? 0).toLocaleString()}{' '}
+                        <TermTip tip="How many listings are live for this market right now. This is eBay's full count, not the 200 we sample.">
+                          listed
+                        </TermTip>
+                      </span>
+                    )}
                     <span className="text-[11px] text-muted-foreground">
                       <TermTip tip="The middle asking price across the listings we sampled.">
                         ask

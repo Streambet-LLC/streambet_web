@@ -534,7 +534,7 @@ export interface ApiMarketHeatPoint {
  * supply: 50 = flat); `share` is the fraction of the blend it carried.
  */
 export interface ApiHeatDriver {
-  key: 'price' | 'supply' | 'sellThrough' | 'freshness' | 'buzz' | 'tracking';
+  key: 'price' | 'supply' | 'listed' | 'sellThrough' | 'freshness' | 'buzz' | 'tracking';
   score: number;
   weight: number;
   share: number;
