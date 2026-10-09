@@ -24,6 +24,7 @@ import {
   X,
   Search,
   ChevronDown,
+  AlertTriangle,
 } from 'lucide-react';
 import { MarketTrendChart } from './MarketTrendChart';
 import { InfoTip, TermTip } from './InfoTip';
@@ -42,11 +43,32 @@ const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
 
 const KINDS = [
-  { k: 'player', label: 'Player / Character', scope: 'player' },
-  { k: 'card', label: 'Card', scope: 'card' },
-  { k: 'set', label: 'Set', scope: 'set' },
-  { k: 'market', label: 'Market', scope: 'segment' },
+  { k: 'player', label: 'Player / Character', scope: 'player', example: 'e.g. Ja Morant or Charizard' },
+  { k: 'card', label: 'Card', scope: 'card', example: 'e.g. Base Set Charizard' },
+  { k: 'set', label: 'Set', scope: 'set', example: 'e.g. Pokémon 151' },
+  { k: 'market', label: 'Whole market', scope: 'segment', example: 'e.g. Flesh and Blood' },
 ] as const;
+
+/** Words that pin an eBay search to a market (sports needs none — names carry it). */
+const MARKET_QUERY_PREFIX: Record<string, string> = {
+  pokemon: 'pokemon',
+  one_piece: 'one piece',
+  sports: '',
+  magic: 'mtg',
+  lorcana: 'lorcana',
+};
+
+const stripAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+/** Suggested eBay search from the name: "Ja Morant" → "ja morant card", "Umbreon" (Pokémon) → "pokemon umbreon card". */
+const suggestQuery = (kind: string, market: string, name: string) => {
+  const n = stripAccents(name.trim().toLowerCase()).replace(/\s+/g, ' ');
+  if (!n) return '';
+  const prefix = kind === 'market' ? '' : MARKET_QUERY_PREFIX[market] ?? '';
+  const head = prefix && !n.includes(prefix) ? `${prefix} ` : '';
+  const tail = /\bcards?\b/.test(n) ? '' : ' card';
+  return `${head}${n}${tail}`;
+};
 
 interface QueryPreview {
   total: number;
@@ -138,36 +160,57 @@ const HeatRowsSkeleton = () => (
 const inputCls =
   'rounded border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-white/25';
 
-/** Add a new tracked market (player / card / set / market) with a live query test. */
+const fieldLabelCls = 'mb-1 block text-[11px] font-medium text-white/60';
+
+/**
+ * Add a new tracked market (player / card / set / whole market). The eBay
+ * search is suggested from the name and live-checked as you type.
+ */
 const AddMarketForm = ({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) => {
   const [kind, setKind] = useState<ApiTaxonomyNode['kind']>('player');
   const [market, setMarket] = useState('sports');
   const [label, setLabel] = useState('');
-  const [query, setQuery] = useState('');
+  // null = follow the suggestion from the name; a string = the user's own search.
+  const [customQuery, setCustomQuery] = useState<string | null>(null);
   const [preview, setPreview] = useState<QueryPreview | null>(null);
-  const [testing, setTesting] = useState(false);
+  const [previewState, setPreviewState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [saving, setSaving] = useState(false);
 
   const isMarket = kind === 'market';
-  const scopeFor = (k: string) => KINDS.find(x => x.k === k)?.scope ?? 'segment';
+  const kindDef = KINDS.find(x => x.k === kind) ?? KINDS[0];
+  const suggested = suggestQuery(kind, market, label);
+  const query = customQuery ?? suggested;
+  const canAdd = !!label.trim() && !!query.trim() && !saving;
 
-  const test = async () => {
-    if (!query.trim()) return;
-    setTesting(true);
-    try {
-      setPreview(await marketHeatAPI.preview(query.trim()));
-    } catch {
-      toast.error('Preview failed');
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const add = async () => {
-    if (!label.trim() || !query.trim()) {
-      toast.error('Name and eBay query are required');
+  // Live-check the search against eBay once typing settles.
+  useEffect(() => {
+    const q = query.trim();
+    setPreview(null);
+    if (q.length < 3) {
+      setPreviewState('idle');
       return;
     }
+    setPreviewState('loading');
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const p = await marketHeatAPI.preview(q);
+        if (!cancelled) {
+          setPreview(p);
+          setPreviewState('done');
+        }
+      } catch {
+        if (!cancelled) setPreviewState('error');
+      }
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [query]);
+
+  const add = async () => {
+    if (!canAdd) return;
     setSaving(true);
     const key = `custom_${kind}_${slugify(label)}`;
     try {
@@ -179,7 +222,7 @@ const AddMarketForm = ({ onDone, onCancel }: { onDone: () => void; onCancel: () 
         label: label.trim(),
         query: query.trim(),
         matchTerms: [label.trim().toLowerCase()],
-        heatScope: scopeFor(kind),
+        heatScope: kindDef.scope,
       });
       const snap = await marketHeatAPI.collectOne(key).catch(() => null);
       toast.success(snap ? `Now tracking ${label}, snapshotted` : `Now tracking ${label}`);
@@ -192,49 +235,154 @@ const AddMarketForm = ({ onDone, onCancel }: { onDone: () => void; onCancel: () 
   };
 
   return (
-    <div className="mb-4 rounded-lg border border-[#B4FF39]/20 bg-[#B4FF39]/[0.03] p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium text-white">Track a new market</span>
-        <button type="button" onClick={onCancel} className="text-white/40 hover:text-white">
+    <form
+      onSubmit={e => { e.preventDefault(); add(); }}
+      className="mb-4 rounded-lg border border-[#B4FF39]/20 bg-[#B4FF39]/[0.03] p-3 sm:p-4"
+    >
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <div className="text-xs font-medium text-white">Track a new market</div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">
+            We'll snapshot its live eBay listings every day and give it a heat score.
+          </div>
+        </div>
+        <button type="button" onClick={onCancel} aria-label="Close" className="text-white/40 hover:text-white">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <select value={kind} onChange={e => setKind(e.target.value as ApiTaxonomyNode['kind'])} className={inputCls}>
-          {KINDS.map(k => (
-            <option key={k.k} value={k.k} className="bg-[#161616]">{k.label}</option>
-          ))}
-        </select>
-        <select value={market} onChange={e => setMarket(e.target.value)} disabled={isMarket} className={`${inputCls} disabled:opacity-40`}>
-          {MARKETS.filter(m => m.k !== 'all').map(m => (
-            <option key={m.k} value={m.k} className="bg-[#161616]">{m.label}</option>
-          ))}
-        </select>
-        <input className={inputCls} value={label} onChange={e => setLabel(e.target.value)} placeholder="Name (e.g. Ja Morant)" />
-        <input
-          className={inputCls}
-          value={query}
-          onChange={e => { setQuery(e.target.value); setPreview(null); }}
-          placeholder="eBay query"
-        />
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="outline" onClick={test} disabled={testing || !query.trim()} className="h-7 gap-1 border-white/10 bg-black/40 text-[11px] text-white/80 hover:bg-white/5">
-          {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />} Test query
-        </Button>
-        {preview && (
-          <span className="text-[11px] text-muted-foreground">
-            ≈ <span className="text-[#B4FF39]">{preview.total.toLocaleString()}</span> active
-            {preview.items[0] && (
-              <span className="text-white/40"> · e.g. “{preview.items[0].title.slice(0, 46)}”</span>
+
+      <div className="space-y-3">
+        {/* What kind of thing */}
+        <div>
+          <span id="add-kind-label" className={fieldLabelCls}>What are you tracking?</span>
+          <div
+            role="radiogroup"
+            aria-labelledby="add-kind-label"
+            className="inline-flex flex-wrap rounded-md border border-white/10 bg-black/40 p-0.5"
+          >
+            {KINDS.map(k => (
+              <button
+                key={k.k}
+                type="button"
+                role="radio"
+                aria-checked={kind === k.k}
+                onClick={() => setKind(k.k)}
+                className={`h-7 rounded px-3 text-[11px] transition-colors ${
+                  kind === k.k ? 'bg-white/10 text-white' : 'text-muted-foreground hover:text-white'
+                }`}
+              >
+                {k.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Market + name */}
+        <div className={`grid gap-3 ${isMarket ? '' : 'sm:grid-cols-[180px_1fr]'}`}>
+          {!isMarket && (
+            <div>
+              <label htmlFor="add-market" className={fieldLabelCls}>Market</label>
+              <select
+                id="add-market"
+                value={market}
+                onChange={e => setMarket(e.target.value)}
+                className={`w-full ${inputCls}`}
+              >
+                {MARKETS.filter(m => m.k !== 'all').map(m => (
+                  <option key={m.k} value={m.k} className="bg-[#161616]">{m.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div>
+            <label htmlFor="add-name" className={fieldLabelCls}>Name</label>
+            <input
+              id="add-name"
+              autoFocus
+              className={`w-full ${inputCls}`}
+              value={label}
+              onChange={e => setLabel(e.target.value)}
+              placeholder={kindDef.example}
+            />
+          </div>
+        </div>
+
+        {/* eBay search — suggested from the name, live-checked */}
+        <div>
+          <div className="flex items-baseline justify-between gap-2">
+            <label htmlFor="add-query" className={fieldLabelCls}>eBay search</label>
+            {customQuery != null && suggested && customQuery !== suggested && (
+              <button
+                type="button"
+                onClick={() => setCustomQuery(null)}
+                className="text-[11px] text-white/50 hover:text-[#B4FF39]"
+              >
+                Use suggested
+              </button>
             )}
-          </span>
-        )}
-        <Button size="sm" onClick={add} disabled={saving} className="ml-auto h-7 gap-1 bg-[#B4FF39] text-[11px] text-black hover:bg-[#a3ee28]">
-          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />} Add &amp; snapshot
+          </div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-white/30" />
+            <input
+              id="add-query"
+              className={`w-full pl-6 ${inputCls}`}
+              value={query}
+              onChange={e => setCustomQuery(e.target.value)}
+              placeholder="Filled in from the name"
+            />
+          </div>
+          <div className="mt-1 min-h-[16px] text-[11px]">
+            {previewState === 'loading' ? (
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> Checking eBay…
+              </span>
+            ) : previewState === 'error' ? (
+              <span className="text-muted-foreground">
+                Couldn't check this search on eBay right now. You can still add it.
+              </span>
+            ) : previewState === 'done' && preview && preview.total === 0 ? (
+              <span className="inline-flex items-center gap-1 text-amber-300">
+                <AlertTriangle className="h-3 w-3" /> No live listings match. Try fewer or broader
+                words.
+              </span>
+            ) : previewState === 'done' && preview ? (
+              <span className="text-muted-foreground">
+                <span className="text-[#B4FF39]">≈ {preview.total.toLocaleString()}</span> live
+                listings
+                {preview.items[0] && (
+                  <span className="text-white/40"> · e.g. “{preview.items[0].title.slice(0, 60)}”</span>
+                )}
+              </span>
+            ) : (
+              <span className="text-white/40">
+                We suggest a search from the name. Edit it to narrow things down.
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-end gap-2 border-t border-white/5 pt-3">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={onCancel}
+          className="h-8 text-xs text-white/60 hover:text-white"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={!canAdd}
+          className="h-8 gap-1.5 bg-[#B4FF39] text-xs text-black hover:bg-[#a3ee28] disabled:opacity-40"
+        >
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+          {saving ? 'Adding…' : 'Add & snapshot'}
         </Button>
       </div>
-    </div>
+    </form>
   );
 };
 
