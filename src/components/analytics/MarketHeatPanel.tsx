@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import moment from 'moment';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Flame,
   Loader2,
@@ -108,6 +109,29 @@ const Momentum = ({
     </span>
   );
 };
+
+/** Placeholder rows shaped like the leaderboard, shown until the first load for a scope lands. */
+const HeatRowsSkeleton = () => (
+  <div className="space-y-2" aria-busy="true" aria-label="Loading market heat">
+    {Array.from({ length: 5 }).map((_, i) => (
+      <div key={i} className="flex items-center gap-3 rounded-lg border border-white/8 bg-black/20 p-3">
+        <div className="flex w-12 shrink-0 flex-col items-center gap-1">
+          <Skeleton className="h-5 w-8 bg-white/10" />
+          <Skeleton className="h-2 w-6 bg-white/5" />
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-4 w-32 bg-white/10" />
+          <Skeleton className="h-1.5 w-full rounded-full bg-white/10" />
+          <div className="flex gap-3">
+            {[16, 14, 12, 10].map((w, j) => (
+              <Skeleton key={j} className="h-3 bg-white/5" style={{ width: `${w * 4}px` }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 const inputCls =
   'rounded border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-white/25';
@@ -278,8 +302,14 @@ export const MarketHeatPanel = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [removingKey, setRemovingKey] = useState<string | null>(null);
+  // scope|market the current rows belong to — a mismatch means they're stale, so show skeletons.
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const reqId = useRef(0);
+  const viewKey = `${scope}|${market}`;
 
   const load = useCallback(async () => {
+    const id = ++reqId.current;
     setLoading(true);
     try {
       const [l, m, e] = await Promise.all([
@@ -287,6 +317,9 @@ export const MarketHeatPanel = () => {
         marketHeatAPI.movers(scope, 6),
         marketEngagementAPI.latest(scope, market).catch(() => []),
       ]);
+      // A newer scope/market request superseded this one.
+      if (id !== reqId.current) return;
+      setLoadedKey(`${scope}|${market}`);
       setRows(
         [...l].sort((a, b) => (b.heatScore ?? -1) - (a.heatScore ?? -1))
       );
@@ -297,7 +330,7 @@ export const MarketHeatPanel = () => {
     } catch {
       /* keep last known */
     } finally {
-      setLoading(false);
+      if (id === reqId.current) setLoading(false);
     }
   }, [scope, market]);
 
@@ -311,8 +344,9 @@ export const MarketHeatPanel = () => {
     try {
       await marketHeatAPI.collect();
       await load();
-    } catch {
-      /* ignore */
+      toast.success('Snapshots refreshed');
+    } catch (e) {
+      toast.error(errMsg(e, 'Snapshot refresh failed'));
     } finally {
       setCollecting(false);
     }
@@ -320,6 +354,7 @@ export const MarketHeatPanel = () => {
 
   const remove = async (key: string, label: string | null) => {
     if (!window.confirm(`Stop tracking "${label ?? key}"? This removes it from the board.`)) return;
+    setRemovingKey(key);
     try {
       await marketTaxonomyAPI.deleteNode(key);
       await marketHeatAPI.remove(key).catch(() => null);
@@ -327,13 +362,21 @@ export const MarketHeatPanel = () => {
       await load();
     } catch (e) {
       toast.error(errMsg(e, 'Remove failed (markets with sub-nodes can’t be removed here)'));
+    } finally {
+      setRemovingKey(null);
     }
   };
 
   const updated = rows[0]?.capturedAt ?? null;
+  const stale = loadedKey !== viewKey;
+  const busy = loading || collecting;
 
   return (
-    <Card className="bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
+    <Card className="relative overflow-hidden bg-[rgba(22,22,22,1)] border-white/5 p-4 sm:p-5">
+      {/* Busy bar — any load or snapshot in flight */}
+      {busy && (
+        <div className="absolute inset-x-0 top-0 h-0.5 animate-pulse bg-[#B4FF39]/70" />
+      )}
       {/* Header */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
@@ -351,10 +394,17 @@ export const MarketHeatPanel = () => {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {updated && (
-            <span className="text-[11px] text-muted-foreground">
-              {moment(updated).fromNow()}
+          {busy ? (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {collecting ? 'collecting…' : 'updating…'}
             </span>
+          ) : (
+            updated && (
+              <span className="text-[11px] text-muted-foreground">
+                {moment(updated).fromNow()}
+              </span>
+            )
           )}
           <Button
             data-tour="mh-add"
@@ -379,10 +429,18 @@ export const MarketHeatPanel = () => {
             ) : (
               <RefreshCw className="h-3.5 w-3.5" />
             )}
-            Refresh Snapshots
+            {collecting ? 'Refreshing…' : 'Refresh Snapshots'}
           </Button>
         </div>
       </div>
+
+      {collecting && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-[#B4FF39]/20 bg-[#B4FF39]/[0.04] px-3 py-2 text-xs text-white/80">
+          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#B4FF39]" />
+          Pulling fresh listings from eBay for every tracked market. This can take a minute;
+          the board updates when it's done.
+        </div>
+      )}
 
       {showAdd && (
         <AddMarketForm
@@ -428,7 +486,13 @@ export const MarketHeatPanel = () => {
       </div>
 
       {/* Movers strip */}
-      {movers.length > 0 && (
+      {loading && stale ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {[24, 20, 28, 18, 22].map((w, i) => (
+            <Skeleton key={i} className="h-6 rounded-full bg-white/5" style={{ width: `${w * 4}px` }} />
+          ))}
+        </div>
+      ) : movers.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
             movers
@@ -461,16 +525,18 @@ export const MarketHeatPanel = () => {
       )}
 
       {/* Leaderboard */}
-      {loading && rows.length === 0 ? (
-        <div className="flex items-center gap-2 py-12 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading heat…
-        </div>
+      {loading && (stale || rows.length === 0) ? (
+        <HeatRowsSkeleton />
       ) : rows.length === 0 ? (
         <div className="py-12 text-center text-sm text-muted-foreground">
           No snapshots yet. Hit "Refresh Snapshots" to grab the first one.
         </div>
       ) : (
-        <div data-tour="mh-rows" className="space-y-2">
+        <div
+          data-tour="mh-rows"
+          aria-busy={busy}
+          className={`space-y-2 transition-opacity ${busy ? 'pointer-events-none opacity-60' : ''}`}
+        >
           {rows.map(r => (
             <div
               key={r.segment}
@@ -537,10 +603,17 @@ export const MarketHeatPanel = () => {
                       <button
                         type="button"
                         onClick={e => { e.stopPropagation(); remove(r.segment, r.label); }}
-                        className="rounded p-1 text-white/40 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
+                        disabled={removingKey === r.segment}
+                        className={`rounded p-1 text-white/40 transition-opacity hover:text-red-400 group-hover:opacity-100 ${
+                          removingKey === r.segment ? 'opacity-100' : 'opacity-0'
+                        }`}
                         title="Stop tracking"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        {removingKey === r.segment ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
                       </button>
                       <ChevronDown
                         className={`h-3.5 w-3.5 text-white/30 transition-transform ${
