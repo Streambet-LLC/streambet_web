@@ -379,7 +379,7 @@ export const MarketHeatPanel = () => {
             ) : (
               <RefreshCw className="h-3.5 w-3.5" />
             )}
-            Snapshot now
+            Refresh Snapshots
           </Button>
         </div>
       </div>
@@ -467,7 +467,7 @@ export const MarketHeatPanel = () => {
         </div>
       ) : rows.length === 0 ? (
         <div className="py-12 text-center text-sm text-muted-foreground">
-          No snapshots yet. Hit "Snapshot now" to grab the first one.
+          No snapshots yet. Hit "Refresh Snapshots" to grab the first one.
         </div>
       ) : (
         <div data-tour="mh-rows" className="space-y-2">

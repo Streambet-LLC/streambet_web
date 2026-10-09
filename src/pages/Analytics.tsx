@@ -25,6 +25,11 @@ type AnalyticsTab =
   | 'usage'
   | 'waitlist';
 
+// Active-tab style keyed off aria-selected: each trigger is wrapped in a
+// TooltipTrigger (asChild), which overwrites the tab's data-state attribute.
+const TAB_TRIGGER_CLASS =
+  'gap-1.5 aria-selected:bg-[#B4FF39] aria-selected:font-semibold aria-selected:text-black aria-selected:shadow-[0_0_12px_rgba(180,255,57,0.35)]';
+
 /**
  * Admin-only Analytics homebase — AI-powered card-market intelligence built
  * on live external data (web research, market pulse, social discovery).
@@ -73,7 +78,7 @@ const Analytics = () => {
                 <TooltipTrigger asChild>
                   <TabsTrigger
                     value="market"
-                    className="gap-1.5 font-semibold text-[#B4FF39] data-[state=active]:bg-[#B4FF39] data-[state=active]:text-black data-[state=active]:shadow-[0_0_12px_rgba(180,255,57,0.35)]"
+                    className={`${TAB_TRIGGER_CLASS} font-semibold text-[#B4FF39]`}
                   >
                     <LineChart className="h-3.5 w-3.5" /> Market Heat
                   </TabsTrigger>
@@ -86,7 +91,7 @@ const Analytics = () => {
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="additional">Deep Insights</TabsTrigger>
+                  <TabsTrigger value="additional" className={TAB_TRIGGER_CLASS}>Deep Insights</TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
                   An AI-researched deep dive on each market: temperature, indices, movers,
@@ -95,7 +100,7 @@ const Analytics = () => {
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="ai">AI</TabsTrigger>
+                  <TabsTrigger value="ai" className={TAB_TRIGGER_CLASS}>AI</TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
                   Cardy, your AI analyst. Ask her anything about the market in plain English
@@ -104,7 +109,7 @@ const Analytics = () => {
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+                  <TabsTrigger value="portfolio" className={TAB_TRIGGER_CLASS}>Portfolio</TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
                   Your tracked cards and holdings: what you paid, what they're worth now, and
@@ -115,7 +120,7 @@ const Analytics = () => {
                 <TooltipTrigger asChild>
                   {/* Short label to keep the tab row compact — the panel's own
                       header still reads "CRM / Sales Intelligence". */}
-                  <TabsTrigger value="crm">CRM</TabsTrigger>
+                  <TabsTrigger value="crm" className={TAB_TRIGGER_CLASS}>CRM</TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
                   Auto-discovered buyer and seller leads, plus your own contacts with notes,
@@ -124,7 +129,7 @@ const Analytics = () => {
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="usage">Usage</TabsTrigger>
+                  <TabsTrigger value="usage" className={TAB_TRIGGER_CLASS}>Usage</TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
                   Platform and AI usage: activity and cost tracking.
@@ -132,7 +137,7 @@ const Analytics = () => {
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
+                  <TabsTrigger value="waitlist" className={TAB_TRIGGER_CLASS}>Waitlist</TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
                   Everyone who's signed up for the waitlist, and the details they gave.
