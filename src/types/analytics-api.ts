@@ -510,15 +510,138 @@ export interface ApiMarketHeatPoint {
   medianAskUsd: number | null;
   askChangePct: number | null;
   heatScore: number | null;
+  /** This topic's own all-time high raw heat (on `latest` rows only). */
+  peakHeat?: number | null;
+  /** How many scored snapshots this topic has (on `latest` rows only). */
+  scoredReadings?: number;
+  /** Sub-scores behind heatScore (on `latest` rows only; null with no score yet). */
+  heatDrivers?: ApiHeatDriver[] | null;
+  /** Spike Radar readings (newer points only). */
+  floorAskUsd?: number | null;
+  floorChangePct?: number | null;
+  sweptPct?: number | null;
+  spikeScore?: number | null;
+  spikeSignals?: ApiSpikeSignal[] | null;
+  /** Hourly watch mode (on `latest` rows only). */
+  watchUntil?: string | null;
+  watchReason?: string | null;
   sampleQuery: string | null;
   extra: {
     social: { mentions: number | null; bySource: Record<string, number> } | null;
     firstParty: { recentAdds: number; recentWatches: number } | null;
+    /** Sub-scores saved with the point (newer points only). */
+    drivers?: ApiHeatDriver[] | null;
   } | null;
   // Taxonomy context (joined) — for roll-up / drill-down in the UI.
   rootMarket?: string | null;
   taxKind?: 'market' | 'subcategory' | 'set' | 'player' | 'card' | null;
   parentKey?: string | null;
+}
+
+/**
+ * One sub-score of a heat score. `score` is 0-100 on its own scale (price and
+ * supply: 50 = flat); `share` is the fraction of the blend it carried.
+ */
+export interface ApiHeatDriver {
+  key: 'price' | 'supply' | 'listed' | 'sellThrough' | 'freshness' | 'buzz' | 'tracking';
+  score: number;
+  weight: number;
+  share: number;
+}
+
+// ---------------------------------------------------------------------------
+// Spike Radar
+// ---------------------------------------------------------------------------
+
+export type ApiSpikeKey = 'floor' | 'sweep' | 'supply' | 'sellThrough' | 'price' | 'buzz' | 'tracking';
+
+/** One signal behind a spike score: today's reading and how unusual it is for this topic. */
+export interface ApiSpikeSignal {
+  key: ApiSpikeKey;
+  value: number;
+  /** Standard deviations from this topic's normal, in the hot direction (≥2 = firing). */
+  z: number;
+  firing: boolean;
+  /** This topic's typical reading, once it has enough history. */
+  typical: number | null;
+}
+
+export interface ApiRadarItem {
+  segment: string;
+  label: string;
+  scope: string;
+  rootMarket: string | null;
+  parentKey: string | null;
+  capturedAt: string;
+  heat: number | null;
+  spikeScore: number | null;
+  firing: number;
+  flagged: boolean;
+  signals: ApiSpikeSignal[];
+  floorAskUsd: number | null;
+  floorChangePct: number | null;
+  sweptPct: number | null;
+  totalActive: number | null;
+  auto: boolean;
+  watchUntil: string | null;
+  watchReason: string | null;
+}
+
+export interface ApiRadarDiscovery {
+  segment: string;
+  topicLabel: string;
+  signature: string;
+  label: string;
+  capturedAt: string;
+  listedCount: number;
+  floorUsd: number | null;
+  medianUsd: number | null;
+  clearedCount: number;
+  floorChangePct: number | null;
+  countChangePct: number | null;
+  stillHot: boolean;
+  sampleUrl: string | null;
+  trackedKey: string | null;
+  notYetMoved: { signature: string; label: string; listedCount: number; floorUsd: number | null }[];
+}
+
+export interface ApiRadarWatch {
+  segment: string;
+  label: string;
+  kind: string;
+  watchUntil: string;
+  watchReason: string | null;
+  spikeScore: number | null;
+  lastSnapshotAt: string | null;
+}
+
+export interface ApiSpikeRadar {
+  asOf: string;
+  spiking: ApiRadarItem[];
+  catchUp: { of: { segment: string; label: string }; items: ApiRadarItem[] }[];
+  discoveries: ApiRadarDiscovery[];
+  watching: ApiRadarWatch[];
+  budget: { snapshots24h: number; watchCap: number; watching: number };
+}
+
+/** One end of the all-time heat record: the reading that set it. */
+export interface ApiHeatRecord {
+  score: number;
+  segment: string;
+  label: string | null;
+  capturedAt: string;
+}
+
+/**
+ * Site-wide record scale for the heat index: 100 = hottest raw reading ever
+ * recorded, 0 = coldest. `floor`/`ceiling` are the effective raw bounds.
+ */
+export interface ApiMarketHeatScale {
+  floor: number;
+  ceiling: number;
+  high: ApiHeatRecord;
+  low: ApiHeatRecord;
+  readings: number;
 }
 
 /** First-party engagement (our platform views + saves) rolled up to a node. */

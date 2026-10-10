@@ -891,6 +891,8 @@ import type {
   ApiCrmStats,
   ApiCrmContactInput,
   ApiMarketHeatPoint,
+  ApiMarketHeatScale,
+  ApiSpikeRadar,
   ApiMarketHeatMover,
   ApiMarketForecast,
   ApiMarketEngagementPoint,
@@ -3617,6 +3619,45 @@ export const marketHeatAPI = {
       params: { scope: scope && scope !== 'all' ? scope : undefined, limit },
     });
     return r.data.data as ApiMarketHeatMover[];
+  },
+
+  /** Site-wide record scale (all-time hottest/coldest readings); null with no data. */
+  scale: async (): Promise<ApiMarketHeatScale | null> => {
+    const r = await apiClient.get(`/admin/analytics/market/heat/scale`);
+    return r.data.data as ApiMarketHeatScale | null;
+  },
+
+  /** Spike Radar: spiking topics, rotation catch-up, discovered cards, watch list. */
+  radar: async (): Promise<ApiSpikeRadar> => {
+    const r = await apiClient.get(`/admin/analytics/market/heat/radar`);
+    return r.data.data as ApiSpikeRadar;
+  },
+
+  /** Snapshot a topic hourly for `hours` (default 72). */
+  watch: async (segment: string, hours?: number): Promise<{ key: string; watchUntil: string }> => {
+    const r = await apiClient.post(
+      `/admin/analytics/market/heat/watch/${encodeURIComponent(segment)}`,
+      undefined,
+      { params: { hours } },
+    );
+    return r.data.data as { key: string; watchUntil: string };
+  },
+
+  /** Back to daily snapshots. */
+  unwatch: async (segment: string): Promise<{ key: string }> => {
+    const r = await apiClient.delete(
+      `/admin/analytics/market/heat/watch/${encodeURIComponent(segment)}`,
+    );
+    return r.data.data as { key: string };
+  },
+
+  /** Track a specific card the radar found inside a topic. */
+  promote: async (segment: string, signature: string): Promise<{ key: string | null }> => {
+    const r = await apiClient.post(`/admin/analytics/market/heat/radar/promote`, {
+      segment,
+      signature,
+    });
+    return r.data.data as { key: string | null };
   },
 
   /** Heat time series for one market topic. */

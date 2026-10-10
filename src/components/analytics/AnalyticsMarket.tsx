@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MarketHeatPanel } from './MarketHeatPanel';
+import { SpikeRadarPanel } from './SpikeRadarPanel';
 import { MarketForecastPanel } from './MarketForecastPanel';
 import { MarketTaxonomyPanel } from './MarketTaxonomyPanel';
 import { SectionHeader, SectionBanner } from './SectionHeader';
@@ -13,6 +14,11 @@ const TOUR_STEPS: TourStep[] = [
   {
     title: 'Welcome to Market Heat',
     body: "This page reads the live card market from eBay's active listings and turns it into early signals, before the sold comps catch up. Here's a quick 60-second tour.",
+  },
+  {
+    selector: '[data-tour="mh-radar"]',
+    title: 'Catch spikes early',
+    body: "Spike Radar compares every card, player and market to its own normal day and flags anything moving unusually: cheap copies getting bought up, the floor jumping, listings draining. Flagged items get snapshotted hourly, and it suggests what's likely to move next.",
   },
   {
     selector: '[data-tour="mh-scope"]',
@@ -79,11 +85,11 @@ export const AnalyticsMarket = () => {
 
   return (
     <div className="space-y-8">
-      {/* 1 — LIVE DATA */}
-      <section className="space-y-4">
+      {/* 0 — EARLY WARNING */}
+      <section data-tour="mh-radar" className="space-y-4">
         <SectionBanner
-          label="Live Data"
-          tip="What the market is doing right now, pulled daily from eBay's active listings. These are early signals that tend to move before the sold comps do."
+          label="Early Warning"
+          tip="Spikes caught in their first hours: anything moving unusually for itself, where the market may rotate next, and specific cards lighting up inside what we track."
           action={
             <Button
               variant="outline"
@@ -94,6 +100,19 @@ export const AnalyticsMarket = () => {
               <HelpCircle className="h-3.5 w-3.5" /> Tour
             </Button>
           }
+        />
+        <SectionHeader
+          title="Spike Radar"
+          subtitle="The cards, players and markets moving unusually right now, judged against their own normal. Flagged items are watched hourly."
+        />
+        <SpikeRadarPanel />
+      </section>
+
+      {/* 1 — LIVE DATA */}
+      <section className="space-y-4">
+        <SectionBanner
+          label="Live Data"
+          tip="What the market is doing right now, pulled daily from eBay's active listings. These are early signals that tend to move before the sold comps do."
         />
         <SectionHeader
           title="Live Heat"

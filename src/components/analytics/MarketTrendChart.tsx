@@ -8,11 +8,17 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
 } from 'recharts';
 import { Loader2 } from 'lucide-react';
 import { InfoTip } from './InfoTip';
+import { toHeatIndex } from './heatScale';
 import { marketHeatAPI, marketEngagementAPI } from '@/integrations/api/client';
-import type { ApiMarketHeatPoint, ApiMarketEngagementPoint } from '@/types/analytics-api';
+import type {
+  ApiMarketHeatPoint,
+  ApiMarketEngagementPoint,
+  ApiMarketHeatScale,
+} from '@/types/analytics-api';
 
 const compact = (n: number) =>
   new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
@@ -52,7 +58,16 @@ const METRICS: MetricDef[] = [
  * snapshots. A metric toggle (heat / median ask / supply / first-party
  * attention) drives a single readable line chart on a dark theme.
  */
-export const MarketTrendChart = ({ segment, label }: { segment: string; label: string | null }) => {
+export const MarketTrendChart = ({
+  segment,
+  label,
+  scale = null,
+}: {
+  segment: string;
+  label: string | null;
+  /** Record scale — heat is plotted as the 0-100 index when present. */
+  scale?: ApiMarketHeatScale | null;
+}) => {
   const [days, setDays] = useState<number>(90);
   const [metric, setMetric] = useState<MetricKey>('heat');
   const [heat, setHeat] = useState<ApiMarketHeatPoint[]>([]);
@@ -89,7 +104,7 @@ export const MarketTrendChart = ({ segment, label }: { segment: string; label: s
       byDate.set(d, { ...(byDate.get(d) ?? { date: d }), ...patch });
     for (const p of heat) {
       put(moment(p.capturedAt).format('YYYY-MM-DD'), {
-        heat: p.heatScore,
+        heat: toHeatIndex(p.heatScore, scale),
         price: p.medianAskUsd,
         supply: p.totalActive,
       });
@@ -101,7 +116,7 @@ export const MarketTrendChart = ({ segment, label }: { segment: string; label: s
       });
     }
     return [...byDate.values()].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  }, [heat, eng]);
+  }, [heat, eng, scale]);
 
   // Peaks & troughs on the primary series of the active metric.
   const stats = useMemo(() => {
@@ -117,7 +132,8 @@ export const MarketTrendChart = ({ segment, label }: { segment: string; label: s
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
         <InfoTip>
-          This is the same market over time. Flip between metrics: heat (the 0 to 100 score),
+          This is the same market over time. Flip between metrics: heat (0 to 100, where 100 is
+          our all-time record),
           median ask (price), supply (how many are listed), or views and saves (our own
           engagement). The now / low / high line shows where it is now plus the peak and dip
           over the range you pick.
@@ -203,6 +219,14 @@ export const MarketTrendChart = ({ segment, label }: { segment: string; label: s
               labelFormatter={d => moment(d as string).format('MMM D, YYYY')}
               formatter={(value: number, name: string) => [active.fmt(value), name]}
             />
+            {active.k === 'heat' && scale && (
+              <ReferenceLine
+                y={100}
+                stroke="rgba(180,255,57,0.45)"
+                strokeDasharray="4 4"
+                label={{ value: 'record', position: 'insideTopRight', fill: 'rgba(180,255,57,0.7)', fontSize: 10 }}
+              />
+            )}
             {active.keys.map(k => (
               <Line
                 key={k.dk}
