@@ -25,10 +25,12 @@ import {
   Search,
   ChevronDown,
   AlertTriangle,
+  Radar,
 } from 'lucide-react';
 import { MarketTrendChart } from './MarketTrendChart';
 import { InfoTip, TermTip } from './InfoTip';
 import { recordHolder, toHeatIndex, toHeatIndexDelta } from './heatScale';
+import { WatchToggle } from './SpikeRadarPanel';
 import { marketHeatAPI, marketEngagementAPI, marketTaxonomyAPI } from '@/integrations/api/client';
 import type {
   ApiHeatDriver,
@@ -903,6 +905,9 @@ export const MarketHeatPanel = () => {
             const idx = toHeatIndex(r.heatScore, scale);
             const peak = toHeatIndex(r.peakHeat, scale);
             const isRecord = scale != null && r.heatScore != null && r.heatScore >= scale.ceiling;
+            // Same rule as the radar: two+ signals firing, or one overwhelming move.
+            const firing = r.spikeSignals?.filter(s => s.firing).length ?? 0;
+            const spiking = r.spikeScore != null && (firing >= 2 || r.spikeScore >= 60);
             // "At its high" only means something once there's some history to beat.
             const atOwnHigh =
               !isRecord &&
@@ -993,7 +998,18 @@ export const MarketHeatPanel = () => {
                         at its high
                       </span>
                     ) : null}
+                    {spiking && (
+                      <TermTip
+                        className="no-underline"
+                        tip={`Spike Radar flagged this (spike ${r.spikeScore}): it's moving unusually for itself right now. See Spike Radar at the top for the signals.`}
+                      >
+                        <span className="inline-flex items-center gap-0.5 rounded bg-[#B4FF39]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#B4FF39]">
+                          <Radar className="h-2.5 w-2.5" /> spiking
+                        </span>
+                      </TermTip>
+                    )}
                     <span className="ml-auto flex shrink-0 items-center gap-0.5">
+                      <WatchToggle segment={r.segment} watchUntil={r.watchUntil} onChange={load} compact />
                       <button
                         type="button"
                         onClick={e => { e.stopPropagation(); setEditingKey(r.segment); }}

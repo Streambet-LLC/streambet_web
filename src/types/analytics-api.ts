@@ -516,6 +516,15 @@ export interface ApiMarketHeatPoint {
   scoredReadings?: number;
   /** Sub-scores behind heatScore (on `latest` rows only; null with no score yet). */
   heatDrivers?: ApiHeatDriver[] | null;
+  /** Spike Radar readings (newer points only). */
+  floorAskUsd?: number | null;
+  floorChangePct?: number | null;
+  sweptPct?: number | null;
+  spikeScore?: number | null;
+  spikeSignals?: ApiSpikeSignal[] | null;
+  /** Hourly watch mode (on `latest` rows only). */
+  watchUntil?: string | null;
+  watchReason?: string | null;
   sampleQuery: string | null;
   extra: {
     social: { mentions: number | null; bySource: Record<string, number> } | null;
@@ -538,6 +547,81 @@ export interface ApiHeatDriver {
   score: number;
   weight: number;
   share: number;
+}
+
+// ---------------------------------------------------------------------------
+// Spike Radar
+// ---------------------------------------------------------------------------
+
+export type ApiSpikeKey = 'floor' | 'sweep' | 'supply' | 'sellThrough' | 'price' | 'buzz' | 'tracking';
+
+/** One signal behind a spike score: today's reading and how unusual it is for this topic. */
+export interface ApiSpikeSignal {
+  key: ApiSpikeKey;
+  value: number;
+  /** Standard deviations from this topic's normal, in the hot direction (≥2 = firing). */
+  z: number;
+  firing: boolean;
+  /** This topic's typical reading, once it has enough history. */
+  typical: number | null;
+}
+
+export interface ApiRadarItem {
+  segment: string;
+  label: string;
+  scope: string;
+  rootMarket: string | null;
+  parentKey: string | null;
+  capturedAt: string;
+  heat: number | null;
+  spikeScore: number | null;
+  firing: number;
+  flagged: boolean;
+  signals: ApiSpikeSignal[];
+  floorAskUsd: number | null;
+  floorChangePct: number | null;
+  sweptPct: number | null;
+  totalActive: number | null;
+  auto: boolean;
+  watchUntil: string | null;
+  watchReason: string | null;
+}
+
+export interface ApiRadarDiscovery {
+  segment: string;
+  topicLabel: string;
+  signature: string;
+  label: string;
+  capturedAt: string;
+  listedCount: number;
+  floorUsd: number | null;
+  medianUsd: number | null;
+  clearedCount: number;
+  floorChangePct: number | null;
+  countChangePct: number | null;
+  stillHot: boolean;
+  sampleUrl: string | null;
+  trackedKey: string | null;
+  notYetMoved: { signature: string; label: string; listedCount: number; floorUsd: number | null }[];
+}
+
+export interface ApiRadarWatch {
+  segment: string;
+  label: string;
+  kind: string;
+  watchUntil: string;
+  watchReason: string | null;
+  spikeScore: number | null;
+  lastSnapshotAt: string | null;
+}
+
+export interface ApiSpikeRadar {
+  asOf: string;
+  spiking: ApiRadarItem[];
+  catchUp: { of: { segment: string; label: string }; items: ApiRadarItem[] }[];
+  discoveries: ApiRadarDiscovery[];
+  watching: ApiRadarWatch[];
+  budget: { snapshots24h: number; watchCap: number; watching: number };
 }
 
 /** One end of the all-time heat record: the reading that set it. */
