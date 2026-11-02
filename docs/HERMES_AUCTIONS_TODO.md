@@ -6,7 +6,11 @@ Working branches:
 
 Check items off as they ship. If a decision changes, update the **Decisions** section first.
 
-**Status (2026-11-01):** the API is live on staging and verified end-to-end for the card win and the decline → runner-up path. The web app is built. The only thing blocking USDC is deploying the escrow program to devnet (see Phase 5).
+**Status (2026-11-01):** the API and web are live on staging. The card win and the decline → runner-up path are verified end-to-end. Two items need someone with access:
+1. Fund the devnet deployer, then deploy + initialize the escrow (Phase 5). This turns on USDC.
+2. Add the CloudFront SPA fallback on staging (Phase 9). This makes deep links load.
+
+Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes_bidder2`, `hermes_bidder3` (`success+hermes-bidderN@simulator.amazonses.com`).
 
 ## Decisions (locked 2026-11-01)
 
@@ -82,14 +86,18 @@ Check items off as they ship. If a decision changes, update the **Decisions** se
 - [x] Bid flow: Bank / Card / USDC picker, Stripe setup redirect, max-bid with "most you'd pay", confirm dialog, shipping address capture.
 - [x] Google sign-up returns the bidder to the auction they came from.
 
-## Phase 8 — Web admin
-- [ ] Hermes Auctions tab (Live / Upcoming / Settled), create/edit form (photos, video, length + computed end, reserve, est. value pull/manual, shipping, featured), detail (bids, escrows, winner, payment, mark shipped, close / cancel). *(in progress)*
+## Phase 8 — Web admin ✅
+- [x] Hermes Auctions tab on `/analytics` (deep link `?tab=auctions&auction=<id>`):
+  - Live / Upcoming / Settled lists
+  - create/edit form: photos, video upload + link, 7/14/21/custom length with computed end, start now / schedule, reserve, shipping, est. value pull or manual, featured
+  - detail: bids, USDC escrows, winner, payment, mark shipped, close now / cancel
 
 ## Phase 9 — Staging rollout & QA
 - [x] Migration on staging.
 - [x] Stripe test webhook events.
 - [x] API pushed and deployed.
-- [ ] Web pushed and deployed.
+- [x] Web pushed and deployed (https://stag.cardcade.fun).
+- [ ] **CloudFront SPA fallback on the staging distribution.** Deep links (`/auctions`, `/login`, `/auth/verify-email`, …) return S3 403 XML on staging; prod is already configured. In the CloudFront console → staging distribution → Error pages, add 403 → `/index.html` (200) and 404 → `/index.html` (200). Alternatively, grant `GHDeployer` `cloudfront:GetDistributionConfig` + `cloudfront:UpdateDistribution` and the deploy workflow configures it itself.
 - [x] E2E (API, Stripe test mode):
   - card win, charged $41.51 = $35 + $5 shipping + $1.51 processing
   - reserve gating
