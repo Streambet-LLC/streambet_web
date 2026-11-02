@@ -95,6 +95,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # Client-side routes (/auctions/..., /login, /auth/verify-email) aren't S3
+      # objects, so S3 answers 403/404. Serve index.html with 200 instead so
+      # deep links work. Idempotent; keeps any other custom error responses.
+      - name: Ensure SPA fallback on CloudFront
+        continue-on-error: true
+        run: |
+          CF_ID="${{ secrets[format('CLOUDFRONT_ID_{0}', github.ref_name)] }}"
+          aws cloudfront get-distribution-config --id "$CF_ID" > /tmp/cf.json
+          ETAG=$(jq -r '.ETag' /tmp/cf.json)
+          HAS=$(jq '[(.DistributionConfig.CustomErrorResponses.Items // [])[] | select((.ErrorCode == 403 or .ErrorCode == 404) and .ResponsePagePath == "/index.html" and .ResponseCode == "200")] | length' /tmp/cf.json)
+          if [ "$HAS" -ge 2 ]; then echo "SPA fallback already configured"; exit 0; fi
+          jq '.DistributionConfig
+            | .CustomErrorResponses.Items = (
+                [(.CustomErrorResponses.Items // [])[] | select(.ErrorCode != 403 and .ErrorCode != 404)]
+                + [
+                    {ErrorCode: 403, ResponsePagePath: "/index.html", ResponseCode: "200", ErrorCachingMinTTL: 10},
+                    {ErrorCode: 404, ResponsePagePath: "/index.html", ResponseCode: "200", ErrorCachingMinTTL: 10}
+                  ])
+            | .CustomErrorResponses.Quantity = (.CustomErrorResponses.Items | length)' /tmp/cf.json > /tmp/cf-new.json
+          aws cloudfront update-distribution --id "$CF_ID" --if-match "$ETAG" --distribution-config file:///tmp/cf-new.json > /dev/null
+          echo "SPA fallback configured"
+
       - name: AWS S3 & CloudFront Deploy
         run: |
           S3_BUCKET="${{ secrets[format('S3_BUCKET_{0}', github.ref_name)] }}"
