@@ -102,7 +102,10 @@ jobs:
         continue-on-error: true
         run: |
           CF_ID="${{ secrets[format('CLOUDFRONT_ID_{0}', github.ref_name)] }}"
-          aws cloudfront get-distribution-config --id "$CF_ID" > /tmp/cf.json
+          if ! aws cloudfront get-distribution-config --id "$CF_ID" > /tmp/cf.json 2>/tmp/cf.err; then
+            echo "::warning::Can't read the CloudFront config ($(head -c 160 /tmp/cf.err)). Set custom error responses 403/404 -> /index.html (200) on this distribution, or grant GHDeployer cloudfront:GetDistributionConfig + UpdateDistribution."
+            exit 0
+          fi
           ETAG=$(jq -r '.ETag' /tmp/cf.json)
           HAS=$(jq '[(.DistributionConfig.CustomErrorResponses.Items // [])[] | select((.ErrorCode == 403 or .ErrorCode == 404) and .ResponsePagePath == "/index.html" and .ResponseCode == "200")] | length' /tmp/cf.json)
           if [ "$HAS" -ge 2 ]; then echo "SPA fallback already configured"; exit 0; fi
