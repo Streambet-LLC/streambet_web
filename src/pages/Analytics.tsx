@@ -1,5 +1,5 @@
-import { Navigate } from 'react-router-dom';
-import { useState } from 'react';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useCallback, useState } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Loader2, LineChart } from 'lucide-react';
@@ -15,6 +15,8 @@ import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
 import { AnalyticsLeads } from '@/components/analytics/crm/AnalyticsLeads';
 import { AnalyticsSellers } from '@/components/analytics/crm/AnalyticsSellers';
 import { CrmContacts } from '@/components/analytics/crm/CrmContacts';
+// Hermes Auctions house admin (create / run / settle auctions).
+import { HermesAdmin } from '@/components/hermes/admin/HermesAdmin';
 
 type AnalyticsTab =
   | 'ai'
@@ -23,7 +25,22 @@ type AnalyticsTab =
   | 'crm'
   | 'portfolio'
   | 'usage'
-  | 'waitlist';
+  | 'waitlist'
+  | 'auctions';
+
+const ANALYTICS_TABS: AnalyticsTab[] = [
+  'ai',
+  'market',
+  'additional',
+  'crm',
+  'portfolio',
+  'usage',
+  'waitlist',
+  'auctions',
+];
+
+const isAnalyticsTab = (v: string | null): v is AnalyticsTab =>
+  !!v && (ANALYTICS_TABS as string[]).includes(v);
 
 // Active-tab style keyed off aria-selected: each trigger is wrapped in a
 // TooltipTrigger (asChild), which overwrites the tab's data-state attribute.
@@ -36,10 +53,46 @@ const TAB_TRIGGER_CLASS =
  */
 const Analytics = () => {
   const { session, isLoading, isFetching } = useAuthContext();
-  const [tab, setTab] = useState<AnalyticsTab>('market');
+  const location = useLocation();
+  // `?tab=<tab>` opens a tab directly; `?tab=auctions&auction=<id>` also
+  // opens that auction (the Hermes "sold" email links here).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState<AnalyticsTab>(() => {
+    const t = searchParams.get('tab');
+    return isAnalyticsTab(t) ? t : 'market';
+  });
   // Sub-view inside the CRM tab.
   const [audienceTab, setAudienceTab] = useState<'sellers' | 'buyers' | 'leads'>(
     'leads',
+  );
+  const selectedAuctionId = searchParams.get('auction');
+
+  const changeTab = (v: AnalyticsTab) => {
+    setTab(v);
+    setSearchParams(
+      prev => {
+        const next = new URLSearchParams(prev);
+        next.set('tab', v);
+        if (v !== 'auctions') next.delete('auction');
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
+  const selectAuction = useCallback(
+    (id: string | null) =>
+      setSearchParams(
+        prev => {
+          const next = new URLSearchParams(prev);
+          next.set('tab', 'auctions');
+          if (id) next.set('auction', id);
+          else next.delete('auction');
+          return next;
+        },
+        { replace: true },
+      ),
+    [setSearchParams],
   );
 
   if (isLoading || isFetching) {
@@ -51,7 +104,13 @@ const Analytics = () => {
   }
 
   if (!session) {
-    return <Navigate to="/login?redirect=/analytics" replace />;
+    // Keep the query so deep links (e.g. ?tab=auctions&auction=…) survive login.
+    return (
+      <Navigate
+        to={`/login?redirect=${encodeURIComponent(`/analytics${location.search}`)}`}
+        replace
+      />
+    );
   }
 
   if (session.role !== 'admin') {
@@ -72,7 +131,7 @@ const Analytics = () => {
             </p>
           </div>
 
-          <Tabs value={tab} onValueChange={v => setTab(v as AnalyticsTab)}>
+          <Tabs value={tab} onValueChange={v => changeTab(v as AnalyticsTab)}>
             <TabsList className="h-auto flex-wrap justify-start bg-[rgba(22,22,22,1)] border border-white/5">
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
@@ -143,6 +202,24 @@ const Analytics = () => {
                   Everyone who's signed up for the waitlist, and the details they gave.
                 </TooltipContent>
               </Tooltip>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="auctions" className={TAB_TRIGGER_CLASS}>
+                    <img
+                      src="/hermes/hermes-mark-32.png"
+                      alt=""
+                      width={16}
+                      height={16}
+                      className="h-4 w-4"
+                    />
+                    Hermes Auctions
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  Run Hermes Auctions: create and schedule lots, watch live bidding, and
+                  settle, ship and audit what sold.
+                </TooltipContent>
+              </Tooltip>
             </TabsList>
 
             <TabsContent value="ai" className="mt-6">
@@ -208,6 +285,13 @@ const Analytics = () => {
 
             <TabsContent value="waitlist" className="mt-6">
               <AnalyticsWaitlist />
+            </TabsContent>
+
+            <TabsContent value="auctions" className="mt-6">
+              <HermesAdmin
+                selectedAuctionId={selectedAuctionId}
+                onSelectAuction={selectAuction}
+              />
             </TabsContent>
           </Tabs>
         </div>

@@ -33,13 +33,16 @@ const GoogleCallback = () => {
     if (accessToken && refreshToken) {
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-      // Give a short delay for UX
+      // Where to land: explicit param, else what Login/SignUp stashed before
+      // leaving for Google (e.g. the auction being bid on). Same-site paths
+      // only. A full load so the session query picks up the new tokens.
+      const stored = sessionStorage.getItem('post_auth_redirect');
+      sessionStorage.removeItem('post_auth_redirect');
+      const target = [redirectParam, stored].find(
+        p => !!p && p.startsWith('/') && !p.startsWith('//'),
+      );
       setTimeout(() => {
-        if (redirectParam) {
-          navigate(redirectParam);
-        } else {
-          navigate('/');
-        }
+        window.location.replace(target || '/');
       }, 1000);
     } else {
       setError('No authentication tokens found');

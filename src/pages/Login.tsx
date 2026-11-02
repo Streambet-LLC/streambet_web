@@ -44,7 +44,7 @@ export default function Login() {
         navigate(redirectParam);
       }
       else {
-        navigate(response?.data?.role === 'admin' ? '/analytics' : '/');
+        navigate(response?.data?.role === 'admin' ? '/analytics' : '/auctions');
       }
     },
     onError: (error: any) => {
@@ -113,6 +113,7 @@ export default function Login() {
   
 
   const handleGoogleLogin = async () => {
+    if (redirectParam) sessionStorage.setItem('post_auth_redirect', redirectParam);
     googleLoginMutation.mutateAsync();
   };
 
@@ -227,6 +228,15 @@ export default function Login() {
                     Sign in with Google
                   </Button>
                 </motion.div>
+                <p className="text-center text-sm text-white/60">
+                  New to Hermes Auctions?{' '}
+                  <Link
+                    to={redirectParam ? `/signup?redirect=${encodeURIComponent(redirectParam)}` : '/signup'}
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    Create an account
+                  </Link>
+                </p>
               </CardContent>
             </form>
           </Card>
