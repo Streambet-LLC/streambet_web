@@ -22,13 +22,9 @@ import {
   hermesAPI,
 } from '@/integrations/api/hermes';
 import { getMessage } from '@/utils/helper';
-import { AuctionClock, ReserveBadge } from './AuctionCard';
+import { AuctionClock, PaymentsBadge, ReserveBadge } from './AuctionCard';
 import { cardFeeFor, fmtDateTime, fmtUsd } from './format';
-import {
-  ShippingAddressForm,
-  fetchMyAddress,
-  isAddressComplete,
-} from './ShippingAddressForm';
+import { ShippingAddressForm, fetchMyAddress, isAddressComplete } from './ShippingAddressForm';
 import { UsdcEscrow } from './UsdcEscrow';
 
 const METHODS: Array<{
@@ -76,22 +72,38 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
 
   const savedOfKind: SavedPaymentMethod[] = useMemo(
     () => (methods.data ?? []).filter(m => m.kind === method),
-    [methods.data, method],
+    [methods.data, method]
   );
+
+  // Only the rails this auction accepts (and USDC only once the escrow is live).
+  const allowed = useMemo(
+    () =>
+      METHODS.filter(
+        m =>
+          (auction.acceptedMethods ?? ['card', 'ach', 'usdc']).includes(m.key) &&
+          (m.key !== 'usdc' || config.crypto.enabled)
+      ),
+    [auction.acceptedMethods, config.crypto.enabled]
+  );
+  useEffect(() => {
+    if (allowed.length && !allowed.some(m => m.key === method)) setMethod(allowed[0].key);
+  }, [allowed, method]);
 
   // Default to whatever the bidder already has saved.
   useEffect(() => {
     if (viewer?.fundingMethod || !methods.data) return;
-    if (methods.data.some(m => m.kind === 'ach')) setMethod('ach');
-    else if (methods.data.some(m => m.kind === 'card')) setMethod('card');
-  }, [methods.data, viewer?.fundingMethod]);
+    const ok = (k: FundingMethod) => allowed.some(m => m.key === k);
+    if (ok('ach') && methods.data.some(m => m.kind === 'ach')) setMethod('ach');
+    else if (ok('card') && methods.data.some(m => m.kind === 'card')) setMethod('card');
+  }, [methods.data, viewer?.fundingMethod, allowed]);
   useEffect(() => {
     setPmId(savedOfKind[0]?.id);
   }, [savedOfKind]);
 
-  const minBid = viewer?.isLeader && viewer.myMaxUsd
-    ? round2(viewer.myMaxUsd + auction.minIncrementUsd)
-    : auction.minNextBidUsd;
+  const minBid =
+    viewer?.isLeader && viewer.myMaxUsd
+      ? round2(viewer.myMaxUsd + auction.minIncrementUsd)
+      : auction.minNextBidUsd;
   useEffect(() => {
     setAmount(String(minBid));
   }, [minBid]);
@@ -114,7 +126,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
       if (r.leading) toast.success(`You're the high bidder at ${fmtUsd(r.currentBidUsd)}`);
       else
         toast.warning(
-          `Another bidder's max is higher — current bid is now ${fmtUsd(r.currentBidUsd)}. Try a higher max.`,
+          `Another bidder's max is higher — current bid is now ${fmtUsd(r.currentBidUsd)}. Try a higher max.`
         );
       qc.invalidateQueries({ queryKey: ['hermes-auction', auction.id] });
       qc.invalidateQueries({ queryKey: ['hermes-bids', auction.id] });
@@ -136,14 +148,14 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
     const sold = auction.result?.sold;
     return (
       <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Auction ended</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-white/50">
+          Auction ended
+        </p>
         {auction.status === 'cancelled' ? (
           <p className="mt-2 text-lg font-bold">This auction was cancelled.</p>
         ) : sold ? (
           <>
-            <p className="mt-2 text-3xl font-extrabold">
-              {fmtUsd(auction.result?.winningBidUsd)}
-            </p>
+            <p className="mt-2 text-3xl font-extrabold">{fmtUsd(auction.result?.winningBidUsd)}</p>
             <p className="text-sm text-white/60">
               Won by {auction.result?.winner ?? 'a bidder'} · {auction.bidCount} bids
             </p>
@@ -154,7 +166,10 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           </p>
         )}
         {viewer?.isWinner && (
-          <Button asChild className="mt-4 h-11 w-full bg-[#C7FA09] font-bold text-black hover:bg-[#d6ff3d]">
+          <Button
+            asChild
+            className="mt-4 h-11 w-full bg-[#C7FA09] font-bold text-black hover:bg-[#d6ff3d]"
+          >
             <Link to={`/auctions/${auction.id}/pay`}>
               <Trophy className="mr-2 h-4 w-4" /> You won — view payment
             </Link>
@@ -182,7 +197,9 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
         <div className="text-right text-sm">
           <AuctionClock auction={auction} />
           <p className="mt-1 text-xs text-white/45">
-            {upcoming ? `Opens ${fmtDateTime(auction.startsAt)}` : `Ends ${fmtDateTime(auction.endsAt)}`}
+            {upcoming
+              ? `Opens ${fmtDateTime(auction.startsAt)}`
+              : `Ends ${fmtDateTime(auction.endsAt)}`}
           </p>
         </div>
       </div>
@@ -199,11 +216,14 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
         <span className="rounded-full bg-[#C7FA09]/10 px-2 py-0.5 text-[11px] font-semibold text-[#C7FA09]">
           0% buyer premium
         </span>
+        {auction.acceptedPayments !== 'both' && (
+          <PaymentsBadge accepted={auction.acceptedPayments} />
+        )}
       </div>
       {viewer?.isLeader && (
         <div className="rounded-xl border border-[#C7FA09]/40 bg-[#C7FA09]/10 px-3 py-2 text-sm">
-          <span className="font-bold text-[#C7FA09]">You're the high bidder.</span>{' '}
-          Your max is {fmtUsd(viewer.myMaxUsd)} — we'll bid for you up to that.
+          <span className="font-bold text-[#C7FA09]">You're the high bidder.</span> Your max is{' '}
+          {fmtUsd(viewer.myMaxUsd)} — we'll bid for you up to that.
         </div>
       )}
       {viewer?.isBidder && !viewer.isLeader && (
@@ -224,13 +244,20 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
   if (!session) {
     return shell(
       <div className="space-y-2">
-        <Button asChild className="h-11 w-full bg-[#C7FA09] font-bold text-black hover:bg-[#d6ff3d]">
+        <Button
+          asChild
+          className="h-11 w-full bg-[#C7FA09] font-bold text-black hover:bg-[#d6ff3d]"
+        >
           <Link to={`/signup?redirect=${redirect}`}>Sign up to bid</Link>
         </Button>
-        <Button asChild variant="outline" className="h-11 w-full border-white/15 bg-transparent text-white hover:bg-white/5">
+        <Button
+          asChild
+          variant="outline"
+          className="h-11 w-full border-white/15 bg-transparent text-white hover:bg-white/5"
+        >
           <Link to={`/login?redirect=${redirect}`}>Log in</Link>
         </Button>
-      </div>,
+      </div>
     );
   }
 
@@ -238,11 +265,14 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
     return shell(
       <p className="text-sm text-white/60">
         You're signed in as the house, so you can't bid. Manage this auction in{' '}
-        <Link to={`/analytics?tab=auctions&auction=${auction.id}`} className="text-[#C7FA09] underline">
+        <Link
+          to={`/analytics?tab=auctions&auction=${auction.id}`}
+          className="text-[#C7FA09] underline"
+        >
           admin
         </Link>
         .
-      </p>,
+      </p>
     );
   }
 
@@ -259,25 +289,39 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           setEditingAddress(false);
           toast.success('Shipping address saved');
         }}
-      />,
+      />
     );
   }
 
-  const cryptoOn = config.crypto.enabled;
+  if (allowed.length === 0) {
+    return shell(
+      <p className="rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white/70">
+        This auction accepts USDC only, and USDC bidding isn't available right now. Check back soon.
+      </p>
+    );
+  }
+
   const escrow = viewer?.escrowUsd ?? 0;
   const usdcRequired = round2((validAmount ? maxBid : minBid) + shipping);
   const usdcCovered = escrow >= usdcRequired;
-  const canBid =
-    !upcoming &&
-    validAmount &&
-    (method === 'usdc' ? usdcCovered : !!pmId);
+  const canBid = !upcoming && validAmount && (method === 'usdc' ? usdcCovered : !!pmId);
 
   return shell(
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/50">Pay with</p>
-        <div className={`grid gap-2 ${config.crypto.enabled ? 'grid-cols-3' : 'grid-cols-2'}`}>
-          {METHODS.filter(m => m.key !== 'usdc' || cryptoOn).map(m => (
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/50">
+          Pay with
+        </p>
+        <div
+          className={`grid gap-2 ${
+            allowed.length === 3
+              ? 'grid-cols-3'
+              : allowed.length === 2
+                ? 'grid-cols-2'
+                : 'grid-cols-1'
+          }`}
+        >
+          {allowed.map(m => (
             <button
               key={m.key}
               type="button"
@@ -289,7 +333,9 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
                   : 'border-white/10 bg-black/30 hover:border-white/25'
               }`}
             >
-              <m.icon className={`h-4 w-4 ${method === m.key ? 'text-[#C7FA09]' : 'text-white/60'}`} />
+              <m.icon
+                className={`h-4 w-4 ${method === m.key ? 'text-[#C7FA09]' : 'text-white/60'}`}
+              />
               <p className="mt-1 text-sm font-semibold">{m.label}</p>
               <p className="text-[11px] text-white/50">{m.note}</p>
             </button>
@@ -311,7 +357,9 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
               {savedOfKind.map(m => (
                 <option key={m.id} value={m.id}>
                   {m.label} •••• {m.last4}
-                  {m.expMonth ? ` · ${String(m.expMonth).padStart(2, '0')}/${String(m.expYear).slice(-2)}` : ''}
+                  {m.expMonth
+                    ? ` · ${String(m.expMonth).padStart(2, '0')}/${String(m.expYear).slice(-2)}`
+                    : ''}
                 </option>
               ))}
             </select>
@@ -328,7 +376,11 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
             disabled={setup.isPending}
             className="inline-flex items-center gap-1 text-xs font-semibold text-[#C7FA09] hover:underline disabled:opacity-50"
           >
-            {setup.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+            {setup.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Plus className="h-3 w-3" />
+            )}
             {method === 'ach' ? 'Link a bank account' : 'Add a card'}
           </button>
         </div>
@@ -342,12 +394,17 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
       )}
 
       <div>
-        <label htmlFor="max-bid" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-white/50">
+        <label
+          htmlFor="max-bid"
+          className="mb-1 block text-xs font-semibold uppercase tracking-wider text-white/50"
+        >
           {viewer?.isLeader ? 'Raise your max bid' : 'Your max bid'}
         </label>
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/50">$</span>
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+              $
+            </span>
             <Input
               id="max-bid"
               inputMode="decimal"
@@ -376,8 +433,8 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           <p className="mt-1 text-xs text-red-400">Minimum is {fmtUsd(minBid)}.</p>
         )}
         <p className="mt-2 text-[11px] leading-relaxed text-white/45">
-          We bid for you automatically, only as much as needed to keep you in front, up to your
-          max. You pay the winning bid, not your max.
+          We bid for you automatically, only as much as needed to keep you in front, up to your max.
+          You pay the winning bid, not your max.
         </p>
       </div>
 
@@ -433,8 +490,8 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           <DialogHeader>
             <DialogTitle>Confirm your max bid</DialogTitle>
             <DialogDescription className="text-white/60">
-              If you win, you'll pay the winning bid (at most {fmtUsd(maxBid, { cents: true })}) plus{' '}
-              {fmtUsd(shipping, { cents: true })} shipping
+              If you win, you'll pay the winning bid (at most {fmtUsd(maxBid, { cents: true })})
+              plus {fmtUsd(shipping, { cents: true })} shipping
               {method === 'card' ? ' and card processing' : ''}
               {method === 'usdc'
                 ? ', settled from your USDC escrow.'
@@ -443,7 +500,11 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setConfirmOpen(false)} className="border-white/15 bg-transparent text-white">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              className="border-white/15 bg-transparent text-white"
+            >
               Back
             </Button>
             <Button
@@ -456,6 +517,6 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>,
+    </div>
   );
 }

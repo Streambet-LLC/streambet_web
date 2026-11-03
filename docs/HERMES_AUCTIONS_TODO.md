@@ -29,6 +29,7 @@ Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes
 | Fees | **Zero-fee: no buyer premium.** The buyer pays a flat per-auction shipping amount. Card payers also pay processing (grossed up for 2.9% + $0.30). ACH and USDC pay no processing. |
 | Card / ACH | Stripe. The method is saved once (hosted Checkout, setup mode) and charged off-session at close. Holds aren't used because card authorizations expire after 7 days and auctions run 7–21. |
 | Crypto | USDC on Solana with **on-chain escrow**, in a **new `hermes-auctions` program** (devnet). Escrow must cover max bid + shipping. Outbid, unsold, or cancelled → refunded automatically. Win → hammer + shipping go to the treasury and the rest is returned. |
+| Payment options (2026-11-03) | Per auction, the admin picks **Fiat** (card + bank), **Crypto** (USDC), or **Both** (default). Locked once bidding opens. Crypto-only is refused while the USDC escrow isn't live. Bidders only see the allowed methods; single-rail lots show a "Card & bank only" / "USDC only" badge. |
 | Anti-snipe | A bid in the final 60 seconds extends the end to now + 60 seconds (no cap). |
 | Increments | $1 under $25; $5 under $100; $10 under $250; $25 under $500; $50 under $1k; $100 under $2.5k; $250 under $5k; $500 under $10k; $1k under $25k; $2.5k under $50k; then $5k. |
 | Failed payment | 48-hour grace window to pay via hosted Checkout. Then the next-highest bidder who hasn't declined is charged their own max. Never loops. |

@@ -7,7 +7,7 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CalendarClock, Loader2, Lock, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,7 +30,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  hermesAPI,
   hermesAdminAPI,
+  type AcceptedPayments,
   type AdminAuctionDetail,
   type AuctionCategory,
   type AuctionImage,
@@ -79,6 +81,7 @@ interface FormState {
   hasReserve: boolean;
   reservePrice: string;
   shipping: string;
+  acceptedPayments: AcceptedPayments;
   est: EstValueState;
   isFeatured: boolean;
 }
@@ -93,6 +96,7 @@ type FieldKey =
   | 'startingPrice'
   | 'reservePrice'
   | 'shipping'
+  | 'payments'
   | 'estValue';
 
 const FIELD_ORDER: FieldKey[] = [
@@ -105,8 +109,21 @@ const FIELD_ORDER: FieldKey[] = [
   'startingPrice',
   'reservePrice',
   'shipping',
+  'payments',
   'estValue',
 ];
+
+const PAYMENT_OPTIONS: ReadonlyArray<{ value: AcceptedPayments; label: string }> = [
+  { value: 'both', label: 'Both' },
+  { value: 'fiat', label: 'Fiat (card + bank)' },
+  { value: 'crypto', label: 'Crypto (USDC)' },
+];
+
+const PAYMENT_HINT: Record<AcceptedPayments, string> = {
+  both: 'Bidders choose card, bank (ACH) or USDC.',
+  fiat: 'Card or bank (ACH) only. Card payers cover processing; bank is free.',
+  crypto: 'USDC only, held in on-chain escrow. No fees.',
+};
 
 /** `required` errors only show after a submit attempt; the rest show live. */
 type FieldErrors = Partial<Record<FieldKey, { msg: string; required?: boolean }>>;
@@ -135,6 +152,7 @@ function initialState(a: AdminAuction | null): FormState {
       hasReserve: false,
       reservePrice: '',
       shipping: '0',
+      acceptedPayments: 'both',
       est: { mode: 'pull', amount: '', accepted: null },
       isFeatured: false,
     };
@@ -154,6 +172,7 @@ function initialState(a: AdminAuction | null): FormState {
     hasReserve: a.reservePriceUsd != null,
     reservePrice: a.reservePriceUsd != null ? String(a.reservePriceUsd) : '',
     shipping: String(a.shippingUsd ?? 0),
+    acceptedPayments: a.acceptedPayments ?? 'both',
     est: pulled
       ? {
           mode: 'pull',
@@ -266,7 +285,16 @@ function AuctionForm({
     form.startingPrice !== init.startingPrice ||
     form.hasReserve !== init.hasReserve ||
     (form.hasReserve && form.reservePrice !== init.reservePrice) ||
-    form.shipping !== init.shipping;
+    form.shipping !== init.shipping ||
+    form.acceptedPayments !== init.acceptedPayments;
+
+  // Crypto-only needs the USDC escrow live (the API refuses it otherwise).
+  const hermesConfig = useQuery({
+    queryKey: ['hermes-config'],
+    queryFn: hermesAPI.config,
+    staleTime: 60_000,
+  });
+  const cryptoLive = !!hermesConfig.data?.crypto.enabled;
 
   // "Start now" moves the computed end with the clock.
   const now = useNow(form.startMode === 'now' && !locked ? 30_000 : 0);
@@ -328,6 +356,15 @@ function AuctionForm({
     }
     const sh = usdError(form.shipping, { label: 'shipping', min: 0, required: false });
     if (sh) errors.shipping = sh;
+    if (
+      form.acceptedPayments === 'crypto' &&
+      hermesConfig.isSuccess &&
+      !cryptoLive &&
+      form.acceptedPayments !== init.acceptedPayments
+    )
+      errors.payments = {
+        msg: "USDC escrow isn't live yet, so nobody could bid. Choose Fiat or Both for now.",
+      };
   }
   const ev = usdError(form.est.amount, { label: 'est. value', min: 0, required: false });
   if (ev) errors.estValue = ev;
@@ -368,6 +405,7 @@ function AuctionForm({
       startingPriceUsd: roundCents(startingNum ?? 0),
       reservePriceUsd: form.hasReserve && reserveNum != null ? roundCents(reserveNum) : null,
       shippingUsd: roundCents(shippingNum ?? 0),
+      acceptedPayments: form.acceptedPayments,
     };
 
     const timing: Partial<AuctionInput> = {
@@ -801,6 +839,27 @@ function AuctionForm({
               </FieldHint>
             </div>
           </div>
+        </Section>
+
+        {/* ── Payments ──────────────────────────────────────────────── */}
+        <Section title="Payments" hint="Which payment methods bidders can use on this auction.">
+          <Segmented
+            value={form.acceptedPayments}
+            onChange={v => set({ acceptedPayments: v })}
+            options={PAYMENT_OPTIONS}
+            ariaLabel="Accepted payments"
+            disabled={locked}
+          />
+          <FieldHint>
+            {PAYMENT_HINT[form.acceptedPayments]}
+            {form.acceptedPayments !== 'fiat' && hermesConfig.isSuccess && !cryptoLive && (
+              <span className="text-amber-300">
+                {' '}
+                USDC escrow isn't live yet — until it is, bidders only see card and bank.
+              </span>
+            )}
+          </FieldHint>
+          <FieldError id={`${ids.payments}-error`}>{visibleError('payments')}</FieldError>
         </Section>
 
         {/* ── Est. value ────────────────────────────────────────────── */}

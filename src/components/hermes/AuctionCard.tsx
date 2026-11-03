@@ -4,7 +4,11 @@ import type { PublicAuction } from '@/integrations/api/hermes';
 import { CATEGORY_LABEL, fmtRemaining, fmtUsd } from './format';
 import { useCountdown } from './useCountdown';
 
-export function ReserveBadge({ auction }: { auction: Pick<PublicAuction, 'hasReserve' | 'reserveMet'> }) {
+export function ReserveBadge({
+  auction,
+}: {
+  auction: Pick<PublicAuction, 'hasReserve' | 'reserveMet'>;
+}) {
   if (!auction.hasReserve) {
     return (
       <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/70">
@@ -19,6 +23,16 @@ export function ReserveBadge({ auction }: { auction: Pick<PublicAuction, 'hasRes
   ) : (
     <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
       Reserve not met
+    </span>
+  );
+}
+
+/** Shown when an auction takes only one rail ("both" needs no badge). */
+export function PaymentsBadge({ accepted }: { accepted: PublicAuction['acceptedPayments'] }) {
+  if (accepted === 'both') return null;
+  return (
+    <span className="rounded-full border border-sky-300/30 bg-sky-300/10 px-2 py-0.5 text-[11px] font-semibold text-sky-200">
+      {accepted === 'crypto' ? 'USDC only' : 'Card & bank only'}
     </span>
   );
 }
@@ -78,7 +92,10 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
           )}
         </div>
         {auction.videos.length > 0 && (
-          <span className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white" title="Has video">
+          <span
+            className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white"
+            title="Has video"
+          >
             <Video className="h-3.5 w-3.5" />
           </span>
         )}
@@ -108,6 +125,7 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <ReserveBadge auction={auction} />
+          <PaymentsBadge accepted={auction.acceptedPayments} />
           {auction.estValueUsd != null && (
             <span className="text-[11px] text-white/55">Est. {fmtUsd(auction.estValueUsd)}</span>
           )}

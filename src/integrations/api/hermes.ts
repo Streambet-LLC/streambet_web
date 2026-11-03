@@ -16,6 +16,8 @@ export type AuctionStatus =
   | 'cancelled';
 export type AuctionBucket = 'live' | 'upcoming' | 'settled';
 export type FundingMethod = 'card' | 'ach' | 'usdc';
+/** Rails an auction accepts: fiat = card + bank (ACH), crypto = USDC escrow. */
+export type AcceptedPayments = 'fiat' | 'crypto' | 'both';
 export type LengthPreset = '7' | '14' | '21' | 'custom';
 
 export interface AuctionImage {
@@ -52,6 +54,8 @@ export interface PublicAuction {
   reserveMet: boolean | null;
   estValueUsd: number | null;
   estValueSource: 'manual' | 'pulled' | null;
+  acceptedPayments: AcceptedPayments;
+  acceptedMethods: FundingMethod[];
   shippingUsd: number;
   isFeatured: boolean;
   leader: string | null;
@@ -173,6 +177,7 @@ export interface AdminAuctionRow {
   paymentMethod: FundingMethod | null;
   fulfillmentStatus: 'pending' | 'shipped' | 'delivered';
   isFeatured: boolean;
+  acceptedPayments: AcceptedPayments;
   isOverdue: boolean;
 }
 
@@ -220,6 +225,7 @@ export interface AdminAuctionDetail {
     estValueMeta: EstValueMeta | null;
     shippingUsd: number;
     isFeatured: boolean;
+    acceptedPayments: AcceptedPayments;
     bidCount: number;
     extensionCount: number;
     currentLeaderUserId: string | null;
@@ -277,6 +283,7 @@ export interface AuctionInput {
   estValueMeta?: EstValueMeta | null;
   shippingUsd: number;
   isFeatured?: boolean;
+  acceptedPayments?: AcceptedPayments;
 }
 
 const data = <T>(p: Promise<{ data: { data: T } }>) => p.then(r => r.data.data);
@@ -285,34 +292,33 @@ export const hermesAPI = {
   config: () => data<HermesConfig>(apiClient.get('/auctions/config')),
   list: (bucket: 'live' | 'upcoming', category?: AuctionCategory) =>
     data<PublicAuction[]>(
-      apiClient.get('/auctions', { params: { bucket, ...(category ? { category } : {}) } }),
+      apiClient.get('/auctions', { params: { bucket, ...(category ? { category } : {}) } })
     ),
   featured: (limit = 6) =>
     data<PublicAuction[]>(apiClient.get('/auctions/featured', { params: { limit } })),
   get: (id: string) => data<PublicAuction>(apiClient.get(`/auctions/${id}`)),
   bids: (id: string) => data<PublicBid[]>(apiClient.get(`/auctions/${id}/bids`)),
   mine: () => data<MyAuction[]>(apiClient.get('/auctions/me')),
-  paymentMethods: () =>
-    data<SavedPaymentMethod[]>(apiClient.get('/auctions/me/payment-methods')),
+  paymentMethods: () => data<SavedPaymentMethod[]>(apiClient.get('/auctions/me/payment-methods')),
   paymentSetup: (method: 'card' | 'ach', returnUrl: string) =>
     data<{ url: string }>(apiClient.post('/auctions/payment-setup', { method, returnUrl })),
   placeBid: (
     id: string,
-    body: { proxyMaxUsd: number; fundingMethod: FundingMethod; stripePaymentMethodId?: string },
+    body: { proxyMaxUsd: number; fundingMethod: FundingMethod; stripePaymentMethodId?: string }
   ) =>
     data<{ leading: boolean; currentBidUsd: number; myMaxUsd: number; endsAt: string }>(
-      apiClient.post(`/auctions/${id}/bids`, body),
+      apiClient.post(`/auctions/${id}/bids`, body)
     ),
   cryptoQuote: (id: string, wallet: string, amountUsd: number) =>
     data<DepositQuote>(apiClient.post(`/auctions/${id}/crypto/quote`, { wallet, amountUsd })),
   cryptoConfirm: (id: string, wallet: string, signature: string) =>
     data<{ escrowUsd: number; escrow: string }>(
-      apiClient.post(`/auctions/${id}/crypto/confirm`, { wallet, signature }),
+      apiClient.post(`/auctions/${id}/crypto/confirm`, { wallet, signature })
     ),
   payment: (id: string) => data<PaymentInfo>(apiClient.get(`/auctions/${id}/payment`)),
   paymentCheckout: (id: string, method: 'card' | 'ach', returnUrl: string) =>
     data<{ url: string }>(
-      apiClient.post(`/auctions/${id}/payment/checkout`, { method, returnUrl }),
+      apiClient.post(`/auctions/${id}/payment/checkout`, { method, returnUrl })
     ),
   paymentConfirm: (id: string, sessionId: string) =>
     data<PaymentInfo>(apiClient.post(`/auctions/${id}/payment/confirm`, { sessionId })),
@@ -322,17 +328,15 @@ export const hermesAdminAPI = {
   list: (bucket: AuctionBucket) =>
     data<AdminAuctionRow[]>(apiClient.get('/admin/auctions', { params: { bucket } })),
   get: (id: string) => data<AdminAuctionDetail>(apiClient.get(`/admin/auctions/${id}`)),
-  create: (body: AuctionInput) =>
-    data<AdminAuctionDetail>(apiClient.post('/admin/auctions', body)),
+  create: (body: AuctionInput) => data<AdminAuctionDetail>(apiClient.post('/admin/auctions', body)),
   update: (id: string, body: Partial<AuctionInput>) =>
     data<AdminAuctionDetail>(apiClient.patch(`/admin/auctions/${id}`, body)),
-  cancel: (id: string) =>
-    data<AdminAuctionDetail>(apiClient.post(`/admin/auctions/${id}/cancel`)),
+  cancel: (id: string) => data<AdminAuctionDetail>(apiClient.post(`/admin/auctions/${id}/cancel`)),
   forceClose: (id: string) =>
     data<AdminAuctionDetail>(apiClient.post(`/admin/auctions/${id}/force-close`)),
   ship: (id: string, carrier: string, trackingNumber: string) =>
     data<AdminAuctionDetail>(
-      apiClient.post(`/admin/auctions/${id}/ship`, { carrier, trackingNumber }),
+      apiClient.post(`/admin/auctions/${id}/ship`, { carrier, trackingNumber })
     ),
   /** Streams one photo or video to S3. Large videos: pass onProgress. */
   upload: (kind: 'image' | 'video', file: File, onProgress?: (pct: number) => void) => {
@@ -345,7 +349,7 @@ export const hermesAdminAPI = {
         onUploadProgress: e => {
           if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100));
         },
-      }),
+      })
     );
   },
   identify: (body: {
@@ -355,10 +359,10 @@ export const hermesAdminAPI = {
     imageUrls?: string[];
   }) =>
     data<{ identified: boolean; subject: string; notes: string }>(
-      apiClient.post('/admin/auctions/estimate/identify', body),
+      apiClient.post('/admin/auctions/estimate/identify', body)
     ),
   value: (category: AuctionCategory, subject: string) =>
     data<EstValueMeta>(
-      apiClient.post('/admin/auctions/estimate/value', { category, subject }, { timeout: 90_000 }),
+      apiClient.post('/admin/auctions/estimate/value', { category, subject }, { timeout: 90_000 })
     ),
 };

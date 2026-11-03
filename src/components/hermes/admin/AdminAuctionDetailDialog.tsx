@@ -348,6 +348,23 @@ function DetailBody({ id, onEdit }: { id: string; onEdit: (a: AdminAuction) => v
           />
           <Stat label="Length" value={lengthLabel} />
           <Stat
+            label="Payments"
+            value={
+              auction.acceptedPayments === 'fiat'
+                ? 'Fiat'
+                : auction.acceptedPayments === 'crypto'
+                  ? 'Crypto'
+                  : 'Both'
+            }
+            sub={
+              auction.acceptedPayments === 'fiat'
+                ? 'Card + bank (ACH)'
+                : auction.acceptedPayments === 'crypto'
+                  ? 'USDC escrow'
+                  : 'Card, bank or USDC'
+            }
+          />
+          <Stat
             label={startsMs > now ? 'Starts' : 'Started'}
             value={<span className="text-sm">{fmtDateTime(auction.startsAt)}</span>}
             sub={
