@@ -101,8 +101,12 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-white/45">
+        <p className="truncate text-[11px] font-semibold uppercase tracking-wider text-white/45">
           {CATEGORY_LABEL[auction.category]}
+          <span className="normal-case tracking-normal text-white/40">
+            {' '}
+            · by {auction.sellerName}
+          </span>
         </p>
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-white">
           {auction.title}

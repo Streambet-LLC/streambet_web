@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Bot } from 'lucide-react';
+import { ArrowLeft, Bot, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { HermesShell } from '@/components/hermes/HermesShell';
 import { MediaGallery } from '@/components/hermes/MediaGallery';
@@ -30,7 +30,11 @@ export default function AuctionDetail() {
     queryFn: () => hermesAPI.bids(id!),
     enabled: !!id,
   });
-  const config = useQuery({ queryKey: ['hermes-config'], queryFn: hermesAPI.config, staleTime: 60_000 });
+  const config = useQuery({
+    queryKey: ['hermes-config'],
+    queryFn: hermesAPI.config,
+    staleTime: 60_000,
+  });
   useAuctionLive(id);
 
   // Back from Stripe's hosted setup page.
@@ -71,7 +75,13 @@ export default function AuctionDetail() {
 
   const a = auction.data;
   const cfg = config.data ?? {
-    crypto: { enabled: false, cluster: 'devnet' as const, programId: null, paymentMint: null, authority: null },
+    crypto: {
+      enabled: false,
+      cluster: 'devnet' as const,
+      programId: null,
+      paymentMint: null,
+      authority: null,
+    },
     fees: a.fees,
   };
   const panel = <BidPanel auction={a} config={cfg} />;
@@ -97,8 +107,16 @@ export default function AuctionDetail() {
               {CATEGORY_LABEL[a.category]}
             </p>
             <h1 className="mt-2 text-2xl font-extrabold leading-tight sm:text-3xl">{a.title}</h1>
+            <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-white/60">
+              <Store className="h-4 w-4" /> Sold by{' '}
+              <span className="font-semibold text-white">{a.sellerName}</span>
+            </p>
           </div>
-          {cfg.crypto.enabled ? <SolanaProviders cluster={cfg.crypto.cluster}>{panel}</SolanaProviders> : panel}
+          {cfg.crypto.enabled ? (
+            <SolanaProviders cluster={cfg.crypto.cluster}>{panel}</SolanaProviders>
+          ) : (
+            panel
+          )}
         </div>
       </div>
 
@@ -109,14 +127,18 @@ export default function AuctionDetail() {
             {a.description || 'No description provided.'}
           </p>
           <dl className="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-            {[
-              ['Starting bid', fmtUsd(a.startingPriceUsd)],
-              ['Est. Value', a.estValueUsd != null ? fmtUsd(a.estValueUsd) : '—'],
-              ['Shipping', a.shippingUsd > 0 ? fmtUsd(a.shippingUsd, { cents: true }) : 'Free'],
-              ['Starts', fmtDateTime(a.startsAt)],
-              ['Ends', fmtDateTime(a.endsAt)],
-              ['Reserve', a.hasReserve ? (a.reserveMet ? 'Met' : 'Not met') : 'None'],
-            ].map(([k, v]) => (
+            {(
+              [
+                ['Starting bid', fmtUsd(a.startingPriceUsd)],
+                // Omitted entirely when the seller hides it (or never set one).
+                a.estValueUsd != null ? ['Est. Value', fmtUsd(a.estValueUsd)] : null,
+                ['Shipping', a.shippingUsd > 0 ? fmtUsd(a.shippingUsd, { cents: true }) : 'Free'],
+                ['Seller', a.sellerName],
+                ['Starts', fmtDateTime(a.startsAt)],
+                ['Ends', fmtDateTime(a.endsAt)],
+                ['Reserve', a.hasReserve ? (a.reserveMet ? 'Met' : 'Not met') : 'None'],
+              ].filter(Boolean) as [string, string][]
+            ).map(([k, v]) => (
               <div key={k} className="rounded-xl border border-white/10 bg-[#141414] p-3">
                 <dt className="text-[11px] uppercase tracking-wider text-white/45">{k}</dt>
                 <dd className="mt-0.5 font-semibold">{v}</dd>
@@ -130,7 +152,8 @@ export default function AuctionDetail() {
           )}
           {a.extensionCount > 0 && (
             <p className="mt-2 text-xs text-white/45">
-              Extended {a.extensionCount}× by late bids — the clock always leaves a minute to respond.
+              Extended {a.extensionCount}× by late bids — the clock always leaves a minute to
+              respond.
             </p>
           )}
         </section>

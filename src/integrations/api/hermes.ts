@@ -54,6 +54,8 @@ export interface PublicAuction {
   reserveMet: boolean | null;
   estValueUsd: number | null;
   estValueSource: 'manual' | 'pulled' | null;
+  /** "Sold by …" — the auction's seller, or Hermes Auctions. */
+  sellerName: string;
   acceptedPayments: AcceptedPayments;
   acceptedMethods: FundingMethod[];
   shippingUsd: number;
@@ -177,6 +179,8 @@ export interface AdminAuctionRow {
   paymentMethod: FundingMethod | null;
   fulfillmentStatus: 'pending' | 'shipped' | 'delivered';
   isFeatured: boolean;
+  showEstValue: boolean;
+  sellerName: string;
   acceptedPayments: AcceptedPayments;
   isOverdue: boolean;
 }
@@ -225,6 +229,9 @@ export interface AdminAuctionDetail {
     estValueMeta: EstValueMeta | null;
     shippingUsd: number;
     isFeatured: boolean;
+    showEstValue: boolean;
+    /** Raw value; null means bidders see the house name. */
+    sellerName: string | null;
     acceptedPayments: AcceptedPayments;
     bidCount: number;
     extensionCount: number;
@@ -283,6 +290,8 @@ export interface AuctionInput {
   estValueMeta?: EstValueMeta | null;
   shippingUsd: number;
   isFeatured?: boolean;
+  showEstValue?: boolean;
+  sellerName?: string | null;
   acceptedPayments?: AcceptedPayments;
 }
 

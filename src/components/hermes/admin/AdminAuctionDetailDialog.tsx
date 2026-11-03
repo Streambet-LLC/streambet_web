@@ -339,14 +339,26 @@ function DetailBody({ id, onEdit }: { id: string; onEdit: (a: AdminAuction) => v
             label="Est. value"
             value={fmtUsd(auction.estValueUsd)}
             sub={
-              auction.estValueSource
-                ? auction.estValueSource === 'pulled'
-                  ? 'Pulled from sales'
-                  : 'Entered manually'
-                : undefined
+              [
+                auction.estValueSource
+                  ? auction.estValueSource === 'pulled'
+                    ? 'Pulled from sales'
+                    : 'Entered manually'
+                  : null,
+                auction.estValueUsd != null && auction.showEstValue === false
+                  ? 'Hidden from bidders'
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(' · ') || undefined
             }
           />
           <Stat label="Length" value={lengthLabel} />
+          <Stat
+            label="Seller"
+            value={auction.sellerName || 'Hermes Auctions'}
+            sub={auction.sellerName ? 'Shown as “Sold by”' : 'House (default)'}
+          />
           <Stat
             label="Payments"
             value={

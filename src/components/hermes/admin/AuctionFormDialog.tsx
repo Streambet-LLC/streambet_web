@@ -83,8 +83,12 @@ interface FormState {
   shipping: string;
   acceptedPayments: AcceptedPayments;
   est: EstValueState;
+  showEstValue: boolean;
+  sellerName: string;
   isFeatured: boolean;
 }
+
+const HOUSE_SELLER_NAME = 'Hermes Auctions';
 
 type FieldKey =
   | 'photos'
@@ -154,6 +158,8 @@ function initialState(a: AdminAuction | null): FormState {
       shipping: '0',
       acceptedPayments: 'both',
       est: { mode: 'pull', amount: '', accepted: null },
+      showEstValue: true,
+      sellerName: '',
       isFeatured: false,
     };
   }
@@ -184,6 +190,8 @@ function initialState(a: AdminAuction | null): FormState {
           amount: a.estValueUsd != null ? String(a.estValueUsd) : '',
           accepted: null,
         },
+    showEstValue: a.showEstValue !== false,
+    sellerName: a.sellerName ?? '',
     isFeatured: a.isFeatured,
   };
 }
@@ -387,6 +395,8 @@ function AuctionForm({
         v.key ? { kind: v.kind, url: v.url, key: v.key } : { kind: v.kind, url: v.url }
       ),
       isFeatured: form.isFeatured,
+      showEstValue: form.showEstValue,
+      sellerName: form.sellerName.trim() || null,
     };
 
     const source = estValueSource(form.est);
@@ -606,6 +616,26 @@ function AuctionForm({
               className={cn(NATIVE_FIELD_CLASS, 'mt-1.5 min-h-[110px] resize-y leading-relaxed')}
             />
             <FieldError id={`${ids.description}-error`}>{visibleError('description')}</FieldError>
+          </div>
+          <div className="mt-4">
+            <Label htmlFor={`${uid}-seller`} className="text-white/85">
+              Seller name
+            </Label>
+            <Input
+              id={`${uid}-seller`}
+              value={form.sellerName}
+              onChange={e => set({ sellerName: e.target.value })}
+              maxLength={80}
+              placeholder={HOUSE_SELLER_NAME}
+              aria-describedby={`${uid}-seller-hint`}
+              className={cn(FIELD_CLASS, 'mt-1.5')}
+            />
+            <FieldHint>
+              <span id={`${uid}-seller-hint`}>
+                Bidders see "Sold by {form.sellerName.trim() || HOUSE_SELLER_NAME}". Leave blank for{' '}
+                {HOUSE_SELLER_NAME}, or name a consignor.
+              </span>
+            </FieldHint>
           </div>
         </Section>
 
@@ -863,7 +893,10 @@ function AuctionForm({
         </Section>
 
         {/* ── Est. value ────────────────────────────────────────────── */}
-        <Section title="Est. value" hint="Optional. Shown to bidders next to the current bid.">
+        <Section
+          title="Est. value"
+          hint="Optional. You always see it here; choose whether bidders do."
+        >
           <EstValueField
             inputId={ids.estValue}
             value={form.est}
@@ -874,6 +907,24 @@ function AuctionForm({
             imageUrls={form.images.map(i => i.url)}
             error={visibleError('estValue')}
           />
+          <div className="mt-3 flex items-start gap-3">
+            <Checkbox
+              id={`${uid}-show-est`}
+              checked={form.showEstValue}
+              onCheckedChange={c => set({ showEstValue: c === true })}
+              className="mt-0.5 border-white/30 data-[state=checked]:border-[#C7FA09] data-[state=checked]:bg-[#C7FA09] data-[state=checked]:text-black"
+            />
+            <div>
+              <Label htmlFor={`${uid}-show-est`} className="cursor-pointer text-white">
+                Show Est. Value to bidders
+              </Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {form.showEstValue
+                  ? 'Shown on the auction page and cards next to the current bid.'
+                  : 'Hidden from bidders. It stays saved here for your own reference.'}
+              </p>
+            </div>
+          </div>
         </Section>
 
         {/* ── Visibility ────────────────────────────────────────────── */}
