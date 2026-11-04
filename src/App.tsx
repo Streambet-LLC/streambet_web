@@ -21,6 +21,11 @@ import Waitlist from './pages/Waitlist';
 import Analytics from './pages/Analytics';
 import DeepDiveReport from './pages/DeepDiveReport';
 import GoogleSheetsCallback from './pages/GoogleSheetsCallback';
+import AuctionsHome from './pages/hermes/AuctionsHome';
+import AuctionDetail from './pages/hermes/AuctionDetail';
+import AuctionPay from './pages/hermes/AuctionPay';
+import MyBids from './pages/hermes/MyBids';
+import SignUp from './pages/hermes/SignUp';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -33,9 +38,10 @@ const queryClient = new QueryClient({
 });
 
 /**
- * App is in private testing: the only public surface is the waitlist landing
- * page. Admins log in to reach the analytics dashboard; every other path
- * redirects to the waitlist. The Analytics page self-guards on `role === 'admin'`.
+ * Public surfaces: the collectIQ landing page and Hermes Auctions
+ * (`/auctions/*`, open sign-up for bidders). Admins log in to reach the
+ * analytics dashboard, which self-guards on `role === 'admin'`. Every other
+ * path redirects to the landing page.
  */
 const App = () => {
   return (
@@ -63,6 +69,13 @@ const App = () => {
                 {/* Legal */}
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
+
+                {/* Hermes Auctions — public; bidding requires an account */}
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/auctions" element={<AuctionsHome />} />
+                <Route path="/auctions/me" element={<MyBids />} />
+                <Route path="/auctions/:id" element={<AuctionDetail />} />
+                <Route path="/auctions/:id/pay" element={<AuctionPay />} />
 
                 {/* Analytics is the admin dashboard (guarded; page self-checks admin) */}
                 <Route element={<RouteGroup guard />}>

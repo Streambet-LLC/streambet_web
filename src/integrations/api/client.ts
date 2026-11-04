@@ -3828,3 +3828,6 @@ export const marketTaxonomyAPI = {
     return r.data.data as { deleted: string };
   },
 };
+
+/** Shared authenticated axios instance (token refresh, anon id) for feature clients. */
+export { apiClient };

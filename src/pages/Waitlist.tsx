@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { waitlistAPI } from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
+import { FeaturedAuctions } from '@/components/hermes/FeaturedAuctions';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -188,6 +189,9 @@ export default function Waitlist() {
           </div>
         </motion.div>
 
+        {/* ---------------- Hermes Auctions (featured lots) ---------------- */}
+        <FeaturedAuctions />
+
         {/* ---------------- Meet Cardy ---------------- */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -301,6 +305,9 @@ export default function Waitlist() {
         </Link>
         <Link to="/terms" className="hover:text-white/70">
           Terms
+        </Link>
+        <Link to="/auctions" className="hover:text-white/70">
+          Hermes Auctions
         </Link>
         <Link to="/login" className="hover:text-white/70">
           Log in
