@@ -6,9 +6,12 @@ Working branches:
 
 Check items off as they ship. If a decision changes, update the **Decisions** section first.
 
-**Status (2026-11-01):** the API and web are live on staging. The card win and the decline → runner-up path are verified end-to-end. Two items need someone with access:
-1. Fund the devnet deployer, then deploy + initialize the escrow (Phase 5). This turns on USDC.
-2. Add the CloudFront SPA fallback on staging (Phase 9). This makes deep links load.
+**Status (2026-11-03):** live on **staging and prod**. Card + ACH only on prod (USDC stays off until the escrow is on mainnet). Items that need someone with AWS access:
+1. **Uploads, prod:** the `hermes-media-upload` IAM policy must allow `s3:PutObject` + `s3:PutObjectAcl` on `arn:aws:s3:::cardcades3prod/*`. Prod currently gets AccessDenied.
+2. **Uploads, staging:** `/cardcade/non_pro_stag/AWS_DEFAULT_S3_BUCKET` is still `streambets3prod`, which is disabled. Set it to `cardcades3prod` (or a staging bucket) and redeploy.
+3. **SES:** both environments get `535 Authentication Credentials Invalid`. Use SES SMTP credentials created in us-east-1, not an IAM key. Until fixed, email sign-ups can't verify; Google sign-up works.
+4. Fund the devnet deployer, then deploy + initialize the escrow (Phase 5). This turns on USDC on staging.
+5. Add the CloudFront SPA fallback on staging (Phase 9). This makes deep links load there; prod already has it.
 
 Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes_bidder2`, `hermes_bidder3` (`success+hermes-bidderN@simulator.amazonses.com`).
 
@@ -111,6 +114,15 @@ Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes
   - no double charge
   - decline → runner-up at their max, decliner excluded
 - [ ] E2E in the browser on staging: ACH bank link (Stripe test bank), 3DS card (`4000 0027 6000 3184`), USDC after Phase 5.
+
+## Phase 10 — Prod rollout (2026-11-03)
+- [x] Migrations `AddHermesAuctions`, `AddAuctionAcceptedPayments` and `AddAuctionDisplayOptions` applied on `cardcade-prod`. They're additive, and prod had no auction rows.
+- [x] API: streambet_api #494 (Hermes) and #495 (upload ACL retry + clearer errors). Web: streambet_web #667. `/auctions`, `/auctions/me` and `/signup` load on cardcade.fun.
+- [x] Live Stripe webhook `api.cardcade.fun/api/payments/webhook`: added `payment_intent.succeeded` and `checkout.session.async_payment_succeeded` / `_failed`, matching staging. These also fix shop ACH orders settling.
+- [x] Prod `/api/auctions/config`: crypto disabled (mainnet), 0% premium.
+- [ ] Prod media upload (IAM policy, see Status).
+- [ ] Prod SES (see Status).
+- [ ] **Legal sign-off on card surcharging**, now that it's live (see Risks).
 
 ## Risks / notes
 - **Card surcharging:** the card network cap is 3%, the fee must be disclosed, debit cards can't be surcharged, and some states restrict surcharges. Get legal sign-off before prod.
