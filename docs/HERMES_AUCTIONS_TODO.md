@@ -6,12 +6,10 @@ Working branches:
 
 Check items off as they ship. If a decision changes, update the **Decisions** section first.
 
-**Status (2026-11-03):** live on **staging and prod**. Card + ACH only on prod (USDC stays off until the escrow is on mainnet). Items that need someone with AWS access:
-1. **Uploads, prod:** the `hermes-media-upload` IAM policy must allow `s3:PutObject` + `s3:PutObjectAcl` on `arn:aws:s3:::cardcades3prod/*`. Prod currently gets AccessDenied.
-2. **Uploads, staging:** `/cardcade/non_pro_stag/AWS_DEFAULT_S3_BUCKET` is still `streambets3prod`, which is disabled. Set it to `cardcades3prod` (or a staging bucket) and redeploy.
-3. **SES:** both environments get `535 Authentication Credentials Invalid`. Use SES SMTP credentials created in us-east-1, not an IAM key. Until fixed, email sign-ups can't verify; Google sign-up works.
-4. Fund the devnet deployer, then deploy + initialize the escrow (Phase 5). This turns on USDC on staging.
-5. Add the CloudFront SPA fallback on staging (Phase 9). This makes deep links load there; prod already has it.
+**Status (2026-11-07):** live on **staging and prod**. Card + ACH only on prod (USDC stays off until the escrow is on mainnet). Media uploads are verified on both, and both now write to `cardcades3prod`. Items that need someone with AWS access:
+1. **SES:** both environments get `535 Authentication Credentials Invalid`. Create credentials in us-east-1 with the **IAM user** option under SES → SMTP settings, not Mail Manager. The app connects to `email-smtp.us-east-1.amazonaws.com:465`, which only takes IAM-based SMTP credentials. Until fixed, email sign-ups can't verify; Google sign-up works.
+2. Fund the devnet deployer, then deploy + initialize the escrow (Phase 5). This turns on USDC on staging.
+3. Add the CloudFront SPA fallback on staging (Phase 9). This makes deep links load there; prod already has it.
 
 Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes_bidder2`, `hermes_bidder3` (`success+hermes-bidderN@simulator.amazonses.com`).
 
@@ -120,7 +118,7 @@ Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes
 - [x] API: streambet_api #494 (Hermes) and #495 (upload ACL retry + clearer errors). Web: streambet_web #667. `/auctions`, `/auctions/me` and `/signup` load on cardcade.fun.
 - [x] Live Stripe webhook `api.cardcade.fun/api/payments/webhook`: added `payment_intent.succeeded` and `checkout.session.async_payment_succeeded` / `_failed`, matching staging. These also fix shop ACH orders settling.
 - [x] Prod `/api/auctions/config`: crypto disabled (mainnet), 0% premium.
-- [ ] Prod media upload (IAM policy, see Status).
+- [x] Media upload verified on staging and prod (2026-11-07): upload succeeds and the file loads publicly.
 - [ ] Prod SES (see Status).
 - [ ] **Legal sign-off on card surcharging**, now that it's live (see Risks).
 
