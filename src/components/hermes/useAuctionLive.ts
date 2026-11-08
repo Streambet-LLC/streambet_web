@@ -21,6 +21,7 @@ export function useAuctionLive(auctionId: string | undefined) {
       qc.invalidateQueries({ queryKey: ['hermes-auction', auctionId] });
       qc.invalidateQueries({ queryKey: ['hermes-bids', auctionId] });
       qc.invalidateQueries({ queryKey: ['hermes-list'] });
+      qc.invalidateQueries({ queryKey: ['hermes-market'] });
     };
 
     if (socket.connected) join();

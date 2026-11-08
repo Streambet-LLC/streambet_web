@@ -677,7 +677,9 @@ function ResultSection({ detail, now }: { detail: AdminAuctionDetail; now: numbe
   const hammer = a.winningAmountUsd;
   const total =
     a.totalChargedUsd ??
-    (hammer != null ? hammer + (a.shippingUsd ?? 0) + (a.cardFeeUsd ?? 0) : null);
+    (hammer != null
+      ? hammer + (a.buyerPremiumUsd ?? 0) + (a.shippingUsd ?? 0) + (a.cardFeeUsd ?? 0)
+      : null);
   const dueMs = a.paymentDueAt ? new Date(a.paymentDueAt).getTime() : null;
 
   const copy = async (text: string) => {
@@ -734,6 +736,9 @@ function ResultSection({ detail, now }: { detail: AdminAuctionDetail; now: numbe
           <dl className="divide-y divide-white/5 rounded-md border border-white/10 bg-black/30 px-3 py-1">
             <Row label="Method">{a.paymentMethod ? METHOD_LABEL[a.paymentMethod] : '—'}</Row>
             <Row label="Hammer">{fmtUsd(hammer)}</Row>
+            <Row label={`Buyer premium (${a.buyerPremiumPercent ?? 0}%)`}>
+              {a.buyerPremiumUsd != null ? fmtUsd(a.buyerPremiumUsd, { cents: true }) : '—'}
+            </Row>
             <Row label="Shipping">{fmtUsd(a.shippingUsd)}</Row>
             <Row label="Card fee">
               {a.cardFeeUsd != null ? fmtUsd(a.cardFeeUsd, { cents: true }) : '—'}

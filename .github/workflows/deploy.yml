@@ -126,4 +126,22 @@ jobs:
           CF_ID="${{ secrets[format('CLOUDFRONT_ID_{0}', github.ref_name)] }}"
 
           aws s3 sync dist/ "s3://$S3_BUCKET" --delete
+          # index.html / hermes.html point at hashed bundles that the sync just
+          # replaced, so caches must always revalidate them.
+          aws s3 cp dist/ "s3://$S3_BUCKET" --recursive --exclude "*" --include "*.html" \
+            --cache-control "no-cache" --content-type "text/html; charset=utf-8"
           aws cloudfront create-invalidation --distribution-id "$CF_ID" --paths "/*"
+
+      # The Hermes Auctions domain is a second CloudFront distribution on the
+      # same bucket, serving hermes.html (docs/HERMES_AUCTIONS_DOMAIN.md).
+      # Skipped until its id is saved as the CLOUDFRONT_ID_HERMES_<branch> secret.
+      - name: Invalidate Hermes Auctions CloudFront
+        continue-on-error: true
+        env:
+          HERMES_CF_ID: ${{ secrets[format('CLOUDFRONT_ID_HERMES_{0}', github.ref_name)] }}
+        run: |
+          if [ -z "$HERMES_CF_ID" ]; then
+            echo "No Hermes Auctions distribution configured for this branch; skipping."
+            exit 0
+          fi
+          aws cloudfront create-invalidation --distribution-id "$HERMES_CF_ID" --paths "/*"

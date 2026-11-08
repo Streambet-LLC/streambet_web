@@ -63,6 +63,24 @@ export function fmtRemaining(ms: number): string {
   return `${sec}s`;
 }
 
+/** Soft-close window when the API doesn't send `extensionWindowSeconds`. */
+export const DEFAULT_EXTENSION_WINDOW_SECONDS = 120;
+
+/** "2 minutes", "1 minute", "30 seconds". */
+export function fmtExtensionWindow(seconds = DEFAULT_EXTENSION_WINDOW_SECONDS): string {
+  if (seconds % 60 === 0) {
+    const m = seconds / 60;
+    return `${m} minute${m === 1 ? '' : 's'}`;
+  }
+  return `${seconds} seconds`;
+}
+
+/** Buyer premium on the hammer, half-up to the cent. Mirrors the API's math. */
+export function buyerPremiumFor(hammer: number, pct: number): number {
+  if (hammer <= 0 || !(pct > 0)) return 0;
+  return Math.round((Math.round(hammer * 100) * pct) / 100) / 100;
+}
+
 /** Card processing the API passes through (grossed up to net 2.9% + 30¢). */
 export function cardFeeFor(subtotal: number, pct = 2.9, fixed = 0.3): number {
   if (subtotal <= 0) return 0;

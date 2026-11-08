@@ -22,8 +22,8 @@ import {
   hermesAPI,
 } from '@/integrations/api/hermes';
 import { getMessage } from '@/utils/helper';
-import { AuctionClock, PaymentsBadge, ReserveBadge } from './AuctionCard';
-import { cardFeeFor, fmtDateTime, fmtUsd } from './format';
+import { AuctionClock, PaymentsBadge, ReserveBadge, SoftCloseHint } from './AuctionCard';
+import { buyerPremiumFor, cardFeeFor, fmtDateTime, fmtUsd } from './format';
 import { ShippingAddressForm, fetchMyAddress, isAddressComplete } from './ShippingAddressForm';
 import { UsdcEscrow } from './UsdcEscrow';
 
@@ -33,13 +33,20 @@ const METHODS: Array<{
   note: string;
   icon: typeof CreditCard;
 }> = [
-  { key: 'ach', label: 'Bank (ACH)', note: 'No fees', icon: Building2 },
+  { key: 'ach', label: 'Bank (ACH)', note: 'No processing fee', icon: Building2 },
   { key: 'card', label: 'Card', note: '+ card processing', icon: CreditCard },
-  { key: 'usdc', label: 'USDC', note: 'No fees · escrowed', icon: Gavel },
+  { key: 'usdc', label: 'USDC', note: 'No processing fee · escrowed', icon: Gavel },
 ];
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
+}
+
+/** "a", "a and b", "a, b and c". */
+function listJoin(items: string[]) {
+  return items.length <= 1
+    ? (items[0] ?? '')
+    : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
 /** Bid box for the auction detail page (also shows results once it ends). */
@@ -111,8 +118,24 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
   const maxBid = Number(amount);
   const validAmount = Number.isFinite(maxBid) && maxBid >= minBid;
   const shipping = auction.shippingUsd;
-  const fee = method === 'card' ? cardFeeFor(maxBid + shipping) : 0;
-  const worstCase = round2((validAmount ? maxBid : minBid) + shipping + (validAmount ? fee : 0));
+  const premiumPct = auction.fees.buyerPremiumPercent ?? 0;
+  // Worst case is winning at the max: premium on it, card processing on everything.
+  const atMax = validAmount ? maxBid : minBid;
+  const premium = buyerPremiumFor(atMax, premiumPct);
+  const fee =
+    method === 'card'
+      ? cardFeeFor(
+          round2(atMax + premium + shipping),
+          auction.fees.cardProcessingPercent,
+          auction.fees.cardProcessingFixedUsd
+        )
+      : 0;
+  const worstCase = round2(atMax + premium + shipping + fee);
+  const confirmExtras = [
+    ...(premiumPct > 0 ? [`a ${premiumPct}% buyer premium`] : []),
+    `${fmtUsd(shipping, { cents: true })} shipping`,
+    ...(method === 'card' ? ['card processing'] : []),
+  ];
 
   const bid = useMutation({
     mutationFn: () =>
@@ -201,6 +224,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
               ? `Opens ${fmtDateTime(auction.startsAt)}`
               : `Ends ${fmtDateTime(auction.endsAt)}`}
           </p>
+          <SoftCloseHint auction={auction} />
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -213,8 +237,17 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
         <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">
           Shipping {shipping > 0 ? fmtUsd(shipping, { cents: true }) : 'free'}
         </span>
-        <span className="rounded-full bg-[#C7FA09]/10 px-2 py-0.5 text-[11px] font-semibold text-[#C7FA09]">
-          0% buyer premium
+        {premiumPct > 0 ? (
+          <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">
+            {premiumPct}% buyer premium
+          </span>
+        ) : (
+          <span className="rounded-full bg-[#C7FA09]/10 px-2 py-0.5 text-[11px] font-semibold text-[#C7FA09]">
+            0% buyer premium
+          </span>
+        )}
+        <span className="rounded-full border border-white/25 px-2 py-0.5 text-[11px] font-semibold text-white/90">
+          All bids are final
         </span>
         {auction.acceptedPayments !== 'both' && (
           <PaymentsBadge accepted={auction.acceptedPayments} />
@@ -302,7 +335,8 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
   }
 
   const escrow = viewer?.escrowUsd ?? 0;
-  const usdcRequired = round2((validAmount ? maxBid : minBid) + shipping);
+  // A USDC win settles hammer + premium + shipping from escrow.
+  const usdcRequired = round2(atMax + premium + shipping);
   const usdcCovered = escrow >= usdcRequired;
   const canBid = !upcoming && validAmount && (method === 'usdc' ? usdcCovered : !!pmId);
 
@@ -390,6 +424,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           escrowUsd={escrow}
           requiredUsd={usdcRequired}
           cluster={config.crypto.cluster}
+          premiumPct={premiumPct}
         />
       )}
 
@@ -434,22 +469,28 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
         )}
         <p className="mt-2 text-[11px] leading-relaxed text-white/45">
           We bid for you automatically, only as much as needed to keep you in front, up to your max.
-          You pay the winning bid, not your max.
+          {premiumPct > 0
+            ? `If you win, you pay the winning bid (not your max) plus the ${premiumPct}% buyer premium on it.`
+            : 'You pay the winning bid, not your max.'}
         </p>
       </div>
 
       <div className="space-y-1 rounded-xl bg-black/30 p-3 text-xs">
         <div className="flex justify-between text-white/60">
           <span>Max bid</span>
-          <span>{fmtUsd(validAmount ? maxBid : minBid, { cents: true })}</span>
+          <span>{fmtUsd(atMax, { cents: true })}</span>
+        </div>
+        <div className="flex justify-between text-white/60">
+          <span>Buyer premium ({premiumPct}%)</span>
+          {premiumPct > 0 ? (
+            <span>{fmtUsd(premium, { cents: true })}</span>
+          ) : (
+            <span className="text-[#C7FA09]">$0.00</span>
+          )}
         </div>
         <div className="flex justify-between text-white/60">
           <span>Shipping</span>
           <span>{fmtUsd(shipping, { cents: true })}</span>
-        </div>
-        <div className="flex justify-between text-white/60">
-          <span>Buyer premium</span>
-          <span className="text-[#C7FA09]">$0.00</span>
         </div>
         {method === 'card' && (
           <div className="flex justify-between text-white/60">
@@ -491,14 +532,16 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
             <DialogTitle>Confirm your max bid</DialogTitle>
             <DialogDescription className="text-white/60">
               If you win, you'll pay the winning bid (at most {fmtUsd(maxBid, { cents: true })})
-              plus {fmtUsd(shipping, { cents: true })} shipping
-              {method === 'card' ? ' and card processing' : ''}
+              plus {listJoin(confirmExtras)} — at most {fmtUsd(worstCase, { cents: true })} in total
               {method === 'usdc'
                 ? ', settled from your USDC escrow.'
-                : `, charged to your ${method === 'ach' ? 'bank account' : 'card'} when the auction ends.`}{' '}
-              Bids can't be withdrawn.
+                : `, charged to your ${method === 'ach' ? 'bank account' : 'card'} when the auction ends.`}
             </DialogDescription>
           </DialogHeader>
+          <p className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm text-amber-200">
+            <span className="font-bold">All bids are final.</span> Once placed, a bid can't be
+            withdrawn or lowered.
+          </p>
           <DialogFooter className="gap-2">
             <Button
               variant="outline"

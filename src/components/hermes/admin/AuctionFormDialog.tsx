@@ -40,9 +40,11 @@ import {
   type LengthPreset,
 } from '@/integrations/api/hermes';
 import { CATEGORIES, CATEGORY_LABEL, fmtDateTime, fmtUsd } from '../format';
+import { DEFAULT_BUYER_PREMIUM_PERCENT } from '../useHermesConfig';
 import { FieldError, FieldHint, Segmented, UsdInput } from './adminUi';
 import { EstValueField } from './EstValueField';
 import { PhotoUploader, VideoUploader, type VideoItem } from './MediaUploader';
+import { SpinMaker } from './SpinMaker';
 import {
   DAY_MS,
   FIELD_CLASS,
@@ -126,7 +128,7 @@ const PAYMENT_OPTIONS: ReadonlyArray<{ value: AcceptedPayments; label: string }>
 const PAYMENT_HINT: Record<AcceptedPayments, string> = {
   both: 'Bidders choose card, bank (ACH) or USDC.',
   fiat: 'Card or bank (ACH) only. Card payers cover processing; bank is free.',
-  crypto: 'USDC only, held in on-chain escrow. No fees.',
+  crypto: 'USDC only, held in on-chain escrow. No processing fee.',
 };
 
 /** `required` errors only show after a submit attempt; the rest show live. */
@@ -166,7 +168,13 @@ function initialState(a: AdminAuction | null): FormState {
   const pulled = a.estValueSource === 'pulled' && !!a.estValueMeta && a.estValueUsd != null;
   return {
     images: a.images.map(i => ({ key: i.key, url: i.url })),
-    videos: a.videos.map(v => ({ kind: v.kind, url: v.url, key: v.key, embedUrl: v.embedUrl })),
+    videos: a.videos.map(v => ({
+      kind: v.kind,
+      url: v.url,
+      key: v.key,
+      embedUrl: v.embedUrl,
+      spin: v.spin,
+    })),
     title: a.title ?? '',
     description: a.description ?? '',
     category: a.category ?? '',
@@ -303,6 +311,11 @@ function AuctionForm({
     staleTime: 60_000,
   });
   const cryptoLive = !!hermesConfig.data?.crypto.enabled;
+  // An existing lot keeps the rate it was listed with; a new one gets today's.
+  const premiumPct =
+    auction?.buyerPremiumPercent ??
+    hermesConfig.data?.fees.buyerPremiumPercent ??
+    DEFAULT_BUYER_PREMIUM_PERCENT;
 
   // "Start now" moves the computed end with the clock.
   const now = useNow(form.startMode === 'now' && !locked ? 30_000 : 0);
@@ -392,7 +405,9 @@ function AuctionForm({
       category: form.category as AuctionCategory,
       images: form.images.map(i => ({ key: i.key, url: i.url })),
       videos: form.videos.map(v =>
-        v.key ? { kind: v.kind, url: v.url, key: v.key } : { kind: v.kind, url: v.url }
+        v.key
+          ? { kind: v.kind, url: v.url, key: v.key, ...(v.spin ? { spin: true } : {}) }
+          : { kind: v.kind, url: v.url }
       ),
       isFeatured: form.isFeatured,
       showEstValue: form.showEstValue,
@@ -511,7 +526,7 @@ function AuctionForm({
         <DialogDescription className="text-xs">
           {isEdit
             ? auction!.title
-            : 'Listed on Hermes Auctions. Zero buyer premium — the winner pays the hammer price plus shipping.'}
+            : `Listed on Hermes Auctions. The winner pays the hammer price plus a ${premiumPct}% buyer premium and shipping.`}
         </DialogDescription>
       </DialogHeader>
 
@@ -535,6 +550,18 @@ function AuctionForm({
             videos={form.videos}
             onChange={fn => setForm(f => ({ ...f, videos: fn(f.videos) }))}
             onBusyChange={setVideosBusy}
+          />
+        </Section>
+
+        <Section
+          title="360° spin"
+          hint="Optional — Pika turns a front and back photo into a looping spin video. You preview it before it's added."
+        >
+          <SpinMaker
+            images={form.images}
+            videos={form.videos}
+            category={form.category}
+            onVideosChange={fn => setForm(f => ({ ...f, videos: fn(f.videos) }))}
           />
         </Section>
 
@@ -770,7 +797,7 @@ function AuctionForm({
             )}
             {!locked && (
               <p className="mt-0.5 text-xs text-white/60">
-                Bids in the final minutes extend the close so nobody gets sniped.
+                Soft close: a bid in the final 2 minutes resets the clock to 2 minutes.
               </p>
             )}
             <FieldError id={`${ids.end}-error`}>{visibleError('end')}</FieldError>
@@ -864,7 +891,7 @@ function AuctionForm({
               <FieldError id={`${ids.shipping}-error`}>{visibleError('shipping')}</FieldError>
               <FieldHint>
                 <span id={`${ids.shipping}-hint`}>
-                  Buyer pays this on top of the winning bid. Zero buyer premium.
+                  Buyer pays this on top of the winning bid and the {premiumPct}% buyer premium.
                 </span>
               </FieldHint>
             </div>

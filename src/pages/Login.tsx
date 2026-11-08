@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { AuthLayout } from '@/components/layout';
 import { Eye, EyeOff } from 'lucide-react';
+import { HERMES_HOME, IS_HERMES_SITE } from '@/components/hermes/site';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email/Username is required'),
@@ -44,7 +45,10 @@ export default function Login() {
         navigate(redirectParam);
       }
       else {
-        navigate(response?.data?.role === 'admin' ? '/analytics' : '/auctions');
+        // The standalone Hermes site has no admin dashboard.
+        navigate(
+          response?.data?.role === 'admin' && !IS_HERMES_SITE ? '/analytics' : HERMES_HOME
+        );
       }
     },
     onError: (error: any) => {

@@ -29,8 +29,7 @@ export function FeaturedAuctions() {
         <div>
           <img src="/hermes/hermes-auctions-logo.png" alt="Hermes Auctions" className="mx-auto h-12 w-auto sm:mx-0" />
           <p className="mt-3 text-sm text-white/65">
-            Zero-fee collectibles auctions — no buyer premium on sports cards, TCG and
-            memorabilia.
+            Zero-seller-fee collectibles auctions for sports cards, TCG and memorabilia.
           </p>
         </div>
         <Link

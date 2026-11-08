@@ -9,7 +9,7 @@ import { useCountdown } from '@/components/hermes/useCountdown';
 import { fmtRemaining } from '@/components/hermes/format';
 import { Button } from '@/components/ui/button';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { hermesAPI } from '@/integrations/api/hermes';
+import { hermesAPI, type WinTotals } from '@/integrations/api/hermes';
 import { getMessage } from '@/utils/helper';
 
 /** Winner's page: receipt once paid, or finish payment if autopay needs help. */
@@ -88,6 +88,7 @@ export default function AuctionPay() {
   const paid = p.status === 'paid';
   const processing = p.intentStatus === 'processing';
   const opt = p.options[method];
+  const premiumPct = p.buyerPremiumPercent ?? 0;
 
   return (
     <HermesShell>
@@ -109,11 +110,7 @@ export default function AuctionPay() {
               {p.paidAt && <span className="text-sm font-normal text-white/50">· {fmtDateTime(p.paidAt)}</span>}
             </div>
             <Breakdown
-              rows={[
-                ['Winning bid', p.hammerUsd],
-                ['Shipping', p.shippingUsd],
-                ...(p.cardFeeUsd > 0 ? ([['Card processing', p.cardFeeUsd]] as [string, number][]) : []),
-              ]}
+              rows={breakdownRows(p, premiumPct)}
               total={p.totalUsd}
               method={p.paymentMethod ? METHOD_LABEL[p.paymentMethod] : undefined}
             />
@@ -139,7 +136,7 @@ export default function AuctionPay() {
               clears.
             </p>
             <div className="mt-4">
-              <Breakdown rows={[['Winning bid', p.hammerUsd], ['Shipping', p.shippingUsd]]} total={p.totalUsd} />
+              <Breakdown rows={breakdownRows(p, premiumPct)} total={p.totalUsd} />
             </div>
           </div>
         ) : p.canPay ? (
@@ -161,7 +158,7 @@ export default function AuctionPay() {
             <div className="grid grid-cols-2 gap-2">
               {(
                 [
-                  ['ach', 'Bank (ACH)', 'No fees', Building2],
+                  ['ach', 'Bank (ACH)', 'No processing fee', Building2],
                   ['card', 'Card', '+ processing', CreditCard],
                 ] as const
               ).map(([k, label, note, Icon]) => (
@@ -180,14 +177,7 @@ export default function AuctionPay() {
                 </button>
               ))}
             </div>
-            <Breakdown
-              rows={[
-                ['Winning bid', opt.hammerUsd],
-                ['Shipping', opt.shippingUsd],
-                ...(opt.cardFeeUsd > 0 ? ([['Card processing', opt.cardFeeUsd]] as [string, number][]) : []),
-              ]}
-              total={opt.totalUsd}
-            />
+            <Breakdown rows={breakdownRows(opt, premiumPct)} total={opt.totalUsd} />
             <Button
               onClick={() => checkout.mutate()}
               disabled={checkout.isPending}
@@ -208,6 +198,17 @@ export default function AuctionPay() {
   );
 }
 
+/** Line items for a receipt or a pay option; premium / card rows only when charged. */
+function breakdownRows(t: WinTotals, premiumPct: number): [string, number][] {
+  const premium = t.buyerPremiumUsd ?? 0;
+  return [
+    ['Winning bid', t.hammerUsd],
+    ...(premium > 0 ? ([[`Buyer premium (${premiumPct}%)`, premium]] as [string, number][]) : []),
+    ['Shipping', t.shippingUsd],
+    ...(t.cardFeeUsd > 0 ? ([['Card processing', t.cardFeeUsd]] as [string, number][]) : []),
+  ];
+}
+
 function Breakdown({
   rows,
   total,
@@ -225,10 +226,6 @@ function Breakdown({
           <span>{fmtUsd(v, { cents: true })}</span>
         </div>
       ))}
-      <div className="flex justify-between text-white/65">
-        <span>Buyer premium</span>
-        <span className="text-[#C7FA09]">$0.00</span>
-      </div>
       <div className="flex justify-between border-t border-white/10 pt-1 font-bold">
         <span>Total{method ? ` · ${method}` : ''}</span>
         <span>{fmtUsd(total, { cents: true })}</span>
