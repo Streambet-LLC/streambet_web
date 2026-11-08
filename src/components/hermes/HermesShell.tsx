@@ -1,17 +1,22 @@
-import { ReactNode } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Gavel, UserRound } from 'lucide-react';
+import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Gavel, Search, UserRound, X } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useBuyerPremiumPercent } from './useHermesConfig';
+import { HERMES_HOME, IS_HERMES_SITE } from './site';
 
 /**
- * Page chrome for Hermes Auctions. The rest of the site is collectIQ; only
- * auction pages carry the Hermes brand. The page scrolls itself because the
- * global CSS locks `body` scrolling.
+ * Page chrome for Hermes Auctions: on the main site the rest is collectIQ and
+ * only auction pages carry the Hermes brand; on the standalone Hermes site
+ * (its own domain) this is the whole site. The page scrolls itself because
+ * the global CSS locks `body` scrolling.
  */
-export function HermesShell({ children }: { children: ReactNode }) {
+export function HermesShell({ children, wide }: { children: ReactNode; wide?: boolean }) {
   const { session } = useAuthContext();
   const location = useLocation();
+  const premiumPct = useBuyerPremiumPercent();
   const redirect = encodeURIComponent(location.pathname + location.search);
+  const container = wide ? 'max-w-7xl' : 'max-w-6xl';
   const navClass = ({ isActive }: { isActive: boolean }) =>
     `rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
       isActive ? 'bg-[#C7FA09] text-black' : 'text-white/70 hover:text-white'
@@ -20,17 +25,26 @@ export function HermesShell({ children }: { children: ReactNode }) {
   return (
     <div className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#0a0a0a] text-white">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0a0a0a]/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
-          <Link to="/auctions" className="flex shrink-0 items-center" aria-label="Hermes Auctions home">
+        <div className={`mx-auto flex h-16 ${container} items-center gap-3 px-4`}>
+          <Link
+            to={HERMES_HOME}
+            className="flex shrink-0 items-center"
+            aria-label="Hermes Auctions home"
+          >
             <img
               src="/hermes/hermes-auctions-logo.png"
               alt="Hermes Auctions"
               className="hidden h-10 w-auto sm:block"
             />
-            <img src="/hermes/hermes-mark-64.png" alt="Hermes Auctions" className="h-10 w-10 sm:hidden" />
+            <img
+              src="/hermes/hermes-mark-64.png"
+              alt="Hermes Auctions"
+              className="h-10 w-10 sm:hidden"
+            />
           </Link>
+          <MarketSearch className="mx-2 hidden max-w-md flex-1 md:flex" />
           <nav className="ml-auto flex items-center gap-1">
-            <NavLink to="/auctions" end className={navClass}>
+            <NavLink to={HERMES_HOME} end className={navClass}>
               Auctions
             </NavLink>
             {session ? (
@@ -56,7 +70,7 @@ export function HermesShell({ children }: { children: ReactNode }) {
               </>
             )}
             {session && (
-              <span className="ml-1 hidden items-center gap-1 text-xs text-white/50 md:inline-flex">
+              <span className="ml-1 hidden items-center gap-1 text-xs text-white/50 lg:inline-flex">
                 <UserRound className="h-3.5 w-3.5" />
                 {session.username ?? session.user?.username}
               </span>
@@ -65,20 +79,24 @@ export function HermesShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 pb-20 pt-6">{children}</main>
+      <main className={`mx-auto ${container} px-4 pb-20 pt-6`}>{children}</main>
 
       <footer className="border-t border-white/10 py-8 text-center text-xs text-white/40">
         <p className="font-semibold uppercase tracking-[0.2em] text-[#C7FA09]/80">
-          Zero-fee collectibles auctions
+          Zero-seller-fee collectibles auctions
         </p>
-        <p className="mt-2">
-          No buyer premium. Pay by bank or USDC with no processing fee — cards add only the
-          card processing cost.
+        <p className="mt-2 px-4">
+          Winners pay a {premiumPct}% buyer premium plus shipping. Bank and USDC carry no processing
+          fee — cards add only the card processing cost. All bids are final.
         </p>
         <div className="mt-3 flex justify-center gap-4">
-          <Link to="/" className="hover:text-white/70">
-            collectIQ
-          </Link>
+          {IS_HERMES_SITE ? (
+            <span>© Hermes Auctions {new Date().getFullYear()}</span>
+          ) : (
+            <Link to="/" className="hover:text-white/70">
+              collectIQ
+            </Link>
+          )}
           <Link to="/terms" className="hover:text-white/70">
             Terms
           </Link>
@@ -88,6 +106,85 @@ export function HermesShell({ children }: { children: ReactNode }) {
         </div>
       </footer>
     </div>
+  );
+}
+
+/**
+ * Marketplace search box. On the marketplace it filters as you type (the
+ * query lives in `?q=`, so results are linkable); anywhere else, submitting
+ * opens the marketplace with the query.
+ */
+export function MarketSearch({ className = '' }: { className?: string }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [params] = useSearchParams();
+  const onHome = location.pathname === HERMES_HOME;
+  const urlQ = onHome ? (params.get('q') ?? '') : '';
+  const [value, setValue] = useState(urlQ);
+  const typed = useRef(false);
+
+  useEffect(() => {
+    if (!typed.current) setValue(urlQ);
+  }, [urlQ]);
+
+  const go = (q: string, replace: boolean) => {
+    const next = new URLSearchParams(onHome ? params : undefined);
+    if (q) next.set('q', q);
+    else next.delete('q');
+    const search = next.toString();
+    navigate({ pathname: HERMES_HOME, search: search ? `?${search}` : '' }, { replace });
+  };
+
+  // Live filtering on the marketplace, debounced.
+  useEffect(() => {
+    if (!onHome || !typed.current) return;
+    const q = value.trim();
+    if (q === urlQ) return;
+    const t = setTimeout(() => go(q, true), 350);
+    return () => clearTimeout(t);
+    // `go` reads the latest params; re-running on them would re-fire the timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, onHome, urlQ]);
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    typed.current = false;
+    go(value.trim(), onHome);
+  };
+
+  return (
+    <form role="search" onSubmit={submit} className={`relative items-center ${className}`}>
+      <Search className="pointer-events-none absolute left-3 h-4 w-4 text-white/40" aria-hidden />
+      <input
+        type="search"
+        value={value}
+        onChange={e => {
+          typed.current = true;
+          setValue(e.target.value);
+        }}
+        onBlur={() => {
+          typed.current = false;
+        }}
+        placeholder="Search cards, players, sets…"
+        aria-label="Search auctions"
+        enterKeyHint="search"
+        className="h-10 w-full rounded-full border border-white/10 bg-white/[0.06] pl-9 pr-9 text-sm text-white placeholder:text-white/40 focus:border-[#C7FA09]/60 focus:outline-none focus:ring-2 focus:ring-[#C7FA09]/25 [&::-webkit-search-cancel-button]:hidden"
+      />
+      {value && (
+        <button
+          type="button"
+          aria-label="Clear search"
+          onClick={() => {
+            typed.current = false;
+            setValue('');
+            if (urlQ) go('', true);
+          }}
+          className="absolute right-2 rounded-full p-1 text-white/50 hover:bg-white/10 hover:text-white"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </form>
   );
 }
 

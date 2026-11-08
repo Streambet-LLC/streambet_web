@@ -8,9 +8,15 @@ import { MediaGallery } from '@/components/hermes/MediaGallery';
 import { BidPanel } from '@/components/hermes/BidPanel';
 import { SolanaProviders } from '@/components/hermes/SolanaProviders';
 import { useAuctionLive } from '@/components/hermes/useAuctionLive';
-import { CATEGORY_LABEL, fmtDateTime, fmtUsd } from '@/components/hermes/format';
+import {
+  CATEGORY_LABEL,
+  fmtDateTime,
+  fmtExtensionWindow,
+  fmtUsd,
+} from '@/components/hermes/format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { hermesAPI } from '@/integrations/api/hermes';
+import { HERMES_HOME } from '@/components/hermes/site';
 
 /** One Hermes lot: media, details, live bid panel and bid history. */
 export default function AuctionDetail() {
@@ -65,7 +71,7 @@ export default function AuctionDetail() {
       <HermesShell>
         <div className="py-20 text-center">
           <p className="text-lg font-semibold">Auction not found.</p>
-          <Link to="/auctions" className="mt-3 inline-block text-[#C7FA09] underline">
+          <Link to={HERMES_HOME} className="mt-3 inline-block text-[#C7FA09] underline">
             Browse auctions
           </Link>
         </div>
@@ -74,6 +80,7 @@ export default function AuctionDetail() {
   }
 
   const a = auction.data;
+  const softClose = fmtExtensionWindow(a.extensionWindowSeconds);
   const cfg = config.data ?? {
     crypto: {
       enabled: false,
@@ -90,7 +97,7 @@ export default function AuctionDetail() {
     <HermesShell>
       <button
         type="button"
-        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/auctions'))}
+        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(HERMES_HOME))}
         className="mb-4 inline-flex items-center gap-1 text-sm text-white/60 hover:text-white"
       >
         <ArrowLeft className="h-4 w-4" /> All auctions
@@ -150,10 +157,11 @@ export default function AuctionDetail() {
               <Bot className="h-3.5 w-3.5" /> Est. Value is based on recent comparable sales.
             </p>
           )}
-          {a.extensionCount > 0 && (
+          {(a.bucket !== 'settled' || a.extensionCount > 0) && (
             <p className="mt-2 text-xs text-white/45">
-              Extended {a.extensionCount}× by late bids — the clock always leaves a minute to
-              respond.
+              {a.extensionCount > 0 && `Extended ${a.extensionCount}× by late bids. `}
+              {a.bucket !== 'settled' &&
+                `Soft close: a bid in the final ${softClose} resets the clock to ${softClose}, so nobody gets sniped.`}
             </p>
           )}
         </section>

@@ -1,7 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Clock, Star, Video } from 'lucide-react';
 import type { PublicAuction } from '@/integrations/api/hermes';
-import { CATEGORY_LABEL, fmtRemaining, fmtUsd } from './format';
+import {
+  CATEGORY_LABEL,
+  DEFAULT_EXTENSION_WINDOW_SECONDS,
+  fmtExtensionWindow,
+  fmtRemaining,
+  fmtUsd,
+} from './format';
 import { useCountdown } from './useCountdown';
 
 export function ReserveBadge({
@@ -57,10 +63,43 @@ export function AuctionClock({ auction, compact }: { auction: PublicAuction; com
   );
 }
 
-/** Grid / rail card for a live or upcoming auction. */
+/** Live bid-panel hint once the clock is inside the soft-close window. */
+export function SoftCloseHint({ auction }: { auction: PublicAuction }) {
+  const ms = useCountdown(auction.endsAt);
+  const windowS = auction.extensionWindowSeconds ?? DEFAULT_EXTENSION_WINDOW_SECONDS;
+  if (auction.bucket !== 'live' || ms <= 0 || ms > windowS * 1000) return null;
+  return (
+    <p className="mt-1 text-xs font-semibold text-[#C7FA09]">
+      Any bid now resets the clock to {fmtExtensionWindow(windowS)}
+    </p>
+  );
+}
+
+/** Grid / rail card for a live, upcoming or ended auction. */
 export function AuctionCard({ auction }: { auction: PublicAuction }) {
   const cover = auction.images[0]?.url;
   const live = auction.bucket === 'live';
+  const ended = auction.bucket === 'settled';
+  const sold = ended && !!auction.result?.sold;
+  const badge = live
+    ? { label: 'Live', cls: 'bg-[#C7FA09] text-black' }
+    : ended
+      ? sold
+        ? { label: 'Sold', cls: 'bg-white text-black' }
+        : { label: 'Ended', cls: 'bg-white/20 text-white' }
+      : { label: 'Upcoming', cls: 'bg-sky-400/90 text-black' };
+  const priceLabel = sold
+    ? 'Sold for'
+    : ended
+      ? auction.currentBidUsd != null
+        ? 'High bid'
+        : 'Starting bid'
+      : auction.currentBidUsd != null
+        ? 'Current bid'
+        : 'Starting bid';
+  const price = sold
+    ? (auction.result?.winningBidUsd ?? auction.currentBidUsd)
+    : (auction.currentBidUsd ?? auction.startingPriceUsd);
   return (
     <Link
       to={`/auctions/${auction.id}`}
@@ -79,11 +118,9 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
         )}
         <div className="absolute left-2 top-2 flex flex-wrap gap-1">
           <span
-            className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${
-              live ? 'bg-[#C7FA09] text-black' : 'bg-sky-400/90 text-black'
-            }`}
+            className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${badge.cls}`}
           >
-            {live ? 'Live' : 'Upcoming'}
+            {badge.label}
           </span>
           {auction.isFeatured && (
             <span className="inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-[#C7FA09]">
@@ -91,13 +128,22 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
             </span>
           )}
         </div>
-        {auction.videos.length > 0 && (
+        {auction.videos.some(v => v.spin) ? (
           <span
-            className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white"
-            title="Has video"
+            className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-[10px] font-extrabold leading-none text-[#C7FA09]"
+            title="Has a 360° spin"
           >
-            <Video className="h-3.5 w-3.5" />
+            360°
           </span>
+        ) : (
+          auction.videos.length > 0 && (
+            <span
+              className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white"
+              title="Has video"
+            >
+              <Video className="h-3.5 w-3.5" />
+            </span>
+          )
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">
@@ -113,12 +159,8 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
         </h3>
         <div className="mt-auto flex items-end justify-between gap-2 pt-1">
           <div>
-            <p className="text-[11px] text-white/45">
-              {auction.currentBidUsd != null ? 'Current bid' : 'Starting bid'}
-            </p>
-            <p className="text-lg font-extrabold text-white">
-              {fmtUsd(auction.currentBidUsd ?? auction.startingPriceUsd)}
-            </p>
+            <p className="text-[11px] text-white/45">{priceLabel}</p>
+            <p className="text-lg font-extrabold text-white">{fmtUsd(price)}</p>
           </div>
           <div className="text-right text-xs">
             <AuctionClock auction={auction} compact />
@@ -128,7 +170,7 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <ReserveBadge auction={auction} />
+          {!ended && <ReserveBadge auction={auction} />}
           <PaymentsBadge accepted={auction.acceptedPayments} />
           {auction.estValueUsd != null && (
             <span className="text-[11px] text-white/55">Est. {fmtUsd(auction.estValueUsd)}</span>

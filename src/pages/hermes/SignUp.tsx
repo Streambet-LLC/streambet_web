@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { api } from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
+import { HERMES_HOME } from '@/components/hermes/site';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -31,8 +32,8 @@ const schema = z.object({
 /** Bidder sign-up (Hermes Auctions). New accounts are regular users. */
 export default function SignUp() {
   const [params] = useSearchParams();
-  const redirect = params.get('redirect') || '/auctions';
-  const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/auctions';
+  const redirect = params.get('redirect') || HERMES_HOME;
+  const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : HERMES_HOME;
   const [form, setForm] = useState({ email: '', username: '', password: '', tos: false });
   const [show, setShow] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -75,7 +76,7 @@ export default function SignUp() {
   return (
     <div className="relative h-[100dvh] overflow-y-auto bg-[#0a0a0a] text-white">
       <div className="mx-auto flex min-h-full max-w-md flex-col justify-center px-5 py-10">
-        <Link to="/auctions" className="mx-auto mb-8">
+        <Link to={HERMES_HOME} className="mx-auto mb-8">
           <img src="/hermes/hermes-auctions-logo.png" alt="Hermes Auctions" className="h-16 w-auto" />
         </Link>
 
@@ -95,7 +96,7 @@ export default function SignUp() {
           <div className="rounded-2xl border border-white/10 bg-[#141414] p-6">
             <h1 className="text-2xl font-extrabold">Create your bidder account</h1>
             <p className="mt-1 text-sm text-white/60">
-              Zero-fee auctions for sports cards, TCG and memorabilia.
+              Zero-seller-fee auctions for sports cards, TCG and memorabilia.
             </p>
 
             <button

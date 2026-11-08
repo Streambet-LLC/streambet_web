@@ -30,6 +30,23 @@ export interface AuctionVideo {
   url: string;
   embedUrl?: string | null;
   key?: string;
+  /** Generated 360° spin: plays muted on loop, right after the cover photo. */
+  spin?: boolean;
+}
+
+/** 360° spin generation (Pika). Admin only. */
+export interface SpinConfig {
+  enabled: boolean;
+  seconds: number;
+  resolution: string;
+  estimatedCostUsd: number;
+}
+
+export interface SpinJob {
+  jobId: string;
+  status: 'queued' | 'running' | 'completed' | 'failed';
+  video?: AuctionVideo;
+  error?: string;
 }
 
 export interface PublicAuction {
@@ -50,6 +67,8 @@ export interface PublicAuction {
   minIncrementUsd: number;
   bidCount: number;
   extensionCount: number;
+  /** Soft close: a bid this close to the end resets the clock to this. Absent on older API builds. */
+  extensionWindowSeconds?: number;
   hasReserve: boolean;
   reserveMet: boolean | null;
   estValueUsd: number | null;
@@ -71,6 +90,7 @@ export interface PublicAuction {
     escrowUsd: number | null;
   } | null;
   fees: {
+    /** This auction's premium on the hammer (fixed when it was listed). */
     buyerPremiumPercent: number;
     cardProcessingPercent: number;
     cardProcessingFixedUsd: number;
@@ -111,6 +131,8 @@ export interface HermesConfig {
 
 export interface WinTotals {
   hammerUsd: number;
+  /** Absent on older API builds (no premium then). */
+  buyerPremiumUsd?: number;
   shippingUsd: number;
   cardFeeUsd: number;
   totalUsd: number;
@@ -124,6 +146,8 @@ export interface PaymentInfo {
   paymentMethod: FundingMethod | null;
   intentStatus: string | null;
   hammerUsd: number;
+  buyerPremiumPercent?: number;
+  buyerPremiumUsd?: number;
   shippingUsd: number;
   cardFeeUsd: number;
   totalUsd: number;
@@ -228,6 +252,7 @@ export interface AdminAuctionDetail {
     estValueSource: 'manual' | 'pulled' | null;
     estValueMeta: EstValueMeta | null;
     shippingUsd: number;
+    buyerPremiumPercent?: number;
     isFeatured: boolean;
     showEstValue: boolean;
     /** Raw value; null means bidders see the house name. */
@@ -239,6 +264,7 @@ export interface AdminAuctionDetail {
     winnerUserId: string | null;
     winningAmountUsd: number | null;
     paymentMethod: FundingMethod | null;
+    buyerPremiumUsd?: number | null;
     cardFeeUsd: number | null;
     totalChargedUsd: number | null;
     paymentIntentId: string | null;
@@ -279,7 +305,7 @@ export interface AuctionInput {
   description: string;
   category: AuctionCategory;
   images: AuctionImage[];
-  videos?: Array<{ kind: AuctionVideo['kind']; url: string; key?: string }>;
+  videos?: Array<{ kind: AuctionVideo['kind']; url: string; key?: string; spin?: boolean }>;
   startsAt?: string;
   lengthPreset: LengthPreset;
   endsAt?: string;
@@ -297,12 +323,38 @@ export interface AuctionInput {
 
 const data = <T>(p: Promise<{ data: { data: T } }>) => p.then(r => r.data.data);
 
+/** Marketplace tabs. `ended` = sold / unsold results (never cancelled). */
+export type MarketBucket = 'live' | 'upcoming' | 'ended';
+export type MarketSort = 'ending' | 'newest' | 'price_asc' | 'price_desc' | 'bids';
+
+export interface MarketQuery {
+  bucket: MarketBucket;
+  q?: string;
+  category?: AuctionCategory;
+  sort?: MarketSort;
+  minPrice?: number;
+  maxPrice?: number;
+  payment?: 'fiat' | 'crypto';
+  limit?: number;
+  offset?: number;
+}
+
+export interface MarketPage {
+  rows: PublicAuction[];
+  total: number;
+}
+
 export const hermesAPI = {
   config: () => data<HermesConfig>(apiClient.get('/auctions/config')),
-  list: (bucket: 'live' | 'upcoming', category?: AuctionCategory) =>
-    data<PublicAuction[]>(
-      apiClient.get('/auctions', { params: { bucket, ...(category ? { category } : {}) } })
-    ),
+  /** Marketplace browse / search; unset filters are left out of the query. */
+  search: (query: MarketQuery): Promise<MarketPage> => {
+    const params = Object.fromEntries(
+      Object.entries(query).filter(([, v]) => v !== undefined && v !== '')
+    );
+    return apiClient
+      .get<{ data: PublicAuction[]; total?: number }>('/auctions', { params })
+      .then(r => ({ rows: r.data.data, total: r.data.total ?? r.data.data.length }));
+  },
   featured: (limit = 6) =>
     data<PublicAuction[]>(apiClient.get('/auctions/featured', { params: { limit } })),
   get: (id: string) => data<PublicAuction>(apiClient.get(`/auctions/${id}`)),
@@ -374,4 +426,10 @@ export const hermesAdminAPI = {
     data<EstValueMeta>(
       apiClient.post('/admin/auctions/estimate/value', { category, subject }, { timeout: 90_000 })
     ),
+  spinConfig: () => data<SpinConfig>(apiClient.get('/admin/auctions/spin')),
+  startSpin: (body: { frontUrl: string; backUrl: string; category?: AuctionCategory }) =>
+    data<SpinJob>(apiClient.post('/admin/auctions/spin', body)),
+  /** Completion copies the MP4 to S3, so allow it a while. */
+  spinStatus: (jobId: string) =>
+    data<SpinJob>(apiClient.get(`/admin/auctions/spin/${jobId}`, { timeout: 180_000 })),
 };

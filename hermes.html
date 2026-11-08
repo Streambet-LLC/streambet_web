@@ -1,0 +1,67 @@
+<!doctype html>
+<!--
+  Hermes Auctions — the standalone buyer site. Same app and bundle as
+  index.html; this entry only changes the document (title, icons, link
+  previews) and the meta below, which switches the app into Hermes mode
+  (src/components/hermes/site.ts). Serve it for every path on the Hermes
+  domain: CloudFront default root object + 403/404 → /hermes.html (200).
+  See docs/HERMES_AUCTIONS_DOMAIN.md.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="app-site" content="hermes" />
+    <title>Hermes Auctions — zero-seller-fee collectibles auctions</title>
+    <meta
+      name="description"
+      content="Bid on sports cards, TCG and sports memorabilia. Zero seller fees. Pay by bank, card or USDC."
+    />
+    <meta name="author" content="Hermes Auctions" />
+    <meta name="theme-color" content="#0a0a0a" />
+
+    <!-- Open Graph / Social Media sharing tags -->
+    <meta property="og:site_name" content="Hermes Auctions" />
+    <meta property="og:title" content="Hermes Auctions — zero-seller-fee collectibles auctions" />
+    <meta
+      property="og:description"
+      content="Bid on sports cards, TCG and sports memorabilia. Zero seller fees. Pay by bank, card or USDC."
+    />
+    <!--
+      og:image must be an absolute URL. cardcade.fun serves the same bucket,
+      so this resolves whatever domain the Hermes site is on. Bump ?v= when
+      the image changes (previews are cached by URL).
+    -->
+    <meta property="og:image" content="https://cardcade.fun/hermes/hermes-social.png?v=1" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Hermes Auctions — zero-seller-fee collectibles auctions"
+    />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter Card tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Hermes Auctions — zero-seller-fee collectibles auctions" />
+    <meta
+      name="twitter:description"
+      content="Bid on sports cards, TCG and sports memorabilia. Zero seller fees."
+    />
+    <meta name="twitter:image" content="https://cardcade.fun/hermes/hermes-social.png?v=1" />
+
+    <link rel="icon" type="image/png" href="/hermes/hermes-mark-64.png" />
+    <link rel="apple-touch-icon" href="/hermes/hermes-mark-192.png" />
+
+    <!-- iOS Safari drawer scroll fix (shared with index.html) -->
+    <script src="/ios-drawer-fix.js"></script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

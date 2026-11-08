@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { HermesShell } from '@/components/hermes/HermesShell';
 import { AuctionClock } from '@/components/hermes/AuctionCard';
 import { fmtUsd } from '@/components/hermes/format';
+import { HERMES_HOME } from '@/components/hermes/site';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { MyAuction, hermesAPI } from '@/integrations/api/hermes';
 
@@ -35,7 +36,7 @@ export default function MyBids() {
       ) : (mine.data ?? []).length === 0 ? (
         <div className="mt-10 rounded-2xl border border-dashed border-white/15 py-16 text-center">
           <p className="font-semibold">You haven't bid on anything yet.</p>
-          <Link to="/auctions" className="mt-2 inline-block text-[#C7FA09] underline">
+          <Link to={HERMES_HOME} className="mt-2 inline-block text-[#C7FA09] underline">
             Browse live auctions
           </Link>
         </div>

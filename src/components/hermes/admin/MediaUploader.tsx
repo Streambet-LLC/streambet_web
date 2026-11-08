@@ -36,6 +36,7 @@ export interface VideoItem {
   url: string;
   key?: string;
   embedUrl?: string | null;
+  spin?: boolean;
 }
 
 const VIDEO_KIND_LABEL: Record<AuctionVideo['kind'], string> = {
@@ -484,7 +485,9 @@ export function VideoUploader({
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-white">{VIDEO_KIND_LABEL[v.kind]}</p>
+                <p className="text-xs font-semibold text-white">
+                  {v.spin ? '360° spin (generated)' : VIDEO_KIND_LABEL[v.kind]}
+                </p>
                 <a
                   href={v.url}
                   target="_blank"

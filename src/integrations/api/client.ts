@@ -346,7 +346,10 @@ export const authAPI = {
 
   // Handle OAuth
   googleAuth: async () => {
-    window.location.href = `${API_URL}/auth/google`;
+    // The API sends the tokens back to this site's origin if it's one of ours
+    // (main site or the Hermes Auctions domain), else to the main site.
+    const origin = encodeURIComponent(window.location.origin);
+    window.location.href = `${API_URL}/auth/google?origin=${origin}`;
   },
 
   // Forgot password (send reset link)

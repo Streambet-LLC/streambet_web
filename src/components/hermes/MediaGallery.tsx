@@ -2,9 +2,24 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Expand, Play, X } from 'lucide-react';
 import type { AuctionImage, AuctionVideo } from '@/integrations/api/hermes';
 
-type Slide = { type: 'image'; src: string } | { type: 'video'; video: AuctionVideo };
+type Slide = { type: 'image'; src: string; n: number } | { type: 'video'; video: AuctionVideo };
 
 function VideoSlide({ video }: { video: AuctionVideo }) {
+  if (video.kind === 'upload' && video.spin) {
+    // Generated 360° spin: a silent seamless loop, no player chrome.
+    return (
+      <video
+        src={video.url}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        aria-label="360° spin"
+        className="h-full w-full bg-black object-contain"
+      />
+    );
+  }
   if (video.kind === 'upload') {
     return (
       <video
@@ -37,13 +52,13 @@ export function MediaGallery({
   videos: AuctionVideo[];
   title: string;
 }) {
-  const slides = useMemo<Slide[]>(
-    () => [
-      ...images.map(i => ({ type: 'image' as const, src: i.url })),
-      ...videos.map(v => ({ type: 'video' as const, video: v })),
-    ],
-    [images, videos],
-  );
+  // Cover first, then any 360° spin, then the other photos and videos.
+  const slides = useMemo<Slide[]>(() => {
+    const photos = images.map((img, i) => ({ type: 'image' as const, src: img.url, n: i + 1 }));
+    const spins = videos.filter(v => v.spin).map(v => ({ type: 'video' as const, video: v }));
+    const clips = videos.filter(v => !v.spin).map(v => ({ type: 'video' as const, video: v }));
+    return [...photos.slice(0, 1), ...spins, ...photos.slice(1), ...clips];
+  }, [images, videos]);
   const [index, setIndex] = useState(0);
   const [zoom, setZoom] = useState(false);
   const [touchX, setTouchX] = useState<number | null>(null);
@@ -85,7 +100,7 @@ export function MediaGallery({
       {current.type === 'image' ? (
         <img
           src={current.src}
-          alt={`${title} — photo ${index + 1}`}
+          alt={`${title} — photo ${current.n}`}
           className="h-full w-full object-contain"
           onClick={() => !big && setZoom(true)}
         />
@@ -135,13 +150,19 @@ export function MediaGallery({
               key={i}
               type="button"
               onClick={() => setIndex(i)}
-              aria-label={`Show ${s.type} ${i + 1}`}
+              aria-label={
+                s.type === 'video' && s.video.spin ? 'Show 360° spin' : `Show ${s.type} ${i + 1}`
+              }
               className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border bg-black ${
                 i === index ? 'border-[#C7FA09]' : 'border-white/10 opacity-70 hover:opacity-100'
               }`}
             >
               {s.type === 'image' ? (
                 <img src={s.src} alt="" className="h-full w-full object-cover" />
+              ) : s.video.spin ? (
+                <span className="flex h-full w-full items-center justify-center text-xs font-extrabold text-[#C7FA09]">
+                  360°
+                </span>
               ) : (
                 <span className="flex h-full w-full items-center justify-center text-white">
                   <Play className="h-5 w-5 fill-current" />
@@ -152,7 +173,11 @@ export function MediaGallery({
         </div>
       )}
       {zoom && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/95" role="dialog" aria-label={title}>
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/95"
+          role="dialog"
+          aria-label={title}
+        >
           <button
             type="button"
             aria-label="Close"

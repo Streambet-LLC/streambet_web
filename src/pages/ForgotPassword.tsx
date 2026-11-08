@@ -9,6 +9,7 @@ import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import api from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
 import Bugsnag from '@bugsnag/js';
+import { SITE_BRAND } from '@/components/hermes/site';
 
 const ForgotPassword = () => {
   const [searchParams] = useSearchParams();
@@ -50,7 +51,7 @@ const ForgotPassword = () => {
         <div className="w-full max-w-md">
           <div className="mb-6">
             <Link to="/">
-              <img src="/collectiq-mark.png" alt="collectIQ" className="mb-8 h-8 w-auto" />
+              <img src={SITE_BRAND.logo} alt={SITE_BRAND.name} className={`mb-8 ${SITE_BRAND.logoClass} w-auto`} />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left">Reset your password</h1>
             <p className="text-[#FFFFFFBF] mt-3 text-left font-light">
@@ -131,7 +132,7 @@ const ForgotPassword = () => {
           zIndex: 10,
         }}
       >
-        © collectIQ {new Date().getFullYear()}
+        © {SITE_BRAND.name} {new Date().getFullYear()}
       </div>
     </>
   );

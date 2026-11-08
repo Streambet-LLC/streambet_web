@@ -37,6 +37,13 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       plugins: [],
+      // Two documents, one app: index.html (collectIQ) and hermes.html (the
+      // standalone Hermes Auctions site, for its own domain). They share
+      // every JS/CSS chunk.
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        hermes: path.resolve(__dirname, 'hermes.html'),
+      },
     },
   },
   optimizeDeps: {

@@ -15,21 +15,25 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 /**
  * USDC escrow for one auction. The bidder deposits enough to cover their max
- * bid + shipping into an on-chain escrow that only Hermes can settle (if
- * they win) or refund (outbid / unsold / cancelled); after the auction they
- * can always withdraw it themselves.
+ * bid + buyer premium + shipping into an on-chain escrow that only Hermes can
+ * settle (if they win) or refund (outbid / unsold / cancelled); after the
+ * auction they can always withdraw it themselves.
  */
 export function UsdcEscrow({
   auctionId,
   escrowUsd,
   requiredUsd,
   cluster,
+  premiumPct = 0,
 }: {
   auctionId: string;
   escrowUsd: number;
   requiredUsd: number;
   cluster: string;
+  /** This auction's buyer premium, for the copy only (`requiredUsd` already includes it). */
+  premiumPct?: number;
 }) {
+  const extras = premiumPct > 0 ? `${premiumPct}% premium + shipping` : 'shipping';
   const { publicKey, sendTransaction, connected } = useWallet();
   const { connection } = useConnection();
   const qc = useQueryClient();
@@ -70,10 +74,9 @@ export function UsdcEscrow({
       <div className="flex items-start gap-2 text-xs text-white/60">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#C7FA09]" />
         <p>
-          Your USDC is held in an on-chain escrow for this auction. You're refunded
-          automatically if you're outbid or the item doesn't sell; if you win, only the
-          winning bid + shipping is taken and the rest comes back. Deposits are public on
-          Solana.
+          Your USDC is held in an on-chain escrow for this auction. You're refunded automatically if
+          you're outbid or the item doesn't sell; if you win, only the winning bid + {extras} is
+          taken and the rest comes back. Deposits are public on Solana.
         </p>
       </div>
       <div className="flex items-center justify-between text-sm">
@@ -81,12 +84,18 @@ export function UsdcEscrow({
         <span className="font-semibold">{fmtUsd(escrowUsd, { cents: true })}</span>
       </div>
       <div className="flex items-center justify-between text-sm">
-        <span className="text-white/60">Needed for this max (+ shipping)</span>
+        <span className="text-white/60">Needed for this max (+ {extras})</span>
         <span className="font-semibold">{fmtUsd(requiredUsd, { cents: true })}</span>
       </div>
       {!connected ? (
         <WalletMultiButton
-          style={{ width: '100%', justifyContent: 'center', height: 40, borderRadius: 10, background: '#1f1f1f' }}
+          style={{
+            width: '100%',
+            justifyContent: 'center',
+            height: 40,
+            borderRadius: 10,
+            background: '#1f1f1f',
+          }}
         >
           <span className="inline-flex items-center gap-2">
             <Wallet className="h-4 w-4" /> Connect wallet
@@ -106,9 +115,7 @@ export function UsdcEscrow({
           )}
         </Button>
       ) : (
-        <p className="text-center text-xs font-semibold text-[#C7FA09]">
-          Escrow covers this bid ✓
-        </p>
+        <p className="text-center text-xs font-semibold text-[#C7FA09]">Escrow covers this bid ✓</p>
       )}
       {cluster === 'devnet' && (
         <p className="text-center text-[11px] text-white/40">

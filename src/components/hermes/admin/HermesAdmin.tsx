@@ -115,7 +115,8 @@ export function HermesAdmin({
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Run house auctions — create and schedule lots, watch bidding live, then settle, ship and
-            audit what sold. Zero buyer premium.
+            audit what sold. Winners pay a buyer premium on the hammer, fixed per lot when it's
+            listed.
           </p>
         </div>
         <Button

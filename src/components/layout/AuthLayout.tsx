@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { SITE_BRAND } from '@/components/hermes/site';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -15,7 +16,7 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
         <div className="w-full max-w-md">
           <div className="mb-6">
             <Link to="/">
-              <img src="/collectiq-mark.png" alt="collectIQ" className="mb-6 h-8 w-auto" />
+              <img src={SITE_BRAND.logo} alt={SITE_BRAND.name} className={`mb-6 ${SITE_BRAND.logoClass} w-auto`} />
             </Link>
             <h1 className="text-3xl font-bold text-white text-left mb-4">{title}</h1>
             {subtitle && (
@@ -37,7 +38,7 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
           zIndex: 10,
         }}
       >
-        © collectIQ {new Date().getFullYear()}
+        © {SITE_BRAND.name} {new Date().getFullYear()}
       </div>
     </div>
   );
