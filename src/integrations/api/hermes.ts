@@ -90,10 +90,15 @@ export interface PublicAuction {
     escrowUsd: number | null;
   } | null;
   fees: {
-    /** This auction's premium on the hammer (fixed when it was listed). */
+    /** Card rate; kept for older clients. Use `buyerPremiumByMethod`. */
     buyerPremiumPercent: number;
+    /** This auction's buyer fee by tender (fixed when it was listed; all-in). Absent on older API builds. */
+    buyerPremiumByMethod?: PremiumRates;
   };
 }
+
+/** Buyer fee on the hammer, in percent, by the tender the winner pays with. */
+export type PremiumRates = Record<FundingMethod, number>;
 
 export interface MyAuction extends PublicAuction {
   state: 'leading' | 'outbid' | 'won' | 'lost' | 'pay';
@@ -145,7 +150,10 @@ export interface PaymentInfo {
   paymentMethod: FundingMethod | null;
   intentStatus: string | null;
   hammerUsd: number;
+  /** The rate for the method on file (what `buyerPremiumUsd` was charged at). */
   buyerPremiumPercent?: number;
+  /** Rates by tender; each pay option uses its own. Absent on older API builds. */
+  buyerPremiumByMethod?: PremiumRates;
   buyerPremiumUsd?: number;
   shippingUsd: number;
   cardFeeUsd: number;
@@ -251,7 +259,9 @@ export interface AdminAuctionDetail {
     estValueSource: 'manual' | 'pulled' | null;
     estValueMeta: EstValueMeta | null;
     shippingUsd: number;
-    buyerPremiumPercent?: number;
+    /** Rate the winner was charged at (null until there's a winner). */
+    buyerPremiumPercent?: number | null;
+    buyerPremiumByMethod?: PremiumRates;
     isFeatured: boolean;
     showEstValue: boolean;
     /** Raw value; null means bidders see the house name. */

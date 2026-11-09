@@ -1,8 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { hermesAPI } from '@/integrations/api/hermes';
-
-/** Buyer premium for site copy until `/auctions/config` loads. Mirrors the API's `BUYER_PREMIUM_PERCENT`. */
-export const DEFAULT_BUYER_PREMIUM_PERCENT = 4;
+import { hermesAPI, type PremiumRates } from '@/integrations/api/hermes';
+import { premiumRates } from './format';
 
 /** Public Hermes config (crypto rail + fees), shared cache with the auction page. */
 export function useHermesConfig() {
@@ -13,7 +11,7 @@ export function useHermesConfig() {
   });
 }
 
-/** Buyer premium (percent) charged on new lots, for site-wide copy. */
-export function useBuyerPremiumPercent(): number {
-  return useHermesConfig().data?.fees?.buyerPremiumPercent ?? DEFAULT_BUYER_PREMIUM_PERCENT;
+/** Buyer fee by tender for new lots (card / ACH / USDC), for site-wide copy. */
+export function useBuyerFeeRates(): PremiumRates {
+  return premiumRates(useHermesConfig().data?.fees);
 }

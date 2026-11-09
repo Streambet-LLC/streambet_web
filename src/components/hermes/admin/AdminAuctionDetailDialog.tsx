@@ -736,7 +736,13 @@ function ResultSection({ detail, now }: { detail: AdminAuctionDetail; now: numbe
           <dl className="divide-y divide-white/5 rounded-md border border-white/10 bg-black/30 px-3 py-1">
             <Row label="Method">{a.paymentMethod ? METHOD_LABEL[a.paymentMethod] : '—'}</Row>
             <Row label="Hammer">{fmtUsd(hammer)}</Row>
-            <Row label={`Buyer premium (${a.buyerPremiumPercent ?? 0}%)`}>
+            <Row
+              label={
+                a.buyerPremiumPercent != null
+                  ? `Buyer fee (${a.buyerPremiumPercent}%)`
+                  : 'Buyer fee'
+              }
+            >
               {a.buyerPremiumUsd != null ? fmtUsd(a.buyerPremiumUsd, { cents: true }) : '—'}
             </Row>
             <Row label="Shipping">{fmtUsd(a.shippingUsd)}</Row>

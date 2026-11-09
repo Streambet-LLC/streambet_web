@@ -1,4 +1,9 @@
-import type { AuctionCategory, AuctionStatus, FundingMethod } from '@/integrations/api/hermes';
+import type {
+  AuctionCategory,
+  AuctionStatus,
+  FundingMethod,
+  PremiumRates,
+} from '@/integrations/api/hermes';
 
 /** Hermes brand lime, sampled from the logo. Use literal `#C7FA09` in classes. */
 export const HERMES_LIME = '#C7FA09';
@@ -101,6 +106,34 @@ export function fmtExtensionWindow(seconds = DEFAULT_EXTENSION_WINDOW_SECONDS): 
     return `${m} minute${m === 1 ? '' : 's'}`;
   }
   return `${seconds} seconds`;
+}
+
+/**
+ * Buyer fee by tender for new lots, all-in (mirrors the API's
+ * `BUYER_PREMIUM_RATES`). Used only until `/auctions/config` loads.
+ */
+export const DEFAULT_PREMIUM_RATES: PremiumRates = { card: 4, ach: 1, usdc: 0.5 };
+
+/** Rates by tender from an auction's (or the config's) `fees`; older APIs sent one rate for all. */
+export function premiumRates(
+  fees?: { buyerPremiumPercent?: number; buyerPremiumByMethod?: PremiumRates } | null
+): PremiumRates {
+  if (fees?.buyerPremiumByMethod) return fees.buyerPremiumByMethod;
+  const flat = fees?.buyerPremiumPercent;
+  return flat != null ? { card: flat, ach: flat, usdc: flat } : DEFAULT_PREMIUM_RATES;
+}
+
+const TIER_LABEL: Record<FundingMethod, string> = { card: 'card', ach: 'ACH', usdc: 'USDC' };
+
+/** "4% card · 1% ACH · 0.5% USDC" (only the given tenders, in that order). */
+export function fmtFeeTiers(
+  rates: PremiumRates,
+  methods: FundingMethod[] = ['card', 'ach', 'usdc']
+): string {
+  return (['card', 'ach', 'usdc'] as FundingMethod[])
+    .filter(m => methods.includes(m))
+    .map(m => `${rates[m]}% ${TIER_LABEL[m]}`)
+    .join(' · ');
 }
 
 /** Buyer premium on the hammer, half-up to the cent. Mirrors the API's math. */
