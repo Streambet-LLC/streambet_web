@@ -11,6 +11,7 @@ import { AnalyticsAdditional } from '@/components/analytics/AnalyticsAdditional'
 import { AnalyticsPortfolio } from '@/components/analytics/AnalyticsPortfolio';
 import { AnalyticsUsage } from '@/components/analytics/AnalyticsUsage';
 import { AnalyticsWaitlist } from '@/components/analytics/AnalyticsWaitlist';
+import { AnalyticsUsers } from '@/components/analytics/AnalyticsUsers';
 // CRM (Leads engine + manual Buyers / Sellers contacts).
 import { AnalyticsLeads } from '@/components/analytics/crm/AnalyticsLeads';
 import { AnalyticsSellers } from '@/components/analytics/crm/AnalyticsSellers';
@@ -25,6 +26,7 @@ type AnalyticsTab =
   | 'crm'
   | 'portfolio'
   | 'usage'
+  | 'users'
   | 'waitlist'
   | 'auctions';
 
@@ -35,6 +37,7 @@ const ANALYTICS_TABS: AnalyticsTab[] = [
   'crm',
   'portfolio',
   'usage',
+  'users',
   'waitlist',
   'auctions',
 ];
@@ -62,9 +65,7 @@ const Analytics = () => {
     return isAnalyticsTab(t) ? t : 'market';
   });
   // Sub-view inside the CRM tab.
-  const [audienceTab, setAudienceTab] = useState<'sellers' | 'buyers' | 'leads'>(
-    'leads',
-  );
+  const [audienceTab, setAudienceTab] = useState<'sellers' | 'buyers' | 'leads'>('leads');
   const selectedAuctionId = searchParams.get('auction');
 
   const changeTab = (v: AnalyticsTab) => {
@@ -76,7 +77,7 @@ const Analytics = () => {
         if (v !== 'auctions') next.delete('auction');
         return next;
       },
-      { replace: true },
+      { replace: true }
     );
   };
 
@@ -90,9 +91,9 @@ const Analytics = () => {
           else next.delete('auction');
           return next;
         },
-        { replace: true },
+        { replace: true }
       ),
-    [setSearchParams],
+    [setSearchParams]
   );
 
   if (isLoading || isFetching) {
@@ -143,14 +144,15 @@ const Analytics = () => {
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
-                  Real-time market heat, 7-day forecasts, trends over time, and the market
-                  taxonomy. It's built from eBay's live listings plus our own view and save
-                  data.
+                  Real-time market heat, 7-day forecasts, trends over time, and the market taxonomy.
+                  It's built from eBay's live listings plus our own view and save data.
                 </TooltipContent>
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="additional" className={TAB_TRIGGER_CLASS}>Deep Insights</TabsTrigger>
+                  <TabsTrigger value="additional" className={TAB_TRIGGER_CLASS}>
+                    Deep Insights
+                  </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
                   An AI-researched deep dive on each market: temperature, indices, movers,
@@ -159,36 +161,44 @@ const Analytics = () => {
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="ai" className={TAB_TRIGGER_CLASS}>AI</TabsTrigger>
+                  <TabsTrigger value="ai" className={TAB_TRIGGER_CLASS}>
+                    AI
+                  </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
-                  Cardy, your AI analyst. Ask her anything about the market in plain English
-                  and she'll pull from the live data to answer.
+                  Cardy, your AI analyst. Ask her anything about the market in plain English and
+                  she'll pull from the live data to answer.
                 </TooltipContent>
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="portfolio" className={TAB_TRIGGER_CLASS}>Portfolio</TabsTrigger>
+                  <TabsTrigger value="portfolio" className={TAB_TRIGGER_CLASS}>
+                    Portfolio
+                  </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
-                  Your tracked cards and holdings: what you paid, what they're worth now, and
-                  your profit or loss (both on paper and once you've sold).
+                  Your tracked cards and holdings: what you paid, what they're worth now, and your
+                  profit or loss (both on paper and once you've sold).
                 </TooltipContent>
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
                   {/* Short label to keep the tab row compact — the panel's own
                       header still reads "CRM / Sales Intelligence". */}
-                  <TabsTrigger value="crm" className={TAB_TRIGGER_CLASS}>CRM</TabsTrigger>
+                  <TabsTrigger value="crm" className={TAB_TRIGGER_CLASS}>
+                    CRM
+                  </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
-                  Auto-discovered buyer and seller leads, plus your own contacts with notes,
-                  tags, and pipeline stages.
+                  Auto-discovered buyer and seller leads, plus your own contacts with notes, tags,
+                  and pipeline stages.
                 </TooltipContent>
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="usage" className={TAB_TRIGGER_CLASS}>Usage</TabsTrigger>
+                  <TabsTrigger value="usage" className={TAB_TRIGGER_CLASS}>
+                    Usage
+                  </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
                   Platform and AI usage: activity and cost tracking.
@@ -196,7 +206,19 @@ const Analytics = () => {
               </Tooltip>
               <Tooltip delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <TabsTrigger value="waitlist" className={TAB_TRIGGER_CLASS}>Waitlist</TabsTrigger>
+                  <TabsTrigger value="users" className={TAB_TRIGGER_CLASS}>
+                    Users
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
+                  Registered accounts, their email addresses, and signup details.
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger value="waitlist" className={TAB_TRIGGER_CLASS}>
+                    Waitlist
+                  </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
                   Everyone who's signed up for the waitlist, and the details they gave.
@@ -216,8 +238,8 @@ const Analytics = () => {
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[280px] border-white/10 bg-[#161616] text-xs font-normal leading-relaxed text-white/85">
-                  Run Hermes Auctions: create and schedule lots, watch live bidding, and
-                  settle, ship and audit what sold.
+                  Run Hermes Auctions: create and schedule lots, watch live bidding, and settle,
+                  ship and audit what sold.
                 </TooltipContent>
               </Tooltip>
             </TabsList>
@@ -237,12 +259,10 @@ const Analytics = () => {
             <TabsContent value="crm" className="mt-6">
               <div className="space-y-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">
-                    CRM / Sales Intelligence
-                  </h2>
+                  <h2 className="text-lg font-semibold text-white">CRM / Sales Intelligence</h2>
                   <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                    Discover buyer prospects, qualify them with AI, and manage
-                    your buyers, sellers, and leads pipeline.
+                    Discover buyer prospects, qualify them with AI, and manage your buyers, sellers,
+                    and leads pipeline.
                   </p>
                 </div>
 
@@ -283,15 +303,16 @@ const Analytics = () => {
               <AnalyticsUsage />
             </TabsContent>
 
+            <TabsContent value="users" className="mt-6">
+              <AnalyticsUsers />
+            </TabsContent>
+
             <TabsContent value="waitlist" className="mt-6">
               <AnalyticsWaitlist />
             </TabsContent>
 
             <TabsContent value="auctions" className="mt-6">
-              <HermesAdmin
-                selectedAuctionId={selectedAuctionId}
-                onSelectAuction={selectAuction}
-              />
+              <HermesAdmin selectedAuctionId={selectedAuctionId} onSelectAuction={selectAuction} />
             </TabsContent>
           </Tabs>
         </div>
