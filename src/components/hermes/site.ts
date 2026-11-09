@@ -38,8 +38,11 @@ function detectHermesSite(): boolean {
 /** True when this page load is the standalone Hermes Auctions site. */
 export const IS_HERMES_SITE = detectHermesSite();
 
-/** The auctions marketplace: `/` on the Hermes site, `/auctions` on the main site. */
-export const HERMES_HOME = IS_HERMES_SITE ? '/' : '/auctions';
+/**
+ * The auctions marketplace. `/` on both sites: on collectiqapp.xyz, Hermes
+ * Auctions is the first tab and the home page. `/auctions` redirects here.
+ */
+export const HERMES_HOME = '/';
 
 /** Brand for shared pages (log in, password reset) on whichever site this is. */
 export const SITE_BRAND = IS_HERMES_SITE

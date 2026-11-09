@@ -1,5 +1,7 @@
 # Hermes Auctions on its own domain
 
+> **Not the current plan (2026-11-08).** Hermes Auctions is now the first tab (and home page) of the main site on **collectiqapp.xyz**, next to collectIQ Analytics. See Phase 14 in `HERMES_AUCTIONS_TODO.md`. This page is kept for the dormant standalone mode (`hermes.html`), in case a separate Hermes domain is wanted later. The main-site column below describes the old layout.
+
 The buyer site for Hermes Auctions can run on its own domain (for example `hermesauctions.com`). It doesn't need a separate app or deploy pipeline. It's the same build, served from a second entry page:
 
 | | Main site (`cardcade.fun`) | Hermes site (its own domain) |

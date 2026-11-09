@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { waitlistAPI } from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { CollectIqLogoLink, SiteTabs } from '@/components/SiteTabs';
 import { FeaturedAuctions } from '@/components/hermes/FeaturedAuctions';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,12 +67,13 @@ const FEATURES: {
 ];
 
 /**
- * Public landing page. While the product is in private testing, this is the
- * ONLY thing non-admin visitors see — a branded overview of collectIQ's
- * market intelligence plus a waitlist capture. Admins reach the dashboard by
- * logging in (discreet link in the footer).
+ * The "collectIQ Analytics" tab (`/analytics`) for everyone but admins: a
+ * branded overview of collectIQ's market intelligence plus a waitlist
+ * capture, while analytics is in private beta. Admins get the dashboard
+ * on the same tab (see AnalyticsTab).
  */
 export default function Waitlist() {
+  const { session } = useAuthContext();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -110,6 +113,22 @@ export default function Waitlist() {
     // (fixed-viewport app shell), so the page must scroll itself.
     <div className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-background">
       <div className="auth-bg-gradient" />
+
+      {/* collectiqapp.xyz top bar: this page is the "collectIQ Analytics" tab for non-admins. */}
+      <header className="sticky top-0 z-30 border-b border-white/5 bg-background/80 backdrop-blur-md">
+        <div className="flex h-16 items-center gap-2 px-4 sm:gap-3">
+          <CollectIqLogoLink />
+          <SiteTabs className="sm:ml-2 md:ml-6" />
+          {!session && (
+            <Link
+              to="/login?redirect=%2Fanalytics"
+              className="ml-auto rounded-full px-3 py-1.5 text-sm font-semibold text-white/70 hover:text-white"
+            >
+              Log in
+            </Link>
+          )}
+        </div>
+      </header>
 
       <div className="relative z-10 mx-auto max-w-5xl px-5 pb-16 pt-12 sm:pt-16">
         {/* ---------------- Hero ---------------- */}
@@ -201,11 +220,7 @@ export default function Waitlist() {
         >
           <div className="mx-auto max-w-2xl text-center">
             {/* Cardy mark */}
-            <img
-              src="/cardy-icon.png"
-              alt="Cardy"
-              className="mx-auto h-14 w-14"
-            />
+            <img src="/cardy-icon.png" alt="Cardy" className="mx-auto h-14 w-14" />
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#B4FF39]">
               Cardy AI Chat
             </p>
@@ -213,8 +228,8 @@ export default function Waitlist() {
               Use Cardy for all your card intelligence needs
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-white/60">
-              Ask Cardy anything about card markets — Cardy goes far beyond
-              specific price checking. Here are some things you can do:
+              Ask Cardy anything about card markets — Cardy goes far beyond specific price checking.
+              Here are some things you can do:
             </p>
           </div>
 
@@ -306,7 +321,7 @@ export default function Waitlist() {
         <Link to="/terms" className="hover:text-white/70">
           Terms
         </Link>
-        <Link to="/auctions" className="hover:text-white/70">
+        <Link to="/" className="hover:text-white/70">
           Hermes Auctions
         </Link>
         <Link to="/login" className="hover:text-white/70">

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { hermesAPI } from '@/integrations/api/hermes';
 import { AuctionCard } from './AuctionCard';
+import { HERMES_HOME } from './site';
 
 /**
  * Landing-page rail: featured, then live (soonest ending), then upcoming
@@ -27,13 +28,17 @@ export function FeaturedAuctions() {
     >
       <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
         <div>
-          <img src="/hermes/hermes-auctions-logo.png" alt="Hermes Auctions" className="mx-auto h-12 w-auto sm:mx-0" />
+          <img
+            src="/hermes/hermes-auctions-logo.png"
+            alt="Hermes Auctions"
+            className="mx-auto h-12 w-auto sm:mx-0"
+          />
           <p className="mt-3 text-sm text-white/65">
             Zero-seller-fee collectibles auctions for sports cards, TCG and memorabilia.
           </p>
         </div>
         <Link
-          to="/auctions"
+          to={HERMES_HOME}
           className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#C7FA09] px-4 py-2 text-sm font-bold text-black hover:bg-[#d6ff3d]"
         >
           See all auctions <ArrowRight className="h-4 w-4" />

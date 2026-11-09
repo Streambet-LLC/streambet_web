@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { ChevronDown, Loader2, SlidersHorizontal, X } from 'lucide-react';
 import { HermesShell, MarketSearch } from '@/components/hermes/HermesShell';
+import { IS_HERMES_SITE } from '@/components/hermes/site';
 import { AuctionCard } from '@/components/hermes/AuctionCard';
 import { CATEGORIES, CATEGORY_LABEL, fmtUsd } from '@/components/hermes/format';
 import { useBuyerPremiumPercent, useHermesConfig } from '@/components/hermes/useHermesConfig';
@@ -81,8 +82,8 @@ function useMarketFilters() {
 }
 
 /**
- * Hermes Auctions marketplace — the buyer home page. `/` on the standalone
- * Hermes site, `/auctions` on the main site. Search, Live / Upcoming / Ended,
+ * Hermes Auctions marketplace — the buyer home page (`/`): the first tab on
+ * collectiqapp.xyz, and the whole standalone Hermes site. Search, Live / Upcoming / Ended,
  * sort, and category / price / payment filters, with "load more" paging.
  */
 export default function AuctionsHome() {
@@ -153,10 +154,19 @@ export default function AuctionsHome() {
 
   return (
     <HermesShell wide>
-      <MarketSearch className="mb-4 flex md:hidden" />
+      {/* The header search shows from md (Hermes site) / lg (collectiqapp.xyz, which also has tabs). */}
+      <MarketSearch className={`mb-4 flex ${IS_HERMES_SITE ? 'md:hidden' : 'lg:hidden'}`} />
 
       {!narrowed && (
         <section className="mb-6 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#C7FA09]/15 via-[#141414] to-[#0a0a0a] px-5 py-5 sm:px-8 sm:py-8">
+          {!IS_HERMES_SITE && (
+            // On collectiqapp.xyz the header carries collectIQ, so the brand lives here.
+            <img
+              src="/hermes/hermes-auctions-logo.png"
+              alt="Hermes Auctions"
+              className="mb-3 h-8 w-auto sm:h-10"
+            />
+          )}
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C7FA09] sm:text-xs sm:tracking-[0.25em]">
             Zero-seller-fee collectibles auctions
           </p>

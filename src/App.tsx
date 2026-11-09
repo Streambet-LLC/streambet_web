@@ -17,8 +17,7 @@ import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 import PageViewTracker from '@/components/analytics/PageViewTracker';
 import RouteGroup from './components/RouteGroup';
 import 'react-image-crop/dist/ReactCrop.css';
-import Waitlist from './pages/Waitlist';
-import Analytics from './pages/Analytics';
+import AnalyticsTab from './pages/AnalyticsTab';
 import DeepDiveReport from './pages/DeepDiveReport';
 import GoogleSheetsCallback from './pages/GoogleSheetsCallback';
 import AuctionsHome from './pages/hermes/AuctionsHome';
@@ -40,7 +39,7 @@ const queryClient = new QueryClient({
   },
 });
 
-/** `/auctions?q=…` → `/?q=…` on the Hermes site (its marketplace lives at `/`). */
+/** `/auctions?q=…` → `/?q=…`: the marketplace lives at `/` on both sites. */
 function ToHermesHome() {
   const { search } = useLocation();
   return <Navigate to={{ pathname: '/', search }} replace />;
@@ -68,24 +67,26 @@ const sharedRoutes = (
 );
 
 /**
- * Main site: the collectIQ landing page (with a Hermes rail), Hermes Auctions
- * under `/auctions`, and the admin dashboard, which self-guards on
- * `role === 'admin'`. Hermes sellers (admins) manage lots there.
+ * Main site (collectiqapp.xyz): two top-level tabs (see SiteTabs).
+ *  1. Hermes Auctions: the marketplace is the home page (`/`).
+ *  2. collectIQ Analytics (`/analytics`): the dashboard for admins, the
+ *     collectIQ product page + waitlist for everyone else.
+ * Hermes sellers (admins) manage lots from the dashboard.
  */
 const mainSiteRoutes = (
   <>
-    <Route path="/" element={<Waitlist />} />
-    <Route path="/auctions" element={<AuctionsHome />} />
+    <Route path="/" element={<AuctionsHome />} />
+    <Route path="/auctions" element={<ToHermesHome />} />
+    <Route path="/analytics" element={<AnalyticsTab />} />
     {sharedRoutes}
 
     <Route element={<RouteGroup guard />}>
       <Route path="/admin" element={<Navigate to="/analytics" replace />} />
-      <Route path="/analytics" element={<Analytics />} />
       <Route path="/analytics/google/callback" element={<GoogleSheetsCallback />} />
       <Route path="/analytics/deep-dive/:id" element={<DeepDiveReport />} />
     </Route>
 
-    {/* Everything else → waitlist */}
+    {/* Everything else → the marketplace */}
     <Route path="*" element={<Navigate to="/" replace />} />
   </>
 );
