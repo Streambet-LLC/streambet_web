@@ -80,9 +80,7 @@ Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes
 ## Phase 5 — Contract: `hermes-auctions` escrow
 - [x] Program `BNHMW9ZTzqRsRsKi9DUt8i5T4PFDFGRevPcHCQpvkuTu`, with 41 tests passing.
 - [x] IDL shipped to the API (`src/auctions/idl/hermes_auctions.json`).
-- [ ] **Deploy to devnet + initialize.** Blocked: the deployer `2qSYLNDy4HSFEusnS7ZMm6mLqpyLMzJU2TD2aviFiE2w` needs ~5 devnet SOL, and the public faucet is rate-limited. Fund it at https://faucet.solana.com, then run from WSL in `cardcade-contracts`:
-  `bash scripts/deploy-hermes-devnet.sh E4LW3c9SMgLAZRMSaVpHcajnV1mHkCZt6FXvhm9L23Fo`
-  The API turns USDC on by itself within about a minute of the config existing.
+- [x] **Deployed to devnet + initialized (2026-11-09).** Aaron funded the deployer `2qSYLNDy4HSFEusnS7ZMm6mLqpyLMzJU2TD2aviFiE2w` (the local Solana CLI key in WSL `~/.config/solana/id.json`; also the program's upgrade authority) with 5 devnet SOL; 3.4 SOL left. Deploy tx `5Sd9xUAN…`, init tx `39R1gFBq…`; config `9z37B3kUh5usrxfo22KWTzB5hbtLfGUm6jDp2KbvqvYZ`, authority `E4LW3c9SMgLAZRMSaVpHcajnV1mHkCZt6FXvhm9L23Fo` (API), mint devnet USDC `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`, treasury `A3MHpXX9F1kd51mng84b93eJDUgsD4GGavF4anQ21Xve`. `scripts/deploy-hermes-devnet.sh` has CRLF endings, so WSL bash rejects it as-is (strip the `\r` first).
 
 ## Phase 6 — API crypto escrow integration ✅ (code) / ⏳ (live test after Phase 5)
 - [x] Lazy `open_auction`, server-built deposit tx with a wallet-signed memo, on-chain balance verification, escrow ≥ max + shipping, refund / settle, and the reconcile sweeper.
@@ -125,14 +123,15 @@ Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes
 - [x] Prod `/api/auctions/config`: crypto disabled (mainnet), 0% premium.
 - [x] Media upload verified on staging and prod (2026-11-07): upload succeeds and the file loads publicly.
 - [ ] Prod SES (see Status).
-- [ ] **Legal sign-off on card surcharging**, now that it's live (see Risks).
+- [x] ~~Legal sign-off on card surcharging~~. Moot since 2026-11-09: there is no card surcharge any more (Phase 11).
 
 ## Phase 11 — 4% buyer premium (2026-11-08)
 - [x] API: `BUYER_PREMIUM_PERCENT = 4`, migration `AddAuctionBuyerPremium20261108120000` (`buyer_premium_percent` default 0 for existing rows, `buyer_premium_usd`). Covers charges, retry checkout, USDC escrow check + settle amount, winner email, and the admin detail.
 - [x] Web: shows the premium on the bid panel badge, in the "most you'd pay" breakdown, in the confirm dialog, in the USDC escrow requirement, on the pay page / receipt and in admin. The site copy was changed to "Zero-seller-fee".
 - [x] Migration applied on `cardcade-stag` and `cardcade-prod` (2026-11-08), before the API deploys.
 - [x] Deployed to staging and prod on 2026-11-08 (API #496, web #668). Both `/api/auctions/config` endpoints report `buyerPremiumPercent: 4`.
-- [ ] Card + ACH E2E on staging. Expected: $35 + $5 → $42.95 card / $41.40 ACH.
+- [x] **The 4% is all-in (Aaron/Nick, 2026-11-09):** Stripe's card and ACH fees come out of the premium, and nothing is added on top for any method (API `31316cb`, web `14999a3`). `winTotals()` no longer takes the method; new settlements store `card_fee_usd = 0`; `fees` no longer sends the card processing rate. The footer now says "Pay by credit card, bank transfer, or USDC." Hermes' cut is thin on small card lots: with $5 shipping, Stripe's 2.9% + 30¢ eats the whole premium on a card win under about $45.
+- [ ] Card + ACH E2E on staging. Expected: $35 + $5 → $41.40 by card or by ACH.
 
 ## Phase 12 — 360° spin via Pika (2026-11-08)
 - [x] API: `AuctionsSpinService` with admin routes `GET/POST /admin/auctions/spin` and `GET /admin/auctions/spin/:jobId`. It is stateless (the Pika job id is the handle) and accepts only `hermes/images/` photos from our bucket. It copies the result to S3 once, and stays dormant without `PIKA_API_KEY`. `AuctionVideoDto.spin` is accepted and kept on save. No migration.
@@ -179,7 +178,7 @@ Nick's call: the main domain is **collectiqapp.xyz** (cardcade.fun 301s to it). 
 - [ ] Later: `api.collectiqapp.xyz` (+ a Google OAuth redirect URI), and staging on `stag.collectiqapp.xyz`.
 
 ## Risks / notes
-- **Card surcharging:** the card network cap is 3%, the fee must be disclosed, debit cards can't be surcharged, and some states restrict surcharges. Get legal sign-off before prod.
+- ~~**Card surcharging:** the card network cap is 3%, the fee must be disclosed, debit cards can't be surcharged, and some states restrict surcharges.~~ Resolved 2026-11-09 by dropping the card fee (the premium covers processing).
 - **On-chain privacy:** USDC deposits are public on Solana, so a USDC bidder's escrow (≥ their max) is visible. The UI says so.
 - **Program isolation:** `cardcade-marketplace` is untouched. `hermes-auctions` stays devnet-only until prod sign-off (prod needs its own deploy + SSM values).
 - **Stale tests:** `tests/cardcade-marketplace.ts` still calls the removed `listCard` / `primarySale`, so 7 tests fail. These failures were already there.
