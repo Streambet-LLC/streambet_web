@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Bot, Store } from 'lucide-react';
+import { ArrowLeft, Bot, ChevronDown, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { HermesShell } from '@/components/hermes/HermesShell';
 import { MediaGallery } from '@/components/hermes/MediaGallery';
@@ -203,15 +203,55 @@ function AboutSection({ a, softClose }: { a: PublicAuction; softClose: string })
   );
 }
 
+/** Collapsible bid list: closed by default, the header shows the count and the latest bid. */
 function BidHistory({ bids }: { bids: PublicBid[] | undefined }) {
+  const [open, setOpen] = useState(false);
+  const list = bids ?? [];
+  if (list.length === 0) {
+    return (
+      <section className="order-4 min-w-0">
+        <h2 className="text-lg font-bold">Bid history</h2>
+        <p className="mt-3 text-sm text-white/55">No bids yet — be the first.</p>
+      </section>
+    );
+  }
+  const latest = list[0];
   return (
     <section className="order-4 min-w-0">
-      <h2 className="text-lg font-bold">Bid history</h2>
-      {(bids ?? []).length === 0 ? (
-        <p className="mt-3 text-sm text-white/55">No bids yet — be the first.</p>
-      ) : (
-        <ul className="mt-3 divide-y divide-white/5 overflow-hidden rounded-xl border border-white/10 bg-[#141414]">
-          {bids!.slice(0, 25).map(b => (
+      <h2>
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          aria-expanded={open}
+          aria-controls="bid-history-list"
+          className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#141414] px-4 py-3 text-left transition-colors hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C7FA09]/60"
+        >
+          <span>
+            <span className="text-lg font-bold">Bid history</span>
+            <span className="ml-2 text-sm font-semibold text-white/50">
+              {list.length} bid{list.length === 1 ? '' : 's'}
+            </span>
+          </span>
+          <span className="flex items-center gap-3 text-sm">
+            {!open && (
+              <span className="text-white/60">
+                Latest <span className="font-semibold text-white">{fmtUsd(latest.amountUsd)}</span>
+                <span className="hidden sm:inline"> by {latest.bidder}</span>
+              </span>
+            )}
+            <ChevronDown
+              className={`h-5 w-5 shrink-0 text-white/60 transition-transform ${open ? 'rotate-180' : ''}`}
+              aria-hidden
+            />
+          </span>
+        </button>
+      </h2>
+      {open && (
+        <ul
+          id="bid-history-list"
+          className="mt-2 divide-y divide-white/5 overflow-hidden rounded-xl border border-white/10 bg-[#141414]"
+        >
+          {list.slice(0, 25).map(b => (
             <li key={b.id} className="flex items-center justify-between px-3 py-2 text-sm">
               <span className="text-white/75">
                 {b.bidder}

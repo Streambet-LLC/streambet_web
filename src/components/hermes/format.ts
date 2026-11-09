@@ -63,6 +63,34 @@ export function fmtRemaining(ms: number): string {
   return `${sec}s`;
 }
 
+/** Stripe's card `brand` codes → how cardholders know them. */
+const CARD_BRAND: Record<string, string> = {
+  visa: 'Visa',
+  mastercard: 'Mastercard',
+  amex: 'American Express',
+  discover: 'Discover',
+  diners: 'Diners Club',
+  jcb: 'JCB',
+  unionpay: 'UnionPay',
+  cartes_bancaires: 'Cartes Bancaires',
+  eftpos_au: 'eftpos',
+  interac: 'Interac',
+  link: 'Link',
+};
+
+/** "Visa", "American Express"; bank names in title case if Stripe sent ALL CAPS. */
+export function fmtMethodLabel(m: { kind: 'card' | 'ach'; label: string }): string {
+  const raw = (m.label || '').trim();
+  if (m.kind === 'card') {
+    const known = CARD_BRAND[raw.toLowerCase()];
+    if (known) return known;
+    if (!raw || raw === 'card' || raw === 'unknown') return 'Card';
+    return raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+  if (!raw) return 'Bank account';
+  return raw === raw.toUpperCase() ? raw.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : raw;
+}
+
 /** Soft-close window when the API doesn't send `extensionWindowSeconds`. */
 export const DEFAULT_EXTENSION_WINDOW_SECONDS = 120;
 
