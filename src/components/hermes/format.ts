@@ -43,6 +43,11 @@ export function fmtUsd(n: number | null | undefined, opts: { cents?: boolean } =
   });
 }
 
+/** Est. Value as shown to bidders: "$450" or "$400 – $600". */
+export function fmtEstValue(usd: number | null | undefined, highUsd?: number | null): string {
+  return highUsd != null && usd != null ? `${fmtUsd(usd)} – ${fmtUsd(highUsd)}` : fmtUsd(usd);
+}
+
 export function fmtDateTime(iso: string | Date): string {
   return new Date(iso).toLocaleString('en-US', {
     weekday: 'short',

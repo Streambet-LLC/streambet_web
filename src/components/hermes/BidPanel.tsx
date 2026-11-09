@@ -26,6 +26,7 @@ import { AuctionClock, PaymentsBadge, ReserveBadge, SoftCloseHint } from './Auct
 import {
   buyerPremiumFor,
   fmtDateTime,
+  fmtEstValue,
   fmtFeeTiers,
   fmtMethodLabel,
   fmtUsd,
@@ -236,7 +237,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
         <ReserveBadge auction={auction} />
         {auction.estValueUsd != null && (
           <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">
-            Est. Value {fmtUsd(auction.estValueUsd)}
+            Est. Value {fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
           </span>
         )}
         <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">

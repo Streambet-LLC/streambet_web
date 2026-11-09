@@ -5,6 +5,7 @@ import {
   CATEGORY_LABEL,
   DEFAULT_EXTENSION_WINDOW_SECONDS,
   fmtExtensionWindow,
+  fmtEstValue,
   fmtRemaining,
   fmtUsd,
 } from './format';
@@ -176,7 +177,9 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
           {!ended && <ReserveBadge auction={auction} />}
           <PaymentsBadge accepted={auction.acceptedPayments} />
           {auction.estValueUsd != null && (
-            <span className="text-[11px] text-white/55">Est. {fmtUsd(auction.estValueUsd)}</span>
+            <span className="text-[11px] text-white/55">
+              Est. {fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
+            </span>
           )}
         </div>
       </div>

@@ -165,13 +165,18 @@ function initialState(a: AdminAuction | null): FormState {
       reservePrice: '',
       shipping: '0',
       acceptedPayments: 'both',
-      est: { mode: 'pull', amount: '', accepted: null },
+      // New lots default to a range (what "Pull it for me" recommends).
+      est: { mode: 'pull', range: true, amount: '', high: '', accepted: null },
       showEstValue: true,
       sellerName: '',
       isFeatured: false,
     };
   }
   const pulled = a.estValueSource === 'pulled' && !!a.estValueMeta && a.estValueUsd != null;
+  const estHigh = a.estValueUsd != null ? (a.estValueHighUsd ?? null) : null;
+  // A lot with no Est. Value yet starts in range mode, like a new one.
+  const estRange = a.estValueUsd == null || estHigh != null;
+  const estHighStr = estHigh != null ? String(estHigh) : '';
   return {
     images: a.images.map(i => ({ key: i.key, url: i.url })),
     videos: a.videos.map(v => ({
@@ -196,12 +201,16 @@ function initialState(a: AdminAuction | null): FormState {
     est: pulled
       ? {
           mode: 'pull',
+          range: estRange,
           amount: String(a.estValueUsd),
-          accepted: { meta: a.estValueMeta!, usd: a.estValueUsd! },
+          high: estHighStr,
+          accepted: { meta: a.estValueMeta!, usd: a.estValueUsd!, highUsd: estHigh },
         }
       : {
           mode: a.estValueUsd != null ? 'manual' : 'pull',
+          range: estRange,
           amount: a.estValueUsd != null ? String(a.estValueUsd) : '',
+          high: estHighStr,
           accepted: null,
         },
     showEstValue: a.showEstValue !== false,
@@ -369,6 +378,7 @@ function AuctionForm({
   const reserveNum = parseUsd(form.reservePrice);
   const shippingNum = parseUsd(form.shipping);
   const estNum = parseUsd(form.est.amount);
+  const estHighNum = form.est.range ? parseUsd(form.est.high) : null;
   if (!locked) {
     const s = usdError(form.startingPrice, { label: 'starting bid', min: 1, required: true });
     if (s) errors.startingPrice = s;
@@ -392,8 +402,16 @@ function AuctionForm({
         msg: "USDC escrow isn't live yet, so nobody could bid. Choose Fiat or Both for now.",
       };
   }
-  const ev = usdError(form.est.amount, { label: 'est. value', min: 0, required: false });
+  const ev =
+    usdError(form.est.amount, { label: 'est. value', min: 0, required: false }) ??
+    (form.est.range
+      ? usdError(form.est.high, { label: 'top of the range', min: 0, required: false })
+      : null);
   if (ev) errors.estValue = ev;
+  else if (form.est.range && (estNum == null) !== (estHighNum == null))
+    errors.estValue = { msg: 'Enter both ends of the range, or leave both blank.', required: true };
+  else if (form.est.range && estNum != null && estHighNum != null && estHighNum <= estNum)
+    errors.estValue = { msg: 'The high end must be above the low end.' };
 
   const visibleError = (k: FieldKey): string | null => {
     const e = errors[k];
@@ -422,12 +440,15 @@ function AuctionForm({
     const source = estValueSource(form.est);
     const est: Partial<AuctionInput> = {
       estValueUsd: estNum != null ? roundCents(estNum) : null,
+      estValueHighUsd: estNum != null && estHighNum != null ? roundCents(estHighNum) : null,
       estValueSource: estNum != null ? source : null,
       estValueMeta: source === 'pulled' ? (form.est.accepted?.meta ?? null) : null,
     };
     const estDirty =
       !isEdit ||
       form.est.amount.trim() !== init.est.amount.trim() ||
+      form.est.range !== init.est.range ||
+      (form.est.range && form.est.high.trim() !== init.est.high.trim()) ||
       source !== estValueSource(init.est) ||
       (source === 'pulled' && form.est.accepted?.meta !== init.est.accepted?.meta);
 

@@ -71,7 +71,10 @@ export interface PublicAuction {
   extensionWindowSeconds?: number;
   hasReserve: boolean;
   reserveMet: boolean | null;
+  /** The Est. Value, or the low end when `estValueHighUsd` is set. */
   estValueUsd: number | null;
+  /** Top of the Est. Value range; null/absent = a single value. */
+  estValueHighUsd?: number | null;
   estValueSource: 'manual' | 'pulled' | null;
   /** "Sold by …" — the auction's seller, or Hermes Auctions. */
   sellerName: string;
@@ -203,6 +206,7 @@ export interface AdminAuctionRow {
   reservePriceUsd: number | null;
   currentBidUsd: number | null;
   estValueUsd: number | null;
+  estValueHighUsd?: number | null;
   bidCount: number;
   leader: string | null;
   winner: string | null;
@@ -256,6 +260,7 @@ export interface AdminAuctionDetail {
     currentBidUsd: number | null;
     proxyMaxUsd: number | null;
     estValueUsd: number | null;
+    estValueHighUsd?: number | null;
     estValueSource: 'manual' | 'pulled' | null;
     estValueMeta: EstValueMeta | null;
     shippingUsd: number;
@@ -320,7 +325,10 @@ export interface AuctionInput {
   endsAt?: string;
   startingPriceUsd: number;
   reservePriceUsd?: number | null;
+  /** The Est. Value, or the low end of the range. */
   estValueUsd?: number | null;
+  /** Top of the range (above estValueUsd); null = a single value. */
+  estValueHighUsd?: number | null;
   estValueSource?: 'manual' | 'pulled' | null;
   estValueMeta?: EstValueMeta | null;
   shippingUsd: number;
