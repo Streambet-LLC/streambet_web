@@ -964,10 +964,10 @@ function AuctionForm({
           />
           <div>
             <Label htmlFor={`${uid}-featured`} className="cursor-pointer text-white">
-              Feature on landing page
+              Featured
             </Label>
             <p className="mt-1 text-xs text-muted-foreground">
-              Pins this auction to the Hermes rail on the collectIQ landing page.
+              Shows a Featured badge on this lot&apos;s card in the marketplace.
             </p>
           </div>
         </div>
