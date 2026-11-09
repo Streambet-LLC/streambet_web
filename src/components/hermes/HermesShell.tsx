@@ -1,10 +1,11 @@
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Gavel, Search, UserRound, X } from 'lucide-react';
+import { Gavel, Info, Search, UserRound, X } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { SiteHeader } from '@/components/SiteHeader';
 import { useBuyerFeeRates } from './useHermesConfig';
 import { HERMES_HOME, IS_HERMES_SITE } from './site';
+import { NICK_EMAIL } from '@/lib/contact';
 
 /**
  * The buyer-fee terms, shared by the marketplace hero and the footer
@@ -63,6 +64,10 @@ export function HermesShell({ children, wide }: { children: ReactNode; wide?: bo
           <NavLink to={HERMES_HOME} end className={navClass}>
             Auctions
           </NavLink>
+          <NavLink to="/about" className={navClass} aria-label="About">
+            <Info className="h-4 w-4 sm:hidden" />
+            <span className="hidden sm:inline">About</span>
+          </NavLink>
           {session ? (
             <NavLink to="/auctions/me" className={navClass} aria-label="My bids">
               <span className="inline-flex items-center gap-1.5">
@@ -117,6 +122,16 @@ export function HermesShell({ children, wide }: { children: ReactNode; wide?: bo
         <p className="mx-auto mt-2 max-w-3xl px-4">
           <BuyerFeeTerms />
         </p>
+        <p className="mx-auto mt-3 max-w-3xl px-4 text-sm text-white/65">
+          If you'd like to consign with us, feel free to reach out to{' '}
+          <a
+            href={`mailto:${NICK_EMAIL}?subject=${encodeURIComponent('Consigning with Hermes Auctions')}`}
+            className="font-semibold text-[#C7FA09] underline-offset-2 hover:underline"
+          >
+            {NICK_EMAIL}
+          </a>
+          !
+        </p>
         <div className="mt-3 flex justify-center gap-4">
           {IS_HERMES_SITE ? (
             <span>© Hermes Auctions {new Date().getFullYear()}</span>
@@ -125,6 +140,9 @@ export function HermesShell({ children, wide }: { children: ReactNode; wide?: bo
               collectIQ Analytics
             </Link>
           )}
+          <Link to="/about" className="hover:text-white/70">
+            About
+          </Link>
           <Link to="/terms" className="hover:text-white/70">
             Terms
           </Link>

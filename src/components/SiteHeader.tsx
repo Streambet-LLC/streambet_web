@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Gavel, LogOut, UserRound } from 'lucide-react';
+import { Gavel, Info, LogOut, UserRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useLogout } from '@/hooks/useLogout';
@@ -39,6 +39,10 @@ export function SiteHeader({ center, fixed }: { center?: ReactNode; fixed?: bool
         <SiteTabs className="sm:ml-2" />
         {center}
         <nav aria-label="Account" className="ml-auto flex items-center gap-1">
+          <NavLink to="/about" className={pill} aria-label="About">
+            <Info className="h-4 w-4 sm:hidden" />
+            <span className="hidden sm:inline">About</span>
+          </NavLink>
           {session ? (
             <>
               <NavLink to="/auctions/me" className={pill} aria-label="My bids">

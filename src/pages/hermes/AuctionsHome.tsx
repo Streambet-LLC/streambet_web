@@ -171,7 +171,7 @@ export default function AuctionsHome() {
             Zero-seller-fee collectibles auctions
           </p>
           <h1 className="mt-2 max-w-4xl text-xl font-black italic uppercase leading-tight sm:text-4xl">
-            Bid on the cards & memorabilia you chase.
+            Bid on the collectibles you chase.
           </h1>
           <p className="mt-2 text-xs text-white/60 sm:hidden">
             Buyer fee {fmtFeeTiers(feeRates)} · all bids are final
