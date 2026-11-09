@@ -49,7 +49,7 @@ export function PaymentsBadge({ accepted }: { accepted: PublicAuction['acceptedP
   if (accepted === 'both') return null;
   return (
     <span className="rounded-full border border-sky-300/30 bg-sky-300/10 px-2 py-0.5 text-[11px] font-semibold text-sky-200">
-      {accepted === 'crypto' ? 'USDC only' : 'Card & bank only'}
+      {accepted === 'crypto' ? 'USDC only' : 'Cards & ACH only'}
     </span>
   );
 }
