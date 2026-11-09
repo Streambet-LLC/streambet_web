@@ -2,11 +2,11 @@ import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { ChevronDown, Loader2, SlidersHorizontal, X } from 'lucide-react';
-import { HermesShell, MarketSearch } from '@/components/hermes/HermesShell';
+import { BuyerFeeTerms, HermesShell, MarketSearch } from '@/components/hermes/HermesShell';
 import { IS_HERMES_SITE } from '@/components/hermes/site';
 import { AuctionCard } from '@/components/hermes/AuctionCard';
-import { CATEGORIES, CATEGORY_LABEL, fmtUsd } from '@/components/hermes/format';
-import { useBuyerPremiumPercent, useHermesConfig } from '@/components/hermes/useHermesConfig';
+import { CATEGORIES, CATEGORY_LABEL, fmtFeeTiers, fmtUsd } from '@/components/hermes/format';
+import { useBuyerFeeRates, useHermesConfig } from '@/components/hermes/useHermesConfig';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AuctionCategory,
@@ -90,7 +90,7 @@ export default function AuctionsHome() {
   const { filters, update } = useMarketFilters();
   const { tab, q, category, sort, min, max, pay } = filters;
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const premiumPct = useBuyerPremiumPercent();
+  const feeRates = useBuyerFeeRates();
 
   const query: MarketQuery = {
     bucket: tab,
@@ -174,11 +174,10 @@ export default function AuctionsHome() {
             Bid on the cards & memorabilia you chase.
           </h1>
           <p className="mt-2 text-xs text-white/60 sm:hidden">
-            {premiumPct}% buyer premium · no seller fees · all bids are final
+            Buyer fee {fmtFeeTiers(feeRates)} · all bids are final
           </p>
           <p className="mt-2 hidden max-w-2xl text-sm text-white/65 sm:block">
-            Winners pay a {premiumPct}% buyer premium plus shipping. Pay by credit card, bank
-            transfer, or USDC. Every lot is hosted and shipped by Hermes. All bids are final.
+            <BuyerFeeTerms />
           </p>
         </section>
       )}

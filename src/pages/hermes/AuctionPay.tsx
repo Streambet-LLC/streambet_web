@@ -88,7 +88,10 @@ export default function AuctionPay() {
   const paid = p.status === 'paid';
   const processing = p.intentStatus === 'processing';
   const opt = p.options[method];
-  const premiumPct = p.buyerPremiumPercent ?? 0;
+  // Receipts: the rate actually charged. Pay options: each tender's own rate.
+  const chargedPct = p.buyerPremiumPercent ?? 0;
+  const rates = p.buyerPremiumByMethod;
+  const optionPct = rates ? rates[method] : chargedPct;
 
   return (
     <HermesShell>
@@ -110,7 +113,7 @@ export default function AuctionPay() {
               {p.paidAt && <span className="text-sm font-normal text-white/50">· {fmtDateTime(p.paidAt)}</span>}
             </div>
             <Breakdown
-              rows={breakdownRows(p, premiumPct)}
+              rows={breakdownRows(p, chargedPct)}
               total={p.totalUsd}
               method={p.paymentMethod ? METHOD_LABEL[p.paymentMethod] : undefined}
             />
@@ -136,7 +139,7 @@ export default function AuctionPay() {
               clears.
             </p>
             <div className="mt-4">
-              <Breakdown rows={breakdownRows(p, premiumPct)} total={p.totalUsd} />
+              <Breakdown rows={breakdownRows(p, chargedPct)} total={p.totalUsd} />
             </div>
           </div>
         ) : p.canPay ? (
@@ -174,10 +177,19 @@ export default function AuctionPay() {
                   <Icon className="h-4 w-4" />
                   <p className="mt-1 text-sm font-semibold">{label}</p>
                   <p className="text-[11px] text-white/50">{note}</p>
+                  {rates && (
+                    <p
+                      className={`mt-0.5 text-[11px] font-semibold ${
+                        method === k ? 'text-[#C7FA09]' : 'text-white/75'
+                      }`}
+                    >
+                      {rates[k]}% buyer fee · {fmtUsd(p.options[k].totalUsd, { cents: true })}
+                    </p>
+                  )}
                 </button>
               ))}
             </div>
-            <Breakdown rows={breakdownRows(opt, premiumPct)} total={opt.totalUsd} />
+            <Breakdown rows={breakdownRows(opt, optionPct)} total={opt.totalUsd} />
             <Button
               onClick={() => checkout.mutate()}
               disabled={checkout.isPending}
@@ -207,7 +219,7 @@ function breakdownRows(t: WinTotals, premiumPct: number): [string, number][] {
   const cardFee = t.cardFeeUsd ?? 0;
   return [
     ['Winning bid', t.hammerUsd],
-    ...(premium > 0 ? ([[`Buyer premium (${premiumPct}%)`, premium]] as [string, number][]) : []),
+    ...(premium > 0 ? ([[`Buyer fee (${premiumPct}%)`, premium]] as [string, number][]) : []),
     ['Shipping', t.shippingUsd],
     ...(cardFee > 0 ? ([['Card processing', cardFee]] as [string, number][]) : []),
   ];

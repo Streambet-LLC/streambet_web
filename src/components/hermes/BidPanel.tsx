@@ -23,7 +23,14 @@ import {
 } from '@/integrations/api/hermes';
 import { getMessage } from '@/utils/helper';
 import { AuctionClock, PaymentsBadge, ReserveBadge, SoftCloseHint } from './AuctionCard';
-import { buyerPremiumFor, fmtDateTime, fmtMethodLabel, fmtUsd } from './format';
+import {
+  buyerPremiumFor,
+  fmtDateTime,
+  fmtFeeTiers,
+  fmtMethodLabel,
+  fmtUsd,
+  premiumRates,
+} from './format';
 import { ShippingAddressForm, fetchMyAddress, isAddressComplete } from './ShippingAddressForm';
 import { UsdcEscrow } from './UsdcEscrow';
 
@@ -122,14 +129,16 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
   const maxBid = Number(amount);
   const validAmount = Number.isFinite(maxBid) && maxBid >= minBid;
   const shipping = auction.shippingUsd;
-  const premiumPct = auction.fees.buyerPremiumPercent ?? 0;
-  // Worst case is winning at the max. Same for every payment method: the
-  // premium covers processing, nothing is added on top.
+  // The buyer fee depends on the tender (card / ACH / USDC) and is all-in:
+  // processing comes out of it, nothing is added on top.
+  const rates = premiumRates(auction.fees);
+  const premiumPct = rates[method];
+  // Worst case is winning at the max.
   const atMax = validAmount ? maxBid : minBid;
   const premium = buyerPremiumFor(atMax, premiumPct);
   const worstCase = round2(atMax + premium + shipping);
   const confirmExtras = [
-    ...(premiumPct > 0 ? [`a ${premiumPct}% buyer premium`] : []),
+    ...(premiumPct > 0 ? [`a ${premiumPct}% buyer fee`] : []),
     `${fmtUsd(shipping, { cents: true })} shipping`,
   ];
 
@@ -233,13 +242,17 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
         <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">
           Shipping {shipping > 0 ? fmtUsd(shipping, { cents: true }) : 'free'}
         </span>
-        {premiumPct > 0 ? (
+        {Object.values(rates).some(r => r > 0) ? (
           <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">
-            {premiumPct}% buyer premium
+            Buyer fee{' '}
+            {fmtFeeTiers(
+              rates,
+              allowed.map(m => m.key)
+            )}
           </span>
         ) : (
           <span className="rounded-full bg-[#C7FA09]/10 px-2 py-0.5 text-[11px] font-semibold text-[#C7FA09]">
-            0% buyer premium
+            No buyer fee
           </span>
         )}
         <span className="rounded-full border border-white/25 px-2 py-0.5 text-[11px] font-semibold text-white/90">
@@ -331,8 +344,8 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
   }
 
   const escrow = viewer?.escrowUsd ?? 0;
-  // A USDC win settles hammer + premium + shipping from escrow.
-  const usdcRequired = round2(atMax + premium + shipping);
+  // A USDC win settles hammer + the USDC buyer fee + shipping from escrow.
+  const usdcRequired = round2(atMax + buyerPremiumFor(atMax, rates.usdc) + shipping);
   const usdcCovered = escrow >= usdcRequired;
   const canBid = !upcoming && validAmount && (method === 'usdc' ? usdcCovered : !!pmId);
 
@@ -368,6 +381,13 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
               />
               <p className="mt-1 text-sm font-semibold">{m.label}</p>
               <p className="text-[11px] text-white/50">{m.note}</p>
+              <p
+                className={`mt-0.5 text-[11px] font-semibold ${
+                  method === m.key ? 'text-[#C7FA09]' : 'text-white/75'
+                }`}
+              >
+                {rates[m.key]}% buyer fee
+              </p>
             </button>
           ))}
         </div>
@@ -426,7 +446,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           escrowUsd={escrow}
           requiredUsd={usdcRequired}
           cluster={config.crypto.cluster}
-          premiumPct={premiumPct}
+          premiumPct={rates.usdc}
         />
       )}
 
@@ -470,9 +490,11 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           <p className="mt-1 text-xs text-red-400">Minimum is {fmtUsd(minBid)}.</p>
         )}
         <p className="mt-2 text-[11px] leading-relaxed text-white/45">
-          We bid for you automatically, only as much as needed to keep you in front, up to your max.
+          We bid for you automatically, only as much as needed to keep you in front, up to your max.{' '}
           {premiumPct > 0
-            ? `If you win, you pay the winning bid (not your max) plus the ${premiumPct}% buyer premium on it.`
+            ? `If you win, you pay the winning bid (not your max) plus the ${premiumPct}% buyer fee for ${
+                method === 'card' ? 'card' : method === 'ach' ? 'ACH' : 'USDC'
+              } on it.`
             : 'You pay the winning bid, not your max.'}
         </p>
       </div>
@@ -483,7 +505,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           <span>{fmtUsd(atMax, { cents: true })}</span>
         </div>
         <div className="flex justify-between text-white/60">
-          <span>Buyer premium ({premiumPct}%)</span>
+          <span>Buyer fee ({premiumPct}%)</span>
           {premiumPct > 0 ? (
             <span>{fmtUsd(premium, { cents: true })}</span>
           ) : (

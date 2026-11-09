@@ -3,8 +3,23 @@ import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-
 import { Gavel, Search, UserRound, X } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { SiteHeader } from '@/components/SiteHeader';
-import { useBuyerPremiumPercent } from './useHermesConfig';
+import { useBuyerFeeRates } from './useHermesConfig';
 import { HERMES_HOME, IS_HERMES_SITE } from './site';
+
+/**
+ * The buyer-fee terms, shared by the marketplace hero and the footer
+ * (Aaron's wording, 2026-11-09). Rates come from the API config.
+ */
+export function BuyerFeeTerms() {
+  const r = useBuyerFeeRates();
+  return (
+    <>
+      Winners pay a variable buyer fee based on the payment tender used — {r.card}% for credit card,{' '}
+      {r.ach}% for ACH, and {r.usdc}% for USDC. Every lot is hosted and shipped by Hermes Auctions.
+      All bids are final.
+    </>
+  );
+}
 
 /**
  * Page chrome for Hermes Auctions: on the main site the rest is collectIQ and
@@ -15,7 +30,6 @@ import { HERMES_HOME, IS_HERMES_SITE } from './site';
 export function HermesShell({ children, wide }: { children: ReactNode; wide?: boolean }) {
   const { session } = useAuthContext();
   const location = useLocation();
-  const premiumPct = useBuyerPremiumPercent();
   const redirect = encodeURIComponent(location.pathname + location.search);
   const container = wide ? 'max-w-7xl' : 'max-w-6xl';
   const navClass = ({ isActive }: { isActive: boolean }) =>
@@ -100,9 +114,8 @@ export function HermesShell({ children, wide }: { children: ReactNode; wide?: bo
         <p className="font-semibold uppercase tracking-[0.2em] text-[#C7FA09]/80">
           Zero-seller-fee collectibles auctions
         </p>
-        <p className="mt-2 px-4">
-          Winners pay a {premiumPct}% buyer premium plus shipping. Pay by credit card, bank
-          transfer, or USDC. All bids are final.
+        <p className="mx-auto mt-2 max-w-3xl px-4">
+          <BuyerFeeTerms />
         </p>
         <div className="mt-3 flex justify-center gap-4">
           {IS_HERMES_SITE ? (

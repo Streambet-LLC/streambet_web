@@ -39,8 +39,14 @@ import {
   type AuctionInput,
   type LengthPreset,
 } from '@/integrations/api/hermes';
-import { CATEGORIES, CATEGORY_LABEL, fmtDateTime, fmtUsd } from '../format';
-import { DEFAULT_BUYER_PREMIUM_PERCENT } from '../useHermesConfig';
+import {
+  CATEGORIES,
+  CATEGORY_LABEL,
+  fmtDateTime,
+  fmtFeeTiers,
+  fmtUsd,
+  premiumRates,
+} from '../format';
 import { FieldError, FieldHint, Segmented, UsdInput } from './adminUi';
 import { EstValueField } from './EstValueField';
 import { PhotoUploader, VideoUploader, type VideoItem } from './MediaUploader';
@@ -311,11 +317,10 @@ function AuctionForm({
     staleTime: 60_000,
   });
   const cryptoLive = !!hermesConfig.data?.crypto.enabled;
-  // An existing lot keeps the rate it was listed with; a new one gets today's.
-  const premiumPct =
-    auction?.buyerPremiumPercent ??
-    hermesConfig.data?.fees.buyerPremiumPercent ??
-    DEFAULT_BUYER_PREMIUM_PERCENT;
+  // An existing lot keeps the rates it was listed with; a new one gets today's.
+  const feeTiers = fmtFeeTiers(
+    auction?.buyerPremiumByMethod ?? premiumRates(hermesConfig.data?.fees)
+  );
 
   // "Start now" moves the computed end with the clock.
   const now = useNow(form.startMode === 'now' && !locked ? 30_000 : 0);
@@ -526,7 +531,7 @@ function AuctionForm({
         <DialogDescription className="text-xs">
           {isEdit
             ? auction!.title
-            : `Listed on Hermes Auctions. The winner pays the hammer price plus a ${premiumPct}% buyer premium and shipping.`}
+            : `Listed on Hermes Auctions. The winner pays the hammer price plus shipping and a buyer fee by tender (${feeTiers}).`}
         </DialogDescription>
       </DialogHeader>
 
@@ -891,7 +896,7 @@ function AuctionForm({
               <FieldError id={`${ids.shipping}-error`}>{visibleError('shipping')}</FieldError>
               <FieldHint>
                 <span id={`${ids.shipping}-hint`}>
-                  Buyer pays this on top of the winning bid and the {premiumPct}% buyer premium.
+                  Buyer pays this on top of the winning bid and the buyer fee ({feeTiers}).
                 </span>
               </FieldHint>
             </div>

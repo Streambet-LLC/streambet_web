@@ -15,7 +15,7 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 /**
  * USDC escrow for one auction. The bidder deposits enough to cover their max
- * bid + buyer premium + shipping into an on-chain escrow that only Hermes can
+ * bid + the USDC buyer fee + shipping into an on-chain escrow that only Hermes can
  * settle (if they win) or refund (outbid / unsold / cancelled); after the
  * auction they can always withdraw it themselves.
  */
@@ -30,10 +30,10 @@ export function UsdcEscrow({
   escrowUsd: number;
   requiredUsd: number;
   cluster: string;
-  /** This auction's buyer premium, for the copy only (`requiredUsd` already includes it). */
+  /** This auction's USDC buyer fee, for the copy only (`requiredUsd` already includes it). */
   premiumPct?: number;
 }) {
-  const extras = premiumPct > 0 ? `${premiumPct}% premium + shipping` : 'shipping';
+  const extras = premiumPct > 0 ? `${premiumPct}% buyer fee + shipping` : 'shipping';
   const { publicKey, sendTransaction, connected } = useWallet();
   const { connection } = useConnection();
   const qc = useQueryClient();
