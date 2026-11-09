@@ -2,6 +2,7 @@ import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Gavel, Search, UserRound, X } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { CollectIqLogoLink, SiteTabs } from '@/components/SiteTabs';
 import { useBuyerPremiumPercent } from './useHermesConfig';
 import { HERMES_HOME, IS_HERMES_SITE } from './site';
 
@@ -25,41 +26,56 @@ export function HermesShell({ children, wide }: { children: ReactNode; wide?: bo
   return (
     <div className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#0a0a0a] text-white">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0a0a0a]/90 backdrop-blur">
-        <div className={`mx-auto flex h-16 ${container} items-center gap-3 px-4`}>
-          <Link
-            to={HERMES_HOME}
-            className="flex shrink-0 items-center"
-            aria-label="Hermes Auctions home"
-          >
-            <img
-              src="/hermes/hermes-auctions-logo.png"
-              alt="Hermes Auctions"
-              className="hidden h-10 w-auto sm:block"
-            />
-            <img
-              src="/hermes/hermes-mark-64.png"
-              alt="Hermes Auctions"
-              className="h-10 w-10 sm:hidden"
-            />
-          </Link>
-          <MarketSearch className="mx-2 hidden max-w-md flex-1 md:flex" />
+        <div className={`mx-auto flex h-16 ${container} items-center gap-2 px-4 sm:gap-3`}>
+          {IS_HERMES_SITE ? (
+            <Link
+              to={HERMES_HOME}
+              className="flex shrink-0 items-center"
+              aria-label="Hermes Auctions home"
+            >
+              <img
+                src="/hermes/hermes-auctions-logo.png"
+                alt="Hermes Auctions"
+                className="hidden h-10 w-auto sm:block"
+              />
+              <img
+                src="/hermes/hermes-mark-64.png"
+                alt="Hermes Auctions"
+                className="h-10 w-10 sm:hidden"
+              />
+            </Link>
+          ) : (
+            // collectiqapp.xyz: collectIQ brand + the two top-level tabs.
+            <>
+              <CollectIqLogoLink />
+              <SiteTabs className="sm:ml-2" />
+            </>
+          )}
+          <MarketSearch
+            className={`mx-2 hidden max-w-md flex-1 ${IS_HERMES_SITE ? 'md:flex' : 'lg:flex'}`}
+          />
           <nav className="ml-auto flex items-center gap-1">
-            <NavLink to={HERMES_HOME} end className={navClass}>
-              Auctions
-            </NavLink>
+            {IS_HERMES_SITE && (
+              <NavLink to={HERMES_HOME} end className={navClass}>
+                Auctions
+              </NavLink>
+            )}
             {session ? (
-              <NavLink to="/auctions/me" className={navClass}>
+              <NavLink to="/auctions/me" className={navClass} aria-label="My bids">
                 <span className="inline-flex items-center gap-1.5">
-                  <Gavel className="h-4 w-4" /> My bids
+                  <Gavel className="h-4 w-4" />
+                  <span className="hidden sm:inline">My bids</span>
                 </span>
               </NavLink>
             ) : (
               <>
                 <Link
                   to={`/login?redirect=${redirect}`}
-                  className="rounded-full px-3 py-1.5 text-sm font-semibold text-white/70 hover:text-white"
+                  aria-label="Log in"
+                  className="rounded-full px-2 py-1.5 text-sm font-semibold text-white/70 hover:text-white sm:px-3"
                 >
-                  Log in
+                  <UserRound className="h-4 w-4 sm:hidden" />
+                  <span className="hidden sm:inline">Log in</span>
                 </Link>
                 <Link
                   to={`/signup?redirect=${redirect}`}
@@ -93,8 +109,8 @@ export function HermesShell({ children, wide }: { children: ReactNode; wide?: bo
           {IS_HERMES_SITE ? (
             <span>© Hermes Auctions {new Date().getFullYear()}</span>
           ) : (
-            <Link to="/" className="hover:text-white/70">
-              collectIQ
+            <Link to="/analytics" className="hover:text-white/70">
+              collectIQ Analytics
             </Link>
           )}
           <Link to="/terms" className="hover:text-white/70">

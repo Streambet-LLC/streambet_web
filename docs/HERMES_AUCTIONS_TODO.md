@@ -6,10 +6,11 @@ Working branches:
 
 Check items off as they ship. If a decision changes, update the **Decisions** section first.
 
-**Status (2026-11-07):** live on **staging and prod**. Card + ACH only on prod (USDC stays off until the escrow is on mainnet). Media uploads are verified on both, and both now write to `cardcades3prod`. Items that need someone with AWS access:
-1. **SES:** both environments get `535 Authentication Credentials Invalid`. Create credentials in us-east-1 with the **IAM user** option under SES → SMTP settings, not Mail Manager. The app connects to `email-smtp.us-east-1.amazonaws.com:465`, which only takes IAM-based SMTP credentials. Until fixed, email sign-ups can't verify; Google sign-up works.
+**Status (2026-11-08):** live on **staging and prod**. Card + ACH only on prod (USDC stays off until the escrow is on mainnet). Media uploads are verified on both, and both now write to `cardcades3prod`. The main domain is moving to **collectiqapp.xyz** (Phase 14). Open items:
+1. **SES:** SMTP login works now (IAM-user credentials). Sending still fails because the from-address domain isn't a verified SES identity: `cardcade.fun` is `PENDING` (its DKIM CNAMEs were never added at Namecheap), and the account is still in the **sandbox**. Once collectiqapp.xyz is on Route 53, `collectiqapp.xyz` can be verified automatically and `AWS_EMAIL_FROM` switched to `noreply@collectiqapp.xyz`. Production access is a separate request. Until fixed, email sign-ups can't verify; Google sign-up works.
 2. Fund the devnet deployer, then deploy + initialize the escrow (Phase 5). This turns on USDC on staging.
-3. Add the CloudFront SPA fallback on staging (Phase 9). This makes deep links load there; prod already has it.
+3. ~~Add the CloudFront SPA fallback on staging~~. Done 2026-11-08 (Phase 9).
+4. ~~collectiqapp.xyz nameservers + Pika key~~. Done 2026-11-08. collectiqapp.xyz is live (Phase 14). Pika is live on staging, and prod is waiting on Aaron's go-ahead (Phase 12).
 
 Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes_bidder2`, `hermes_bidder3` (`success+hermes-bidderN@simulator.amazonses.com`).
 
@@ -31,7 +32,7 @@ Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes
 | 360° spin (2026-11-08) | Optional, per lot. The admin picks a front and a back photo. **Pika 2.5 Keyframe** (`pika/pikaframes/image-to-video` on dev.pika.art) gets `[front, back]` with `loop: true` and 3 s per half turn, which gives a seamless 6 s front → back → front loop at 1080p. Price: **$0.36 per spin**, charged only on success, from a prepaid Pika balance. The MP4 is copied to `hermes/spins/<job>.mp4` in the media bucket. The admin previews it and chooses whether to include it, and it's saved as an `upload` video with `spin: true`. Bidders see it muted on loop right after the cover, and the card shows a "360°" badge. See Phase 12. |
 | Fees (changed 2026-11-08) | **Zero seller fee; 4% buyer premium** on the hammer (Nick's call; was 0%). Tagline is now "Zero-seller-fee collectibles auctions". The winner pays hammer + premium + flat per-auction shipping. Card payers also pay processing on that whole amount (grossed up for 2.9% + $0.30). ACH and USDC pay no processing. The rate is `BUYER_PREMIUM_PERCENT` in `hermes.pricing.ts`. Each auction stores its own `buyer_premium_percent` when it's created, so changing the constant never changes a listed lot. The USDC escrow must cover max + premium + shipping. Example: $35 hammer + $5 shipping = $41.40 by bank / USDC, or $42.95 by card. |
 | Card / ACH | Stripe. The method is saved once (hosted Checkout, setup mode) and charged off-session at close. Holds aren't used because card authorizations expire after 7 days and auctions run 7–21. |
-| Crypto | USDC on Solana with **on-chain escrow**, in a **new `hermes-auctions` program** (devnet). Escrow must cover max bid + shipping. Outbid, unsold, or cancelled → refunded automatically. Win → hammer + shipping go to the treasury and the rest is returned. |
+| Crypto | USDC on Solana with **on-chain escrow**, in a **new `hermes-auctions` program** (devnet). Escrow must cover max bid + the buyer premium on it + shipping. Outbid, unsold, or cancelled → refunded automatically. Win → hammer + premium + shipping go to the treasury and the rest is returned. |
 | Est. Value visibility (2026-11-03) | Per auction, "Show Est. Value to bidders" (default on). When off, the value is never sent to bidders; admins still see it. Can change any time. |
 | Seller name (2026-11-03) | Bidders see "Sold by …" on cards and the auction page. Blank = **Hermes Auctions** (the house); admins can enter a consignor name (≤80 chars). Can change any time. |
 | Payment options (2026-11-03) | Per auction, the admin picks **Fiat** (card + bank), **Crypto** (USDC), or **Both** (default). Locked once bidding opens. Crypto-only is refused while the USDC escrow isn't live. Bidders only see the allowed methods; single-rail lots show a "Card & bank only" / "USDC only" badge. |
@@ -105,7 +106,7 @@ Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes
 - [x] Stripe test webhook events.
 - [x] API pushed and deployed.
 - [x] Web pushed and deployed (https://stag.cardcade.fun).
-- [ ] **CloudFront SPA fallback on the staging distribution.** Deep links (`/auctions`, `/login`, `/auth/verify-email`, …) return S3 403 XML on staging; prod is already configured. In the CloudFront console → staging distribution → Error pages, add 403 → `/index.html` (200) and 404 → `/index.html` (200). Alternatively, grant `GHDeployer` `cloudfront:GetDistributionConfig` + `cloudfront:UpdateDistribution` and the deploy workflow configures it itself.
+- [x] **CloudFront SPA fallback on the staging distribution.** Done 2026-11-08 via the AWS CLI (`EASGI6LI5JIAW`: 403/404 → `/index.html` 200, error TTL 10 s); deep links verified. Original note: Deep links (`/auctions`, `/login`, `/auth/verify-email`, …) return S3 403 XML on staging; prod is already configured. In the CloudFront console → staging distribution → Error pages, add 403 → `/index.html` (200) and 404 → `/index.html` (200). Alternatively, grant `GHDeployer` `cloudfront:GetDistributionConfig` + `cloudfront:UpdateDistribution` and the deploy workflow configures it itself.
 - [x] E2E (API, Stripe test mode):
   - card win, charged $41.51 = $35 + $5 shipping + $1.51 processing
   - reserve gating
@@ -129,26 +130,51 @@ Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes
 ## Phase 11 — 4% buyer premium (2026-11-08)
 - [x] API: `BUYER_PREMIUM_PERCENT = 4`, migration `AddAuctionBuyerPremium20261108120000` (`buyer_premium_percent` default 0 for existing rows, `buyer_premium_usd`). Covers charges, retry checkout, USDC escrow check + settle amount, winner email, and the admin detail.
 - [x] Web: shows the premium on the bid panel badge, in the "most you'd pay" breakdown, in the confirm dialog, in the USDC escrow requirement, on the pay page / receipt and in admin. The site copy was changed to "Zero-seller-fee".
-- [ ] Apply the migration on `cardcade-stag`, then `cardcade-prod`, **before** each API deploy (the entity reads the new columns).
-- [ ] Deploy the API and web to staging, then run a card + ACH E2E. Expected: $35 + $5 → $42.95 card / $41.40 ACH.
-- [ ] Prod rollout.
+- [x] Migration applied on `cardcade-stag` and `cardcade-prod` (2026-11-08), before the API deploys.
+- [x] Deployed to staging and prod on 2026-11-08 (API #496, web #668). Both `/api/auctions/config` endpoints report `buyerPremiumPercent: 4`.
+- [ ] Card + ACH E2E on staging. Expected: $35 + $5 → $42.95 card / $41.40 ACH.
 
 ## Phase 12 — 360° spin via Pika (2026-11-08)
 - [x] API: `AuctionsSpinService` with admin routes `GET/POST /admin/auctions/spin` and `GET /admin/auctions/spin/:jobId`. It is stateless (the Pika job id is the handle) and accepts only `hermes/images/` photos from our bucket. It copies the result to S3 once, and stays dormant without `PIKA_API_KEY`. `AuctionVideoDto.spin` is accepted and kept on save. No migration.
 - [x] Web: a "360° spin" section in the auction form (front/back pickers → generate → preview → include/discard). The gallery plays the spin muted on loop after the cover, and lot cards show a "360°" badge.
 - [x] Verified with a mocked Pika + S3 run of the service, and Pika's public quote endpoint accepted the exact request body ($0.36).
-- [ ] **Pika account:** sign in at https://dev.pika.art/login, add funds at /billing (prepaid, no free tier), and create a key at /keys.
-- [ ] **SSM:** create SecureString `/cardcade/non_pro_stag/PIKA_API_KEY` (and `/cardcade/non_pro_prod/PIKA_API_KEY` for prod).
-- [ ] **Only after the SSM params exist**, add `{"name": "PIKA_API_KEY", "valueFrom": "/cardcade/non_pro_<env>/PIKA_API_KEY"}` to `secrets` in `.devops/task-def.non_pro_<env>.json`. A task definition that references a missing parameter fails to start.
-- [ ] Staging E2E: generate a spin on a real card, include it, save, and check the auction page plays it.
+- [x] Deployed to staging and prod (dormant: no key yet).
+- [x] **Pika account** (Aaron, 2026-11-08). Keep it funded; spins fail with "out of credit" otherwise. No webhook endpoint is needed: the app polls the job.
+- [x] **Pika API key** in `streambet_api/.env` (balance $10 at setup).
+- [x] **SSM:** SecureString `/cardcade/non_pro_{stag,prod}/PIKA_API_KEY` (aws/ssm key). These are the first SecureStrings under `/cardcade/`, and ECS decrypts them fine with the existing role.
+- [x] Task-def `secrets` entries for both envs (API `1654c6c`). Staging is running it (task def rev 283).
+- [x] **Staging E2E through the deployed API** (2026-11-08): admin `POST /admin/auctions/spin` with a mock card front/back → completed in 105 s, charged $0.36, MP4 copied to `hermes/spins/media_4942a377-….mp4` (1440×1440, 6 s, 30 fps, 2.3 MB, public). **Quality:** front → back is a real 3D turn; the closing back → front edge is a cross-fade with ghosting for ~2 s. Options: add anti-crossfade terms to the negative prompt; try `[front, back, front]` with `loop: false`; or generate only front → back and ping-pong it.
+- [x] **Prompt tweak test (Aaron picked option 2)**, run locally against real Pika ($0.36): `[front, back, front]`, `loop: false`, prompts insisting on one solid 360° turn, negative prompt banning crossfade / dissolve / ghosting. **Worse:** neither half rotated; the card stayed face-on, the artwork morphed ("23" → "25" / "40" / "44"), and it dissolved between sides. Reverted (never committed); staging still runs v1.
+- [x] Free preview of option 3 from v1's good half (ffmpeg, forward + reversed): a clean front ⇄ back rock with real rotation. It's a flip back and forth, not a full spin.
+- [x] **Option 3 chosen (Aaron) and built** (API `c6a499f`): Pika renders only the 3 s front → back turn (**$0.18**), and the API builds the loop with `ffmpeg-static`: frames forward then backward without repeating the ends, 1080 px, ~6 s, H.264 faststart. Frames go through disk, not ffmpeg's `reverse` filter, to stay within the 512 MB task. x264 is single-threaded at low priority. The build runs in the background, polls say `running` until it's stored, and a failed store is reported once and then retried. A mocked test with a real clip + real ffmpeg passed, and Pika's quote for the new body is $0.18.
+- [x] Staging E2E of option 3 through the deployed API: 84 s end to end, loop built in 27 s in the container (Linux ffmpeg OK), task memory flat (~48%), 1080×1080 6.00 s 1.6 MB, clean rotation both ways. Test spend so far: $0.90.
+- [x] **Prod:** API PR #497 merged (`307d3ee`); prod runs task def rev 243 with `PIKA_API_KEY`. 360° spins are live for admins on prod.
+- [ ] UI check on staging: include a spin on a real lot, save, and confirm the auction page plays it.
 
 ## Phase 13 — Standalone buyer site + marketplace (2026-11-08)
 - [x] API: the public list became a search: query DTO `ListAuctionsQueryDto`, the `ended` bucket, sorts, price and payment filters, and paging with `total`. The SQL was checked against `cardcade-stag`, and old clients that send only `bucket`/`category` still work. `HERMES_WEB_URL` (optional) adds the Hermes domain to our origins (`common/utils/client-origins.ts`). It's used for Stripe returns, Google sign-in (`GoogleOAuthGuard` carries `?origin=` through OAuth `state`; only our own origins can receive tokens, never an arbitrary localhost) and auction email links.
 - [x] Web: the marketplace rewrites `pages/hermes/AuctionsHome.tsx` (sidebar filters on desktop, chips + a Filters panel on mobile). The header search filters live on the marketplace. Lot cards show Sold / Ended. `hermes.html` is a second Vite entry with Hermes title, icon and link-preview image (`public/hermes/hermes-social.png`). `site.ts` handles Hermes mode, and the routing is split in `App.tsx`. Log in and password pages switch branding.
 - [x] Deploy: HTML is uploaded with `Cache-Control: no-cache`, and the Hermes distribution is invalidated when the `CLOUDFRONT_ID_HERMES_<branch>` secret exists. The iOS drawer fix moved to `public/ios-drawer-fix.js`, shared by both pages.
 - [x] Verified a production build (both pages share one bundle). Took Playwright screenshots against a mocked API: Hermes desktop, search, mobile and log in; main landing, `/auctions` and `?site=hermes`.
-- [ ] Deploy both repos to staging and try `https://stag.cardcade.fun/?site=hermes`. Run the deploys together: an old API rejects `bucket=ended`.
-- [ ] Pick the domain, then follow `docs/HERMES_AUCTIONS_DOMAIN.md`: ACM cert → CloudFront distribution → DNS → GitHub secret → `HERMES_WEB_URL` on the API.
+- [x] Deployed to staging and prod on 2026-11-08 (API #496, web #668). `hermes.html` is served (`no-cache`) on both, and the `ended` search answers on both APIs.
+- [x] ~~Pick a separate Hermes domain~~. Superseded by Phase 14: Hermes Auctions is a tab on collectiqapp.xyz. `hermes.html` + `site.ts` Hermes mode stay in the build, dormant, in case a separate domain is wanted later.
+
+## Phase 14 — collectiqapp.xyz + two top-level tabs (2026-11-08)
+Nick's call: the main domain is **collectiqapp.xyz** (cardcade.fun 301s to it). The site has two top-level tabs: **1. Hermes Auctions** (the home page) and **2. collectIQ Analytics** (for now). Aaron chose: DNS on Route 53, `/` = marketplace, and **main website only** for now (the API stays `api.cardcade.fun`, and staging stays `stag.cardcade.fun`).
+- [ ] Web tabs: **built, not shipped** (Aaron: "later"). `SiteTabs` in every main-site header (HermesShell, Navigation, the collectIQ product page). `/` = marketplace, `/auctions` → `/`, `/analytics` = dashboard for admins / collectIQ product page + waitlist for everyone else (`AnalyticsTab`). The marketplace hero carries the Hermes logo, since the header is collectIQ now. These are uncommitted in `streambet_web` on `non_pro_stag`.
+- [x] Web domain fix shipped (web `cad3925`, prod PR #669): GA / Hotjar / Mixpanel treat collectiqapp.xyz as production (`lib/hosts.ts`), and og URLs point at collectiqapp.xyz.
+- [x] Route 53 hosted zone `collectiqapp.xyz` (`Z0818300367PE0HVJJPVJ`) with: ACM validation CNAMEs; apex + www A/AAAA aliases → prod CloudFront (`d2tt40cz4n47fu.cloudfront.net`); Namecheap email-forwarding MX + SPF copied over (SPF also includes `amazonses.com`); SES Easy DKIM CNAMEs; `_dmarc` `p=none`. (An earlier zone/cert for collectiq.xyz, which isn't ours, was created by mistake and deleted.)
+- [x] ACM cert `7ff4193e-c3fb-409f-ae7d-25b83a0e9934` (us-east-1): collectiqapp.xyz, www.collectiqapp.xyz, cardcade.fun. cardcade.fun validates through its existing Namecheap CNAME.
+- [x] SES domain identity `collectiqapp.xyz` (DKIM RSA-2048) created. It verifies by itself once DNS is on Route 53.
+- [x] CloudFront Function `collectiq-canonical-host`: 301s any host except collectiqapp.xyz to `https://collectiqapp.xyz` + path + query. Tested, and attached in the cutover.
+- [x] Nameservers switched at Namecheap (Aaron, 2026-11-08). The .xyz registry showed the Route 53 NS right away, and the cert issued within the hour. Email forwarding: the MX records are copied, but Namecheap may stop forwarding once its DNS isn't used. Re-check any @collectiqapp.xyz forwards.
+- [x] **Cutover done 2026-11-08**, with no window where Stripe / Google returns broke: (1) prod `APP_HOST_URL` = collectiqapp.xyz + API rolled; (2) prod distribution `EAZS87LJNNBA`: aliases `cardcade.fun, collectiqapp.xyz, www.collectiqapp.xyz`, cert `7ff4193e…`, the redirect function on viewer-request (the previous config is saved in the scratchpad as `prod-backup-config.json`); (3) prod `CLIENT_URL`, `APPLICATION_HOST`, `VITE_APP_HOST_URL` = collectiqapp.xyz + API rolled; (4) the web domain fix deployed (PR #669). Staging is unchanged.
+- [x] Verified: collectiqapp.xyz serves the site over HTTPS, including deep links; `www` and `cardcade.fun/auctions?tab=live&q=…` 301 to collectiqapp.xyz with the path and query kept; Google sign-in accepts `origin=https://collectiqapp.xyz` and refuses others.
+- [ ] Still to see in a browser: saving a card returns to collectiqapp.xyz, and the next outbid email links there.
+- [x] No email forwarding in use (Aaron): the Namecheap MX records were removed, and SPF = `v=spf1 include:amazonses.com ~all`.
+- [ ] Email: the SES identity `collectiqapp.xyz` DKIM was still `PENDING` on 2026-11-08 (all 3 CNAMEs resolve publicly; SES re-checks on its own). Once it shows `SUCCESS`, set `/cardcade/non_pro_{stag,prod}/AWS_EMAIL_FROM` = `noreply@collectiqapp.xyz` (currently `noreply@streambet.tv`) and restart both APIs.
+- [ ] **SES production access:** requested 2026-11-08 (TRANSACTIONAL, collectiqapp.xyz) and **denied within minutes**, case `179418417300454`. Reading the case needs the AWS Support Center console (the API needs a paid support plan). Likely reasons: the domain was registered the same day and its identity wasn't verified yet. Once DKIM is `SUCCESS`, reply to the case with the use case, or resubmit.
+- [ ] Later: `api.collectiqapp.xyz` (+ a Google OAuth redirect URI), and staging on `stag.collectiqapp.xyz`.
 
 ## Risks / notes
 - **Card surcharging:** the card network cap is 3%, the fee must be disclosed, debit cards can't be surcharged, and some states restrict surcharges. Get legal sign-off before prod.
