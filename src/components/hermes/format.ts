@@ -108,10 +108,3 @@ export function buyerPremiumFor(hammer: number, pct: number): number {
   if (hammer <= 0 || !(pct > 0)) return 0;
   return Math.round((Math.round(hammer * 100) * pct) / 100) / 100;
 }
-
-/** Card processing the API passes through (grossed up to net 2.9% + 30¢). */
-export function cardFeeFor(subtotal: number, pct = 2.9, fixed = 0.3): number {
-  if (subtotal <= 0) return 0;
-  const gross = (subtotal + fixed) / (1 - pct / 100);
-  return Math.round((Math.ceil(gross * 100) / 100 - subtotal) * 100) / 100;
-}

@@ -23,7 +23,7 @@ import {
 } from '@/integrations/api/hermes';
 import { getMessage } from '@/utils/helper';
 import { AuctionClock, PaymentsBadge, ReserveBadge, SoftCloseHint } from './AuctionCard';
-import { buyerPremiumFor, cardFeeFor, fmtDateTime, fmtMethodLabel, fmtUsd } from './format';
+import { buyerPremiumFor, fmtDateTime, fmtMethodLabel, fmtUsd } from './format';
 import { ShippingAddressForm, fetchMyAddress, isAddressComplete } from './ShippingAddressForm';
 import { UsdcEscrow } from './UsdcEscrow';
 
@@ -33,9 +33,9 @@ const METHODS: Array<{
   note: string;
   icon: typeof CreditCard;
 }> = [
-  { key: 'ach', label: 'Bank (ACH)', note: 'No processing fee', icon: Building2 },
-  { key: 'card', label: 'Card', note: '+ card processing', icon: CreditCard },
-  { key: 'usdc', label: 'USDC', note: 'No processing fee · escrowed', icon: Gavel },
+  { key: 'ach', label: 'Bank (ACH)', note: 'Bank transfer', icon: Building2 },
+  { key: 'card', label: 'Card', note: 'Credit or debit', icon: CreditCard },
+  { key: 'usdc', label: 'USDC', note: 'Escrowed on-chain', icon: Gavel },
 ];
 
 function round2(n: number) {
@@ -123,22 +123,14 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
   const validAmount = Number.isFinite(maxBid) && maxBid >= minBid;
   const shipping = auction.shippingUsd;
   const premiumPct = auction.fees.buyerPremiumPercent ?? 0;
-  // Worst case is winning at the max: premium on it, card processing on everything.
+  // Worst case is winning at the max. Same for every payment method: the
+  // premium covers processing, nothing is added on top.
   const atMax = validAmount ? maxBid : minBid;
   const premium = buyerPremiumFor(atMax, premiumPct);
-  const fee =
-    method === 'card'
-      ? cardFeeFor(
-          round2(atMax + premium + shipping),
-          auction.fees.cardProcessingPercent,
-          auction.fees.cardProcessingFixedUsd
-        )
-      : 0;
-  const worstCase = round2(atMax + premium + shipping + fee);
+  const worstCase = round2(atMax + premium + shipping);
   const confirmExtras = [
     ...(premiumPct > 0 ? [`a ${premiumPct}% buyer premium`] : []),
     `${fmtUsd(shipping, { cents: true })} shipping`,
-    ...(method === 'card' ? ['card processing'] : []),
   ];
 
   const bid = useMutation({
@@ -502,12 +494,6 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
           <span>Shipping</span>
           <span>{fmtUsd(shipping, { cents: true })}</span>
         </div>
-        {method === 'card' && (
-          <div className="flex justify-between text-white/60">
-            <span>Card processing</span>
-            <span>{fmtUsd(fee, { cents: true })}</span>
-          </div>
-        )}
         <div className="flex justify-between border-t border-white/10 pt-1 text-sm font-bold">
           <span>Most you'd pay</span>
           <span>{fmtUsd(worstCase, { cents: true })}</span>
