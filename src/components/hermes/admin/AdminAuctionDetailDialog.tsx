@@ -27,7 +27,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { hermesAPI, hermesAdminAPI, type AdminAuctionDetail } from '@/integrations/api/hermes';
-import { CATEGORY_LABEL, METHOD_LABEL, fmtDateTime, fmtRemaining, fmtUsd } from '../format';
+import {
+  CATEGORY_LABEL,
+  METHOD_LABEL,
+  fmtDateTime,
+  fmtEstValue,
+  fmtRemaining,
+  fmtUsd,
+} from '../format';
 import { ConfirmDialog, Pill, ReliabilityBadge, ReserveCell, StatusBadge } from './adminUi';
 import {
   FIELD_CLASS,
@@ -337,7 +344,7 @@ function DetailBody({ id, onEdit }: { id: string; onEdit: (a: AdminAuction) => v
           <Stat label="Shipping" value={fmtUsd(auction.shippingUsd)} sub="Flat, paid by buyer" />
           <Stat
             label="Est. value"
-            value={fmtUsd(auction.estValueUsd)}
+            value={fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
             sub={
               [
                 auction.estValueSource
@@ -460,11 +467,15 @@ function DetailBody({ id, onEdit }: { id: string; onEdit: (a: AdminAuction) => v
             <details className="group rounded-md border border-white/10 bg-black/30">
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 px-3 py-2.5 text-sm text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C7FA09]/60">
                 <span className="font-semibold text-white">
-                  {fmtUsd(auction.estValueMeta.pointUsd)}
+                  {auction.estValueMeta.lowUsd != null && auction.estValueMeta.highUsd != null
+                    ? fmtEstValue(auction.estValueMeta.lowUsd, auction.estValueMeta.highUsd)
+                    : fmtUsd(auction.estValueMeta.pointUsd)}
                 </span>
-                <span className="text-xs text-white/55">
-                  {fmtUsd(auction.estValueMeta.lowUsd)} – {fmtUsd(auction.estValueMeta.highUsd)}
-                </span>
+                {auction.estValueMeta.pointUsd != null && (
+                  <span className="text-xs text-white/55">
+                    most likely {fmtUsd(auction.estValueMeta.pointUsd)}
+                  </span>
+                )}
                 <ReliabilityBadge reliability={auction.estValueMeta.reliability} />
                 {auction.estValueMeta.confidencePct != null && (
                   <span className="text-xs text-white/55">

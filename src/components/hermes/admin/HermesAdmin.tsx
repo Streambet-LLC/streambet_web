@@ -11,7 +11,7 @@ import {
   type AdminAuctionRow,
   type AuctionBucket,
 } from '@/integrations/api/hermes';
-import { CATEGORY_LABEL, METHOD_LABEL, fmtRemaining, fmtUsd } from '../format';
+import { CATEGORY_LABEL, METHOD_LABEL, fmtEstValue, fmtRemaining, fmtUsd } from '../format';
 import { Pill, ReserveCell, Segmented, StatusBadge } from './adminUi';
 import { AdminAuctionDetailDialog } from './AdminAuctionDetailDialog';
 import { AuctionFormDialog } from './AuctionFormDialog';
@@ -447,7 +447,7 @@ function AuctionTable({
                 <ReserveCell reserveUsd={r.reservePriceUsd} bidUsd={highBidOf(r)} />
               </td>
               <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums text-white/75">
-                {fmtUsd(r.estValueUsd)}
+                {fmtEstValue(r.estValueUsd, r.estValueHighUsd)}
               </td>
               <td className="px-2 py-2.5 text-right tabular-nums">{r.bidCount}</td>
               <td className="px-2 py-2.5 text-white/30">
@@ -524,7 +524,8 @@ function AuctionCards({
               </Kv>
               <Kv label="Est. value · Bids">
                 <span className="tabular-nums">
-                  {fmtUsd(r.estValueUsd)} · {r.bidCount} bid{r.bidCount === 1 ? '' : 's'}
+                  {fmtEstValue(r.estValueUsd, r.estValueHighUsd)} · {r.bidCount} bid
+                  {r.bidCount === 1 ? '' : 's'}
                 </span>
               </Kv>
             </dl>

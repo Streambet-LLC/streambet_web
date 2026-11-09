@@ -148,7 +148,7 @@ export default function AuctionsHome() {
   if (pay)
     pills.push({
       key: 'pay',
-      label: pay === 'crypto' ? 'Takes USDC' : 'Takes card & bank',
+      label: pay === 'crypto' ? 'Takes USDC' : 'Takes cards & ACH',
       clear: () => update({ pay: undefined }),
     });
 
@@ -498,7 +498,7 @@ function FilterPanel({
             {(
               [
                 [undefined, 'Any'],
-                ['fiat', 'Card or bank'],
+                ['fiat', 'Cards or ACH'],
                 ['crypto', 'USDC'],
               ] as const
             ).map(([key, label]) => (

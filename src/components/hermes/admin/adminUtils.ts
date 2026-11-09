@@ -174,22 +174,46 @@ export function fmtDay(s: string | null | undefined): string {
 }
 
 /**
- * Est. value form state. `accepted` is the recommendation the admin chose
- * with "Use $X"; the value counts as `pulled` only while the amount still
- * equals it (any edit makes it `manual`).
+ * Est. value form state. With `range` on, `amount` is the low end and `high`
+ * the top; otherwise `amount` is the single value. `accepted` is the
+ * recommendation the admin chose with "Use …"; the value counts as `pulled`
+ * only while the inputs still equal it (any edit makes it `manual`).
  */
 export interface EstValueState {
   mode: 'pull' | 'manual';
+  range: boolean;
   amount: string;
-  accepted: { meta: EstValueMeta; usd: number } | null;
+  high: string;
+  accepted: { meta: EstValueMeta; usd: number; highUsd: number | null } | null;
 }
+
+const sameCents = (a: number | null, b: number | null) =>
+  a == null || b == null ? a === b : roundCents(a) === roundCents(b);
 
 export function estValueSource(s: EstValueState): 'manual' | 'pulled' | null {
   const n = parseUsd(s.amount);
   if (n == null || Number.isNaN(n)) return null;
-  return s.mode === 'pull' && s.accepted && roundCents(n) === roundCents(s.accepted.usd)
+  const high = s.range ? parseUsd(s.high) : null;
+  return s.mode === 'pull' &&
+    s.accepted &&
+    sameCents(n, s.accepted.usd) &&
+    sameCents(high, s.accepted.highUsd)
     ? 'pulled'
     : 'manual';
+}
+
+/**
+ * "Use …" target for a recommendation: its range when the form is in range
+ * mode (and the pull returned one), else the point estimate.
+ */
+export function recommendedEstValue(
+  rec: EstValueMeta,
+  range: boolean
+): { usd: number; highUsd: number | null } | null {
+  if (range && rec.lowUsd != null && rec.highUsd != null && rec.highUsd > rec.lowUsd) {
+    return { usd: roundCents(rec.lowUsd), highUsd: roundCents(rec.highUsd) };
+  }
+  return rec.pointUsd != null ? { usd: roundCents(rec.pointUsd), highUsd: null } : null;
 }
 
 export const adminKeys = {

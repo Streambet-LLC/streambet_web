@@ -11,6 +11,7 @@ import { useAuctionLive } from '@/components/hermes/useAuctionLive';
 import {
   CATEGORY_LABEL,
   fmtDateTime,
+  fmtEstValue,
   fmtExtensionWindow,
   fmtUsd,
 } from '@/components/hermes/format';
@@ -173,12 +174,21 @@ function AboutSection({ a, softClose }: { a: PublicAuction; softClose: string })
           [
             ['Starting bid', fmtUsd(a.startingPriceUsd)],
             // Omitted entirely when the seller hides it (or never set one).
-            a.estValueUsd != null ? ['Est. Value', fmtUsd(a.estValueUsd)] : null,
+            a.estValueUsd != null
+              ? ['Est. Value', fmtEstValue(a.estValueUsd, a.estValueHighUsd)]
+              : null,
             ['Shipping', a.shippingUsd > 0 ? fmtUsd(a.shippingUsd, { cents: true }) : 'Free'],
             ['Seller', a.sellerName],
             ['Starts', fmtDateTime(a.startsAt)],
             ['Ends', fmtDateTime(a.endsAt)],
-            ['Reserve', a.hasReserve ? (a.reserveMet ? 'Met' : 'Not met') : 'None'],
+            [
+              'Reserve',
+              !a.hasReserve
+                ? 'None'
+                : `${a.reservePriceUsd != null ? `${fmtUsd(a.reservePriceUsd)} · ` : ''}${
+                    a.reserveMet ? 'Met' : 'Not met'
+                  }`,
+            ],
           ].filter(Boolean) as [string, string][]
         ).map(([k, v]) => (
           <div key={k} className="rounded-xl border border-white/10 bg-[#141414] p-3">

@@ -5,15 +5,26 @@ import {
   CATEGORY_LABEL,
   DEFAULT_EXTENSION_WINDOW_SECONDS,
   fmtExtensionWindow,
+  fmtEstValue,
   fmtRemaining,
   fmtUsd,
 } from './format';
 import { useCountdown } from './useCountdown';
 
+/** "Reserve $150 · not met" (just "Reserve not met" if the API sent no amount). */
+function reserveLabel(
+  auction: Pick<PublicAuction, 'reservePriceUsd'>,
+  status: 'met' | 'not met'
+): string {
+  return auction.reservePriceUsd != null
+    ? `Reserve ${fmtUsd(auction.reservePriceUsd)} · ${status}`
+    : `Reserve ${status}`;
+}
+
 export function ReserveBadge({
   auction,
 }: {
-  auction: Pick<PublicAuction, 'hasReserve' | 'reserveMet'>;
+  auction: Pick<PublicAuction, 'hasReserve' | 'reserveMet' | 'reservePriceUsd'>;
 }) {
   if (!auction.hasReserve) {
     return (
@@ -24,11 +35,11 @@ export function ReserveBadge({
   }
   return auction.reserveMet ? (
     <span className="rounded-full bg-[#C7FA09]/15 px-2 py-0.5 text-[11px] font-semibold text-[#C7FA09]">
-      Reserve met
+      {reserveLabel(auction, 'met')}
     </span>
   ) : (
     <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
-      Reserve not met
+      {reserveLabel(auction, 'not met')}
     </span>
   );
 }
@@ -38,7 +49,7 @@ export function PaymentsBadge({ accepted }: { accepted: PublicAuction['acceptedP
   if (accepted === 'both') return null;
   return (
     <span className="rounded-full border border-sky-300/30 bg-sky-300/10 px-2 py-0.5 text-[11px] font-semibold text-sky-200">
-      {accepted === 'crypto' ? 'USDC only' : 'Card & bank only'}
+      {accepted === 'crypto' ? 'USDC only' : 'Cards & ACH only'}
     </span>
   );
 }
@@ -176,7 +187,9 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
           {!ended && <ReserveBadge auction={auction} />}
           <PaymentsBadge accepted={auction.acceptedPayments} />
           {auction.estValueUsd != null && (
-            <span className="text-[11px] text-white/55">Est. {fmtUsd(auction.estValueUsd)}</span>
+            <span className="text-[11px] text-white/55">
+              Est. {fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
+            </span>
           )}
         </div>
       </div>

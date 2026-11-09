@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { hermesAdminAPI, type AuctionCategory, type EstValueMeta } from '@/integrations/api/hermes';
-import { fmtUsd } from '../format';
-import { FieldError, FieldHint, Pill, ReliabilityBadge, UsdInput } from './adminUi';
+import { fmtEstValue, fmtUsd } from '../format';
+import { FieldError, FieldHint, Pill, ReliabilityBadge, Segmented, UsdInput } from './adminUi';
 import {
   FIELD_CLASS,
   GHOST_BUTTON_CLASS,
@@ -18,11 +18,16 @@ import {
   fmtDay,
   fmtShortDateTime,
   parseUsd,
-  roundCents,
+  recommendedEstValue,
   useNow,
   valueMethodLabel,
   type EstValueState,
 } from './adminUtils';
+
+const SHAPE_OPTIONS = [
+  { value: 'single', label: 'Single value' },
+  { value: 'range', label: 'Range' },
+] as const;
 
 /**
  * Est. value: either typed by the admin, or pulled from recent sales in two
@@ -83,17 +88,30 @@ export function EstValueField({
   const amountNum = parseUsd(value.amount);
   const canIdentify = !!category && (!!title.trim() || imageUrls.length > 0);
   const subjectOk = subject.trim().length >= 3;
-  const usingRec =
-    !!rec && rec.pointUsd != null && source === 'pulled' && value.accepted?.meta === rec;
+  const target = rec ? recommendedEstValue(rec, value.range) : null;
+  const usingRec = !!target && source === 'pulled' && value.accepted?.meta === rec;
 
-  const applyRecommendation = () => {
-    if (!rec || rec.pointUsd == null) return;
-    const usd = roundCents(rec.pointUsd);
-    onChange({ mode: 'pull', amount: String(usd), accepted: { meta: rec, usd } });
+  /** Fill the inputs from `r` in the given shape (range falls back to single). */
+  const apply = (r: EstValueMeta, range: boolean) => {
+    const t = recommendedEstValue(r, range);
+    if (!t) return;
+    onChange({
+      mode: 'pull',
+      range: t.highUsd != null,
+      amount: String(t.usd),
+      high: t.highUsd != null ? String(t.highUsd) : '',
+      accepted: { meta: r, ...t },
+    });
   };
 
   const setMode = (mode: EstValueState['mode']) =>
     onChange(mode === 'manual' ? { ...value, mode, accepted: null } : { ...value, mode });
+
+  const setRange = (range: boolean) => {
+    // While the pulled value is in use, switching re-applies it in the new shape.
+    if (rec && usingRec && rec.pointUsd != null) apply(rec, range);
+    else onChange({ ...value, range });
+  };
 
   return (
     <fieldset className="space-y-3">
@@ -246,25 +264,70 @@ export function EstValueField({
           )}
 
           {rec && !pull.isPending && (
-            <Recommendation rec={rec} using={usingRec} onUse={applyRecommendation} />
+            <Recommendation
+              rec={rec}
+              range={value.range}
+              target={target}
+              using={usingRec}
+              onUse={() => apply(rec, value.range)}
+            />
           )}
         </div>
       )}
 
       <div>
-        <Label htmlFor={inputId} className="text-white/85">
-          Est. value <span className="font-normal text-muted-foreground">(optional)</span>
-        </Label>
-        <div className="mt-1.5 max-w-[220px]">
-          <UsdInput
-            id={inputId}
-            value={value.amount}
-            onChange={e => onChange({ ...value, amount: e.target.value })}
-            placeholder="0.00"
-            invalid={!!error}
-            aria-describedby={error ? `${inputId}-error` : `${inputId}-hint`}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Label htmlFor={inputId} className="text-white/85">
+            Est. value <span className="font-normal text-muted-foreground">(optional)</span>
+          </Label>
+          <Segmented
+            size="sm"
+            ariaLabel="Est. value shape"
+            value={value.range ? 'range' : 'single'}
+            onChange={v => setRange(v === 'range')}
+            options={SHAPE_OPTIONS}
           />
         </div>
+        {value.range ? (
+          <div className="mt-1.5 flex max-w-[380px] items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <UsdInput
+                id={inputId}
+                value={value.amount}
+                onChange={e => onChange({ ...value, amount: e.target.value })}
+                placeholder="Low"
+                aria-label="Est. value, low end"
+                invalid={!!error}
+                aria-describedby={error ? `${inputId}-error` : `${inputId}-hint`}
+              />
+            </div>
+            <span className="text-white/40" aria-hidden>
+              –
+            </span>
+            <div className="min-w-0 flex-1">
+              <UsdInput
+                id={`${inputId}-high`}
+                value={value.high}
+                onChange={e => onChange({ ...value, high: e.target.value })}
+                placeholder="High"
+                aria-label="Est. value, high end"
+                invalid={!!error}
+                aria-describedby={error ? `${inputId}-error` : `${inputId}-hint`}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mt-1.5 max-w-[220px]">
+            <UsdInput
+              id={inputId}
+              value={value.amount}
+              onChange={e => onChange({ ...value, amount: e.target.value })}
+              placeholder="0.00"
+              invalid={!!error}
+              aria-describedby={error ? `${inputId}-error` : `${inputId}-hint`}
+            />
+          </div>
+        )}
         <FieldError id={`${inputId}-error`}>{error}</FieldError>
         {!error && (
           <p id={`${inputId}-hint`} className="mt-1 text-xs text-muted-foreground">
@@ -274,6 +337,8 @@ export function EstValueField({
               </span>
             ) : value.mode === 'pull' && value.accepted && amountNum != null ? (
               'Edited — this will be saved as a manual value.'
+            ) : value.range ? (
+              'Bidders see it as a range, like "$400 – $600". Leave both blank to hide it.'
             ) : (
               'Shown to bidders as the estimated value. Leave blank to hide it.'
             )}
@@ -286,13 +351,21 @@ export function EstValueField({
 
 function Recommendation({
   rec,
+  range,
+  target,
   using,
   onUse,
 }: {
   rec: EstValueMeta;
+  /** The form is in range mode. */
+  range: boolean;
+  /** What "Use" applies (null = no estimate). */
+  target: { usd: number; highUsd: number | null } | null;
   using: boolean;
   onUse: () => void;
 }) {
+  const hasRange = rec.lowUsd != null && rec.highUsd != null;
+  const targetLabel = target ? fmtEstValue(target.usd, target.highUsd) : null;
   return (
     <div className="rounded-lg border border-[#C7FA09]/25 bg-[#C7FA09]/[0.04] p-3 sm:p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -301,12 +374,18 @@ function Recommendation({
             Recommended est. value
           </p>
           <p className="mt-0.5 text-3xl font-bold tabular-nums text-white">
-            {rec.pointUsd != null ? fmtUsd(rec.pointUsd) : 'No estimate'}
+            {targetLabel ?? 'No estimate'}
           </p>
-          {(rec.lowUsd != null || rec.highUsd != null) && (
-            <p className="text-xs tabular-nums text-white/60">
-              Range {fmtUsd(rec.lowUsd)} – {fmtUsd(rec.highUsd)}
-            </p>
+          {target && target.highUsd != null && rec.pointUsd != null ? (
+            <p className="text-xs tabular-nums text-white/60">Most likely {fmtUsd(rec.pointUsd)}</p>
+          ) : (
+            target &&
+            hasRange && (
+              <p className="text-xs tabular-nums text-white/60">
+                Range {fmtEstValue(rec.lowUsd, rec.highUsd)}
+                {!range && ' · switch to Range below to use it'}
+              </p>
+            )
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -371,17 +450,17 @@ function Recommendation({
       )}
 
       <div className="mt-3">
-        {rec.pointUsd == null ? (
+        {!targetLabel ? (
           <p className="text-xs text-muted-foreground">
             No reliable estimate — enter a value below, or refine the item and try again.
           </p>
         ) : using ? (
           <p className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-300">
-            <Check className="h-4 w-4" aria-hidden /> Using {fmtUsd(rec.pointUsd)}
+            <Check className="h-4 w-4" aria-hidden /> Using {targetLabel}
           </p>
         ) : (
           <Button type="button" size="sm" onClick={onUse} className={LIME_BUTTON_CLASS}>
-            <Check /> Use {fmtUsd(rec.pointUsd)}
+            <Check /> Use {targetLabel}
           </Button>
         )}
       </div>

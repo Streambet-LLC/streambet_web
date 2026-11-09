@@ -43,6 +43,11 @@ export function fmtUsd(n: number | null | undefined, opts: { cents?: boolean } =
   });
 }
 
+/** Est. Value as shown to bidders: "$450" or "$400 – $600". */
+export function fmtEstValue(usd: number | null | undefined, highUsd?: number | null): string {
+  return highUsd != null && usd != null ? `${fmtUsd(usd)} – ${fmtUsd(highUsd)}` : fmtUsd(usd);
+}
+
 export function fmtDateTime(iso: string | Date): string {
   return new Date(iso).toLocaleString('en-US', {
     weekday: 'short',
@@ -112,7 +117,7 @@ export function fmtExtensionWindow(seconds = DEFAULT_EXTENSION_WINDOW_SECONDS): 
  * Buyer fee by tender for new lots, all-in (mirrors the API's
  * `BUYER_PREMIUM_RATES`). Used only until `/auctions/config` loads.
  */
-export const DEFAULT_PREMIUM_RATES: PremiumRates = { card: 4, ach: 1, usdc: 0.5 };
+export const DEFAULT_PREMIUM_RATES: PremiumRates = { card: 4, ach: 1, usdc: 1 };
 
 /** Rates by tender from an auction's (or the config's) `fees`; older APIs sent one rate for all. */
 export function premiumRates(
@@ -125,7 +130,7 @@ export function premiumRates(
 
 const TIER_LABEL: Record<FundingMethod, string> = { card: 'card', ach: 'ACH', usdc: 'USDC' };
 
-/** "4% card · 1% ACH · 0.5% USDC" (only the given tenders, in that order). */
+/** "4% card · 1% ACH · 1% USDC" (only the given tenders, in that order). */
 export function fmtFeeTiers(
   rates: PremiumRates,
   methods: FundingMethod[] = ['card', 'ach', 'usdc']
