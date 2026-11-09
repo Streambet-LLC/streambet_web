@@ -2,6 +2,7 @@ import { Briefcase, GraduationCap, Instagram, Mail, Sparkles } from 'lucide-reac
 import type { LucideIcon } from 'lucide-react';
 import { HermesShell } from '@/components/hermes/HermesShell';
 import { COLLECTIQ_INSTAGRAM_URL, NICK_EMAIL } from '@/lib/contact';
+import nickPhoto from '@/assets/about/nick.jpg';
 
 /** Nick's bio, in his words (2026-11-09). First name only, by his choice. */
 const CREDENTIALS: Array<{ icon: LucideIcon; text: string }> = [
@@ -26,12 +27,13 @@ export default function About() {
           className="mt-6 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#C7FA09]/10 via-[#141414] to-[#0a0a0a] p-6 sm:p-8"
         >
           <div className="flex items-center gap-4">
-            <div
-              aria-hidden
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#C7FA09] text-2xl font-black text-black"
-            >
-              N
-            </div>
+            <img
+              src={nickPhoto}
+              alt="Nick"
+              width={96}
+              height={96}
+              className="h-20 w-20 shrink-0 rounded-full object-cover ring-2 ring-[#C7FA09] ring-offset-2 ring-offset-[#141414] sm:h-24 sm:w-24"
+            />
             <div>
               <h2 id="founder-name" className="text-2xl font-extrabold">
                 Nick
