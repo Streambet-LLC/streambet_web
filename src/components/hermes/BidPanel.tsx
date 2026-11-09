@@ -65,10 +65,14 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
     queryFn: fetchMyAddress,
     enabled: !!session && !settled && !isAdmin,
   });
+  // Saved card / bank: always refetch on mount and when the tab regains
+  // focus, so a method saved on Stripe (or in another tab) shows right away.
   const methods = useQuery({
     queryKey: ['hermes-methods'],
     queryFn: hermesAPI.paymentMethods,
     enabled: !!session && !settled && !isAdmin,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const [editingAddress, setEditingAddress] = useState(false);
@@ -415,7 +419,13 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
             ) : (
               <Plus className="h-3 w-3" />
             )}
-            {method === 'ach' ? 'Link a bank account' : 'Add a card'}
+            {method === 'ach'
+              ? savedOfKind.length > 0
+                ? 'Link another bank account'
+                : 'Link a bank account'
+              : savedOfKind.length > 0
+                ? 'Add another card'
+                : 'Add a card'}
           </button>
         </div>
       ) : (
