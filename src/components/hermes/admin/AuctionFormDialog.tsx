@@ -894,7 +894,7 @@ function AuctionForm({
               </FieldError>
               <FieldHint>
                 <span id={`${ids.reservePrice}-hint`}>
-                  Bidders only see whether the reserve is met, never the amount.
+                  Bidders see the reserve amount and whether it's been met.
                 </span>
               </FieldHint>
             </div>

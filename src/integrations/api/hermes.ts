@@ -70,6 +70,8 @@ export interface PublicAuction {
   /** Soft close: a bid this close to the end resets the clock to this. Absent on older API builds. */
   extensionWindowSeconds?: number;
   hasReserve: boolean;
+  /** The reserve amount (shown to bidders since 2026-11-09; absent from older APIs). */
+  reservePriceUsd?: number | null;
   reserveMet: boolean | null;
   /** The Est. Value, or the low end when `estValueHighUsd` is set. */
   estValueUsd: number | null;
