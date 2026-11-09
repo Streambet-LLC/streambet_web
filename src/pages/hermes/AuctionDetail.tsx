@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Bot, Store } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,15 +15,20 @@ import {
   fmtUsd,
 } from '@/components/hermes/format';
 import { Skeleton } from '@/components/ui/skeleton';
-import { hermesAPI } from '@/integrations/api/hermes';
+import { hermesAPI, type PublicAuction, type PublicBid } from '@/integrations/api/hermes';
 import { HERMES_HOME } from '@/components/hermes/site';
 
 /** One Hermes lot: media, details, live bid panel and bid history. */
 export default function AuctionDetail() {
   const { id } = useParams<{ id: string }>();
   const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
+
+  // Back to the marketplace, with its filters when the lot was opened from
+  // it (AuctionCard passes `state.from`); otherwise the marketplace home.
+  const from = (location.state as { from?: string } | null)?.from;
+  const backTo = from && /^\/(\?|$)/.test(from) && !from.startsWith('//') ? from : HERMES_HOME;
 
   const auction = useQuery({
     queryKey: ['hermes-auction', id],
@@ -42,6 +47,18 @@ export default function AuctionDetail() {
     staleTime: 60_000,
   });
   useAuctionLive(id);
+
+  // A back/forward cache restore (e.g. coming back from Stripe) revives the
+  // page exactly as it was, with stale bids and saved methods. Refresh them.
+  useEffect(() => {
+    const onShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        qc.invalidateQueries({ predicate: q => String(q.queryKey[0]).startsWith('hermes') });
+      }
+    };
+    window.addEventListener('pageshow', onShow);
+    return () => window.removeEventListener('pageshow', onShow);
+  }, [qc]);
 
   // Back from Stripe's hosted setup page.
   useEffect(() => {
@@ -92,113 +109,133 @@ export default function AuctionDetail() {
     fees: a.fees,
   };
   const panel = <BidPanel auction={a} config={cfg} />;
+  const about = <AboutSection a={a} softClose={softClose} />;
+  const history = <BidHistory bids={bids.data} />;
 
   return (
     <HermesShell>
-      <button
-        type="button"
-        onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(HERMES_HOME))}
+      {/* A real link, never history-back: after a Stripe card setup the
+          previous history entry is Stripe. Keeps marketplace filters when
+          the lot was opened from the marketplace. */}
+      <Link
+        to={backTo}
         className="mb-4 inline-flex items-center gap-1 text-sm text-white/60 hover:text-white"
       >
         <ArrowLeft className="h-4 w-4" /> All auctions
-      </button>
+      </Link>
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:gap-10">
-        <div className="min-w-0">
-          <MediaGallery images={a.images} videos={a.videos} title={a.title} />
-        </div>
-
-        <div className="min-w-0 space-y-5">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C7FA09]">
-              {CATEGORY_LABEL[a.category]}
-            </p>
-            <h1 className="mt-2 text-2xl font-extrabold leading-tight sm:text-3xl">{a.title}</h1>
-            <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-white/60">
-              <Store className="h-4 w-4" /> Sold by{' '}
-              <span className="font-semibold text-white">{a.sellerName}</span>
-            </p>
+      {/* Desktop: photos + description on the left, bid panel + history on
+          the right (no gap under the photos). Phones: the column wrappers
+          dissolve (`contents`) and `order` interleaves photos, bid panel,
+          description, history. */}
+      <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1.2fr_1fr] lg:items-start lg:gap-10">
+        <div className="contents lg:block lg:min-w-0 lg:space-y-10">
+          <div className="order-1 min-w-0">
+            <MediaGallery images={a.images} videos={a.videos} title={a.title} />
           </div>
-          {cfg.crypto.enabled ? (
-            <SolanaProviders cluster={cfg.crypto.cluster}>{panel}</SolanaProviders>
-          ) : (
-            panel
-          )}
+          {about}
         </div>
-      </div>
 
-      <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:gap-10">
-        <section>
-          <h2 className="text-lg font-bold">About this item</h2>
-          <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/75">
-            {a.description || 'No description provided.'}
-          </p>
-          <dl className="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-            {(
-              [
-                ['Starting bid', fmtUsd(a.startingPriceUsd)],
-                // Omitted entirely when the seller hides it (or never set one).
-                a.estValueUsd != null ? ['Est. Value', fmtUsd(a.estValueUsd)] : null,
-                ['Shipping', a.shippingUsd > 0 ? fmtUsd(a.shippingUsd, { cents: true }) : 'Free'],
-                ['Seller', a.sellerName],
-                ['Starts', fmtDateTime(a.startsAt)],
-                ['Ends', fmtDateTime(a.endsAt)],
-                ['Reserve', a.hasReserve ? (a.reserveMet ? 'Met' : 'Not met') : 'None'],
-              ].filter(Boolean) as [string, string][]
-            ).map(([k, v]) => (
-              <div key={k} className="rounded-xl border border-white/10 bg-[#141414] p-3">
-                <dt className="text-[11px] uppercase tracking-wider text-white/45">{k}</dt>
-                <dd className="mt-0.5 font-semibold">{v}</dd>
-              </div>
-            ))}
-          </dl>
-          {a.estValueSource === 'pulled' && (
-            <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-white/45">
-              <Bot className="h-3.5 w-3.5" /> Est. Value is based on recent comparable sales.
-            </p>
-          )}
-          {(a.bucket !== 'settled' || a.extensionCount > 0) && (
-            <p className="mt-2 text-xs text-white/45">
-              {a.extensionCount > 0 && `Extended ${a.extensionCount}× by late bids. `}
-              {a.bucket !== 'settled' &&
-                `Soft close: a bid in the final ${softClose} resets the clock to ${softClose}, so nobody gets sniped.`}
-            </p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-lg font-bold">Bid history</h2>
-          {(bids.data ?? []).length === 0 ? (
-            <p className="mt-3 text-sm text-white/55">No bids yet — be the first.</p>
-          ) : (
-            <ul className="mt-3 divide-y divide-white/5 overflow-hidden rounded-xl border border-white/10 bg-[#141414]">
-              {bids.data!.slice(0, 25).map(b => (
-                <li key={b.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                  <span className="text-white/75">
-                    {b.bidder}
-                    {b.isAuto && (
-                      <span className="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase text-white/55">
-                        auto
-                      </span>
-                    )}
-                  </span>
-                  <span className="flex items-center gap-3">
-                    <span className="font-semibold">{fmtUsd(b.amountUsd)}</span>
-                    <span className="hidden text-xs text-white/40 sm:inline">
-                      {new Date(b.createdAt).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <div className="contents lg:block lg:min-w-0 lg:space-y-10">
+          <div className="order-2 min-w-0 space-y-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C7FA09]">
+                {CATEGORY_LABEL[a.category]}
+              </p>
+              <h1 className="mt-2 text-2xl font-extrabold leading-tight sm:text-3xl">{a.title}</h1>
+              <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-white/60">
+                <Store className="h-4 w-4" /> Sold by{' '}
+                <span className="font-semibold text-white">{a.sellerName}</span>
+              </p>
+            </div>
+            {cfg.crypto.enabled ? (
+              <SolanaProviders cluster={cfg.crypto.cluster}>{panel}</SolanaProviders>
+            ) : (
+              panel
+            )}
+          </div>
+          {history}
+        </div>
       </div>
     </HermesShell>
+  );
+}
+
+function AboutSection({ a, softClose }: { a: PublicAuction; softClose: string }) {
+  return (
+    <section className="order-3 min-w-0">
+      <h2 className="text-lg font-bold">About this item</h2>
+      <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/75">
+        {a.description || 'No description provided.'}
+      </p>
+      <dl className="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+        {(
+          [
+            ['Starting bid', fmtUsd(a.startingPriceUsd)],
+            // Omitted entirely when the seller hides it (or never set one).
+            a.estValueUsd != null ? ['Est. Value', fmtUsd(a.estValueUsd)] : null,
+            ['Shipping', a.shippingUsd > 0 ? fmtUsd(a.shippingUsd, { cents: true }) : 'Free'],
+            ['Seller', a.sellerName],
+            ['Starts', fmtDateTime(a.startsAt)],
+            ['Ends', fmtDateTime(a.endsAt)],
+            ['Reserve', a.hasReserve ? (a.reserveMet ? 'Met' : 'Not met') : 'None'],
+          ].filter(Boolean) as [string, string][]
+        ).map(([k, v]) => (
+          <div key={k} className="rounded-xl border border-white/10 bg-[#141414] p-3">
+            <dt className="text-[11px] uppercase tracking-wider text-white/45">{k}</dt>
+            <dd className="mt-0.5 font-semibold">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {a.estValueSource === 'pulled' && (
+        <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-white/45">
+          <Bot className="h-3.5 w-3.5" /> Est. Value is based on recent comparable sales.
+        </p>
+      )}
+      {(a.bucket !== 'settled' || a.extensionCount > 0) && (
+        <p className="mt-2 text-xs text-white/45">
+          {a.extensionCount > 0 && `Extended ${a.extensionCount}× by late bids. `}
+          {a.bucket !== 'settled' &&
+            `Soft close: a bid in the final ${softClose} resets the clock to ${softClose}, so nobody gets sniped.`}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function BidHistory({ bids }: { bids: PublicBid[] | undefined }) {
+  return (
+    <section className="order-4 min-w-0">
+      <h2 className="text-lg font-bold">Bid history</h2>
+      {(bids ?? []).length === 0 ? (
+        <p className="mt-3 text-sm text-white/55">No bids yet — be the first.</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-white/5 overflow-hidden rounded-xl border border-white/10 bg-[#141414]">
+          {bids!.slice(0, 25).map(b => (
+            <li key={b.id} className="flex items-center justify-between px-3 py-2 text-sm">
+              <span className="text-white/75">
+                {b.bidder}
+                {b.isAuto && (
+                  <span className="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase text-white/55">
+                    auto
+                  </span>
+                )}
+              </span>
+              <span className="flex items-center gap-3">
+                <span className="font-semibold">{fmtUsd(b.amountUsd)}</span>
+                <span className="hidden text-xs text-white/40 sm:inline">
+                  {new Date(b.createdAt).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Clock, Star, Video } from 'lucide-react';
 import type { PublicAuction } from '@/integrations/api/hermes';
 import {
@@ -77,6 +77,7 @@ export function SoftCloseHint({ auction }: { auction: PublicAuction }) {
 
 /** Grid / rail card for a live, upcoming or ended auction. */
 export function AuctionCard({ auction }: { auction: PublicAuction }) {
+  const location = useLocation();
   const cover = auction.images[0]?.url;
   const live = auction.bucket === 'live';
   const ended = auction.bucket === 'settled';
@@ -103,6 +104,8 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
   return (
     <Link
       to={`/auctions/${auction.id}`}
+      // Lets the lot's "All auctions" link return to these exact filters.
+      state={{ from: location.pathname + location.search }}
       className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#141414] transition hover:-translate-y-0.5 hover:border-[#C7FA09]/50 hover:shadow-[0_0_24px_rgba(199,250,9,0.12)]"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-black">
