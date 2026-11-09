@@ -21,9 +21,10 @@ export function SiteHeader({ center, fixed }: { center?: ReactNode; fixed?: bool
   const { handleLogout } = useLogout();
   const location = useLocation();
   const redirect = encodeURIComponent(location.pathname + location.search);
+  // Icon-only on phones (tight padding), text from `sm` up.
   const pill = ({ isActive }: { isActive: boolean }) =>
     cn(
-      'inline-flex items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-semibold transition-colors sm:px-3',
+      'inline-flex items-center gap-1.5 rounded-full p-1.5 text-sm font-semibold transition-colors sm:px-3',
       isActive ? 'bg-[#C7FA09] text-black' : 'text-white/70 hover:text-white'
     );
 
@@ -34,12 +35,21 @@ export function SiteHeader({ center, fixed }: { center?: ReactNode; fixed?: bool
         fixed ? 'fixed inset-x-0 top-0 z-50' : 'sticky top-0 z-30'
       )}
     >
-      <div className={`mx-auto flex h-16 ${SITE_HEADER_WIDTH} items-center gap-2 px-4 sm:gap-3`}>
-        <CollectIqLogoLink />
+      {/* Phones: everything has to fit one row down to 320px, so the logo
+          hides under 340px and the About icon under 375px (About is in the
+          footer too). */}
+      <div
+        className={`mx-auto flex h-16 ${SITE_HEADER_WIDTH} items-center gap-1.5 px-3 sm:gap-3 sm:px-4`}
+      >
+        <CollectIqLogoLink className="max-[339px]:hidden" />
         <SiteTabs className="sm:ml-2" />
         {center}
-        <nav aria-label="Account" className="ml-auto flex items-center gap-1">
-          <NavLink to="/about" className={pill} aria-label="About">
+        <nav aria-label="Account" className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <NavLink
+            to="/about"
+            className={state => cn(pill(state), 'max-[374px]:hidden')}
+            aria-label="About"
+          >
             <Info className="h-4 w-4 sm:hidden" />
             <span className="hidden sm:inline">About</span>
           </NavLink>
@@ -61,7 +71,7 @@ export function SiteHeader({ center, fixed }: { center?: ReactNode; fixed?: bool
                 }}
                 aria-label="Log out"
                 title="Log out"
-                className="ml-1 rounded-full p-2 text-white/50 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C7FA09]"
+                className="rounded-full p-1.5 text-white/50 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C7FA09] sm:ml-1 sm:p-2"
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -71,14 +81,14 @@ export function SiteHeader({ center, fixed }: { center?: ReactNode; fixed?: bool
               <Link
                 to={`/login?redirect=${redirect}`}
                 aria-label="Log in"
-                className="rounded-full px-2 py-1.5 text-sm font-semibold text-white/70 hover:text-white sm:px-3"
+                className="rounded-full p-1.5 text-sm font-semibold text-white/70 hover:text-white sm:px-3"
               >
                 <UserRound className="h-4 w-4 sm:hidden" />
                 <span className="hidden sm:inline">Log in</span>
               </Link>
               <Link
                 to={`/signup?redirect=${redirect}`}
-                className="rounded-full bg-[#C7FA09] px-4 py-1.5 text-sm font-bold text-black hover:bg-[#d6ff3d]"
+                className="shrink-0 whitespace-nowrap rounded-full bg-[#C7FA09] px-3 py-1.5 text-sm font-bold text-black hover:bg-[#d6ff3d] sm:px-4"
               >
                 Sign up
               </Link>

@@ -35,7 +35,7 @@ export function SiteTabs({ className }: { className?: string }) {
             to={tab.to}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-semibold transition-colors sm:px-3',
+              'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-1.5 text-[13px] font-semibold transition-colors sm:px-3 sm:text-sm',
               active ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'
             )}
           >
