@@ -23,7 +23,7 @@ import {
 } from '@/integrations/api/hermes';
 import { getMessage } from '@/utils/helper';
 import { AuctionClock, PaymentsBadge, ReserveBadge, SoftCloseHint } from './AuctionCard';
-import { buyerPremiumFor, cardFeeFor, fmtDateTime, fmtUsd } from './format';
+import { buyerPremiumFor, cardFeeFor, fmtDateTime, fmtMethodLabel, fmtUsd } from './format';
 import { ShippingAddressForm, fetchMyAddress, isAddressComplete } from './ShippingAddressForm';
 import { UsdcEscrow } from './UsdcEscrow';
 
@@ -394,7 +394,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
             >
               {savedOfKind.map(m => (
                 <option key={m.id} value={m.id}>
-                  {m.label} •••• {m.last4}
+                  {fmtMethodLabel(m)} •••• {m.last4}
                   {m.expMonth
                     ? ` · ${String(m.expMonth).padStart(2, '0')}/${String(m.expYear).slice(-2)}`
                     : ''}
