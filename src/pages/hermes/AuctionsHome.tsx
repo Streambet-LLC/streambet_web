@@ -177,9 +177,8 @@ export default function AuctionsHome() {
             {premiumPct}% buyer premium · no seller fees · all bids are final
           </p>
           <p className="mt-2 hidden max-w-2xl text-sm text-white/65 sm:block">
-            Winners pay a {premiumPct}% buyer premium plus shipping. Pay by bank or USDC with no
-            processing fee — cards add only the card processing cost. Every lot is hosted and
-            shipped by Hermes. All bids are final.
+            Winners pay a {premiumPct}% buyer premium plus shipping. Pay by credit card, bank
+            transfer, or USDC. Every lot is hosted and shipped by Hermes. All bids are final.
           </p>
         </section>
       )}
