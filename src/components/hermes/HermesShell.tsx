@@ -2,7 +2,7 @@ import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Gavel, Search, UserRound, X } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { CollectIqLogoLink, SiteTabs } from '@/components/SiteTabs';
+import { SiteHeader } from '@/components/SiteHeader';
 import { useBuyerPremiumPercent } from './useHermesConfig';
 import { HERMES_HOME, IS_HERMES_SITE } from './site';
 
@@ -23,81 +23,80 @@ export function HermesShell({ children, wide }: { children: ReactNode; wide?: bo
       isActive ? 'bg-[#C7FA09] text-black' : 'text-white/70 hover:text-white'
     }`;
 
-  return (
-    <div className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-[#0a0a0a] text-white">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0a0a0a]/90 backdrop-blur">
-        <div className={`mx-auto flex h-16 ${container} items-center gap-2 px-4 sm:gap-3`}>
-          {IS_HERMES_SITE ? (
-            <Link
-              to={HERMES_HOME}
-              className="flex shrink-0 items-center"
-              aria-label="Hermes Auctions home"
-            >
-              <img
-                src="/hermes/hermes-auctions-logo.png"
-                alt="Hermes Auctions"
-                className="hidden h-10 w-auto sm:block"
-              />
-              <img
-                src="/hermes/hermes-mark-64.png"
-                alt="Hermes Auctions"
-                className="h-10 w-10 sm:hidden"
-              />
-            </Link>
+  // collectiqapp.xyz uses the shared top bar (identical on every tab); the
+  // dormant standalone Hermes site keeps its own Hermes-branded one.
+  const standaloneHeader = (
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0a0a0a]/90 backdrop-blur">
+      <div className={`mx-auto flex h-16 ${container} items-center gap-2 px-4 sm:gap-3`}>
+        <Link
+          to={HERMES_HOME}
+          className="flex shrink-0 items-center"
+          aria-label="Hermes Auctions home"
+        >
+          <img
+            src="/hermes/hermes-auctions-logo.png"
+            alt="Hermes Auctions"
+            className="hidden h-10 w-auto sm:block"
+          />
+          <img
+            src="/hermes/hermes-mark-64.png"
+            alt="Hermes Auctions"
+            className="h-10 w-10 sm:hidden"
+          />
+        </Link>
+        <MarketSearch className="mx-2 hidden max-w-md flex-1 md:flex" />
+        <nav className="ml-auto flex items-center gap-1">
+          <NavLink to={HERMES_HOME} end className={navClass}>
+            Auctions
+          </NavLink>
+          {session ? (
+            <NavLink to="/auctions/me" className={navClass} aria-label="My bids">
+              <span className="inline-flex items-center gap-1.5">
+                <Gavel className="h-4 w-4" />
+                <span className="hidden sm:inline">My bids</span>
+              </span>
+            </NavLink>
           ) : (
-            // collectiqapp.xyz: collectIQ brand + the two top-level tabs.
             <>
-              <CollectIqLogoLink />
-              <SiteTabs className="sm:ml-2" />
+              <Link
+                to={`/login?redirect=${redirect}`}
+                aria-label="Log in"
+                className="rounded-full px-2 py-1.5 text-sm font-semibold text-white/70 hover:text-white sm:px-3"
+              >
+                <UserRound className="h-4 w-4 sm:hidden" />
+                <span className="hidden sm:inline">Log in</span>
+              </Link>
+              <Link
+                to={`/signup?redirect=${redirect}`}
+                className="rounded-full bg-[#C7FA09] px-4 py-1.5 text-sm font-bold text-black hover:bg-[#d6ff3d]"
+              >
+                Sign up
+              </Link>
             </>
           )}
-          <MarketSearch
-            className={`mx-2 hidden max-w-md flex-1 ${IS_HERMES_SITE ? 'md:flex' : 'lg:flex'}`}
-          />
-          <nav className="ml-auto flex items-center gap-1">
-            {IS_HERMES_SITE && (
-              <NavLink to={HERMES_HOME} end className={navClass}>
-                Auctions
-              </NavLink>
-            )}
-            {session ? (
-              <NavLink to="/auctions/me" className={navClass} aria-label="My bids">
-                <span className="inline-flex items-center gap-1.5">
-                  <Gavel className="h-4 w-4" />
-                  <span className="hidden sm:inline">My bids</span>
-                </span>
-              </NavLink>
-            ) : (
-              <>
-                <Link
-                  to={`/login?redirect=${redirect}`}
-                  aria-label="Log in"
-                  className="rounded-full px-2 py-1.5 text-sm font-semibold text-white/70 hover:text-white sm:px-3"
-                >
-                  <UserRound className="h-4 w-4 sm:hidden" />
-                  <span className="hidden sm:inline">Log in</span>
-                </Link>
-                <Link
-                  to={`/signup?redirect=${redirect}`}
-                  className="rounded-full bg-[#C7FA09] px-4 py-1.5 text-sm font-bold text-black hover:bg-[#d6ff3d]"
-                >
-                  Sign up
-                </Link>
-              </>
-            )}
-            {session && (
-              <span className="ml-1 hidden items-center gap-1 text-xs text-white/50 lg:inline-flex">
-                <UserRound className="h-3.5 w-3.5" />
-                {session.username ?? session.user?.username}
-              </span>
-            )}
-          </nav>
-        </div>
-      </header>
+          {session && (
+            <span className="ml-1 hidden items-center gap-1 text-xs text-white/50 lg:inline-flex">
+              <UserRound className="h-3.5 w-3.5" />
+              {session.username ?? session.user?.username}
+            </span>
+          )}
+        </nav>
+      </div>
+    </header>
+  );
 
-      <main className={`mx-auto ${container} px-4 pb-20 pt-6`}>{children}</main>
+  return (
+    // Flex column + flex-1 main: the footer sits at the bottom on short pages.
+    <div className="relative flex h-[100dvh] flex-col overflow-y-auto overflow-x-hidden bg-[#0a0a0a] text-white">
+      {IS_HERMES_SITE ? (
+        standaloneHeader
+      ) : (
+        <SiteHeader center={<MarketSearch className="mx-2 hidden max-w-md flex-1 lg:flex" />} />
+      )}
 
-      <footer className="border-t border-white/10 py-8 text-center text-xs text-white/40">
+      <main className={`mx-auto w-full flex-1 ${container} px-4 pb-20 pt-6`}>{children}</main>
+
+      <footer className="shrink-0 border-t border-white/10 py-8 text-center text-xs text-white/40">
         <p className="font-semibold uppercase tracking-[0.2em] text-[#C7FA09]/80">
           Zero-seller-fee collectibles auctions
         </p>

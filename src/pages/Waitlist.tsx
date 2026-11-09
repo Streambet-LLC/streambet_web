@@ -15,9 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { waitlistAPI } from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
-import { useAuthContext } from '@/contexts/AuthContext';
-import { CollectIqLogoLink, SiteTabs } from '@/components/SiteTabs';
-import { FeaturedAuctions } from '@/components/hermes/FeaturedAuctions';
+import { SiteHeader } from '@/components/SiteHeader';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -73,7 +71,6 @@ const FEATURES: {
  * on the same tab (see AnalyticsTab).
  */
 export default function Waitlist() {
-  const { session } = useAuthContext();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -114,21 +111,8 @@ export default function Waitlist() {
     <div className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-background">
       <div className="auth-bg-gradient" />
 
-      {/* collectiqapp.xyz top bar: this page is the "collectIQ Analytics" tab for non-admins. */}
-      <header className="sticky top-0 z-30 border-b border-white/5 bg-background/80 backdrop-blur-md">
-        <div className="flex h-16 items-center gap-2 px-4 sm:gap-3">
-          <CollectIqLogoLink />
-          <SiteTabs className="sm:ml-2 md:ml-6" />
-          {!session && (
-            <Link
-              to="/login?redirect=%2Fanalytics"
-              className="ml-auto rounded-full px-3 py-1.5 text-sm font-semibold text-white/70 hover:text-white"
-            >
-              Log in
-            </Link>
-          )}
-        </div>
-      </header>
+      {/* Shared top bar: this page is the "collectIQ Analytics" tab for non-admins. */}
+      <SiteHeader />
 
       <div className="relative z-10 mx-auto max-w-5xl px-5 pb-16 pt-12 sm:pt-16">
         {/* ---------------- Hero ---------------- */}
@@ -207,9 +191,6 @@ export default function Waitlist() {
             )}
           </div>
         </motion.div>
-
-        {/* ---------------- Hermes Auctions (featured lots) ---------------- */}
-        <FeaturedAuctions />
 
         {/* ---------------- Meet Cardy ---------------- */}
         <motion.section
@@ -320,9 +301,6 @@ export default function Waitlist() {
         </Link>
         <Link to="/terms" className="hover:text-white/70">
           Terms
-        </Link>
-        <Link to="/" className="hover:text-white/70">
-          Hermes Auctions
         </Link>
         <Link to="/login" className="hover:text-white/70">
           Log in
