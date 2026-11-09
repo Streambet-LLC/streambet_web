@@ -1,23 +1,7 @@
-import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  Loader2,
-  CheckCircle2,
-  ArrowRight,
-  Gauge,
-  FileText,
-  LineChart,
-  Scale,
-  Briefcase,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { waitlistAPI } from '@/integrations/api/client';
-import { getMessage } from '@/utils/helper';
+import { Gauge, FileText, LineChart, Scale, Briefcase } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Markets we cover — colors mirror the analytics dashboard's segment palette. */
 const SEGMENTS: { label: string; color: string }[] = [
@@ -66,45 +50,11 @@ const FEATURES: {
 
 /**
  * The "collectIQ Analytics" tab (`/analytics`) for everyone but admins: a
- * branded overview of collectIQ's market intelligence plus a waitlist
- * capture, while analytics is in private beta. Admins get the dashboard
- * on the same tab (see AnalyticsTab).
+ * branded "Coming Soon" overview of collectIQ's market intelligence. The
+ * waitlist sign-up was removed on 2026-11-09. Admins get the dashboard on
+ * the same tab (see AnalyticsTab).
  */
 export default function Waitlist() {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState('');
-  const formRef = useRef<HTMLDivElement>(null);
-
-  const scrollToForm = () => {
-    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = email.trim();
-    if (!EMAIL_RE.test(trimmed)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    setError('');
-    setSubmitting(true);
-    try {
-      await waitlistAPI.join({
-        email: trimmed,
-        name: name.trim() || undefined,
-        source: 'landing',
-      });
-      setDone(true);
-    } catch (err) {
-      setError(getMessage(err) || 'Something went wrong. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     // Own scroll container: global CSS locks `body { overflow-y: hidden }`
     // (fixed-viewport app shell), so the page must scroll itself.
@@ -129,7 +79,7 @@ export default function Waitlist() {
           />
 
           <span className="inline-flex items-center gap-2 rounded-full border border-[#B4FF39]/25 bg-[#B4FF39]/10 px-3 py-1 text-xs font-medium text-[#B4FF39]">
-            Private beta
+            Coming Soon
           </span>
 
           <h1 className="mt-5 text-4xl font-semibold leading-tight text-white sm:text-5xl">
@@ -139,57 +89,8 @@ export default function Waitlist() {
             collectIQ turns live web data into AI-powered market intelligence for trading cards —
             real-time pricing, trend forecasts, and{' '}
             <span className="font-medium text-white">Cardy</span>, our AI research analyst who
-            answers any card or collector question. Sign up below for updates.
+            answers any card or collector question.
           </p>
-
-          {/* Waitlist capture */}
-          <div ref={formRef} className="scroll-mt-24">
-            {done ? (
-              <div className="mx-auto mt-8 flex max-w-md flex-col items-center rounded-2xl border border-[#B4FF39]/25 bg-[#B4FF39]/[0.06] px-6 py-8">
-                <CheckCircle2 className="h-9 w-9 text-[#B4FF39]" />
-                <h2 className="mt-3 text-lg font-semibold text-white">You're on the list!</h2>
-                <p className="mt-1 text-sm text-white/70">
-                  Thanks for your interest — we'll be in touch at{' '}
-                  <span className="text-white">{email.trim()}</span> when access opens up.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={submit} className="mx-auto mt-8 w-full max-w-md space-y-3">
-                <Input
-                  type="text"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Your name (optional)"
-                  className="h-12 border-white/10 bg-black/40 text-center text-sm text-white placeholder:text-gray-500"
-                />
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="you@email.com"
-                    autoComplete="email"
-                    className="h-12 flex-1 border-white/10 bg-black/40 text-sm text-white placeholder:text-gray-500"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={submitting || !email.trim()}
-                    className="h-12 shrink-0 bg-[#B4FF39] px-6 font-medium text-black hover:bg-[#a2e833] disabled:opacity-40"
-                  >
-                    {submitting ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        Join waitlist
-                        <ArrowRight className="ml-1 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-                {error && <p className="text-sm text-red-400">{error}</p>}
-              </form>
-            )}
-          </div>
         </motion.div>
 
         {/* ---------------- Meet Cardy ---------------- */}
@@ -268,34 +169,14 @@ export default function Waitlist() {
             </div>
           </div>
         </motion.section>
-
-        {/* ---------------- Closing CTA ---------------- */}
-        {!done && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.5 }}
-            className="mx-auto mt-24 max-w-2xl rounded-3xl border border-white/8 bg-gradient-to-b from-[rgba(180,255,57,0.06)] to-transparent px-6 py-12 text-center"
-          >
-            <h2 className="text-2xl font-semibold text-white sm:text-3xl">Get in early</h2>
-            <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-white/60">
-              Be among the first 1,000 waitlist signups to get early access!
-            </p>
-            <Button
-              onClick={scrollToForm}
-              className="mt-6 h-12 bg-[#B4FF39] px-7 font-medium text-black hover:bg-[#a2e833]"
-            >
-              Join the waitlist
-              <ArrowRight className="ml-1.5 h-4 w-4" />
-            </Button>
-          </motion.section>
-        )}
       </div>
 
       {/* Footer: legal + discreet admin login */}
       <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pb-8 text-xs text-white/40">
         <span>© collectIQ {new Date().getFullYear()}</span>
+        <Link to="/about" className="hover:text-white/70">
+          About
+        </Link>
         <Link to="/privacy" className="hover:text-white/70">
           Privacy
         </Link>

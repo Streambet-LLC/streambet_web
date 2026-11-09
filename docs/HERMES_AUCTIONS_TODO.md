@@ -177,6 +177,11 @@ Nick's call: the main domain is **collectiqapp.xyz** (cardcade.fun 301s to it). 
 - [x] SES bounce/complaint handling (2026-11-09): account-level suppression list (bounce + complaint) was already on. SNS topic `ses-collectiqapp-feedback` gets collectiqapp.xyz bounce + complaint notifications (with headers) and emails `aaron@cardcade.fun` (subscription must be confirmed from that inbox). Email feedback forwarding is off (noreply@ has no inbox). CloudWatch alarms `ses-bounce-rate-high` (> 2%) and `ses-complaint-rate-high` (> 0.05%) on the account reputation metrics notify the same topic.
 - [x] Staging test data (2026-11-08): 3 lots (Jordan Test with a 360° spin, live about 3 h; Ace Riley, live 2 days, reserve $150; Flarecat TCG, opens in 1 h), all mock cards marked TEST. `hermes_bidder1–3` verified, with a shared test password (given to Aaron in chat).
 - [ ] Later: `api.collectiqapp.xyz` (+ a Google OAuth redirect URI), and staging on `stag.collectiqapp.xyz`.
+- [x] Site copy + pages (2026-11-09):
+  - `/about` shows Nick's bio in his words: first name only, `nick@cardcade.fun`, Instagram `@collectiq.co`. It's linked from the top bar and both footers.
+  - The Hermes footer says "If you'd like to consign with us, feel free to reach out to nick@cardcade.fun!"
+  - The marketplace headline is "Bid on the collectibles you chase."
+  - The collectIQ Analytics tab says **Coming Soon** (was "Private beta"). The waitlist form and the "Get in early" box were removed, and the waitlist API is unused by the page now.
 
 ## Risks / notes
 - ~~**Card surcharging:** the card network cap is 3%, the fee must be disclosed, debit cards can't be surcharged, and some states restrict surcharges.~~ Resolved 2026-11-09 by dropping the card fee (the premium covers processing).
