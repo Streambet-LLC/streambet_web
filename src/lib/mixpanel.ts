@@ -1,4 +1,5 @@
 import mixpanel, { type Dict } from 'mixpanel-browser';
+import { isProductionHost } from './hosts';
 
 /**
  * Client-side Mixpanel wrapper.
@@ -23,7 +24,7 @@ let initialized = false;
 function resolveEnvironment(): string {
   if (typeof window === 'undefined') return 'development';
   const host = window.location.hostname;
-  if (host === 'cardcade.fun') return 'production';
+  if (isProductionHost(host)) return 'production';
   if (host.includes('stag')) return 'staging';
   if (host === 'localhost' || host === '127.0.0.1') return 'development';
   return 'development';
@@ -44,8 +45,7 @@ export const MixpanelEvent = {
   WATCHLIST_ADDED: 'Watchlist Item Added',
 } as const;
 
-export type MixpanelEventName =
-  (typeof MixpanelEvent)[keyof typeof MixpanelEvent];
+export type MixpanelEventName = (typeof MixpanelEvent)[keyof typeof MixpanelEvent];
 
 /** Call once at app startup (main.tsx). Safe to call repeatedly. */
 export function initMixpanel(): void {
@@ -101,10 +101,7 @@ export function resetMixpanel(): void {
 }
 
 /** Track a funnel/intent event. */
-export function track(
-  event: MixpanelEventName,
-  properties?: Dict,
-): void {
+export function track(event: MixpanelEventName, properties?: Dict): void {
   if (!initialized) return;
   try {
     mixpanel.track(event, properties);
