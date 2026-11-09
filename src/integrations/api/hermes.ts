@@ -92,8 +92,6 @@ export interface PublicAuction {
   fees: {
     /** This auction's premium on the hammer (fixed when it was listed). */
     buyerPremiumPercent: number;
-    cardProcessingPercent: number;
-    cardProcessingFixedUsd: number;
   };
 }
 
@@ -134,7 +132,8 @@ export interface WinTotals {
   /** Absent on older API builds (no premium then). */
   buyerPremiumUsd?: number;
   shippingUsd: number;
-  cardFeeUsd: number;
+  /** Card processing; only on wins settled before it was dropped (2026-11-09). */
+  cardFeeUsd?: number;
   totalUsd: number;
 }
 

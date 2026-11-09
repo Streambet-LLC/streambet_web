@@ -101,8 +101,8 @@ export function HermesShell({ children, wide }: { children: ReactNode; wide?: bo
           Zero-seller-fee collectibles auctions
         </p>
         <p className="mt-2 px-4">
-          Winners pay a {premiumPct}% buyer premium plus shipping. Bank and USDC carry no processing
-          fee — cards add only the card processing cost. All bids are final.
+          Winners pay a {premiumPct}% buyer premium plus shipping. Pay by credit card, bank
+          transfer, or USDC. All bids are final.
         </p>
         <div className="mt-3 flex justify-center gap-4">
           {IS_HERMES_SITE ? (

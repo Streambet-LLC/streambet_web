@@ -127,8 +127,8 @@ const PAYMENT_OPTIONS: ReadonlyArray<{ value: AcceptedPayments; label: string }>
 
 const PAYMENT_HINT: Record<AcceptedPayments, string> = {
   both: 'Bidders choose card, bank (ACH) or USDC.',
-  fiat: 'Card or bank (ACH) only. Card payers cover processing; bank is free.',
-  crypto: 'USDC only, held in on-chain escrow. No processing fee.',
+  fiat: 'Card or bank (ACH) only.',
+  crypto: 'USDC only, held in on-chain escrow.',
 };
 
 /** `required` errors only show after a submit attempt; the rest show live. */

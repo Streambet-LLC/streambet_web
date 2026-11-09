@@ -158,8 +158,8 @@ export default function AuctionPay() {
             <div className="grid grid-cols-2 gap-2">
               {(
                 [
-                  ['ach', 'Bank (ACH)', 'No processing fee', Building2],
-                  ['card', 'Card', '+ processing', CreditCard],
+                  ['ach', 'Bank (ACH)', 'Bank transfer', Building2],
+                  ['card', 'Card', 'Credit or debit', CreditCard],
                 ] as const
               ).map(([k, label, note, Icon]) => (
                 <button
@@ -198,14 +198,18 @@ export default function AuctionPay() {
   );
 }
 
-/** Line items for a receipt or a pay option; premium / card rows only when charged. */
+/**
+ * Line items for a receipt or a pay option; premium row only when charged.
+ * Card processing only shows on receipts for wins settled before it was dropped.
+ */
 function breakdownRows(t: WinTotals, premiumPct: number): [string, number][] {
   const premium = t.buyerPremiumUsd ?? 0;
+  const cardFee = t.cardFeeUsd ?? 0;
   return [
     ['Winning bid', t.hammerUsd],
     ...(premium > 0 ? ([[`Buyer premium (${premiumPct}%)`, premium]] as [string, number][]) : []),
     ['Shipping', t.shippingUsd],
-    ...(t.cardFeeUsd > 0 ? ([['Card processing', t.cardFeeUsd]] as [string, number][]) : []),
+    ...(cardFee > 0 ? ([['Card processing', cardFee]] as [string, number][]) : []),
   ];
 }
 
