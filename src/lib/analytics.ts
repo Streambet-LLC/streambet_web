@@ -1,9 +1,11 @@
+import { isProductionHost } from './hosts';
+
 export function initGoogleAnalytics(): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return;
   }
 
-  if (window.location.hostname !== 'cardcade.fun') {
+  if (!isProductionHost()) {
     return;
   }
 
@@ -38,7 +40,7 @@ export function initHotjar(): void {
     return;
   }
 
-  if (window.location.hostname !== 'cardcade.fun') {
+  if (!isProductionHost()) {
     return;
   }
 
