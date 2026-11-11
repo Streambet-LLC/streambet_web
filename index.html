@@ -7,12 +7,26 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>collectIQ</title>
-    <meta name="description" content="collectIQ — AI-powered market intelligence for trading cards. Collector focused." />
+    <meta
+      name="description"
+      content="Hermes Auctions on collectIQ: zero-seller-fee auctions for sports cards, TCG and sports memorabilia, plus AI market intelligence for trading cards."
+    />
     <meta name="author" content="collectIQ" />
 
-    <!-- Open Graph / Social Media sharing tags -->
-    <meta property="og:title" content="collectIQ — trading cards market intelligence. AI powered. Collector Focused." />
-    <meta property="og:description" content="AI-powered market intelligence for trading cards — real-time pricing, trend forecasts, and a research analyst that tells you where every market stands." />
+    <!--
+      Open Graph / social sharing tags. Hermes Auctions is the home page, so
+      these default to Hermes. Link-preview bots (Telegram, iMessage, Slack, X…)
+      don't run JS: the CloudFront Function sends them to the API's
+      /api/og/* instead, which returns the lot's own photo, title and price for
+      /auctions/<id> links (and these same Hermes tags elsewhere). These static
+      tags only reach bots that function doesn't recognise.
+    -->
+    <meta property="og:site_name" content="Hermes Auctions" />
+    <meta property="og:title" content="Hermes Auctions — zero-seller-fee collectibles auctions" />
+    <meta
+      property="og:description"
+      content="Bid on sports cards, TCG and sports memorabilia with zero seller fees. Every lot is hosted and shipped by Hermes Auctions."
+    />
     <!--
       og:image MUST be an absolute URL — the Open Graph spec requires it and
       scrapers (Telegram, Slack, iMessage) resolve relative paths
@@ -20,27 +34,24 @@
       cached by URL, so replacing the file in place never refreshes them —
       bump this whenever the image content changes.
     -->
-    <meta
-      property="og:image"
-      content="https://collectiqapp.xyz/lovable-uploads/socialshare.png?v=2"
-    />
-    <meta property="og:image:width" content="523" />
-    <meta property="og:image:height" content="275" />
+    <meta property="og:image" content="https://collectiqapp.xyz/hermes/hermes-social.png?v=1" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="collectIQ — trading cards market intelligence. AI powered. Collector focused."
+      content="Hermes Auctions — zero-seller-fee collectibles auctions"
     />
     <meta property="og:url" content="https://collectiqapp.xyz" />
     <meta property="og:type" content="website" />
 
     <!-- Twitter Card tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="collectIQ — trading cards market intelligence. AI powered. Collector Focused." />
-    <meta name="twitter:description" content="AI-powered market intelligence for trading cards. Collector focused." />
+    <meta name="twitter:title" content="Hermes Auctions — zero-seller-fee collectibles auctions" />
     <meta
-      name="twitter:image"
-      content="https://collectiqapp.xyz/lovable-uploads/socialshare.png?v=2"
+      name="twitter:description"
+      content="Bid on sports cards, TCG and sports memorabilia with zero seller fees."
     />
+    <meta name="twitter:image" content="https://collectiqapp.xyz/hermes/hermes-social.png?v=1" />
 
     <meta name="google-site-verification" content="XY_A9UqrbHzkJJis4c6D6WPXImWt8DMzd5cpobscCms" />
 
