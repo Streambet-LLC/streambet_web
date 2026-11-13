@@ -73,6 +73,12 @@ export default function About() {
               </a>
             </div>
           </div>
+
+          <div className="mt-6 border-t border-white/10 pt-6">
+            <p className="text-sm font-semibold text-white/70">
+              For lot sales over $25,000, we hand-deliver anywhere in the continental U.S.
+            </p>
+          </div>
         </section>
       </div>
     </HermesShell>
