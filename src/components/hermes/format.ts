@@ -117,7 +117,7 @@ export function fmtExtensionWindow(seconds = DEFAULT_EXTENSION_WINDOW_SECONDS): 
  * Buyer fee by tender for new lots, all-in (mirrors the API's
  * `BUYER_PREMIUM_RATES`). Used only until `/auctions/config` loads.
  */
-export const DEFAULT_PREMIUM_RATES: PremiumRates = { card: 4, ach: 1, usdc: 1 };
+export const DEFAULT_PREMIUM_RATES: PremiumRates = { card: 5, ach: 2, usdc: 2 };
 
 /** Rates by tender from an auction's (or the config's) `fees`; older APIs sent one rate for all. */
 export function premiumRates(
@@ -130,7 +130,7 @@ export function premiumRates(
 
 const TIER_LABEL: Record<FundingMethod, string> = { card: 'card', ach: 'ACH', usdc: 'USDC' };
 
-/** "4% card · 1% ACH · 1% USDC" (only the given tenders, in that order). */
+/** "5% card · 2% ACH · 2% USDC" (only the given tenders, in that order). */
 export function fmtFeeTiers(
   rates: PremiumRates,
   methods: FundingMethod[] = ['card', 'ach', 'usdc']
