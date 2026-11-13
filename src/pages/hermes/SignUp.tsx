@@ -11,6 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { api } from '@/integrations/api/client';
 import { getMessage } from '@/utils/helper';
 import { HERMES_HOME } from '@/components/hermes/site';
+import { getAttribution } from '@/lib/attribution';
+import { pixelCompleteRegistration } from '@/lib/metaPixel';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -40,8 +42,10 @@ export default function SignUp() {
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   const register = useMutation({
-    mutationFn: () =>
-      api.auth.register({
+    mutationFn: () => {
+      // First-touch ad params (if they came from an ad), saved on the account.
+      const attribution = getAttribution();
+      return api.auth.register({
         email: form.email.trim(),
         username: form.username.trim(),
         password: form.password,
@@ -50,8 +54,14 @@ export default function SignUp() {
         lastKnownIp: '',
         // VerifyEmail sends the user on to /login?redirect=<this>.
         redirect: safeRedirect,
-      } as Parameters<typeof api.auth.register>[0]),
-    onSuccess: () => setSentTo(form.email.trim()),
+        ...(attribution ? { attribution } : {}),
+      } as Parameters<typeof api.auth.register>[0]);
+    },
+    onSuccess: () => {
+      // The account exists now (email verification comes after).
+      pixelCompleteRegistration();
+      setSentTo(form.email.trim());
+    },
     onError: err => toast.error(getMessage(err) || 'Could not create your account.'),
   });
 

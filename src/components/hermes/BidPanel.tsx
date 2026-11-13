@@ -22,6 +22,7 @@ import {
   hermesAPI,
 } from '@/integrations/api/hermes';
 import { getMessage } from '@/utils/helper';
+import { pixelBid } from '@/lib/metaPixel';
 import { AuctionClock, PaymentsBadge, ReserveBadge, SoftCloseHint } from './AuctionCard';
 import {
   buyerPremiumFor,
@@ -157,6 +158,8 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
         ...(method !== 'usdc' && pmId ? { stripePaymentMethodId: pmId } : {}),
       }),
     onSuccess: r => {
+      // Meta Pixel "Bid": the max the bidder just committed to.
+      pixelBid(auction.id, r.myMaxUsd ?? round2(maxBid));
       setConfirmOpen(false);
       if (r.leading) toast.success(`You're the high bidder at ${fmtUsd(r.currentBidUsd)}`);
       else

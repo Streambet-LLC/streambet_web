@@ -12,6 +12,7 @@ import {
   type PublicAuction,
 } from '@/integrations/api/hermes';
 import { getMessage } from '@/utils/helper';
+import { pixelWatch } from '@/lib/metaPixel';
 
 /**
  * Watchlist: a heart on lot cards and a Watch button on the lot page.
@@ -78,6 +79,7 @@ export function useWatch(auction: PublicAuction) {
       applyWatch(qc, auction.id, res.watching, res.watcherCount);
       qc.invalidateQueries({ queryKey: ['hermes-watchlist'] });
       if (next) toast.success('Added to your watchlist');
+      if (next && res.watching) pixelWatch(auction.id);
     },
     onError: (err, next) => {
       applyWatch(qc, auction.id, !next);
@@ -113,6 +115,7 @@ export function PendingWatchHandler() {
     hermesAPI
       .watch(id)
       .then(res => {
+        if (res.watching) pixelWatch(id);
         applyWatch(qc, id, res.watching, res.watcherCount);
         qc.invalidateQueries({ queryKey: ['hermes-auction', id] });
         qc.invalidateQueries({ queryKey: ['hermes-market'] });

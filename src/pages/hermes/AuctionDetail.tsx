@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Bot, ChevronDown, Store } from 'lucide-react';
@@ -19,6 +19,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { hermesAPI, type PublicAuction, type PublicBid } from '@/integrations/api/hermes';
 import { HERMES_HOME } from '@/components/hermes/site';
+import { pixelViewContent } from '@/lib/metaPixel';
 
 /** One Hermes lot: media, details, live bid panel and bid history. */
 export default function AuctionDetail() {
@@ -49,6 +50,15 @@ export default function AuctionDetail() {
     staleTime: 60_000,
   });
   useAuctionLive(id);
+
+  // Meta Pixel ViewContent, once per lot opened (not on each refetch).
+  const lotTitle = auction.data?.title;
+  const viewedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!id || lotTitle == null || viewedRef.current === id) return;
+    viewedRef.current = id;
+    pixelViewContent({ id, title: lotTitle });
+  }, [id, lotTitle]);
 
   // A back/forward cache restore (e.g. coming back from Stripe) revives the
   // page exactly as it was, with stale bids and saved methods. Refresh them.

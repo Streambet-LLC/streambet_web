@@ -17,6 +17,24 @@ interface AdminUser {
   isActive: boolean;
   isVerify: boolean;
   createdAt: string;
+  /** First-touch ad params from signup (Meta ads); null if untagged. */
+  signupAttribution?: Record<string, string> | null;
+}
+
+/** "meta / paid · tyranitar" from the signup's UTM params; null if untagged. */
+function fmtSource(a: AdminUser['signupAttribution']): string | null {
+  if (!a) return null;
+  const channel = [a.utm_source, a.utm_medium].filter(Boolean).join(' / ');
+  const label = [channel, a.utm_campaign].filter(Boolean).join(' · ');
+  return label || (a.fbclid ? 'Facebook click' : null);
+}
+
+/** Every captured param, for the cell's tooltip. */
+function sourceDetail(a: AdminUser['signupAttribution']): string | undefined {
+  if (!a) return undefined;
+  return Object.entries(a)
+    .map(([k, v]) => `${k}: ${k === 'fbclid' && v.length > 24 ? `${v.slice(0, 24)}…` : v}`)
+    .join('\n');
 }
 
 const PAGE_SIZE = 50;
@@ -63,7 +81,7 @@ export const AnalyticsUsers = () => {
     <div className="space-y-5">
       <SectionHeader
         title="Users"
-        subtitle="Registered accounts, including email addresses, account status, and signup date."
+        subtitle="Registered accounts, including email addresses, account status, the ad they signed up from, and signup date."
       />
       <Card className="border-white/5 bg-[rgba(22,22,22,1)] p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -117,6 +135,7 @@ export const AnalyticsUsers = () => {
                   <th className="px-2 py-2 font-medium">Name</th>
                   <th className="px-2 py-2 font-medium">Role</th>
                   <th className="px-2 py-2 font-medium">Account</th>
+                  <th className="px-2 py-2 font-medium">Source</th>
                   <th className="px-2 py-2 text-right font-medium">Signed up</th>
                 </tr>
               </thead>
@@ -137,6 +156,12 @@ export const AnalyticsUsers = () => {
                       <span className="ml-2 text-xs text-white/45">
                         {user.isVerify ? 'Verified' : 'Unverified'}
                       </span>
+                    </td>
+                    <td
+                      className="whitespace-nowrap px-2 py-2.5 text-white/70"
+                      title={sourceDetail(user.signupAttribution)}
+                    >
+                      {fmtSource(user.signupAttribution) ?? '—'}
                     </td>
                     <td className="whitespace-nowrap px-2 py-2.5 text-right text-muted-foreground">
                       {moment(user.createdAt).format('MMM D, YYYY h:mm A')}{' '}

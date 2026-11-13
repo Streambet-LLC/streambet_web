@@ -16,6 +16,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import BugSnagErrorBoundary from './bugsnag';
 import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 import PageViewTracker from '@/components/analytics/PageViewTracker';
+import PendingSignupHandler from '@/components/analytics/PendingSignupHandler';
 import RouteGroup from './components/RouteGroup';
 import 'react-image-crop/dist/ReactCrop.css';
 import AnalyticsTab from './pages/AnalyticsTab';
@@ -122,6 +123,7 @@ const App = () => {
               <Sonner />
               <LogoutEventHandlers />
               <PendingWatchHandler />
+              <PendingSignupHandler />
               <PageViewTracker />
               <Routes>{IS_HERMES_SITE ? hermesSiteRoutes : mainSiteRoutes}</Routes>
             </TooltipProvider>

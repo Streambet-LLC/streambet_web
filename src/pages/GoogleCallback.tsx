@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { markPendingSignup } from '@/lib/attribution';
 
 const GoogleLoadingIcon = () => (
   <svg width="64" height="64" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-spin">
@@ -33,6 +34,12 @@ const GoogleCallback = () => {
     if (accessToken && refreshToken) {
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
+      // Take the tokens out of the address bar, so they don't stay in history
+      // or ride along as the next page's referrer (analytics pixels send it).
+      window.history.replaceState(null, '', window.location.pathname);
+      // `new=1`: this sign-in created the account. The signup event and the
+      // ad attribution save run after the reload (PendingSignupHandler).
+      if (params.get('new') === '1') markPendingSignup();
       // Where to land: explicit param, else what Login/SignUp stashed before
       // leaving for Google (e.g. the auction being bid on). Same-site paths
       // only. A full load so the session query picks up the new tokens.
