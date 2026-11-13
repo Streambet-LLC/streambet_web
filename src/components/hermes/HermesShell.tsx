@@ -4,20 +4,27 @@ import { Gavel, Info, Search, UserRound, X } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { SiteHeader } from '@/components/SiteHeader';
 import { useBuyerFeeRates } from './useHermesConfig';
+import { lowestFeeMethods } from './format';
 import { HERMES_HOME, IS_HERMES_SITE } from './site';
 import { NICK_EMAIL } from '@/lib/contact';
+import type { FundingMethod } from '@/integrations/api/hermes';
 
 /**
  * The buyer-fee terms, shared by the marketplace hero and the footer
- * (Aaron's wording, 2026-11-09). Rates come from the API config.
+ * (Aaron's wording, 2026-11-09). Rates come from the API config. The
+ * cheapest tenders (ACH and USDC at 5% / 2% / 2%) are in lime.
  */
 export function BuyerFeeTerms() {
   const r = useBuyerFeeRates();
+  const low = lowestFeeMethods(r);
+  const tier = (m: FundingMethod, text: string) =>
+    low.includes(m) ? <span className="font-bold text-[#C7FA09]">{text}</span> : text;
   return (
     <>
-      Winners pay a variable buyer fee based on the payment tender used — {r.card}% for credit card,{' '}
-      {r.ach}% for ACH, and {r.usdc}% for USDC. Every lot is hosted and shipped by Hermes Auctions.
-      All bids are final.
+      Winners pay a variable buyer fee based on the payment tender used —{' '}
+      {tier('card', `${r.card}% for credit card`)}, {tier('ach', `${r.ach}% for ACH`)}, and{' '}
+      {tier('usdc', `${r.usdc}% for USDC`)}. Every lot is hosted and shipped by Hermes Auctions. All
+      bids are final.
     </>
   );
 }

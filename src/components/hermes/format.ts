@@ -128,17 +128,41 @@ export function premiumRates(
   return flat != null ? { card: flat, ach: flat, usdc: flat } : DEFAULT_PREMIUM_RATES;
 }
 
-const TIER_LABEL: Record<FundingMethod, string> = { card: 'card', ach: 'ACH', usdc: 'USDC' };
+export const TIER_LABEL: Record<FundingMethod, string> = {
+  card: 'card',
+  ach: 'ACH',
+  usdc: 'USDC',
+};
+
+/** Tender order for fee lists: card, ACH, USDC (only the given tenders). */
+export function feeTierOrder(methods: FundingMethod[] = ['card', 'ach', 'usdc']): FundingMethod[] {
+  return (['card', 'ach', 'usdc'] as FundingMethod[]).filter(m => methods.includes(m));
+}
 
 /** "5% card · 2% ACH · 2% USDC" (only the given tenders, in that order). */
 export function fmtFeeTiers(
   rates: PremiumRates,
   methods: FundingMethod[] = ['card', 'ach', 'usdc']
 ): string {
-  return (['card', 'ach', 'usdc'] as FundingMethod[])
-    .filter(m => methods.includes(m))
+  return feeTierOrder(methods)
     .map(m => `${rates[m]}% ${TIER_LABEL[m]}`)
     .join(' · ');
+}
+
+/**
+ * The tenders with the lowest buyer fee among `methods` (ACH and USDC at
+ * 5% / 2% / 2%), which the app highlights. Empty when they all cost the
+ * same, so nothing is singled out.
+ */
+export function lowestFeeMethods(
+  rates: PremiumRates,
+  methods: FundingMethod[] = ['card', 'ach', 'usdc']
+): FundingMethod[] {
+  if (methods.length < 2) return [];
+  const pcts = methods.map(m => rates[m]);
+  const min = Math.min(...pcts);
+  if (min === Math.max(...pcts)) return [];
+  return methods.filter(m => rates[m] === min);
 }
 
 /** Buyer premium on the hammer, half-up to the cent. Mirrors the API's math. */

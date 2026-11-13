@@ -27,11 +27,12 @@ import {
   buyerPremiumFor,
   fmtDateTime,
   fmtEstValue,
-  fmtFeeTiers,
   fmtMethodLabel,
   fmtUsd,
+  lowestFeeMethods,
   premiumRates,
 } from './format';
+import { FeeTiers, LowestFeeTag } from './FeeTiers';
 import { ShippingAddressForm, fetchMyAddress, isAddressComplete } from './ShippingAddressForm';
 import { UsdcEscrow } from './UsdcEscrow';
 
@@ -134,6 +135,11 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
   // processing comes out of it, nothing is added on top.
   const rates = premiumRates(auction.fees);
   const premiumPct = rates[method];
+  // Cheapest tenders this lot accepts (ACH + USDC at 5/2/2), highlighted.
+  const lowFee = lowestFeeMethods(
+    rates,
+    allowed.map(m => m.key)
+  );
   // Worst case is winning at the max.
   const atMax = validAmount ? maxBid : minBid;
   const premium = buyerPremiumFor(atMax, premiumPct);
@@ -245,11 +251,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
         </span>
         {Object.values(rates).some(r => r > 0) ? (
           <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">
-            Buyer fee{' '}
-            {fmtFeeTiers(
-              rates,
-              allowed.map(m => m.key)
-            )}
+            Buyer fee <FeeTiers rates={rates} methods={allowed.map(m => m.key)} />
           </span>
         ) : (
           <span className="rounded-full bg-[#C7FA09]/10 px-2 py-0.5 text-[11px] font-semibold text-[#C7FA09]">
@@ -353,7 +355,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
   return shell(
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/50">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/50">
           Pay with
         </p>
         <div
@@ -365,32 +367,38 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
                 : 'grid-cols-1'
           }`}
         >
-          {allowed.map(m => (
-            <button
-              key={m.key}
-              type="button"
-              onClick={() => setMethod(m.key)}
-              aria-pressed={method === m.key}
-              className={`rounded-xl border px-2 py-2.5 text-left transition ${
-                method === m.key
-                  ? 'border-[#C7FA09] bg-[#C7FA09]/10'
-                  : 'border-white/10 bg-black/30 hover:border-white/25'
-              }`}
-            >
-              <m.icon
-                className={`h-4 w-4 ${method === m.key ? 'text-[#C7FA09]' : 'text-white/60'}`}
-              />
-              <p className="mt-1 text-sm font-semibold">{m.label}</p>
-              <p className="text-[11px] text-white/50">{m.note}</p>
-              <p
-                className={`mt-0.5 text-[11px] font-semibold ${
-                  method === m.key ? 'text-[#C7FA09]' : 'text-white/75'
+          {allowed.map(m => {
+            const low = lowFee.includes(m.key);
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => setMethod(m.key)}
+                aria-pressed={method === m.key}
+                className={`relative rounded-xl border px-2 py-2.5 text-left transition ${
+                  method === m.key
+                    ? 'border-[#C7FA09] bg-[#C7FA09]/10'
+                    : low
+                      ? 'border-[#C7FA09]/35 bg-black/30 hover:border-[#C7FA09]/60'
+                      : 'border-white/10 bg-black/30 hover:border-white/25'
                 }`}
               >
-                {rates[m.key]}% buyer fee
-              </p>
-            </button>
-          ))}
+                {low && <LowestFeeTag />}
+                <m.icon
+                  className={`h-4 w-4 ${method === m.key ? 'text-[#C7FA09]' : 'text-white/60'}`}
+                />
+                <p className="mt-1 text-sm font-semibold">{m.label}</p>
+                <p className="text-[11px] text-white/50">{m.note}</p>
+                <p
+                  className={`mt-0.5 text-[11px] font-semibold ${
+                    method === m.key || low ? 'text-[#C7FA09]' : 'text-white/75'
+                  }`}
+                >
+                  {rates[m.key]}% buyer fee
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
