@@ -84,6 +84,8 @@ export interface PublicAuction {
   acceptedMethods: FundingMethod[];
   shippingUsd: number;
   isFeatured: boolean;
+  /** How many people are watching this lot. Absent on older API builds. */
+  watcherCount?: number;
   leader: string | null;
   result: { sold: boolean; winningBidUsd: number | null; winner: string | null } | null;
   viewer: {
@@ -93,6 +95,8 @@ export interface PublicAuction {
     myMaxUsd: number | null;
     fundingMethod: FundingMethod | null;
     escrowUsd: number | null;
+    /** On the signed-in user's watchlist. Absent on older API builds. */
+    isWatching?: boolean;
   } | null;
   fees: {
     /** Card rate; kept for older clients. Use `buyerPremiumByMethod`. */
@@ -107,6 +111,11 @@ export type PremiumRates = Record<FundingMethod, number>;
 
 export interface MyAuction extends PublicAuction {
   state: 'leading' | 'outbid' | 'won' | 'lost' | 'pay';
+}
+
+export interface WatchState {
+  watching: boolean;
+  watcherCount: number;
 }
 
 export interface PublicBid {
@@ -210,6 +219,8 @@ export interface AdminAuctionRow {
   estValueUsd: number | null;
   estValueHighUsd?: number | null;
   bidCount: number;
+  /** People watching the lot. Absent on older API builds. */
+  watcherCount?: number;
   leader: string | null;
   winner: string | null;
   winningAmountUsd: number | null;
@@ -276,6 +287,8 @@ export interface AdminAuctionDetail {
     acceptedPayments: AcceptedPayments;
     bidCount: number;
     extensionCount: number;
+    /** People watching the lot. Absent on older API builds. */
+    watcherCount?: number;
     currentLeaderUserId: string | null;
     winnerUserId: string | null;
     winningAmountUsd: number | null;
@@ -379,6 +392,10 @@ export const hermesAPI = {
   get: (id: string) => data<PublicAuction>(apiClient.get(`/auctions/${id}`)),
   bids: (id: string) => data<PublicBid[]>(apiClient.get(`/auctions/${id}/bids`)),
   mine: () => data<MyAuction[]>(apiClient.get('/auctions/me')),
+  /** The signed-in user's watched lots: live, then upcoming, then ended. */
+  watchlist: () => data<PublicAuction[]>(apiClient.get('/auctions/watchlist')),
+  watch: (id: string) => data<WatchState>(apiClient.put(`/auctions/${id}/watch`)),
+  unwatch: (id: string) => data<WatchState>(apiClient.delete(`/auctions/${id}/watch`)),
   paymentMethods: () => data<SavedPaymentMethod[]>(apiClient.get('/auctions/me/payment-methods')),
   paymentSetup: (method: 'card' | 'ach', returnUrl: string) =>
     data<{ url: string }>(apiClient.post('/auctions/payment-setup', { method, returnUrl })),

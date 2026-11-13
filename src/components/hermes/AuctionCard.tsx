@@ -10,6 +10,7 @@ import {
   fmtUsd,
 } from './format';
 import { useCountdown } from './useCountdown';
+import { WatchHeart } from './WatchButton';
 
 /** "Reserve $150 · not met" (just "Reserve not met" if the API sent no amount). */
 function reserveLabel(
@@ -86,7 +87,7 @@ export function SoftCloseHint({ auction }: { auction: PublicAuction }) {
   );
 }
 
-/** Grid / rail card for a live, upcoming or ended auction. */
+/** Grid / rail card for a live, upcoming or ended auction, with a watchlist heart. */
 export function AuctionCard({ auction }: { auction: PublicAuction }) {
   const location = useLocation();
   const cover = auction.images[0]?.url;
@@ -112,87 +113,98 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
   const price = sold
     ? (auction.result?.winningBidUsd ?? auction.currentBidUsd)
     : (auction.currentBidUsd ?? auction.startingPriceUsd);
+  // Ended lots can't be watched, but a watcher can still take one off.
+  const showHeart = !ended || !!auction.viewer?.isWatching;
   return (
-    <Link
-      to={`/auctions/${auction.id}`}
-      // Lets the lot's "All auctions" link return to these exact filters.
-      state={{ from: location.pathname + location.search }}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#141414] transition hover:-translate-y-0.5 hover:border-[#C7FA09]/50 hover:shadow-[0_0_24px_rgba(199,250,9,0.12)]"
-    >
-      <div className="relative aspect-[4/5] overflow-hidden bg-black">
-        {cover ? (
-          <img
-            src={cover}
-            alt={auction.title}
-            loading="lazy"
-            className="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-white/30">No photo</div>
-        )}
-        <div className="absolute left-2 top-2 flex flex-wrap gap-1">
-          <span
-            className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${badge.cls}`}
-          >
-            {badge.label}
-          </span>
-          {auction.isFeatured && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-[#C7FA09]">
-              <Star className="h-3 w-3 fill-current" /> Featured
-            </span>
+    // The heart sits beside the link, not inside it (no button in an <a>);
+    // the overlay copies the photo's box so it lands on the photo's corner.
+    <div className="group relative h-full transition hover:-translate-y-0.5">
+      <Link
+        to={`/auctions/${auction.id}`}
+        // Lets the lot's "All auctions" link return to these exact filters.
+        state={{ from: location.pathname + location.search }}
+        className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#141414] transition group-hover:border-[#C7FA09]/50 group-hover:shadow-[0_0_24px_rgba(199,250,9,0.12)]"
+      >
+        <div className="relative aspect-[4/5] overflow-hidden bg-black">
+          {cover ? (
+            <img
+              src={cover}
+              alt={auction.title}
+              loading="lazy"
+              className="h-full w-full object-contain transition duration-300 group-hover:scale-[1.03]"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-white/30">No photo</div>
           )}
-        </div>
-        {auction.videos.some(v => v.spin) ? (
-          <span
-            className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-[10px] font-extrabold leading-none text-[#C7FA09]"
-            title="Has a 360° spin"
-          >
-            360°
-          </span>
-        ) : (
-          auction.videos.length > 0 && (
+          <div className="absolute left-2 top-2 flex flex-wrap gap-1">
             <span
-              className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white"
-              title="Has video"
+              className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${badge.cls}`}
             >
-              <Video className="h-3.5 w-3.5" />
+              {badge.label}
             </span>
-          )
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <p className="truncate text-[11px] font-semibold uppercase tracking-wider text-white/45">
-          {CATEGORY_LABEL[auction.category]}
-          <span className="normal-case tracking-normal text-white/40">
-            {' '}
-            · by {auction.sellerName}
-          </span>
-        </p>
-        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-white">
-          {auction.title}
-        </h3>
-        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
-          <div>
-            <p className="text-[11px] text-white/45">{priceLabel}</p>
-            <p className="text-lg font-extrabold text-white">{fmtUsd(price)}</p>
+            {auction.isFeatured && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-[#C7FA09]">
+                <Star className="h-3 w-3 fill-current" /> Featured
+              </span>
+            )}
           </div>
-          <div className="text-right text-xs">
-            <AuctionClock auction={auction} compact />
-            <p className="mt-0.5 text-white/45">
-              {auction.bidCount} bid{auction.bidCount === 1 ? '' : 's'}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {!ended && <ReserveBadge auction={auction} />}
-          <PaymentsBadge accepted={auction.acceptedPayments} />
-          {auction.estValueUsd != null && (
-            <span className="text-[11px] text-white/55">
-              Est. {fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
+          {auction.videos.some(v => v.spin) ? (
+            <span
+              className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-[10px] font-extrabold leading-none text-[#C7FA09]"
+              title="Has a 360° spin"
+            >
+              360°
             </span>
+          ) : (
+            auction.videos.length > 0 && (
+              <span
+                className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white"
+                title="Has video"
+              >
+                <Video className="h-3.5 w-3.5" />
+              </span>
+            )
           )}
         </div>
-      </div>
-    </Link>
+        <div className="flex flex-1 flex-col gap-2 p-3">
+          <p className="truncate text-[11px] font-semibold uppercase tracking-wider text-white/45">
+            {CATEGORY_LABEL[auction.category]}
+            <span className="normal-case tracking-normal text-white/40">
+              {' '}
+              · by {auction.sellerName}
+            </span>
+          </p>
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-white">
+            {auction.title}
+          </h3>
+          <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+            <div>
+              <p className="text-[11px] text-white/45">{priceLabel}</p>
+              <p className="text-lg font-extrabold text-white">{fmtUsd(price)}</p>
+            </div>
+            <div className="text-right text-xs">
+              <AuctionClock auction={auction} compact />
+              <p className="mt-0.5 text-white/45">
+                {auction.bidCount} bid{auction.bidCount === 1 ? '' : 's'}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {!ended && <ReserveBadge auction={auction} />}
+            <PaymentsBadge accepted={auction.acceptedPayments} />
+            {auction.estValueUsd != null && (
+              <span className="text-[11px] text-white/55">
+                Est. {fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+      {showHeart && (
+        <div className="pointer-events-none absolute inset-x-px top-px aspect-[4/5]">
+          <WatchHeart auction={auction} className="pointer-events-auto absolute bottom-2 right-2" />
+        </div>
+      )}
+    </div>
   );
 }

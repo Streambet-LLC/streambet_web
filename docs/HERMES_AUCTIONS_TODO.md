@@ -40,6 +40,7 @@ Test bidders on staging (SES simulator, no real mail): `hermes_bidder1`, `hermes
 | All bids are final (2026-11-08) | Bids can't be withdrawn, and a leader can only raise their max, never lower it (enforced in `placeBid`). Shown to bidders as an "All bids are final" chip on every live/upcoming lot's bid panel, a callout in the bid-confirm dialog, the `/auctions` hero, and the Hermes footer. |
 | Increments (changed 2026-11-09) | $1 under $25; $5 under $250; $10 under $500; $25 under $1k; $50 under $2.5k; $100 under $5k; $250 under $10k; $500 under $25k; $1k under $50k; then $2.5k. The ladder isn't stored per lot, so changes apply to live lots right away. Was: $5 under $100, $10 under $250, …, $2.5k under $50k, then $5k. |
 | Failed payment | 48-hour grace window to pay via hosted Checkout. Then the next-highest bidder who hasn't declined is charged their own max. Never loops. |
+| Watchlist (2026-11-12) | Signed-in users can watch live and upcoming lots: a heart on every lot card, a Watch / Watching button on the lot page, and a **Watchlist** page (`/auctions/watchlist`) linked from the header next to My bids. A logged-out tap goes to log in and the lot is added automatically afterward (remembered for 24 h in localStorage, so it survives Google sign-in and email verification). The **watcher count is public on the lot page** ("12 watching", hidden at 0) and shown to admins in the list and the detail; it isn't on lot cards. Emails go to watchers **who haven't bid** (bidders already get their own): bidding is open (upcoming lots), closing in 1 hour, the result (sold price or didn't sell), and cancelled. Ended lots can't be newly watched, but stay on the list until removed; cancelled lots drop off. Table `auction_watchers`, migration `AddAuctionWatchers20261112120000`. |
 
 ## Phase 0 — Prep & safety ✅
 - [x] Staging `auctions` table was empty, so there was nothing for the boot sweeper to charge.
@@ -183,6 +184,15 @@ Nick's call: the main domain is **collectiqapp.xyz** (cardcade.fun 301s to it). 
   - The Hermes footer says "If you'd like to consign with us, feel free to reach out to nick@cardcade.fun!"
   - The marketplace headline is "Bid on the collectibles you chase."
   - The collectIQ Analytics tab says **Coming Soon** (was "Private beta"). The waitlist form and the "Get in early" box were removed, and the waitlist API is unused by the page now.
+
+## Phase 15 — Watchlist (2026-11-12)
+Aaron's choices: a separate page + header link; all three watcher emails (opens, closing in 1 hour, result); log in then auto-watch; the count public on the lot page + admin.
+- [x] API: `auction_watchers` table + `AuctionWatcher` entity (unique per auction + user, cascades on auction/user delete). Routes `GET /auctions/watchlist`, `PUT /auctions/:id/watch`, `DELETE /auctions/:id/watch` (both idempotent; watching an ended lot is a 400). Public payloads carry `watcherCount` and `viewer.isWatching`; admin list + detail carry `watcherCount`.
+- [x] Emails (watchers who haven't bid): bidding is open (activate job, or an admin edit that starts the lot now), closing in 1 hour (same job as bidders), the result at close (sold for $X / no bids / below reserve), and cancelled (now also sent when an upcoming lot is cancelled). Each says it's from the watchlist and how to stop it. Blocked on SES delivery like the rest.
+- [x] Web: `WatchButton.tsx` (`WatchHeart` on cards, `WatchButton` on the lot page, `PendingWatchHandler` mounted once in `App.tsx`), `pages/hermes/Watchlist.tsx` (Live / Upcoming / Ended sections), header links in `SiteHeader` and the standalone Hermes header, a Watching column + detail line in admin.
+- [x] Migration applied on `cardcade-stag` before the API deploy.
+- [x] Verified locally against staging data: 19 endpoint checks (auth, idempotency, counts, ordering, 400/404, admin counts, cleanup), 15 mocked email checks (bidders never get a watcher duplicate), and 16 browser checks (logged-out heart → login → auto-watched, Watchlist page, card heart toggle, header fits one row at 320 px and 375 px, admin column).
+- [ ] Prod: run `AddAuctionWatchers20261112120000` on `cardcade-prod` **before** the API deploys (public lot lists query the table), then deploy API + web.
 
 ## Risks / notes
 - ~~**Card surcharging:** the card network cap is 3%, the fee must be disclosed, debit cards can't be surcharged, and some states restrict surcharges.~~ Resolved 2026-11-09 by dropping the card fee (the premium covers processing).

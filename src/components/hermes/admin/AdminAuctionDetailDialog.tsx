@@ -331,9 +331,14 @@ function DetailBody({ id, onEdit }: { id: string; onEdit: (a: AdminAuction) => v
             label="Bids"
             value={auction.bidCount}
             sub={
-              auction.extensionCount
-                ? `${auction.extensionCount} extension${auction.extensionCount === 1 ? '' : 's'}`
-                : undefined
+              [
+                auction.watcherCount != null ? `${auction.watcherCount} watching` : null,
+                auction.extensionCount
+                  ? `${auction.extensionCount} extension${auction.extensionCount === 1 ? '' : 's'}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(' · ') || undefined
             }
           />
           <Stat

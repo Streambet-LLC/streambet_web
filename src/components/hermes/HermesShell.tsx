@@ -1,6 +1,6 @@
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Gavel, Info, Search, UserRound, X } from 'lucide-react';
+import { Gavel, Heart, Info, Search, UserRound, X } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { SiteHeader } from '@/components/SiteHeader';
 import { useBuyerFeeRates } from './useHermesConfig';
@@ -76,12 +76,20 @@ export function HermesShell({ children, wide }: { children: ReactNode; wide?: bo
             <span className="hidden sm:inline">About</span>
           </NavLink>
           {session ? (
-            <NavLink to="/auctions/me" className={navClass} aria-label="My bids">
-              <span className="inline-flex items-center gap-1.5">
-                <Gavel className="h-4 w-4" />
-                <span className="hidden sm:inline">My bids</span>
-              </span>
-            </NavLink>
+            <>
+              <NavLink to="/auctions/watchlist" className={navClass} aria-label="Watchlist">
+                <span className="inline-flex items-center gap-1.5">
+                  <Heart className="h-4 w-4" />
+                  <span className="hidden sm:inline">Watchlist</span>
+                </span>
+              </NavLink>
+              <NavLink to="/auctions/me" className={navClass} aria-label="My bids">
+                <span className="inline-flex items-center gap-1.5">
+                  <Gavel className="h-4 w-4" />
+                  <span className="hidden sm:inline">My bids</span>
+                </span>
+              </NavLink>
+            </>
           ) : (
             <>
               <Link

@@ -7,6 +7,7 @@ import { HermesShell } from '@/components/hermes/HermesShell';
 import { MediaGallery } from '@/components/hermes/MediaGallery';
 import { BidPanel } from '@/components/hermes/BidPanel';
 import { SolanaProviders } from '@/components/hermes/SolanaProviders';
+import { WatchButton } from '@/components/hermes/WatchButton';
 import { useAuctionLive } from '@/components/hermes/useAuctionLive';
 import {
   CATEGORY_LABEL,
@@ -148,6 +149,9 @@ export default function AuctionDetail() {
                 <Store className="h-4 w-4" /> Sold by{' '}
                 <span className="font-semibold text-white">{a.sellerName}</span>
               </p>
+              <div className="mt-3">
+                <WatchButton auction={a} />
+              </div>
             </div>
             {cfg.crypto.enabled ? (
               <SolanaProviders cluster={cfg.crypto.cluster}>{panel}</SolanaProviders>
