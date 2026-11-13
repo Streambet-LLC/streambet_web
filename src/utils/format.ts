@@ -67,6 +67,22 @@ export const formatRelativeTime = (date: Date | string): string => {
 };
 
 /**
+ * The viewer's time zone as a short label for `date` (DST-aware): "PST",
+ * "EDT", … in the US, "GMT+1", "GMT+9", … elsewhere. Empty if unsupported.
+ */
+export const localTzAbbr = (date: Date | string | number = new Date()): string => {
+  try {
+    return (
+      new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+        .formatToParts(new Date(date))
+        .find(p => p.type === 'timeZoneName')?.value ?? ''
+    );
+  } catch {
+    return '';
+  }
+};
+
+/**
  * Format a duration in seconds to MM:SS format
  */
 export const formatDuration = (seconds: number): string => {

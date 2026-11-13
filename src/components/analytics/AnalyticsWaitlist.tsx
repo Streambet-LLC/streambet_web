@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
 import { Card } from '@/components/ui/card';
+import { localTzAbbr } from '@/utils/format';
 import { SectionHeader } from './SectionHeader';
 import { Button } from '@/components/ui/button';
 import { Loader2, Users, Download } from 'lucide-react';
@@ -109,7 +110,7 @@ export const AnalyticsWaitlist = () => {
                   <td className="px-2 py-2.5 text-white/70">{r.name || '—'}</td>
                   <td className="px-2 py-2.5 text-white/50">{r.source || '—'}</td>
                   <td className="px-2 py-2.5 text-right text-muted-foreground">
-                    {moment(r.createdAt).format('MMM D, YYYY h:mm A')}
+                    {moment(r.createdAt).format('MMM D, YYYY h:mm A')} {localTzAbbr(r.createdAt)}
                   </td>
                 </tr>
               ))}

@@ -48,15 +48,30 @@ export function fmtEstValue(usd: number | null | undefined, highUsd?: number | n
   return highUsd != null && usd != null ? `${fmtUsd(usd)} – ${fmtUsd(highUsd)}` : fmtUsd(usd);
 }
 
+/**
+ * Keeps the trailing "6:35 PM PST" on one line (no-break spaces), so a narrow
+ * column wraps after the date instead of leaving the zone on its own line.
+ */
+export function keepTimeTogether(s: string): string {
+  return s.replace(/(\d{1,2}:\d{2})[\s ]([AP]M)\s(\S+)$/, '$1 $2 $3');
+}
+
+/**
+ * "Sun, Nov 15, 2026, 6:35 PM PST": in the viewer's own time zone, labelled
+ * with it (US zones read PST / EDT / …; elsewhere GMT+1, GMT+9, …).
+ */
 export function fmtDateTime(iso: string | Date): string {
-  return new Date(iso).toLocaleString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  return keepTimeTogether(
+    new Date(iso).toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short',
+    })
+  );
 }
 
 /** "2d 4h", "3h 12m", "45s" — compact time left until `ms` from now. */

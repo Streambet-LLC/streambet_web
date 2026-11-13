@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import moment from 'moment';
 import { Loader2, Search, Users } from 'lucide-react';
+import { localTzAbbr } from '@/utils/format';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -138,7 +139,8 @@ export const AnalyticsUsers = () => {
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-2 py-2.5 text-right text-muted-foreground">
-                      {moment(user.createdAt).format('MMM D, YYYY h:mm A')}
+                      {moment(user.createdAt).format('MMM D, YYYY h:mm A')}{' '}
+                      {localTzAbbr(user.createdAt)}
                     </td>
                   </tr>
                 ))}

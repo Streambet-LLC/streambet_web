@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import moment from 'moment';
+import { localTzAbbr } from '@/utils/format';
 import {
   Dialog,
   DialogContent,
@@ -100,7 +101,7 @@ export const InsightsHistoryDialog = ({
                       {c.title}
                     </span>
                     <span className="block text-[11px] text-muted-foreground">
-                      {moment(c.lastAt).format('MMM D, h:mm A')} ·{' '}
+                      {moment(c.lastAt).format('MMM D, h:mm A')} {localTzAbbr(c.lastAt)} ·{' '}
                       {c.count} {c.count === 1 ? 'message' : 'messages'}
                     </span>
                   </span>

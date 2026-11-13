@@ -283,6 +283,7 @@ function BidHistory({ bids }: { bids: PublicBid[] | undefined }) {
                     day: 'numeric',
                     hour: 'numeric',
                     minute: '2-digit',
+                    timeZoneName: 'short',
                   })}
                 </span>
               </span>

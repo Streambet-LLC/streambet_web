@@ -218,7 +218,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs text-white/50">
+          <p className="whitespace-nowrap text-xs text-white/50">
             {auction.currentBidUsd != null ? 'Current bid' : 'Starting bid'}
           </p>
           <p className="text-4xl font-extrabold tracking-tight">

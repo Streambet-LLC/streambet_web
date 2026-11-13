@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import moment from 'moment';
 import { toast } from 'sonner';
+import { localTzAbbr } from '@/utils/format';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -876,7 +877,7 @@ export const AnalyticsInsights = () => {
                     )}
                     {m.at && (
                       <div className="mt-1 mr-1 text-[10px] text-muted-foreground">
-                        {moment(m.at).format('MMM D, h:mm A')}
+                        {moment(m.at).format('MMM D, h:mm A')} {localTzAbbr(m.at)}
                       </div>
                     )}
                   </div>
@@ -920,7 +921,7 @@ export const AnalyticsInsights = () => {
                         <div className="ml-1 flex items-center gap-2">
                           {m.at && (
                             <span className="text-[10px] text-muted-foreground">
-                              {moment(m.at).format('MMM D, h:mm A')}
+                              {moment(m.at).format('MMM D, h:mm A')} {localTzAbbr(m.at)}
                             </span>
                           )}
                           <button
