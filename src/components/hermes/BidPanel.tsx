@@ -245,8 +245,8 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
       <div className="flex flex-wrap items-center gap-2">
         <ReserveBadge auction={auction} />
         {auction.estValueUsd != null && (
-          <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">
-            Est. Value {fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
+          <span className="whitespace-nowrap rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">
+            Estimated Value: {fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
           </span>
         )}
         <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/75">

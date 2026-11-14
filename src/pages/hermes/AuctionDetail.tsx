@@ -189,7 +189,7 @@ function AboutSection({ a, softClose }: { a: PublicAuction; softClose: string })
             ['Starting bid', fmtUsd(a.startingPriceUsd)],
             // Omitted entirely when the seller hides it (or never set one).
             a.estValueUsd != null
-              ? ['Est. Value', fmtEstValue(a.estValueUsd, a.estValueHighUsd)]
+              ? ['Estimated Value', fmtEstValue(a.estValueUsd, a.estValueHighUsd)]
               : null,
             ['Shipping', a.shippingUsd > 0 ? fmtUsd(a.shippingUsd, { cents: true }) : 'Free'],
             ['Seller', a.sellerName],
@@ -213,7 +213,7 @@ function AboutSection({ a, softClose }: { a: PublicAuction; softClose: string })
       </dl>
       {a.estValueSource === 'pulled' && (
         <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-white/45">
-          <Bot className="h-3.5 w-3.5" /> Est. Value is based on recent comparable sales.
+          <Bot className="h-3.5 w-3.5" /> Estimated Value is based on recent comparable sales.
         </p>
       )}
       {(a.bucket !== 'settled' || a.extensionCount > 0) && (
