@@ -192,7 +192,7 @@ Aaron's choices: a separate page + header link; all three watcher emails (opens,
 - [x] Web: `WatchButton.tsx` (`WatchHeart` on cards, `WatchButton` on the lot page, `PendingWatchHandler` mounted once in `App.tsx`), `pages/hermes/Watchlist.tsx` (Live / Upcoming / Ended sections), header links in `SiteHeader` and the standalone Hermes header, a Watching column + detail line in admin.
 - [x] Migration applied on `cardcade-stag` before the API deploy.
 - [x] Verified locally against staging data: 19 endpoint checks (auth, idempotency, counts, ordering, 400/404, admin counts, cleanup), 15 mocked email checks (bidders never get a watcher duplicate), and 16 browser checks (logged-out heart → login → auto-watched, Watchlist page, card heart toggle, header fits one row at 320 px and 375 px, admin column).
-- [ ] Prod: run `AddAuctionWatchers20261112120000` on `cardcade-prod` **before** the API deploys (public lot lists query the table), then deploy API + web.
+- [x] Prod (2026-11-13): `AddAuctionWatchers20261112120000` (and `AddUserSignupAttribution20261112130000`) applied on `cardcade-prod`, then API #502 and web #681 deployed. Live on collectiqapp.xyz with the 5/2/2 fees for new lots (the three live lots kept 4/1/1; no bump, per Aaron), the About quote, time-zone labels and the Meta Pixel (inert until its id is set).
 
 ## Phase 16 — USDC on prod (mainnet), started 2026-11-13
 Prod's API is already configured for mainnet (Helius RPC, mint `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`, authority `E4LW…`, program `BNHMW9…`). It turns USDC on by itself within 60 s once a matching mainnet config exists, with no deploy needed. The devnet binary matches the committed source (sha256 `c1f2f8c0…`, checked by rebuilding).
@@ -203,10 +203,11 @@ Hardening, on branches only (not merged, not deployed; Aaron asked to hold):
 - [x] Web `feat/usdc-mainnet-hardening`: the USDC panel says the wallet needs a little SOL, reads the real rent from the cluster (~0.0027 SOL for a first deposit: escrow 97 B + vault 165 B, refunded on close), warns and disables Deposit when the balance is short. The devnet faucet link pointed at spl-token-faucet's USDC-Dev (a different mint the escrow rejects); now Circle's faucet + the Solana faucet.
 
 Still to do:
-- [ ] Merge the branches (Aaron's call), then redeploy the devnet program with the gated `initialize` (`solana program deploy` upgrade; the existing devnet config is untouched).
+- [x] Branches merged (2026-11-13): API + web are on staging and prod (API #502, web #681); contracts on `feat/hermes-auctions` (`c097378`). Staging logs "Hermes escrow READY" with `treasury=A3MHpXX9…`; prod logs `treasury=unset` → not ready, so USDC stays off on prod.
+- [ ] Redeploy the devnet program with the gated `initialize` (`solana program deploy` upgrade; the existing devnet config is untouched).
 - [ ] Live devnet E2E through staging: deposit → outbid refund → settle with remainder. Needs devnet USDC from faucet.circle.com.
 - [ ] Aaron: mainnet treasury wallet (not the server key), who holds the upgrade authority after deploy (Ledger / Squads), ~3.3 SOL to the deployer `2qSYL…` (~1.6 SOL stays as program rent), go-live OK (USDC then shows on every "Both" lot). Optional: give prod its own authority key (stag + prod share `E4LW…`).
-- [ ] Prod API deploy with `HERMES_TREASURY_ATA` in `task-def.non_pro_prod.json` **before** the mainnet init.
+- [ ] Add `HERMES_TREASURY_ATA` to `task-def.non_pro_prod.json` and deploy the prod API **before** the mainnet init (the treasury check itself is already live on prod).
 - [ ] `deploy-hermes-mainnet.sh`, hand off the upgrade authority, confirm `/auctions/config` → `enabled: true`, then one small real USDC lot end to end.
 
 ## Risks / notes
