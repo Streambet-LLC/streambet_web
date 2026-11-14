@@ -16,6 +16,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import BugSnagErrorBoundary from './bugsnag';
 import { LogoutEventHandlers } from '@/components/LogoutEventHandlers';
 import PageViewTracker from '@/components/analytics/PageViewTracker';
+import PendingSignupHandler from '@/components/analytics/PendingSignupHandler';
 import RouteGroup from './components/RouteGroup';
 import 'react-image-crop/dist/ReactCrop.css';
 import AnalyticsTab from './pages/AnalyticsTab';
@@ -25,6 +26,8 @@ import AuctionsHome from './pages/hermes/AuctionsHome';
 import AuctionDetail from './pages/hermes/AuctionDetail';
 import AuctionPay from './pages/hermes/AuctionPay';
 import MyBids from './pages/hermes/MyBids';
+import Watchlist from './pages/hermes/Watchlist';
+import { PendingWatchHandler } from './components/hermes/WatchButton';
 import SignUp from './pages/hermes/SignUp';
 import { IS_HERMES_SITE, applyHermesDocumentBranding } from './components/hermes/site';
 
@@ -63,6 +66,7 @@ const sharedRoutes = (
     {/* Hermes Auctions — public; bidding requires an account */}
     <Route path="/signup" element={<SignUp />} />
     <Route path="/auctions/me" element={<MyBids />} />
+    <Route path="/auctions/watchlist" element={<Watchlist />} />
     <Route path="/auctions/:id" element={<AuctionDetail />} />
     <Route path="/auctions/:id/pay" element={<AuctionPay />} />
   </>
@@ -118,6 +122,8 @@ const App = () => {
               <Toaster />
               <Sonner />
               <LogoutEventHandlers />
+              <PendingWatchHandler />
+              <PendingSignupHandler />
               <PageViewTracker />
               <Routes>{IS_HERMES_SITE ? hermesSiteRoutes : mainSiteRoutes}</Routes>
             </TooltipProvider>

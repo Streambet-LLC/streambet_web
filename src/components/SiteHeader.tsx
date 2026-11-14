@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Gavel, Info, LogOut, UserRound } from 'lucide-react';
+import { Gavel, Heart, Info, LogOut, UserRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useLogout } from '@/hooks/useLogout';
@@ -55,6 +55,10 @@ export function SiteHeader({ center, fixed }: { center?: ReactNode; fixed?: bool
           </NavLink>
           {session ? (
             <>
+              <NavLink to="/auctions/watchlist" className={pill} aria-label="Watchlist">
+                <Heart className="h-4 w-4" />
+                <span className="hidden sm:inline">Watchlist</span>
+              </NavLink>
               <NavLink to="/auctions/me" className={pill} aria-label="My bids">
                 <Gavel className="h-4 w-4" />
                 <span className="hidden sm:inline">My bids</span>

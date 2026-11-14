@@ -236,9 +236,17 @@ export const authAPI = {
     redirect?: string;
     promoCode?: string;
     refLink?: string;
+    /** First-touch ad params (lib/attribution.ts); saved on the account. */
+    attribution?: Record<string, string>;
   }) => {
     const response = await apiClient.post('/auth/register', userData);
     return response.data;
+  },
+
+  /** Google sign-ups: save the ad attribution on the just-created account. */
+  saveSignupAttribution: async (attribution: Record<string, string>) => {
+    const response = await apiClient.post('/auth/signup-attribution', { attribution });
+    return response.data as { data?: { saved: boolean } };
   },
 
   // Login user

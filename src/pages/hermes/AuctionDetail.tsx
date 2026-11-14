@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Bot, ChevronDown, Store } from 'lucide-react';
@@ -7,6 +7,7 @@ import { HermesShell } from '@/components/hermes/HermesShell';
 import { MediaGallery } from '@/components/hermes/MediaGallery';
 import { BidPanel } from '@/components/hermes/BidPanel';
 import { SolanaProviders } from '@/components/hermes/SolanaProviders';
+import { WatchButton } from '@/components/hermes/WatchButton';
 import { useAuctionLive } from '@/components/hermes/useAuctionLive';
 import {
   CATEGORY_LABEL,
@@ -18,6 +19,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { hermesAPI, type PublicAuction, type PublicBid } from '@/integrations/api/hermes';
 import { HERMES_HOME } from '@/components/hermes/site';
+import { pixelViewContent } from '@/lib/metaPixel';
 
 /** One Hermes lot: media, details, live bid panel and bid history. */
 export default function AuctionDetail() {
@@ -48,6 +50,15 @@ export default function AuctionDetail() {
     staleTime: 60_000,
   });
   useAuctionLive(id);
+
+  // Meta Pixel ViewContent, once per lot opened (not on each refetch).
+  const lotTitle = auction.data?.title;
+  const viewedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!id || lotTitle == null || viewedRef.current === id) return;
+    viewedRef.current = id;
+    pixelViewContent({ id, title: lotTitle });
+  }, [id, lotTitle]);
 
   // A back/forward cache restore (e.g. coming back from Stripe) revives the
   // page exactly as it was, with stale bids and saved methods. Refresh them.
@@ -148,6 +159,9 @@ export default function AuctionDetail() {
                 <Store className="h-4 w-4" /> Sold by{' '}
                 <span className="font-semibold text-white">{a.sellerName}</span>
               </p>
+              <div className="mt-3">
+                <WatchButton auction={a} />
+              </div>
             </div>
             {cfg.crypto.enabled ? (
               <SolanaProviders cluster={cfg.crypto.cluster}>{panel}</SolanaProviders>
@@ -279,6 +293,7 @@ function BidHistory({ bids }: { bids: PublicBid[] | undefined }) {
                     day: 'numeric',
                     hour: 'numeric',
                     minute: '2-digit',
+                    timeZoneName: 'short',
                   })}
                 </span>
               </span>

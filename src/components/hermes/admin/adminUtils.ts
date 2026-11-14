@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AuctionVideo, EstValueMeta } from '@/integrations/api/hermes';
 import { getMessage } from '@/utils/helper';
+import { keepTimeTogether } from '../format';
 
 export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * HOUR_MS;
@@ -55,19 +56,22 @@ export function defaultScheduleStart(now = Date.now()): Date {
   return d;
 }
 
-/** "Nov 18, 3:00 PM" (adds the year when it isn't this year). */
+/** "Nov 18, 3:00 PM PST" in the viewer's time zone (adds the year when it isn't this year). */
 export function fmtShortDateTime(iso: string | Date | null | undefined): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
   const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    ...(sameYear ? {} : { year: 'numeric' }),
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  return keepTimeTogether(
+    d.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      ...(sameYear ? {} : { year: 'numeric' }),
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short',
+    })
+  );
 }
 
 /** "7 days", "3d 4h", "5h 30m" — a span length for the form. */

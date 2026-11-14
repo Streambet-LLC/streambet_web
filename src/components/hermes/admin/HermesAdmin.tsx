@@ -399,6 +399,9 @@ function AuctionTable({
             <th scope="col" className="px-2 py-2 text-right font-medium">
               Bids
             </th>
+            <th scope="col" className="px-2 py-2 text-right font-medium">
+              Watching
+            </th>
             <th scope="col" className="w-6 px-2 py-2">
               <span className="sr-only">Open</span>
             </th>
@@ -450,6 +453,9 @@ function AuctionTable({
                 {fmtEstValue(r.estValueUsd, r.estValueHighUsd)}
               </td>
               <td className="px-2 py-2.5 text-right tabular-nums">{r.bidCount}</td>
+              <td className="px-2 py-2.5 text-right tabular-nums text-white/75">
+                {r.watcherCount ?? '—'}
+              </td>
               <td className="px-2 py-2.5 text-white/30">
                 <ChevronRight className="h-4 w-4" aria-hidden />
               </td>
@@ -526,6 +532,7 @@ function AuctionCards({
                 <span className="tabular-nums">
                   {fmtEstValue(r.estValueUsd, r.estValueHighUsd)} · {r.bidCount} bid
                   {r.bidCount === 1 ? '' : 's'}
+                  {r.watcherCount != null && ` · ${r.watcherCount} watching`}
                 </span>
               </Kv>
             </dl>

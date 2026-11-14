@@ -64,6 +64,20 @@ jobs:
             export "$name=$value"
           done
 
+          # Optional: unset → the feature stays off in this build.
+          #   VITE_META_PIXEL_ID: Meta Pixel (src/lib/metaPixel.ts)
+          OPTIONAL_PARAMS=(
+            VITE_META_PIXEL_ID
+          )
+          for name in "${OPTIONAL_PARAMS[@]}"; do
+            full="/cardcade/$REF/$name"
+            if value=$(aws ssm get-parameter --name "$full" --with-decryption --query "Parameter.Value" --output text 2>/dev/null); then
+              export "$name=$value"
+            else
+              echo "Optional SSM parameter not set: $full"
+            fi
+          done
+
           # 3. Build
           npm ci && npm run build
         env:

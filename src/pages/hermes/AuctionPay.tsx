@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Building2, CheckCircle2, CreditCard, Loader2, Package, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { HermesShell } from '@/components/hermes/HermesShell';
-import { METHOD_LABEL, fmtDateTime, fmtUsd } from '@/components/hermes/format';
+import { METHOD_LABEL, fmtDateTime, fmtUsd, lowestFeeMethods } from '@/components/hermes/format';
+import { LowestFeeTag } from '@/components/hermes/FeeTiers';
 import { useCountdown } from '@/components/hermes/useCountdown';
 import { fmtRemaining } from '@/components/hermes/format';
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,7 @@ export default function AuctionPay() {
   const chargedPct = p.buyerPremiumPercent ?? 0;
   const rates = p.buyerPremiumByMethod;
   const optionPct = rates ? rates[method] : chargedPct;
+  const lowFee = rates ? lowestFeeMethods(rates, ['ach', 'card']) : [];
 
   return (
     <HermesShell>
@@ -158,36 +160,44 @@ export default function AuctionPay() {
                 .
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 pt-1">
               {(
                 [
                   ['ach', 'Bank (ACH)', 'Bank transfer', Building2],
                   ['card', 'Card', 'Credit or debit', CreditCard],
                 ] as const
-              ).map(([k, label, note, Icon]) => (
-                <button
-                  key={k}
-                  type="button"
-                  aria-pressed={method === k}
-                  onClick={() => setMethod(k)}
-                  className={`rounded-xl border p-3 text-left ${
-                    method === k ? 'border-[#C7FA09] bg-[#C7FA09]/10' : 'border-white/10 bg-black/30'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <p className="mt-1 text-sm font-semibold">{label}</p>
-                  <p className="text-[11px] text-white/50">{note}</p>
-                  {rates && (
-                    <p
-                      className={`mt-0.5 text-[11px] font-semibold ${
-                        method === k ? 'text-[#C7FA09]' : 'text-white/75'
-                      }`}
-                    >
-                      {rates[k]}% buyer fee · {fmtUsd(p.options[k].totalUsd, { cents: true })}
-                    </p>
-                  )}
-                </button>
-              ))}
+              ).map(([k, label, note, Icon]) => {
+                const low = lowFee.includes(k);
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={method === k}
+                    onClick={() => setMethod(k)}
+                    className={`relative rounded-xl border p-3 text-left ${
+                      method === k
+                        ? 'border-[#C7FA09] bg-[#C7FA09]/10'
+                        : low
+                          ? 'border-[#C7FA09]/35 bg-black/30'
+                          : 'border-white/10 bg-black/30'
+                    }`}
+                  >
+                    {low && <LowestFeeTag />}
+                    <Icon className="h-4 w-4" />
+                    <p className="mt-1 text-sm font-semibold">{label}</p>
+                    <p className="text-[11px] text-white/50">{note}</p>
+                    {rates && (
+                      <p
+                        className={`mt-0.5 text-[11px] font-semibold ${
+                          method === k || low ? 'text-[#C7FA09]' : 'text-white/75'
+                        }`}
+                      >
+                        {rates[k]}% buyer fee · {fmtUsd(p.options[k].totalUsd, { cents: true })}
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
             <Breakdown rows={breakdownRows(opt, optionPct)} total={opt.totalUsd} />
             <Button

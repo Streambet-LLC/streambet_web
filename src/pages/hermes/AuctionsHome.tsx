@@ -5,7 +5,8 @@ import { ChevronDown, Loader2, SlidersHorizontal, X } from 'lucide-react';
 import { BuyerFeeTerms, HermesShell, MarketSearch } from '@/components/hermes/HermesShell';
 import { IS_HERMES_SITE } from '@/components/hermes/site';
 import { AuctionCard } from '@/components/hermes/AuctionCard';
-import { CATEGORIES, CATEGORY_LABEL, fmtFeeTiers, fmtUsd } from '@/components/hermes/format';
+import { FeeTiers } from '@/components/hermes/FeeTiers';
+import { CATEGORIES, CATEGORY_LABEL, fmtUsd } from '@/components/hermes/format';
 import { useBuyerFeeRates, useHermesConfig } from '@/components/hermes/useHermesConfig';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -174,7 +175,7 @@ export default function AuctionsHome() {
             Bid on the collectibles you chase.
           </h1>
           <p className="mt-2 text-xs text-white/60 sm:hidden">
-            Buyer fee {fmtFeeTiers(feeRates)} · all bids are final
+            Buyer fee <FeeTiers rates={feeRates} /> · all bids are final
           </p>
           <p className="mt-2 hidden max-w-2xl text-sm text-white/65 sm:block">
             <BuyerFeeTerms />

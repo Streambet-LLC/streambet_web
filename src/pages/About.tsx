@@ -73,7 +73,21 @@ export default function About() {
               </a>
             </div>
           </div>
+
+          <div className="mt-6 border-t border-white/10 pt-6">
+            <p className="text-sm font-semibold text-white/70">
+              For lot sales over $25,000, we hand-deliver anywhere in the continental U.S.
+            </p>
+          </div>
         </section>
+
+        {/* Nick's closing line (2026-11-13), in his words. */}
+        <figure className="mt-10 border-l-4 border-[#C7FA09] pl-5 sm:pl-6">
+          <blockquote className="text-lg font-semibold italic leading-relaxed text-white/90 sm:text-xl">
+            “If you want to win at the highest level, you have to be willing to be misunderstood for
+            very long periods of time.”
+          </blockquote>
+        </figure>
       </div>
     </HermesShell>
   );

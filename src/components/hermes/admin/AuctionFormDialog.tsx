@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { CalendarClock, Loader2, Lock, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { localTzAbbr } from '@/utils/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -797,6 +798,12 @@ function AuctionForm({
               )}
             </div>
           </div>
+          {!locked && (form.startMode === 'schedule' || form.lengthPreset === 'custom') && (
+            <FieldHint className="mt-2">
+              Dates and times are in your time zone ({localTzAbbr(startDate ?? new Date())}).
+              Bidders see them in theirs.
+            </FieldHint>
+          )}
 
           <div
             className={cn(
