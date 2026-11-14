@@ -193,8 +193,12 @@ export function AuctionCard({ auction }: { auction: PublicAuction }) {
             {!ended && <ReserveBadge auction={auction} />}
             <PaymentsBadge accepted={auction.acceptedPayments} />
             {auction.estValueUsd != null && (
+              // Narrow cards wrap after the label, never inside the range.
               <span className="text-[11px] text-white/55">
-                Est. {fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
+                Estimated Value:{' '}
+                <span className="whitespace-nowrap">
+                  {fmtEstValue(auction.estValueUsd, auction.estValueHighUsd)}
+                </span>
               </span>
             )}
           </div>
