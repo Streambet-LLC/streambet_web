@@ -32,8 +32,8 @@ export default function Watchlist() {
     <HermesShell wide>
       <h1 className="text-2xl font-extrabold">Watchlist</h1>
       <p className="mt-1 text-sm text-white/55">
-        We'll email you when a watched lot opens for bidding, an hour before it closes, and when it
-        ends.
+        We'll email you when a watched lot opens for bidding, 24 hours and 1 hour before it closes,
+        and when it ends.
       </p>
       {list.isLoading || isLoading ? (
         <Loader2 className="mx-auto mt-16 h-6 w-6 animate-spin text-white/50" />
