@@ -194,6 +194,21 @@ Aaron's choices: a separate page + header link; all three watcher emails (opens,
 - [x] Verified locally against staging data: 19 endpoint checks (auth, idempotency, counts, ordering, 400/404, admin counts, cleanup), 15 mocked email checks (bidders never get a watcher duplicate), and 16 browser checks (logged-out heart → login → auto-watched, Watchlist page, card heart toggle, header fits one row at 320 px and 375 px, admin column).
 - [ ] Prod: run `AddAuctionWatchers20261112120000` on `cardcade-prod` **before** the API deploys (public lot lists query the table), then deploy API + web.
 
+## Phase 16 — USDC on prod (mainnet), started 2026-11-13
+Prod's API is already configured for mainnet (Helius RPC, mint `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`, authority `E4LW…`, program `BNHMW9…`). It turns USDC on by itself within 60 s once a matching mainnet config exists, with no deploy needed. The devnet binary matches the committed source (sha256 `c1f2f8c0…`, checked by rebuilding).
+
+Hardening, on branches only (not merged, not deployed; Aaron asked to hold):
+- [x] Contracts `feat/hermes-mainnet-hardening` (off `feat/hermes-auctions`): `initialize` now requires the program's **upgrade authority** as payer (was first-come; someone could have front-run it with our public authority + real USDC + their own treasury). New error `NotUpgradeAuthority` (6013, appended). `init-hermes.ts` checks the upgrade authority first, refuses defaults off devnet, refuses a treasury owned by the authority off devnet, and prints the `HERMES_TREASURY_ATA` value. New `scripts/deploy-hermes-mainnet.sh` (sha256 pin, existing-program guard, ≥3.3 SOL check, typed confirmation, deploy + init, then the upgrade-authority handoff command). `.gitattributes` keeps `*.sh` LF. Tests deploy upgradeable now (`[test] upgradeable = true`): 43 hermes tests pass (2 new: stranger can't init; another program's ProgramData can't be swapped in). The 7 marketplace failures are the old ones (see Risks).
+- [x] API `feat/usdc-mainnet-hardening`: readiness also requires the on-chain treasury to equal `HERMES_TREASURY_ATA` (`escrowConfigProblems`); on mainnet it's required, so prod stays off without it. `settle` re-checks the treasury every time and refuses on a mismatch. Staging task def sets `HERMES_TREASURY_ATA=A3MHpXX9…` (matches the live devnet config). The prod task def gets it at go-live. IDL synced (only `initialize` + the new error changed).
+- [x] Web `feat/usdc-mainnet-hardening`: the USDC panel says the wallet needs a little SOL, reads the real rent from the cluster (~0.0027 SOL for a first deposit: escrow 97 B + vault 165 B, refunded on close), warns and disables Deposit when the balance is short. The devnet faucet link pointed at spl-token-faucet's USDC-Dev (a different mint the escrow rejects); now Circle's faucet + the Solana faucet.
+
+Still to do:
+- [ ] Merge the branches (Aaron's call), then redeploy the devnet program with the gated `initialize` (`solana program deploy` upgrade; the existing devnet config is untouched).
+- [ ] Live devnet E2E through staging: deposit → outbid refund → settle with remainder. Needs devnet USDC from faucet.circle.com.
+- [ ] Aaron: mainnet treasury wallet (not the server key), who holds the upgrade authority after deploy (Ledger / Squads), ~3.3 SOL to the deployer `2qSYL…` (~1.6 SOL stays as program rent), go-live OK (USDC then shows on every "Both" lot). Optional: give prod its own authority key (stag + prod share `E4LW…`).
+- [ ] Prod API deploy with `HERMES_TREASURY_ATA` in `task-def.non_pro_prod.json` **before** the mainnet init.
+- [ ] `deploy-hermes-mainnet.sh`, hand off the upgrade authority, confirm `/auctions/config` → `enabled: true`, then one small real USDC lot end to end.
+
 ## Risks / notes
 - ~~**Card surcharging:** the card network cap is 3%, the fee must be disclosed, debit cards can't be surcharged, and some states restrict surcharges.~~ Resolved 2026-11-09 by dropping the card fee (the premium covers processing).
 - **On-chain privacy:** USDC deposits are public on Solana, so a USDC bidder's escrow (≥ their max) is visible. The UI says so.
