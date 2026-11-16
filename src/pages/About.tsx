@@ -35,6 +35,11 @@ const PILLARS: Array<{ title: string; text: string }> = [
     // Non-breaking spaces keep "1–3 weeks" and "2 minutes" on one line.
     text: 'Auctions run 1–3 weeks, and any bid in the final 2 minutes resets the clock to 2 minutes — no sniping.',
   },
+  {
+    // Aaron, 2026-11-15 (title in sentence case to match the others).
+    title: 'Graded, auth’d, sealed only. All sellers vetted',
+    text: 'To keep everything reliable & safe, we only allow graded cards and sealed product, along with officially authenticated memorabilia. Every seller is fully vetted by our team to keep out fake products.',
+  },
 ];
 
 /** Nick's bio, in his words (2026-11-09). First name only, by his choice. */
