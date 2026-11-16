@@ -317,6 +317,14 @@ export interface AdminAuctionDetail {
     fundingMethod: FundingMethod;
     createdAt: string;
   }>;
+  /** Who's watching, newest first (absent from an API older than 2026-11-15). */
+  watchers?: Array<{
+    userId: string;
+    username: string | null;
+    email: string | null;
+    watchingSince: string;
+    hasBid: boolean;
+  }>;
   deposits: Array<{
     id: string;
     userId: string;

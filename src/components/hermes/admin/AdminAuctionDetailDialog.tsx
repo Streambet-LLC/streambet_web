@@ -540,6 +540,8 @@ function DetailBody({ id, onEdit }: { id: string; onEdit: (a: AdminAuction) => v
 
         {auction.status === 'paid' && <FulfillmentSection detail={d} onUpdated={applyResult} />}
 
+        {d.watchers && <WatchersSection watchers={d.watchers} />}
+
         <DetailSection title={`Bid history (${d.bids.length})`}>
           {d.bids.length === 0 ? (
             <p className="rounded-md border border-dashed border-white/10 px-3 py-6 text-center text-sm text-muted-foreground">
@@ -950,6 +952,69 @@ function FulfillmentSection({
           )}
         </div>
       </div>
+    </DetailSection>
+  );
+}
+
+/**
+ * Who's watching this lot (Nick, 2026-11-15), newest first. "Not yet" in
+ * the Bid column marks watchers who haven't bid: the ones worth a nudge.
+ */
+function WatchersSection({ watchers }: { watchers: NonNullable<AdminAuctionDetail['watchers']> }) {
+  return (
+    <DetailSection title={`Watching (${watchers.length})`}>
+      {watchers.length === 0 ? (
+        <p className="rounded-md border border-dashed border-white/10 px-3 py-6 text-center text-sm text-muted-foreground">
+          Nobody is watching yet.
+        </p>
+      ) : (
+        <div className="overflow-x-auto rounded-md border border-white/10">
+          <table className="w-full min-w-[480px] text-left text-xs">
+            <thead>
+              <tr className="border-b border-white/10 uppercase tracking-wide text-muted-foreground">
+                <th scope="col" className="px-2.5 py-2 font-medium">
+                  Watcher
+                </th>
+                <th scope="col" className="px-2.5 py-2 font-medium">
+                  Watching since
+                </th>
+                <th scope="col" className="px-2.5 py-2 font-medium">
+                  Bid
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {watchers.map(w => (
+                <tr key={w.userId} className="border-b border-white/5 last:border-0">
+                  <td className="px-2.5 py-2">
+                    <span className="block font-medium text-white">{w.username ?? '—'}</span>
+                    {w.email && (
+                      <a
+                        href={`mailto:${w.email}`}
+                        className="block text-muted-foreground hover:text-[#C7FA09] hover:underline"
+                      >
+                        {w.email}
+                      </a>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-2.5 py-2 text-white/70">
+                    {fmtShortDateTime(w.watchingSince)}
+                  </td>
+                  <td className="px-2.5 py-2">
+                    {w.hasBid ? (
+                      <Pill className="border-[#C7FA09]/30 bg-[#C7FA09]/10 text-[#C7FA09]">
+                        Has bid
+                      </Pill>
+                    ) : (
+                      <span className="text-white/50">Not yet</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </DetailSection>
   );
 }
