@@ -2,7 +2,12 @@ import { KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { ChevronDown, Loader2, SlidersHorizontal, X } from 'lucide-react';
-import { BuyerFeeTerms, HermesShell, MarketSearch } from '@/components/hermes/HermesShell';
+import {
+  BuyerFeeTerms,
+  HermesShell,
+  MarketSearch,
+  UsdcComingSoonBadge,
+} from '@/components/hermes/HermesShell';
 import { IS_HERMES_SITE } from '@/components/hermes/site';
 import { AuctionCard } from '@/components/hermes/AuctionCard';
 import { FeeTiers } from '@/components/hermes/FeeTiers';
@@ -178,8 +183,11 @@ export default function AuctionsHome() {
             Buyer fee <FeeTiers rates={feeRates} /> · all bids are final
           </p>
           <p className="mt-2 hidden max-w-2xl text-sm text-white/65 sm:block">
-            <BuyerFeeTerms />
+            <BuyerFeeTerms usdcNote={false} />
           </p>
+          {/* Nick (2026-11-15): USDC isn't live on prod yet; say so up front so
+              Breakpoint visitors don't expect to pay in USDC today. */}
+          <UsdcComingSoonBadge className="mt-3" />
         </section>
       )}
 

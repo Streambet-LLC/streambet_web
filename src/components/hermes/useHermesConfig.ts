@@ -11,6 +11,16 @@ export function useHermesConfig() {
   });
 }
 
+/**
+ * True once the config has loaded and says the USDC rail is off (prod until
+ * the mainnet escrow ships), so the fee copy can say "USDC coming soon"
+ * instead of implying bidders can pay in USDC today.
+ */
+export function useUsdcComingSoon(): boolean {
+  const { data } = useHermesConfig();
+  return !!data && !data.crypto?.enabled;
+}
+
 /** Buyer fee by tender for new lots (card / ACH / USDC), for site-wide copy. */
 export function useBuyerFeeRates(): PremiumRates {
   return premiumRates(useHermesConfig().data?.fees);
