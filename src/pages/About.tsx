@@ -32,7 +32,8 @@ const PILLARS: Array<{ title: string; text: string }> = [
     // (ANTI_SNIPE_WINDOW_SECONDS: ends_at = bid time + 2 min); lengths are the
     // 7 / 14 / 21-day presets.
     title: 'Extended bidding',
-    text: 'Auctions run 1–3 weeks, and any bid in the final 2 minutes resets the clock to 2 minutes — no sniping.',
+    // Non-breaking spaces keep "1–3 weeks" and "2 minutes" on one line.
+    text: 'Auctions run 1–3 weeks, and any bid in the final 2 minutes resets the clock to 2 minutes — no sniping.',
   },
 ];
 
