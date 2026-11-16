@@ -27,6 +27,14 @@ const PILLARS: Array<{ title: string; text: string }> = [
     title: 'A paid campaign for every batch',
     text: 'All auction batches receive at least one full paid marketing campaign (i.e. at least one lot per batch gets a marketing boost, using our proprietary matching / distribution engines).',
   },
+  {
+    // Aaron, 2026-11-15. "Resets the clock to 2 minutes" is what the API does
+    // (ANTI_SNIPE_WINDOW_SECONDS: ends_at = bid time + 2 min); lengths are the
+    // 7 / 14 / 21-day presets.
+    title: 'Extended bidding',
+    // Non-breaking spaces keep "1–3 weeks" and "2 minutes" on one line.
+    text: 'Auctions run 1–3 weeks, and any bid in the final 2 minutes resets the clock to 2 minutes — no sniping.',
+  },
 ];
 
 /** Nick's bio, in his words (2026-11-09). First name only, by his choice. */
