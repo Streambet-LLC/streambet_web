@@ -34,6 +34,7 @@ import {
   premiumRates,
 } from './format';
 import { FeeTiers, LowestFeeTag } from './FeeTiers';
+import { UsdcComingSoonBadge } from './HermesShell';
 import { ShippingAddressForm, fetchMyAddress, isAddressComplete } from './ShippingAddressForm';
 import { UsdcEscrow } from './UsdcEscrow';
 
@@ -106,6 +107,9 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
       ),
     [auction.acceptedMethods, config.crypto.enabled]
   );
+  // The lot takes USDC but the rail is off (prod today): say it's coming.
+  const usdcSoon =
+    !config.crypto.enabled && (auction.acceptedMethods ?? ['card', 'ach', 'usdc']).includes('usdc');
   useEffect(() => {
     if (allowed.length && !allowed.some(m => m.key === method)) setMethod(allowed[0].key);
   }, [allowed, method]);
@@ -403,6 +407,7 @@ export function BidPanel({ auction, config }: { auction: PublicAuction; config: 
             );
           })}
         </div>
+        {usdcSoon && <UsdcComingSoonBadge className="mt-2" />}
       </div>
 
       {method !== 'usdc' ? (

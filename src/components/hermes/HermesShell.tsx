@@ -1,9 +1,9 @@
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Gavel, Heart, Info, Search, UserRound, X } from 'lucide-react';
+import { Clock, Gavel, Heart, Info, Search, UserRound, X } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { SiteHeader } from '@/components/SiteHeader';
-import { useBuyerFeeRates } from './useHermesConfig';
+import { useBuyerFeeRates, useUsdcComingSoon } from './useHermesConfig';
 import { lowestFeeMethods } from './format';
 import { HERMES_HOME, IS_HERMES_SITE } from './site';
 import { NICK_EMAIL } from '@/lib/contact';
@@ -12,10 +12,13 @@ import type { FundingMethod } from '@/integrations/api/hermes';
 /**
  * The buyer-fee terms, shared by the marketplace hero and the footer
  * (Aaron's wording, 2026-11-09). Rates come from the API config. The
- * cheapest tenders (ACH and USDC at 5% / 2% / 2%) are in lime.
+ * cheapest tenders (ACH and USDC at 5% / 2% / 2%) are in lime. While the
+ * USDC rail is off it says "(coming soon)" after the USDC rate, unless the
+ * caller shows its own `UsdcComingSoonBadge` (`usdcNote={false}`).
  */
-export function BuyerFeeTerms() {
+export function BuyerFeeTerms({ usdcNote = true }: { usdcNote?: boolean }) {
   const r = useBuyerFeeRates();
+  const usdcSoon = useUsdcComingSoon();
   const low = lowestFeeMethods(r);
   const tier = (m: FundingMethod, text: string) =>
     low.includes(m) ? <span className="font-bold text-[#C7FA09]">{text}</span> : text;
@@ -23,9 +26,23 @@ export function BuyerFeeTerms() {
     <>
       Winners pay a variable buyer fee based on the payment tender used —{' '}
       {tier('card', `${r.card}% for credit card`)}, {tier('ach', `${r.ach}% for ACH`)}, and{' '}
-      {tier('usdc', `${r.usdc}% for USDC`)}. Every lot is hosted and shipped by Hermes Auctions. All
-      bids are final.
+      {tier('usdc', `${r.usdc}% for USDC`)}
+      {usdcNote && usdcSoon && ' (coming soon)'}. Every lot is hosted and shipped by Hermes
+      Auctions. All bids are final.
     </>
+  );
+}
+
+/** Lime "USDC coming soon" pill; renders nothing once USDC bidding is live. */
+export function UsdcComingSoonBadge({ className = '' }: { className?: string }) {
+  if (!useUsdcComingSoon()) return null;
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border border-[#C7FA09]/40 bg-[#C7FA09]/10 px-3 py-1 text-xs font-bold text-[#C7FA09] ${className}`}
+    >
+      <Clock className="h-3.5 w-3.5" aria-hidden />
+      USDC coming soon
+    </span>
   );
 }
 
