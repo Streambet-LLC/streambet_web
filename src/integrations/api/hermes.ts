@@ -227,6 +227,8 @@ export interface AdminAuctionRow {
   paymentMethod: FundingMethod | null;
   fulfillmentStatus: 'pending' | 'shipped' | 'delivered';
   isFeatured: boolean;
+  /** Place in the marketplace order (Reorder dialog); null = never placed. */
+  displayOrder?: number | null;
   showEstValue: boolean;
   sellerName: string;
   acceptedPayments: AcceptedPayments;
@@ -365,7 +367,8 @@ const data = <T>(p: Promise<{ data: { data: T } }>) => p.then(r => r.data.data);
 
 /** Marketplace tabs. `ended` = sold / unsold results (never cancelled). */
 export type MarketBucket = 'live' | 'upcoming' | 'ended';
-export type MarketSort = 'ending' | 'newest' | 'price_asc' | 'price_desc' | 'bids';
+/** `featured` = featured lots first, then the admin's order, then by time. */
+export type MarketSort = 'featured' | 'ending' | 'newest' | 'price_asc' | 'price_desc' | 'bids';
 
 export interface MarketQuery {
   bucket: MarketBucket;
@@ -430,8 +433,16 @@ export const hermesAPI = {
 };
 
 export const hermesAdminAPI = {
-  list: (bucket: AuctionBucket) =>
-    data<AdminAuctionRow[]>(apiClient.get('/admin/auctions', { params: { bucket } })),
+  /** `marketplace` = the order bidders see by default (live / upcoming). */
+  list: (bucket: AuctionBucket, order: 'time' | 'marketplace' = 'time') =>
+    data<AdminAuctionRow[]>(
+      apiClient.get('/admin/auctions', {
+        params: order === 'time' ? { bucket } : { bucket, order },
+      })
+    ),
+  /** Save a tab's marketplace order, top to bottom. Returns the tab in that order. */
+  reorder: (bucket: 'live' | 'upcoming', ids: string[]) =>
+    data<AdminAuctionRow[]>(apiClient.put('/admin/auctions/order', { bucket, ids })),
   get: (id: string) => data<AdminAuctionDetail>(apiClient.get(`/admin/auctions/${id}`)),
   create: (body: AuctionInput) => data<AdminAuctionDetail>(apiClient.post('/admin/auctions', body)),
   update: (id: string, body: Partial<AuctionInput>) =>

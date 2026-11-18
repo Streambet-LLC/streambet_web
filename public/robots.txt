@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin
+Disallow: /auctions/me
+Disallow: /auctions/watchlist
+Disallow: /auctions/*/pay
+
+Sitemap: https://collectiqapp.xyz/sitemap.xml

@@ -1,4 +1,12 @@
-import { Briefcase, GraduationCap, Instagram, Mail, Sparkles } from 'lucide-react';
+import {
+  Briefcase,
+  CreditCard,
+  GraduationCap,
+  Instagram,
+  Landmark,
+  Mail,
+  Sparkles,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { HermesShell } from '@/components/hermes/HermesShell';
 import { COLLECTIQ_INSTAGRAM_URL, NICK_EMAIL } from '@/lib/contact';
@@ -42,12 +50,35 @@ const PILLARS: Array<{ title: string; text: string }> = [
   },
 ];
 
-/** Nick's bio, in his words (2026-11-09). First name only, by his choice. */
-const CREDENTIALS: Array<{ icon: LucideIcon; text: string }> = [
+/**
+ * Nick's bio, in his words (2026-11-09; founder / banking / payments lines
+ * 2026-11-17). First name only, by his choice. `detail` is the part he put
+ * in parentheses (or after a dash), shown on its own line so the list scans.
+ */
+const CREDENTIALS: Array<{ icon: LucideIcon; text: string; detail?: string }> = [
   { icon: GraduationCap, text: 'MBA, University of Southern California' },
   { icon: GraduationCap, text: 'MS Finance, Georgetown' },
-  { icon: Briefcase, text: '4x Founder' },
-  { icon: Sparkles, text: 'Avid Collector — sports cards & memorabilia; TCG; books & manga' },
+  {
+    icon: Briefcase,
+    text: '4x Founder (2 exits)',
+    detail:
+      'LeagueDay (esports audio platform), TripRecs (AI travel app), Streambet (streaming x betting), CardCade (gamified cards marketplace)',
+  },
+  {
+    icon: Landmark,
+    text: 'Ex-Investment Banker / Growth Equity',
+    detail: 'Perella Weinberg, Credit Suisse — Arsenal takeover bid, Manchester United IPO',
+  },
+  {
+    icon: CreditCard,
+    text: 'Payments Expert',
+    detail: 'ex-Helio (exit), ex-Coinflow (now Advisor), MangoPay Advisor',
+  },
+  {
+    icon: Sparkles,
+    text: 'Avid Collector',
+    detail: 'sports cards & memorabilia, TCG, books & manga',
+  },
 ];
 
 /** About page: how the auctions are run, then who's behind them and how to reach him. */
@@ -104,10 +135,17 @@ export default function About() {
           </div>
 
           <ul className="mt-6 space-y-3">
-            {CREDENTIALS.map(({ icon: Icon, text }) => (
+            {CREDENTIALS.map(({ icon: Icon, text, detail }) => (
               <li key={text} className="flex items-start gap-3 text-[15px] text-white/85">
                 <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[#C7FA09]" aria-hidden />
-                <span>{text}</span>
+                <span className="min-w-0">
+                  <span className={detail ? 'font-semibold text-white' : undefined}>{text}</span>
+                  {detail && (
+                    <span className="mt-0.5 block text-sm leading-relaxed text-white/60">
+                      {detail}
+                    </span>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

@@ -28,10 +28,18 @@ const TABS: Array<{ key: MarketBucket; label: string }> = [
   { key: 'upcoming', label: 'Upcoming' },
   { key: 'ended', label: 'Ended' },
 ];
-const SORTS: MarketSort[] = ['ending', 'newest', 'price_asc', 'price_desc', 'bids'];
+// "Featured" = featured lots first, then the order set in admin (Reorder), then
+// by time; the same order in "All categories" and in each category. Ended lots
+// aren't promoted, so that tab opens on "Recently ended".
+const SORTS: MarketSort[] = ['featured', 'ending', 'newest', 'price_asc', 'price_desc', 'bids'];
+const sortsFor = (tab: MarketBucket) =>
+  tab === 'ended' ? SORTS.filter(s => s !== 'featured') : SORTS;
+const defaultSort = (tab: MarketBucket): MarketSort => (tab === 'ended' ? 'ending' : 'featured');
 
 function sortLabel(sort: MarketSort, tab: MarketBucket): string {
   switch (sort) {
+    case 'featured':
+      return 'Featured';
     case 'ending':
       return tab === 'upcoming'
         ? 'Starting soonest'
@@ -62,13 +70,16 @@ function useMarketFilters() {
   const catRaw = params.get('cat');
   const sortRaw = params.get('sort');
   const payRaw = params.get('pay');
+  const tab = (TABS.some(t => t.key === tabRaw) ? tabRaw : 'live') as MarketBucket;
   const filters = {
-    tab: (TABS.some(t => t.key === tabRaw) ? tabRaw : 'live') as MarketBucket,
+    tab,
     q: (params.get('q') ?? '').trim(),
     category: (CATEGORIES as string[]).includes(catRaw ?? '')
       ? (catRaw as AuctionCategory)
       : undefined,
-    sort: (SORTS as string[]).includes(sortRaw ?? '') ? (sortRaw as MarketSort) : 'ending',
+    sort: (sortsFor(tab) as string[]).includes(sortRaw ?? '')
+      ? (sortRaw as MarketSort)
+      : defaultSort(tab),
     min: money(params.get('min')),
     max: money(params.get('max')),
     pay: (payRaw === 'fiat' || payRaw === 'crypto' ? payRaw : undefined) as
@@ -252,11 +263,13 @@ export default function AuctionsHome() {
                   id="market-sort"
                   value={sort}
                   onChange={e =>
-                    update({ sort: e.target.value === 'ending' ? undefined : e.target.value })
+                    update({
+                      sort: e.target.value === defaultSort(tab) ? undefined : e.target.value,
+                    })
                   }
                   className="h-9 cursor-pointer appearance-none rounded-full border border-white/15 bg-black/40 pl-3.5 pr-9 text-sm font-semibold text-white focus:border-[#C7FA09]/60 focus:outline-none [&>option]:bg-[#141414]"
                 >
-                  {SORTS.map(s => (
+                  {sortsFor(tab).map(s => (
                     <option key={s} value={s}>
                       {sortLabel(s, tab)}
                     </option>

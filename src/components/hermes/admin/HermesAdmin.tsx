@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, ChevronRight, Plus, RefreshCw, Star } from 'lucide-react';
+import { AlertTriangle, ArrowUpDown, ChevronRight, Plus, RefreshCw, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { CATEGORY_LABEL, METHOD_LABEL, fmtEstValue, fmtRemaining, fmtUsd } from 
 import { Pill, ReserveCell, Segmented, StatusBadge } from './adminUi';
 import { AdminAuctionDetailDialog } from './AdminAuctionDetailDialog';
 import { AuctionFormDialog } from './AuctionFormDialog';
+import { ReorderDialog } from './ReorderDialog';
 import {
   GHOST_BUTTON_CLASS,
   HOUR_MS,
@@ -78,6 +79,7 @@ export function HermesAdmin({
     auction: null,
   });
   const openCreate = () => setForm({ open: true, auction: null });
+  const [reorderOpen, setReorderOpen] = useState(false);
 
   // Deep link (e.g. the "sold" email): show the auction's own bucket behind it.
   const [deepLinkId] = useState(() => selectedAuctionId ?? null);
@@ -142,6 +144,18 @@ export function HermesAdmin({
                 {rows.length} auction{rows.length === 1 ? '' : 's'}
               </span>
             )}
+            {bucket !== 'settled' && rows.length > 1 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setReorderOpen(true)}
+                title="Set the order bidders see in the marketplace"
+                className={cn(GHOST_BUTTON_CLASS, 'h-8')}
+              >
+                <ArrowUpDown /> Reorder
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -201,6 +215,10 @@ export function HermesAdmin({
         onEdit={a => setForm({ open: true, auction: a })}
       />
 
+      {bucket !== 'settled' && (
+        <ReorderDialog bucket={bucket} open={reorderOpen} onOpenChange={setReorderOpen} />
+      )}
+
       <AuctionFormDialog
         open={form.open}
         auction={form.auction}
@@ -245,7 +263,7 @@ function OverdueFlag() {
 
 function FeaturedStar() {
   return (
-    <span title="Featured on the landing page" className="inline-flex">
+    <span title="Featured: shown first in the marketplace" className="inline-flex">
       <Star className="h-3.5 w-3.5 fill-[#C7FA09] text-[#C7FA09]" aria-hidden />
       <span className="sr-only">Featured</span>
     </span>
