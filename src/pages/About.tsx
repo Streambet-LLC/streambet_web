@@ -77,7 +77,7 @@ const CREDENTIALS: Array<{ icon: LucideIcon; text: string; detail?: string }> = 
   {
     icon: Sparkles,
     text: 'Avid Collector',
-    detail: 'sports cards & memorabilia; TCG; books & manga',
+    detail: 'sports cards & memorabilia, TCG, books & manga',
   },
 ];
 
