@@ -197,8 +197,20 @@ export function FieldError({ id, children }: { id?: string; children?: ReactNode
   );
 }
 
-export function FieldHint({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn('mt-1 text-xs text-muted-foreground', className)}>{children}</p>;
+export function FieldHint({
+  children,
+  className,
+  id,
+}: {
+  children: ReactNode;
+  className?: string;
+  id?: string;
+}) {
+  return (
+    <p id={id} className={cn('mt-1 text-xs text-muted-foreground', className)}>
+      {children}
+    </p>
+  );
 }
 
 export function SectionTitle({

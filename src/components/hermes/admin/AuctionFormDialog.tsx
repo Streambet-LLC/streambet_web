@@ -294,6 +294,8 @@ function AuctionForm({
   const queryClient = useQueryClient();
   const isEdit = !!auction;
   const locked = isEdit && auction.status !== 'scheduled';
+  // A live lot nobody has bid on can still move its end (the start stays put).
+  const endMovable = isEdit && auction.status === 'active' && auction.bidCount === 0;
 
   const [init] = useState(() => initialState(auction));
   const [form, setForm] = useState<FormState>(init);
@@ -312,6 +314,7 @@ function AuctionForm({
     form.startLocal !== init.startLocal ||
     form.lengthPreset !== init.lengthPreset ||
     (form.lengthPreset === 'custom' && form.endLocal !== init.endLocal);
+  const endMoved = endMovable && form.endLocal !== init.endLocal;
   const termsDirty =
     !isEdit ||
     form.startingPrice !== init.startingPrice ||
@@ -339,13 +342,15 @@ function AuctionForm({
     : form.startMode === 'now'
       ? new Date(now)
       : fromLocalInput(form.startLocal);
-  const endDate: Date | null = locked
-    ? new Date(auction!.endsAt)
-    : form.lengthPreset === 'custom'
-      ? fromLocalInput(form.endLocal)
-      : startDate
-        ? new Date(startDate.getTime() + Number(form.lengthPreset) * DAY_MS)
-        : null;
+  const endDate: Date | null = endMovable
+    ? fromLocalInput(form.endLocal)
+    : locked
+      ? new Date(auction!.endsAt)
+      : form.lengthPreset === 'custom'
+        ? fromLocalInput(form.endLocal)
+        : startDate
+          ? new Date(startDate.getTime() + Number(form.lengthPreset) * DAY_MS)
+          : null;
 
   // ── Validation ─────────────────────────────────────────────────────────
   const errors: FieldErrors = {};
@@ -373,6 +378,13 @@ function AuctionForm({
       else if (len < MIN_LENGTH_MS) errors.end = { msg: 'Auctions must run at least 1 hour.' };
       else if (len > MAX_LENGTH_MS) errors.end = { msg: 'Auctions can run at most 60 days.' };
     }
+  }
+  if (endMoved) {
+    if (!endDate) errors.end = { msg: 'Pick the new end date and time.', required: true };
+    else if (endDate.getTime() < Date.now() + MIN_LENGTH_MS)
+      errors.end = { msg: 'A live auction has to stay open at least another hour.' };
+    else if (startDate && endDate.getTime() - startDate.getTime() > MAX_LENGTH_MS)
+      errors.end = { msg: 'Auctions can run at most 60 days from the start.' };
   }
 
   const startingNum = parseUsd(form.startingPrice);
@@ -475,6 +487,9 @@ function AuctionForm({
       ...(estDirty ? est : {}),
       ...(!locked && termsDirty ? terms : {}),
       ...(!locked && timingDirty ? timing : {}),
+      ...(endMoved && endDate
+        ? { lengthPreset: 'custom' as const, endsAt: endDate.toISOString() }
+        : {}),
     };
   };
 
@@ -695,7 +710,7 @@ function AuctionForm({
 
         {/* ── Timing ────────────────────────────────────────────────── */}
         <Section title="Timing">
-          {locked && <LockedNote />}
+          {locked && <LockedNote endMovable={endMovable} />}
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <p className="text-sm font-medium text-white/85">Start</p>
@@ -752,53 +767,79 @@ function AuctionForm({
               )}
             </div>
 
-            <div>
-              <p className="text-sm font-medium text-white/85">Length</p>
-              <Segmented
-                className="mt-1.5"
-                ariaLabel="Auction length"
-                value={form.lengthPreset}
-                disabled={locked}
-                onChange={v => {
-                  if (v === 'custom' && form.lengthPreset !== 'custom' && startDate) {
-                    // Seed the custom end from the current preset.
-                    const days = Number(form.lengthPreset) || 7;
-                    set({
-                      lengthPreset: v,
-                      endLocal: toLocalInput(new Date(startDate.getTime() + days * DAY_MS)),
-                    });
-                  } else set({ lengthPreset: v });
-                }}
-                options={LENGTH_OPTIONS}
-              />
-              {form.lengthPreset === 'custom' && !locked && (
-                <div className="mt-2">
-                  <Label htmlFor={ids.end} className="sr-only">
-                    End date and time
-                  </Label>
-                  <Input
-                    id={ids.end}
-                    type="datetime-local"
-                    value={form.endLocal}
-                    min={
-                      startDate
-                        ? toLocalInput(new Date(startDate.getTime() + MIN_LENGTH_MS))
-                        : undefined
-                    }
-                    onChange={e => set({ endLocal: e.target.value })}
-                    aria-invalid={!!visibleError('end') || undefined}
-                    aria-describedby={`${ids.end}-error`}
-                    className={cn(
-                      FIELD_CLASS,
-                      '[color-scheme:dark]',
-                      visibleError('end') && 'border-red-400/60'
-                    )}
-                  />
-                </div>
-              )}
-            </div>
+            {endMovable ? (
+              <div>
+                <Label htmlFor={ids.end} className="text-sm font-medium text-white/85">
+                  End
+                </Label>
+                <Input
+                  id={ids.end}
+                  type="datetime-local"
+                  value={form.endLocal}
+                  min={toLocalInput(new Date(Date.now() + MIN_LENGTH_MS))}
+                  onChange={e => set({ endLocal: e.target.value })}
+                  aria-invalid={!!visibleError('end') || undefined}
+                  aria-describedby={`${ids.end}-error ${ids.end}-hint`}
+                  className={cn(
+                    FIELD_CLASS,
+                    'mt-1.5 [color-scheme:dark]',
+                    visibleError('end') && 'border-red-400/60'
+                  )}
+                />
+                <FieldHint id={`${ids.end}-hint`}>
+                  No bids yet, so you can move the end, earlier or later. It locks at the first bid.
+                </FieldHint>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm font-medium text-white/85">Length</p>
+                <Segmented
+                  className="mt-1.5"
+                  ariaLabel="Auction length"
+                  value={form.lengthPreset}
+                  disabled={locked}
+                  onChange={v => {
+                    if (v === 'custom' && form.lengthPreset !== 'custom' && startDate) {
+                      // Seed the custom end from the current preset.
+                      const days = Number(form.lengthPreset) || 7;
+                      set({
+                        lengthPreset: v,
+                        endLocal: toLocalInput(new Date(startDate.getTime() + days * DAY_MS)),
+                      });
+                    } else set({ lengthPreset: v });
+                  }}
+                  options={LENGTH_OPTIONS}
+                />
+                {form.lengthPreset === 'custom' && !locked && (
+                  <div className="mt-2">
+                    <Label htmlFor={ids.end} className="sr-only">
+                      End date and time
+                    </Label>
+                    <Input
+                      id={ids.end}
+                      type="datetime-local"
+                      value={form.endLocal}
+                      min={
+                        startDate
+                          ? toLocalInput(new Date(startDate.getTime() + MIN_LENGTH_MS))
+                          : undefined
+                      }
+                      onChange={e => set({ endLocal: e.target.value })}
+                      aria-invalid={!!visibleError('end') || undefined}
+                      aria-describedby={`${ids.end}-error`}
+                      className={cn(
+                        FIELD_CLASS,
+                        '[color-scheme:dark]',
+                        visibleError('end') && 'border-red-400/60'
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          {!locked && (form.startMode === 'schedule' || form.lengthPreset === 'custom') && (
+          {(endMovable ||
+            (!locked && (form.startMode === 'schedule' || form.lengthPreset === 'custom'))) && (
             <FieldHint className="mt-2">
               Dates and times are in your time zone ({localTzAbbr(startDate ?? new Date())}).
               Bidders see them in theirs.
@@ -828,7 +869,7 @@ function AuctionForm({
                 Extended {auction!.extensionCount}× by late bids.
               </p>
             )}
-            {!locked && (
+            {(!locked || endMovable) && (
               <p className="mt-0.5 text-xs text-white/60">
                 Soft close: a bid in the final 2 minutes resets the clock to 2 minutes.
               </p>
@@ -839,7 +880,7 @@ function AuctionForm({
 
         {/* ── Pricing ───────────────────────────────────────────────── */}
         <Section title="Pricing">
-          {locked && <LockedNote />}
+          {locked && <LockedNote endMovable={endMovable} />}
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <Label htmlFor={ids.startingPrice} className="text-white/85">
@@ -1067,12 +1108,22 @@ function Section({
   );
 }
 
-function LockedNote() {
+function LockedNote({ endMovable }: { endMovable: boolean }) {
   return (
     <p className="mb-3 flex items-start gap-2 rounded-md border border-amber-400/25 bg-amber-400/[0.06] px-3 py-2 text-xs text-amber-200">
       <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-      Bidding has opened, so the starting bid, reserve, shipping, start and length are locked.
-      Photos, videos, name, description, category, est. value and featuring can still change.
+      {endMovable ? (
+        <span>
+          Bidding has opened, so the starting bid, reserve, shipping and start are locked. Nobody
+          has bid yet, so the end can still move. Photos, videos, name, description, category, est.
+          value and featuring can still change.
+        </span>
+      ) : (
+        <span>
+          Bidding has opened, so the starting bid, reserve, shipping, start and length are locked.
+          Photos, videos, name, description, category, est. value and featuring can still change.
+        </span>
+      )}
     </p>
   );
 }
