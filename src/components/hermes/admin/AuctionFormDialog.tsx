@@ -1000,7 +1000,8 @@ function AuctionForm({
               Featured
             </Label>
             <p className="mt-1 text-xs text-muted-foreground">
-              Shows a Featured badge on this lot&apos;s card in the marketplace.
+              Shows a Featured badge on this lot&apos;s card and puts it first in the marketplace,
+              under All categories and in its own category.
             </p>
           </div>
         </div>
