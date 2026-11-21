@@ -51,7 +51,6 @@ export default function SignUp() {
         password: form.password,
         tosAccepted: true,
         profileImageUrl: '',
-        lastKnownIp: '',
         // VerifyEmail sends the user on to /login?redirect=<this>.
         redirect: safeRedirect,
         ...(attribution ? { attribution } : {}),

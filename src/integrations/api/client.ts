@@ -232,7 +232,8 @@ export const authAPI = {
     username: string;
     tosAccepted: boolean;
     profileImageUrl: string;
-    lastKnownIp: string;
+    /** Must be a real IP if sent; the API rejects anything else. */
+    lastKnownIp?: string;
     redirect?: string;
     promoCode?: string;
     refLink?: string;
