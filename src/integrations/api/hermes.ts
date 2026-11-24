@@ -222,6 +222,8 @@ export interface AdminAuctionRow {
   /** People watching the lot. Absent on older API builds. */
   watcherCount?: number;
   leader: string | null;
+  /** The leader's private max bid; null = no bids. Absent on older API builds. */
+  leaderMaxUsd?: number | null;
   winner: string | null;
   winningAmountUsd: number | null;
   paymentMethod: FundingMethod | null;
