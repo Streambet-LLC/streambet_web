@@ -355,6 +355,21 @@ function BidCell({ row }: { row: AdminAuctionRow }) {
   );
 }
 
+/** The high bidder's private max. Bidders never see it. */
+function LeaderMaxCell({ row }: { row: AdminAuctionRow }) {
+  if (row.leaderMaxUsd == null) return <span className="text-white/40">—</span>;
+  // BidCell already names the leader or winner, except on a lot that didn't sell.
+  const unsold = row.bucket === 'settled' && row.winningAmountUsd == null;
+  return (
+    <span className="block">
+      <span className="block font-semibold tabular-nums text-white">{fmtUsd(row.leaderMaxUsd)}</span>
+      {unsold && row.leader && (
+        <span className="block truncate text-xs text-muted-foreground">{row.leader}</span>
+      )}
+    </span>
+  );
+}
+
 function SettledMeta({ row }: { row: AdminAuctionRow }) {
   if (row.status !== 'paid' && row.status !== 'ended' && row.status !== 'failed') return null;
   const parts = [
@@ -393,7 +408,7 @@ function AuctionTable({
 }) {
   return (
     <div className="hidden overflow-x-auto md:block">
-      <table className="w-full min-w-[880px] text-left text-sm">
+      <table className="w-full min-w-[980px] text-left text-sm">
         <thead>
           <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-muted-foreground">
             <th scope="col" className="px-2 py-2 font-medium">
@@ -408,6 +423,15 @@ function AuctionTable({
             <th scope="col" className="px-2 py-2 font-medium">
               {bucket === 'settled' ? 'Winning bid' : 'Current bid'}
             </th>
+            {bucket !== 'upcoming' && (
+              <th
+                scope="col"
+                className="px-2 py-2 font-medium"
+                title="The high bidder's private max. Bidders can't see it."
+              >
+                Max bid
+              </th>
+            )}
             <th scope="col" className="px-2 py-2 font-medium">
               Reserve
             </th>
@@ -464,6 +488,11 @@ function AuctionTable({
               <td className="max-w-[160px] whitespace-nowrap px-2 py-2.5">
                 <BidCell row={r} />
               </td>
+              {bucket !== 'upcoming' && (
+                <td className="max-w-[140px] whitespace-nowrap px-2 py-2.5">
+                  <LeaderMaxCell row={r} />
+                </td>
+              )}
               <td className="whitespace-nowrap px-2 py-2.5">
                 <ReserveCell reserveUsd={r.reservePriceUsd} bidUsd={highBidOf(r)} />
               </td>
@@ -543,6 +572,11 @@ function AuctionCards({
               >
                 <TimeCell row={r} now={now} />
               </Kv>
+              {bucket !== 'upcoming' && (
+                <Kv label="Max bid">
+                  <LeaderMaxCell row={r} />
+                </Kv>
+              )}
               <Kv label="Reserve">
                 <ReserveCell reserveUsd={r.reservePriceUsd} bidUsd={highBidOf(r)} compact />
               </Kv>

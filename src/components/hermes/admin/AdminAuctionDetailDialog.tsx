@@ -189,6 +189,12 @@ function DetailBody({ id, onEdit }: { id: string; onEdit: (a: AdminAuction) => v
     null;
   // Bids come newest first, so this is the leader's current bid.
   const leaderBid = leaderId ? d.bids.find(b => b.userId === leaderId) : undefined;
+  // From the leader's own bids: auction.proxyMaxUsd keeps the first leader's
+  // max when an unpaid win passes to the runner-up.
+  const leaderMax = leaderBid
+    ? Math.max(...d.bids.filter(b => b.userId === leaderId).map(b => b.proxyMaxUsd))
+    : null;
+  const leaderName = leaderBid ? (leaderBid.username ?? leaderBid.email) : null;
   const canClose = auction.status === 'active' || auction.status === 'scheduled';
   const canCancel = auction.status !== 'cancelled';
   const settledish = ['ended', 'paid', 'failed', 'unsold'].includes(auction.status);
@@ -323,9 +329,13 @@ function DetailBody({ id, onEdit }: { id: string; onEdit: (a: AdminAuction) => v
             }
           />
           <Stat
-            label="Leader's max"
-            value={auction.proxyMaxUsd != null ? fmtUsd(auction.proxyMaxUsd) : '—'}
-            sub="Private proxy ceiling"
+            label="Max bid"
+            value={leaderMax != null ? fmtUsd(leaderMax) : '—'}
+            sub={
+              leaderMax == null
+                ? undefined
+                : `${leaderName ? `${leaderName} · ` : ''}hidden from bidders`
+            }
           />
           <Stat
             label="Bids"
